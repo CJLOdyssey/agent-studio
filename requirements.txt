@@ -1,0 +1,9 @@
+pyautogen>=0.2.0,<0.7.0
+pydantic>=2.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+celery>=5.3.0
+redis>=5.0.0
+sqlalchemy>=2.0.0
+asyncpg>=0.28.0
+websockets>=12.0

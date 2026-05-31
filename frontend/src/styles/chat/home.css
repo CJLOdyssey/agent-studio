@@ -1,0 +1,98 @@
+/* Home page */
+.devagents-home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.devagents-home-centered {
+  flex: 1;
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--sp-6);
+}
+
+.devagents-home-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.devagents-home-hero {
+  text-align: center;
+  margin-bottom: var(--sp-8);
+}
+
+.devagents-home-logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto var(--sp-6);
+  background: var(--da-bg-surface);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.devagents-home-greeting {
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  color: var(--da-text-primary);
+  margin: 0 0 var(--sp-2);
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  text-wrap: balance;
+}
+
+.devagents-home-subtitle {
+  font-size: var(--da-font-size-base);
+  color: var(--da-text-muted);
+  margin: 0;
+}
+
+.devagents-home-messages {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.devagents-home-chat-messages {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.devagents-home-input {
+  width: 100%;
+}
+
+.devagents-home-input .devagents-textarea {
+  min-height: 72px;
+  padding: var(--sp-5) var(--sp-6);
+}
+
+/* Typing cursor */
+.typing-cursor {
+  display: inline-block;
+  color: var(--da-text-muted);
+  font-weight: 300;
+  animation: blink 0.8s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<title>虚拟软件外包团队</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5; color: #1a1a2e; min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff; padding: 24px 0; text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .header h1 { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+  .header h1 span { color: #e94560; }
+  .header p { margin-top: 8px; font-size: 14px; color: #a8b2d1; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+  .input-card {
+    background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .input-card label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 10px; color: #1a1a2e; }
+  .input-card textarea {
+    width: 100%; min-height: 80px; padding: 14px 16px; border: 2px solid #e1e4e8;
+    border-radius: 8px; font-size: 15px; font-family: inherit; resize: vertical;
+    transition: border-color 0.2s; line-height: 1.6;
+  }
+  .input-card textarea:focus { outline: none; border-color: #0f3460; }
+  .input-row { display: flex; justify-content: flex-end; margin-top: 14px; gap: 12px; align-items: center; }
+  .btn {
+    padding: 10px 28px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.25s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary { background: #0f3460; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1a1a2e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,52,96,0.3); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: #e1e4e8; color: #1a1a2e; }
+  .btn-secondary:hover { background: #d0d3d8; }
+
+  .loading-overlay { display: none; flex-direction: column; align-items: center; padding: 40px 0; }
+  .loading-overlay.active { display: flex; }
+  .loading-roles { display: flex; gap: 32px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; }
+  .role-spinner { display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: 0.4; transition: all 0.5s; }
+  .role-spinner.active { opacity: 1; }
+  .role-spinner .icon { font-size: 36px; }
+  .role-spinner .name { font-size: 13px; font-weight: 600; color: #586069; }
+  .role-spinner.active .name { color: #0f3460; }
+  .spinner-dot { width: 8px; height: 8px; border-radius: 50%; background: #0f3460; animation: bounce 1.2s infinite; }
+  .role-spinner:nth-child(2) .spinner-dot { animation-delay: 0.2s; }
+  .role-spinner:nth-child(3) .spinner-dot { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+  .loading-text { font-size: 14px; color: #586069; }
+
+  .results { display: none; }
+  .results.active { display: block; }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px;
+    border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 20px;
+  }
+  .status-badge.approved { background: #dcffe4; color: #137333; }
+  .status-badge.limited { background: #fef7e0; color: #9a6b01; }
+  .status-badge.error { background: #fce8e6; color: #c5221f; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+  .card {
+    background: #fff; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; flex-direction: column;
+  }
+  .card-header { padding: 14px 18px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 16px 18px; font-size: 14px; line-height: 1.7; flex: 1; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  .card-body.code { background: #1e1e2e; color: #cdd6f4; font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.6; tab-size: 2; }
+  .card-pm { border-top: 4px solid #0f3460; }
+  .card-pm .card-header { color: #0f3460; }
+  .card-code { border-top: 4px solid #137333; }
+  .card-code .card-header { color: #137333; }
+  .card-review { border-top: 4px solid #e94560; }
+  .card-review .card-header { color: #e94560; }
+
+  .conversation-section { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .conversation-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+  .msg { display: flex; margin-bottom: 14px; }
+  .msg-avatar {
+    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; margin-right: 12px;
+  }
+  .msg-pm .msg-avatar { background: #dbeafe; }
+  .msg-programmer .msg-avatar { background: #dcffe4; }
+  .msg-tester .msg-avatar { background: #fef3e2; }
+  .msg-body { flex: 1; }
+  .msg-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .msg-pm .msg-name { color: #0f3460; }
+  .msg-programmer .msg-name { color: #137333; }
+  .msg-tester .msg-name { color: #b85a00; }
+  .msg-content {
+    background: #f6f8fa; padding: 12px 16px; border-radius: 8px; font-size: 14px;
+    line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+  }
+  .msg-pm .msg-content { background: #eff6ff; }
+  .msg-programmer .msg-content { background: #f0fdf4; }
+  .msg-tester .msg-content { background: #fff7ed; }
+  .msg-round { font-size: 11px; color: #8b949e; margin-top: 4px; }
+
+  .error-bar {
+    display: none; background: #fce8e6; color: #c5221f; padding: 14px 18px;
+    border-radius: 8px; margin-bottom: 16px; font-size: 14px; line-height: 1.5;
+  }
+  .error-bar.active { display: block; }
+
+  .footer { text-align: center; padding: 24px; color: #8b949e; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏗️ 虚拟软件外包<span>团队</span></h1>
+  <p>AI 产品经理 · 资深程序员 · 测试工程师 — 自动协作完成您的需求</p>
+</div>
+
+<div class="container">
+  <div class="input-card">
+    <label for="requirement">📝 输入需求</label>
+    <textarea id="requirement" placeholder="例如：写一个贪吃蛇游戏&#10;例如：用 Python 实现一个命令行计算器&#10;例如：生成一个待办事项管理工具的 HTML 页面">写一个贪吃蛇游戏</textarea>
+    <div class="input-row">
+      <span id="charCount" style="font-size:13px;color:#8b949e;"></span>
+      <button class="btn btn-primary" id="startBtn" onclick="start()">🚀 开始协作</button>
+    </div>
+  </div>
+
+  <div class="error-bar" id="errorBar"></div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-roles">
+      <div class="role-spinner active" id="spinnerPm">
+        <span class="icon">📋</span>
+        <span class="name">产品经理</span>
+        <div class="spinner-dot"></div>
+      </div>
+      <div class="role-spinner" id="spinnerProg">
+        <span class="icon">💻</span>
+        <span class="name">资深程序员</span>
+        <div class="spinner-dot"></div>
+      </div>
+      <div class="role-spinner" id="spinnerTest">
+        <span class="icon">🔍</span>
+        <span class="name">测试工程师</span>
+        <div class="spinner-dot"></div>
+      </div>
+    </div>
+    <div class="loading-text" id="loadingText">AI 团队正在分析需求...</div>
+  </div>
+
+  <div class="results" id="results">
+    <div id="statusBadge"></div>
+
+    <div class="cards">
+      <div class="card card-pm">
+        <div class="card-header">📄 产品需求文档</div>
+        <div class="card-body" id="pmDoc">等待输出...</div>
+      </div>
+      <div class="card card-code">
+        <div class="card-header">💻 代码实现</div>
+        <div class="card-body code" id="codeOutput">等待输出...</div>
+      </div>
+      <div class="card card-review">
+        <div class="card-header">🔍 测试审查意见</div>
+        <div class="card-body" id="reviewOutput">等待输出...</div>
+      </div>
+    </div>
+
+    <div class="conversation-section">
+      <h3>💬 讨论过程</h3>
+      <div id="conversationLog"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">虚拟软件外包团队 · Powered by AI · AutoGen</div>
+
+<script>
+const startBtn = document.getElementById('startBtn');
+const reqInput = document.getElementById('requirement');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const results = document.getElementById('results');
+const errorBar = document.getElementById('errorBar');
+const pmDoc = document.getElementById('pmDoc');
+const codeOutput = document.getElementById('codeOutput');
+const reviewOutput = document.getElementById('reviewOutput');
+const conversationLog = document.getElementById('conversationLog');
+const statusBadge = document.getElementById('statusBadge');
+const loadingText = document.getElementById('loadingText');
+const spinners = {
+  pm: document.getElementById('spinnerPm'),
+  prog: document.getElementById('spinnerProg'),
+  test: document.getElementById('spinnerTest'),
+};
+
+const loadingMessages = [
+  'AI 团队正在分析需求...',
+  '产品经理正在撰写需求文档...',
+  '资深程序员正在编写代码...',
+  '测试工程师正在审查代码...',
+  '团队正在讨论修改方案...',
+];
+
+let loadingInterval = null;
+let loadingIdx = 0;
+
+function showError(msg) {
+  errorBar.textContent = msg;
+  errorBar.classList.add('active');
+}
+
+function hideError() {
+  errorBar.classList.remove('active');
+}
+
+function setLoading(active) {
+  if (active) {
+    loadingOverlay.classList.add('active');
+    results.classList.remove('active');
+    startBtn.disabled = true;
+    startBtn.textContent = '⏳ 协作中...';
+    hideError();
+    loadingIdx = 0;
+    loadingText.textContent = loadingMessages[0];
+    Object.values(spinners).forEach(s => s.classList.remove('active'));
+    spinners.pm.classList.add('active');
+    loadingInterval = setInterval(() => {
+      loadingIdx = (loadingIdx + 1) % loadingMessages.length;
+      loadingText.textContent = loadingMessages[loadingIdx];
+      Object.values(spinners).forEach(s => s.classList.remove('active'));
+      if (loadingIdx < 2) spinners.pm.classList.add('active');
+      else if (loadingIdx < 3) spinners.prog.classList.add('active');
+      else spinners.test.classList.add('active');
+    }, 2500);
+  } else {
+    loadingOverlay.classList.remove('active');
+    startBtn.disabled = false;
+    startBtn.textContent = '🚀 开始协作';
+    if (loadingInterval) { clearInterval(loadingInterval); loadingInterval = null; }
+  }
+}
+
+function renderConversation(rounds) {
+  conversationLog.innerHTML = '';
+  if (!rounds || rounds.length === 0) {
+    conversationLog.innerHTML = '<div style="color:#8b949e;font-size:14px;text-align:center;padding:20px;">暂无讨论记录</div>';
+    return;
+  }
+  const roleEmoji = { pm: '📋', programmer: '💻', tester: '🔍' };
+  const roleLabel = { pm: '产品经理', programmer: '资深程序员', tester: '测试工程师' };
+  const roleClass = { pm: 'msg-pm', programmer: 'msg-programmer', tester: 'msg-tester' };
+
+  for (const round of rounds) {
+    for (const msg of round.messages || []) {
+      const div = document.createElement('div');
+      div.className = `msg ${roleClass[msg.role] || 'msg-pm'}`;
+      div.innerHTML = `
+        <div class="msg-avatar">${roleEmoji[msg.role] || '🤖'}</div>
+        <div class="msg-body">
+          <div class="msg-name">${roleLabel[msg.role] || msg.role}</div>
+          <div class="msg-content">${escapeHtml(msg.content)}</div>
+          <div class="msg-round">第 ${msg.round_number || 1} 轮</div>
+        </div>`;
+      conversationLog.appendChild(div);
+    }
+  }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function start() {
+  const requirement = reqInput.value.trim();
+  if (!requirement) {
+    showError('请输入需求描述');
+    reqInput.focus();
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requirement }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `请求失败 (${res.status})`);
+    }
+
+    const data = await res.json();
+
+    pmDoc.textContent = data.pm_document || '（无输出）';
+    codeOutput.textContent = data.code || '（无输出）';
+    reviewOutput.textContent = data.review || '（无输出）';
+
+    statusBadge.innerHTML = '';
+    if (data.approved) {
+      statusBadge.className = 'status-badge approved';
+      statusBadge.innerHTML = '✅ 已批准 — 测试工程师确认代码通过审查';
+    } else if (data.status === 'error') {
+      statusBadge.className = 'status-badge error';
+      statusBadge.innerHTML = '❌ 运行出错';
+    } else {
+      statusBadge.className = 'status-badge limited';
+      statusBadge.innerHTML = '⏹️ 已达最大讨论轮数 — 测试工程师尚未完全批准';
+    }
+
+    renderConversation(data.conversation_rounds);
+
+    results.classList.add('active');
+  } catch (err) {
+    showError(err.message || '运行失败，请检查 API 配置');
+  } finally {
+    setLoading(false);
+  }
+}
+
+reqInput.addEventListener('input', () => {
+  const len = reqInput.value.length;
+  document.getElementById('charCount').textContent = len > 0 ? `${len} 字` : '';
+});
+
+// Allow Ctrl+Enter to submit
+reqInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    start();
+  }
+});
+</script>
+</body>
+</html>

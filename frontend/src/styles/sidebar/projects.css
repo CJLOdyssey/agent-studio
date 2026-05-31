@@ -1,0 +1,23 @@
+.devagents-projects-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.devagents-project-item {
+  font-size: var(--da-font-size-sm);
+  padding: var(--sp-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.devagents-project-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.devagents-project-item.active {
+  color: var(--da-accent-indigo);
+}
+
+/* User menu */

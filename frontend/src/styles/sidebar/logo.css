@@ -1,0 +1,53 @@
+.devagents-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.devagents-logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--da-bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-text-muted);
+  flex-shrink: 0;
+}
+
+.devagents-logo h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--da-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.devagents-logo p {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin: 2px 0 0;
+}
+
+.devagents-sprint-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.devagents-sprint-btn:hover {
+  background: var(--da-bg-hover);
+  border-color: var(--da-border);
+}

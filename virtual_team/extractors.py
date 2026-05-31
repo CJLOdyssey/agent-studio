@@ -1,0 +1,60 @@
+import logging
+import re
+
+from virtual_team.models import Message
+from virtual_team.prompts import APPROVAL_KEYWORD
+
+logger = logging.getLogger(__name__)
+
+
+def extract_pm_document(text: str) -> str:
+    if not text or not text.strip():
+        raise ValueError("text must not be empty")
+    return text.strip()
+
+
+def extract_code(text: str) -> str:
+    pattern = r"```(?:\w+)?\n(.*?)```"
+    matches = re.findall(pattern, text, re.DOTALL)
+    return "\n\n".join(m.strip() for m in matches)
+
+
+def extract_review(text: str) -> str:
+    if not text or not text.strip():
+        raise ValueError("text must not be empty")
+    review = text.replace(APPROVAL_KEYWORD, "").strip()
+    return review
+
+
+def extract_all(messages: list[Message]) -> dict[str, str]:
+    if not messages:
+        raise ValueError("messages must not be empty")
+    pm_doc = ""
+    code = ""
+    review = ""
+
+    # First message goes to pm_doc (design/planning)
+    first = messages[0]
+    try:
+        pm_doc = extract_pm_document(first.content)
+    except ValueError as exc:
+        logger.warning("Failed to extract document from first message: %s", exc)
+
+    # Collect any code blocks from non-first messages
+    code_parts = []
+    for msg in messages[1:]:
+        extracted = extract_code(msg.content)
+        if extracted:
+            code_parts.append(extracted)
+    code = "\n\n".join(code_parts)
+
+    # Last approver message goes to review (if contains approval keyword)
+    for msg in reversed(messages):
+        if APPROVAL_KEYWORD in msg.content:
+            try:
+                review = extract_review(msg.content)
+            except ValueError as exc:
+                logger.warning("Failed to extract review: %s", exc)
+            break
+
+    return {"pm_document": pm_doc, "code": code, "review": review}

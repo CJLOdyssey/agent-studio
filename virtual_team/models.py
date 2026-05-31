@@ -1,0 +1,91 @@
+from datetime import datetime, timezone
+from enum import Enum
+from uuid import uuid4
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class Role(str, Enum):
+    PM = "pm"
+    PROGRAMMER = "programmer"
+    TESTER = "tester"
+
+    @property
+    def display_name(self) -> str:
+        mapping = {
+            Role.PM: "产品经理",
+            Role.PROGRAMMER: "资深程序员",
+            Role.TESTER: "测试工程师",
+        }
+        return mapping[self]
+
+
+class AgentConfig(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    name: str = Field(..., min_length=1, max_length=64)
+    role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
+    system_prompt: str = Field(..., min_length=1)
+    model: str | None = Field(default=None)
+    temperature: float | None = Field(default=None, ge=0.0, le=1.0)
+    order: int = Field(default=0, ge=0)
+    is_active: bool = Field(default=True)
+    is_approver: bool = Field(default=False)
+    icon: str = Field(default="🤖", max_length=8)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class Message(BaseModel):
+    role: str  # Now a string (role_identifier), not enum
+    content: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    round_number: int = Field(default=1, ge=1)
+
+    @field_validator("content")
+    @classmethod
+    def content_not_empty(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("content must not be empty")
+        return stripped
+
+
+class ConversationStatus(str, Enum):
+    IN_PROGRESS = "in_progress"
+    CONVERGED = "converged"
+    MAX_ROUNDS_REACHED = "max_rounds_reached"
+    ERROR = "error"
+
+
+class ConversationRound(BaseModel):
+    round_number: int = Field(ge=1)
+    messages: list[Message] = Field(min_length=1)
+
+
+class MemoryEntryItem(BaseModel):
+    id: str
+    agent_role: str
+    content_type: str = Field(..., pattern=r'^(pm_document|code|review|decision)$')
+    summary: str
+    details: str
+    created_at: datetime
+
+
+class SessionItem(BaseModel):
+    id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class SessionDetail(SessionItem):
+    runs: list = Field(default_factory=list)
+
+
+class TeamOutput(BaseModel):
+    requirement: str = Field(min_length=1)
+    pm_document: str
+    code: str
+    review: str
+    approved: bool = False
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    conversation_rounds: list[ConversationRound] = Field(default_factory=list)

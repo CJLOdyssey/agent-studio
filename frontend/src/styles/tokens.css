@@ -1,0 +1,174 @@
+:root {
+  /* Z-index scale */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal-backdrop: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  /* Layout tokens */
+  --da-sidebar-width: 260px;
+  --da-sidebar-min: 220px;
+  --da-sidebar-max: 320px;
+  --da-workspace-width: 480px;
+  --da-workspace-min: 360px;
+  --da-workspace-max: 600px;
+  --da-header-height: 48px;
+  --da-input-height: 64px;
+  --da-input-min-lines: 1;
+  --da-input-max-lines: 8;
+  --da-input-radius: 20px;
+  --da-toolbar-height: 48px;
+
+  /* Spacing scale (4px base) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* Typography */
+  --da-font-size-base: 13px;
+  --da-font-size-sm: 12px;
+  --da-font-size-xs: 11px;
+  --da-font-size-lg: 15px;
+  --da-font-size-xl: 18px;
+
+  /* Colors - Dark theme (legacy --bg-* + new --da-bg-*) */
+  --bg-primary: #09090b;
+  --bg-secondary: #111113;
+  --bg-surface: #18181b;
+  --bg-elevated: #1e1e22;
+  --bg-hover: #27272a;
+  --bg-input: #27272a;
+  --border: #27272a;
+  --border-light: #3a3a3a;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #8c8c8c;
+  --accent: #6366f1;
+  --accent-pm: #6366f1;
+  --accent-programmer: #34d399;
+  --accent-tester: #fbbf24;
+  --accent-approved: #22c55e;
+  --icon-status-success: #34d399;
+  --icon-status-warning: #fbbf24;
+  --icon-status-error: #f87171;
+  --danger: #ef4444;
+
+  --da-bg-primary: #09090b;
+  --da-bg-secondary: #111113;
+  --da-bg-surface: #18181b;
+  --da-bg-elevated: #1e1e22;
+  --da-bg-hover: #27272a;
+  --da-border: #27272a;
+  --da-border-subtle: #1e1e22;
+  --da-text-primary: #fafafa;
+  --da-text-secondary: #a1a1aa;
+  --da-text-muted: #8c8c8c;
+  --da-accent-indigo: #6366f1;
+  --da-accent-cyan: #22d3ee;
+  --da-accent-pink: #f472b6;
+  --da-accent-amber: #fbbf24;
+  --da-accent-emerald: #34d399;
+  --da-accent-purple: #c084fc;
+
+  /* Text on accent backgrounds (always high-contrast) */
+  --da-text-on-accent: #ffffff;
+
+  /* Icon colors by category */
+  --icon-planning: #6366f1;
+  --icon-design: #f472b6;
+  --icon-dev-frontend: #22d3ee;
+  --icon-dev-backend: #34d399;
+  --icon-dev-fullstack: #c084fc;
+  --icon-quality: #fbbf24;
+  --icon-ops: #fb923c;
+  --icon-file: #9ca3af;
+  --icon-code: #94a3b8;
+
+  /* Sidebar */
+  --sidebar-width: 280px;
+
+  /* Fonts */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Syntax highlighting */
+  --syntax-blue-300: #93c5fd;
+  --syntax-blue-400: #60a5fa;
+  --syntax-cyan-200: #a5f3fc;
+  --syntax-red: #f87171;
+
+  /* Overlay */
+  --da-overlay-bg: rgba(0, 0, 0, 0.6);
+  --da-overlay-bg-light: rgba(0, 0, 0, 0.5);
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.5);
+}
+
+.light-theme {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-surface: #f1f3f5;
+  --bg-elevated: #ffffff;
+  --bg-hover: #e9ecef;
+  --bg-input: #e9ecef;
+  --border: #dee2e6;
+  --border-light: #ced4da;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6b7280;
+  --accent: #6366f1;
+  --accent-pm: #6366f1;
+  --danger: #dc2626;
+  --icon-status-success: #10b981;
+  --icon-status-warning: #d97706;
+  --icon-status-error: #dc2626;
+
+  --da-bg-primary: #ffffff;
+  --da-bg-secondary: #f8f9fa;
+  --da-bg-surface: #f1f3f5;
+  --da-bg-elevated: #ffffff;
+  --da-bg-hover: #e9ecef;
+  --da-border: #dee2e6;
+  --da-border-subtle: #e9ecef;
+  --da-text-primary: #212529;
+  --da-text-secondary: #495057;
+  --da-text-muted: #6b7280;
+  --da-text-on-accent: #ffffff;
+  --da-accent-indigo: #6366f1;
+  --da-accent-cyan: #06b6d4;
+  --da-accent-pink: #ec4899;
+  --da-accent-amber: #d97706;
+  --da-accent-emerald: #10b981;
+  --da-accent-purple: #9333ea;
+
+  --icon-planning: #6366f1;
+  --icon-design: #ec4899;
+  --icon-dev-frontend: #06b6d4;
+  --icon-dev-backend: #10b981;
+  --icon-dev-fullstack: #9333ea;
+  --icon-quality: #d97706;
+  --icon-ops: #ea580c;
+  --icon-file: #6b7280;
+  --icon-code: #6b7280;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+
+  --da-overlay-bg: rgba(0, 0, 0, 0.3);
+  --da-overlay-bg-light: rgba(0, 0, 0, 0.2);
+}

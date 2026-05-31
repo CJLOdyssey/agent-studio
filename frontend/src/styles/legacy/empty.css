@@ -1,0 +1,91 @@
+/* ── Placeholder / Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--sp-10);
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: var(--sp-4);
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-2);
+}
+
+.empty-state-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.empty-state-steps {
+  margin-top: var(--sp-8);
+  display: flex;
+  gap: 24px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.empty-state-step-icon {
+  font-size: 20px;
+}
+
+.chat-error-state {
+  padding: var(--sp-10) var(--sp-6);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.chat-error-icon {
+  font-size: 32px;
+  margin-bottom: var(--sp-3);
+}
+
+.chat-error-title {
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+.chat-error-message {
+  font-size: 12px;
+}
+
+.chat-error-hint {
+  margin-top: var(--sp-4);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.chat-loading-state {
+  padding: var(--sp-10) var(--sp-6);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.chat-loading-icon {
+  font-size: 32px;
+  margin-bottom: var(--sp-3);
+}
+
+.chat-loading-title {
+  font-weight: 600;
+}
+
+.chat-loading-desc {
+  margin-top: var(--sp-2);
+  font-size: 12px;
+}

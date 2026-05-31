@@ -1,0 +1,45 @@
+/* Process panel */
+.devagents-process-panel {
+  background: var(--da-bg-surface);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: var(--sp-1);
+}
+
+.devagents-process-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.devagents-process-header:hover {
+  background: var(--da-bg-hover);
+}
+
+.devagents-process-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+  color: var(--da-text-secondary);
+}
+
+.devagents-process-steps {
+  padding: var(--sp-3);
+  border-top: 1px solid var(--da-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.devagents-process-step {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+}

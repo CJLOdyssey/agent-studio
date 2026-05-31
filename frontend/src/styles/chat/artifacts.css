@@ -1,0 +1,67 @@
+/* Action labels */
+.devagents-message-action {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+}
+
+/* Artifact cards */
+.devagents-artifact-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--da-bg-surface);
+  border-radius: 8px;
+  max-width: 320px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: var(--sp-1);
+}
+
+.devagents-artifact-card:hover {
+  background: var(--da-bg-hover);
+}
+
+.devagents-artifact-icon {
+  background: color-mix(in srgb, var(--da-accent-cyan) 10%, transparent);
+  padding: var(--sp-2);
+  border-radius: 6px;
+  color: var(--da-accent-cyan);
+  flex-shrink: 0;
+}
+
+.devagents-artifact-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.devagents-artifact-title {
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+}
+
+.devagents-artifact-status {
+  font-size: 10px;
+  color: var(--da-text-muted);
+}
+
+.devagents-artifact-review {
+  font-size: 10px;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--da-bg-primary);
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.devagents-artifact-review:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}

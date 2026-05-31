@@ -1,0 +1,40 @@
+/* Utility classes */
+.text-emerald-500 { color: var(--da-accent-emerald); }
+.text-amber-500 { color: var(--da-accent-amber); }
+.text-cyan-400 { color: var(--da-accent-cyan); }
+.text-red-500 { color: var(--icon-status-error); }
+.text-green-500 { color: var(--da-accent-emerald); }
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .devagents-input-wrapper {
+    transition: none;
+  }
+
+  .devagents-tool-btn,
+  .devagents-tool-btn-text,
+  .devagents-send-btn,
+  .devagents-process-header,
+  .devagents-artifact-card,
+  .devagents-artifact-review,
+  .devagents-agent-card,
+  .devagents-pagination-btn,
+  .devagents-sample-btn,
+  .devagents-welcome-close,
+  .typing-cursor {
+    transition: none;
+  }
+
+  .animate-spin {
+    animation: none;
+  }
+
+  .typing-cursor {
+    animation: none;
+    opacity: 0.5;
+  }
+}

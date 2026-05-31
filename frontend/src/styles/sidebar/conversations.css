@@ -1,0 +1,78 @@
+.devagents-conversations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: var(--sp-1);
+}
+
+.devagents-conv-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: var(--sp-2);
+}
+
+.devagents-conv-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.devagents-conv-item.active {
+  background: var(--da-bg-elevated);
+}
+
+.devagents-conv-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.devagents-conv-item-title {
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devagents-conv-item-meta {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin-top: 2px;
+}
+
+.devagents-conv-delete {
+  flex-shrink: 0;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.devagents-conv-item:hover .devagents-conv-delete {
+  opacity: 1;
+}
+
+.devagents-conv-delete:hover {
+  color: var(--icon-status-error);
+}
+
+@media (pointer: coarse) {
+  .devagents-conv-delete {
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--sp-2);
+  }
+}
+
+/* Projects */

@@ -1,0 +1,65 @@
+.devagents-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) 0;
+}
+
+.devagents-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.devagents-icon-btn {
+  padding: var(--sp-1);
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.devagents-icon-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.devagents-icon-btn-sm {
+  padding: var(--sp-1);
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.devagents-icon-btn-sm:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+@media (pointer: coarse) {
+  .devagents-icon-btn,
+  .devagents-icon-btn-sm {
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--sp-2);
+  }
+}
+
+/* Teams */

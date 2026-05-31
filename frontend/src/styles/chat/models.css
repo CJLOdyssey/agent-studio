@@ -1,0 +1,45 @@
+/* Model selector */
+.devagents-model-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.devagents-model-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 6px;
+  padding: 4px 24px 4px 8px;
+  color: var(--da-text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s;
+  min-width: 0;
+  max-width: 180px;
+}
+
+.devagents-model-select:hover {
+  border-color: var(--da-border);
+  color: var(--da-text-primary);
+}
+
+.devagents-model-select:focus {
+  border-color: var(--da-accent-indigo);
+}
+
+.devagents-model-select option {
+  background: var(--da-bg-surface);
+  color: var(--da-text-primary);
+}
+
+.devagents-model-chevron {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--da-text-muted);
+}

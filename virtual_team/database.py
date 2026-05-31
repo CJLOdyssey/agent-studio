@@ -1,0 +1,170 @@
+import os
+from datetime import datetime, timezone
+from uuid import uuid4
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
+
+
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team",
+)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class SessionDB(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    title: Mapped[str] = mapped_column(String(256), default="新对话")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    runs: Mapped[list["ProjectRun"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan",
+        order_by="ProjectRun.created_at",
+    )
+    memories: Mapped[list["MemoryEntry"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan",
+        order_by="MemoryEntry.created_at",
+    )
+
+
+class ProjectRun(Base):
+    __tablename__ = "project_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    session_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
+    requirement: Mapped[str] = mapped_column(Text, nullable=False)
+    pm_document: Mapped[str] = mapped_column(Text, default="", server_default="")
+    code: Mapped[str] = mapped_column(Text, default="", server_default="")
+    review: Mapped[str] = mapped_column(Text, default="", server_default="")
+    approved: Mapped[bool] = mapped_column(Boolean, default=False, server_default="f")
+    status: Mapped[str] = mapped_column(
+        String(32), default="pending", server_default="pending",
+        comment="pending|running|converged|max_rounds_reached|error",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    session: Mapped["SessionDB | None"] = relationship(back_populates="runs")
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        back_populates="run", cascade="all, delete-orphan", order_by="ChatMessage.created_at",
+    )
+
+
+class MemoryEntry(Base):
+    __tablename__ = "memory_entries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("project_runs.id", ondelete="SET NULL"), nullable=True,
+    )
+    agent_role: Mapped[str] = mapped_column(String(32), nullable=False)
+    content_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="pm_document|code|review|decision",
+    )
+    summary: Mapped[str] = mapped_column(String(512), nullable=False)
+    details: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+    )
+
+    session: Mapped["SessionDB"] = relationship(back_populates="memories")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("project_runs.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    role: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="pm|programmer|tester",
+    )
+    agent_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    round_number: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+    )
+
+    run: Mapped["ProjectRun"] = relationship(back_populates="messages")
+
+
+class AgentConfigDB(Base):
+    __tablename__ = "agent_configs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    role_identifier: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
+    order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_approver: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    icon: Mapped[str] = mapped_column(String(8), default="🤖", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc), nullable=False,
+    )
+
+
+_async_engine: AsyncSession | None = None
+_async_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_async_engine() -> "AsyncSession":
+    global _async_engine
+    if _async_engine is None:
+        _async_engine = create_async_engine(
+            DATABASE_URL,
+            echo=False,
+            poolclass=NullPool,
+        )
+    return _async_engine
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    global _async_session_factory
+    if _async_session_factory is None:
+        _async_session_factory = async_sessionmaker(get_async_engine(), expire_on_commit=False)
+    return _async_session_factory
+
+
+async def init_db():
+    engine = get_async_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def get_session() -> AsyncSession:
+    factory = get_session_factory()
+    async with factory() as session:
+        yield session

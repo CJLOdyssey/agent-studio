@@ -1,0 +1,222 @@
+/* Agent Config Modal */
+.agent-config-modal {
+  max-width: 700px;
+}
+
+.agent-config-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.agent-config-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-config-subtitle {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin: var(--sp-1) 0 0;
+}
+
+.agent-config-tabs {
+  display: flex;
+  gap: var(--sp-1);
+  margin: var(--sp-4) 0;
+  padding: var(--sp-1);
+  background: var(--da-bg-surface);
+  border-radius: 8px;
+}
+
+.agent-config-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.agent-config-tab:hover {
+  color: var(--da-text-primary);
+}
+
+.agent-config-tab.active {
+  background: var(--da-bg-primary);
+  color: var(--da-text-primary);
+}
+
+.tab-badge {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent, #fff);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.agent-config-content {
+  min-height: 200px;
+}
+
+.agent-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.agent-config-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-secondary);
+}
+
+.agent-config-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.agent-config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3);
+  background: var(--da-bg-surface);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.agent-config-item.enabled {
+  background: color-mix(in srgb, var(--da-accent-indigo) 10%, transparent);
+}
+
+.agent-config-item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+}
+
+.agent-config-item-info input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--da-text-secondary);
+}
+
+.agent-config-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-config-item-name {
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.agent-config-item-name:focus {
+  outline: none;
+  border-bottom: 1px solid var(--da-accent-indigo);
+}
+
+.agent-config-item-desc {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.agent-config-item-desc:focus {
+  outline: none;
+  border-bottom: 1px dashed var(--da-text-muted);
+}
+
+.agent-config-item-remove {
+  background: none;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  padding: var(--sp-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.agent-config-item-remove:hover {
+  background: color-mix(in srgb, var(--syntax-red) 15%, transparent);
+  color: var(--syntax-red);
+}
+
+.agent-config-item-actions {
+  display: flex;
+  gap: var(--sp-1);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.agent-config-item:hover .agent-config-item-actions {
+  opacity: 1;
+}
+
+.agent-config-item-action {
+  background: none;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  padding: var(--sp-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.agent-config-item-action:hover {
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
+}
+
+.agent-config-item-input {
+  background: var(--da-bg-primary);
+  border: 1px solid var(--da-accent-indigo);
+  border-radius: 4px;
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  width: 100%;
+  outline: none;
+}
+
+.agent-config-item-input:focus {
+  border-color: var(--da-accent-indigo);
+}
+
+.agent-config-empty {
+  text-align: center;
+  padding: var(--sp-6);
+  color: var(--da-text-muted);
+  font-size: var(--da-font-size-sm);
+}

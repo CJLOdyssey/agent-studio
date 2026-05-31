@@ -1,0 +1,47 @@
+.devagents-back-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--da-bg-surface);
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-xs);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.devagents-back-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .devagents-sprint-btn,
+  .devagents-icon-btn,
+  .devagents-icon-btn-sm,
+  .devagents-team-header,
+  .devagents-team-actions,
+  .devagents-agent-item,
+  .devagents-agent-actions,
+  .devagents-conv-item,
+  .devagents-conv-delete,
+  .devagents-project-item,
+  .devagents-user-btn,
+  .devagents-dropdown-item,
+  .devagents-back-btn {
+    transition: none;
+  }
+
+  .devagents-agent-status.working,
+  .status-dot.working {
+    animation: none;
+    opacity: 0.7;
+  }
+}
