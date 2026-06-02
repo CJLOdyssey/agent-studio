@@ -51,7 +51,7 @@ export default function HistoryPage() {
               </thead>
               <tbody>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
+                  <tr key={`skeleton-${i}`}>
                     <td><div className="skeleton skeleton-text" /></td>
                     <td><div className="skeleton skeleton-badge" /></td>
                     <td><div className="skeleton skeleton-date" /></td>

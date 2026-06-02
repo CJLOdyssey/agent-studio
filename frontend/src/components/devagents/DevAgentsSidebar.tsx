@@ -143,12 +143,24 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
             <div key={team.id} className="devagents-team">
               <div
                 className="devagents-team-header"
+                role="button"
+                tabIndex={0}
+                aria-expanded={team.isExpanded}
+                aria-label={team.name}
                 onClick={() => {
                   if (editingTeamId === team.id) return;
                   if (editingTeamId) {
                     saveTeamName(editingTeamId);
                   }
                   toggleTeam(team.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (editingTeamId === team.id) return;
+                    if (editingTeamId) saveTeamName(editingTeamId);
+                    toggleTeam(team.id);
+                  }
                 }}
               >
                 <div className="devagents-team-title">
@@ -158,6 +170,7 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
                     <input
                       type="text"
                       value={editTeamName}
+                      aria-label={editTeamName || 'Team name'}
                       onChange={(e) => setEditTeamName(e.target.value)}
                       onBlur={() => saveTeamName(team.id)}
                       onKeyDown={(e) => handleTeamNameKeyDown(e, team.id)}

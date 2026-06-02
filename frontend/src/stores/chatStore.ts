@@ -1,16 +1,11 @@
 import { create } from 'zustand';
 import type { AgentConfig, AppStatus, ChatMessage, RunResult, WsMessage } from '../types';
 import { connectRun, disconnectRun } from '../api/websocket';
+import { submitRequirement, listAgents } from '../api/client';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
-import {
-  submitRequirement,
-  listAgents,
-  createAgent as apiCreateAgent,
-  updateAgent as apiUpdateAgent,
-  deleteAgent as apiDeleteAgent,
-  toggleAgent as apiToggleAgent,
-} from '../api/client';
+
+export type WsConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
 interface ChatState {
   currentRunId: string | null;
@@ -20,8 +15,17 @@ interface ChatState {
   result: RunResult | null;
   currentRole: string | null;
   error: string | null;
+
+  /**
+   * @deprecated Use `useAgents()` from `@/api/hooks` (React Query) as the single source of truth.
+   * Kept for backward compatibility with legacy components (MessageBubble, ConfigPanel).
+   * Will be removed once all consumers migrate to React Query.
+   */
   agents: AgentConfig[];
+  /** @deprecated Use `useAgents().isSuccess` instead. */
   agentsLoaded: boolean;
+
+  wsStatus: WsConnectionStatus;
 
   submitRequirement: (requirement: string, session_id?: string) => Promise<void>;
   restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
@@ -29,31 +33,11 @@ interface ChatState {
   setStatus: (status: AppStatus) => void;
   setResult: (result: RunResult) => void;
   setError: (error: string | null) => void;
+  setWsStatus: (wsStatus: WsConnectionStatus) => void;
   reset: () => void;
+
+  /** @deprecated Use `prefetchAgents(queryClient)` from `@/api/hooks` instead. */
   loadAgents: () => Promise<void>;
-  createAgent: (cfg: {
-    name: string;
-    role_identifier: string;
-    system_prompt: string;
-    order: number;
-    is_active: boolean;
-    is_approver: boolean;
-    icon: string;
-    model?: string | null;
-    temperature?: number | null;
-  }) => Promise<void>;
-  updateAgent: (id: string, cfg: {
-    name?: string;
-    system_prompt?: string;
-    order?: number;
-    is_active?: boolean;
-    is_approver?: boolean;
-    icon?: string;
-    model?: string | null;
-    temperature?: number | null;
-  }) => Promise<void>;
-  deleteAgent: (id: string) => Promise<void>;
-  toggleAgent: (id: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -66,6 +50,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   agents: [],
   agentsLoaded: false,
+  wsStatus: 'disconnected',
 
   restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => {
     set({
@@ -104,45 +89,52 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     try {
       const { run_id } = await submitRequirement(requirement, session_id);
-      set({ currentRunId: run_id, currentSessionId: session_id || null, status: 'running' });
+      set({ currentRunId: run_id, currentSessionId: session_id || null, status: 'running', wsStatus: 'connecting' });
 
-      connectRun(run_id, (data) => {
-        const msg = data as unknown as WsMessage;
-        if (msg.type === 'message') {
-          const m: ChatMessage = {
-            id: crypto.randomUUID?.() || uid(),
-            role: msg.role!,
-            agent_name: msg.agent_name!,
-            content: msg.content!,
-            round_number: msg.round_number ?? 0,
-            created_at: new Date().toISOString(),
-          };
-          set((state) => ({
-            messages: [...state.messages, m],
-            currentRole: msg.role!,
-          }));
-        } else if (msg.type === 'status') {
-          if (msg.status === 'error') {
-            set({ status: 'error', error: msg.error ?? '未知错误' });
+      connectRun(run_id, {
+        onMessage: (data) => {
+          const msg = data as unknown as WsMessage;
+          if (msg.type === 'message') {
+            const m: ChatMessage = {
+              id: crypto.randomUUID?.() || uid(),
+              role: msg.role!,
+              agent_name: msg.agent_name!,
+              content: msg.content!,
+              round_number: msg.round_number ?? 0,
+              created_at: new Date().toISOString(),
+            };
+            set((state) => ({
+              messages: [...state.messages, m],
+              currentRole: msg.role!,
+              wsStatus: 'connected' as WsConnectionStatus,
+            }));
+          } else if (msg.type === 'status') {
+            if (msg.status === 'error') {
+              set({ status: 'error', error: msg.error ?? '未知错误', wsStatus: 'disconnected' });
+            }
+          } else if (msg.type === 'result') {
+            set({
+              status: 'completed',
+              currentRole: null,
+              wsStatus: 'disconnected',
+              result: {
+                requirement: '',
+                pm_document: msg.pm_document ?? '',
+                code: msg.code ?? '',
+                review: msg.review ?? '',
+                approved: msg.approved ?? false,
+                status: msg.status ?? 'completed',
+              },
+            });
           }
-        } else if (msg.type === 'result') {
-          set({
-            status: 'completed',
-            currentRole: null,
-            result: {
-              requirement: '',
-              pm_document: msg.pm_document ?? '',
-              code: msg.code ?? '',
-              review: msg.review ?? '',
-              approved: msg.approved ?? false,
-              status: msg.status ?? 'completed',
-            },
-          });
-        }
+        },
+        onStatusChange: (wsStatus: WsConnectionStatus) => {
+          set({ wsStatus });
+        },
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : '提交失败';
-      set({ status: 'error', error: message });
+      set({ status: 'error', error: message, wsStatus: 'disconnected' });
     }
   },
 
@@ -161,6 +153,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setStatus: (status: AppStatus) => set({ status }),
   setResult: (result: RunResult) => set({ result }),
   setError: (error: string | null) => set({ error }),
+  setWsStatus: (wsStatus: WsConnectionStatus) => set({ wsStatus }),
 
   reset: () => {
     const prevRunId = get().currentRunId;
@@ -173,9 +166,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       result: null,
       currentRole: null,
       error: null,
+      wsStatus: 'disconnected',
     });
   },
 
+  // @deprecated — kept for backward compat; use React Query useAgents() + prefetchAgents()
   loadAgents: async () => {
     try {
       const agents = await listAgents();
@@ -183,25 +178,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch {
       set({ agents: [], agentsLoaded: true });
     }
-  },
-
-  createAgent: async (cfg) => {
-    await apiCreateAgent(cfg);
-    await get().loadAgents();
-  },
-
-  updateAgent: async (id, cfg) => {
-    await apiUpdateAgent(id, cfg);
-    await get().loadAgents();
-  },
-
-  deleteAgent: async (id) => {
-    await apiDeleteAgent(id);
-    await get().loadAgents();
-  },
-
-  toggleAgent: async (id) => {
-    await apiToggleAgent(id);
-    await get().loadAgents();
   },
 }));

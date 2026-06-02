@@ -1,9 +1,11 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ToastProvider } from './utils/useToast';
 import { useChatStore } from './stores/chatStore';
+import { prefetchAgents } from './api/hooks';
+import Logger from './utils/logger';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage'));
@@ -22,24 +24,36 @@ function HistoryDetailWrapper() {
 }
 
 function AppInit() {
+  const queryClient = useQueryClient();
   const loadAgents = useChatStore((s) => s.loadAgents);
   const agentsLoaded = useChatStore((s) => s.agentsLoaded);
-  useEffect(() => { if (!agentsLoaded) loadAgents(); }, [agentsLoaded, loadAgents]);
+
+  useEffect(() => {
+    if (!agentsLoaded) {
+      loadAgents();
+      // Also populate React Query cache so useAgents() returns data immediately
+      prefetchAgents(queryClient);
+    }
+  }, [agentsLoaded, loadAgents, queryClient]);
   return null;
 }
 
 function Fallback({ error, resetErrorBoundary }: FallbackProps) {
+  const message = (error as Error)?.message || '未知错误';
+  // Report to Sentry automatically via logger
+  Logger.error('React render error caught by ErrorBoundary', { error: error as Error });
+
   return (
     <div className="error-boundary" role="alert">
       <h2>应用出错了</h2>
-      <p>{(error as Error)?.message || '未知错误'}</p>
+      <p>{message}</p>
       <button className="btn btn-primary" onClick={resetErrorBoundary}>重试</button>
     </div>
   );
 }
 
 function logError(error: unknown) {
-  try { console.warn('App Error:', (error as Error)?.message); } catch {}
+  Logger.error('App Error Boundary triggered', { error: error as Error });
 }
 
 export default function App() {

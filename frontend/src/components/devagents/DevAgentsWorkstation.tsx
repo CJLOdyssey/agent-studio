@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { Bot, Send, Paperclip, Layout, ChevronRight, MessageSquare } from 'lucide-react';
+import { Bot, Layout, ChevronRight, MessageSquare } from 'lucide-react';
 import type { Agent, Team, WorkspaceTab } from '../../types/devagents';
 import TeamMessage from './TeamMessage';
 import DevAgentsSidebar from './DevAgentsSidebar';
@@ -8,10 +8,14 @@ import Workspace from './workspace/Workspace';
 import { useToast } from '../../utils/useToast';
 import { useTeamManagement } from '../../hooks/useTeamManagement';
 import { useConversation } from '../../hooks/useConversation';
-import { useSettings, useNotificationSound } from '../../contexts/SettingsContext';
+import { useNotificationSound } from '../../contexts/SettingsContext';
 import { useTranslation } from 'react-i18next';
+import { InputToolbar, type InputToolbarHandle } from '../input';
+import type { AttachedFile } from '../input';
+import { useAgents, useAvailableModels, useCommands } from '../../api/hooks';
+import { useAgentCommands } from '../../hooks/useAgentCommands';
+import { useChatStore } from '../../stores/chatStore';
 import Logger from '../../utils/logger';
-import { validateInput } from '../../utils/validation';
 
 const AgentConfigModal = lazy(() => import('./modals/AgentConfigModal'));
 const SettingsModal = lazy(() => import('./modals/SettingsModal'));
@@ -43,18 +47,31 @@ function GreetingAnimation() {
 
 export default function DevAgentsWorkstation() {
   const { toast } = useToast();
-  const [inputValue, setInputValue] = useState('');
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('code');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const workspaceRef = useRef<HTMLElement>(null);
+  const inputToolbarRef = useRef<InputToolbarHandle>(null);
 
-  const teamMgmt = useTeamManagement(toast);
+  // Load real agent configs from backend via React Query
+  const { data: agentConfigs } = useAgents();
+  const models = useAvailableModels();
+  const teamMgmt = useTeamManagement(agentConfigs, toast);
+
+  // Commands for slash palette (API + agent MCP/skills/tools)
+  const { data: apiCommands } = useCommands();
+  const agentCommands = useAgentCommands(teamMgmt.teams);
+  const allCommands = [
+    ...(apiCommands ?? []).map((c) => ({ id: c.id, name: c.name, description: c.description, source: 'local' as const })),
+    ...agentCommands,
+  ];
   const conv = useConversation();
-  const { settings } = useSettings();
   const { t } = useTranslation();
   const notify = useNotificationSound();
+
+  // Bridge to real API via Zustand chatStore
+  const submitToApi = useChatStore((s) => s.submitRequirement);
+  const wsStatus = useChatStore((s) => s.wsStatus);
 
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [configuringAgent, setConfiguringAgent] = useState<Agent | null>(null);
@@ -66,7 +83,10 @@ export default function DevAgentsWorkstation() {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void; danger?: boolean } | null>(null);
 
+  // Home page input: separate InputToolbar rendered when no agent selected + no messages
+  // Key resets the input state when conversation changes
   const [conversationKey, setConversationKey] = useState(0);
+
   const convRef = useRef(conv);
   useEffect(() => { convRef.current = conv; });
 
@@ -74,6 +94,7 @@ export default function DevAgentsWorkstation() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conv.agentMessages, conv.homeMessages, selectedAgentId]);
 
+  // ── Global keyboard shortcut: Ctrl+N new chat ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
@@ -83,7 +104,7 @@ export default function DevAgentsWorkstation() {
         setSelectedAgentId(null);
         c.setActiveConvId(null);
         c.setHomeMessages([]);
-        setInputValue('');
+        // input state is self-contained in InputToolbar — no need to reset
         setConversationKey(prev => prev + 1);
         toast(t('toast.newChat'), 'info');
       }
@@ -92,13 +113,67 @@ export default function DevAgentsWorkstation() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [t, toast]);
 
-  const handleSendMessage = useCallback(() => {
-    const { valid, sanitized } = validateInput(inputValue);
-    setInputValue('');
-    if (!valid) return;
-    conv.handleSendMessage(sanitized, selectedAgentId, teamMgmt.allAgents);
-    notify();
-  }, [inputValue, selectedAgentId, teamMgmt.allAgents, conv, notify]);
+  // ── Send handler — bridges InputToolbar/ChatInputArea to conv + API ──
+  const handleSendMessage = useCallback(
+    (text: string, _files: AttachedFile[], _model: string) => {
+      // Local UI update (mock fallback)
+      conv.handleSendMessage(text, selectedAgentId, teamMgmt.allAgents);
+
+      // Real API submission
+      if (agentConfigs && agentConfigs.length > 0) {
+        submitToApi(text).catch(() => {
+          Logger.warn('API submission failed, using mock fallback');
+        });
+      }
+
+      notify();
+      // input state is self-contained in InputToolbar — no need to reset
+    },
+    [selectedAgentId, teamMgmt.allAgents, conv, notify, agentConfigs, submitToApi],
+  );
+
+  // Home page send handler (no agent selected)
+  const handleHomeSend = useCallback(
+    (text: string, _files: AttachedFile[]) => {
+      conv.handleSendMessage(text, null, teamMgmt.allAgents);
+
+      if (agentConfigs && agentConfigs.length > 0) {
+        submitToApi(text).catch(() => {
+          Logger.warn('API submission failed, using mock fallback');
+        });
+      }
+
+      notify();
+      // input state is self-contained in InputToolbar — no need to reset
+    },
+    [teamMgmt.allAgents, conv, notify, agentConfigs, submitToApi],
+  );
+
+  // ── Page-level drag-and-drop ──
+  // Files dropped anywhere on the chat area are attached to the current input.
+  // This is the only drag-drop handler — InputToolbar itself has no drag zone.
+
+  const [isPageDragOver, setIsPageDragOver] = useState(false);
+
+  const handlePageDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsPageDragOver(true);
+  }, []);
+
+  const handlePageDragLeave = useCallback((e: React.DragEvent) => {
+    // Only set false when leaving the main area entirely
+    if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsPageDragOver(false);
+    }
+  }, []);
+
+  const handlePageDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsPageDragOver(false);
+    if (e.dataTransfer.files.length > 0) {
+      inputToolbarRef.current?.addFiles(Array.from(e.dataTransfer.files));
+    }
+  }, []);
 
   const toggleWorkspaceFullscreen = useCallback(async () => {
     if (!workspaceRef.current) return;
@@ -134,6 +209,11 @@ export default function DevAgentsWorkstation() {
     e.stopPropagation(); setConfiguringAgent(agent);
   }, [setConfiguringAgent]);
 
+  // ── Render ──
+
+  const showAgentChat = selectedAgentId !== null;
+  const hasHomeMessages = conv.homeMessages.length > 0;
+
   return (
     <div className="devagents-layout">
       <DevAgentsSidebar
@@ -152,7 +232,7 @@ export default function DevAgentsWorkstation() {
         setSelectedAgentId={setSelectedAgentId}
         setActiveConvId={conv.setActiveConvId}
         setHomeMessages={conv.setHomeMessages}
-        setInputValue={setInputValue}
+        setInputValue={() => {}}
         setConversationKey={setConversationKey}
         setConversations={conv.setConversations}
         toggleTeam={teamMgmt.toggleTeam}
@@ -171,12 +251,28 @@ export default function DevAgentsWorkstation() {
 
       {isSidebarOpen && <div className="devagents-sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />}
 
-      <main className="devagents-main" id="main-content">
+      <main
+        className={`devagents-main ${isPageDragOver ? 'devagents-drag-over' : ''}`}
+        id="main-content"
+        onDragOver={handlePageDragOver}
+        onDragLeave={handlePageDragLeave}
+        onDrop={handlePageDrop}
+      >
+        {isPageDragOver && (
+          <div className="devagents-page-drop-overlay">
+            <span>{t('fileAttach.dropHere')}</span>
+          </div>
+        )}
+        {wsStatus === 'reconnecting' && (
+          <div className="devagents-ws-banner" role="status" aria-live="polite">
+            {t('common.connecting')}...
+          </div>
+        )}
         <button className="devagents-hamburger" onClick={() => setIsSidebarOpen(!isSidebarOpen)} aria-label="Toggle sidebar">
           <MessageSquare size={18} />
         </button>
 
-        {selectedAgentId && (
+        {showAgentChat && (
           <header className="devagents-header">
             <div className="devagents-header-title">
               {(() => {
@@ -198,7 +294,7 @@ export default function DevAgentsWorkstation() {
         )}
 
         <div className="devagents-messages">
-          {selectedAgentId ? (
+          {showAgentChat ? (
             <div className="devagents-messages-inner" aria-live="polite">
               {!welcomeDismissed && (
                 <div className="devagents-agent-welcome">
@@ -212,10 +308,10 @@ export default function DevAgentsWorkstation() {
                   <p>{t('agent.welcome')}</p>
                 </div>
               )}
-              {(conv.agentMessages[selectedAgentId] || []).map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)}
+              {(conv.agentMessages[selectedAgentId!] || []).map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)}
               <div ref={messagesEndRef} />
             </div>
-          ) : conv.homeMessages.length === 0 ? (
+          ) : !hasHomeMessages ? (
             <div className="devagents-home">
               <div className="devagents-home-centered">
                 <div className="devagents-home-group">
@@ -225,38 +321,49 @@ export default function DevAgentsWorkstation() {
                     <p className="devagents-home-subtitle">{t('home.subtitle')}</p>
                   </div>
                   <div className="devagents-samples">
-                    {[['home.samples.login', '帮我设计一个用户登录页面的前端组件，包含邮箱、密码输入和验证码'],
+                    {[
+                      ['home.samples.login', '帮我设计一个用户登录页面的前端组件，包含邮箱、密码输入和验证码'],
                       ['home.samples.api', '分析现有API架构的性能瓶颈，给出优化建议'],
                       ['home.samples.auth', '编写一个用户权限管理的后端接口，包含角色和权限的 CRUD'],
                       ['home.samples.database', '为电商系统设计数据库表结构，包括用户、商品、订单、购物车'],
-                    ].map(([key, text], i) => (
-                      <button key={i} className="devagents-sample-btn" onClick={() => { setInputValue(text); }}>{t(key)}</button>
+                    ].map(([key, text]) => (
+                      <button
+                        key={key}
+                        className="devagents-sample-btn"
+                        onClick={() => {
+                          // Pre-fill via DOM since input state lives in InputToolbar
+                          const ta = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
+                          if (ta) {
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                              window.HTMLTextAreaElement.prototype, 'value'
+                            )!.set!;
+                            nativeInputValueSetter.call(ta, text);
+                            ta.dispatchEvent(new Event('input', { bubbles: true }));
+                            ta.focus();
+                          }
+                        }}
+                      >
+                        {t(key)}
+                      </button>
                     ))}
                   </div>
                   <div className="devagents-home-input">
-                    <div className="devagents-input-wrapper">
-                      <textarea value={inputValue} onChange={e => setInputValue(e.target.value)}
-                        onKeyDown={e => {
-                          const isSendKey = settings.sendMode === 'enter' ? (e.key === 'Enter' && !e.shiftKey) : (e.key === 'Enter' && (e.ctrlKey || e.metaKey));
-                          if (isSendKey) { e.preventDefault(); handleSendMessage(); }
-                        }}
-                        placeholder={t('home.placeholder')} className="devagents-textarea" rows={2} />
-                      <div className="devagents-input-toolbar">
-                        <div className="devagents-input-tools">
-                          <button className="devagents-tool-btn" title={t('home.attach')}><Paperclip size={16} /></button>
-                          <button className="devagents-tool-btn-text">{t('home.commands')}</button>
-                        </div>
-                          <button onClick={handleSendMessage} disabled={!inputValue.trim()} className={`devagents-send-btn ${inputValue.trim() ? 'active' : 'disabled'}`}>
-                          <span>{t('home.send')}</span><Send size={14} />
-                        </button>
-                      </div>
-                    </div>
+                    <InputToolbar
+                      ref={inputToolbarRef}
+                      key={conversationKey}
+                      onSend={handleHomeSend}
+                      models={models}
+                      selectedModel={models[0]?.id ?? ''}
+                      onModelChange={() => {}}
+                      onConfigureModels={() => setIsApiOpen(true)}
+                      commands={allCommands}
+                    />
                   </div>
                 </div>
               </div>
             </div>
           ) : (
-        <div className="devagents-messages" aria-live="polite">
+            <div className="devagents-messages" aria-live="polite">
               <div className="devagents-home-chat-messages">
                 {conv.homeMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)}
                 <div ref={messagesEndRef} />
@@ -265,18 +372,13 @@ export default function DevAgentsWorkstation() {
           )}
         </div>
 
-        {selectedAgentId && (
-          <ChatInputArea
-            selectedAgentId={selectedAgentId}
-            homeMessagesLength={conv.homeMessages.length}
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            handleSendMessage={handleSendMessage}
-            textareaRef={textareaRef}
-            selectedModel="deepseek-chat"
-            onModelChange={() => {}}
-          />
-        )}
+        <ChatInputArea
+          ref={inputToolbarRef}
+          visible={showAgentChat || hasHomeMessages}
+          onSend={handleSendMessage}
+          onConfigureModels={() => setIsApiOpen(true)}
+          teams={teamMgmt.teams}
+        />
       </main>
 
       <Workspace selectedAgentId={selectedAgentId} activeTab={activeTab} setActiveTab={setActiveTab} isWorkspaceOpen={isWorkspaceOpen} setIsWorkspaceOpen={setIsWorkspaceOpen} toggleWorkspaceFullscreen={toggleWorkspaceFullscreen} workspaceRef={workspaceRef} />
@@ -285,7 +387,7 @@ export default function DevAgentsWorkstation() {
         {configuringAgent && <AgentConfigModal agent={configuringAgent} onSave={teamMgmt.handleAgentConfigSave} onClose={() => setConfiguringAgent(null)} />}
         {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
         {isApiOpen && <ApiManagementModal onClose={() => setIsApiOpen(false)} />}
-        {isNewProjectOpen && <NewProjectModal onClose={() => setIsNewProjectOpen(false)} onCreateProject={() => { setSelectedAgentId(null); conv.setHomeMessages([]); setInputValue(''); }} />}
+        {isNewProjectOpen && <NewProjectModal onClose={() => setIsNewProjectOpen(false)} onCreateProject={() => { setSelectedAgentId(null); conv.setHomeMessages([]); setConversationKey(prev => prev + 1); }} />}
         {confirmDialog && <ConfirmModal title={confirmDialog.title} message={confirmDialog.message} onConfirm={confirmDialog.onConfirm} onCancel={() => setConfirmDialog(null)} danger={confirmDialog.danger} confirmLabel="删除" />}
       </Suspense>
     </div>

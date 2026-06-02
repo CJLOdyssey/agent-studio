@@ -1,1 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "=== Pre-commit checks ==="
+
+# 1. Lint + Format staged files
 npx lint-staged
+
+# 2. TypeScript type-check
+echo "--- TypeScript type-check ---"
+npx tsc --noEmit
+
+echo "=== Pre-commit OK ==="

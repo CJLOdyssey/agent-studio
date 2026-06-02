@@ -9,10 +9,6 @@ vi.mock('../../api/websocket', () => ({
 vi.mock('../../api/client', () => ({
   submitRequirement: vi.fn(),
   listAgents: vi.fn(),
-  createAgent: vi.fn(),
-  updateAgent: vi.fn(),
-  deleteAgent: vi.fn(),
-  toggleAgent: vi.fn(),
 }));
 
 const initialState = {
@@ -25,6 +21,7 @@ const initialState = {
   error: null,
   agents: [],
   agentsLoaded: false,
+  wsStatus: 'disconnected' as const,
 };
 
 beforeEach(async () => {
@@ -45,6 +42,7 @@ describe('chatStore', () => {
     expect(state.error).toBeNull();
     expect(state.agents).toEqual([]);
     expect(state.agentsLoaded).toBe(false);
+    expect(state.wsStatus).toBe('disconnected');
   });
 
   it('setStatus 更新状态', async () => {
@@ -75,6 +73,18 @@ describe('chatStore', () => {
     expect(useChatStore.getState().error).toBeNull();
   });
 
+  it('setWsStatus 更新 WebSocket 连接状态', async () => {
+    const { useChatStore } = await import('../chatStore');
+    useChatStore.getState().setWsStatus('connecting');
+    expect(useChatStore.getState().wsStatus).toBe('connecting');
+    useChatStore.getState().setWsStatus('connected');
+    expect(useChatStore.getState().wsStatus).toBe('connected');
+    useChatStore.getState().setWsStatus('reconnecting');
+    expect(useChatStore.getState().wsStatus).toBe('reconnecting');
+    useChatStore.getState().setWsStatus('disconnected');
+    expect(useChatStore.getState().wsStatus).toBe('disconnected');
+  });
+
   describe('addMessage', () => {
     it('添加消息到消息列表', async () => {
       const { useChatStore } = await import('../chatStore');
@@ -94,16 +104,18 @@ describe('chatStore', () => {
     });
   });
 
-  it('reset 重置所有状态', async () => {
+  it('reset 重置所有状态包括 wsStatus', async () => {
     const { useChatStore } = await import('../chatStore');
     useChatStore.getState().setStatus('running');
     useChatStore.getState().setError('error');
+    useChatStore.getState().setWsStatus('connected');
     useChatStore.getState().reset();
     const state = useChatStore.getState();
     expect(state.status).toBe('idle');
     expect(state.error).toBeNull();
     expect(state.messages).toEqual([]);
     expect(state.result).toBeNull();
+    expect(state.wsStatus).toBe('disconnected');
   });
 
   describe('loadAgents', () => {
@@ -149,7 +161,7 @@ describe('chatStore', () => {
       expect(state.error).toBeNull();
     });
 
-    it('提交失败时保留用户消息', async () => {
+    it('提交失败时保留用户消息并设置 wsStatus 为 disconnected', async () => {
       const client = await import('../../api/client');
       (client.submitRequirement as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API Error'));
       const { useChatStore } = await import('../chatStore');
@@ -157,43 +169,9 @@ describe('chatStore', () => {
       const state = useChatStore.getState();
       expect(state.status).toBe('error');
       expect(state.error).toBe('API Error');
+      expect(state.wsStatus).toBe('disconnected');
       expect(state.messages).toHaveLength(1);
       expect(state.messages[0].role).toBe('user');
-    });
-  });
-
-  describe('agent CRUD', () => {
-    it('createAgent 调用 API 并刷新列表', async () => {
-      const client = await import('../../api/client');
-      (client.createAgent as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'new-id' });
-      (client.listAgents as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().createAgent({ name: 'A', role_identifier: 'a', system_prompt: 'p', order: 1, is_active: true, is_approver: false, icon: '◆' });
-      expect(client.createAgent).toHaveBeenCalled();
-    });
-
-    it('updateAgent 调用 API', async () => {
-      const client = await import('../../api/client');
-      (client.updateAgent as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().updateAgent('1', { name: 'new' });
-      expect(client.updateAgent).toHaveBeenCalledWith('1', { name: 'new' });
-    });
-
-    it('deleteAgent 调用 API', async () => {
-      const client = await import('../../api/client');
-      (client.deleteAgent as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().deleteAgent('1');
-      expect(client.deleteAgent).toHaveBeenCalledWith('1');
-    });
-
-    it('toggleAgent 调用 API', async () => {
-      const client = await import('../../api/client');
-      (client.toggleAgent as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().toggleAgent('1');
-      expect(client.toggleAgent).toHaveBeenCalledWith('1');
     });
   });
 });

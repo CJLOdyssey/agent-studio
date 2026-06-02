@@ -5,6 +5,17 @@
 .text-red-500 { color: var(--icon-status-error); }
 .text-green-500 { color: var(--da-accent-emerald); }
 
+/* WebSocket reconnection banner */
+.devagents-ws-banner {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--da-accent-amber);
+  color: #000;
+  text-align: center;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
 }

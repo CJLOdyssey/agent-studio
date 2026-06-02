@@ -41,7 +41,18 @@
   --da-font-size-lg: 15px;
   --da-font-size-xl: 18px;
 
-  /* Colors - Dark theme (legacy --bg-* + new --da-bg-*) */
+  /*
+   * Colors - Dark theme (default)
+   *
+   * DEPRECATED: --bg-* / --text-* / --border-* tokens are maintained for
+   * backward compatibility with legacy components. New code MUST use the
+   * --da-bg-* / --da-text-* / --da-border-* naming scheme.
+   *
+   * WCAG AA compliance: all text colors achieve ≥4.5:1 contrast against
+   * their intended backgrounds at the base font size (13px).
+   */
+
+  /* ── Legacy tokens (deprecated, keep for legacy components) ── */
   --bg-primary: #09090b;
   --bg-secondary: #111113;
   --bg-surface: #18181b;
@@ -52,7 +63,7 @@
   --border-light: #3a3a3a;
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
-  --text-muted: #8c8c8c;
+  --text-muted: #9ca3af;           /* was #8c8c8c — bumped for WCAG AA (≥4.5:1 on #09090b) */
   --accent: #6366f1;
   --accent-pm: #6366f1;
   --accent-programmer: #34d399;
@@ -63,6 +74,7 @@
   --icon-status-error: #f87171;
   --danger: #ef4444;
 
+  /* ── Current design tokens (use these) ── */
   --da-bg-primary: #09090b;
   --da-bg-secondary: #111113;
   --da-bg-surface: #18181b;
@@ -72,7 +84,7 @@
   --da-border-subtle: #1e1e22;
   --da-text-primary: #fafafa;
   --da-text-secondary: #a1a1aa;
-  --da-text-muted: #8c8c8c;
+  --da-text-muted: #9ca3af;        /* was #8c8c8c — bumped for WCAG AA */
   --da-accent-indigo: #6366f1;
   --da-accent-cyan: #22d3ee;
   --da-accent-pink: #f472b6;
@@ -108,6 +120,9 @@
   --syntax-cyan-200: #a5f3fc;
   --syntax-red: #f87171;
 
+  /* Focus ring — neutral, subtle, theme-aware */
+  --da-focus-ring: 0 0 0 2px rgba(255, 255, 255, 0.12);
+
   /* Overlay */
   --da-overlay-bg: rgba(0, 0, 0, 0.6);
   --da-overlay-bg-light: rgba(0, 0, 0, 0.5);
@@ -129,13 +144,16 @@
   --border-light: #ced4da;
   --text-primary: #212529;
   --text-secondary: #495057;
-  --text-muted: #6b7280;
+  --text-muted: #6b7280;           /* ≥5.9:1 on #ffffff — passes AA */
   --accent: #6366f1;
   --accent-pm: #6366f1;
   --danger: #dc2626;
   --icon-status-success: #10b981;
   --icon-status-warning: #d97706;
   --icon-status-error: #dc2626;
+
+  /* Focus ring — subtle gray, invisible on white backgrounds */
+  --da-focus-ring: 0 0 0 2px rgba(0, 0, 0, 0.10);
 
   --da-bg-primary: #ffffff;
   --da-bg-secondary: #f8f9fa;
@@ -146,7 +164,7 @@
   --da-border-subtle: #e9ecef;
   --da-text-primary: #212529;
   --da-text-secondary: #495057;
-  --da-text-muted: #6b7280;
+  --da-text-muted: #6b7280;        /* ≥5.9:1 on #ffffff — passes AA */
   --da-text-on-accent: #ffffff;
   --da-accent-indigo: #6366f1;
   --da-accent-cyan: #06b6d4;

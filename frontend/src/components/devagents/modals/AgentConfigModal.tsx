@@ -11,26 +11,44 @@ interface Props {
   onClose: () => void;
 }
 
+// ── Tools: 开发人员定义，用户勾选 ──
+// 每个 tool 对应后端一个真实的 function call schema
 const PRESET_TOOLS: Omit<AgentTool, 'enabled'>[] = [
-  { id: 'file-read', name: '文件读取', description: '读取本地文件内容' },
-  { id: 'file-write', name: '文件写入', description: '创建或修改本地文件' },
-  { id: 'terminal', name: '终端命令', description: '执行终端命令' },
-  { id: 'web-search', name: '网络搜索', description: '搜索互联网信息' },
-  { id: 'code-exec', name: '代码执行', description: '执行代码片段' },
+  { id: 'read_file',     name: '读取文件',     description: '读取工作区文件内容' },
+  { id: 'write_file',    name: '写入文件',     description: '创建或修改工作区文件' },
+  { id: 'list_files',    name: '列出文件',     description: '列出目录中的文件列表' },
+  { id: 'search_code',   name: '搜索代码',     description: '在代码库中搜索符号和文本' },
+  { id: 'run_command',   name: '终端命令',     description: '执行 Shell 命令并返回输出' },
+  { id: 'web_search',    name: '网络搜索',     description: '搜索互联网获取最新信息' },
+  { id: 'web_fetch',     name: '网页抓取',     description: '抓取指定 URL 的网页内容' },
+  { id: 'run_tests',     name: '运行测试',     description: '执行测试套件并返回结果' },
+  { id: 'git_diff',      name: 'Git 差异',     description: '查看代码变更差异' },
+  { id: 'lint_check',    name: '代码检查',     description: '运行 Linter 检查代码质量' },
 ];
 
+// ── MCP: 标准协议，连接外部服务 ──
+// 用户可添加自己的 MCP server URL
 const PRESET_MCP: Omit<AgentMCP, 'enabled'>[] = [
-  { id: 'github', name: 'GitHub MCP', serverUrl: 'https://github.com/mcp' },
-  { id: 'database', name: 'Database MCP', serverUrl: 'localhost:3001' },
-  { id: 'slack', name: 'Slack MCP', serverUrl: 'https://slack.com/mcp' },
+  { id: 'filesystem',  name: '文件系统',    serverUrl: 'http://localhost:8100/mcp' },
+  { id: 'github',      name: 'GitHub',      serverUrl: 'https://api.github.com/mcp' },
+  { id: 'postgres',    name: 'PostgreSQL',  serverUrl: 'http://localhost:8101/mcp' },
+  { id: 'brave-search', name: 'Brave 搜索', serverUrl: 'https://api.search.brave.com/mcp' },
+  { id: 'puppeteer',   name: '浏览器操作',  serverUrl: 'http://localhost:8102/mcp' },
 ];
 
+// ── Skills: Prompt 模板，用户可自定义 ──
+// 本质是预制的 system prompt 片段，告诉 LLM 如何执行特定任务
 const PRESET_SKILLS: Omit<AgentSkill, 'enabled'>[] = [
-  { id: 'frontend-design', name: '前端设计', description: '创建高质量的前端界面' },
-  { id: 'backend-api', name: '后端 API', description: '设计和实现 RESTful API' },
-  { id: 'database', name: '数据库设计', description: '设计和优化数据库结构' },
-  { id: 'testing', name: '自动化测试', description: '编写和执行测试用例' },
-  { id: 'devops', name: 'DevOps', description: '部署和运维相关任务' },
+  { id: 'code-review',    name: '代码审查',     description: '审查代码质量、安全性和可维护性' },
+  { id: 'test-gen',       name: '测试生成',     description: '自动生成单元测试和集成测试' },
+  { id: 'refactor',       name: '代码重构',     description: '重构代码结构和命名' },
+  { id: 'api-design',     name: 'API 设计',     description: '设计 RESTful API 接口规范' },
+  { id: 'db-design',      name: '数据库设计',   description: '设计数据库表结构和索引' },
+  { id: 'ui-design',      name: 'UI 设计',      description: '设计用户界面和交互流程' },
+  { id: 'docs-gen',       name: '文档生成',     description: '生成 API 文档和 README' },
+  { id: 'security-audit', name: '安全审计',     description: '检查代码安全漏洞和风险' },
+  { id: 'perf-optimize',  name: '性能优化',     description: '分析和优化系统性能瓶颈' },
+  { id: 'debug',          name: '调试排错',     description: '分析错误日志并定位根因' },
 ];
 
 export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
@@ -159,7 +177,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
                   <span className="form-examples-label">常用约束：</span>
                   <div className="form-examples-list">
                     {['中文回复', '代码标识', 'Markdown', '字数限制'].map((label, i) => (
-                      <button key={i} type="button" className="form-example-btn" onClick={() => setOutputConstraints(prev => prev + (prev ? '\n' : '') + `${i + 1}. ${['回复必须使用中文', '代码块必须包含语言标识', '使用 Markdown 格式化输出', '每次回复不超过 500 字'][i]}`)}>
+                      <button key={label} type="button" className="form-example-btn" onClick={() => setOutputConstraints(prev => prev + (prev ? '\n' : '') + `${i + 1}. ${['回复必须使用中文', '代码块必须包含语言标识', '使用 Markdown 格式化输出', '每次回复不超过 500 字'][i]}`)}>
                         {label}
                       </button>
                     ))}

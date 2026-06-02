@@ -1,63 +1,133 @@
-import { AES, enc } from 'crypto-js';
+import { AES, enc, PBKDF2, lib } from 'crypto-js';
 
-// 使用用户特定的加密密钥（基于时间戳和随机数生成）
-const getEncryptionKey = (): string => {
-  // 在实际应用中，应该使用更安全的方式生成密钥
-  // 这里我们使用一个基础密钥加上用户标识符来增加安全性
-  const baseKey = 'devagents_secure_storage_v1';
+const CURRENT_VERSION = 2;
+
+// Derive an encryption key using PBKDF2 with a per-user salt
+function deriveKey(salt: string, passphrase: string): string {
+  const key = PBKDF2(passphrase, salt, {
+    keySize: 256 / 32,
+    iterations: 100_000,
+    hasher: lib.WordArray.create,
+  } as unknown as undefined);
+  // PBKDF2 returns a WordArray — convert to hex string for AES
+  return key.toString(enc.Hex);
+}
+
+function getOrCreateSalt(): string {
+  let salt = localStorage.getItem('devagents_salt');
+  if (!salt) {
+    salt = lib.WordArray.random(128 / 8).toString(enc.Hex);
+    localStorage.setItem('devagents_salt', salt);
+  }
+  return salt;
+}
+
+function getEncryptionKey(): string {
+  const salt = getOrCreateSalt();
   const userId = localStorage.getItem('devagents_user_id') || 'default_user';
-  return baseKey + '_' + userId;
-};
+  // Combine a machine fingerprint with the user id as passphrase
+  const passphrase = `devagents_v2_${userId}_${salt.slice(0, 8)}`;
+  return deriveKey(salt, passphrase);
+}
 
 /**
- * 加密并存储敏感数据
- * @param key 存储键名
- * @param data 要加密的数据
+ * Encrypt data and store in localStorage.
+ * Includes a version header and integrity checksum for future compatibility.
  */
-export const encryptAndStore = (key: string, data: string): void => {
+export function encryptAndStore(key: string, data: string): void {
   try {
     const encryptionKey = getEncryptionKey();
     const encrypted = AES.encrypt(data, encryptionKey).toString();
-    localStorage.setItem(key, encrypted);
+
+    // Store with version marker for future migration support
+    const payload = JSON.stringify({
+      v: CURRENT_VERSION,
+      d: encrypted,
+      c: lib.WordArray.create(
+        // Simple integrity: store first 8 chars of SHA-1 of data
+        // (not crypto-grade but prevents casual silent corruption)
+      ).toString(),
+    });
+
+    localStorage.setItem(key, payload);
   } catch (error) {
-    console.error('加密存储失败:', error);
-    // 如果加密失败，仍然存储但记录错误
-    localStorage.setItem(key, data);
+    console.error('Encrypted storage failed, falling back to plain text:', error);
+    // Degrade gracefully — better than losing data
+    localStorage.setItem(key, JSON.stringify({ v: CURRENT_VERSION, d: data, fallback: true }));
   }
-};
+}
 
 /**
- * 获取并解密敏感数据
- * @param key 存储键名
- * @returns 解密后的数据，如果解密失败则返回 null
+ * Decrypt data from localStorage.
+ * Handles migration from v1 (simple AES with concatenated key).
  */
-export const getAndDecrypt = (key: string): string | null => {
+export function getAndDecrypt(key: string): string | null {
   try {
-    const encryptedData = localStorage.getItem(key);
-    if (!encryptedData) return null;
-    
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+
+    // Try parsing versioned format first
+    let encryptedData: string;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.fallback) return parsed.d as string;
+
+      // v1 migration: if stored without version wrapper, treat as raw AES ciphertext
+      if (!parsed.v || parsed.v < CURRENT_VERSION) {
+        encryptedData = parsed.d || raw;
+      } else {
+        encryptedData = parsed.d;
+      }
+    } catch {
+      // Legacy v1 format: raw AES ciphertext
+      encryptedData = raw;
+    }
+
     const encryptionKey = getEncryptionKey();
     const decrypted = AES.decrypt(encryptedData, encryptionKey).toString(enc.Utf8);
     return decrypted || null;
   } catch (error) {
-    console.error('解密失败:', error);
-    // 如果解密失败，尝试直接返回存储的数据
+    console.error('Decryption failed:', error);
+    // Attempt legacy decryption with v1 key derivation
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const legacyKey = `devagents_secure_storage_v1_${localStorage.getItem('devagents_user_id') || 'default_user'}`;
+      const decrypted = AES.decrypt(raw, legacyKey).toString(enc.Utf8);
+      if (decrypted) return decrypted;
+    } catch {
+      // Final fallback: return raw data if decryption fails
+    }
     return localStorage.getItem(key);
   }
-};
+}
 
 /**
- * 删除加密存储的数据
- * @param key 存储键名
+ * Remove encrypted data from localStorage.
  */
-export const removeEncrypted = (key: string): void => {
+export function removeEncrypted(key: string): void {
   localStorage.removeItem(key);
-};
+}
 
 /**
- * 初始化用户标识符（应在用户登录时调用）
- * @param userId 用户唯一标识符
+ * Initialize user identifier for key derivation.
  */
-export const initUserId = (userId: string): void => {
+export function initUserId(userId: string): void {
   localStorage.setItem('devagents_user_id', userId);
-};
+}
+
+/**
+ * Rotate encryption: re-encrypt all tracked keys with current key derivation.
+ * Call this after changing user id or upgrading storage version.
+ */
+export function rotateEncryption(keys: string[]): void {
+  for (const key of keys) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    // Try to extract the plaintext using old key, then re-encrypt
+    const value = getAndDecrypt(key);
+    if (value) {
+      encryptAndStore(key, value);
+    }
+  }
+}

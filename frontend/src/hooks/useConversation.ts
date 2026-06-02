@@ -1,19 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Message, Conversation } from '../types/devagents';
-import { getAgentResponse, getHomeResponse } from '../utils/agentResponses';
+import { getAgentResponse, getHomeResponse, getAgentGreeting } from '../utils/agentResponses';
 import { useSettings } from '../contexts/SettingsContext';
+
+const AGENT_IDS = ['pm', 'architect', 'ui', 'frontend', 'backend', 'qa', 'devops', 'fullstack'] as const;
 
 export function useConversation() {
   const { settings } = useSettings();
-  const [agentMessages, setAgentMessages] = useState<Record<string, Message[]>>({
-    'pm': [{ id: 1, role: 'agent', agentId: 'pm', content: '你好！我是产品经理，负责需求分析和产品规划。有什么产品需求可以告诉我。' }],
-    'architect': [{ id: 2, role: 'agent', agentId: 'architect', content: '你好！我是架构师，负责系统架构设计和技术选型。有什么架构问题可以讨论。' }],
-    'ui': [{ id: 3, role: 'agent', agentId: 'ui', content: '你好！我是 UI 设计师，负责界面与交互设计。有什么设计需求可以告诉我。' }],
-    'frontend': [{ id: 4, role: 'agent', agentId: 'frontend', content: '你好！我是前端工程师，精通 React/Vue 开发。有什么前端需求可以告诉我。' }],
-    'backend': [{ id: 5, role: 'agent', agentId: 'backend', content: '你好！我是后端工程师，负责 API 与数据库设计。有什么后端需求可以告诉我。' }],
-    'qa': [{ id: 6, role: 'agent', agentId: 'qa', content: '你好！我是测试工程师，负责自动化与安全测试。有什么测试需求可以告诉我。' }],
-    'devops': [{ id: 7, role: 'agent', agentId: 'devops', content: '你好！我是 DevOps 工程师，负责 CI/CD 和部署运维。有什么运维需求可以告诉我。' }],
-    'fullstack': [{ id: 8, role: 'agent', agentId: 'fullstack', content: '你好！我是全栈工程师，可以处理前后端各种问题。有什么需求可以告诉我。' }]
+  const { t } = useTranslation();
+
+  const [agentMessages, setAgentMessages] = useState<Record<string, Message[]>>(() => {
+    const initial: Record<string, Message[]> = {};
+    for (const id of AGENT_IDS) {
+      initial[id] = [
+        { id: AGENT_IDS.indexOf(id) + 1, role: 'agent', agentId: id, content: getAgentGreeting(id, t) },
+      ];
+    }
+    return initial;
   });
 
   const [homeMessages, setHomeMessages] = useState<Message[]>([]);
@@ -63,13 +67,29 @@ export function useConversation() {
       }));
       const typingId = now + 1;
       const agentInfo = allAgents.find(a => a.id === selectedAgentId);
-      const typingMsg: Message = { id: typingId, role: 'agent', agentId: selectedAgentId, content: `${agentInfo?.name || 'Agent'} 正在思考...`, isTyping: true, timestamp: now };
+      const typingMsg: Message = {
+        id: typingId,
+        role: 'agent',
+        agentId: selectedAgentId,
+        content: t('agent.thinking', { name: agentInfo?.name || 'Agent' }),
+        isTyping: true,
+        timestamp: now,
+      };
       setTimeout(() => {
         setAgentMessages(prev => ({ ...prev, [selectedAgentId]: [...(prev[selectedAgentId] || []), typingMsg] }));
       }, 300);
       setTimeout(() => {
-        const agentReply: Message = { id: now + 2, role: 'agent', agentId: selectedAgentId, content: getAgentResponse(selectedAgentId), timestamp: now + 2 };
-        setAgentMessages(prev => ({ ...prev, [selectedAgentId]: [...(prev[selectedAgentId] || []).filter(m => m.id !== typingId), agentReply] }));
+        const agentReply: Message = {
+          id: now + 2,
+          role: 'agent',
+          agentId: selectedAgentId,
+          content: getAgentResponse(selectedAgentId, t),
+          timestamp: now + 2,
+        };
+        setAgentMessages(prev => ({
+          ...prev,
+          [selectedAgentId]: [...(prev[selectedAgentId] || []).filter(m => m.id !== typingId), agentReply],
+        }));
       }, 1000 + Math.random() * 1000);
     } else {
       let convId = activeConvId;
@@ -82,14 +102,27 @@ export function useConversation() {
       }
       setHomeMessages(prev => [...prev, newUserMsg]);
       const homeTypingId = now + 1;
-      const homeTypingMsg: Message = { id: homeTypingId, role: 'agent', agentId: 'pm', content: '需求分析助手 正在思考...', isTyping: true, timestamp: now };
+      const homeTypingMsg: Message = {
+        id: homeTypingId,
+        role: 'agent',
+        agentId: 'pm',
+        content: t('agent.thinking', { name: '需求分析助手' }),
+        isTyping: true,
+        timestamp: now,
+      };
       setTimeout(() => { setHomeMessages(prev => [...prev, homeTypingMsg]); }, 300);
       setTimeout(() => {
-        const aiReply: Message = { id: now + 2, role: 'agent', agentId: 'pm', content: getHomeResponse(inputValue), timestamp: now + 2 };
+        const aiReply: Message = {
+          id: now + 2,
+          role: 'agent',
+          agentId: 'pm',
+          content: getHomeResponse(inputValue, t),
+          timestamp: now + 2,
+        };
         setHomeMessages(prev => [...prev.filter(m => m.id !== homeTypingId), aiReply]);
       }, 1000 + Math.random() * 1000);
     }
-  }, [activeConvId]);
+  }, [activeConvId, t]);
 
   return {
     agentMessages, setAgentMessages,

@@ -48,6 +48,21 @@ vi.mock('lucide-react', () => ({
   Check: () => <span data-testid="icon-check" />,
 }));
 
+vi.mock('../../api/hooks', () => ({
+  useAgents: () => ({ data: [], isLoading: false, isSuccess: true }),
+  useSessions: () => ({ data: [], isLoading: false, isSuccess: true }),
+  useRuns: () => ({ data: [], isLoading: false, isSuccess: true }),
+  useRun: () => ({ data: null, isLoading: false, isSuccess: false }),
+  useSessionDetail: () => ({ data: null, isLoading: false, isSuccess: false }),
+  useCreateSession: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useDeleteSession: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useCreateAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useUpdateAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useDeleteAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useToggleAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  prefetchAgents: vi.fn(),
+}));
+
 describe('DevAgentsWorkstation 集成测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();

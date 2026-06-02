@@ -11,6 +11,7 @@
 }
 
 .devagents-input-wrapper {
+  position: relative;
   background: var(--da-bg-surface);
   border: none;
   border-radius: var(--da-input-radius);
@@ -19,8 +20,13 @@
   box-shadow: none;
 }
 
+/* Let popovers escape the wrapper's overflow clip */
+.devagents-input-wrapper:has(.devagents-command-popover) {
+  overflow: visible;
+}
+
 .devagents-input-wrapper:focus-within {
-  box-shadow: 0 0 0 2px var(--da-accent-indigo);
+  box-shadow: var(--da-focus-ring);
 }
 
 .devagents-textarea {
@@ -38,6 +44,25 @@
   color: var(--da-text-primary);
   line-height: 1.5;
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.devagents-textarea:hover {
+  scrollbar-color: var(--da-border-subtle) transparent;
+}
+
+.devagents-textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.devagents-textarea::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.devagents-textarea:hover::-webkit-scrollbar-thumb {
+  background: var(--da-border-subtle);
 }
 
 .devagents-textarea::placeholder {
@@ -77,6 +102,11 @@
 .devagents-tool-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
+}
+
+/* Hide native file input — the paperclip button triggers it programmatically */
+.devagents-file-input {
+  display: none;
 }
 
 .devagents-tool-btn-text {

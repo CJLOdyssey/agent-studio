@@ -86,8 +86,8 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
 
                 {isProcessExpanded && (
                   <div className="devagents-process-steps" id="process-steps">
-                    {msg.plan.map((step, idx) => (
-                      <div key={idx} className="devagents-process-step">
+                    {msg.plan.map((step) => (
+                      <div key={step.step} className="devagents-process-step">
                         {step.status === 'completed' ? (
                           <CheckCircle2 size={14} className="text-[var(--icon-status-success)]" />
                         ) : (
@@ -110,7 +110,7 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
 
             <div className="devagents-message-bubble agent">
               {msg.content.split(t('teamMessage.mentionBackend')).map((part, i, arr) =>
-                i === arr.length - 1 ? part : <span key={i}>{part}<span className="devagents-mention">{t('teamMessage.mentionBackend')}</span></span>
+                i === arr.length - 1 ? <span key={`part-${i}`}>{part}</span> : <span key={`part-${i}`}>{part}<span className="devagents-mention">{t('teamMessage.mentionBackend')}</span></span>
               )}
             </div>
 

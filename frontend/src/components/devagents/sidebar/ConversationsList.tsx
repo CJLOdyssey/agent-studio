@@ -51,7 +51,7 @@ const ConversationsList = memo(function ConversationsList({
           >
             <div className="devagents-conv-item-content">
               <div className="devagents-conv-item-title">
-                {conv.title.length > 26 ? conv.title.slice(0, 26) + '...' : conv.title}
+                {Array.from(conv.title).length > 26 ? Array.from(conv.title).slice(0, 26).join('') + '...' : conv.title}
               </div>
               <div className="devagents-conv-item-meta">
                 {conv.messages.filter(m => m.role === 'agent').length > 0 ? t('sidebar.replied') : t('sidebar.pendingReply')}

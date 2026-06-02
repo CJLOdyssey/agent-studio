@@ -48,6 +48,10 @@ async function getWs() {
   return import('../websocket');
 }
 
+function mockOpts(cb = vi.fn()) {
+  return { onMessage: cb };
+}
+
 describe('WebSocket Module', () => {
   it('setMaxRetries 更改重试次数', async () => {
     const ws = await getWs();
@@ -57,7 +61,7 @@ describe('WebSocket Module', () => {
 
   it('connectRun 创建连接并返回取消函数', async () => {
     const ws = await getWs();
-    const unsub = ws.connectRun('test-run', vi.fn());
+    const unsub = ws.connectRun('test-run', mockOpts());
     expect(typeof unsub).toBe('function');
     expect(fakeWsInstances.length).toBe(1);
     unsub();
@@ -66,7 +70,7 @@ describe('WebSocket Module', () => {
   it('收到消息时调用回调', async () => {
     const ws = await getWs();
     const cb = vi.fn();
-    const unsub = ws.connectRun('test-run', cb);
+    const unsub = ws.connectRun('test-run', mockOpts(cb));
     fakeWsInstances[0].onmessage!({ data: JSON.stringify({ type: 'message', content: 'hello' }) } as MessageEvent);
     expect(cb).toHaveBeenCalledWith({ type: 'message', content: 'hello' });
     unsub();
@@ -76,8 +80,8 @@ describe('WebSocket Module', () => {
     const ws = await getWs();
     const cb1 = vi.fn();
     const cb2 = vi.fn();
-    const unsub1 = ws.connectRun('test-run', cb1);
-    const unsub2 = ws.connectRun('test-run', cb2);
+    const unsub1 = ws.connectRun('test-run', mockOpts(cb1));
+    const unsub2 = ws.connectRun('test-run', mockOpts(cb2));
     expect(fakeWsInstances.length).toBe(1);
     fakeWsInstances[0].onmessage!({ data: JSON.stringify({ msg: 'hi' }) } as MessageEvent);
     expect(cb1).toHaveBeenCalledWith({ msg: 'hi' });
@@ -89,7 +93,7 @@ describe('WebSocket Module', () => {
   it('取消订阅后不再收到消息', async () => {
     const ws = await getWs();
     const cb = vi.fn();
-    const unsub = ws.connectRun('test-run', cb);
+    const unsub = ws.connectRun('test-run', mockOpts(cb));
     unsub();
     if (fakeWsInstances[0]?.onmessage) {
       fakeWsInstances[0].onmessage!({ data: JSON.stringify({}) } as MessageEvent);
@@ -99,21 +103,21 @@ describe('WebSocket Module', () => {
 
   it('重复取消不崩溃', async () => {
     const ws = await getWs();
-    const unsub = ws.connectRun('test-run', vi.fn());
+    const unsub = ws.connectRun('test-run', mockOpts());
     unsub();
     unsub();
   });
 
   it('disconnectRun 清理指定 runId', async () => {
     const ws = await getWs();
-    ws.connectRun('run-a', vi.fn());
+    ws.connectRun('run-a', mockOpts());
     ws.disconnectRun('run-a');
   });
 
   it('两个不同 runId 独立连接', async () => {
     const ws = await getWs();
-    ws.connectRun('run-a', vi.fn());
-    ws.connectRun('run-b', vi.fn());
+    ws.connectRun('run-a', mockOpts());
+    ws.connectRun('run-b', mockOpts());
     expect(fakeWsInstances.length).toBe(2);
   });
 
@@ -121,7 +125,7 @@ describe('WebSocket Module', () => {
     const ws = await getWs();
     const cb = vi.fn();
     const runId = 'json-err-' + Date.now();
-    const unsub = ws.connectRun(runId, cb);
+    const unsub = ws.connectRun(runId, mockOpts(cb));
     expect(fakeWsInstances.length).toBeGreaterThan(0);
     fakeWsInstances[fakeWsInstances.length - 1].onmessage!({ data: '{invalid json' } as MessageEvent);
     expect(cb).not.toHaveBeenCalled();

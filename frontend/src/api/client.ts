@@ -1,11 +1,108 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import type { AgentConfig, ProjectRun, SessionDetail, SessionItem } from '../types';
+import Logger from '../utils/logger';
+
+// ---- Custom Error Class ----
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code: string,
+    public readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+export class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
+function normalizeError(err: unknown): never {
+  if (err instanceof AxiosError) {
+    if (err.code === 'ECONNABORTED') {
+      throw new TimeoutError('Request timed out');
+    }
+    if (!err.response) {
+      throw new NetworkError(err.message || 'Network error');
+    }
+    const status = err.response.status;
+    const data = err.response.data as Record<string, unknown> | undefined;
+    const message = (data?.detail as string) || (data?.message as string) || err.message;
+
+    switch (status) {
+      case 401: {
+        // Dispatch a custom event so the app layer can redirect to login
+        window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { status: 401 } }));
+        throw new ApiError(message, status, 'UNAUTHORIZED', data);
+      }
+      case 403:
+        throw new ApiError(message, status, 'FORBIDDEN', data);
+      case 404:
+        throw new ApiError(message, status, 'NOT_FOUND', data);
+      case 422:
+        throw new ApiError(message, status, 'VALIDATION_ERROR', data);
+      case 429: {
+        const retryAfter = err.response.headers['retry-after'];
+        throw new ApiError(message, status, 'RATE_LIMITED', { ...data, retryAfter });
+      }
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        Logger.error(`Server error ${status}`, { message, status, data });
+        throw new ApiError(message, status, 'SERVER_ERROR', data);
+      default:
+        Logger.warn(`Unhandled API error ${status}`, { message, status });
+        throw new ApiError(message, status, 'UNKNOWN', data);
+    }
+  }
+  throw err;
+}
+
+// ---- Axios Instance ----
 
 const api = axios.create({
   baseURL: '/api',
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
+  // CSRF protection: read token from cookie and send as header
+  xsrfCookieName: 'csrftoken',
+  xsrfHeaderName: 'X-CSRFToken',
+  withCredentials: true,
 });
+
+// Interceptors — guarded for environments where axios may be mocked
+if (api.interceptors?.request) {
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+}
+
+if (api.interceptors?.response) {
+  api.interceptors.response.use(
+    (response) => response,
+    (error: unknown) => normalizeError(error),
+  );
+}
+
+// ---- API Functions ----
 
 export async function submitRequirement(
   requirement: string,
@@ -113,3 +210,48 @@ export async function toggleAgent(id: string): Promise<{ id: string; is_active: 
   const { data } = await api.put(`/agents/${id}/toggle`);
   return data;
 }
+
+// ---- Models API ----
+
+export interface ModelInfo {
+  id: string;
+  label: string;
+  provider: string;
+}
+
+export async function listModels(): Promise<ModelInfo[]> {
+  const { data } = await api.get('/models');
+  return data;
+}
+
+// ---- Commands API ----
+
+export interface CommandDef {
+  id: string;
+  name: string;
+  description?: string;
+  shortcut?: string;
+  category?: string;
+  requires_input?: boolean;
+  enabled?: boolean;
+}
+
+export async function listCommands(): Promise<CommandDef[]> {
+  const { data } = await api.get('/commands');
+  return data;
+}
+
+export async function executeCommand(
+  commandId: string,
+  sessionId: string,
+  payload?: Record<string, unknown>,
+): Promise<{ success: boolean; message: string; data: Record<string, unknown> }> {
+  const { data } = await api.post('/commands/execute', {
+    command_id: commandId,
+    session_id: sessionId,
+    payload: payload ?? {},
+  });
+  return data;
+}
+
+export default api;

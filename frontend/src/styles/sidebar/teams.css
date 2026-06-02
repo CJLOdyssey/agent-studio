@@ -92,11 +92,25 @@
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2);
+  padding-right: 52px;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s;
   margin-bottom: var(--sp-1);
   border: none;
+  position: relative;
+}
+
+.devagents-agent-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devagents-agent-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .devagents-agent-item:hover {
@@ -196,14 +210,21 @@
 }
 
 .devagents-agent-actions {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
+  align-items: center;
   gap: var(--sp-1);
   opacity: 0;
-  transition: opacity 0.15s;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
 }
 
 .devagents-agent-item:hover .devagents-agent-actions {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .devagents-empty-team {
