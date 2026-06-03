@@ -1,0 +1,135 @@
+"""Agent config API routes: CRUD and toggle."""
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from virtual_team.logging_config import get_logger
+from virtual_team.repository import (
+    create_agent_config,
+    delete_agent_config,
+    get_agent_config_by_role,
+    get_agent_configs,
+    update_agent_config,
+)
+
+logger = get_logger(__name__)
+router = APIRouter(tags=["agents"])
+
+
+class AgentCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=64)
+    role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
+    system_prompt: str = Field(..., min_length=1)
+    model: str | None = None
+    temperature: float | None = Field(default=None, ge=0.0, le=1.0)
+    order: int = 0
+    is_active: bool = True
+    is_approver: bool = False
+    icon: str = "🤖"
+
+
+class AgentUpdateRequest(BaseModel):
+    name: str | None = None
+    system_prompt: str | None = None
+    order: int | None = None
+    is_active: bool | None = None
+    is_approver: bool | None = None
+    icon: str | None = None
+    model: str | None = None
+    temperature: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+@router.get("/api/agents")
+async def list_agents():
+    try:
+        configs = await get_agent_configs()
+        return [
+            {
+                "id": c.id,
+                "name": c.name,
+                "role_identifier": c.role_identifier,
+                "system_prompt": c.system_prompt,
+                "model": c.model,
+                "temperature": c.temperature,
+                "order": c.order,
+                "is_active": c.is_active,
+                "is_approver": c.is_approver,
+                "icon": c.icon,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+            }
+            for c in configs
+        ]
+    except Exception as e:
+        logger.error("Error listing agents: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/agents", status_code=201)
+async def add_agent(req: AgentCreateRequest):
+    existing = await get_agent_config_by_role(req.role_identifier)
+    if existing:
+        raise HTTPException(status_code=409, detail=f"角色标识 '{req.role_identifier}' 已存在")
+    try:
+        created = await create_agent_config(
+            name=req.name,
+            role_identifier=req.role_identifier,
+            system_prompt=req.system_prompt,
+            order=req.order,
+            is_active=req.is_active,
+            is_approver=req.is_approver,
+            icon=req.icon,
+            model=req.model,
+            temperature=req.temperature,
+        )
+        return {"id": created.id, "status": "created"}
+    except Exception as e:
+        logger.error("Error creating agent: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/api/agents/{agent_id}")
+async def edit_agent(agent_id: str, req: AgentUpdateRequest):
+    updated = await update_agent_config(
+        id=agent_id,
+        name=req.name,
+        system_prompt=req.system_prompt,
+        order=req.order,
+        is_active=req.is_active,
+        is_approver=req.is_approver,
+        icon=req.icon,
+        model=req.model,
+        temperature=req.temperature,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    return {"id": updated.id, "status": "updated"}
+
+
+@router.delete("/api/agents/{agent_id}")
+async def remove_agent(agent_id: str):
+    configs = await get_agent_configs()
+    target = next((c for c in configs if c.id == agent_id), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    if target.is_approver:
+        approvers = [c for c in configs if c.is_approver and c.id != agent_id]
+        if not approvers:
+            raise HTTPException(status_code=400, detail="不能删除唯一的审批者，请先设置其他审批者")
+    deleted = await delete_agent_config(agent_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    return {"status": "deleted"}
+
+
+@router.put("/api/agents/{agent_id}/toggle")
+async def toggle_agent(agent_id: str):
+    configs = await get_agent_configs()
+    target = next((c for c in configs if c.id == agent_id), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    if target.is_active and target.is_approver:
+        active_approvers = [c for c in configs if c.is_approver and c.is_active and c.id != agent_id]
+        if not active_approvers:
+            raise HTTPException(status_code=400, detail="不能停用唯一的活跃审批者")
+    updated = await update_agent_config(id=agent_id, is_active=not target.is_active)
+    return {"id": updated.id, "is_active": updated.is_active}

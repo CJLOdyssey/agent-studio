@@ -1,0 +1,103 @@
+"""Messaging infrastructure: Celery app + Redis pub/sub for streaming."""
+
+import json
+import os
+from typing import AsyncIterator
+
+from celery import Celery
+from redis.asyncio import Redis as AsyncRedis
+
+# ---------------------------------------------------------------------------
+# Celery app
+# ---------------------------------------------------------------------------
+
+BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
+RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
+celery_app = Celery(
+    "virtual_team",
+    broker=BROKER_URL,
+    backend=RESULT_BACKEND,
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="Asia/Shanghai",
+    enable_utc=True,
+    task_track_started=True,
+    task_acks_late=True,
+    worker_prefetch_multiplier=1,
+    task_soft_time_limit=600,
+    task_time_limit=900,
+)
+
+celery_app.autodiscover_tasks(["virtual_team.tasks"])
+
+# ---------------------------------------------------------------------------
+# Redis pub/sub
+# ---------------------------------------------------------------------------
+
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+
+_pool: AsyncRedis | None = None
+CHANNEL_PREFIX = "run:"
+
+
+def _channel(run_id: str) -> str:
+    return f"{CHANNEL_PREFIX}{run_id}"
+
+
+def get_redis() -> AsyncRedis:
+    global _pool
+    if _pool is None:
+        _pool = AsyncRedis.from_url(
+            REDIS_URL,
+            decode_responses=True,
+            socket_keepalive=True,
+            socket_connect_timeout=10,
+            health_check_interval=30,
+            retry_on_timeout=True,
+            # NOTE: do NOT set socket_timeout — pubsub is a long-lived streaming
+            # connection that must remain open indefinitely for WebSocket push.
+        )
+    return _pool
+
+
+async def close_redis():
+    global _pool
+    if _pool is not None:
+        await _pool.aclose()
+        _pool = None
+
+
+async def publish_run_message(run_id: str, message: dict):
+    r = get_redis()
+    await r.publish(_channel(run_id), json.dumps(message, ensure_ascii=False))
+
+
+async def subscribe_run(run_id: str) -> AsyncIterator[dict]:
+    """Subscribe to a run's pub/sub channel.
+
+    Uses redis-py pubsub.listen() with socket_keepalive enabled on the
+    underlying connection to prevent TCP idle timeouts from firewalls/proxies.
+    """
+    r = get_redis()
+    pubsub = r.pubsub()
+    await pubsub.subscribe(_channel(run_id))
+    try:
+        async for msg in pubsub.listen():
+            if msg["type"] == "message":
+                data = msg["data"]
+                if isinstance(data, str):
+                    yield json.loads(data)
+    finally:
+        try:
+            await pubsub.unsubscribe(_channel(run_id))
+        except Exception:
+            pass
+        try:
+            await pubsub.close()
+        except Exception:
+            pass
