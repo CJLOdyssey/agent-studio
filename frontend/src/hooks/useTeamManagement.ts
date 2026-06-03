@@ -21,13 +21,10 @@ interface ApiTeamMember {
   order: number;
 }
 
-const API_BASE = '';
-
 async function fetchTeams(): Promise<Team[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/teams`);
-    if (!res.ok) return [];
-    const data: ApiTeam[] = await res.json();
+    const res = await api.get('/teams');
+    const data: ApiTeam[] = res.data;
     return data.map(t => ({
       id: t.id,
       name: t.name,
@@ -74,12 +71,12 @@ export function useTeamManagement(toast?: ToastFn) {
     if (!team) return;
     const newExpanded = !team.isExpanded;
     setTeams(prev => prev.map(t => t.id === teamId ? { ...t, isExpanded: newExpanded } : t));
-    await apiPut(`/api/teams/${teamId}`, { is_expanded: newExpanded }).catch(() => {});
+    await apiPut(`/teams/${teamId}`, { is_expanded: newExpanded }).catch(() => {});
   }, [teams]);
 
   const handleAddTeam = useCallback(async () => {
     try {
-      const res = await apiPost('/api/teams', { name: '新团队' });
+      const res = await apiPost('/teams', { name: '新团队' });
       setTeams(prev => [...prev, { id: res.id, name: res.name, isExpanded: false, agents: [] }]);
       toast?.('团队已创建', 'success');
     } catch {
@@ -89,7 +86,7 @@ export function useTeamManagement(toast?: ToastFn) {
 
   const handleAddAgent = useCallback(async (teamId: string) => {
     try {
-      const member = await apiPost(`/api/teams/${teamId}/members`, { name: '新 Agent' });
+      const member = await apiPost(`/teams/${teamId}/members`, { name: '新 Agent' });
       const newAgent: Agent = {
         id: member.id, name: member.name, role: member.role || '待配置角色',
         icon: Bot, color: 'text-[var(--da-text-muted)]',
@@ -116,7 +113,7 @@ export function useTeamManagement(toast?: ToastFn) {
     setTeams(prev => prev.map(t => t.id === editingTeamId ? { ...t, name } : t));
     setEditingTeamId(null);
     setEditTeamName('');
-    await apiPut(`/api/teams/${editingTeamId}`, { name }).catch(() => {});
+    await apiPut(`/teams/${editingTeamId}`, { name }).catch(() => {});
   }, [editingTeamId, editTeamName]);
 
   const cancelEditTeam = useCallback(() => {
@@ -126,12 +123,12 @@ export function useTeamManagement(toast?: ToastFn) {
 
   const handleRename = useCallback((teamId: string, name: string) => {
     setTeams(prev => prev.map(t => t.id === teamId ? { ...t, name } : t));
-    apiPut(`/api/teams/${teamId}`, { name }).catch(() => {});
+    apiPut(`/teams/${teamId}`, { name }).catch(() => {});
   }, []);
 
   const handleDeleteTeam = useCallback(async (teamId: string) => {
     setTeams(prev => prev.filter(t => t.id !== teamId));
-    await apiDelete(`/api/teams/${teamId}`).catch(() => {});
+    await apiDelete(`/teams/${teamId}`).catch(() => {});
     toast?.('团队已删除', 'info');
   }, [toast]);
 
@@ -139,7 +136,7 @@ export function useTeamManagement(toast?: ToastFn) {
     setTeams(prev => prev.map(t =>
       t.id === teamId ? { ...t, agents: t.agents.filter(a => a.id !== agentId) } : t,
     ));
-    await apiDelete(`/api/teams/${teamId}/members/${agentId}`).catch(() => {});
+    await apiDelete(`/teams/${teamId}/members/${agentId}`).catch(() => {});
   }, []);
 
   const allAgents = useMemo(() => getAllAgents(teams), [teams]);
