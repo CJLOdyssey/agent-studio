@@ -2,7 +2,8 @@ import asyncio
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, update as sa_update
+from sqlalchemy.orm import selectinload
 
 from virtual_team.database import (
     AgentConfigDB,
@@ -733,7 +734,7 @@ async def get_teams() -> list[dict]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(TeamDB).order_by(TeamDB.order).options(
-            __import__('sqlalchemy.orm').selectinload(TeamDB.members),
+            selectinload(TeamDB.members),
         )
         result = await session.execute(stmt)
         teams = result.scalars().all()
@@ -762,7 +763,7 @@ async def get_team(team_id: str) -> dict | None:
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(TeamDB).where(TeamDB.id == team_id).options(
-            __import__('sqlalchemy.orm').selectinload(TeamDB.members),
+            selectinload(TeamDB.members),
         )
         result = await session.execute(stmt)
         t = result.scalar_one_or_none()
@@ -869,7 +870,7 @@ async def reorder_team_members(team_id: str, member_ids: list[str]) -> None:
     async with factory() as session:
         for idx, mid in enumerate(member_ids):
             await session.execute(
-                __import__('sqlalchemy').update(TeamAgentDB)
+                sa_update(TeamAgentDB)
                 .where(TeamAgentDB.id == mid, TeamAgentDB.team_id == team_id)
                 .values(order=idx)
             )
