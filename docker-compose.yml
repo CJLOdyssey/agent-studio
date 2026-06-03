@@ -36,8 +36,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
       - MAX_ROUNDS=${MAX_ROUNDS:-5}
       - TEMPERATURE=${TEMPERATURE:-0.7}
@@ -48,7 +48,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - KEY_VAULT_SECRET=${KEY_VAULT_SECRET:?err: KEY_VAULT_SECRET must be set in .env file}
+      - "KEY_VAULT_SECRET=${KEY_VAULT_SECRET:?KEY_VAULT_SECRET is required}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,8 +77,8 @@ services:
       retries: 3
       start_period: 40s
     environment:
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
       - MAX_ROUNDS=${MAX_ROUNDS:-5}
       - TEMPERATURE=${TEMPERATURE:-0.7}
@@ -89,7 +89,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - KEY_VAULT_SECRET=${KEY_VAULT_SECRET:?err: KEY_VAULT_SECRET must be set in .env file}
+      - "KEY_VAULT_SECRET=${KEY_VAULT_SECRET:?KEY_VAULT_SECRET is required}"
     depends_on:
       redis:
         condition: service_healthy
