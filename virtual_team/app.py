@@ -13,8 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from virtual_team.broker import get_redis
 from virtual_team.config import load_config
-from virtual_team.logging_config import get_logger
 from virtual_team.database import get_async_engine, init_db
+from virtual_team.logging_config import get_logger
 from virtual_team.repository import seed_default_agents
 from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions
 
@@ -53,6 +53,7 @@ app = FastAPI(title="虚拟软件外包团队", lifespan=lifespan)
 
 # ── Rate limiting ───────────────────────────────────────────────────────────
 from virtual_team.rate_limit import RateLimitMiddleware
+
 app.add_middleware(
     RateLimitMiddleware,
     rate=int(os.environ.get("RATE_LIMIT", "60")),
@@ -61,6 +62,7 @@ app.add_middleware(
 
 # ── Authentication ──────────────────────────────────────────────────────────
 from virtual_team.auth import AuthMiddleware
+
 app.add_middleware(AuthMiddleware)
 
 _cors_origins = [

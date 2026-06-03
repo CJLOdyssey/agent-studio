@@ -5,12 +5,13 @@
 测试范围: API 接口 / 前端 UI / 集成工作流
 """
 
-import re
 import json
-import urllib.request
+import re
 import urllib.error
 import urllib.parse
-from playwright.sync_api import sync_playwright, expect
+import urllib.request
+
+from playwright.sync_api import expect, sync_playwright
 
 # ─── 环境配置 ─────────────────────────────────────────────────
 FRONTEND_URL = 'http://localhost:5173'
@@ -127,7 +128,7 @@ def test_api_session_crud():
     # Verify deletion
     try:
         api_get(f'/sessions/{sess_id}')
-        assert False, 'Should have raised 404'
+        raise AssertionError('Should have raised 404')
     except urllib.error.HTTPError as e:
         assert e.code == 404
 
@@ -149,7 +150,8 @@ def test_api_agent_config_crud():
     assert isinstance(agents, list)
 
     # Create (must match ^[a-z_]+$)
-    import random, string
+    import random
+    import string
     letters = string.ascii_lowercase
     role = 'test_agent_' + ''.join(random.choice(letters) for _ in range(8))
     created = api_post('/agents', {
@@ -183,7 +185,8 @@ def test_api_agent_config_crud():
 def test_api_agent_validation():
     """A07: Agent 输入验证"""
     # Duplicate role_identifier (only letters, must match ^[a-z_]+$)
-    import random, string
+    import random
+    import string
     letters = string.ascii_lowercase
     role = 'dup_role_' + ''.join(random.choice(letters) for _ in range(8))
     api_post('/agents', {
@@ -224,7 +227,7 @@ def test_api_memory_export_formats():
     # Invalid format
     try:
         with urllib.request.urlopen(f'{API_URL}/sessions/{sess_id}/memories/export?format=xml', timeout=5):
-            assert False, 'Should reject invalid format'
+            raise AssertionError('Should reject invalid format')
     except urllib.error.HTTPError as e:
         assert e.code == 400
 
@@ -238,14 +241,14 @@ def test_api_error_handling():
     # Non-existent run
     try:
         api_get('/runs/nonexistent-id-12345')
-        assert False, 'Should raise 404'
+        raise AssertionError('Should raise 404')
     except urllib.error.HTTPError as e:
         assert e.code == 404
 
     # Non-existent session
     try:
         api_get('/sessions/nonexistent-id-12345')
-        assert False, 'Should raise 404'
+        raise AssertionError('Should raise 404')
     except urllib.error.HTTPError as e:
         assert e.code == 404
 
@@ -623,7 +626,7 @@ def main():
     # ── 汇总 ──
     total = all_passed + all_failed
     print(f'\n{"="*60}')
-    print(f'  灰盒冒烟测试完成')
+    print('  灰盒冒烟测试完成')
     print(f'{"="*60}')
     print(f'  总计: {total}  |  通过: {all_passed}  |  失败: {all_failed}')
     print(f'  通过率: {all_passed / total * 100:.1f}%' if total else '  无测试')

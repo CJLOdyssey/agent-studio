@@ -4,11 +4,11 @@ import pytest
 
 from virtual_team.models import Role
 from virtual_team.prompts import (
-    get_system_prompt,
+    APPROVAL_KEYWORD,
     build_pm_task,
     build_programmer_task,
     build_tester_task,
-    APPROVAL_KEYWORD,
+    get_system_prompt,
 )
 
 
@@ -31,7 +31,7 @@ class TestGetSystemPrompt:
     def test_invalid_role_raises(self):
         try:
             get_system_prompt("invalid")  # type: ignore
-            assert False, "Should have raised"
+            raise AssertionError("Should have raised")
         except ValueError:
             pass
 

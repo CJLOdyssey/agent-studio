@@ -1,6 +1,5 @@
 """CLI entry point — runs a single agent via LangGraph."""
 import asyncio
-import logging
 import sys
 
 from virtual_team.config import load_config
@@ -40,7 +39,7 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
         if memories:
             session_context = _build_context(memories)
 
-    from virtual_team.agent_graph import SingleAgentGraph, DEFAULT_TOOLS
+    from virtual_team.agent_graph import DEFAULT_TOOLS, SingleAgentGraph
 
     graph = SingleAgentGraph(
         model=model,

@@ -7,15 +7,15 @@ from pydantic import BaseModel, Field
 from starlette.responses import Response
 
 from virtual_team.logging_config import get_logger
-from virtual_team.models import MemoryItem, RunSummary, SessionDetailResponse, SessionSummary
+from virtual_team.models import SessionDetailResponse, SessionSummary
 from virtual_team.repository import (
     create_session,
     delete_memory_entry,
     delete_session,
+    get_runs_by_session_ids,
     get_session,
     get_session_memories,
     get_session_runs,
-    get_runs_by_session_ids,
     get_sessions,
     update_session_title,
 )

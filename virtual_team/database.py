@@ -1,13 +1,12 @@
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.pool import NullPool
-
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
@@ -25,11 +24,11 @@ class SessionDB(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     title: Mapped[str] = mapped_column(String(256), default="新对话")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     runs: Mapped[list["ProjectRun"]] = relationship(
@@ -59,11 +58,11 @@ class ProjectRun(Base):
         comment="pending|running|converged|max_rounds_reached|error",
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     session: Mapped["SessionDB | None"] = relationship(back_populates="runs")
@@ -89,7 +88,7 @@ class MemoryEntry(Base):
     summary: Mapped[str] = mapped_column(String(512), nullable=False)
     details: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
 
     session: Mapped["SessionDB"] = relationship(back_populates="memories")
@@ -109,7 +108,7 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     round_number: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
 
     run: Mapped["ProjectRun"] = relationship(back_populates="messages")
@@ -129,11 +128,11 @@ class AgentConfigDB(Base):
     is_approver: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     icon: Mapped[str] = mapped_column(String(8), default="🤖", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False,
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc), nullable=False,
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC), nullable=False,
     )
 
 
@@ -171,7 +170,7 @@ class CommandLogDB(Base):
     payload: Mapped[str] = mapped_column(Text, default="")
     result: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
 
 
@@ -189,7 +188,7 @@ class AttachmentDB(Base):
     storage_path: Mapped[str] = mapped_column(String(512), nullable=False)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
 
 
@@ -213,11 +212,11 @@ class UserApiKey(Base):
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
@@ -242,7 +241,7 @@ class KeyUsageLog(Base):
     status: Mapped[str] = mapped_column(String(16), default="success", comment="success|error")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
 
 
@@ -266,7 +265,8 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
 
 
-async def get_session() -> AsyncSession:
+async def get_session():
+    """Async generator yielding a database session (FastAPI Depends)."""
     factory = get_session_factory()
     async with factory() as session:
         yield session

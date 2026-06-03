@@ -4,15 +4,16 @@ import asyncio
 import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from virtual_team.database import Base
+from alembic import context
+from virtual_team.checkpoint import CheckpointDB  # noqa: F401
 
 # Import all models so Base.metadata is populated
 from virtual_team.database import (  # noqa: F401
     AgentConfigDB,
     AttachmentDB,
+    Base,
     ChatMessage,
     CommandLogDB,
     KeyUsageLog,
@@ -21,7 +22,6 @@ from virtual_team.database import (  # noqa: F401
     SessionDB,
     UserApiKey,
 )
-from virtual_team.checkpoint import CheckpointDB  # noqa: F401
 
 config = context.config
 

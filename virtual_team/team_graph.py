@@ -14,17 +14,18 @@ Architecture:
                                    └── yes ──→ END
 """
 
-import asyncio
 from collections.abc import Callable
 from typing import Annotated, TypedDict
 
-from langgraph.graph import StateGraph, END
-from langgraph.graph.message import add_messages
-from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import (
-    BaseMessage, HumanMessage, AIMessage, SystemMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
 )
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
+from langgraph.graph.message import add_messages
 
 from virtual_team.logging_config import get_logger
 from virtual_team.prompts import APPROVAL_KEYWORD, DIRECT_REPLY_KEYWORD

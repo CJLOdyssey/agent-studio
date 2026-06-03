@@ -1,6 +1,6 @@
 import re
-from playwright.sync_api import sync_playwright, expect
 
+from playwright.sync_api import expect, sync_playwright
 
 BASE_URL = 'http://localhost:5173'
 

@@ -1,9 +1,8 @@
 """Tests for configuration model and safety."""
-import os
 
 import pytest
 
-from virtual_team.config import TeamConfig, load_config
+from virtual_team.config import TeamConfig
 
 
 class TestTeamConfig:

@@ -145,8 +145,8 @@ class EmbeddingProvider:
 
     def _embed_sync(self, texts: list[str]) -> list[list[float]]:
         """Synchronous HTTP call to DashScope — runs in thread pool via asyncio.to_thread."""
-        import urllib.request
         import json
+        import urllib.request
 
         body = json.dumps({
             "model": self.model,
@@ -228,14 +228,14 @@ class PgVectorStore:
 
             # Create index if not exists
             try:
-                await session.execute(text(f"""
+                await session.execute(text("""
                     CREATE INDEX IF NOT EXISTS idx_vector_chunks_embedding
                     ON vector_chunks USING hnsw (embedding vector_cosine_ops)
                 """))
             except Exception:
                 # HNSW might not be available — try IVFFlat
                 try:
-                    await session.execute(text(f"""
+                    await session.execute(text("""
                         CREATE INDEX IF NOT EXISTS idx_vector_chunks_embedding
                         ON vector_chunks USING ivfflat (embedding vector_cosine_ops)
                     """))
@@ -383,7 +383,7 @@ async def ingest_session_messages(
 
     texts = [c.text for c in chunks]
     embeddings = await _embedding_provider.embed(texts)
-    for chunk, emb in zip(chunks, embeddings):
+    for chunk, emb in zip(chunks, embeddings, strict=False):
         chunk.embedding = emb
 
     await _vector_store.add(chunks)

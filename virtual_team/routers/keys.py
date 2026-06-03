@@ -15,13 +15,12 @@ from virtual_team.auth import get_user_id
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     create_api_key,
-    get_api_keys,
-    update_api_key,
     delete_api_key,
-    test_api_key_connection,
+    get_api_keys,
     get_key_usage_stats,
+    test_api_key_connection,
+    update_api_key,
 )
-from virtual_team.key_vault import mask_api_key
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["keys"])
@@ -103,7 +102,7 @@ async def add_key(req: KeyCreateRequest, request: Request):
             models=req.models,
             is_default=req.is_default,
         )
-        from virtual_team.key_vault import mask_api_key, decrypt_api_key
+        from virtual_team.key_vault import decrypt_api_key, mask_api_key
         return KeyResponse(
             id=obj.id,
             provider=obj.provider,

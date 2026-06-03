@@ -1,22 +1,29 @@
 """Run API routes: create, list, detail, and WebSocket streaming."""
 
+import contextlib
+
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 from virtual_team.auth import get_user_id
 from virtual_team.broker import subscribe_run
+from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary
 from virtual_team.repository import (
-    get_messages, get_run, get_runs, update_run_status,
-    create_session, get_session, update_session_title,
-    get_api_key_for_use, get_default_api_key,
+    create_session,
+    get_api_key_for_use,
+    get_default_api_key,
+    get_messages,
+    get_run,
+    get_runs,
+    get_session,
+    update_run_status,
+    update_session_title,
 )
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])
-
-from virtual_team.config import load_config
 
 _MAX_REQUIREMENT_LENGTH = 2000
 
@@ -82,9 +89,9 @@ async def create_run(req: RunRequest, request: Request):
         raise HTTPException(status_code=500, detail=f"创建失败: {e}")
 
     try:
-        sess = await get_session(session_id)
-        if sess:
-            await update_session_title(session_id, sess.title)
+        existing_sess = await get_session(session_id)
+        if existing_sess:
+            await update_session_title(session_id, existing_sess.title)
     except Exception:
         pass
 
@@ -185,10 +192,8 @@ async def run_websocket(websocket: WebSocket, run_id: str):
                     return
         except Exception as e:
             logger.error("Redis subscribe error: %s", e, exc_info=True)
-            try:
+            with contextlib.suppress(Exception):
                 await websocket.send_json({"type": "status", "status": "error", "error": str(e)})
-            except Exception:
-                pass
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected gracefully | run_id=%s", run_id)
     except Exception as e:

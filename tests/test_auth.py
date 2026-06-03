@@ -1,10 +1,7 @@
 """Tests for JWT auth module."""
-import os
 import time
-import pytest
 
-from virtual_team.auth import decode_jwt, create_token
-
+from virtual_team.auth import create_token, decode_jwt
 
 SECRET = "test-secret-key-for-unit-tests"
 
@@ -53,9 +50,9 @@ class TestJwtCreateAndDecode:
 
     def test_simplified_token_format(self):
         """Test the simplified HMAC token format."""
+        import base64
         import hashlib
         import hmac
-        import base64
 
         now = int(time.time())
         user_id = "test-user"
@@ -68,9 +65,9 @@ class TestJwtCreateAndDecode:
         assert payload["sub"] == user_id
 
     def test_simplified_token_wrong_secret(self):
+        import base64
         import hashlib
         import hmac
-        import base64
 
         now = int(time.time())
         raw = f"test-user:{now}"
@@ -81,9 +78,9 @@ class TestJwtCreateAndDecode:
         assert payload is None
 
     def test_simplified_token_expired(self):
+        import base64
         import hashlib
         import hmac
-        import base64
 
         old_time = int(time.time()) - 100000  # >24 hours ago
         raw = f"test-user:{old_time}"

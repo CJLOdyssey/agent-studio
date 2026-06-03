@@ -14,10 +14,9 @@ Architecture:
   Subsequent LLM calls reference the key by ID; the server decrypts on-the-fly.
 """
 
-import os
 import base64
 import hashlib
-from typing import Optional
+import os
 
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes
@@ -41,7 +40,7 @@ def _derive_fernet_key(secret: str) -> bytes:
     return key
 
 
-def _get_fernet() -> Fernet:
+def _get_fernet() -> Fernet | MultiFernet:
     """Get the Fernet instance for the current master secret.
 
     If KEY_VAULT_SECRET_ROTATED is set, returns a MultiFernet that

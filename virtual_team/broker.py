@@ -1,8 +1,9 @@
 """Messaging infrastructure: Celery app + Redis pub/sub for streaming."""
 
+import contextlib
 import json
 import os
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from celery import Celery
 from redis.asyncio import Redis as AsyncRedis
@@ -93,11 +94,7 @@ async def subscribe_run(run_id: str) -> AsyncIterator[dict]:
                 if isinstance(data, str):
                     yield json.loads(data)
     finally:
-        try:
+        with contextlib.suppress(Exception):
             await pubsub.unsubscribe(_channel(run_id))
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             await pubsub.close()
-        except Exception:
-            pass

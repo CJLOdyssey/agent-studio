@@ -20,8 +20,9 @@ def client():
          patch("virtual_team.database.init_db", new_callable=AsyncMock), \
          patch("virtual_team.repository.seed_default_agents", new_callable=AsyncMock), \
          patch("virtual_team.rate_limit.get_redis", return_value=mock_redis):
-        from virtual_team.app import app
         from fastapi.testclient import TestClient
+
+        from virtual_team.app import app
         yield TestClient(app)
 
 

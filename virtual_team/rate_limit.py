@@ -1,7 +1,6 @@
 """Rate limiting middleware using token-bucket algorithm backed by Redis."""
 
 import time
-from fastapi import Request, HTTPException
 
 from virtual_team.broker import get_redis
 from virtual_team.logging_config import get_logger

@@ -1,14 +1,13 @@
 """Command palette API routes."""
 
 import json
-from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
 
-from virtual_team.logging_config import get_logger
-from virtual_team.database import get_session_factory
 from virtual_team.database import CommandLogDB as CommandLog
+from virtual_team.database import get_session_factory
+from virtual_team.logging_config import get_logger
 from virtual_team.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
 from virtual_team.repository import get_session, update_session_title
 

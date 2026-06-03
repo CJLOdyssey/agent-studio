@@ -1,15 +1,19 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import select, desc
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import desc, select
 
+from virtual_team.database import (
+    AgentConfigDB,
+    ChatMessage,
+    MemoryEntry,
+    ProjectRun,
+    SessionDB,
+    get_session_factory,
+)
 from virtual_team.models import AgentConfig
 from virtual_team.prompts import DIRECT_REPLY_KEYWORD
-from virtual_team.database import (
-    AgentConfigDB, ChatMessage, MemoryEntry, ProjectRun, SessionDB, get_session_factory,
-)
 
 DEFAULT_AGENTS = [
     AgentConfig(
@@ -89,8 +93,8 @@ async def create_session(title: str = "新对话") -> SessionDB:
         obj = SessionDB(
             id=str(uuid4()),
             title=title,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         session.add(obj)
         await session.commit()
@@ -119,7 +123,7 @@ async def update_session_title(session_id: str, title: str) -> SessionDB | None:
         if not obj:
             return None
         obj.title = title
-        obj.updated_at = datetime.now(timezone.utc)
+        obj.updated_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(obj)
         return obj
@@ -163,7 +167,7 @@ async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[Proj
         runs = list(result.scalars().all())
         grouped: dict[str, list[ProjectRun]] = {}
         for run in runs:
-            grouped.setdefault(run.session_id, []).append(run)
+            grouped.setdefault(run.session_id or "", []).append(run)
         return grouped
 
 
@@ -199,7 +203,7 @@ async def create_memory_entry(
             content_type=content_type,
             summary=summary,
             details=details,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(obj)
         await session.commit()
@@ -237,8 +241,8 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
         session_id=session_id,
         requirement=requirement,
         status="pending",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     factory = get_session_factory()
     async with factory() as session:
@@ -247,7 +251,7 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
         if session_id:
             sess = await session.get(SessionDB, session_id)
             if sess:
-                sess.updated_at = datetime.now(timezone.utc)
+                sess.updated_at = datetime.now(UTC)
                 await session.commit()
     return run_id
 
@@ -258,7 +262,7 @@ async def update_run_status(run_id: str, status: str):
         run = await session.get(ProjectRun, run_id)
         if run:
             run.status = status
-            run.updated_at = datetime.now(timezone.utc)
+            run.updated_at = datetime.now(UTC)
             await session.commit()
 
 
@@ -270,7 +274,7 @@ async def save_message(run_id: str, role: str, agent_name: str, content: str, ro
         agent_name=agent_name,
         content=content,
         round_number=round_number,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     factory = get_session_factory()
     async with factory() as session:
@@ -295,7 +299,7 @@ async def update_run_result(
             run.review = review
             run.approved = approved
             run.status = status
-            run.updated_at = datetime.now(timezone.utc)
+            run.updated_at = datetime.now(UTC)
             await session.commit()
 
 
@@ -341,7 +345,7 @@ async def get_active_agent_configs() -> list[AgentConfigDB]:
     async with factory() as session:
         stmt = (
             select(AgentConfigDB)
-            .where(AgentConfigDB.is_active == True)
+            .where(AgentConfigDB.is_active)
             .order_by(AgentConfigDB.order, AgentConfigDB.created_at)
         )
         result = await session.execute(stmt)
@@ -398,8 +402,8 @@ async def create_agent_config(
         is_active=is_active,
         is_approver=is_approver,
         icon=icon,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     factory = get_session_factory()
     async with factory() as session:
@@ -441,7 +445,7 @@ async def update_agent_config(
             config.model = model
         if temperature is not None:
             config.temperature = temperature
-        config.updated_at = datetime.now(timezone.utc)
+        config.updated_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(config)
     return config
@@ -476,8 +480,8 @@ async def seed_default_agents():
                 is_active=agent.is_active,
                 is_approver=agent.is_approver,
                 icon=agent.icon,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(db_agent)
         await session.commit()
@@ -487,8 +491,8 @@ async def seed_default_agents():
 # Enterprise API Key Vault CRUD
 # ═══════════════════════════════════════════════════════════════════════════════
 
-from virtual_team.database import UserApiKey, KeyUsageLog
-from virtual_team.key_vault import encrypt_api_key, decrypt_api_key, mask_api_key
+from virtual_team.database import KeyUsageLog, UserApiKey
+from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
 
 
 async def create_api_key(
@@ -508,7 +512,7 @@ async def create_api_key(
             result = await session.execute(
                 select(UserApiKey).where(
                     UserApiKey.user_id == user_id,
-                    UserApiKey.is_default == True,
+                    UserApiKey.is_default,
                 )
             )
             for row in result.scalars().all():
@@ -572,14 +576,14 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
         stmt = select(UserApiKey).where(
             UserApiKey.id == key_id,
             UserApiKey.user_id == user_id,
-            UserApiKey.is_active == True,
+            UserApiKey.is_active,
         )
         result = await session.execute(stmt)
         row = result.scalar_one_or_none()
         if not row:
             return None
 
-        row.last_used_at = datetime.now(timezone.utc)
+        row.last_used_at = datetime.now(UTC)
         await session.commit()
 
         return {
@@ -597,8 +601,8 @@ async def get_default_api_key(user_id: str) -> dict | None:
     async with factory() as session:
         stmt = select(UserApiKey).where(
             UserApiKey.user_id == user_id,
-            UserApiKey.is_active == True,
-            UserApiKey.is_default == True,
+            UserApiKey.is_active,
+            UserApiKey.is_default,
         )
         result = await session.execute(stmt)
         row = result.scalar_one_or_none()
@@ -606,7 +610,7 @@ async def get_default_api_key(user_id: str) -> dict | None:
             # No default set — use the first active key
             stmt = select(UserApiKey).where(
                 UserApiKey.user_id == user_id,
-                UserApiKey.is_active == True,
+                UserApiKey.is_active,
             ).order_by(UserApiKey.created_at).limit(1)
             result = await session.execute(stmt)
             row = result.scalar_one_or_none()
@@ -614,7 +618,7 @@ async def get_default_api_key(user_id: str) -> dict | None:
         if not row:
             return None
 
-        row.last_used_at = datetime.now(timezone.utc)
+        row.last_used_at = datetime.now(UTC)
         await session.commit()
 
         return {
@@ -660,14 +664,14 @@ async def update_api_key(
                 result = await session.execute(
                     select(UserApiKey).where(
                         UserApiKey.user_id == user_id,
-                        UserApiKey.is_default == True,
+                        UserApiKey.is_default,
                         UserApiKey.id != key_id,
                     )
                 )
                 for other in result.scalars().all():
                     other.is_default = False
 
-        row.updated_at = datetime.now(timezone.utc)
+        row.updated_at = datetime.now(UTC)
         await session.commit()
 
         return {
@@ -775,7 +779,7 @@ async def get_key_usage_stats(user_id: str) -> dict:
         from sqlalchemy import func
 
         # Today's stats
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         stmt_today = (
             select(
                 func.count(KeyUsageLog.id).label("requests"),

@@ -8,18 +8,14 @@ Single-agent task uses LangGraph's agent graph with:
 """
 
 import asyncio
+import contextlib
 import logging
 import os
-import time
 
-from virtual_team.broker import celery_app
+from virtual_team.broker import celery_app, publish_run_message
 from virtual_team.config import load_config
-from virtual_team.broker import publish_run_message
 from virtual_team.repository import (
-    create_run,
-    get_active_agent_configs,
     get_agent_config,
-    get_run,
     get_run_messages,
     get_session_memories,
     save_message,
@@ -148,7 +144,7 @@ async def _run_mock_discussion(requirement: str, run_id: str, session_id: str | 
         "正在分析需求...",
         "根据分析，这是一个标准的软件开发需求。需要明确输入输出和边界条件。",
         "建议采用模块化设计，优先实现核心功能。",
-        f"需求分析完成。请提供更多细节或确认开始开发。",
+        "需求分析完成。请提供更多细节或确认开始开发。",
     ]
     for msg in messages:
         await emitter._emit("Agent", msg)
@@ -195,13 +191,11 @@ async def _run_agent_pipeline(
 
     # 3. Load agent system prompt
     system_prompt = "你是一个智能助手，负责理解用户需求并完成任务。"
-    agent_name = "Agent"
     if agent_id:
         try:
             ac = await get_agent_config(agent_id)
             if ac:
                 system_prompt = ac.system_prompt
-                agent_name = ac.name
                 if ac.model:
                     effective_model = ac.model
         except Exception:
@@ -221,7 +215,7 @@ async def _run_agent_pipeline(
             pass
 
     # 5. Build agent graph with frontend-provided credentials
-    from virtual_team.agent_graph import SingleAgentGraph, DEFAULT_TOOLS
+    from virtual_team.agent_graph import DEFAULT_TOOLS, SingleAgentGraph
 
     graph = SingleAgentGraph(
         model=effective_model,
@@ -312,6 +306,7 @@ def run_agent(
     """
     logger.info("LangGraph agent task | run=%s | session=%s | agent=%s", run_id, session_id, agent_id)
 
+    assert run_id is not None, "run_id must be provided"
     try:
         return _run_async(_run_agent_pipeline(
             requirement, run_id, session_id, agent_id,
@@ -341,10 +336,8 @@ def run_agent(
                     "review": "LangGraph fallback",
                 }))
                 if session_id:
-                    try:
+                    with contextlib.suppress(Exception):
                         _run_async(_save_output_memories(session_id, run_id, output.response, {}))
-                    except Exception:
-                        pass
                 return {"run_id": run_id, "status": "completed", "fallback": True}
             except Exception as mock_exc:
                 logger.exception("Mock fallback also failed for run=%s", run_id)

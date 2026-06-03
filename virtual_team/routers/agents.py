@@ -132,4 +132,6 @@ async def toggle_agent(agent_id: str):
         if not active_approvers:
             raise HTTPException(status_code=400, detail="不能停用唯一的活跃审批者")
     updated = await update_agent_config(id=agent_id, is_active=not target.is_active)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Agent not found")
     return {"id": updated.id, "is_active": updated.is_active}

@@ -3,7 +3,7 @@ import pytest
 
 pytest.importorskip("langchain_openai", reason="langchain-openai not installed")
 
-from virtual_team.agent_graph import AgentState, DEFAULT_TOOLS
+from virtual_team.agent_graph import DEFAULT_TOOLS, AgentState
 
 
 class TestAgentState:

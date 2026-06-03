@@ -2,10 +2,9 @@ import json
 import logging
 import os
 import sys
-from typing import Optional
 
 
-def get_logger(name: str, level: Optional[int] = None) -> logging.Logger:
+def get_logger(name: str, level: int | None = None) -> logging.Logger:
     """Get a logger with consistent formatting for the virtual_team package.
 
     Usage:
@@ -23,10 +22,7 @@ def get_logger(name: str, level: Optional[int] = None) -> logging.Logger:
         return logger
 
     log_format = os.environ.get("LOG_FORMAT", "text").lower()
-    if log_format == "json":
-        handler = _json_handler()
-    else:
-        handler = _text_handler()
+    handler = _json_handler() if log_format == "json" else _text_handler()
 
     if level is not None:
         logger.setLevel(level)

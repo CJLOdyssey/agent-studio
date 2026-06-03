@@ -9,8 +9,9 @@ Run:
 """
 
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 USER_ID = "test-user-001"
@@ -131,7 +132,7 @@ class TestScenario1_FirstVisit:
     def test_create_key_and_mask(self, client):
         """TC-1.5: Key created, plaintext NEVER in response."""
         secret = "sk-test-demo-key-000000"
-        mock_key = _mock_key_response(key_id="k-101", masked="sk-...0000")
+        _mock_key_response(key_id="k-101", masked="sk-...0000")
 
         with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as m:
             m.return_value = MagicMock(
@@ -172,7 +173,7 @@ class TestScenario1_FirstVisit:
 
     def test_create_second_key(self, client):
         """TC-1.7: Second key as non-default."""
-        mock_key = _mock_key_response(key_id="k-202", provider="openai",
+        _mock_key_response(key_id="k-202", provider="openai",
                                       label="OpenAI Backup", is_default=False)
         m = MagicMock(id="k-202", provider="openai", label="OpenAI Backup",
                       encrypted_key="enc-2", models="gpt-4o",
@@ -496,7 +497,7 @@ class TestSecurity:
         """🔒 Plaintext key must never appear in any list/get response."""
         secret = "sk-top-secret-key-xyz789"
 
-        mock_key = _mock_key_response(key_id="k-sec", masked="sk-...z789")
+        _mock_key_response(key_id="k-sec", masked="sk-...z789")
         with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as m:
             m.return_value = MagicMock(
                 id="k-sec", provider="openai", label="Secret Key",

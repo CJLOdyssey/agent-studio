@@ -1,11 +1,11 @@
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     PM = "pm"
     PROGRAMMER = "programmer"
     TESTER = "tester"
@@ -31,13 +31,13 @@ class AgentConfig(BaseModel):
     is_active: bool = Field(default=True)
     is_approver: bool = Field(default=False)
     icon: str = Field(default="🤖", max_length=8)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class Message(BaseModel):
     role: str  # Now a string (role_identifier), not enum
     content: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     round_number: int = Field(default=1, ge=1)
 
     @field_validator("content")
@@ -49,7 +49,7 @@ class Message(BaseModel):
         return stripped
 
 
-class ConversationStatus(str, Enum):
+class ConversationStatus(StrEnum):
     IN_PROGRESS = "in_progress"
     CONVERGED = "converged"
     MAX_ROUNDS_REACHED = "max_rounds_reached"
@@ -120,7 +120,7 @@ class TeamOutput(BaseModel):
     code: str
     review: str
     approved: bool = False
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     conversation_rounds: list[ConversationRound] = Field(default_factory=list)
 
 

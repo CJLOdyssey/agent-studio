@@ -1,17 +1,16 @@
 """Attachment API routes."""
 
 import os
-import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from virtual_team.logging_config import get_logger
-from virtual_team.database import get_session_factory
 from virtual_team.database import AttachmentDB as Attachment
+from virtual_team.database import get_session_factory
+from virtual_team.logging_config import get_logger
 from virtual_team.models import AttachmentResponse
 from virtual_team.repository import get_session
 
@@ -104,7 +103,7 @@ async def upload_attachment(
         session_id=session_id,
         run_id=run_id,
         has_extracted_text=bool(extracted),
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 

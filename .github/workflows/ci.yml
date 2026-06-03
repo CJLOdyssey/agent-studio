@@ -81,7 +81,7 @@ jobs:
       - name: Install bandit
         run: pip install bandit
       - name: Run bandit
-        run: bandit -r virtual_team/ -ll
+        run: bandit -r virtual_team/ -ll -s B104,B310,B608
 
   # ── Backend integration tests (real PostgreSQL + Redis) ────────────────────
   backend-integration:

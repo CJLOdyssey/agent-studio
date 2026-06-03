@@ -7,15 +7,14 @@ signed with HS256 using a server-side secret (AUTH_SECRET env var).
 Public routes (health, WebSocket upgrade) are exempt from authentication.
 """
 
-import os
-import time
+import base64
 import hashlib
 import hmac
 import json
-import base64
-from typing import Optional
+import os
+import time
 
-from fastapi import Request, HTTPException
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -46,7 +45,7 @@ def _base64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data)
 
 
-def decode_jwt(token: str, secret: str) -> Optional[dict]:
+def decode_jwt(token: str, secret: str) -> dict | None:
     """Decode and verify a JWT token.
 
     Returns the payload dict if valid, None otherwise.

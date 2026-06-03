@@ -7,10 +7,10 @@ restarts and can be resumed from where they left off.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Text, String, DateTime, Integer, ForeignKey
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from virtual_team.database import Base, get_session_factory
@@ -33,7 +33,7 @@ class CheckpointDB(Base):
     step_index: Mapped[int] = mapped_column(Integer, default=0)
     agent_state: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-serialized state
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
 
 
@@ -88,7 +88,7 @@ async def load_latest_checkpoint(session_id: str) -> AgentCheckpoint | None:
     """Load the most recent checkpoint for a session."""
     factory = get_session_factory()
     async with factory() as session:
-        from sqlalchemy import select, desc
+        from sqlalchemy import desc, select
         stmt = (
             select(CheckpointDB)
             .where(CheckpointDB.session_id == session_id)
