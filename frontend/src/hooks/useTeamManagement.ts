@@ -50,7 +50,7 @@ export function useTeamManagement(
     const newTeam: Team = {
       id: `team-${Date.now()}`,
       name: `新团队 ${teams.length + 1}`,
-      isExpanded: true,
+      isExpanded: false,
       agents: [],
     };
     setTeams(prev => [...prev, newTeam]);
