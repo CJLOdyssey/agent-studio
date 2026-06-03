@@ -14,5 +14,6 @@ nginx.conf
 .env
 .github/
 scripts/
+!scripts/entrypoint.sh
 README.md
 设计思路.txt
