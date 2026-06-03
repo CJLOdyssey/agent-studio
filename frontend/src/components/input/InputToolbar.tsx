@@ -19,6 +19,7 @@ interface InputToolbarProps {
   selectedModel: string;
   onModelChange: (id: string) => void;
   onConfigureModels?: () => void;
+  onExecuteCommand?: (commandId: string) => void;
   commands?: CommandOption[];
   placeholder?: string;
   maxLength?: number;
@@ -32,6 +33,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   selectedModel,
   onModelChange,
   onConfigureModels,
+  onExecuteCommand,
   commands = [],
   placeholder,
   maxLength = 10000,
@@ -52,21 +54,35 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
 
   const palette = useCommandPalette(commands);
 
+  const handleCommandSelect = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= palette.filtered.length) return;
+      const cmd = palette.filtered[index];
+      if (cmd.source === 'local' && onExecuteCommand) {
+        palette.close();
+        onExecuteCommand(cmd.id);
+        return;
+      }
+      const replacement = palette.selectCommand(index);
+      if (replacement) composer.setValue(replacement);
+    },
+    [palette, composer, onExecuteCommand],
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       // Let palette intercept first (arrow keys, Enter, Escape when open)
       const handled = palette.handleKeyDown(e, composer.value);
       if (handled) {
         if (e.key === 'Enter' && !e.shiftKey && palette.open) {
-          const replacement = palette.selectCommand(palette.activeIndex);
-          if (replacement) composer.setValue(replacement);
+          handleCommandSelect(palette.activeIndex);
         }
         return;
       }
       // Fall through to composer (Enter to send, etc.)
       composer.handleKeyDown(e);
     },
-    [palette, composer],
+    [palette, composer, handleCommandSelect],
   );
 
   const handleChange = useCallback(
@@ -120,15 +136,13 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   );
 
   return (
-    <div className="devagents-input-wrapper">
+    <div className="devagents-input-container">
+      <div className="devagents-input-wrapper">
       {palette.open && (
         <CommandDropdown
           commands={palette.filtered}
           activeIndex={palette.activeIndex}
-          onSelect={(index) => {
-            const replacement = palette.selectCommand(index);
-            if (replacement) composer.setValue(replacement);
-          }}
+          onSelect={handleCommandSelect}
           onHover={palette.setActiveIndex}
           onClose={palette.close}
         />
@@ -161,6 +175,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           <Send size={14} />
         </button>
       </div>
+    </div>
     </div>
   );
 });

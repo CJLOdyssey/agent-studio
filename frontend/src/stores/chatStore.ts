@@ -15,6 +15,7 @@ interface ChatState {
   result: RunResult | null;
   currentRole: string | null;
   error: string | null;
+  streamingId: string | null;
 
   /**
    * @deprecated Use `useAgents()` from `@/api/hooks` (React Query) as the single source of truth.
@@ -27,8 +28,9 @@ interface ChatState {
 
   wsStatus: WsConnectionStatus;
 
-  submitRequirement: (requirement: string, session_id?: string) => Promise<void>;
+  submitRequirement: (requirement: string, session_id?: string, agent_id?: string) => Promise<void>;
   restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
+  loadConversation: (messages: ChatMessage[]) => void;
   addMessage: (msg: WsMessage) => void;
   setStatus: (status: AppStatus) => void;
   setResult: (result: RunResult) => void;
@@ -48,6 +50,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   result: null,
   currentRole: null,
   error: null,
+  streamingId: null,
   agents: [],
   agentsLoaded: false,
   wsStatus: 'disconnected',
@@ -64,13 +67,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
-  submitRequirement: async (requirement: string, session_id?: string) => {
-    const prevRunId = get().currentRunId;
+  loadConversation: (messages: ChatMessage[]) => {
+    set({
+      messages,
+      status: 'idle',
+      error: null,
+      currentRole: messages.length > 0 ? messages[messages.length - 1].role : null,
+    });
+  },
+
+  submitRequirement: async (requirement: string, session_id?: string, agent_id?: string) => {
+    const prevState = get();
+    const prevRunId = prevState.currentRunId;
     if (prevRunId) {
       disconnectRun(prevRunId);
     }
 
-    // Resolve API key from the server-side enterprise vault
+    // Use stored session_id if not explicitly provided
+    const effectiveSessionId = session_id || prevState.currentSessionId || undefined;
+
+    // BYOK: resolve user's API key from the key vault
     let keyId: string | undefined;
     let model: string | undefined;
     try {
@@ -81,7 +97,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
         model = defaultKey.models[0];
       }
     } catch {
-      // No keys in vault — server will use env var fallback
+      // Key vault unavailable
+    }
+
+    if (!keyId) {
+      set({ status: 'error', error: '请先在设置中配置 API Key', wsStatus: 'disconnected' });
+      return;
     }
 
     const userMsg: ChatMessage = {
@@ -102,12 +123,48 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      const { run_id } = await submitRequirement(requirement, session_id, keyId, model);
-      set({ currentRunId: run_id, currentSessionId: session_id || null, status: 'running', wsStatus: 'connecting' });
+      const resp = await submitRequirement(requirement, effectiveSessionId, keyId, model, agent_id);
+      const run_id = resp.run_id;
+      const returnedSessionId = resp.session_id || effectiveSessionId || null;
+      set({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
 
       connectRun(run_id, {
         onMessage: (data) => {
           const msg = data as unknown as WsMessage;
+
+          if (msg.type === 'stream') {
+            const chunk = msg.content || '';
+            if (!chunk) return;
+            set((state) => {
+              if (state.streamingId) {
+                return {
+                  messages: state.messages.map(m =>
+                    m.id === state.streamingId
+                      ? { ...m, content: m.content + chunk }
+                      : m,
+                  ),
+                  currentRole: msg.agent_name || 'Agent',
+                  wsStatus: 'connected' as WsConnectionStatus,
+                };
+              }
+              const newId = crypto.randomUUID?.() || uid();
+              return {
+                streamingId: newId,
+                messages: [...state.messages, {
+                  id: newId,
+                  role: 'agent',
+                  agent_name: msg.agent_name || 'Agent',
+                  content: chunk,
+                  round_number: 0,
+                  created_at: new Date().toISOString(),
+                }],
+                currentRole: msg.agent_name || 'Agent',
+                wsStatus: 'connected' as WsConnectionStatus,
+              };
+            });
+            return;
+          }
+
           if (msg.type === 'message') {
             const m: ChatMessage = {
               id: crypto.randomUUID?.() || uid(),
@@ -122,24 +179,59 @@ export const useChatStore = create<ChatState>((set, get) => ({
               currentRole: msg.role!,
               wsStatus: 'connected' as WsConnectionStatus,
             }));
-          } else if (msg.type === 'status') {
+            return;
+          }
+
+          if (msg.type === 'status') {
             if (msg.status === 'error') {
-              set({ status: 'error', error: msg.error ?? '未知错误', wsStatus: 'disconnected' });
+              set({ status: 'error', error: msg.error ?? '未知错误' });
             }
-          } else if (msg.type === 'result') {
-            set({
-              status: 'completed',
-              currentRole: null,
-              wsStatus: 'disconnected',
-              result: {
-                requirement: '',
-                pm_document: msg.pm_document ?? '',
-                code: msg.code ?? '',
-                review: msg.review ?? '',
-                approved: msg.approved ?? false,
-                status: msg.status ?? 'completed',
-              },
+            return;
+          }
+
+          if (msg.type === 'result') {
+            const codeContent = msg.code ?? '';
+            set((state) => {
+              let msgs = state.messages;
+              if (state.streamingId && codeContent) {
+                msgs = state.messages.map(m =>
+                  m.id === state.streamingId ? { ...m, content: codeContent } : m,
+                );
+              } else if (!state.streamingId && codeContent) {
+                // Avoid duplicating the agent message already added by 'message' type
+                const lastMsg = state.messages[state.messages.length - 1];
+                const lastRole = lastMsg?.role?.toLowerCase();
+                const needsNew = !lastMsg || (lastRole !== 'agent' && lastRole !== 'system');
+                if (needsNew) {
+                  msgs = [...state.messages, {
+                    id: crypto.randomUUID?.() || uid(),
+                    role: 'agent',
+                    agent_name: 'Agent',
+                    content: codeContent,
+                    round_number: 0,
+                    created_at: new Date().toISOString(),
+                  }];
+                }
+              }
+              return {
+                streamingId: null,
+                messages: msgs,
+                status: 'completed',
+                currentRole: null,
+                result: {
+                  requirement: '',
+                  pm_document: msg.pm_document ?? '',
+                  code: codeContent,
+                  review: msg.review ?? '',
+                  approved: msg.approved ?? false,
+                  status: msg.status ?? 'completed',
+                },
+              };
             });
+            if (get().currentRunId) {
+              disconnectRun(get().currentRunId!);
+            }
+            return;
           }
         },
         onStatusChange: (wsStatus: WsConnectionStatus) => {
@@ -180,6 +272,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       result: null,
       currentRole: null,
       error: null,
+      streamingId: null,
       wsStatus: 'disconnected',
     });
   },

@@ -42,7 +42,10 @@ celery_app.autodiscover_tasks(["virtual_team.tasks"])
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
-_pool: AsyncRedis | None = None
+# Per-event-loop connection pool — Celery prefork workers create a new event
+# loop via asyncio.run() in each child process, so a single global pool bound
+# to the parent's loop becomes invalid ("Event loop is closed").
+_pools: dict[int, AsyncRedis] = {}
 CHANNEL_PREFIX = "run:"
 
 
@@ -51,9 +54,20 @@ def _channel(run_id: str) -> str:
 
 
 def get_redis() -> AsyncRedis:
-    global _pool
-    if _pool is None:
-        _pool = AsyncRedis.from_url(
+    """Return an AsyncRedis pool for the current event loop.
+
+    Each asyncio event loop gets its own connection pool so that Celery's
+    prefork model (where every asyncio.run() call creates a fresh loop) works
+    correctly.
+    """
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    loop_id = id(loop)
+
+    pool = _pools.get(loop_id)
+    if pool is None:
+        pool = AsyncRedis.from_url(
             REDIS_URL,
             decode_responses=True,
             socket_keepalive=True,
@@ -63,14 +77,18 @@ def get_redis() -> AsyncRedis:
             # NOTE: do NOT set socket_timeout — pubsub is a long-lived streaming
             # connection that must remain open indefinitely for WebSocket push.
         )
-    return _pool
+        _pools[loop_id] = pool
+    return pool
 
 
 async def close_redis():
-    global _pool
-    if _pool is not None:
-        await _pool.aclose()
-        _pool = None
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    loop_id = id(loop)
+    pool = _pools.pop(loop_id, None)
+    if pool is not None:
+        await pool.aclose()
 
 
 async def publish_run_message(run_id: str, message: dict):

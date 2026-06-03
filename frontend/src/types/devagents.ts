@@ -58,6 +58,7 @@ export interface Conversation {
   messages: Message[];
   createdAt: string;
   updatedAt: string;
+  agentId?: string;
 }
 
 // 消息类型

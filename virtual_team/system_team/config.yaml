@@ -1,0 +1,27 @@
+# 系统团队配置
+team:
+  name: "系统团队"
+  description: "负责工具生成、技能管理的核心团队"
+  version: "1.0.0"
+
+agents:
+  - id: tools_agent
+    name: "工具生成 Agent"
+    role: "负责生成和管理可执行工具"
+    type: tools
+    config_path: "./tools_agent/config.yaml"
+    
+  - id: skill_agent
+    name: "技能生成 Agent"
+    role: "负责生成和管理 SKILL.md 技能文件"
+    type: skills
+    config_path: "./skill_agent/config.yaml"
+
+shared:
+  tools_path: "./shared/tools"
+  skills_path: "./shared/skills"
+  prompts_path: "./shared/prompts"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

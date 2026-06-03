@@ -83,15 +83,6 @@
   max-height: 50vh;
 }
 
-.devagents-home-input {
-  width: 100%;
-}
-
-.devagents-home-input .devagents-textarea {
-  min-height: 72px;
-  padding: var(--sp-5) var(--sp-6);
-}
-
 /* Typing cursor */
 .typing-cursor {
   display: inline-block;

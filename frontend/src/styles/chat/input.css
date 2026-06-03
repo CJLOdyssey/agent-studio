@@ -1,13 +1,9 @@
 /* Input area */
-.devagents-input-area {
+.devagents-input-container {
   padding: var(--sp-4) var(--sp-6) var(--sp-5);
-  background: var(--da-bg-primary);
-  flex-shrink: 0;
-}
-
-.devagents-input-inner {
   max-width: 800px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .devagents-input-wrapper {

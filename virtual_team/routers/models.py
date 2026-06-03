@@ -1,16 +1,26 @@
 """Available models API route.
 
 Returns the list of models that users can select in the frontend.
-Models are configured server-side via environment variables — API keys
-never leave the server.
+Models are read from the user_api_keys table — each active key contributes
+its configured models to the available list.
 """
 
-import os
-
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from virtual_team.auth import get_user_id
+from virtual_team.logging_config import get_logger
+from virtual_team.repository import get_api_keys
+
+logger = get_logger(__name__)
 router = APIRouter(tags=["models"])
+
+PROVIDER_LABELS = {
+    "openai": "OpenAI",
+    "deepseek": "DeepSeek",
+    "anthropic": "Anthropic",
+    "custom": "Custom",
+}
 
 
 class ModelInfo(BaseModel):
@@ -19,39 +29,33 @@ class ModelInfo(BaseModel):
     provider: str
 
 
-def _get_available_models() -> list[ModelInfo]:
-    """Build model list from environment configuration."""
+async def _get_models_from_keys(user_id: str) -> list[ModelInfo]:
+    """Build model list from user's active API keys in the database."""
+    try:
+        keys = await get_api_keys(user_id)
+    except Exception as e:
+        logger.warning("Failed to load keys for model list: %s", e)
+        return []
+
+    seen: set[str] = set()
     models: list[ModelInfo] = []
 
-    # DeepSeek models (available when DEEPSEEK_API_KEY is set)
-    if os.environ.get("DEEPSEEK_API_KEY"):
-        models.extend([
-            ModelInfo(id="deepseek-chat", label="DeepSeek Chat", provider="DeepSeek"),
-            ModelInfo(id="deepseek-reasoner", label="DeepSeek Reasoner", provider="DeepSeek"),
-        ])
-
-    # OpenAI models (available when OPENAI_API_KEY is set)
-    if os.environ.get("OPENAI_API_KEY"):
-        models.extend([
-            ModelInfo(id="gpt-4o", label="GPT-4o", provider="OpenAI"),
-            ModelInfo(id="gpt-4o-mini", label="GPT-4o Mini", provider="OpenAI"),
-        ])
-
-    # Anthropic models (available when ANTHROPIC_API_KEY is set)
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        models.extend([
-            ModelInfo(id="claude-sonnet-4-20250514", label="Claude Sonnet 4", provider="Anthropic"),
-            ModelInfo(id="claude-3-5-haiku-20241022", label="Claude 3.5 Haiku", provider="Anthropic"),
-        ])
-
-    # Fallback: always show DeepSeek as default
-    if not models:
-        models.append(ModelInfo(id="deepseek-chat", label="DeepSeek Chat", provider="DeepSeek"))
+    for k in keys:
+        if not k.get("is_active"):
+            continue
+        provider = k.get("provider", "custom")
+        provider_label = PROVIDER_LABELS.get(provider, provider.title())
+        for model_id in k.get("models", []):
+            if model_id in seen:
+                continue
+            seen.add(model_id)
+            models.append(ModelInfo(id=model_id, label=model_id, provider=provider_label))
 
     return models
 
 
 @router.get("/api/models", response_model=list[ModelInfo])
-async def list_models():
-    """Return available models based on configured API keys."""
-    return _get_available_models()
+async def list_models(request: Request):
+    """Return available models from the user's active API keys."""
+    user_id = get_user_id(request)
+    return await _get_models_from_keys(user_id)

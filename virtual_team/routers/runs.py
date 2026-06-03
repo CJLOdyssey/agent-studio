@@ -33,11 +33,13 @@ class RunRequest(BaseModel):
     session_id: str | None = None
     key_id: str | None = Field(default=None, description="Vaulted API key ID — server resolves key, never exposes it")
     model: str | None = None
+    agent_id: str | None = None
 
 
 class RunResponse(BaseModel):
     run_id: str
     status: str
+    session_id: str | None = None
 
 
 @router.post("/api/runs", response_model=RunResponse)
@@ -55,6 +57,12 @@ async def create_run(req: RunRequest, request: Request):
     if session_id is None:
         sess = await create_session(title=requirement[:64])
         session_id = sess.id
+    else:
+        existing_sess = await get_session(session_id)
+        if existing_sess is None:
+            logger.warning("session_id=%s not found, creating new session", session_id)
+            sess = await create_session(title=requirement[:64])
+            session_id = sess.id
 
     # ── Resolve API credentials from the enterprise key vault ──────────────
     user_id = get_user_id(request)
@@ -77,10 +85,9 @@ async def create_run(req: RunRequest, request: Request):
     except Exception:
         logger.warning("Key vault lookup failed — falling back to server env var")
 
-    # Fallback to server environment variables
+    # BYOK: no server-side key fallback — user must configure their own key
     if not api_key:
-        api_key = config.api_key
-        api_base = config.api_base
+        raise HTTPException(status_code=400, detail="请先在设置中配置 API Key")
 
     try:
         run_id = await db_create_run(requirement, session_id=session_id)
@@ -101,6 +108,7 @@ async def create_run(req: RunRequest, request: Request):
             requirement=requirement,
             run_id=run_id,
             session_id=session_id,
+            agent_id=req.agent_id,
             api_key=api_key,
             api_base=api_base,
             model=effective_model,
@@ -110,7 +118,7 @@ async def create_run(req: RunRequest, request: Request):
         logger.error("Failed to enqueue task: %s", e, exc_info=True)
         await update_run_status(run_id, "error")
 
-    return RunResponse(run_id=run_id, status="pending")
+    return RunResponse(run_id=run_id, status="pending", session_id=session_id)
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
@@ -180,6 +188,33 @@ async def run_websocket(websocket: WebSocket, run_id: str):
     logger.info("WebSocket connected | run_id=%s", run_id)
     try:
         await websocket.send_json({"type": "status", "status": "connected"})
+
+        # Check if run already completed (race condition: task finished before WS connected)
+        try:
+            run = await get_run(run_id)
+            if run and run.status in ("converged", "error"):
+                messages = await get_messages(run_id)
+                for m in messages:
+                    await websocket.send_json({
+                        "type": "message",
+                        "role": m.role,
+                        "agent_name": m.agent_name,
+                        "content": m.content,
+                        "round_number": m.round_number,
+                    })
+                await websocket.send_json({
+                    "type": "result",
+                    "status": run.status,
+                    "approved": run.approved,
+                    "pm_document": run.pm_document or "",
+                    "code": run.code or "",
+                    "review": run.review or "",
+                })
+                await websocket.close()
+                return
+        except Exception as e:
+            logger.warning("Pre-check run status failed: %s", e)
+
         try:
             async for message in subscribe_run(run_id):
                 try:

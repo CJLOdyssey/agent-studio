@@ -1,0 +1,106 @@
+"""系统团队管理器 - 管理所有 Agent 的生命周期."""
+
+import os
+import yaml
+from pathlib import Path
+from typing import Any
+
+from virtual_team.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+SYSTEM_TEAM_DIR = Path(__file__).parent
+
+
+class AgentManager:
+    def __init__(self, team_config_path: str | None = None):
+        self.config_path = Path(team_config_path) if team_config_path else SYSTEM_TEAM_DIR / "config.yaml"
+        self.config: dict[str, Any] = {}
+        self.agents: dict[str, Any] = {}
+        self._load_config()
+
+    def _load_config(self):
+        if self.config_path.exists():
+            with open(self.config_path, "r", encoding="utf-8") as f:
+                self.config = yaml.safe_load(f) or {}
+            logger.info("Loaded system team config from %s", self.config_path)
+        else:
+            logger.warning("Config not found at %s, using defaults", self.config_path)
+            self.config = {"team": {"name": "系统团队"}, "agents": []}
+
+    def get_team_info(self) -> dict[str, Any]:
+        return self.config.get("team", {})
+
+    def list_agents(self) -> list[dict[str, Any]]:
+        return self.config.get("agents", [])
+
+    def get_agent_config(self, agent_id: str) -> dict[str, Any] | None:
+        agent_def = next((a for a in self.list_agents() if a.get("id") == agent_id), None)
+        if not agent_def:
+            return None
+
+        config_path = SYSTEM_TEAM_DIR / agent_def.get("config_path", "")
+        if config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
+        return {}
+
+    def get_agent_tools(self, agent_id: str) -> list[dict[str, Any]]:
+        tools_dir = SYSTEM_TEAM_DIR / agent_id / "tools"
+        if not tools_dir.exists():
+            return []
+
+        tools = []
+        for py_file in tools_dir.glob("*.py"):
+            if py_file.name.startswith("_"):
+                continue
+            tools.append({
+                "file": py_file.name,
+                "name": py_file.stem,
+                "path": str(py_file),
+            })
+        return tools
+
+    def get_agent_skills(self, agent_id: str) -> list[dict[str, Any]]:
+        skills_dir = SYSTEM_TEAM_DIR / agent_id / "skills"
+        if not skills_dir.exists():
+            return []
+
+        skills = []
+        for md_file in skills_dir.glob("*.md"):
+            if md_file.name.startswith("_"):
+                continue
+            skills.append({
+                "file": md_file.name,
+                "name": md_file.stem,
+                "path": str(md_file),
+            })
+        return skills
+
+    def get_shared_resources(self) -> dict[str, list[str]]:
+        shared_dir = SYSTEM_TEAM_DIR / "shared"
+        if not shared_dir.exists():
+            return {}
+
+        result = {}
+        for sub_dir in ["tools", "skills", "prompts"]:
+            dir_path = shared_dir / sub_dir
+            if dir_path.exists():
+                result[sub_dir] = [f.name for f in dir_path.iterdir() if f.is_file()]
+            else:
+                result[sub_dir] = []
+        return result
+
+    def reload(self):
+        self._load_config()
+        logger.info("System team config reloaded")
+
+
+_manager: AgentManager | None = None
+
+
+def get_system_team_manager() -> AgentManager:
+    global _manager
+    if _manager is None:
+        _manager = AgentManager()
+    return _manager

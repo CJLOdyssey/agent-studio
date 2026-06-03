@@ -3,7 +3,7 @@ import {
   Bot, Users, Plus, Pencil, Trash2, ChevronDown, ChevronRight,
   Sparkles
 } from 'lucide-react';
-import type { Team, Agent, Conversation, Message } from '../../types/devagents';
+import type { Team, Agent, Conversation } from '../../types/devagents';
 import { useTranslation } from 'react-i18next';
 import UserMenu from './sidebar/UserMenu';
 import ConversationsList from './sidebar/ConversationsList';
@@ -16,17 +16,16 @@ interface DevAgentsSidebarProps {
   setEditTeamName: (name: string) => void;
   conversations: Conversation[];
   activeConvId: number | null;
-  homeMessages: Message[];
   isUserMenuOpen: boolean;
   setIsUserMenuOpen: (open: boolean) => void;
   setIsSettingsOpen: (open: boolean) => void;
   setIsApiOpen: (open: boolean) => void;
   setSelectedAgentId: (id: string | null) => void;
   setActiveConvId: (id: number | null) => void;
-  setHomeMessages: (msgs: Message[] | ((prev: Message[]) => Message[])) => void;
   setInputValue: (value: string) => void;
   setConversationKey: (fn: (prev: number) => number) => void;
   setConversations: (fn: (prev: Conversation[]) => Conversation[]) => void;
+  onNewChat: () => void;
   toggleTeam: (teamId: string) => void;
   handleAddTeam: () => void;
   handleAddAgent: (e: React.MouseEvent, teamId: string) => void;
@@ -49,17 +48,15 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
   setEditTeamName,
   conversations,
   activeConvId,
-  homeMessages,
   isUserMenuOpen,
   setIsUserMenuOpen,
   setIsSettingsOpen,
   setIsApiOpen,
   setSelectedAgentId,
   setActiveConvId,
-  setHomeMessages,
   setInputValue,
-  setConversationKey,
   setConversations,
+  onNewChat,
   toggleTeam,
   handleAddTeam,
   handleAddAgent,
@@ -78,17 +75,15 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
   const handleConvSelect = useCallback((conv: Conversation) => {
     setSelectedAgentId(null);
     setActiveConvId(conv.id);
-    setHomeMessages(conv.messages);
     setInputValue('');
-  }, [setSelectedAgentId, setActiveConvId, setHomeMessages, setInputValue]);
+  }, [setSelectedAgentId, setActiveConvId, setInputValue]);
 
   const handleConvDelete = useCallback((convId: number) => {
     setConversations(prev => prev.filter(c => c.id !== convId));
     if (activeConvId === convId) {
       setActiveConvId(null);
-      setHomeMessages([]);
     }
-  }, [activeConvId, setConversations, setActiveConvId, setHomeMessages]);
+  }, [activeConvId, setConversations, setActiveConvId]);
 
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), [setIsSidebarOpen]);
 
@@ -110,20 +105,7 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
       </div>
 
       <div className="devagents-sidebar-content">
-        <button className="devagents-sprint-btn" onClick={() => {
-            if (homeMessages.length > 0 && activeConvId) {
-              setConversations(prev => prev.map(c =>
-                c.id === activeConvId
-                  ? { ...c, messages: homeMessages, updatedAt: new Date().toISOString() }
-                  : c
-              ));
-            }
-            setSelectedAgentId(null);
-            setActiveConvId(null);
-            setHomeMessages([]);
-            setInputValue('');
-            setConversationKey(prev => prev + 1);
-          }}>
+        <button className="devagents-sprint-btn" onClick={onNewChat}>
           <Sparkles size={16} />
           <span>{t('sidebar.newChat')}</span>
         </button>

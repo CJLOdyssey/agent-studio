@@ -1,0 +1,52 @@
+import api from './instance';
+import type { SessionDetail, SessionItem, ProjectRun } from '../../types';
+
+export async function listSessions(limit = 50): Promise<SessionItem[]> {
+  const { data } = await api.get('/sessions', { params: { limit } });
+  return data;
+}
+
+export async function getSessionDetail(sessionId: string): Promise<SessionDetail> {
+  const { data } = await api.get(`/sessions/${sessionId}`);
+  return data;
+}
+
+export async function createSession(title = '新对话'): Promise<{ id: string; title: string }> {
+  const { data } = await api.post('/sessions', { title });
+  return data;
+}
+
+export async function renameSession(sessionId: string, title: string): Promise<void> {
+  await api.put(`/sessions/${sessionId}`, { title });
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  await api.delete(`/sessions/${sessionId}`);
+}
+
+export async function deleteMemory(memoryId: string): Promise<void> {
+  await api.delete(`/memories/${memoryId}`);
+}
+
+export async function exportSessionMemories(sessionId: string, format: 'json' | 'md'): Promise<Blob> {
+  const { data } = await api.get(`/sessions/${sessionId}/memories/export`, {
+    params: { format },
+    responseType: 'blob',
+  });
+  return data;
+}
+
+export async function getRun(runId: string): Promise<ProjectRun> {
+  const { data } = await api.get(`/runs/${runId}`);
+  return data;
+}
+
+export async function listRuns(limit = 20, offset?: number): Promise<ProjectRun[]> {
+  const { data } = await api.get('/runs', { params: { limit, ...(offset !== undefined && { offset }) } });
+  return data;
+}
+
+export async function healthCheck(): Promise<Record<string, unknown>> {
+  const { data } = await api.get('/health');
+  return data;
+}

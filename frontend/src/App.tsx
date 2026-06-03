@@ -51,7 +51,7 @@ function logError(error: unknown) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AppInit />
         <ToastProvider>
           <Suspense fallback={<div className="route-loading" aria-label="Loading page">Loading...</div>}>

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Wrench, Server, Sparkles } from 'lucide-react';
+import { X, Wrench, Server, Sparkles, Wand2 } from 'lucide-react';
 import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/devagents';
 import { useTranslation } from 'react-i18next';
 import { useItemList } from '../../../hooks/useItemList';
 import ConfigItemList from './ConfigItemList';
+import ToolGenerator from './ToolGenerator';
+import SkillGenerator from './SkillGenerator';
 
 interface Props {
   agent: Agent;
@@ -11,45 +13,9 @@ interface Props {
   onClose: () => void;
 }
 
-// ── Tools: 开发人员定义，用户勾选 ──
-// 每个 tool 对应后端一个真实的 function call schema
-const PRESET_TOOLS: Omit<AgentTool, 'enabled'>[] = [
-  { id: 'read_file',     name: '读取文件',     description: '读取工作区文件内容' },
-  { id: 'write_file',    name: '写入文件',     description: '创建或修改工作区文件' },
-  { id: 'list_files',    name: '列出文件',     description: '列出目录中的文件列表' },
-  { id: 'search_code',   name: '搜索代码',     description: '在代码库中搜索符号和文本' },
-  { id: 'run_command',   name: '终端命令',     description: '执行 Shell 命令并返回输出' },
-  { id: 'web_search',    name: '网络搜索',     description: '搜索互联网获取最新信息' },
-  { id: 'web_fetch',     name: '网页抓取',     description: '抓取指定 URL 的网页内容' },
-  { id: 'run_tests',     name: '运行测试',     description: '执行测试套件并返回结果' },
-  { id: 'git_diff',      name: 'Git 差异',     description: '查看代码变更差异' },
-  { id: 'lint_check',    name: '代码检查',     description: '运行 Linter 检查代码质量' },
-];
-
-// ── MCP: 标准协议，连接外部服务 ──
-// 用户可添加自己的 MCP server URL
-const PRESET_MCP: Omit<AgentMCP, 'enabled'>[] = [
-  { id: 'filesystem',  name: '文件系统',    serverUrl: 'http://localhost:8100/mcp' },
-  { id: 'github',      name: 'GitHub',      serverUrl: 'https://api.github.com/mcp' },
-  { id: 'postgres',    name: 'PostgreSQL',  serverUrl: 'http://localhost:8101/mcp' },
-  { id: 'brave-search', name: 'Brave 搜索', serverUrl: 'https://api.search.brave.com/mcp' },
-  { id: 'puppeteer',   name: '浏览器操作',  serverUrl: 'http://localhost:8102/mcp' },
-];
-
-// ── Skills: Prompt 模板，用户可自定义 ──
-// 本质是预制的 system prompt 片段，告诉 LLM 如何执行特定任务
-const PRESET_SKILLS: Omit<AgentSkill, 'enabled'>[] = [
-  { id: 'code-review',    name: '代码审查',     description: '审查代码质量、安全性和可维护性' },
-  { id: 'test-gen',       name: '测试生成',     description: '自动生成单元测试和集成测试' },
-  { id: 'refactor',       name: '代码重构',     description: '重构代码结构和命名' },
-  { id: 'api-design',     name: 'API 设计',     description: '设计 RESTful API 接口规范' },
-  { id: 'db-design',      name: '数据库设计',   description: '设计数据库表结构和索引' },
-  { id: 'ui-design',      name: 'UI 设计',      description: '设计用户界面和交互流程' },
-  { id: 'docs-gen',       name: '文档生成',     description: '生成 API 文档和 README' },
-  { id: 'security-audit', name: '安全审计',     description: '检查代码安全漏洞和风险' },
-  { id: 'perf-optimize',  name: '性能优化',     description: '分析和优化系统性能瓶颈' },
-  { id: 'debug',          name: '调试排错',     description: '分析错误日志并定位根因' },
-];
+const PRESET_TOOLS: Omit<AgentTool, 'enabled'>[] = [];
+const PRESET_MCP: Omit<AgentMCP, 'enabled'>[] = [];
+const PRESET_SKILLS: Omit<AgentSkill, 'enabled'>[] = [];
 
 export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { t } = useTranslation();
@@ -87,6 +53,8 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const [systemPrompt, setSystemPrompt] = useState(agent.systemPrompt || '');
   const [outputConstraints, setOutputConstraints] = useState(agent.outputConstraints || '');
   const [activeTab, setActiveTab] = useState('system');
+  const [showToolGenerator, setShowToolGenerator] = useState(false);
+  const [showSkillGenerator, setShowSkillGenerator] = useState(false);
 
   useEffect(() => {
     if (agent.tools) tools.setItems(agent.tools);
@@ -185,9 +153,51 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
                 </div>
               </div>
             )}
-            {activeTab === 'tools' && renderList(CTX.tools, tools)}
+            {activeTab === 'tools' && (
+              <>
+                {showToolGenerator ? (
+                  <ToolGenerator
+                    onAdd={(tool) => {
+                      tools.addCustom(() => ({ ...tool, enabled: true } as AgentTool));
+                      setShowToolGenerator(false);
+                    }}
+                    onClose={() => setShowToolGenerator(false)}
+                  />
+                ) : (
+                  <>
+                    <div className="tool-generator-trigger">
+                      <button onClick={() => setShowToolGenerator(true)} className="btn btn-secondary btn-sm">
+                        <Wand2 size={14} /> 用自然语言生成工具
+                      </button>
+                    </div>
+                    {renderList(CTX.tools, tools)}
+                  </>
+                )}
+              </>
+            )}
             {activeTab === 'mcp' && renderList(CTX.mcp, mcp)}
-            {activeTab === 'skills' && renderList(CTX.skills, skills)}
+            {activeTab === 'skills' && (
+              <>
+                {showSkillGenerator ? (
+                  <SkillGenerator
+                    onAdd={(skill) => {
+                      skills.addCustom(() => ({ ...skill, enabled: true } as AgentSkill));
+                      setShowSkillGenerator(false);
+                    }}
+                    onClose={() => setShowSkillGenerator(false)}
+                  />
+                ) : (
+                  <>
+                    <div className="tool-generator-trigger">
+                      <button onClick={() => setShowSkillGenerator(true)} className="btn btn-secondary btn-sm">
+                        <Sparkles size={14} /> 用自然语言生成 Skill
+                      </button>
+                    </div>
+                    {renderList(CTX.skills, skills)}
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
         <div className="modal-footer">

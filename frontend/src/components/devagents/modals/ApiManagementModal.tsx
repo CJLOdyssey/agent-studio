@@ -13,7 +13,7 @@ interface Props {
   onClose: () => void;
 }
 
-type ApiTab = 'providers' | 'models' | 'usage';
+type ApiTab = 'providers' | 'embedding' | 'models' | 'usage';
 
 export default function ApiManagementModal({ onClose }: Props) {
   const [activeTab, setActiveTab] = useState<ApiTab>('providers');
@@ -52,12 +52,13 @@ export default function ApiManagementModal({ onClose }: Props) {
   }, [keys]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
-  const handleSaveKey = async (keyData: { provider: string; label: string; apiKey: string; baseUrl: string; models: string[]; isDefault: boolean }) => {
+  const handleSaveKey = async (keyData: { provider: string; usage_type?: string; label: string; apiKey: string; baseUrl: string; models: string[]; isDefault: boolean }) => {
     setError(null);
     setSaving(true);
     try {
       await api.createKey({
         provider: keyData.provider,
+        usage_type: keyData.usage_type,
         label: keyData.label,
         api_key: keyData.apiKey,
         base_url: keyData.baseUrl || undefined,
@@ -75,7 +76,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   };
 
-  const handleUpdateKey = async (id: string, updates: { label?: string; apiKey?: string; baseUrl?: string; models?: string[]; isActive?: boolean; isDefault?: boolean }) => {
+  const handleUpdateKey = async (id: string, updates: { usage_type?: string; label?: string; apiKey?: string; baseUrl?: string; models?: string[]; isActive?: boolean; isDefault?: boolean }) => {
     setError(null);
     try {
       await api.updateKey(id, {
@@ -135,6 +136,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     setEditingKey({
       id: '',
       provider: 'custom',
+      usage_type: 'llm',
       label: '',
       key_masked: '',
       base_url: '',
@@ -150,12 +152,12 @@ export default function ApiManagementModal({ onClose }: Props) {
     <Modal title="API 管理" onClose={onClose} className="api-modal">
       <div className="settings-body">
         <div className="settings-sidebar">
-          {(['providers', 'models', 'usage'] as const).map(tab => {
-            const icons = { providers: Server, models: Globe, usage: Key };
+          {(['providers', 'embedding', 'models', 'usage'] as const).map(tab => {
+            const icons = { providers: Server, embedding: Shield, models: Globe, usage: Key };
             const Icon = icons[tab];
             return (
               <button key={tab} className={`settings-tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-                <Icon size={16} /><span>{tab === 'providers' ? '提供商' : tab === 'models' ? '模型' : '用量'}</span>
+                <Icon size={16} /><span>{tab === 'providers' ? '提供商' : tab === 'embedding' ? '嵌入模型' : tab === 'models' ? '模型' : '用量'}</span>
               </button>
             );
           })}
@@ -242,6 +244,63 @@ export default function ApiManagementModal({ onClose }: Props) {
               </div>
             </div>
           )}
+          {activeTab === 'embedding' && (
+            <div className="api-providers-tab">
+              <div className="api-section-header">
+                <h4>嵌入模型配置</h4>
+                <button className="btn btn-sm btn-primary" onClick={() => {
+                  setEditingKey({
+                    id: '',
+                    provider: 'dashscope',
+                    usage_type: 'embedding',
+                    label: 'DashScope Embedding',
+                    key_masked: '',
+                    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+                    models: [],
+                    is_active: true,
+                    is_default: false,
+                    last_used_at: null,
+                    created_at: null,
+                  });
+                }}><Plus size={14} />添加 Key</button>
+              </div>
+              <p className="api-hint" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                <Shield size={14} /> 配置 DashScope (阿里云百炼) API Key 用于文本嵌入/向量化，实现 RAG 上下文检索。
+              </p>
+              {loading ? (
+                <div className="api-empty-state"><Loader2 size={32} className="animate-spin" /><p>加载中...</p></div>
+              ) : (
+                <div className="api-providers-list">
+                  {keys.filter(k => k.usage_type === 'embedding' || k.usage_type === 'both').length === 0 ? (
+                    <div className="api-empty-state"><Key size={32} /><p>尚未配置嵌入模型<br />点击"添加 Key"配置 DashScope</p></div>
+                  ) : (
+                    keys.filter(k => k.usage_type === 'embedding' || k.usage_type === 'both').map(key => (
+                      <div key={key.id} className={`api-provider-card ${key.is_active ? 'active' : ''}`}>
+                        <div className="api-provider-header">
+                          <div className="api-provider-info">
+                            <div className="api-provider-name">
+                              DashScope {key.is_active && <CheckCircle2 size={14} className="text-green-500" />}
+                            </div>
+                            <div className="api-provider-url">{key.base_url || 'https://dashscope.aliyuncs.com'}</div>
+                          </div>
+                          <div className="api-provider-actions">
+                            <button className="btn btn-sm btn-ghost" onClick={() => setEditingKey(key)}>编辑</button>
+                            <button className="btn btn-sm btn-ghost" onClick={() => handleDeleteKey(key.id)}><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                        <div className="api-key-row">
+                          <label>Key</label>
+                          <div className="api-key-display">
+                            <code>{key.key_masked}</code>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {activeTab === 'usage' && (
             <div className="api-usage-tab">
               <div className="api-section-header"><h4>用量统计</h4></div>
@@ -258,7 +317,9 @@ export default function ApiManagementModal({ onClose }: Props) {
       {editingKey && (
         <ProviderEditModal
           provider={{
-            id: editingKey.provider,
+            id: editingKey.id,
+            provider: editingKey.provider,
+            usage_type: editingKey.usage_type || 'llm',
             name: editingKey.label || editingKey.provider,
             baseUrl: editingKey.base_url || '',
             apiKey: '',
@@ -267,22 +328,24 @@ export default function ApiManagementModal({ onClose }: Props) {
             status: 'untested' as const,
           }}
           saving={saving}
-          onSave={async (provider) => {
+          onSave={async (form) => {
             if (editingKey.id) {
               await handleUpdateKey(editingKey.id, {
-                label: provider.name,
-                apiKey: provider.apiKey || undefined,
-                baseUrl: provider.baseUrl || undefined,
-                models: provider.models,
+                label: form.name,
+                usage_type: form.usage_type,
+                apiKey: form.apiKey || undefined,
+                baseUrl: form.baseUrl || undefined,
+                models: form.models,
                 isDefault: editingKey.is_default,
               });
             } else {
               await handleSaveKey({
-                provider: provider.id,
-                label: provider.name,
-                apiKey: provider.apiKey,
-                baseUrl: provider.baseUrl,
-                models: provider.models,
+                provider: form.provider,
+                usage_type: form.usage_type,
+                label: form.name,
+                apiKey: form.apiKey,
+                baseUrl: form.baseUrl,
+                models: form.models,
                 isDefault: keys.length === 0,
               });
             }

@@ -65,19 +65,15 @@ const ChatInputArea = memo(
     if (!visible) return null;
 
     return (
-      <div className="devagents-input-area">
-        <div className="devagents-input-inner">
-          <InputToolbar
-            ref={ref}
-            onSend={handleSend}
-            models={models}
-            selectedModel={selectedModel}
-            onModelChange={handleModelChange}
-            onConfigureModels={onConfigureModels}
-            commands={commands}
-          />
-        </div>
-      </div>
+      <InputToolbar
+        ref={ref}
+        onSend={handleSend}
+        models={models}
+        selectedModel={selectedModel}
+        onModelChange={handleModelChange}
+        onConfigureModels={onConfigureModels}
+        commands={commands}
+      />
     );
   }),
 );

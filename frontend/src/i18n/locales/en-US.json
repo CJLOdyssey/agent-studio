@@ -105,6 +105,29 @@
   "chat": {
     "inputPlaceholder": "Describe your requirements, the AI team will discuss..."
   },
+  "providerEdit": {
+    "edit": "Edit Provider",
+    "add": "Add Provider",
+    "name": "Display Name",
+    "provider": "Provider Type",
+    "baseUrl": "Base URL",
+    "apiKey": "API Key",
+    "supportedModels": "Supported Models",
+    "save": "Save",
+    "placeholders": {
+      "name": "e.g. My OpenAI",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": "sk-...",
+      "models": "gpt-4o\ngpt-4o-mini"
+    },
+    "providers": {
+      "openai": "OpenAI",
+      "deepseek": "DeepSeek",
+      "anthropic": "Anthropic",
+      "dashscope": "DashScope (Embedding)",
+      "custom": "Custom"
+    }
+  },
   "confirm": {
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -162,7 +185,7 @@
   "teamMessage": {
     "you": "You",
     "copy": "Copy",
-    "unknownAgent": "Unknown Agent",
+    "unknownAgent": "DevAgent",
     "system": "System",
     "executeTask": "Execute Task ({{count}} steps)",
     "mentionBackend": "@Backend Agent",

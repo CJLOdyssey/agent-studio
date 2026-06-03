@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: virtual-team-db
     restart: always
     environment:
@@ -48,6 +48,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-}
       - SECRETS_DIR=/secrets
     volumes:
       - secrets:/secrets
@@ -91,6 +92,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-}
       - SECRETS_DIR=/secrets
     volumes:
       - secrets:/secrets

@@ -9,6 +9,7 @@ vi.mock('../../api/websocket', () => ({
 vi.mock('../../api/client', () => ({
   submitRequirement: vi.fn(),
   listAgents: vi.fn(),
+  listKeys: vi.fn().mockResolvedValue([{ id: 'key-1', is_default: true, is_active: true, models: ['deepseek-chat'] }]),
 }));
 
 const initialState = {
@@ -146,18 +147,14 @@ describe('chatStore', () => {
       const client = await import('../../api/client');
       (client.submitRequirement as ReturnType<typeof vi.fn>).mockResolvedValue({ run_id: 'run-1', status: 'running' });
       const { useChatStore } = await import('../chatStore');
-      const promise = useChatStore.getState().submitRequirement('测试需求');
-      const loadingState = useChatStore.getState();
-      expect(loadingState.status).toBe('loading');
-      expect(loadingState.messages).toHaveLength(1);
-      expect(loadingState.messages[0].role).toBe('user');
-      expect(loadingState.messages[0].agent_name).toBe('我');
-      expect(loadingState.messages[0].content).toBe('测试需求');
-      await promise;
+      await useChatStore.getState().submitRequirement('测试需求');
       const state = useChatStore.getState();
       expect(state.status).toBe('running');
       expect(state.currentRunId).toBe('run-1');
       expect(state.messages).toHaveLength(1);
+      expect(state.messages[0].role).toBe('user');
+      expect(state.messages[0].agent_name).toBe('我');
+      expect(state.messages[0].content).toBe('测试需求');
       expect(state.error).toBeNull();
     });
 
@@ -172,6 +169,20 @@ describe('chatStore', () => {
       expect(state.wsStatus).toBe('disconnected');
       expect(state.messages).toHaveLength(1);
       expect(state.messages[0].role).toBe('user');
+    });
+
+    it('无可用 API Key 时返回引导提示', async () => {
+      const client = await import('../../api/client');
+      (client.submitRequirement as ReturnType<typeof vi.fn>).mockClear();
+      (client.listKeys as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      const { useChatStore } = await import('../chatStore');
+      await useChatStore.getState().submitRequirement('测试需求');
+      const state = useChatStore.getState();
+      expect(state.status).toBe('error');
+      expect(state.error).toBe('请先在设置中配置 API Key');
+      expect(state.wsStatus).toBe('disconnected');
+      // BYOK: should NOT call the API when no key is configured
+      expect(client.submitRequirement).not.toHaveBeenCalled();
     });
   });
 });

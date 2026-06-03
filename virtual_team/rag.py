@@ -29,7 +29,6 @@ logger = get_logger(__name__)
 
 # ── Environment ──────────────────────────────────────────────────────────────
 
-DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", "")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-v3")
 EMBEDDING_DIM = 1024  # text-embedding-v3 output dimension
 
@@ -125,8 +124,8 @@ def _hash_id(text: str) -> str:
 class EmbeddingProvider:
     """DashScope embedding via HTTP API — no heavy SDK dependency required."""
 
-    def __init__(self, api_key: str = "", model: str = EMBEDDING_MODEL):
-        self.api_key = api_key or DASHSCOPE_API_KEY
+    def __init__(self, api_key: str, model: str = EMBEDDING_MODEL):
+        self.api_key = api_key
         self.model = model
         self._base_url = "https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding"
 
@@ -174,13 +173,8 @@ class EmbeddingProvider:
 
 
 def _fallback_embed(texts: list[str]) -> list[list[float]]:
-    """No DashScope API key configured — embedding is unavailable.
-
-    Returns zero-vectors as placeholder. Callers MUST check for this
-    and either skip RAG or surface a clear user-facing message.
-    """
     logger.warning(
-        "RAG embedding unavailable: DASHSCOPE_API_KEY not configured. "
+        "RAG embedding unavailable: no DashScope API key configured. "
         "Returning zero vectors for %d texts — vector search will be non-functional.",
         len(texts),
     )
@@ -352,12 +346,20 @@ class PgVectorStore:
 
 # ── RAG Pipeline ─────────────────────────────────────────────────────────────
 
-_embedding_provider = EmbeddingProvider()
+_embedding_provider: EmbeddingProvider | None = None
 _vector_store = PgVectorStore()
 
 
-def get_rag_pipeline() -> tuple[EmbeddingProvider, PgVectorStore]:
+def get_rag_pipeline() -> tuple[EmbeddingProvider | None, PgVectorStore]:
     return _embedding_provider, _vector_store
+
+
+def ensure_embedding_provider(api_key: str | None = None):
+    global _embedding_provider
+    if api_key:
+        _embedding_provider = EmbeddingProvider(api_key=api_key)
+    else:
+        _embedding_provider = None
 
 
 async def ingest_session_messages(
@@ -381,6 +383,9 @@ async def ingest_session_messages(
     if not chunks:
         return
 
+    if _embedding_provider is None:
+        logger.warning("Embedding provider not configured — skipping RAG ingestion")
+        return
     texts = [c.text for c in chunks]
     embeddings = await _embedding_provider.embed(texts)
     for chunk, emb in zip(chunks, embeddings, strict=False):
@@ -403,6 +408,8 @@ async def retrieve_context(
     2. Hybrid search via pgvector (cosine + tag filter)
     3. Return formatted context for LLM
     """
+    if _embedding_provider is None:
+        return ""
     query_embedding = await _embedding_provider.embed_query(query)
     results = await _vector_store.search(
         query_embedding,

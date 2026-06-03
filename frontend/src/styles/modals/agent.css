@@ -220,3 +220,434 @@
   color: var(--da-text-muted);
   font-size: var(--da-font-size-sm);
 }
+
+/* Tool Generator */
+.tool-generator-trigger {
+  margin-bottom: var(--sp-3);
+}
+
+.tool-generator-trigger button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-sm);
+  color: var(--da-accent-indigo);
+  background: color-mix(in srgb, var(--da-accent-indigo) 10%, transparent);
+  border: 1px dashed var(--da-accent-indigo);
+  border-radius: 6px;
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tool-generator-trigger button:hover {
+  background: color-mix(in srgb, var(--da-accent-indigo) 20%, transparent);
+}
+
+.tool-generator {
+  padding: var(--sp-3);
+  background: var(--da-bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--da-border);
+  margin-bottom: var(--sp-3);
+}
+
+.tool-generator-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+  margin-bottom: var(--sp-3);
+}
+
+.tool-generator-llm-status {
+  margin-left: auto;
+  font-size: var(--da-font-size-xs);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--syntax-red) 15%, transparent);
+  color: var(--syntax-red);
+}
+
+.tool-generator-llm-status.active {
+  background: color-mix(in srgb, var(--syntax-green) 15%, transparent);
+  color: var(--syntax-green);
+}
+
+.tool-generator-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.tool-generator-textarea {
+  width: 100%;
+  padding: var(--sp-3);
+  background: var(--da-bg-primary);
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.tool-generator-textarea:focus {
+  outline: none;
+  border-color: var(--da-accent-indigo);
+}
+
+.tool-generator-options {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.tool-generator-select {
+  flex: 1;
+  padding: var(--sp-2);
+  background: var(--da-bg-primary);
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  cursor: pointer;
+}
+
+.tool-generator-select:focus {
+  outline: none;
+  border-color: var(--da-accent-indigo);
+}
+
+.tool-generator-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: color-mix(in srgb, var(--syntax-red) 10%, transparent);
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  color: var(--syntax-red);
+}
+
+.tool-generator-result {
+  margin-top: var(--sp-3);
+  border-top: 1px solid var(--da-border);
+  padding-top: var(--sp-3);
+}
+
+.tool-generator-result-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--sp-3);
+}
+
+.tool-generator-name {
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+}
+
+.tool-generator-desc {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+}
+
+.tool-generator-code {
+  background: var(--da-bg-primary);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: var(--sp-3);
+}
+
+.tool-generator-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--da-bg-surface);
+  border-bottom: 1px solid var(--da-border);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+}
+
+.tool-generator-copy {
+  background: none;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  padding: var(--sp-1);
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tool-generator-copy:hover {
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
+}
+
+.tool-generator-code pre {
+  margin: 0;
+  padding: var(--sp-3);
+  overflow-x: auto;
+}
+
+.tool-generator-code code {
+  font-family: var(--da-font-mono);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-primary);
+}
+
+.tool-generator-params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  margin-bottom: var(--sp-3);
+}
+
+.tool-generator-param {
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--da-accent-indigo) 10%, transparent);
+  border-radius: 4px;
+  color: var(--da-accent-indigo);
+}
+
+.tool-generator-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.tool-generator-validation {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.tool-generator-validation.valid {
+  background: color-mix(in srgb, var(--syntax-green) 10%, transparent);
+  color: var(--syntax-green);
+}
+
+.tool-generator-validation.invalid {
+  background: color-mix(in srgb, var(--syntax-yellow) 10%, transparent);
+  color: var(--syntax-yellow);
+}
+
+.tool-generator-suggestions {
+  margin: 0;
+  padding-left: var(--sp-4);
+  list-style: disc;
+}
+
+.tool-generator-suggestions li {
+  margin-bottom: 2px;
+}
+
+/* Skill Generator */
+.skill-generator {
+  padding: var(--sp-3);
+  background: var(--da-bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--da-border);
+  margin-bottom: var(--sp-3);
+}
+
+.skill-generator-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+  margin-bottom: var(--sp-3);
+}
+
+.skill-generator-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.skill-generator-textarea {
+  width: 100%;
+  padding: var(--sp-3);
+  background: var(--da-bg-primary);
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.skill-generator-textarea:focus {
+  outline: none;
+  border-color: var(--da-accent-indigo);
+}
+
+.skill-generator-options {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.skill-generator-select {
+  flex: 1;
+  padding: var(--sp-2);
+  background: var(--da-bg-primary);
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  cursor: pointer;
+}
+
+.skill-generator-select:focus {
+  outline: none;
+  border-color: var(--da-accent-indigo);
+}
+
+.skill-generator-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: color-mix(in srgb, var(--syntax-red) 10%, transparent);
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  color: var(--syntax-red);
+}
+
+.skill-generator-result {
+  margin-top: var(--sp-3);
+  border-top: 1px solid var(--da-border);
+  padding-top: var(--sp-3);
+}
+
+.skill-generator-result-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--sp-3);
+}
+
+.skill-generator-name {
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+}
+
+.skill-generator-desc {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+}
+
+.skill-generator-preview {
+  background: var(--da-bg-primary);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: var(--sp-3);
+}
+
+.skill-generator-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--da-bg-surface);
+  border-bottom: 1px solid var(--da-border);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+}
+
+.skill-generator-copy {
+  background: none;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  padding: var(--sp-1);
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.skill-generator-copy:hover {
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
+}
+
+.skill-generator-preview pre {
+  margin: 0;
+  padding: var(--sp-3);
+  overflow-x: auto;
+  max-height: 400px;
+}
+
+.skill-generator-preview code {
+  font-family: var(--da-font-mono);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-primary);
+  white-space: pre-wrap;
+}
+
+.skill-generator-meta {
+  display: flex;
+  gap: var(--sp-3);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  margin-bottom: var(--sp-3);
+}
+
+.skill-generator-category {
+  padding: 2px 6px;
+  background: color-mix(in srgb, var(--da-accent-purple) 10%, transparent);
+  border-radius: 4px;
+  color: var(--da-accent-purple);
+}
+
+.skill-generator-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.skill-generator-validation {
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.skill-generator-validation.valid {
+  background: color-mix(in srgb, var(--syntax-green) 10%, transparent);
+  color: var(--syntax-green);
+}
+
+.skill-generator-validation.invalid {
+  background: color-mix(in srgb, var(--syntax-yellow) 10%, transparent);
+  color: var(--syntax-yellow);
+}
+
+.skill-generator-suggestions {
+  margin: 0;
+  padding-left: var(--sp-4);
+  list-style: disc;
+}
+
+.skill-generator-suggestions li {
+  margin-bottom: 2px;
+}

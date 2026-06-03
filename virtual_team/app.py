@@ -15,21 +15,15 @@ from virtual_team.broker import get_redis
 from virtual_team.config import load_config
 from virtual_team.database import get_async_engine, init_db
 from virtual_team.logging_config import get_logger
-
-from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions, teams
+from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions, skills, system_team, teams, tools
 
 logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting up — validating configuration...")
-    cfg = load_config(validate=True)
-    if not cfg.api_key:
-        logger.warning("=" * 60)
-        logger.warning("  API Key 未配置！请设置 DEEPSEEK_API_KEY 或 OPENAI_API_KEY 环境变量")
-        logger.warning("  讨论功能将无法正常使用")
-        logger.warning("=" * 60)
+    logger.info("Starting up — initializing configuration...")
+    load_config()
 
     logger.info("Starting up — initializing database...")
     try:
@@ -37,6 +31,13 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.warning("Database init skipped (might not be available): %s", e)
+
+    try:
+        from virtual_team.repository import seed_default_agents
+        await seed_default_agents()
+        logger.info("Default agents seeded successfully")
+    except Exception as e:
+        logger.warning("Seed default agents skipped: %s", e)
 
     yield
     logger.info("Shutting down")
@@ -120,6 +121,9 @@ app.include_router(commands.router)
 app.include_router(models.router)
 app.include_router(keys.router)
 app.include_router(teams.router)
+app.include_router(tools.router)
+app.include_router(skills.router)
+app.include_router(system_team.router)
 
 
 if __name__ == "__main__":

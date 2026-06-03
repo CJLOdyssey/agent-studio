@@ -198,6 +198,7 @@ class SingleAgentGraph:
         user_input: str,
         thread_id: str,
         session_context: str = "",
+        chat_history: list[BaseMessage] | None = None,
         stream_callback: Callable | None = None,
     ) -> dict:
         """
@@ -208,6 +209,7 @@ class SingleAgentGraph:
             user_input: User message
             thread_id: Unique thread ID (session ID) for checkpointing
             session_context: RAG-retrieved context
+            chat_history: Previous conversation messages for short-term memory
             stream_callback: Async callback for each streaming event
 
         Returns:
@@ -218,8 +220,10 @@ class SingleAgentGraph:
             "recursion_limit": 25,
         }
 
+        messages: list[BaseMessage] = list(chat_history or [])
+        messages.append(HumanMessage(content=user_input))
         initial_state: AgentState = {
-            "messages": [HumanMessage(content=user_input)],
+            "messages": messages,
             "system_prompt": system_prompt,
             "session_context": session_context,
         }
@@ -311,4 +315,4 @@ def write_file(args: str) -> str:
     return f"写入文件：'{path}' (文件系统功能已注册，等待后端接入)"
 
 
-DEFAULT_TOOLS = [web_search, read_file, write_file]
+DEFAULT_TOOLS = []

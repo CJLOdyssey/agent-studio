@@ -1,0 +1,23 @@
+"""共享工具库 - 多个 Agent 共用的工具函数."""
+
+import os
+import json
+from typing import Any, Dict
+
+
+def ensure_dir(path: str) -> None:
+    os.makedirs(path, exist_ok=True)
+
+
+def read_json(file_path: str) -> Dict[str, Any]:
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json(file_path: str, data: Dict[str, Any]) -> None:
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def safe_filename(name: str) -> str:
+    return "".join(c if c.isalnum() or c in "-_" else "_" for c in name).strip("_")

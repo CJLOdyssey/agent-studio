@@ -1,0 +1,356 @@
+import asyncio
+import json
+from datetime import UTC, datetime
+from uuid import uuid4
+
+from sqlalchemy import desc, select, update as sa_update
+from sqlalchemy.orm import selectinload
+
+from virtual_team.database import UserApiKey, get_session_factory
+from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
+
+async def create_api_key(
+    user_id: str,
+    provider: str,
+    usage_type: str = "llm",
+    label: str = "",
+    plaintext_key: str = "",
+    base_url: str | None = None,
+    models: list[str] | None = None,
+    is_default: bool = False,
+) -> UserApiKey:
+    """Save a new API key — encrypts before storage, returns the created key."""
+    factory = get_session_factory()
+    async with factory() as session:
+        # If set as default, clear other defaults for this user
+        if is_default:
+            result = await session.execute(
+                select(UserApiKey).where(
+                    UserApiKey.user_id == user_id,
+                    UserApiKey.is_default,
+                )
+            )
+            for row in result.scalars().all():
+                row.is_default = False
+
+        encrypted = encrypt_api_key(plaintext_key)
+        obj = UserApiKey(
+            id=str(uuid4()),
+            user_id=user_id,
+            provider=provider,
+            usage_type=usage_type,
+            label=label,
+            encrypted_key=encrypted,
+            base_url=base_url,
+            models=",".join(models) if models else "",
+            is_active=True,
+            is_default=is_default,
+        )
+        session.add(obj)
+        await session.commit()
+        await session.refresh(obj)
+        return obj
+
+async def get_api_keys(user_id: str) -> list[dict]:
+    """List a user's API keys — keys are MASKED, never returned raw."""
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(UserApiKey.user_id == user_id)
+            .order_by(UserApiKey.created_at)
+        )
+        result = await session.execute(stmt)
+        rows = result.scalars().all()
+        results = []
+        for r in rows:
+            try:
+                key_masked = mask_api_key(decrypt_api_key(r.encrypted_key))
+            except Exception:
+                key_masked = "**** (解密失败，请重新添加)"
+            results.append({
+                "id": r.id,
+                "provider": r.provider,
+                "usage_type": r.usage_type,
+                "label": r.label,
+                "key_masked": key_masked,
+                "base_url": r.base_url,
+                "models": [m.strip() for m in r.models.split(",") if m.strip()] if r.models else [],
+                "is_active": r.is_active,
+                "is_default": r.is_default,
+                "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+        return results
+
+async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
+    """Retrieve and decrypt an API key for LLM invocation.
+
+    Returns full config dict with decrypted key. Updates last_used_at.
+    This is the ONLY function that returns a decrypted key — it is
+    never called from API routes, only from Celery tasks.
+    """
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = select(UserApiKey).where(
+            UserApiKey.id == key_id,
+            UserApiKey.user_id == user_id,
+            UserApiKey.is_active,
+        )
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+
+        row.last_used_at = datetime.now(UTC)
+        await session.commit()
+
+        return {
+            "id": row.id,
+            "provider": row.provider,
+            "usage_type": row.usage_type,
+            "api_key": decrypt_api_key(row.encrypted_key),
+            "base_url": row.base_url,
+            "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
+        }
+
+async def get_default_api_key(user_id: str) -> dict | None:
+    """Get the user's default active API key for LLM calls."""
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = select(UserApiKey).where(
+            UserApiKey.user_id == user_id,
+            UserApiKey.is_active,
+            UserApiKey.is_default,
+        )
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            # No default set — use the first active key
+            stmt = select(UserApiKey).where(
+                UserApiKey.user_id == user_id,
+                UserApiKey.is_active,
+            ).order_by(UserApiKey.created_at).limit(1)
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+
+        if not row:
+            return None
+
+        row.last_used_at = datetime.now(UTC)
+        await session.commit()
+
+        return {
+            "id": row.id,
+            "provider": row.provider,
+            "api_key": decrypt_api_key(row.encrypted_key),
+            "base_url": row.base_url,
+            "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
+        }
+
+async def update_api_key(
+    key_id: str,
+    user_id: str,
+    label: str | None = None,
+    plaintext_key: str | None = None,
+    base_url: str | None = None,
+    models: list[str] | None = None,
+    is_active: bool | None = None,
+    is_default: bool | None = None,
+    usage_type: str | None = None,
+) -> dict | None:
+    """Update an API key configuration."""
+    factory = get_session_factory()
+    async with factory() as session:
+        row = await session.get(UserApiKey, key_id)
+        if not row or row.user_id != user_id:
+            return None
+
+        if label is not None:
+            row.label = label
+        if plaintext_key is not None:
+            row.encrypted_key = encrypt_api_key(plaintext_key)
+        if base_url is not None:
+            row.base_url = base_url
+        if models is not None:
+            row.models = ",".join(models)
+        if usage_type is not None:
+            row.usage_type = usage_type
+        if is_active is not None:
+            row.is_active = is_active
+        if is_default is not None:
+            row.is_default = is_default
+            if is_default:
+                # Clear other defaults
+                result = await session.execute(
+                    select(UserApiKey).where(
+                        UserApiKey.user_id == user_id,
+                        UserApiKey.is_default,
+                        UserApiKey.id != key_id,
+                    )
+                )
+                for other in result.scalars().all():
+                    other.is_default = False
+
+        row.updated_at = datetime.now(UTC)
+        await session.commit()
+
+        return {
+            "id": row.id,
+            "label": row.label,
+            "provider": row.provider,
+            "usage_type": row.usage_type,
+            "key_masked": mask_api_key(decrypt_api_key(row.encrypted_key)),
+            "is_active": row.is_active,
+            "is_default": row.is_default,
+        }
+
+async def delete_api_key(key_id: str, user_id: str) -> bool:
+    """Delete an API key. Returns True if deleted, False if not found."""
+    factory = get_session_factory()
+    async with factory() as session:
+        row = await session.get(UserApiKey, key_id)
+        if not row or row.user_id != user_id:
+            return False
+        await session.delete(row)
+        await session.commit()
+        return True
+
+async def test_api_key_connection(key_id: str, user_id: str) -> dict:
+    """Test connectivity for a stored key. Does NOT return the key itself.
+
+    Runs the blocking HTTP call in a thread pool to avoid blocking the event loop.
+    """
+    key_cfg = await get_api_key_for_use(key_id, user_id)
+    if not key_cfg:
+        return {"success": False, "message": "Key not found or inactive"}
+
+    return await asyncio.to_thread(_test_connection_sync, key_cfg)
+
+def _test_connection_sync(key_cfg: dict) -> dict:
+    """Synchronous HTTP connectivity test — runs in thread pool executor."""
+    import json
+    import urllib.request
+
+    try:
+        endpoints = {
+            "openai": "https://api.openai.com/v1/models",
+            "deepseek": "https://api.deepseek.com/v1/models",
+            "anthropic": "https://api.anthropic.com/v1/models",
+        }
+
+        base_url = (key_cfg.get("base_url") or "").rstrip("/")
+
+        if base_url:
+            if base_url.endswith("/v1"):
+                test_url = base_url + "/models"
+            elif base_url.endswith("/v1/"):
+                test_url = base_url[:-1] + "/models"
+            else:
+                test_url = base_url + "/v1/models"
+        else:
+            test_url = endpoints.get(key_cfg["provider"], "")
+
+        if not test_url:
+            return {"success": False, "message": "No base URL configured", "models": []}
+
+        req = urllib.request.Request(test_url, method="GET")
+        req.add_header("Authorization", f"Bearer {key_cfg['api_key']}")
+        req.add_header("Content-Type", "application/json")
+
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            if resp.status == 200:
+                models = _parse_models_from_response(resp, key_cfg["provider"])
+                return {"success": True, "message": "Connection successful", "models": models}
+            return {"success": False, "message": f"HTTP {resp.status}", "models": []}
+    except Exception as e:
+        return {"success": False, "message": str(e), "models": []}
+
+
+def _parse_models_from_response(resp, provider: str) -> list[str]:
+    """Extract model IDs from the provider's /models response."""
+    try:
+        body = json.loads(resp.read().decode())
+        data = body.get("data", [])
+        models = []
+        for item in data:
+            model_id = item.get("id", "")
+            if model_id:
+                models.append(model_id)
+        return models
+    except Exception:
+        return []
+
+async def get_embedding_api_key() -> str | None:
+    """Get the decrypted API key for embedding (any active key with embedding capability)."""
+    from virtual_team.database import UserApiKey
+    from virtual_team.key_vault import decrypt_api_key
+
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = select(UserApiKey).where(
+            UserApiKey.usage_type.in_(["embedding", "both"]),
+            UserApiKey.is_active,
+        ).limit(1)
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            return decrypt_api_key(row.encrypted_key)
+    return None
+
+
+async def log_key_usage(
+    key_id: str | None,
+    user_id: str,
+    run_id: str | None,
+    provider: str,
+    model: str,
+    tokens_prompt: int = 0,
+    tokens_completion: int = 0,
+    duration_ms: int = 0,
+    status: str = "success",
+    error_message: str | None = None,
+):
+    """Record an LLM call in the audit log."""
+    total = tokens_prompt + tokens_completion
+    factory = get_session_factory()
+    async with factory() as session:
+        log = KeyUsageLog(
+            id=str(uuid4()),
+            key_id=key_id,
+            user_id=user_id,
+            run_id=run_id,
+            provider=provider,
+            model=model,
+            tokens_prompt=tokens_prompt,
+            tokens_completion=tokens_completion,
+            tokens_total=total,
+            duration_ms=duration_ms,
+            status=status,
+            error_message=error_message,
+        )
+        session.add(log)
+        await session.commit()
+
+async def get_key_usage_stats(user_id: str) -> dict:
+    """Get usage statistics for a user's keys."""
+    factory = get_session_factory()
+    async with factory() as session:
+        from sqlalchemy import func
+
+        # Today's stats
+        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        stmt_today = (
+            select(
+                func.count(KeyUsageLog.id).label("requests"),
+                func.sum(KeyUsageLog.tokens_total).label("tokens"),
+            )
+            .where(
+                KeyUsageLog.user_id == user_id,
+                KeyUsageLog.created_at >= today_start,
+                KeyUsageLog.status == "success",
+            )
+        )
+        result_today = await session.execute(stmt_today)
+        today = result_today.one()
+

@@ -8,6 +8,7 @@ Security invariants:
   - All key mutations are audit-logged at INFO level
 """
 
+import asyncio
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -28,6 +29,7 @@ router = APIRouter(tags=["keys"])
 
 class KeyCreateRequest(BaseModel):
     provider: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
+    usage_type: str = Field(default="llm", pattern=r'^(llm|embedding|both)$')
     label: str = Field(..., min_length=1, max_length=64)
     api_key: str = Field(..., min_length=1, description="Plaintext API key — encrypted before storage")
     base_url: str | None = None
@@ -36,6 +38,7 @@ class KeyCreateRequest(BaseModel):
 
 
 class KeyUpdateRequest(BaseModel):
+    usage_type: str | None = Field(default=None, pattern=r'^(llm|embedding|both)$')
     label: str | None = None
     api_key: str | None = Field(default=None, description="New plaintext key (optional)")
     base_url: str | None = None
@@ -44,9 +47,16 @@ class KeyUpdateRequest(BaseModel):
     is_default: bool | None = None
 
 
+class FetchModelsRequest(BaseModel):
+    api_key: str = Field(..., min_length=1)
+    base_url: str | None = None
+    provider: str = Field(default="custom")
+
+
 class KeyResponse(BaseModel):
     id: str
     provider: str
+    usage_type: str
     label: str
     key_masked: str
     base_url: str | None
@@ -69,6 +79,7 @@ async def list_keys(request: Request):
             KeyResponse(
                 id=k["id"],
                 provider=k["provider"],
+                usage_type=k.get("usage_type", "llm"),
                 label=k["label"],
                 key_masked=k["key_masked"],
                 base_url=k["base_url"],
@@ -87,42 +98,75 @@ async def list_keys(request: Request):
 
 @router.post("/api/keys", status_code=201, response_model=KeyResponse)
 async def add_key(req: KeyCreateRequest, request: Request):
-    """Save a new API key. The plaintext key is encrypted immediately and never logged."""
+    """Save a new API key. Auto-validates connectivity and fetches available models."""
     user_id = get_user_id(request)
-    logger.info("Key creation requested | user=%s | provider=%s | label=%s | models=%s",
-                user_id, req.provider, req.label, req.models)
+    logger.info("Key creation requested | user=%s | provider=%s | label=%s",
+                user_id, req.provider, req.label)
 
-    try:
-        obj = await create_api_key(
-            user_id=user_id,
-            provider=req.provider,
-            label=req.label,
-            plaintext_key=req.api_key,
-            base_url=req.base_url,
-            models=req.models,
-            is_default=req.is_default,
-        )
+    obj = await create_api_key(
+        user_id=user_id,
+        provider=req.provider,
+        usage_type=req.usage_type,
+        label=req.label,
+        plaintext_key=req.api_key,
+        base_url=req.base_url,
+        models=req.models,
+        is_default=req.is_default,
+    )
+
+    # For embedding-only and both keys, skip connectivity test and model fetch
+    if req.usage_type in ("embedding", "both"):
         from virtual_team.key_vault import decrypt_api_key, mask_api_key
         return KeyResponse(
             id=obj.id,
             provider=obj.provider,
+            usage_type=obj.usage_type,
             label=obj.label,
             key_masked=mask_api_key(decrypt_api_key(obj.encrypted_key)),
             base_url=obj.base_url,
-            models=[m.strip() for m in obj.models.split(",") if m.strip()] if obj.models else [],
+            models=[],
             is_active=obj.is_active,
             is_default=obj.is_default,
             last_used_at=obj.last_used_at.isoformat() if obj.last_used_at else None,
             created_at=obj.created_at.isoformat() if obj.created_at else None,
         )
-    except Exception as e:
-        logger.error("Error creating key for user %s: %s", user_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+
+    test_result = await test_api_key_connection(obj.id, user_id)
+
+    if not test_result.get("success"):
+        await delete_api_key(obj.id, user_id)
+        raise HTTPException(
+            status_code=400,
+            detail=f"API Key 验证失败: {test_result.get('message', '连接失败')}",
+        )
+
+    fetched_models = test_result.get("models", [])
+    models_to_store = fetched_models if fetched_models else req.models
+
+    await update_api_key(
+        key_id=obj.id,
+        user_id=user_id,
+        models=models_to_store,
+    )
+
+    from virtual_team.key_vault import decrypt_api_key, mask_api_key
+    return KeyResponse(
+        id=obj.id,
+        provider=obj.provider,
+        label=obj.label,
+        key_masked=mask_api_key(decrypt_api_key(obj.encrypted_key)),
+        base_url=obj.base_url,
+        models=models_to_store,
+        is_active=obj.is_active,
+        is_default=obj.is_default,
+        last_used_at=obj.last_used_at.isoformat() if obj.last_used_at else None,
+        created_at=obj.created_at.isoformat() if obj.created_at else None,
+    )
 
 
 @router.put("/api/keys/{key_id}", response_model=KeyResponse)
 async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
-    """Update an API key. Only the owner can modify their keys."""
+    """Update an API key. Re-validates if api_key or base_url changed."""
     user_id = get_user_id(request)
     result = await update_api_key(
         key_id=key_id,
@@ -136,6 +180,15 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
     )
     if not result:
         raise HTTPException(status_code=404, detail="Key not found or access denied")
+
+    if req.api_key or req.base_url:
+        test_result = await test_api_key_connection(key_id, user_id)
+        if test_result.get("success"):
+            fetched_models = test_result.get("models", [])
+            if fetched_models:
+                await update_api_key(key_id=key_id, user_id=user_id, models=fetched_models)
+                result["models"] = fetched_models
+
     return KeyResponse(
         id=result["id"],
         provider=result["provider"],
@@ -169,6 +222,22 @@ async def test_key_connection(key_id: str, request: Request):
     if result.get("success"):
         return {"success": True, "message": result.get("message", "OK")}
     return {"success": False, "message": result.get("message", "Test failed")}
+
+
+@router.post("/api/keys/fetch-models")
+async def fetch_models_from_provider(req: FetchModelsRequest):
+    """Fetch available models from a provider's API without saving a key."""
+    from virtual_team.repository.keys import _test_connection_sync
+
+    key_cfg = {
+        "provider": req.provider,
+        "api_key": req.api_key,
+        "base_url": req.base_url,
+    }
+    result = await asyncio.to_thread(_test_connection_sync, key_cfg)
+    if result.get("success"):
+        return {"success": True, "models": result.get("models", [])}
+    return {"success": False, "message": result.get("message", "Failed to fetch models"), "models": []}
 
 
 @router.get("/api/keys/usage")

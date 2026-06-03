@@ -160,6 +160,10 @@ class AgentConfigDB(Base):
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     role_identifier: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    output_constraints: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tools: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mcp: Mapped[str | None] = mapped_column(Text, nullable=True)
+    skills: Mapped[str | None] = mapped_column(Text, nullable=True)
     model: Mapped[str | None] = mapped_column(String(64), nullable=True)
     temperature: Mapped[float | None] = mapped_column(Float, nullable=True)
     order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -240,6 +244,10 @@ class UserApiKey(Base):
     user_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     provider: Mapped[str] = mapped_column(
         String(32), nullable=False, comment="openai|deepseek|anthropic|custom"
+    )
+    usage_type: Mapped[str] = mapped_column(
+        String(16), default="llm", nullable=False,
+        comment="llm|embedding|both — how this key is used",
     )
     label: Mapped[str] = mapped_column(String(64), nullable=False)
     encrypted_key: Mapped[str] = mapped_column(Text, nullable=False)

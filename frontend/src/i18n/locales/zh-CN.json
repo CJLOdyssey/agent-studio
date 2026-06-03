@@ -105,6 +105,29 @@
   "chat": {
     "inputPlaceholder": "输入需求，AI 团队将展开讨论..."
   },
+  "providerEdit": {
+    "edit": "编辑提供商",
+    "add": "添加提供商",
+    "name": "提供商名称",
+    "provider": "提供商类型",
+    "baseUrl": "Base URL",
+    "apiKey": "API Key",
+    "supportedModels": "支持的模型",
+    "save": "保存",
+    "placeholders": {
+      "name": "例如：我的 OpenAI",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": "sk-...",
+      "models": "gpt-4o\ngpt-4o-mini"
+    },
+    "providers": {
+      "openai": "OpenAI",
+      "deepseek": "DeepSeek",
+      "anthropic": "Anthropic",
+      "dashscope": "DashScope（嵌入模型）",
+      "custom": "自定义"
+    }
+  },
   "confirm": {
     "cancel": "取消",
     "confirm": "确定",
@@ -162,7 +185,7 @@
   "teamMessage": {
     "you": "你",
     "copy": "复制",
-    "unknownAgent": "未知 Agent",
+    "unknownAgent": "DevAgent",
     "system": "系统",
     "executeTask": "执行任务 ({{count}} 步)",
     "mentionBackend": "@后端 Agent",

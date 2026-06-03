@@ -33,7 +33,7 @@ export function useConversation() {
 
   /** Save or update a conversation. If convId exists, updates it; otherwise creates new. */
   const saveConversation = useCallback(
-    (title: string, messages: unknown[]) => {
+    (title: string, messages: unknown[], agentId?: string) => {
       const now = new Date().toISOString();
       const id = Date.now();
       const conv: Conversation = {
@@ -42,6 +42,7 @@ export function useConversation() {
         messages: messages as Conversation['messages'],
         createdAt: now,
         updatedAt: now,
+        agentId,
       };
       setConversations((prev) => [conv, ...prev]);
       setActiveConvId(id);

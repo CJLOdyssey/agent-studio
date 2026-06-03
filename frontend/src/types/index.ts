@@ -5,6 +5,10 @@ export interface AgentConfig {
   name: string;
   role_identifier: string;
   system_prompt: string;
+  output_constraints?: string | null;
+  tools?: string | null;
+  mcp?: string | null;
+  skills?: string | null;
   model: string | null;
   temperature: number | null;
   order: number;
@@ -15,7 +19,7 @@ export interface AgentConfig {
 }
 
 export interface WsMessage {
-  type: 'message' | 'status' | 'result';
+  type: 'message' | 'stream' | 'status' | 'result';
   role?: AgentRole;
   agent_name?: string;
   content?: string;

@@ -20,6 +20,10 @@ class AgentCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
     system_prompt: str = Field(..., min_length=1)
+    output_constraints: str | None = None
+    tools: list[dict] | None = None
+    mcp: list[dict] | None = None
+    skills: list[dict] | None = None
     model: str | None = None
     temperature: float | None = Field(default=None, ge=0.0, le=1.0)
     order: int = 0
@@ -31,6 +35,10 @@ class AgentCreateRequest(BaseModel):
 class AgentUpdateRequest(BaseModel):
     name: str | None = None
     system_prompt: str | None = None
+    output_constraints: str | None = None
+    tools: list[dict] | None = None
+    mcp: list[dict] | None = None
+    skills: list[dict] | None = None
     order: int | None = None
     is_active: bool | None = None
     is_approver: bool | None = None
@@ -49,6 +57,10 @@ async def list_agents():
                 "name": c.name,
                 "role_identifier": c.role_identifier,
                 "system_prompt": c.system_prompt,
+                "output_constraints": c.output_constraints,
+                "tools": c.tools,
+                "mcp": c.mcp,
+                "skills": c.skills,
                 "model": c.model,
                 "temperature": c.temperature,
                 "order": c.order,
@@ -70,10 +82,15 @@ async def add_agent(req: AgentCreateRequest):
     if existing:
         raise HTTPException(status_code=409, detail=f"角色标识 '{req.role_identifier}' 已存在")
     try:
+        import json
         created = await create_agent_config(
             name=req.name,
             role_identifier=req.role_identifier,
             system_prompt=req.system_prompt,
+            output_constraints=req.output_constraints,
+            tools=json.dumps(req.tools) if req.tools else None,
+            mcp=json.dumps(req.mcp) if req.mcp else None,
+            skills=json.dumps(req.skills) if req.skills else None,
             order=req.order,
             is_active=req.is_active,
             is_approver=req.is_approver,
@@ -89,10 +106,15 @@ async def add_agent(req: AgentCreateRequest):
 
 @router.put("/api/agents/{agent_id}")
 async def edit_agent(agent_id: str, req: AgentUpdateRequest):
+    import json
     updated = await update_agent_config(
         id=agent_id,
         name=req.name,
         system_prompt=req.system_prompt,
+        output_constraints=req.output_constraints,
+        tools=json.dumps(req.tools) if req.tools is not None else None,
+        mcp=json.dumps(req.mcp) if req.mcp is not None else None,
+        skills=json.dumps(req.skills) if req.skills is not None else None,
         order=req.order,
         is_active=req.is_active,
         is_approver=req.is_approver,

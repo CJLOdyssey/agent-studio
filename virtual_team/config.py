@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -6,8 +7,16 @@ from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-REQUIRED_VARS = ["DEEPSEEK_API_KEY", "OPENAI_API_KEY"]
-
+_env_file = Path(__file__).parent.parent / ".env"
+if _env_file.exists():
+    for line in _env_file.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
 
 class TeamConfig(BaseModel):
     model_config = {"extra": "forbid"}
@@ -26,13 +35,14 @@ class TeamConfig(BaseModel):
         safe["api_key"] = "***" if self.api_key else "(unset)"
         return f"TeamConfig({safe})"
 
-    def validate_required(self) -> list[str]:
-        errors: list[str] = []
-        if not self.api_key:
-            errors.append(f"API key 未配置。请设置环境变量: {' 或 '.join(REQUIRED_VARS)}")
-        return errors
 
-def load_config(validate: bool = True) -> TeamConfig:
+def load_config() -> TeamConfig:
+    """Load configuration from environment variables.
+
+    Note: This reads DEEPSEEK_API_KEY/OPENAI_API_KEY for backward compatibility,
+    but the server NEVER uses these as a fallback (BYOK pattern).
+    Users must configure their own API keys through the frontend key vault.
+    """
     api_key = os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
     api_base = os.environ.get("OPENAI_BASE_URL") or None
     model = os.environ.get("OPENAI_MODEL", "gpt-4o")
@@ -41,7 +51,7 @@ def load_config(validate: bool = True) -> TeamConfig:
     timeout = _safe_int("TIMEOUT", 120)
     max_retries = _safe_int("MAX_RETRIES", 3)
     max_requirement_length = _safe_int("MAX_REQUIREMENT_LENGTH", 2000)
-    cfg = TeamConfig(
+    return TeamConfig(
         api_key=api_key,
         api_base=api_base,
         model=model,
@@ -51,11 +61,6 @@ def load_config(validate: bool = True) -> TeamConfig:
         max_retries=max_retries,
         max_requirement_length=max_requirement_length,
     )
-    if validate:
-        errors = cfg.validate_required()
-        for err in errors:
-            logger.warning("配置缺失: %s", err)
-    return cfg
 
 
 def _safe_float(key: str, default: float) -> float:
