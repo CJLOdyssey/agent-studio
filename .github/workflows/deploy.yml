@@ -47,10 +47,19 @@ jobs:
     needs: docker
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout via SSH
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_github
+          cd /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team
+          git fetch origin
+          git reset --hard origin/main
 
       - name: Pull and restart services
         run: |
+          cd /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team
           docker compose pull
           docker compose up -d --remove-orphans
           docker image prune -f
