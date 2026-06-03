@@ -15,7 +15,7 @@ from virtual_team.broker import get_redis
 from virtual_team.config import load_config
 from virtual_team.database import get_async_engine, init_db
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import seed_default_agents
+
 from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions
 
 logger = get_logger(__name__)
@@ -37,13 +37,6 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.warning("Database init skipped (might not be available): %s", e)
-
-    logger.info("Starting up — seeding default agent configs...")
-    try:
-        await seed_default_agents()
-        logger.info("Default agent configs seeded")
-    except Exception as e:
-        logger.warning("Agent seeding skipped: %s", e)
 
     yield
     logger.info("Shutting down")

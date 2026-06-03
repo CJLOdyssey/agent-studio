@@ -5,7 +5,6 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { AgentConfig } from '../types';
 import type { Agent, Team } from '../types/devagents';
-import { INITIAL_TEAMS } from '../constants/initialTeams';
 
 // Map backend role_identifier to frontend icon + styling
 const ROLE_STYLE_MAP: Record<string, {
@@ -84,11 +83,11 @@ export function mapAgentConfigToAgent(cfg: AgentConfig): Agent {
 
 /**
  * Build teams from API-loaded agent configs.
- * Falls back to INITIAL_TEAMS if no agents are provided.
+ * Returns empty array when no agents exist.
  */
 export function buildTeamsFromAgents(agentConfigs: AgentConfig[] | undefined | null): Team[] {
   if (!agentConfigs || agentConfigs.length === 0) {
-    return INITIAL_TEAMS;
+    return [];
   }
 
   const activeAgents = agentConfigs
@@ -99,16 +98,10 @@ export function buildTeamsFromAgents(agentConfigs: AgentConfig[] | undefined | n
 
   return [
     {
-      id: 'team-dynamic',
-      name: 'AI 开发团队',
+      id: 'team-api',
+      name: '我的团队',
       isExpanded: true,
       agents: mappedAgents,
-    },
-    {
-      id: 'team-growth',
-      name: '增长业务团队',
-      isExpanded: false,
-      agents: [],
     },
   ];
 }
