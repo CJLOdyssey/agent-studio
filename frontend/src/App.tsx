@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ToastProvider } from './utils/useToast';
@@ -7,9 +7,6 @@ import { useChatStore } from './stores/chatStore';
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';
 
-const HomePage = lazy(() => import('./pages/HomePage'));
-const HistoryPage = lazy(() => import('./pages/HistoryPage'));
-const HistoryDetailPage = lazy(() => import('./pages/HistoryDetailPage'));
 const DevAgentsWorkstation = lazy(() => import('./components/devagents/DevAgentsWorkstation'));
 
 const queryClient = new QueryClient({
@@ -17,11 +14,6 @@ const queryClient = new QueryClient({
     queries: { retry: 2, staleTime: 30_000, refetchOnWindowFocus: false },
   },
 });
-
-function HistoryDetailWrapper() {
-  const { id } = useParams<{ id: string }>();
-  return <HistoryDetailPage id={id} />;
-}
 
 function AppInit() {
   const queryClient = useQueryClient();
@@ -64,10 +56,7 @@ export default function App() {
         <ToastProvider>
           <Suspense fallback={<div className="route-loading" aria-label="Loading page">Loading...</div>}>
             <Routes>
-              <Route path="/" element={<ErrorBoundary FallbackComponent={Fallback} onError={logError}><DevAgentsWorkstation /></ErrorBoundary>} />
-              <Route path="/legacy" element={<ErrorBoundary FallbackComponent={Fallback} onError={logError}><HomePage /></ErrorBoundary>} />
-              <Route path="/history" element={<ErrorBoundary FallbackComponent={Fallback} onError={logError}><HistoryPage /></ErrorBoundary>} />
-              <Route path="/history/:id" element={<ErrorBoundary FallbackComponent={Fallback} onError={logError}><HistoryDetailWrapper /></ErrorBoundary>} />
+              <Route path="*" element={<ErrorBoundary FallbackComponent={Fallback} onError={logError}><DevAgentsWorkstation /></ErrorBoundary>} />
             </Routes>
           </Suspense>
         </ToastProvider>

@@ -12,7 +12,7 @@ import './styles/sidebar/index.css';
 import './styles/chat/index.css';
 import './styles/components/index.css';
 import './styles/modals/index.css';
-import './styles/legacy/index.css';
+
 
 installGlobalErrorHandlers();
 
