@@ -8,7 +8,7 @@
 |---|---|
 | 前端 | React 18 + TypeScript + Vite 6 + Zustand 5 |
 | 后端 | FastAPI |
-| AI 框架 | AutoGen (pyautogen) GroupChat |
+| AI 框架 | LangGraph + LangChain ChatOpenAI (ReAct Agent) |
 | 任务队列 | Celery + Redis |
 | 数据库 | PostgreSQL 16 + SQLAlchemy async |
 | 容器化 | Docker Compose (5 服务) |
@@ -49,23 +49,23 @@ docker compose up -d
 
 ```bash
 # 后端（热重载）
-uvicorn webapp:app --reload --port 8080
+uvicorn virtual_team.app:app --reload --port 8080
 
 # 前端（Vite dev server）
 cd frontend && npm run dev
 
 # Celery Worker
-celery -A virtual_team.celery_app worker --loglevel=info --concurrency=2
+celery -A virtual_team.broker.celery_app worker --loglevel=info --concurrency=2
 ```
 
 ## 核心流程
 
 1. 用户输入需求 → POST /api/runs（自动创建 Session）
-2. Celery 异步执行 GroupChat 讨论（携带 Session 上下文中的历史记忆）
+2. Celery 异步执行 LangGraph ReAct Agent 讨论（携带 Session 上下文中的历史记忆）
 3. PM → 程序员 → 测试员 轮转发言（最多 MAX_ROUNDS 轮）
 4. 测试员检测到关键词"【批准】" → 对话终止
 5. 自动提取：PM 文档 / 代码 / 审查意见，并保存为结构化记忆
-6. 结果通过 WebSocket 实时推送到前端
+6. 结果通过 Redis pub/sub → WebSocket 实时推送到前端
 
 ## 会话与长期记忆
 
@@ -97,20 +97,30 @@ celery -A virtual_team.celery_app worker --loglevel=info --concurrency=2
 ## 项目结构
 
 ```
-webapp.py              # FastAPI 入口 + API 路由
 virtual_team/          # 后端核心
-├── agents.py          # AutoGen Agent 工厂
-├── config.py          # 配置管理
-├── conversation.py    # TeamManager (GroupChat 控制)
-├── tasks.py           # Celery 任务定义
+├── app.py             # FastAPI 入口 + 路由注册
+├── main.py            # CLI 入口（单次运行）
+├── agent_graph.py     # LangGraph ReAct Agent 引擎
+├── config.py          # Pydantic 配置管理
+├── database.py        # SQLAlchemy ORM + 异步引擎
 ├── models.py          # Pydantic 数据模型
 ├── repository.py      # 数据库 CRUD
-├── database.py        # SQLAlchemy 引擎 + ORM
+├── broker.py          # Celery 应用 + Redis pub/sub
+├── tasks.py           # Celery 异步任务定义
 ├── extractors.py      # 文档/代码/评审提取
-├── prompts.py         # 提示模板
-└── agent_defaults.py  # 默认 Agent 配置
+├── prompts.py         # Agent 提示模板
+├── rag.py             # RAG 管线（pgvector 向量检索）
+├── checkpoint.py      # 会话检查点系统
+├── logging_config.py  # 结构化日志配置
+└── routers/           # API 路由（6 个模块）
+    ├── agents.py      # Agent 配置 CRUD
+    ├── sessions.py    # Session 管理
+    ├── runs.py        # 讨论运行 + WebSocket
+    ├── attachments.py # 文件上传
+    ├── commands.py    # 命令面板
+    └── models.py      # 可用模型列表
 frontend/              # React SPA
-tests/                 # 104 个单元测试
+tests/                 # 单元测试
 docker-compose.yml     # 5 服务编排
 ```
 
@@ -126,7 +136,9 @@ docker-compose.yml     # 5 服务编排
 | TIMEOUT | 120 | API 超时(秒) |
 | MAX_RETRIES | 3 | 最大重试次数 |
 | CORS_ORIGIN | — | 生产环境 CORS 来源 |
-| LOG_LEVEL | INFO | 日志级别 |
+| LOG_LEVEL | INFO | 日志级别（DEBUG / INFO / WARNING / ERROR） |
+| LOG_FORMAT | text | 日志格式（text / json，json 适配 ELK/Loki） |
+| MAX_REQUIREMENT_LENGTH | 2000 | 单次需求最大字符数 |
 
 ## 文档
 

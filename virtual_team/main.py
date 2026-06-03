@@ -1,87 +1,83 @@
+"""CLI entry point — runs a single agent via LangGraph."""
 import asyncio
 import logging
 import sys
 
-from virtual_team.config import TeamConfig, load_config
-from virtual_team.conversation import TeamManager
+from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
-from virtual_team.models import AgentConfig
-from virtual_team.repository import get_active_agent_configs
+from virtual_team.repository import get_active_agent_configs, get_session_memories
 
 logger = get_logger(__name__)
 
-MAX_REQUIREMENT_LENGTH = 2000
+
+def _build_context(memories) -> str:
+    if not memories:
+        return ""
+    lines = ["\n\n【历史上下文】"]
+    for m in memories:
+        lines.append(f"- [{m.content_type}] {m.agent_role}: {m.summary}")
+    return "\n".join(lines)
 
 
-def run_team(
-    requirement: str, config: TeamConfig | None = None
-) -> dict:
-    if config is None:
-        config = load_config()
+def run_cli(requirement: str, session_id: str | None = None) -> dict:
+    """Run a single agent from the command line."""
+    return asyncio.run(_run_cli_async(requirement, session_id))
 
-    loop = asyncio.new_event_loop()
-    try:
-        db_configs = loop.run_until_complete(get_active_agent_configs())
-    finally:
-        loop.close()
 
-    agent_configs = [
-        AgentConfig(
-            id=ac.id,
-            name=ac.name,
-            role_identifier=ac.role_identifier,
-            system_prompt=ac.system_prompt,
-            model=ac.model,
-            temperature=ac.temperature,
-            order=ac.order,
-            is_active=ac.is_active,
-            is_approver=ac.is_approver,
-            icon=ac.icon,
-        )
-        for ac in db_configs
-    ]
+async def _run_cli_async(requirement: str, session_id: str | None = None) -> dict:
+    """Async implementation of CLI agent runner."""
+    config = load_config()
 
-    manager = TeamManager(config, agent_configs)
-    output = manager.run(requirement)
-    return output.model_dump()
+    db_configs = await get_active_agent_configs()
+    primary = db_configs[0] if db_configs else None
+
+    system_prompt = primary.system_prompt if primary else "你是一个智能助手。"
+    model = primary.model or config.model if primary else config.model
+
+    session_context = ""
+    if session_id:
+        memories = await get_session_memories(session_id)
+        if memories:
+            session_context = _build_context(memories)
+
+    from virtual_team.agent_graph import SingleAgentGraph, DEFAULT_TOOLS
+
+    graph = SingleAgentGraph(
+        model=model,
+        api_key=config.api_key,
+        base_url=config.api_base,
+        temperature=config.temperature,
+    )
+    graph.set_tools(DEFAULT_TOOLS)
+
+    result = await graph.run(
+        system_prompt=system_prompt,
+        user_input=requirement,
+        thread_id=session_id or "cli",
+        session_context=session_context,
+    )
+
+    return result
 
 
 def main() -> int:
     if len(sys.argv) < 2:
-        logger.warning("No requirement provided")
-        print("Usage: python -m virtual_team.main <requirement>")
+        print("Usage: python -m virtual_team.main <requirement>", file=sys.stderr)
         return 1
-    requirement = sys.argv[1]
-    if len(requirement) > MAX_REQUIREMENT_LENGTH:
-        logger.error("Requirement too long: %d chars (max %d)", len(requirement), MAX_REQUIREMENT_LENGTH)
-        print(f"Error: requirement too long ({len(requirement)} chars, max {MAX_REQUIREMENT_LENGTH})", file=sys.stderr)
-        return 1
-    logger.info("CLI run | requirement=%.200s | chars=%d", requirement, len(requirement))
-    try:
-        config = load_config()
-        loop = asyncio.new_event_loop()
-        try:
-            db_configs = loop.run_until_complete(get_active_agent_configs())
-        finally:
-            loop.close()
 
-        agent_configs = [
-            AgentConfig(
-                id=ac.id, name=ac.name, role_identifier=ac.role_identifier,
-                system_prompt=ac.system_prompt, model=ac.model,
-                temperature=ac.temperature, order=ac.order,
-                is_active=ac.is_active, is_approver=ac.is_approver, icon=ac.icon,
-            )
-            for ac in db_configs
-        ]
-        manager = TeamManager(config, agent_configs)
-        output = manager.run(requirement)
-        print(output.model_dump_json(indent=2, ensure_ascii=False))
-        logger.info("CLI completed | status=%s | approved=%s",
-                     manager.status.value, output.approved)
+    requirement = sys.argv[1]
+    cfg = load_config()
+    if len(requirement) > cfg.max_requirement_length:
+        print(f"Error: requirement too long ({len(requirement)} chars)", file=sys.stderr)
+        return 1
+
+    try:
+        result = run_cli(requirement)
+        import json
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
-    except (ValueError, RuntimeError) as e:
-        logger.error("CLI failed | error=%s", e, exc_info=True)
+    except Exception as e:
+        logger.error("CLI failed: %s", e, exc_info=True)
         print(f"Error: {e}", file=sys.stderr)
         return 1
 

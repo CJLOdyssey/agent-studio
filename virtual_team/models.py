@@ -81,6 +81,39 @@ class SessionDetail(SessionItem):
     runs: list = Field(default_factory=list)
 
 
+class AttachmentResponse(BaseModel):
+    id: str
+    session_id: str
+    run_id: str | None = None
+    filename: str
+    content_type: str = "application/octet-stream"
+    size_bytes: int = 0
+    has_extracted_text: bool = False
+    created_at: datetime | None = None
+
+
+class CommandResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    shortcut: str | None = None
+    category: str = "general"
+    requires_input: bool = False
+    enabled: bool = True
+
+
+class CommandExecuteRequest(BaseModel):
+    command_id: str
+    session_id: str
+    payload: dict = Field(default_factory=dict)
+
+
+class CommandExecuteResponse(BaseModel):
+    success: bool
+    message: str = ""
+    data: dict = Field(default_factory=dict)
+
+
 class TeamOutput(BaseModel):
     requirement: str = Field(min_length=1)
     pm_document: str
@@ -89,3 +122,55 @@ class TeamOutput(BaseModel):
     approved: bool = False
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     conversation_rounds: list[ConversationRound] = Field(default_factory=list)
+
+
+class SessionSummary(BaseModel):
+    id: str
+    title: str
+    run_count: int = 0
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class RunSummary(BaseModel):
+    id: str
+    session_id: str | None = None
+    requirement: str
+    pm_document: str = ""
+    code: str = ""
+    review: str = ""
+    approved: bool = False
+    status: str = "pending"
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class MessageItem(BaseModel):
+    id: str
+    role: str
+    agent_name: str
+    content: str
+    round_number: int = 1
+    created_at: str | None = None
+
+
+class RunDetail(RunSummary):
+    messages: list[MessageItem] = Field(default_factory=list)
+
+
+class MemoryItem(BaseModel):
+    id: str
+    agent_role: str
+    content_type: str
+    summary: str
+    details: str = ""
+    created_at: str | None = None
+
+
+class SessionDetailResponse(BaseModel):
+    id: str
+    title: str
+    created_at: str | None = None
+    updated_at: str | None = None
+    runs: list[RunSummary] = Field(default_factory=list)
+    memories: list[MemoryItem] = Field(default_factory=list)

@@ -1,15 +1,86 @@
+import asyncio
 from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from virtual_team.agent_defaults import DEFAULT_AGENTS
+from virtual_team.models import AgentConfig
+from virtual_team.prompts import DIRECT_REPLY_KEYWORD
 from virtual_team.database import (
     AgentConfigDB, ChatMessage, MemoryEntry, ProjectRun, SessionDB, get_session_factory,
 )
 
+DEFAULT_AGENTS = [
+    AgentConfig(
+        role_identifier="product_manager",
+        name="产品经理",
+        system_prompt=f"""你是产品经理，负责与用户交流并协调前端、后端和测试团队。
 
+你的职责：
+1. 判断用户输入类型，决定是否需要启动团队讨论
+2. 如果是软件需求，分析并输出完整的产品需求文档
+3. 如果是简单问候或闲聊，直接回复即可
+
+判断规则：
+- 如果用户说的是简单问候（你好/谢谢/嗨）、闲聊、概念提问，直接在回复末尾加上{DIRECT_REPLY_KEYWORD}，系统将不会启动前端和后端工程师。
+- 如果是软件需求、需要生成代码或文档的任务，正常输出需求文档，不要添加{DIRECT_REPLY_KEYWORD}，系统会自动让前端和后端工程师参与讨论。
+
+输出格式：先输出设计说明（## 产品需求文档），再输出代码实现。""",
+        order=0,
+        icon="👤",
+    ),
+    AgentConfig(
+        role_identifier="frontend",
+        name="前端工程师",
+        system_prompt=(
+            "你是资深前端工程师，负责设计用户界面和交互体验。\n\n"
+            "你的职责：\n"
+            "1. 分析用户需求，设计清晰的产品界面和交互流程\n"
+            "2. 输出产品界面设计说明，包含功能布局、用户操作流程\n"
+            "3. 编写高质量的前端代码（HTML/CSS/JavaScript/TypeScript/React等）\n"
+            "4. 如果需求中明显需要前端代码，请输出完整的代码实现\n\n"
+            "输出格式：先输出设计说明（## 前端设计），再输出代码实现。"
+        ),
+        order=1,
+        icon="🎨",
+    ),
+    AgentConfig(
+        role_identifier="backend",
+        name="后端工程师",
+        system_prompt=(
+            "你是资深后端工程师，负责实现服务器端逻辑和数据存储。\n\n"
+            "你的职责：\n"
+            "1. 仔细阅读前端工程师的设计说明，理解完整的业务需求\n"
+            "2. 设计并实现 API、数据库、业务逻辑\n"
+            "3. 编写高质量、可维护的后端代码\n"
+            "4. 代码需要包含必要的注释和错误处理\n"
+            "5. 如需求不清晰，请指出并询问\n\n"
+            "输出格式：用代码块(```)包含你的代码实现，并附上简要说明。"
+        ),
+        order=1,
+        icon="⚙️",
+    ),
+    AgentConfig(
+        role_identifier="tester",
+        name="测试工程师",
+        system_prompt=(
+            "你是测试工程师，负责审查前端和后端工程师的工作成果，确保质量和功能正确性。\n\n"
+            "你的职责：\n"
+            "1. 审查前端设计是否满足用户需求\n"
+            "2. 审查后端代码是否满足设计和业务逻辑\n"
+            "3. 检查代码质量、安全性和边界情况\n"
+            "4. 检查前后端接口是否协调一致\n"
+            "5. 如发现问题，清晰说明问题并给出修改建议\n"
+            "6. 如所有工作通过审查，在回复末尾单独一行输出【批准】\n\n"
+            "重要：只有当全部工作完全满足需求、质量合格时，才在末尾输出【批准】。"
+            "否则列出具体问题，要求前端或后端工程师修改。"
+        ),
+        order=2,
+        is_approver=True,
+        icon="🧪",
+    ),
+]
 # ---- Session CRUD ----
 
 async def create_session(title: str = "新对话") -> SessionDB:
@@ -75,6 +146,25 @@ async def get_session_runs(session_id: str) -> list[ProjectRun]:
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
+
+async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[ProjectRun]]:
+    """Batch-load runs for multiple session IDs, keyed by session_id."""
+    if not session_ids:
+        return {}
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(ProjectRun)
+            .where(ProjectRun.session_id.in_(session_ids))
+            .order_by(ProjectRun.created_at)
+        )
+        result = await session.execute(stmt)
+        runs = list(result.scalars().all())
+        grouped: dict[str, list[ProjectRun]] = {}
+        for run in runs:
+            grouped.setdefault(run.session_id, []).append(run)
+        return grouped
 
 
 # ---- Memory CRUD ----
@@ -266,6 +356,26 @@ async def get_agent_config_by_role(role_identifier: str) -> AgentConfigDB | None
         return result.scalar_one_or_none()
 
 
+async def get_agent_config(agent_id: str) -> AgentConfigDB | None:
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = select(AgentConfigDB).where(AgentConfigDB.id == agent_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+async def get_run_messages(run_id: str) -> list[ChatMessage]:
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(ChatMessage)
+            .where(ChatMessage.run_id == run_id)
+            .order_by(ChatMessage.created_at)
+        )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
+
+
 async def create_agent_config(
     name: str,
     role_identifier: str,
@@ -371,3 +481,334 @@ async def seed_default_agents():
             )
             session.add(db_agent)
         await session.commit()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Enterprise API Key Vault CRUD
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from virtual_team.database import UserApiKey, KeyUsageLog
+from virtual_team.key_vault import encrypt_api_key, decrypt_api_key, mask_api_key
+
+
+async def create_api_key(
+    user_id: str,
+    provider: str,
+    label: str,
+    plaintext_key: str,
+    base_url: str | None = None,
+    models: list[str] | None = None,
+    is_default: bool = False,
+) -> UserApiKey:
+    """Save a new API key — encrypts before storage, returns masked record."""
+    factory = get_session_factory()
+    async with factory() as session:
+        # If set as default, clear other defaults for this user
+        if is_default:
+            result = await session.execute(
+                select(UserApiKey).where(
+                    UserApiKey.user_id == user_id,
+                    UserApiKey.is_default == True,
+                )
+            )
+            for row in result.scalars().all():
+                row.is_default = False
+
+        encrypted = encrypt_api_key(plaintext_key)
+        obj = UserApiKey(
+            id=str(uuid4()),
+            user_id=user_id,
+            provider=provider,
+            label=label,
+            encrypted_key=encrypted,
+            base_url=base_url,
+            models=",".join(models) if models else "",
+            is_active=True,
+            is_default=is_default,
+        )
+        session.add(obj)
+        await session.commit()
+        await session.refresh(obj)
+        return obj
+
+
+async def get_api_keys(user_id: str) -> list[dict]:
+    """List a user's API keys — keys are MASKED, never returned in plaintext."""
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(UserApiKey.user_id == user_id)
+            .order_by(UserApiKey.created_at)
+        )
+        result = await session.execute(stmt)
+        rows = result.scalars().all()
+        return [
+            {
+                "id": r.id,
+                "provider": r.provider,
+                "label": r.label,
+                "key_masked": mask_api_key(decrypt_api_key(r.encrypted_key)),
+                "base_url": r.base_url,
+                "models": [m.strip() for m in r.models.split(",") if m.strip()] if r.models else [],
+                "is_active": r.is_active,
+                "is_default": r.is_default,
+                "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
+
+
+async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
+    """Retrieve and decrypt an API key for LLM invocation.
+
+    Returns full config dict with decrypted key. Updates last_used_at.
+    This is the ONLY function that returns a decrypted key — it is
+    never called from API routes, only from Celery tasks.
+    """
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = select(UserApiKey).where(
+            UserApiKey.id == key_id,
+            UserApiKey.user_id == user_id,
+            UserApiKey.is_active == True,
+        )
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+
+        row.last_used_at = datetime.now(timezone.utc)
+        await session.commit()
+
+        return {
+            "id": row.id,
+            "provider": row.provider,
+            "api_key": decrypt_api_key(row.encrypted_key),
+            "base_url": row.base_url,
+            "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
+        }
+
+
+async def get_default_api_key(user_id: str) -> dict | None:
+    """Get the user's default active API key for LLM calls."""
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = select(UserApiKey).where(
+            UserApiKey.user_id == user_id,
+            UserApiKey.is_active == True,
+            UserApiKey.is_default == True,
+        )
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            # No default set — use the first active key
+            stmt = select(UserApiKey).where(
+                UserApiKey.user_id == user_id,
+                UserApiKey.is_active == True,
+            ).order_by(UserApiKey.created_at).limit(1)
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+
+        if not row:
+            return None
+
+        row.last_used_at = datetime.now(timezone.utc)
+        await session.commit()
+
+        return {
+            "id": row.id,
+            "provider": row.provider,
+            "api_key": decrypt_api_key(row.encrypted_key),
+            "base_url": row.base_url,
+            "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
+        }
+
+
+async def update_api_key(
+    key_id: str,
+    user_id: str,
+    label: str | None = None,
+    plaintext_key: str | None = None,
+    base_url: str | None = None,
+    models: list[str] | None = None,
+    is_active: bool | None = None,
+    is_default: bool | None = None,
+) -> dict | None:
+    """Update an API key configuration."""
+    factory = get_session_factory()
+    async with factory() as session:
+        row = await session.get(UserApiKey, key_id)
+        if not row or row.user_id != user_id:
+            return None
+
+        if label is not None:
+            row.label = label
+        if plaintext_key is not None:
+            row.encrypted_key = encrypt_api_key(plaintext_key)
+        if base_url is not None:
+            row.base_url = base_url
+        if models is not None:
+            row.models = ",".join(models)
+        if is_active is not None:
+            row.is_active = is_active
+        if is_default is not None:
+            row.is_default = is_default
+            if is_default:
+                # Clear other defaults
+                result = await session.execute(
+                    select(UserApiKey).where(
+                        UserApiKey.user_id == user_id,
+                        UserApiKey.is_default == True,
+                        UserApiKey.id != key_id,
+                    )
+                )
+                for other in result.scalars().all():
+                    other.is_default = False
+
+        row.updated_at = datetime.now(timezone.utc)
+        await session.commit()
+
+        return {
+            "id": row.id,
+            "label": row.label,
+            "provider": row.provider,
+            "key_masked": mask_api_key(decrypt_api_key(row.encrypted_key)),
+            "is_active": row.is_active,
+            "is_default": row.is_default,
+        }
+
+
+async def delete_api_key(key_id: str, user_id: str) -> bool:
+    """Delete an API key. Returns True if deleted, False if not found."""
+    factory = get_session_factory()
+    async with factory() as session:
+        row = await session.get(UserApiKey, key_id)
+        if not row or row.user_id != user_id:
+            return False
+        await session.delete(row)
+        await session.commit()
+        return True
+
+
+async def test_api_key_connection(key_id: str, user_id: str) -> dict:
+    """Test connectivity for a stored key. Does NOT return the decrypted key.
+
+    Runs the blocking HTTP call in a thread pool to avoid blocking the event loop.
+    """
+    key_cfg = await get_api_key_for_use(key_id, user_id)
+    if not key_cfg:
+        return {"success": False, "message": "Key not found or inactive"}
+
+    return await asyncio.to_thread(_test_connection_sync, key_cfg)
+
+
+def _test_connection_sync(key_cfg: dict) -> dict:
+    """Synchronous HTTP connectivity test — runs in thread pool."""
+    import urllib.request
+
+    try:
+        test_url = key_cfg.get("base_url", "").rstrip("/") + "/models"
+        if not key_cfg.get("base_url"):
+            # Default test endpoints per provider
+            endpoints = {
+                "openai": "https://api.openai.com/v1/models",
+                "deepseek": "https://api.deepseek.com/v1/models",
+                "anthropic": "https://api.anthropic.com/v1/models",
+            }
+            test_url = endpoints.get(key_cfg["provider"], "")
+
+        if not test_url:
+            return {"success": False, "message": "No base URL configured"}
+
+        req = urllib.request.Request(test_url, method="GET")
+        req.add_header("Authorization", f"Bearer {key_cfg['api_key']}")
+        req.add_header("Content-Type", "application/json")
+
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            if resp.status == 200:
+                return {"success": True, "message": "Connection successful"}
+            return {"success": False, "message": f"HTTP {resp.status}"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+async def log_key_usage(
+    key_id: str | None,
+    user_id: str,
+    run_id: str | None,
+    provider: str,
+    model: str,
+    tokens_prompt: int = 0,
+    tokens_completion: int = 0,
+    duration_ms: int = 0,
+    status: str = "success",
+    error_message: str | None = None,
+):
+    """Record an LLM call in the audit log."""
+    total = tokens_prompt + tokens_completion
+    factory = get_session_factory()
+    async with factory() as session:
+        log = KeyUsageLog(
+            id=str(uuid4()),
+            key_id=key_id,
+            user_id=user_id,
+            run_id=run_id,
+            provider=provider,
+            model=model,
+            tokens_prompt=tokens_prompt,
+            tokens_completion=tokens_completion,
+            tokens_total=total,
+            duration_ms=duration_ms,
+            status=status,
+            error_message=error_message,
+        )
+        session.add(log)
+        await session.commit()
+
+
+async def get_key_usage_stats(user_id: str) -> dict:
+    """Get usage statistics for a user's keys."""
+    factory = get_session_factory()
+    async with factory() as session:
+        from sqlalchemy import func
+
+        # Today's stats
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        stmt_today = (
+            select(
+                func.count(KeyUsageLog.id).label("requests"),
+                func.sum(KeyUsageLog.tokens_total).label("tokens"),
+            )
+            .where(
+                KeyUsageLog.user_id == user_id,
+                KeyUsageLog.created_at >= today_start,
+                KeyUsageLog.status == "success",
+            )
+        )
+        result_today = await session.execute(stmt_today)
+        today = result_today.one()
+
+        # Month start
+        month_start = today_start.replace(day=1)
+        stmt_month = (
+            select(
+                func.count(KeyUsageLog.id).label("requests"),
+                func.sum(KeyUsageLog.tokens_total).label("tokens"),
+            )
+            .where(
+                KeyUsageLog.user_id == user_id,
+                KeyUsageLog.created_at >= month_start,
+                KeyUsageLog.status == "success",
+            )
+        )
+        result_month = await session.execute(stmt_month)
+        month = result_month.one()
+
+        return {
+            "today_requests": today.requests or 0,
+            "today_tokens": today.tokens or 0,
+            "month_requests": month.requests or 0,
+            "month_tokens": month.tokens or 0,
+        }

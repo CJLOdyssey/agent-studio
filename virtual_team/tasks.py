@@ -1,19 +1,26 @@
+"""
+Celery tasks — LangGraph-powered agent execution.
+
+Single-agent task uses LangGraph's agent graph with:
+  - Built-in checkpointing (SqliteSaver/MemorySaver)
+  - Native streaming via astream_events
+  - LangChain tool calling
+"""
+
 import asyncio
 import logging
+import os
 import time
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from asyncio import AbstractEventLoop
-
-from virtual_team.celery_app import celery_app
+from virtual_team.broker import celery_app
 from virtual_team.config import load_config
-from virtual_team.conversation import TeamManager
-from virtual_team.redis_client import publish_run_message
+from virtual_team.broker import publish_run_message
 from virtual_team.repository import (
     create_run,
     get_active_agent_configs,
+    get_agent_config,
     get_run,
+    get_run_messages,
     get_session_memories,
     save_message,
     update_run_result,
@@ -22,350 +29,340 @@ from virtual_team.repository import (
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# 单 event-loop 执行器：防止嵌套 loop / 重复 new_event_loop
-# ---------------------------------------------------------------------------
+# ── Feature flags ─────────────────────────────────────────────────────────────
 
-def _start_event_loop() -> "AbstractEventLoop":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop
+ENABLE_MOCK_FALLBACK = os.environ.get("ENABLE_MOCK_FALLBACK", "0") == "1"
 
+# ── Event loop helpers ───────────────────────────────────────────────────────
 
-def _shutdown_event_loop(loop: "AbstractEventLoop"):
-    try:
-        loop.run_until_complete(loop.shutdown_asyncgens())
-    except Exception:
-        pass
-    try:
-        loop.close()
-    except Exception:
-        pass
+def _run_async(coro):
+    """Safely run an async coroutine inside a Celery task.
 
-
-# ---------------------------------------------------------------------------
-# Streaming callback
-# ---------------------------------------------------------------------------
-
-def _streaming_callback(loop: "AbstractEventLoop", run_id: str, msg_dict: dict):
-    """Called by TeamManager on every agent message.
-
-    Reuses the task's single event loop instead of creating a per-message
-    loop, which previously caused asyncpg ``InterfaceError``.
+    Creates a fresh event loop per invocation to avoid cross-task
+    contamination in multi-process worker pools.
     """
-    try:
-        name = msg_dict.get("name", "")
-        content = msg_dict.get("content", "")
-        if not name or not content:
-            return
-        role = name
-        display_name = name
+    return asyncio.run(coro)
 
+
+# ── Streaming emitter ────────────────────────────────────────────────────────
+
+class _StreamEmitter:
+    """Bridges LangGraph streaming events to Redis pub/sub + DB persistence.
+
+    Since LangGraph's astream_events yields events inside an async loop,
+    the emitter uses native async/await rather than manual loop management.
+    """
+
+    def __init__(self, run_id: str):
+        self._run_id = run_id
+        self._message_index = 0  # Per-event sequence, not conversational "round"
+
+    async def __call__(self, event: dict):
+        kind = event.get("event", "")
+        data = event.get("data", {})
+
+        if kind == "on_chat_model_stream":
+            chunk = data.get("chunk")
+            if chunk and hasattr(chunk, "content") and chunk.content:
+                await self._emit("Agent", chunk.content, msg_type="stream")
+
+        elif kind == "on_tool_start":
+            tool_name = event.get("name", "tool")
+            tool_input = data.get("input", "")
+            await self._emit("Agent", f"\U0001f527 调用工具: {tool_name}({str(tool_input)[:200]})")
+
+        elif kind == "on_tool_end":
+            tool_name = event.get("name", "tool")
+            output = str(data.get("output", ""))[:500]
+            await self._emit("Agent", f"\U0001f441 {tool_name} 返回: {output}")
+
+    async def _emit(self, agent_name: str, content: str, msg_type: str = "message"):
+        self._message_index += 1
         payload = {
-            "type": "message",
-            "role": role,
-            "agent_name": display_name,
+            "type": msg_type,
+            "role": agent_name,
+            "agent_name": agent_name,
             "content": content,
-            "round_number": msg_dict.get("round_number", 0),
+            "round_number": self._message_index,
         }
-        loop.run_until_complete(publish_run_message(run_id, payload))
-        loop.run_until_complete(save_message(
-            run_id=run_id,
-            role=role,
-            agent_name=display_name,
-            content=content,
-            round_number=msg_dict.get("round_number", 0),
-        ))
-    except Exception:
-        logger.exception("Error in streaming callback")
+        try:
+            await publish_run_message(self._run_id, payload)
+            if msg_type == "message":
+                await save_message(
+                    run_id=self._run_id,
+                    role=agent_name,
+                    agent_name=agent_name,
+                    content=content,
+                    round_number=self._message_index,
+                )
+        except Exception:
+            logger.exception("Stream emit failed for run %s", self._run_id)
 
 
-# ---------------------------------------------------------------------------
-# Session context builder
-# ---------------------------------------------------------------------------
+# ── Session context ──────────────────────────────────────────────────────────
 
 def _build_session_context(memories) -> str:
     if not memories:
         return ""
-    lines = ["\n\n【历史上下文 - 之前的讨论记录】"]
+    lines = ["\n\n【历史上下文】"]
     for m in memories:
         lines.append(f"- [{m.content_type}] {m.agent_role}: {m.summary}")
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------------------
-# Memory persistence helper
-# ---------------------------------------------------------------------------
+async def _get_rag_context(query: str, session_id: str) -> str:
+    try:
+        from virtual_team.rag import retrieve_context
+        return await retrieve_context(query=query, session_id=session_id, top_k=3)
+    except Exception:
+        return ""
 
-def _save_run_memories(loop: "AbstractEventLoop", session_id: str, run_id: str, output):
+
+# ── Memory persistence ───────────────────────────────────────────────────────
+
+async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict):
     from virtual_team.repository import create_memory_entry
 
-    entries = []
-
-    if output.pm_document:
-        summary = output.pm_document[:200].replace("\n", " ")
-        entries.append(("pm", "pm_document", summary, output.pm_document))
-
-    if output.code:
-        code_preview = output.code[:200].replace("\n", " ")
-        entries.append(("programmer", "code", code_preview, output.code))
-
-    if output.review:
-        review_preview = output.review[:200].replace("\n", " ")
-        entries.append(("tester", "review", review_preview, output.review))
-
-    for agent_role, content_type, summary, details in entries:
-        loop.run_until_complete(
-            create_memory_entry(
-                session_id=session_id,
-                run_id=run_id,
-                agent_role=agent_role,
-                content_type=content_type,
-                summary=summary,
-                details=details,
-            )
+    summary = response[:200].replace("\n", " ")
+    try:
+        await create_memory_entry(
+            session_id=session_id,
+            run_id=run_id,
+            agent_role="agent",
+            content_type="code",
+            summary=summary,
+            details=response[:2000],
         )
+    except Exception:
+        logger.exception("Failed to save memory for run %s", run_id)
 
 
-# ---------------------------------------------------------------------------
-# Mock fallback — demonstrates streaming when LLM is unavailable
-# ---------------------------------------------------------------------------
+# ── Mock fallback (opt-in only) ──────────────────────────────────────────────
 
-def _run_mock_discussion(loop, requirement: str, run_id: str, session_id: str | None):
-    """Simulate a 3-agent discussion with streaming messages."""
-    import uuid
+async def _run_mock_discussion(requirement: str, run_id: str, session_id: str | None):
+    """Simulate agent discussion — only used when ENABLE_MOCK_FALLBACK=1."""
+    emitter = _StreamEmitter(run_id)
 
-    from virtual_team.prompts import DIRECT_REPLY_KEYWORD
-
-    GREETINGS = {"你好", "hello", "hi", "嗨", "您好", "在吗", "在不在", "谢谢", "多谢", "感谢"}
-    GREETING_PREFIXES = ("你好", "hello", "hi", "嗨")
-    norm = requirement.strip().lower()
-    is_greeting = (
-        norm in GREETINGS
-        or any(norm.startswith(p) for p in ("你好", "hello", "hi", "嗨"))
-        or len(norm) < 6
-    )
-
-    if is_greeting:
-        msg = {
-            "name": "产品经理",
-            "content": f"你好！有什么需求需要我们的团队帮忙吗？请描述你的需求，"
-                       f"产品经理、程序员和测试工程师会一起讨论并产出方案。{DIRECT_REPLY_KEYWORD}",
-            "round_number": 0,
-        }
-        _streaming_callback(loop, run_id, msg)
-
-        from dataclasses import dataclass
-        from enum import Enum
-
-        class MockStatus(Enum):
-            CONVERGED = "converged"
-
-        @dataclass
-        class MockOutput:
-            pm_document: str = ""
-            code: str = ""
-            review: str = ""
-            approved: bool = False
-            status: MockStatus = MockStatus.CONVERGED
-
-        return MockOutput(pm_document=msg["content"], approved=False)
-
-    agents = [
-        {"name": "pm", "display": "产品经理", "role": "pm"},
-        {"name": "programmer", "display": "资深程序员", "role": "programmer"},
-        {"name": "tester", "display": "测试工程师", "role": "tester"},
+    messages = [
+        f"收到需求：{requirement[:100]}",
+        "正在分析需求...",
+        "根据分析，这是一个标准的软件开发需求。需要明确输入输出和边界条件。",
+        "建议采用模块化设计，优先实现核心功能。",
+        f"需求分析完成。请提供更多细节或确认开始开发。",
     ]
+    for msg in messages:
+        await emitter._emit("Agent", msg)
+        await asyncio.sleep(0.5)
 
-    conversation = [
-        ("pm", "收到需求：{}。我先分析一下可行性...".format(requirement[:40])),
-        ("pm", "这是一个典型的软件开发需求。需要明确输入输出、边界条件和性能要求。"),
-        ("pm", "优先级建议：核心功能 P0，错误处理 P1，性能优化 P2。"),
-        ("programmer", "理解了，我先设计数据结构，然后实现核心逻辑。"),
-        ("programmer", "考虑使用函数式风格，保持代码简洁。单元测试覆盖主要路径。"),
-        ("tester", "收到代码，开始审查。检查边界条件：空输入、异常值、大数据量。"),
-        ("tester", "代码逻辑正确，建议增加文档注释。添加类型提示会更安全。【批准】"),
-    ]
-
-    round_num = 0
-    for name, content in conversation:
-        agent = next(a for a in agents if a["name"] == name)
-        msg = {
-            "name": agent["display"],
-            "content": content,
-            "round_number": round_num,
-        }
-        _streaming_callback(loop, run_id, msg)
-        round_num += 1
-        time.sleep(0.6)  # simulate thinking delay
-
-    # Build mock output
-    from dataclasses import dataclass, field
-    from enum import Enum
-
-    class MockStatus(Enum):
-        CONVERGED = "converged"
+    from dataclasses import dataclass
 
     @dataclass
     class MockOutput:
-        pm_document: str = ""
-        code: str = ""
-        review: str = ""
+        response: str = ""
+        status: str = "converged"
         approved: bool = False
-        status: MockStatus = field(default_factory=lambda: MockStatus.CONVERGED)
 
-    output = MockOutput(
-        pm_document="## 需求分析\n\n{}\n\n### 技术方案\n- 使用 Python 标准库\n- 函数式编程风格\n- 完整的类型注解\n\n### 风险评估\n低风险，需求明确。".format(requirement),
-        code="def solution():\n    \"\"\"Mock implementation — 配置真实 DeepSeek API Key 后生成实际代码\"\"\"\n    pass\n",
-        review="代码结构清晰，建议配置真实 API Key 以生成生产级代码。测试场景已覆盖。",
-        approved=True,
-    )
-    return output
+    return MockOutput(response="\n".join(messages), approved=True)
 
 
-# ---------------------------------------------------------------------------
-# Main Celery task
-# ---------------------------------------------------------------------------
+# ── Main async pipeline ──────────────────────────────────────────────────────
 
-@celery_app.task(bind=True, max_retries=3, default_retry_delay=5)
-def run_discussion(self, requirement: str, run_id: str | None = None, session_id: str | None = None):
-    logger.info("Task run_discussion started | run_id=%s | session_id=%s | requirement=%.100s",
-                run_id, session_id, requirement)
+async def _run_agent_pipeline(
+    requirement: str,
+    run_id: str,
+    session_id: str | None,
+    agent_id: str | None,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    model: str | None = None,
+) -> dict:
+    """Async core of the agent execution pipeline.
 
-    loop = _start_event_loop()
+    Uses api_key/api_base/model from the frontend request if provided;
+    falls back to server environment variables.
+    """
 
-    try:
-        # --- 1. Mark running ---
+    # 1. Mark running
+    await update_run_status(run_id, "running")
+
+    # 2. Load config (server-side fallback)
+    cfg = load_config()
+
+    # Use frontend-provided credentials if available, else server env vars
+    effective_api_key = api_key or cfg.api_key
+    effective_api_base = api_base or cfg.api_base
+    effective_model = model or cfg.model
+
+    # 3. Load agent system prompt
+    system_prompt = "你是一个智能助手，负责理解用户需求并完成任务。"
+    agent_name = "Agent"
+    if agent_id:
         try:
-            loop.run_until_complete(update_run_status(run_id, "running"))
+            ac = await get_agent_config(agent_id)
+            if ac:
+                system_prompt = ac.system_prompt
+                agent_name = ac.name
+                if ac.model:
+                    effective_model = ac.model
         except Exception:
             pass
 
-        # --- 2. Load config ---
-        config = load_config()
+    # 4. RAG context
+    session_context = ""
+    if session_id:
+        try:
+            memories = await get_session_memories(session_id)
+            if memories:
+                session_context = _build_session_context(memories)
+            rag_ctx = await _get_rag_context(requirement, session_id)
+            if rag_ctx:
+                session_context += "\n" + rag_ctx
+        except Exception:
+            pass
 
-        # --- 3. Load session memories ---
-        session_context = ""
-        if session_id:
-            try:
-                memories = loop.run_until_complete(get_session_memories(session_id))
-                if memories:
-                    session_context = _build_session_context(memories)
-            except Exception:
-                logger.exception("Failed to load session memories for %s", session_id)
+    # 5. Build agent graph with frontend-provided credentials
+    from virtual_team.agent_graph import SingleAgentGraph, DEFAULT_TOOLS
 
-        # --- 4. Load active agent configs ---
-        active_configs = loop.run_until_complete(get_active_agent_configs())
-        if not active_configs:
-            raise RuntimeError("没有活跃的 agent 配置，请在设置中添加至少一个 agent")
+    graph = SingleAgentGraph(
+        model=effective_model,
+        api_key=effective_api_key,
+        base_url=effective_api_base,
+        temperature=cfg.temperature,
+    )
+    graph.set_tools(DEFAULT_TOOLS)
 
-        from virtual_team.models import AgentConfig as AgentConfigModel
-        agent_configs = [
-            AgentConfigModel(
-                id=ac.id,
-                name=ac.name,
-                role_identifier=ac.role_identifier,
-                system_prompt=ac.system_prompt,
-                model=ac.model,
-                temperature=ac.temperature,
-                order=ac.order,
-                is_active=ac.is_active,
-                is_approver=ac.is_approver,
-                icon=ac.icon,
-            )
-            for ac in active_configs
-        ]
+    # 6. Run LangGraph agent with streaming
+    emitter = _StreamEmitter(run_id)
+    result = await graph.run(
+        system_prompt=system_prompt,
+        user_input=requirement,
+        thread_id=session_id or run_id or "default",
+        session_context=session_context,
+        stream_callback=emitter,
+    )
 
-        # --- 5. Run discussion ---
-        enriched_requirement = requirement + session_context if session_context else requirement
-        manager = TeamManager(
-            config,
-            agent_configs,
-            message_callback=lambda m: _streaming_callback(loop, run_id, m),
-        )
-        output = manager.run_streaming(enriched_requirement)
+    response = result.get("response", "")
+    tool_calls = result.get("tool_calls", [])
 
-        # --- 6. Save results ---
-        loop.run_until_complete(update_run_result(
-            run_id=run_id,
-            pm_document=output.pm_document,
-            code=output.code,
-            review=output.review,
-            approved=output.approved,
-            status=output.status.value if hasattr(output.status, 'value') else str(output.status),
+    # Build a meaningful review summary for the single-agent flow
+    review_summary = (
+        f"Agent completed successfully with {result.get('message_count', 0)} messages "
+        f"and {len(tool_calls)} tool call(s)."
+    )
+
+    # 7. Save results — field mapping for single-agent pipeline:
+    #    pm_document = requirement analysis (no separate PM phase in ReAct agent)
+    #    code        = the agent's final response
+    #    review      = execution summary
+    await update_run_result(
+        run_id=run_id,
+        pm_document=requirement,
+        code=response,
+        review=review_summary,
+        approved=True,
+        status="converged",
+    )
+    await publish_run_message(run_id, {
+        "type": "result",
+        "status": "completed",
+        "approved": True,
+        "pm_document": requirement,
+        "code": response,
+        "review": review_summary,
+    })
+
+    # 8. Save memories + RAG ingestion
+    if session_id:
+        try:
+            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
+            from virtual_team.rag import ingest_session_messages
+            messages = await get_run_messages(run_id)
+            if messages:
+                msg_dicts = [{"content": m.content, "role": m.role, "agent_name": m.agent_name} for m in messages]
+                await ingest_session_messages(session_id, run_id, msg_dicts)
+        except Exception:
+            logger.exception("RAG/memory save failed for run %s", run_id)
+
+    logger.info("LangGraph agent completed | run=%s | msgs=%d | tools=%d",
+                run_id, result.get("message_count", 0), len(tool_calls))
+    return {"run_id": run_id, "status": "completed"}
+
+
+# ── Celery task entry point ─────────────────────────────────────────────────
+
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)
+def run_agent(
+    self,
+    requirement: str,
+    run_id: str | None = None,
+    session_id: str | None = None,
+    agent_id: str | None = None,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    model: str | None = None,
+):
+    """
+    Run a single agent with the complete pipeline:
+      1. Load session + system prompt
+      2. Retrieve RAG context
+      3. Run LangGraph ReAct agent
+      4. Stream output via Redis
+      5. Save results to DB
+      6. Ingest into RAG pipeline
+    """
+    logger.info("LangGraph agent task | run=%s | session=%s | agent=%s", run_id, session_id, agent_id)
+
+    try:
+        return _run_async(_run_agent_pipeline(
+            requirement, run_id, session_id, agent_id,
+            api_key=api_key, api_base=api_base, model=model,
         ))
-        loop.run_until_complete(publish_run_message(run_id, {
-            "type": "result",
-            "status": "completed",
-            "approved": output.approved,
-            "pm_document": output.pm_document,
-            "code": output.code,
-            "review": output.review,
-        }))
-
-        # --- 7. Save memories (moved BEFORE return — was dead code) ---
-        if session_id:
-            try:
-                _save_run_memories(loop, session_id, run_id, output)
-            except Exception:
-                logger.exception("Failed to save memories for run %s", run_id)
-
-        logger.info("Task run_discussion completed | run_id=%s | approved=%s", run_id, output.approved)
-        return {"run_id": run_id, "status": "completed", "approved": output.approved}
 
     except Exception as exc:
-        logger.exception("Task run_discussion failed | run_id=%s — falling back to mock", run_id)
+        logger.exception("LangGraph agent failed | run=%s", run_id)
 
-        # --- 8. Mock fallback: demonstrate streaming even without LLM ---
-        try:
-            output = _run_mock_discussion(loop, requirement, run_id, session_id)
-
-            loop.run_until_complete(update_run_result(
-                run_id=run_id,
-                pm_document=output.pm_document,
-                code=output.code,
-                review=output.review,
-                approved=output.approved,
-                status=output.status.value,
-            ))
-            loop.run_until_complete(publish_run_message(run_id, {
-                "type": "result",
-                "status": "completed",
-                "approved": output.approved,
-                "pm_document": output.pm_document,
-                "code": output.code,
-                "review": output.review,
-            }))
-
-            if session_id:
-                try:
-                    _save_run_memories(loop, session_id, run_id, output)
-                except Exception:
-                    logger.exception("Failed to save mock memories for run %s", run_id)
-
-            logger.info("Task run_discussion completed (mock) | run_id=%s", run_id)
-            return {"run_id": run_id, "status": "completed", "approved": output.approved}
-        except Exception as mock_exc:
-            logger.exception("Mock discussion also failed | run_id=%s", run_id)
-
-            # --- 9. Final error ---
+        # Mock fallback — opt-in only via ENABLE_MOCK_FALLBACK env var
+        if ENABLE_MOCK_FALLBACK:
+            logger.warning("Mock fallback enabled — using simulated response for run=%s", run_id)
             try:
-                loop.run_until_complete(update_run_status(run_id, "error"))
-                loop.run_until_complete(publish_run_message(run_id, {
-                    "type": "status", "status": "error", "error": str(exc),
+                output = _run_async(_run_mock_discussion(requirement, run_id, session_id))
+                _run_async(update_run_result(
+                    run_id=run_id,
+                    pm_document="Mock fallback",
+                    code=output.response,
+                    review="LangGraph 调用失败，使用了模拟回复",
+                    approved=True,
+                    status="converged",
+                ))
+                _run_async(publish_run_message(run_id, {
+                    "type": "result", "status": "completed", "approved": True,
+                    "pm_document": "Mock fallback",
+                    "code": output.response,
+                    "review": "LangGraph fallback",
                 }))
-            except Exception:
-                _shutdown_event_loop(loop)
-                fallback = _start_event_loop()
+                if session_id:
+                    try:
+                        _run_async(_save_output_memories(session_id, run_id, output.response, {}))
+                    except Exception:
+                        pass
+                return {"run_id": run_id, "status": "completed", "fallback": True}
+            except Exception as mock_exc:
+                logger.exception("Mock fallback also failed for run=%s", run_id)
                 try:
-                    fallback.run_until_complete(update_run_status(run_id, "error"))
+                    _run_async(update_run_status(run_id, "error"))
+                    _run_async(publish_run_message(run_id, {
+                        "type": "status", "status": "error", "error": str(exc),
+                    }))
                 except Exception:
                     pass
-                finally:
-                    _shutdown_event_loop(fallback)
-                raise
+                self.retry(exc=mock_exc)
 
-            self.retry(exc=mock_exc)
-
-    finally:
-        _shutdown_event_loop(loop)
+        # No fallback — mark as error and retry
+        try:
+            _run_async(update_run_status(run_id, "error"))
+            _run_async(publish_run_message(run_id, {
+                "type": "status", "status": "error", "error": str(exc),
+            }))
+        except Exception:
+            pass
+        self.retry(exc=exc)

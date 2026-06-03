@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as api from './client';
 import type { ModelOption } from '../types/input';
-import { getAndDecrypt } from '../utils/secureStorage';
 
 // ---- Sessions ----
 
@@ -130,39 +129,34 @@ export function useCommands() {
   });
 }
 
-// ---- Available Models (backend API + localStorage providers) ----
-
-interface StoredProvider {
-  id: string;
-  name: string;
-  models: string[];
-  isActive: boolean;
-}
+// ---- Available Models (server key vault + backend models API) ----
 
 /**
- * Returns available models from TWO sources, merged:
+ * Returns available models from the server-side key vault.
  *
- *   1. Backend GET /api/models (server-side, from environment variables)
- *   2. ApiManagementModal localStorage config (user-configured providers)
- *
- * The backend is authoritative for server-managed models. The localStorage
- * fallback covers the case where the user configured providers in the UI
- * but the backend hasn't been set up with env vars yet.
+ * The enterprise architecture stores API keys server-side. This hook
+ * fetches the key list from GET /api/keys and extracts available models.
+ * Also merges GET /api/models (server env var fallback).
  */
 export function useAvailableModels(): ModelOption[] {
   const { data: apiModels } = useQuery({
     queryKey: ['models'],
     queryFn: () => api.listModels(),
-    staleTime: 0,        // always refetch on mount — user may have just configured
-    gcTime: 30_000,      // keep in cache for 30s after unmount
+    staleTime: 0,
+    gcTime: 30_000,
   });
 
-  // Compute inline (no useMemo) — localStorage read must happen on every render
-  // so the list updates immediately after ApiManagementModal saves changes.
+  const { data: keys } = useQuery({
+    queryKey: ['keys'],
+    queryFn: () => api.listKeys(),
+    staleTime: 30_000,
+    gcTime: 60_000,
+  });
+
   const seen = new Set<string>();
   const models: ModelOption[] = [];
 
-  // 1. Backend API models (authoritative)
+  // 1. Backend /api/models (server env var fallback)
   if (apiModels) {
     for (const m of apiModels) {
       if (seen.has(m.id)) continue;
@@ -171,22 +165,16 @@ export function useAvailableModels(): ModelOption[] {
     }
   }
 
-  // 2. localStorage: user-configured providers from ApiManagementModal
-  try {
-    const raw = getAndDecrypt('devagents-api-providers');
-    if (raw) {
-      const providers: StoredProvider[] = JSON.parse(raw);
-      for (const p of providers) {
-        if (!p.isActive) continue;
-        for (const modelId of p.models) {
-          if (seen.has(modelId)) continue;
-          seen.add(modelId);
-          models.push({ id: modelId, label: modelId, provider: p.name });
-        }
+  // 2. Server key vault — active keys with their models
+  if (keys) {
+    for (const k of keys) {
+      if (!k.is_active) continue;
+      for (const modelId of k.models) {
+        if (seen.has(modelId)) continue;
+        seen.add(modelId);
+        models.push({ id: modelId, label: modelId, provider: k.provider });
       }
     }
-  } catch {
-    // localStorage parse failed — ignore
   }
 
   return models;

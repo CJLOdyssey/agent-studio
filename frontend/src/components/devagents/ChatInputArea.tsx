@@ -1,4 +1,4 @@
-import { memo, forwardRef, useState, useCallback, useMemo } from 'react';
+import { memo, forwardRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { InputToolbar, type AttachedFile, type InputToolbarHandle } from '../input';
 import type { CommandOption } from '../../types/input';
 import type { Team } from '../../types/devagents';
@@ -44,10 +44,12 @@ const ChatInputArea = memo(
       return [...builtin, ...agentCommands];
     }, [apiCommands, agentCommands]);
 
-    // Auto-select first model when list loads
-    if (!selectedModel && models.length > 0) {
-      setSelectedModel(models[0].id);
-    }
+    // Auto-select first model when list loads (side-effect, not render-time)
+    useEffect(() => {
+      if (!selectedModel && models.length > 0) {
+        setSelectedModel(models[0].id);
+      }
+    }, [selectedModel, models]);
 
     const handleModelChange = useCallback((id: string) => {
       setSelectedModel(id);

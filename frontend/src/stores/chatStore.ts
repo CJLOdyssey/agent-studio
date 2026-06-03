@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { AgentConfig, AppStatus, ChatMessage, RunResult, WsMessage } from '../types';
 import { connectRun, disconnectRun } from '../api/websocket';
-import { submitRequirement, listAgents } from '../api/client';
+import { submitRequirement, listAgents, listKeys } from '../api/client';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
 
@@ -70,6 +70,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
       disconnectRun(prevRunId);
     }
 
+    // Resolve API key from the server-side enterprise vault
+    let keyId: string | undefined;
+    let model: string | undefined;
+    try {
+      const keys = await listKeys();
+      const defaultKey = keys.find(k => k.is_default && k.is_active) || keys.find(k => k.is_active);
+      if (defaultKey) {
+        keyId = defaultKey.id;
+        model = defaultKey.models[0];
+      }
+    } catch {
+      // No keys in vault — server will use env var fallback
+    }
+
     const userMsg: ChatMessage = {
       id: crypto.randomUUID?.() || uid(),
       role: 'user',
@@ -88,7 +102,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      const { run_id } = await submitRequirement(requirement, session_id);
+      const { run_id } = await submitRequirement(requirement, session_id, keyId, model);
       set({ currentRunId: run_id, currentSessionId: session_id || null, status: 'running', wsStatus: 'connecting' });
 
       connectRun(run_id, {

@@ -60,6 +60,8 @@ vi.mock('../../api/hooks', () => ({
   useUpdateAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
   useDeleteAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
   useToggleAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useAvailableModels: () => [],
+  useCommands: () => ({ data: [], isLoading: false, isSuccess: true }),
   prefetchAgents: vi.fn(),
 }));
 
@@ -94,9 +96,7 @@ describe('DevAgentsWorkstation', () => {
     it('should render all 8 agents in sidebar', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
 
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
-
+      // Team starts expanded — agents are already visible
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-name');
@@ -108,9 +108,7 @@ describe('DevAgentsWorkstation', () => {
     it('should select agent when clicked in sidebar', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
 
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
-
+      // Team starts expanded — agents are already visible; no toggle needed
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
@@ -122,9 +120,6 @@ describe('DevAgentsWorkstation', () => {
     it('should show back button when agent is selected', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
 
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
-
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
@@ -135,9 +130,6 @@ describe('DevAgentsWorkstation', () => {
 
     it('should render home page structure after returning from agent', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
-
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -155,19 +147,25 @@ describe('DevAgentsWorkstation', () => {
     it('should toggle team expansion when header clicked', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
 
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
-
+      // Team starts expanded — agents list should be visible
       await new Promise(resolve => setTimeout(resolve, 100));
-
       const agentsList = document.querySelector('.devagents-agents-list');
       expect(agentsList).toBeInTheDocument();
 
+      // First click: collapse
+      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
       fireEvent.click(teamHeader!);
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const agentsListCollapsed = document.querySelectorAll('.devagents-agents-list');
       expect(agentsListCollapsed.length).toBe(0);
+
+      // Second click: expand again
+      fireEvent.click(teamHeader!);
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const agentsListExpanded = document.querySelector('.devagents-agents-list');
+      expect(agentsListExpanded).toBeInTheDocument();
     });
   });
 
@@ -205,9 +203,7 @@ describe('DevAgentsWorkstation', () => {
     it('should show open button and open workspace when clicked', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
 
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
-
+      // Team starts expanded — agents are already visible; no toggle needed
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');

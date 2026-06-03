@@ -1,15 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Eye, EyeOff, Save } from 'lucide-react';
-import type { ApiProvider } from './ApiManagementModal';
+import { X, Eye, EyeOff, Save, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-interface Props {
-  provider: ApiProvider;
-  onSave: (provider: ApiProvider) => void;
-  onClose: () => void;
+export interface ApiProviderForm {
+  id: string;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  models: string[];
+  isActive: boolean;
+  status?: 'connected' | 'error' | 'untested';
 }
 
-export default function ProviderEditModal({ provider, onSave, onClose }: Props) {
+interface Props {
+  provider: ApiProviderForm;
+  onSave: (provider: ApiProviderForm) => void;
+  onClose: () => void;
+  saving?: boolean;
+}
+
+export default function ProviderEditModal({ provider, onSave, onClose, saving = false }: Props) {
   const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +59,7 @@ export default function ProviderEditModal({ provider, onSave, onClose }: Props) 
       name,
       baseUrl,
       apiKey,
-      models: modelsText.split('\n').map(s => s.trim()).filter(Boolean),
+      models: modelsText.split('\n').map((s: string) => s.trim()).filter(Boolean),
     });
   };
 
@@ -85,7 +95,10 @@ export default function ProviderEditModal({ provider, onSave, onClose }: Props) 
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}><Save size={14} />{t('providerEdit.save')}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim() || saving}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {saving ? '保存中...' : t('providerEdit.save')}
+          </button>
         </div>
       </div>
     </div>

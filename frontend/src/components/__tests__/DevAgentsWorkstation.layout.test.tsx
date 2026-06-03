@@ -60,6 +60,8 @@ vi.mock('../../api/hooks', () => ({
   useUpdateAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
   useDeleteAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
   useToggleAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useAvailableModels: () => [],
+  useCommands: () => ({ data: [], isLoading: false, isSuccess: true }),
   prefetchAgents: vi.fn(),
 }));
 

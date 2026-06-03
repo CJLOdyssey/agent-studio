@@ -60,6 +60,8 @@ vi.mock('../../api/hooks', () => ({
   useUpdateAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
   useDeleteAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
   useToggleAgent: () => ({ mutateAsync: vi.fn(), mutate: vi.fn() }),
+  useAvailableModels: () => [],
+  useCommands: () => ({ data: [], isLoading: false, isSuccess: true }),
   prefetchAgents: vi.fn(),
 }));
 
@@ -108,14 +110,22 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should toggle team expansion when header clicked', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
 
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
-      fireEvent.click(teamHeader!);
-
+      // Team starts expanded — agents list should be visible
       await waitFor(() => {
         const lists = document.querySelectorAll('.devagents-agents-list');
         expect(lists.length).toBeGreaterThanOrEqual(1);
       });
 
+      // Click to collapse
+      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
+      fireEvent.click(teamHeader!);
+
+      await waitFor(() => {
+        const lists = document.querySelectorAll('.devagents-agents-list');
+        expect(lists.length).toBe(0);
+      });
+
+      // Click to expand again
       fireEvent.click(teamHeader!);
     });
 
