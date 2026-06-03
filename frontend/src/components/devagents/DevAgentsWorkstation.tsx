@@ -406,41 +406,25 @@ export default function DevAgentsWorkstation() {
               }
               <div ref={messagesEndRef} />
             </div>
-          ) : !hasHomeContent ? (
+          ) : (
             <div className="devagents-home">
               <div className="devagents-home-centered">
+                {hasHomeContent && (
+                  <div className="devagents-home-chat-messages">
+                    {isApiAvailable
+                      ? displayMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
+                      : homeMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
+                    }
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
                 <div className="devagents-home-group">
                   <div className="devagents-home-hero">
                     <div className="devagents-home-logo" role="img" tabIndex={-1} aria-label="DevAgents Logo"><Bot size={48} className="text-[var(--icon-planning)]" /></div>
                     <GreetingAnimation key={conversationKey} />
                     <p className="devagents-home-subtitle">{t('home.subtitle')}</p>
                   </div>
-                  <div className="devagents-samples">
-                    {[
-                      ['home.samples.login', '帮我设计一个用户登录页面的前端组件，包含邮箱、密码输入和验证码'],
-                      ['home.samples.api', '分析现有API架构的性能瓶颈，给出优化建议'],
-                      ['home.samples.auth', '编写一个用户权限管理的后端接口，包含角色和权限的 CRUD'],
-                      ['home.samples.database', '为电商系统设计数据库表结构，包括用户、商品、订单、购物车'],
-                    ].map(([key, text]) => (
-                      <button
-                        key={key}
-                        className="devagents-sample-btn"
-                        onClick={() => {
-                          const ta = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
-                          if (ta) {
-                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                              window.HTMLTextAreaElement.prototype, 'value'
-                            )!.set!;
-                            nativeInputValueSetter.call(ta, text);
-                            ta.dispatchEvent(new Event('input', { bubbles: true }));
-                            ta.focus();
-                          }
-                        }}
-                      >
-                        {t(key)}
-                      </button>
-                    ))}
-                  </div>
+
                   <div className="devagents-home-input">
                     <InputToolbar
                       ref={inputToolbarRef}
@@ -456,22 +440,12 @@ export default function DevAgentsWorkstation() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="devagents-messages" aria-live="polite">
-              <div className="devagents-home-chat-messages">
-                {isApiAvailable
-                  ? displayMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
-                  : homeMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
-                }
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
           )}
         </div>
 
         <ChatInputArea
           ref={inputToolbarRef}
-          visible={showAgentChat || hasHomeContent}
+          visible={showAgentChat}
           onSend={handleSendMessage}
           onConfigureModels={() => setIsApiOpen(true)}
           teams={teamMgmt.teams}
