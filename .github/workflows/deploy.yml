@@ -58,6 +58,14 @@ jobs:
           git -C /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team \
             reset --hard origin/main
 
+      - name: Build frontend
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR/frontend"
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          npm run build
+          echo "✅ Frontend built"
+
       - name: Pull and restart services
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
@@ -67,7 +75,8 @@ jobs:
           [ -f "$ENV_SRC" ] && cp "$ENV_SRC" "$WORK_DIR/.env"
 
           cd "$WORK_DIR"
-          # 用 -p 7 指定项目名，与已有容器保持一致
+          # 构建 api/celery_worker 镜像 + 拉取外部镜像
+          docker compose -p 7 build api celery_worker
           docker compose -p 7 pull
           docker compose -p 7 up -d --remove-orphans
           docker image prune -f
