@@ -68,7 +68,7 @@ export function useTeamManagement(
       border: 'border-[var(--da-border)]',
     };
     setTeams(prev => prev.map(t =>
-      t.id === teamId ? { ...t, agents: [...t.agents, newAgent] } : t,
+      t.id === teamId ? { ...t, isExpanded: true, agents: [...t.agents, newAgent] } : t,
     ));
     toast?.('Agent 已添加', 'success');
   }, [toast]);
