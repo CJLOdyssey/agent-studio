@@ -227,16 +227,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install backend
-        run: pip install -r requirements.txt
-      - name: Install Playwright
-        run: pip install playwright && python -m playwright install chromium --with-deps
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+          cd frontend && npm ci
+      - name: Install Playwright browsers
+        run: python -m playwright install chromium --with-deps
       - name: Start backend & frontend, then run E2E
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team
           OPENAI_API_KEY: skip
           DEEPSEEK_API_KEY: skip
         run: |
+          REPO_ROOT="$GITHUB_WORKSPACE"
           # 启动后端
           uvicorn virtual_team.app:app --host 0.0.0.0 --port 8080 &
           # 等待后端就绪
@@ -245,12 +254,11 @@ jobs:
             sleep 1
           done
           # 启动前端 dev server
-          cd frontend && npm run dev -- --host 0.0.0.0 --port 5173 &
+          cd "$REPO_ROOT/frontend" && npx vite --host 0.0.0.0 --port 5173 &
           # 等待前端就绪
           for i in $(seq 1 30); do
             curl -s http://localhost:5173 >/dev/null 2>&1 && break
             sleep 1
           done
-          cd ..
           # 跑测试
-          python frontend/e2e/smoke_tests.py
+          cd "$REPO_ROOT" && python frontend/e2e/smoke_tests.py
