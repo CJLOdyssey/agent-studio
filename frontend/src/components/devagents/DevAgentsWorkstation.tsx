@@ -408,7 +408,7 @@ export default function DevAgentsWorkstation() {
             </div>
           ) : (
             <div className="devagents-home">
-              <div className="devagents-home-centered">
+              <div className={'devagents-home-centered' + (hasHomeContent ? ' has-messages' : '')}>
                 {hasHomeContent && (
                   <div className="devagents-home-chat-messages">
                     {isApiAvailable

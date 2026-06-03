@@ -8,7 +8,6 @@
 }
 
 .devagents-home-centered {
-  flex: 1;
   width: 100%;
   max-width: 860px;
   display: flex;
@@ -16,6 +15,14 @@
   align-items: center;
   justify-content: center;
   padding: 0 var(--sp-6);
+}
+
+.devagents-home-centered.has-messages {
+  justify-content: flex-start;
+  flex: 1;
+  overflow-y: auto;
+  padding-top: var(--sp-6);
+  padding-bottom: var(--sp-6);
 }
 
 .devagents-home-group {
