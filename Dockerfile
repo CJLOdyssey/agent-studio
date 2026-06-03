@@ -32,6 +32,9 @@ COPY --from=python-deps /usr/local/bin /usr/local/bin
 # Copy backend source
 COPY virtual_team/ ./virtual_team/
 
+# Copy entrypoint script (auto-provision secrets on first run)
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+
 # Copy pre-built frontend assets
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
@@ -41,4 +44,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=10s \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/health')" || exit 1
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["uvicorn", "virtual_team.app:app", "--host", "0.0.0.0", "--port", "8080"]

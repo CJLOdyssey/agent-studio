@@ -51,9 +51,7 @@ class TestRunAsync:
 
 
 class TestStreamEmitterAsync:
-    @pytest.mark.asyncio
-    async def test_emit_increments_message_index(self):
+    def test_emit_initial_index_is_zero(self):
+        """_StreamEmitter starts with message_index 0 before any emits."""
         emitter = _StreamEmitter(run_id="test-run-emit")
-        # _emit publishes to Redis — without Redis running it will fail
-        # but we can verify the index increment by inspecting internal state
         assert emitter._message_index == 0
