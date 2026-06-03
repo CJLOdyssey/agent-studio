@@ -33,5 +33,15 @@ node_modules/
 frontend/dist/
 frontend/node_modules/
 
+# TypeScript
+*.tsbuildinfo
+
 # Docker
 *.tar.gz
+
+# Tool runtimes
+.sisyphus/
+
+# Screenshots (move to docs/screenshots/ if needed)
+*.png
+*.jpg
