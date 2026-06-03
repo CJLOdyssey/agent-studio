@@ -34,6 +34,7 @@ COPY virtual_team/ ./virtual_team/
 
 # Copy entrypoint script (auto-provision secrets on first run)
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy pre-built frontend assets
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
