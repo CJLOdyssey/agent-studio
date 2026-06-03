@@ -48,13 +48,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout via SSH
-        env:
-          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
         run: |
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_github
           cd /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team
-          git fetch origin
+          git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
+          git fetch --depth=1 origin main
           git reset --hard origin/main
 
       - name: Pull and restart services
