@@ -13,8 +13,7 @@ import { useNotificationSound } from '../../contexts/SettingsContext';
 import { useTranslation } from 'react-i18next';
 import { InputToolbar, type InputToolbarHandle } from '../input';
 import type { AttachedFile } from '../input';
-import { useAgents, useAvailableModels, useCommands } from '../../api/hooks';
-import { useAgentCommands } from '../../hooks/useAgentCommands';
+import { useAgents } from '../../api/hooks';
 import { useChatStore } from '../../stores/chatStore';
 import { getAgentResponse, getHomeResponse, getAgentGreeting } from '../../utils/agentResponses';
 import Logger from '../../utils/logger';
@@ -69,10 +68,8 @@ export default function DevAgentsWorkstation() {
 
   // ── Data sources ──────────────────────────────────────────────────────────
   const { data: agentConfigs } = useAgents();
-  const models = useAvailableModels();
   const teamMgmt = useTeamManagement(agentConfigs, toast);
-  const { data: apiCommands } = useCommands();
-  const agentCommands = useAgentCommands(teamMgmt.teams);
+
   const conv = useConversation();
   const { t } = useTranslation();
   const notify = useNotificationSound();
@@ -278,11 +275,6 @@ export default function DevAgentsWorkstation() {
     e.stopPropagation(); setConfiguringAgent(agent);
   }, []);
 
-  const allCommands = [
-    ...(apiCommands ?? []).map((c) => ({ id: c.id, name: c.name, description: c.description, source: 'local' as const })),
-    ...agentCommands,
-  ];
-
   // ── Build message list for display ────────────────────────────────────────
   // In API mode: use chatStore messages. In mock mode: use local state.
   const getFallbackId = (() => { let i = 0; return () => ++i; })();
@@ -441,18 +433,6 @@ export default function DevAgentsWorkstation() {
                       </button>
                     ))}
                   </div>
-                  <div className="devagents-home-input">
-                    <InputToolbar
-                      ref={inputToolbarRef}
-                      key={conversationKey}
-                      onSend={handleHomeSend}
-                      models={models}
-                      selectedModel={models[0]?.id ?? ''}
-                      onModelChange={() => {}}
-                      onConfigureModels={() => setIsApiOpen(true)}
-                      commands={allCommands}
-                    />
-                  </div>
                 </div>
               </div>
             </div>
@@ -471,7 +451,7 @@ export default function DevAgentsWorkstation() {
 
         <ChatInputArea
           ref={inputToolbarRef}
-          visible={showAgentChat || hasHomeContent}
+          visible={true}
           onSend={handleSendMessage}
           onConfigureModels={() => setIsApiOpen(true)}
           teams={teamMgmt.teams}
