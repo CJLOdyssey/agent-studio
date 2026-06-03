@@ -99,7 +99,6 @@ export default function DevAgentsWorkstation() {
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void; danger?: boolean } | null>(null);
   const [conversationKey, setConversationKey] = useState(0);
-  const idCounterRef = useRef(0);
 
   // Mock-mode state (only used when no API agents configured)
   const [homeMessages, setHomeMessages] = useState<Message[]>([]);
@@ -219,7 +218,7 @@ export default function DevAgentsWorkstation() {
       }
       notify();
     },
-    [isApiAvailable, conv, t, notify, submitToApi],
+    [isApiAvailable, conv, t, notify, submitToApi, setHomeMessages],
   );
 
   // ── Page-level drag-and-drop ──────────────────────────────────────────────
@@ -286,15 +285,16 @@ export default function DevAgentsWorkstation() {
 
   // ── Build message list for display ────────────────────────────────────────
   // In API mode: use chatStore messages. In mock mode: use local state.
+  const getFallbackId = (() => { let i = 0; return () => ++i; })();
   const displayMessages: Message[] = isApiAvailable
     ? apiMessages.map((m) => {
-        idCounterRef.current += 1;
+        const fallbackId = getFallbackId();
         return {
-          id: parseInt(m.id, 36) || idCounterRef.current,
+          id: parseInt(m.id, 36) || fallbackId,
           role: m.role === 'user' ? 'user' : 'agent',
           agentId: m.role,
           content: m.content,
-          timestamp: m.created_at ? new Date(m.created_at).getTime() : idCounterRef.current,
+          timestamp: m.created_at ? new Date(m.created_at).getTime() : fallbackId,
         };
       })
     : [];
