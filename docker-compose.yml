@@ -48,7 +48,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - "KEY_VAULT_SECRET=${KEY_VAULT_SECRET:?KEY_VAULT_SECRET is required}"
+      - SECRETS_DIR=/secrets
+    volumes:
+      - secrets:/secrets
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,7 +91,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - "KEY_VAULT_SECRET=${KEY_VAULT_SECRET:?KEY_VAULT_SECRET is required}"
+      - SECRETS_DIR=/secrets
+    volumes:
+      - secrets:/secrets
     depends_on:
       redis:
         condition: service_healthy
@@ -117,6 +121,7 @@ services:
 
 volumes:
   pgdata:
+  secrets:
 
 networks:
   default:
