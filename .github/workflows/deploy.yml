@@ -51,17 +51,20 @@ jobs:
         run: |
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_github
-          cd /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team
-          git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
-          git fetch --depth=1 origin main
-          git reset --hard origin/main
+          git -C /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team \
+            remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
+          git -C /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team \
+            fetch --depth=1 origin main
+          git -C /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team \
+            reset --hard origin/main
 
       - name: Pull and restart services
         run: |
-          cd /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team
+          # 用原项目目录运行，保持 Docker Compose 项目名一致
+          cd /mnt/d/PyCharmProjects/Agent/projects/项目\ 7：虚拟软件外包团队
+          git pull origin main
           docker compose pull
-          docker compose down --remove-orphans || true
-          docker compose up -d
+          docker compose up -d --remove-orphans
           docker image prune -f
           echo "✅ Deploy complete"
           docker compose ps
