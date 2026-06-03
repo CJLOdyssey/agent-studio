@@ -60,14 +60,19 @@ jobs:
 
       - name: Pull and restart services
         run: |
-          # 用原项目目录运行，保持 Docker Compose 项目名一致
-          cd /mnt/d/PyCharmProjects/Agent/projects/项目\ 7：虚拟软件外包团队
-          git pull origin main
-          docker compose pull
-          docker compose up -d --remove-orphans
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          ENV_SRC="/mnt/d/PyCharmProjects/Agent/projects/项目 7：虚拟软件外包团队/.env"
+
+          # 复制 .env 到工作目录（docker compose 需要环境变量）
+          [ -f "$ENV_SRC" ] && cp "$ENV_SRC" "$WORK_DIR/.env"
+
+          cd "$WORK_DIR"
+          # 用 -p 7 指定项目名，与已有容器保持一致
+          docker compose -p 7 pull
+          docker compose -p 7 up -d --remove-orphans
           docker image prune -f
           echo "✅ Deploy complete"
-          docker compose ps
+          docker compose -p 7 ps
 
       - name: Notify deploy result
         if: always()
