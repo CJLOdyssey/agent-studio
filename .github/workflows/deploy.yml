@@ -60,6 +60,8 @@ jobs:
 
       - name: Build frontend
         run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR/frontend"
           npm ci --legacy-peer-deps || npm install --legacy-peer-deps
