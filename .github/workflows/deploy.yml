@@ -60,7 +60,8 @@ jobs:
         run: |
           cd /home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team
           docker compose pull
-          docker compose up -d --remove-orphans
+          docker compose down --remove-orphans || true
+          docker compose up -d
           docker image prune -f
           echo "✅ Deploy complete"
           docker compose ps
