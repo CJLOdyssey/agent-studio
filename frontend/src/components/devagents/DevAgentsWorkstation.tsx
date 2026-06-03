@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { Bot, Layout, ChevronRight, MessageSquare } from 'lucide-react';
+import { Bot, ChevronRight, MessageSquare } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import type { Agent, Team, WorkspaceTab, Message } from '../../types/devagents';
 import TeamMessage from './TeamMessage';
@@ -363,24 +363,28 @@ export default function DevAgentsWorkstation() {
           <MessageSquare size={18} />
         </button>
 
-        {showAgentChat && (
+        {(showAgentChat || hasHomeContent) && (
           <header className="devagents-header">
             <div className="devagents-header-title">
-              {(() => {
+              {showAgentChat ? (() => {
                 const agent = teamMgmt.allAgents.find(a => a.id === selectedAgentId);
                 return agent ? (
                   <><div className={`devagents-agent-icon-sm ${agent.bg} ${agent.border}`}><agent.icon size={14} className={agent.color} /></div>{agent.name}</>
                 ) : <><MessageSquare size={16} /></>;
-              })()}
-              <button onClick={() => setSelectedAgentId(null)} className="devagents-back-btn" title="返回">
+              })() : (
+                <><MessageSquare size={16} /><span>{t('home.title')}</span></>
+              )}
+              <button onClick={() => {
+                if (showAgentChat) {
+                  setSelectedAgentId(null);
+                } else {
+                  resetApi();
+                  setHomeMessages([]);
+                }
+              }} className="devagents-back-btn" title="返回">
                 <ChevronRight size={14} className="rotate-180" />{t('workspace.back')}
               </button>
             </div>
-            {!isWorkspaceOpen && (
-              <button onClick={() => setIsWorkspaceOpen(true)} className="devagents-open-workspace-btn">
-                <Layout size={14} />{t('workspace.open')}
-              </button>
-            )}
           </header>
         )}
 
@@ -406,25 +410,23 @@ export default function DevAgentsWorkstation() {
               }
               <div ref={messagesEndRef} />
             </div>
+          ) : hasHomeContent ? (
+            <div className="devagents-messages-inner" aria-live="polite">
+              {isApiAvailable
+                ? displayMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
+                : homeMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
+              }
+              <div ref={messagesEndRef} />
+            </div>
           ) : (
             <div className="devagents-home">
-              <div className={'devagents-home-centered' + (hasHomeContent ? ' has-messages' : '')}>
-                {hasHomeContent && (
-                  <div className="devagents-home-chat-messages">
-                    {isApiAvailable
-                      ? displayMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
-                      : homeMessages.map(msg => <TeamMessage key={msg.id} msg={msg} allAgents={teamMgmt.allAgents} />)
-                    }
-                    <div ref={messagesEndRef} />
-                  </div>
-                )}
+              <div className="devagents-home-centered">
                 <div className="devagents-home-group">
                   <div className="devagents-home-hero">
                     <div className="devagents-home-logo" role="img" tabIndex={-1} aria-label="DevAgents Logo"><Bot size={48} className="text-[var(--icon-planning)]" /></div>
                     <GreetingAnimation key={conversationKey} />
                     <p className="devagents-home-subtitle">{t('home.subtitle')}</p>
                   </div>
-
                   <div className="devagents-home-input">
                     <InputToolbar
                       ref={inputToolbarRef}
@@ -445,7 +447,7 @@ export default function DevAgentsWorkstation() {
 
         <ChatInputArea
           ref={inputToolbarRef}
-          visible={showAgentChat}
+          visible={showAgentChat || hasHomeContent}
           onSend={handleSendMessage}
           onConfigureModels={() => setIsApiOpen(true)}
           teams={teamMgmt.teams}
