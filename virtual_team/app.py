@@ -16,7 +16,7 @@ from virtual_team.config import load_config
 from virtual_team.database import get_async_engine, init_db
 from virtual_team.logging_config import get_logger
 
-from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions
+from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions, teams
 
 logger = get_logger(__name__)
 
@@ -119,6 +119,7 @@ app.include_router(attachments.router)
 app.include_router(commands.router)
 app.include_router(models.router)
 app.include_router(keys.router)
+app.include_router(teams.router)
 
 
 if __name__ == "__main__":

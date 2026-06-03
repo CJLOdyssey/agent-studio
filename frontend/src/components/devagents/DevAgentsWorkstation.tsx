@@ -70,7 +70,7 @@ export default function DevAgentsWorkstation() {
   // ── Data sources ──────────────────────────────────────────────────────────
   const { data: agentConfigs } = useAgents();
   const models = useAvailableModels();
-  const teamMgmt = useTeamManagement(agentConfigs, toast);
+  const teamMgmt = useTeamManagement(toast);
   const { data: apiCommands } = useCommands();
   const agentCommands = useAgentCommands(teamMgmt.teams);
   const conv = useConversation();

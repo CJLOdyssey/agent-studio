@@ -114,6 +114,45 @@ class ChatMessage(Base):
     run: Mapped["ProjectRun"] = relationship(back_populates="messages")
 
 
+class TeamDB(Base):
+    __tablename__ = "teams"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    is_expanded: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    members: Mapped[list["TeamAgentDB"]] = relationship(
+        back_populates="team", cascade="all, delete-orphan",
+        order_by="TeamAgentDB.order",
+    )
+
+
+class TeamAgentDB(Base):
+    __tablename__ = "team_agents"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    team_id: Mapped[str] = mapped_column(String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_config_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="SET NULL"), nullable=True,
+    )
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    role: Mapped[str] = mapped_column(String(64), default="待配置角色")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+    )
+
+    team: Mapped["TeamDB"] = relationship(back_populates="members")
+
+
 class AgentConfigDB(Base):
     __tablename__ = "agent_configs"
 
