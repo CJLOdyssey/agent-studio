@@ -43,6 +43,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadKeys(); }, []);
 
   // Load usage stats
@@ -115,7 +116,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       } else {
         alert('❌ 连接失败: ' + result.message);
       }
-    } catch (err) {
+    } catch {
       alert('❌ 测试请求失败');
     }
     setTestingId(null);
