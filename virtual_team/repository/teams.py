@@ -7,11 +7,14 @@ from sqlalchemy.orm import selectinload
 from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
 
 
-async def get_teams() -> list[dict]:
+async def get_teams(user_id: str = "default") -> list[dict]:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(TeamDB).order_by(TeamDB.order).options(
-            selectinload(TeamDB.members),
+        stmt = (
+            select(TeamDB)
+            .where(TeamDB.user_id == user_id)
+            .order_by(TeamDB.order)
+            .options(selectinload(TeamDB.members))
         )
         result = await session.execute(stmt)
         teams = result.scalars().all()
@@ -36,12 +39,16 @@ async def get_teams() -> list[dict]:
         ]
 
 
-async def get_team(team_id: str) -> dict | None:
+async def get_team(team_id: str, user_id: str | None = None) -> dict | None:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(TeamDB).where(TeamDB.id == team_id).options(
-            selectinload(TeamDB.members),
+        stmt = (
+            select(TeamDB)
+            .where(TeamDB.id == team_id)
+            .options(selectinload(TeamDB.members))
         )
+        if user_id is not None:
+            stmt = stmt.where(TeamDB.user_id == user_id)
         result = await session.execute(stmt)
         t = result.scalar_one_or_none()
         if not t:
@@ -59,13 +66,19 @@ async def get_team(team_id: str) -> dict | None:
         }
 
 
-async def create_team(name: str) -> TeamDB:
+async def create_team(name: str, user_id: str = "default") -> TeamDB:
     factory = get_session_factory()
     async with factory() as session:
-        count = await session.execute(select(TeamDB).order_by(TeamDB.order.desc()).limit(1))
+        count = await session.execute(
+            select(TeamDB)
+            .where(TeamDB.user_id == user_id)
+            .order_by(TeamDB.order.desc())
+            .limit(1)
+        )
         last = count.scalar_one_or_none()
         team = TeamDB(
             id=str(uuid4()),
+            user_id=user_id,
             name=name,
             order=(last.order + 1) if last else 0,
         )
@@ -77,11 +90,14 @@ async def create_team(name: str) -> TeamDB:
 
 async def update_team(
     team_id: str, name: str | None = None, order: int | None = None,
-    is_expanded: bool | None = None,
+    is_expanded: bool | None = None, user_id: str | None = None,
 ) -> TeamDB | None:
     factory = get_session_factory()
     async with factory() as session:
-        result = await session.execute(select(TeamDB).where(TeamDB.id == team_id))
+        stmt = select(TeamDB).where(TeamDB.id == team_id)
+        if user_id is not None:
+            stmt = stmt.where(TeamDB.user_id == user_id)
+        result = await session.execute(stmt)
         team = result.scalar_one_or_none()
         if not team:
             return None
@@ -96,10 +112,13 @@ async def update_team(
         return team
 
 
-async def delete_team(team_id: str) -> bool:
+async def delete_team(team_id: str, user_id: str | None = None) -> bool:
     factory = get_session_factory()
     async with factory() as session:
-        result = await session.execute(select(TeamDB).where(TeamDB.id == team_id))
+        stmt = select(TeamDB).where(TeamDB.id == team_id)
+        if user_id is not None:
+            stmt = stmt.where(TeamDB.user_id == user_id)
+        result = await session.execute(stmt)
         team = result.scalar_one_or_none()
         if not team:
             return False
@@ -108,10 +127,14 @@ async def delete_team(team_id: str) -> bool:
         return True
 
 
-async def add_team_member(team_id: str, name: str, role: str = "待配置角色") -> dict | None:
+async def add_team_member(team_id: str, name: str, role: str = "待配置角色", user_id: str | None = None) -> dict | None:
     factory = get_session_factory()
     async with factory() as session:
-        team = await session.get(TeamDB, team_id)
+        stmt = select(TeamDB).where(TeamDB.id == team_id)
+        if user_id is not None:
+            stmt = stmt.where(TeamDB.user_id == user_id)
+        result = await session.execute(stmt)
+        team = result.scalar_one_or_none()
         if not team:
             return None
         count = await session.execute(
@@ -131,9 +154,15 @@ async def add_team_member(team_id: str, name: str, role: str = "待配置角色"
         return {"id": member.id, "name": member.name, "role": member.role, "order": member.order}
 
 
-async def remove_team_member(team_id: str, member_id: str) -> bool:
+async def remove_team_member(team_id: str, member_id: str, user_id: str | None = None) -> bool:
     factory = get_session_factory()
     async with factory() as session:
+        team_stmt = select(TeamDB).where(TeamDB.id == team_id)
+        if user_id is not None:
+            team_stmt = team_stmt.where(TeamDB.user_id == user_id)
+        team_result = await session.execute(team_stmt)
+        if not team_result.scalar_one_or_none():
+            return False
         result = await session.execute(
             select(TeamAgentDB).where(TeamAgentDB.id == member_id, TeamAgentDB.team_id == team_id)
         )
@@ -145,9 +174,15 @@ async def remove_team_member(team_id: str, member_id: str) -> bool:
         return True
 
 
-async def reorder_team_members(team_id: str, member_ids: list[str]) -> None:
+async def reorder_team_members(team_id: str, member_ids: list[str], user_id: str | None = None) -> None:
     factory = get_session_factory()
     async with factory() as session:
+        team_stmt = select(TeamDB).where(TeamDB.id == team_id)
+        if user_id is not None:
+            team_stmt = team_stmt.where(TeamDB.user_id == user_id)
+        team_result = await session.execute(team_stmt)
+        if not team_result.scalar_one_or_none():
+            return
         for idx, mid in enumerate(member_ids):
             await session.execute(
                 sa_update(TeamAgentDB)

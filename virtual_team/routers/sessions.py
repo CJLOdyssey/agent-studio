@@ -2,10 +2,11 @@
 
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from starlette.responses import Response
 
+from virtual_team.auth import get_user_id
 from virtual_team.logging_config import get_logger
 from virtual_team.models import SessionDetailResponse, SessionSummary
 from virtual_team.repository import (
@@ -33,11 +34,12 @@ class SessionUpdateRequest(BaseModel):
 
 
 @router.get("/api/sessions", response_model=list[SessionSummary])
-async def list_sessions(limit: int = 50):
+async def list_sessions(request: Request, limit: int = 50):
     try:
-        sessions = await get_sessions(limit=min(limit, 100))
+        user_id = get_user_id(request)
+        sessions = await get_sessions(limit=min(limit, 100), user_id=user_id)
         session_ids = [s.id for s in sessions]
-        runs_by_session = await get_runs_by_session_ids(session_ids)
+        runs_by_session = await get_runs_by_session_ids(session_ids, user_id=user_id)
         result = []
         for s in sessions:
             runs = runs_by_session.get(s.id, [])
@@ -55,9 +57,10 @@ async def list_sessions(limit: int = 50):
 
 
 @router.post("/api/sessions", status_code=201)
-async def add_session(req: SessionCreateRequest):
+async def add_session(req: SessionCreateRequest, request: Request):
     try:
-        sess = await create_session(title=req.title)
+        user_id = get_user_id(request)
+        sess = await create_session(title=req.title, user_id=user_id)
         return {
             "id": sess.id,
             "title": sess.title,
@@ -70,14 +73,15 @@ async def add_session(req: SessionCreateRequest):
 
 
 @router.get("/api/sessions/{session_id}", response_model=SessionDetailResponse)
-async def get_session_detail(session_id: str):
+async def get_session_detail(session_id: str, request: Request):
     try:
-        sess = await get_session(session_id)
+        user_id = get_user_id(request)
+        sess = await get_session(session_id, user_id=user_id)
         if not sess:
             raise HTTPException(status_code=404, detail="未找到该对话")
 
-        runs = await get_session_runs(session_id)
-        memories = await get_session_memories(session_id)
+        runs = await get_session_runs(session_id, user_id=user_id)
+        memories = await get_session_memories(session_id, user_id=user_id)
 
         return {
             "id": sess.id,
@@ -118,9 +122,10 @@ async def get_session_detail(session_id: str):
 
 
 @router.put("/api/sessions/{session_id}")
-async def rename_session(session_id: str, req: SessionUpdateRequest):
+async def rename_session(session_id: str, req: SessionUpdateRequest, request: Request):
     try:
-        sess = await update_session_title(session_id, req.title)
+        user_id = get_user_id(request)
+        sess = await update_session_title(session_id, req.title, user_id=user_id)
         if not sess:
             raise HTTPException(status_code=404, detail="未找到该对话")
         return {"id": sess.id, "title": sess.title, "status": "updated"}
@@ -132,9 +137,10 @@ async def rename_session(session_id: str, req: SessionUpdateRequest):
 
 
 @router.delete("/api/sessions/{session_id}")
-async def remove_session(session_id: str):
+async def remove_session(session_id: str, request: Request):
     try:
-        deleted = await delete_session(session_id)
+        user_id = get_user_id(request)
+        deleted = await delete_session(session_id, user_id=user_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="未找到该对话")
         return {"status": "deleted"}
@@ -146,12 +152,13 @@ async def remove_session(session_id: str):
 
 
 @router.get("/api/sessions/{session_id}/memories")
-async def list_session_memories(session_id: str):
+async def list_session_memories(session_id: str, request: Request):
     try:
-        sess = await get_session(session_id)
+        user_id = get_user_id(request)
+        sess = await get_session(session_id, user_id=user_id)
         if not sess:
             raise HTTPException(status_code=404, detail="未找到该对话")
-        memories = await get_session_memories(session_id)
+        memories = await get_session_memories(session_id, user_id=user_id)
         return [
             {
                 "id": m.id,
@@ -171,9 +178,10 @@ async def list_session_memories(session_id: str):
 
 
 @router.delete("/api/memories/{memory_id}")
-async def delete_session_memory(memory_id: str):
+async def delete_session_memory(memory_id: str, request: Request):
     try:
-        deleted = await delete_memory_entry(memory_id)
+        user_id = get_user_id(request)
+        deleted = await delete_memory_entry(memory_id, user_id=user_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="未找到该记忆")
         return {"status": "deleted"}
@@ -185,16 +193,17 @@ async def delete_session_memory(memory_id: str):
 
 
 @router.get("/api/sessions/{session_id}/memories/export")
-async def export_session_memories(session_id: str, format: str = "json"):
+async def export_session_memories(session_id: str, request: Request, format: str = "json"):
     try:
         if format not in ("json", "md"):
             raise HTTPException(status_code=400, detail="format 参数必须为 json 或 md")
 
-        sess = await get_session(session_id)
+        user_id = get_user_id(request)
+        sess = await get_session(session_id, user_id=user_id)
         if not sess:
             raise HTTPException(status_code=404, detail="未找到该对话")
 
-        memories = await get_session_memories(session_id)
+        memories = await get_session_memories(session_id, user_id=user_id)
         items = [
             {
                 "id": m.id,

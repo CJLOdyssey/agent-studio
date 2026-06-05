@@ -119,7 +119,7 @@ def get_user_id(request) -> str:
     user_id = getattr(request.state, "user_id", None)
     if user_id:
         return user_id
-    return request.headers.get("X-User-ID", "anonymous")
+    return request.headers.get("X-User-ID", "default")
 
 
 def create_token(user_id: str, secret: str, ttl: int = 86400) -> str:

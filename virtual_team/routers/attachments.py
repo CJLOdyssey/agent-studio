@@ -5,9 +5,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
+from sqlalchemy import select
 
+from virtual_team.auth import get_user_id
 from virtual_team.database import AttachmentDB as Attachment
 from virtual_team.database import get_session_factory
 from virtual_team.logging_config import get_logger
@@ -55,8 +57,11 @@ async def upload_attachment(
     file: UploadFile = File(...),
     session_id: str = Form(...),
     run_id: str | None = Form(None),
+    request: Request = None,
 ):
-    sess = await get_session(session_id)
+    # Extract user_id; request may be None in unit tests, fall back to "default"
+    user_id = get_user_id(request) if request is not None else "default"
+    sess = await get_session(session_id, user_id=user_id)
     if sess is None:
         raise HTTPException(status_code=404, detail="会话不存在")
 
@@ -79,6 +84,7 @@ async def upload_attachment(
 
     db_attachment = Attachment(
         id=attachment_id,
+        user_id=user_id,
         session_id=session_id,
         run_id=run_id,
         filename=file.filename or "unnamed",
@@ -108,10 +114,16 @@ async def upload_attachment(
 
 
 @router.get("/api/attachments/{attachment_id}")
-async def get_attachment(attachment_id: str):
+async def get_attachment(attachment_id: str, request: Request):
+    user_id = get_user_id(request)
     factory = get_session_factory()
     async with factory() as db:
-        att = await db.get(Attachment, attachment_id)
+        stmt = select(Attachment).where(
+            Attachment.id == attachment_id,
+            Attachment.user_id == user_id,
+        )
+        result = await db.execute(stmt)
+        att = result.scalar_one_or_none()
         if att is None:
             raise HTTPException(status_code=404, detail="附件不存在")
         if not Path(att.storage_path).exists():
@@ -124,16 +136,18 @@ async def get_attachment(attachment_id: str):
 
 
 @router.get("/api/sessions/{session_id}/attachments", response_model=list[AttachmentResponse])
-async def list_session_attachments(session_id: str):
-    sess = await get_session(session_id)
+async def list_session_attachments(session_id: str, request: Request):
+    user_id = get_user_id(request)
+    sess = await get_session(session_id, user_id=user_id)
     if sess is None:
         raise HTTPException(status_code=404, detail="会话不存在")
 
     factory = get_session_factory()
     async with factory() as db:
-        from sqlalchemy import select
         result = await db.execute(
-            select(Attachment).where(Attachment.session_id == session_id).order_by(Attachment.created_at.desc())
+            select(Attachment)
+            .where(Attachment.session_id == session_id, Attachment.user_id == user_id)
+            .order_by(Attachment.created_at.desc())
         )
         attachments = result.scalars().all()
 
@@ -153,10 +167,16 @@ async def list_session_attachments(session_id: str):
 
 
 @router.delete("/api/attachments/{attachment_id}")
-async def delete_attachment(attachment_id: str):
+async def delete_attachment(attachment_id: str, request: Request):
+    user_id = get_user_id(request)
     factory = get_session_factory()
     async with factory() as db:
-        att = await db.get(Attachment, attachment_id)
+        stmt = select(Attachment).where(
+            Attachment.id == attachment_id,
+            Attachment.user_id == user_id,
+        )
+        result = await db.execute(stmt)
+        att = result.scalar_one_or_none()
         if att is None:
             raise HTTPException(status_code=404, detail="附件不存在")
         storage_path = Path(att.storage_path)

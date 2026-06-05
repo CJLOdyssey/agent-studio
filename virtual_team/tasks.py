@@ -48,7 +48,7 @@ async def _get_rag_context(query: str, session_id: str) -> str:
         return ""
 
 
-async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict):
+async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict, user_id: str = "default"):
     summary = response[:200].replace("\n", " ")
     content_type = "code"
     if "<pm_document>" in response or "需求分析" in response:
@@ -59,6 +59,7 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
         await create_memory_entry(
             session_id=session_id, run_id=run_id, agent_role="agent",
             content_type=content_type, summary=summary, details=response[:2000],
+            user_id=user_id,
         )
     except Exception:
         logger.exception("Failed to save memory for run %s", run_id)
@@ -67,6 +68,7 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
 async def _run_agent_pipeline(
     requirement: str, run_id: str, session_id: str | None, agent_id: str | None,
     api_key: str | None = None, api_base: str | None = None, model: str | None = None,
+    user_id: str = "default",
 ) -> dict:
     await update_run_status(run_id, "running")
     cfg = load_config()
@@ -146,7 +148,7 @@ async def _run_agent_pipeline(
 
     if session_id:
         try:
-            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
+            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls}, user_id=user_id)
             from virtual_team.rag import ingest_session_messages
             messages = await get_run_messages(run_id)
             if messages:
@@ -165,14 +167,15 @@ def run_agent(
     self, requirement: str, run_id: str | None = None, session_id: str | None = None,
     agent_id: str | None = None, api_key: str | None = None,
     api_base: str | None = None, model: str | None = None,
+    user_id: str = "default",
 ):
-    logger.info("Agent task | run=%s | session=%s | agent=%s", run_id, session_id, agent_id)
+    logger.info("Agent task | run=%s | session=%s | agent=%s | user=%s", run_id, session_id, agent_id, user_id)
     assert run_id is not None, "run_id must be provided"
 
     try:
         return _run_async(_run_agent_pipeline(
             requirement, run_id, session_id, agent_id,
-            api_key=api_key, api_base=api_base, model=model,
+            api_key=api_key, api_base=api_base, model=model, user_id=user_id,
         ))
     except Exception as exc:
         logger.exception("Agent failed | run=%s", run_id)
@@ -191,7 +194,7 @@ def run_agent(
                 }))
                 if session_id:
                     with contextlib.suppress(Exception):
-                        _run_async(_save_output_memories(session_id, run_id, output.response, {}))
+                        _run_async(_save_output_memories(session_id, run_id, output.response, {}, user_id=user_id))
                 return {"run_id": run_id, "status": "completed", "fallback": True}
             except Exception as mock_exc:
                 logger.exception("Mock fallback also failed for run=%s", run_id)

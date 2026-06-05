@@ -1,8 +1,9 @@
 """Team API routes: CRUD and member management."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from virtual_team.auth import get_user_id
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     add_team_member,
@@ -39,9 +40,10 @@ class ReorderRequest(BaseModel):
 
 
 @router.get("/api/teams")
-async def list_teams():
+async def list_teams(request: Request):
     try:
-        teams = await get_teams()
+        user_id = get_user_id(request)
+        teams = await get_teams(user_id=user_id)
         return [
             {
                 "id": t["id"],
@@ -59,9 +61,10 @@ async def list_teams():
 
 
 @router.post("/api/teams", status_code=201)
-async def add_team(req: TeamCreateRequest):
+async def add_team(req: TeamCreateRequest, request: Request):
     try:
-        team = await create_team(name=req.name)
+        user_id = get_user_id(request)
+        team = await create_team(name=req.name, user_id=user_id)
         return {
             "id": team.id,
             "name": team.name,
@@ -75,21 +78,24 @@ async def add_team(req: TeamCreateRequest):
 
 
 @router.get("/api/teams/{team_id}")
-async def get_team_detail(team_id: str):
-    team = await get_team(team_id)
+async def get_team_detail(team_id: str, request: Request):
+    user_id = get_user_id(request)
+    team = await get_team(team_id, user_id=user_id)
     if not team:
         raise HTTPException(status_code=404, detail="团队不存在")
     return team
 
 
 @router.put("/api/teams/{team_id}")
-async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
+async def update_team_endpoint(team_id: str, req: TeamUpdateRequest, request: Request):
     try:
+        user_id = get_user_id(request)
         team = await update_team(
             team_id=team_id,
             name=req.name,
             order=req.order,
             is_expanded=req.is_expanded,
+            user_id=user_id,
         )
         if not team:
             raise HTTPException(status_code=404, detail="团队不存在")
@@ -102,9 +108,10 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
 
 
 @router.delete("/api/teams/{team_id}")
-async def delete_team_endpoint(team_id: str):
+async def delete_team_endpoint(team_id: str, request: Request):
     try:
-        deleted = await delete_team(team_id)
+        user_id = get_user_id(request)
+        deleted = await delete_team(team_id, user_id=user_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="团队不存在")
         return {"ok": True}
@@ -116,12 +123,14 @@ async def delete_team_endpoint(team_id: str):
 
 
 @router.post("/api/teams/{team_id}/members", status_code=201)
-async def add_member(team_id: str, req: MemberAddRequest):
+async def add_member(team_id: str, req: MemberAddRequest, request: Request):
     try:
+        user_id = get_user_id(request)
         member = await add_team_member(
             team_id=team_id,
             name=req.name,
             role=req.role,
+            user_id=user_id,
         )
         if not member:
             raise HTTPException(status_code=404, detail="团队不存在")
@@ -134,9 +143,10 @@ async def add_member(team_id: str, req: MemberAddRequest):
 
 
 @router.delete("/api/teams/{team_id}/members/{member_id}")
-async def remove_member(team_id: str, member_id: str):
+async def remove_member(team_id: str, member_id: str, request: Request):
     try:
-        deleted = await remove_team_member(team_id, member_id)
+        user_id = get_user_id(request)
+        deleted = await remove_team_member(team_id, member_id, user_id=user_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="成员不存在")
         return {"ok": True}
@@ -148,9 +158,10 @@ async def remove_member(team_id: str, member_id: str):
 
 
 @router.put("/api/teams/{team_id}/members/reorder")
-async def reorder_members(team_id: str, req: ReorderRequest):
+async def reorder_members(team_id: str, req: ReorderRequest, request: Request):
     try:
-        await reorder_team_members(team_id, req.member_ids)
+        user_id = get_user_id(request)
+        await reorder_team_members(team_id, req.member_ids, user_id=user_id)
         return {"ok": True}
     except Exception as e:
         logger.error("Error reordering members: %s", e, exc_info=True)

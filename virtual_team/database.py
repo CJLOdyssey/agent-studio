@@ -3,7 +3,7 @@ import os
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.pool import NullPool
@@ -22,6 +22,7 @@ class SessionDB(Base):
     __tablename__ = "sessions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     title: Mapped[str] = mapped_column(String(256), default="新对话")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC),
@@ -45,6 +46,7 @@ class ProjectRun(Base):
     __tablename__ = "project_runs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True,
     )
@@ -75,6 +77,7 @@ class MemoryEntry(Base):
     __tablename__ = "memory_entries"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
     )
@@ -118,6 +121,7 @@ class TeamDB(Base):
     __tablename__ = "teams"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0)
     is_expanded: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -207,6 +211,7 @@ class CommandLogDB(Base):
     __tablename__ = "command_logs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
     )
@@ -223,6 +228,7 @@ class AttachmentDB(Base):
     __tablename__ = "attachments"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
     )
@@ -299,7 +305,7 @@ from virtual_team.checkpoint import CheckpointDB as _CheckpointDB  # noqa: F401
 
 
 async def init_db():
-    """Bootstrap database tables on first run.
+    """Bootstrap database tables on first run + apply migrations.
 
     Uses create_all() which is idempotent — only creates tables that don't
     already exist. For production deployments with existing data, use Alembic
@@ -312,6 +318,28 @@ async def init_db():
     engine = get_async_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        # ── Migration: add user_id columns to existing tables ──────────────
+        import logging as _mig_logging
+        _MIGRATIONS = [
+            "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
+            "CREATE INDEX IF NOT EXISTS ix_sessions_user_id ON sessions(user_id)",
+            "ALTER TABLE project_runs ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
+            "CREATE INDEX IF NOT EXISTS ix_project_runs_user_id ON project_runs(user_id)",
+            "ALTER TABLE memory_entries ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
+            "CREATE INDEX IF NOT EXISTS ix_memory_entries_user_id ON memory_entries(user_id)",
+            "ALTER TABLE teams ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
+            "CREATE INDEX IF NOT EXISTS ix_teams_user_id ON teams(user_id)",
+            "ALTER TABLE command_logs ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
+            "CREATE INDEX IF NOT EXISTS ix_command_logs_user_id ON command_logs(user_id)",
+            "ALTER TABLE attachments ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
+            "CREATE INDEX IF NOT EXISTS ix_attachments_user_id ON attachments(user_id)",
+        ]
+        for sql in _MIGRATIONS:
+            try:
+                await conn.execute(text(sql))
+            except Exception as exc:
+                _mig_logging.warning("Migration SQL skipped (%s): %s", sql[:60], exc)
 
 
 async def get_session():

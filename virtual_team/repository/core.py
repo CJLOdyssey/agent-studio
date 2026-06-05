@@ -13,11 +13,12 @@ from virtual_team.database import (
 )
 
 
-async def create_session(title: str = "新对话") -> SessionDB:
+async def create_session(title: str = "新对话", user_id: str = "default") -> SessionDB:
     factory = get_session_factory()
     async with factory() as session:
         obj = SessionDB(
             id=str(uuid4()),
+            user_id=user_id,
             title=title,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
@@ -27,22 +28,35 @@ async def create_session(title: str = "新对话") -> SessionDB:
         await session.refresh(obj)
         return obj
 
-async def get_session(session_id: str) -> SessionDB | None:
+async def get_session(session_id: str, user_id: str | None = None) -> SessionDB | None:
     factory = get_session_factory()
     async with factory() as session:
-        return await session.get(SessionDB, session_id)
+        stmt = select(SessionDB).where(SessionDB.id == session_id)
+        if user_id is not None:
+            stmt = stmt.where(SessionDB.user_id == user_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
-async def get_sessions(limit: int = 50) -> list[SessionDB]:
+async def get_sessions(limit: int = 50, user_id: str = "default") -> list[SessionDB]:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(SessionDB).order_by(desc(SessionDB.updated_at)).limit(limit)
+        stmt = (
+            select(SessionDB)
+            .where(SessionDB.user_id == user_id)
+            .order_by(desc(SessionDB.updated_at))
+            .limit(limit)
+        )
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
-async def update_session_title(session_id: str, title: str) -> SessionDB | None:
+async def update_session_title(session_id: str, title: str, user_id: str | None = None) -> SessionDB | None:
     factory = get_session_factory()
     async with factory() as session:
-        obj = await session.get(SessionDB, session_id)
+        stmt = select(SessionDB).where(SessionDB.id == session_id)
+        if user_id is not None:
+            stmt = stmt.where(SessionDB.user_id == user_id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
         if not obj:
             return None
         obj.title = title
@@ -51,28 +65,34 @@ async def update_session_title(session_id: str, title: str) -> SessionDB | None:
         await session.refresh(obj)
         return obj
 
-async def delete_session(session_id: str) -> bool:
+async def delete_session(session_id: str, user_id: str | None = None) -> bool:
     factory = get_session_factory()
     async with factory() as session:
-        obj = await session.get(SessionDB, session_id)
+        stmt = select(SessionDB).where(SessionDB.id == session_id)
+        if user_id is not None:
+            stmt = stmt.where(SessionDB.user_id == user_id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
         if not obj:
             return False
         await session.delete(obj)
         await session.commit()
         return True
 
-async def get_session_runs(session_id: str) -> list[ProjectRun]:
+async def get_session_runs(session_id: str, user_id: str | None = None) -> list[ProjectRun]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
             select(ProjectRun)
             .where(ProjectRun.session_id == session_id)
-            .order_by(ProjectRun.created_at)
         )
+        if user_id is not None:
+            stmt = stmt.where(ProjectRun.user_id == user_id)
+        stmt = stmt.order_by(ProjectRun.created_at)
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
-async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[ProjectRun]]:
+async def get_runs_by_session_ids(session_ids: list[str], user_id: str | None = None) -> dict[str, list[ProjectRun]]:
     """Batch-load runs for multiple session IDs, keyed by session_id."""
     if not session_ids:
         return {}
@@ -81,8 +101,10 @@ async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[Proj
         stmt = (
             select(ProjectRun)
             .where(ProjectRun.session_id.in_(session_ids))
-            .order_by(ProjectRun.created_at)
         )
+        if user_id is not None:
+            stmt = stmt.where(ProjectRun.user_id == user_id)
+        stmt = stmt.order_by(ProjectRun.created_at)
         result = await session.execute(stmt)
         runs = list(result.scalars().all())
         grouped: dict[str, list[ProjectRun]] = {}
@@ -90,14 +112,16 @@ async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[Proj
             grouped.setdefault(run.session_id or "", []).append(run)
         return grouped
 
-async def get_session_memories(session_id: str) -> list[MemoryEntry]:
+async def get_session_memories(session_id: str, user_id: str | None = None) -> list[MemoryEntry]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
             select(MemoryEntry)
             .where(MemoryEntry.session_id == session_id)
-            .order_by(MemoryEntry.created_at)
         )
+        if user_id is not None:
+            stmt = stmt.where(MemoryEntry.user_id == user_id)
+        stmt = stmt.order_by(MemoryEntry.created_at)
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
@@ -108,11 +132,13 @@ async def create_memory_entry(
     content_type: str,
     summary: str,
     details: str = "",
+    user_id: str = "default",
 ) -> MemoryEntry:
     factory = get_session_factory()
     async with factory() as session:
         obj = MemoryEntry(
             id=str(uuid4()),
+            user_id=user_id,
             session_id=session_id,
             run_id=run_id,
             agent_role=agent_role,
@@ -126,29 +152,36 @@ async def create_memory_entry(
         await session.refresh(obj)
         return obj
 
-async def clear_session_memories(session_id: str):
+async def clear_session_memories(session_id: str, user_id: str | None = None):
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(MemoryEntry).where(MemoryEntry.session_id == session_id)
+        if user_id is not None:
+            stmt = stmt.where(MemoryEntry.user_id == user_id)
         result = await session.execute(stmt)
         for obj in result.scalars().all():
             await session.delete(obj)
         await session.commit()
 
-async def delete_memory_entry(memory_id: str) -> bool:
+async def delete_memory_entry(memory_id: str, user_id: str | None = None) -> bool:
     factory = get_session_factory()
     async with factory() as session:
-        obj = await session.get(MemoryEntry, memory_id)
+        stmt = select(MemoryEntry).where(MemoryEntry.id == memory_id)
+        if user_id is not None:
+            stmt = stmt.where(MemoryEntry.user_id == user_id)
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
         if not obj:
             return False
         await session.delete(obj)
         await session.commit()
         return True
 
-async def create_run(requirement: str, session_id: str | None = None) -> str:
+async def create_run(requirement: str, session_id: str | None = None, user_id: str = "default") -> str:
     run_id = str(uuid4())
     run = ProjectRun(
         id=run_id,
+        user_id=user_id,
         session_id=session_id,
         requirement=requirement,
         status="pending",
@@ -210,16 +243,24 @@ async def update_run_result(
             run.updated_at = datetime.now(UTC)
             await session.commit()
 
-async def get_run(run_id: str) -> ProjectRun | None:
+async def get_run(run_id: str, user_id: str | None = None) -> ProjectRun | None:
     factory = get_session_factory()
     async with factory() as session:
-        run = await session.get(ProjectRun, run_id)
-        return run
+        stmt = select(ProjectRun).where(ProjectRun.id == run_id)
+        if user_id is not None:
+            stmt = stmt.where(ProjectRun.user_id == user_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
-async def get_runs(limit: int = 20) -> list[ProjectRun]:
+async def get_runs(limit: int = 20, user_id: str = "default") -> list[ProjectRun]:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(ProjectRun).order_by(desc(ProjectRun.created_at)).limit(limit)
+        stmt = (
+            select(ProjectRun)
+            .where(ProjectRun.user_id == user_id)
+            .order_by(desc(ProjectRun.created_at))
+            .limit(limit)
+        )
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
@@ -278,7 +319,7 @@ async def get_run_messages(run_id: str) -> list[ChatMessage]:
         return list(result.scalars().all())
 
 
-async def get_session_messages(session_id: str, exclude_run_id: str | None = None) -> list[ChatMessage]:
+async def get_session_messages(session_id: str, exclude_run_id: str | None = None, user_id: str | None = None) -> list[ChatMessage]:
     """Get all chat messages across all runs in a session, ordered chronologically."""
     factory = get_session_factory()
     async with factory() as session:
@@ -287,6 +328,8 @@ async def get_session_messages(session_id: str, exclude_run_id: str | None = Non
             select(ProjectRun.id)
             .where(ProjectRun.session_id == session_id)
         )
+        if user_id is not None:
+            runs_stmt = runs_stmt.where(ProjectRun.user_id == user_id)
         if exclude_run_id:
             runs_stmt = runs_stmt.where(ProjectRun.id != exclude_run_id)
         runs_result = await session.execute(runs_stmt)

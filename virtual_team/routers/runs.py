@@ -53,19 +53,20 @@ async def create_run(req: RunRequest, request: Request):
     if not requirement:
         raise HTTPException(status_code=400, detail="需求不能为空")
 
+    user_id = get_user_id(request)
+
     session_id = req.session_id
     if session_id is None:
-        sess = await create_session(title=requirement[:64])
+        sess = await create_session(title=requirement[:64], user_id=user_id)
         session_id = sess.id
     else:
         existing_sess = await get_session(session_id)
         if existing_sess is None:
             logger.warning("session_id=%s not found, creating new session", session_id)
-            sess = await create_session(title=requirement[:64])
+            sess = await create_session(title=requirement[:64], user_id=user_id)
             session_id = sess.id
 
     # ── Resolve API credentials from the enterprise key vault ──────────────
-    user_id = get_user_id(request)
     api_key = None
     api_base = None
     effective_model = req.model or config.model
@@ -90,7 +91,7 @@ async def create_run(req: RunRequest, request: Request):
         raise HTTPException(status_code=400, detail="请先在设置中配置 API Key")
 
     try:
-        run_id = await db_create_run(requirement, session_id=session_id)
+        run_id = await db_create_run(requirement, session_id=session_id, user_id=user_id)
     except Exception as e:
         logger.error("Failed to create run: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"创建失败: {e}")
@@ -108,6 +109,7 @@ async def create_run(req: RunRequest, request: Request):
             requirement=requirement,
             run_id=run_id,
             session_id=session_id,
+            user_id=user_id,
             agent_id=req.agent_id,
             api_key=api_key,
             api_base=api_base,
@@ -122,9 +124,10 @@ async def create_run(req: RunRequest, request: Request):
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
-async def get_run_detail(run_id: str):
+async def get_run_detail(run_id: str, request: Request):
     try:
-        run = await get_run(run_id)
+        user_id = get_user_id(request)
+        run = await get_run(run_id, user_id=user_id)
         if run is None:
             raise HTTPException(status_code=404, detail="未找到该次讨论")
         messages = await get_messages(run_id)
@@ -159,9 +162,10 @@ async def get_run_detail(run_id: str):
 
 
 @router.get("/api/runs", response_model=list[RunSummary])
-async def list_runs(limit: int = 20):
+async def list_runs(request: Request, limit: int = 20):
     try:
-        runs = await get_runs(limit=min(limit, 100))
+        user_id = get_user_id(request)
+        runs = await get_runs(limit=min(limit, 100), user_id=user_id)
         return [
             {
                 "id": r.id,
@@ -186,20 +190,25 @@ async def list_runs(limit: int = 20):
 async def run_websocket(websocket: WebSocket, run_id: str):
     from virtual_team.auth import AUTH_ENABLED, AUTH_SECRET, decode_jwt
 
+    ws_user_id = "default"
     if AUTH_ENABLED:
         token = websocket.query_params.get("token", "")
-        if not token or not decode_jwt(token, AUTH_SECRET):
+        payload = decode_jwt(token, AUTH_SECRET) if token else None
+        if not payload:
             await websocket.close(code=4001, reason="Unauthorized")
             return
+        ws_user_id = payload["sub"]
+    else:
+        ws_user_id = websocket.query_params.get("X-User-ID", "default")
 
     await websocket.accept()
-    logger.info("WebSocket connected | run_id=%s", run_id)
+    logger.info("WebSocket connected | run_id=%s | user_id=%s", run_id, ws_user_id)
     try:
         await websocket.send_json({"type": "status", "status": "connected"})
 
         # Check if run already completed (race condition: task finished before WS connected)
         try:
-            run = await get_run(run_id)
+            run = await get_run(run_id, user_id=ws_user_id)
             if run and run.status in ("converged", "error"):
                 messages = await get_messages(run_id)
                 for m in messages:
