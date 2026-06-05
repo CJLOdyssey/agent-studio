@@ -11,6 +11,25 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  Pre-push Quality Gates"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+# ── Secret leak check ─────────────────────────────────────────────────────────
+echo ""
+echo "▶ Security: .env leak check"
+if [ -f ".env" ]; then
+    if [ "$(stat -c '%a' .env)" != "600" ]; then
+        echo "⚠️  WARNING: .env permissions are $(stat -c '%a' .env), should be 600"
+        echo "   Fix: chmod 600 .env"
+    fi
+    # Check if .env is staged or tracked by git
+    if git ls-files --error-unmatch .env 2>/dev/null; then
+        echo "❌ CRITICAL: .env is tracked by git! Remove it immediately."
+        echo "   Fix: git rm --cached .env && echo '.env' >> .gitignore"
+        exit 1
+    fi
+    echo "   ✅ .env is properly gitignored"
+else
+    echo "   ⚠️  .env not found — copy from .env.template"
+fi
+
 # ── Backend ────────────────────────────────────────────────────────────────────
 echo ""
 echo "▶ Backend: Ruff lint"

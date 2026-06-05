@@ -6,9 +6,7 @@ services:
     environment:
       POSTGRES_DB: virtual_team
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -21,8 +19,6 @@ services:
     image: redis:7-alpine
     container_name: virtual-team-redis
     restart: always
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -33,8 +29,6 @@ services:
     image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${ACR_NAMESPACE:-virtual-team}/virtual-team:${IMAGE_TAG:-latest}
     container_name: virtual-team-api
     restart: always
-    ports:
-      - "8080:8080"
     environment:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
@@ -44,7 +38,7 @@ services:
       - TIMEOUT=${TIMEOUT:-120}
       - MAX_RETRIES=${MAX_RETRIES:-3}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/virtual_team
+      - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/virtual_team
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -88,7 +82,7 @@ services:
       - TIMEOUT=${TIMEOUT:-120}
       - MAX_RETRIES=${MAX_RETRIES:-3}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/virtual_team
+      - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/virtual_team
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
