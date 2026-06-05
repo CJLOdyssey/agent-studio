@@ -4,6 +4,33 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 
+def _mock_async_session_factory():
+    """Return a callable that yields an AsyncMock session."""
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_scalar = MagicMock()
+    mock_scalar.all.return_value = []
+    mock_result.scalars.return_value = mock_scalar
+    mock_result.scalar_one_or_none.return_value = None
+    mock_result.one.return_value = MagicMock(requests=0, tokens=0)
+    mock_session.execute.return_value = mock_result
+    mock_session.get.return_value = None
+    mock_session.add = MagicMock()
+    mock_session.commit = AsyncMock()
+    mock_session.refresh = AsyncMock()
+    mock_session.delete = AsyncMock()
+
+    class _AsyncCtx:
+        def __call__(self):
+            return self
+        async def __aenter__(self):
+            return mock_session
+        async def __aexit__(self, *args):
+            pass
+
+    return MagicMock(return_value=_AsyncCtx())
+
+
 @pytest.fixture
 def client():
     """Create a TestClient with all external dependencies mocked.
@@ -13,10 +40,15 @@ def client():
     """
     mock_redis = MagicMock()
     mock_redis.ping = AsyncMock(return_value=True)
+    _mock_factory = _mock_async_session_factory()
 
     with patch("virtual_team.broker.get_redis", return_value=mock_redis), \
          patch("virtual_team.database.get_async_engine", return_value=MagicMock()), \
-         patch("virtual_team.database.get_session_factory", return_value=MagicMock()), \
+         patch("virtual_team.database.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.keys.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.agents.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.core.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.teams.get_session_factory", _mock_factory), \
          patch("virtual_team.database.init_db", new_callable=AsyncMock), \
          patch("virtual_team.repository.seed_default_agents", new_callable=AsyncMock), \
          patch("virtual_team.rate_limit.get_redis", return_value=mock_redis):

@@ -1,7 +1,7 @@
 """Tests for conversation task infrastructure (StreamEmitter, helpers)."""
 
-from virtual_team.tasks import _build_session_context, _run_async
 from virtual_team.streaming import StreamEmitter
+from virtual_team.tasks import _build_session_context, _run_async
 
 
 class TestStreamEmitter:

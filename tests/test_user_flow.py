@@ -17,6 +17,40 @@ from fastapi.testclient import TestClient
 USER_ID = "test-user-001"
 
 
+def _mock_async_session_factory():
+    """Return a callable that yields an AsyncMock session.
+
+    Mimics :func:`async_sessionmaker`: calling the factory returns an
+    async context manager whose ``__aenter__`` yields the mock session.
+    Patched via ``MagicMock(return_value=...)`` so ``get_session_factory()``
+    returns it, then ``factory()`` is called to enter the context.
+    """
+    mock_session = AsyncMock()
+    mock_result = MagicMock()
+    mock_scalar = MagicMock()
+    mock_scalar.all.return_value = []
+    mock_result.scalars.return_value = mock_scalar
+    mock_result.scalar_one_or_none.return_value = None
+    mock_result.one.return_value = MagicMock(requests=0, tokens=0)
+    mock_session.execute.return_value = mock_result
+    mock_session.get.return_value = None
+    mock_session.add = MagicMock()
+    mock_session.commit = AsyncMock()
+    mock_session.refresh = AsyncMock()
+    mock_session.delete = AsyncMock()
+
+    class _AsyncCtx:
+        """Callable async context manager — mimics a sessionmaker."""
+        def __call__(self):
+            return self
+        async def __aenter__(self):
+            return mock_session
+        async def __aexit__(self, *args):
+            pass
+
+    return MagicMock(return_value=_AsyncCtx())
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _mock_key_response(key_id="k-001", provider="deepseek", label="My Key",
@@ -78,10 +112,15 @@ def client(_mock_key_vault):
     mock_redis.incr = AsyncMock(return_value=1)
     mock_redis.expire = AsyncMock(return_value=True)
 
+    _mock_factory = _mock_async_session_factory()
     with patch("virtual_team.broker.get_redis", return_value=mock_redis), \
          patch("virtual_team.rate_limit.get_redis", return_value=mock_redis), \
          patch("virtual_team.database.get_async_engine", return_value=MagicMock()), \
-         patch("virtual_team.database.get_session_factory", return_value=MagicMock()), \
+         patch("virtual_team.database.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.keys.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.agents.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.core.get_session_factory", _mock_factory), \
+         patch("virtual_team.repository.teams.get_session_factory", _mock_factory), \
          patch("virtual_team.database.init_db", new_callable=AsyncMock), \
          patch("virtual_team.repository.seed_default_agents", new_callable=AsyncMock):
         from virtual_team.app import app
@@ -103,7 +142,15 @@ class TestScenario1_FirstVisit:
 
     def test_list_models(self, client):
         """TC-1.2: Available models returned."""
-        resp = client.get("/api/models")
+        with patch("virtual_team.routers.models.get_api_keys", new_callable=AsyncMock) as m:
+            m.return_value = [{
+                "id": "k-001", "provider": "deepseek", "models": ["deepseek-chat"],
+                "label": "My Key", "usage_type": "llm",
+                "key_masked": "sk-...0000", "base_url": "https://api.deepseek.com/v1",
+                "is_active": True, "is_default": True,
+                "last_used_at": None, "created_at": "2026-06-03T00:00:00+00:00",
+            }]
+            resp = client.get("/api/models")
         assert resp.status_code == 200
         models = resp.json()
         assert isinstance(models, list)
@@ -134,9 +181,12 @@ class TestScenario1_FirstVisit:
         secret = "sk-test-demo-key-000000"
         _mock_key_response(key_id="k-101", masked="sk-...0000")
 
-        with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as m:
+        with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as m, \
+             patch("virtual_team.routers.keys.test_api_key_connection", new_callable=AsyncMock) as t:
+            t.return_value = {"success": True, "models": []}
             m.return_value = MagicMock(
-                id="k-101", provider="deepseek", label="My DeepSeek Key",
+                id="k-101", provider="deepseek", usage_type="llm",
+                label="My DeepSeek Key",
                 encrypted_key="encrypted-blob",
                 base_url="https://api.deepseek.com/v1",
                 models="deepseek-chat,deepseek-reasoner",
@@ -175,12 +225,15 @@ class TestScenario1_FirstVisit:
         """TC-1.7: Second key as non-default."""
         _mock_key_response(key_id="k-202", provider="openai",
                                       label="OpenAI Backup", is_default=False)
-        m = MagicMock(id="k-202", provider="openai", label="OpenAI Backup",
+        m = MagicMock(id="k-202", provider="openai", usage_type="llm",
+                      label="OpenAI Backup",
                       encrypted_key="enc-2", models="gpt-4o",
                       is_active=True, is_default=False, last_used_at=None,
                       base_url="https://api.openai.com/v1",
                       created_at=MagicMock(isoformat=lambda: "2026-06-03T00:00:00+00:00"))
-        with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as mock_create:
+        with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as mock_create, \
+             patch("virtual_team.routers.keys.test_api_key_connection", new_callable=AsyncMock) as t:
+            t.return_value = {"success": True, "models": []}
             mock_create.return_value = m
             resp = client.post("/api/keys", json={
                 "provider": "openai", "label": "OpenAI Backup",
@@ -551,18 +604,29 @@ class TestFullUserJourney:
         assert r.status_code == 200
         journey_log.append("health ✅")
 
-        r = client.get("/api/models")
-        assert r.status_code == 200 and len(r.json()) > 0
-        journey_log.append(f"models ({len(r.json())}) ✅")
+        with patch("virtual_team.routers.models.get_api_keys", new_callable=AsyncMock) as m_models:
+            m_models.return_value = [{
+                "id": "k-journey", "provider": "deepseek", "models": ["deepseek-chat"],
+                "label": "Journey Key", "usage_type": "llm",
+                "key_masked": "sk-...0000", "base_url": "https://api.deepseek.com/v1",
+                "is_active": True, "is_default": True,
+                "last_used_at": None, "created_at": "2026-06-03T00:00:00+00:00",
+            }]
+            r = client.get("/api/models")
+            assert r.status_code == 200 and len(r.json()) > 0
+            journey_log.append(f"models ({len(r.json())}) ✅")
 
         r = client.get("/api/commands")
         assert r.status_code == 200 and len(r.json()) == 7
         journey_log.append(f"commands ({len(r.json())}) ✅")
 
         # 2. Configure key
-        with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as m:
+        with patch("virtual_team.routers.keys.create_api_key", new_callable=AsyncMock) as m, \
+             patch("virtual_team.routers.keys.test_api_key_connection", new_callable=AsyncMock) as t:
+            t.return_value = {"success": True, "models": []}
             m.return_value = MagicMock(
-                id="k-journey", provider="deepseek", label="Journey Key",
+                id="k-journey", provider="deepseek", usage_type="llm",
+                label="Journey Key",
                 encrypted_key="enc", models="deepseek-chat", base_url="https://api.deepseek.com/v1",
                 is_active=True, is_default=True, last_used_at=None,
                 created_at=MagicMock(isoformat=lambda: "2026-06-03T00:00:00+00:00"),
