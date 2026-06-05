@@ -1,16 +1,17 @@
-"""Tests for conversation task infrastructure (_StreamEmitter, helpers)."""
+"""Tests for conversation task infrastructure (StreamEmitter, helpers)."""
 
-from virtual_team.tasks import _build_session_context, _run_async, _StreamEmitter
+from virtual_team.tasks import _build_session_context, _run_async
+from virtual_team.streaming import StreamEmitter
 
 
 class TestStreamEmitter:
     def test_emitter_initialisation(self):
-        emitter = _StreamEmitter(run_id="test-run-123")
+        emitter = StreamEmitter(run_id="test-run-123")
         assert emitter._run_id == "test-run-123"
         assert emitter._message_index == 0
 
     def test_emitter_increments_index(self):
-        emitter = _StreamEmitter(run_id="test-run-456")
+        emitter = StreamEmitter(run_id="test-run-456")
         assert emitter._message_index == 0
         # _emit is async so we can't easily test it without a running loop,
         # but we can verify the initial state
@@ -51,6 +52,6 @@ class TestRunAsync:
 
 class TestStreamEmitterAsync:
     def test_emit_initial_index_is_zero(self):
-        """_StreamEmitter starts with message_index 0 before any emits."""
-        emitter = _StreamEmitter(run_id="test-run-emit")
+        """StreamEmitter starts with message_index 0 before any emits."""
+        emitter = StreamEmitter(run_id="test-run-emit")
         assert emitter._message_index == 0
