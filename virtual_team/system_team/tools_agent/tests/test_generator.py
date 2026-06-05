@@ -1,6 +1,5 @@
 """工具生成器测试."""
 
-import pytest
 from virtual_team.system_team.tools_agent.generator import ToolGenerator
 
 

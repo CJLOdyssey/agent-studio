@@ -139,7 +139,9 @@ class TeamAgentDB(Base):
     __tablename__ = "team_agents"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    team_id: Mapped[str] = mapped_column(String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    team_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
     agent_config_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("agent_configs.id", ondelete="SET NULL"), nullable=True,
     )

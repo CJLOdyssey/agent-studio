@@ -1,9 +1,9 @@
 """系统团队管理器 - 管理所有 Agent 的生命周期."""
 
-import os
-import yaml
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from virtual_team.logging_config import get_logger
 
@@ -21,7 +21,7 @@ class AgentManager:
 
     def _load_config(self):
         if self.config_path.exists():
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 self.config = yaml.safe_load(f) or {}
             logger.info("Loaded system team config from %s", self.config_path)
         else:
@@ -41,7 +41,7 @@ class AgentManager:
 
         config_path = SYSTEM_TEAM_DIR / agent_def.get("config_path", "")
         if config_path.exists():
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         return {}
 

@@ -5,11 +5,11 @@ from pydantic import BaseModel, Field
 
 from virtual_team.logging_config import get_logger
 from virtual_team.system_team.main import get_system_team_manager
-from virtual_team.system_team.tools_agent.generator import ToolGenerator
-from virtual_team.system_team.tools_agent.validator import ToolValidator
+from virtual_team.system_team.shared.llm import llm_client
 from virtual_team.system_team.skill_agent.generator import SkillGenerator
 from virtual_team.system_team.skill_agent.validator import SkillValidator
-from virtual_team.system_team.shared.llm import llm_client
+from virtual_team.system_team.tools_agent.generator import ToolGenerator
+from virtual_team.system_team.tools_agent.validator import ToolValidator
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/system-team", tags=["system-team"])

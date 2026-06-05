@@ -15,7 +15,19 @@ from virtual_team.broker import get_redis
 from virtual_team.config import load_config
 from virtual_team.database import get_async_engine, init_db
 from virtual_team.logging_config import get_logger
-from virtual_team.routers import agents, attachments, commands, keys, models, runs, sessions, skills, system_team, teams, tools
+from virtual_team.routers import (
+    agents,
+    attachments,
+    commands,
+    keys,
+    models,
+    runs,
+    sessions,
+    skills,
+    system_team,
+    teams,
+    tools,
+)
 
 logger = get_logger(__name__)
 

@@ -5,14 +5,14 @@ from pydantic import BaseModel, Field
 
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
+    add_team_member,
     create_team,
     delete_team,
     get_team,
     get_teams,
-    update_team,
-    add_team_member,
     remove_team_member,
     reorder_team_members,
+    update_team,
 )
 
 logger = get_logger(__name__)
