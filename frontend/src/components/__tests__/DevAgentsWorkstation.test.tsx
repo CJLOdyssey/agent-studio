@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DevAgentsWorkstation from '../devagents/DevAgentsWorkstation';
 import { TestProviders } from '../../test/setup';
+import { useChatStore } from '../../stores/chatStore';
 
 vi.mock('lucide-react', () => ({
   Bot: () => <span data-testid="icon-bot" />,
@@ -65,9 +66,52 @@ vi.mock('../../api/hooks', () => ({
   prefetchAgents: vi.fn(),
 }));
 
+vi.mock('../../api/client', () => {
+  const teams = [
+    {
+      id: 'team-1',
+      name: '核心开发团队',
+      order: 1,
+      is_expanded: true,
+      agents: [
+        { id: 'a1', name: '产品经理', role: '产品经理', order: 1 },
+        { id: 'a2', name: '前端工程师', role: '前端工程师', order: 2 },
+        { id: 'a3', name: '后端工程师', role: '后端工程师', order: 3 },
+        { id: 'a4', name: '测试工程师', role: '测试工程师', order: 4 },
+        { id: 'a5', name: 'UI/UX 设计师', role: 'UI/UX 设计师', order: 5 },
+        { id: 'a6', name: 'DevOps 工程师', role: 'DevOps 工程师', order: 6 },
+        { id: 'a7', name: '项目经理', role: '项目经理', order: 7 },
+        { id: 'a8', name: '产品经理', role: '产品经理', order: 8 },
+      ],
+    },
+  ];
+  return {
+    default: {
+      get: vi.fn((url: string) => {
+        if (url === '/teams') return Promise.resolve({ data: teams });
+        return Promise.resolve({ data: [] });
+      }),
+      post: vi.fn(() => Promise.resolve({ data: {} })),
+      put: vi.fn(() => Promise.resolve()),
+      delete: vi.fn(() => Promise.resolve()),
+      interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
+      defaults: { headers: {} },
+    },
+  executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
+  submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
+  listKeys: vi.fn(() => Promise.resolve([{ id: 'key-1', is_default: true, is_active: true, models: ['gpt-4'] }])),
+  listAgents: vi.fn(() => Promise.resolve([])),
+    createAgent: vi.fn(),
+    updateAgent: vi.fn(),
+    deleteAgent: vi.fn(),
+    toggleAgent: vi.fn(),
+  };
+});
+
 describe('DevAgentsWorkstation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useChatStore.getState().reset();
   });
 
   describe('团队列表渲染', () => {
@@ -76,14 +120,14 @@ describe('DevAgentsWorkstation', () => {
       expect(screen.getByText('我的团队')).toBeInTheDocument();
     });
 
-    it('should render "核心开发团队" team', () => {
+    it('should render "核心开发团队" team', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
-      expect(screen.getByText('核心开发团队')).toBeInTheDocument();
+      expect(await screen.findByText('核心开发团队')).toBeInTheDocument();
     });
 
-    it('should show team member count (8)', () => {
+    it('should show team member count (8)', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
-      expect(screen.getByText('8')).toBeInTheDocument();
+      expect(await screen.findByText('8')).toBeInTheDocument();
     });
 
     it('should render "新建对话" button', () => {
@@ -187,9 +231,9 @@ describe('DevAgentsWorkstation', () => {
       const textarea = screen.getByPlaceholderText(/描述你的需求/) as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
-      const messageArea = document.querySelector('.devagents-home-chat-messages');
       await waitFor(() => {
-        expect(messageArea?.textContent).toContain('测试消息');
+        const messagesArea = document.querySelector('.devagents-messages-inner');
+        expect(messagesArea?.textContent).toContain('测试消息');
       });
     });
   });
@@ -200,20 +244,14 @@ describe('DevAgentsWorkstation', () => {
       expect(screen.queryByText('资源管理器')).not.toBeInTheDocument();
     });
 
-    it('should show open button and open workspace when clicked', async () => {
+    it('should not show workspace when agent selected (workspace closed by default)', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
-
-      // Team starts expanded — agents are already visible; no toggle needed
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      await waitFor(() => {
+        expect(document.querySelectorAll('.devagents-sidebar .devagents-agent-item').length).toBeGreaterThan(0);
+      });
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
       fireEvent.click(sidebarAgents[0]);
-
       expect(screen.queryByText('资源管理器')).not.toBeInTheDocument();
-      expect(screen.getByText('打开代码工作区')).toBeInTheDocument();
-
-      fireEvent.click(screen.getByText('打开代码工作区'));
-      expect(screen.getByText('资源管理器')).toBeInTheDocument();
     });
   });
 

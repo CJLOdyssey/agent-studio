@@ -65,6 +65,47 @@ vi.mock('../../api/hooks', () => ({
   prefetchAgents: vi.fn(),
 }));
 
+const mockTeams = [
+  {
+    id: 'team-1',
+    name: '核心开发团队',
+    order: 1,
+    is_expanded: true,
+    agents: [
+      { id: 'a1', name: '产品经理', role: '产品经理', order: 1 },
+      { id: 'a2', name: '前端工程师', role: '前端工程师', order: 2 },
+      { id: 'a3', name: '后端工程师', role: '后端工程师', order: 3 },
+      { id: 'a4', name: '测试工程师', role: '测试工程师', order: 4 },
+      { id: 'a5', name: 'UI/UX 设计师', role: 'UI/UX 设计师', order: 5 },
+      { id: 'a6', name: 'DevOps 工程师', role: 'DevOps 工程师', order: 6 },
+      { id: 'a7', name: '项目经理', role: '项目经理', order: 7 },
+      { id: 'a8', name: '产品经理', role: '产品经理', order: 8 },
+    ],
+  },
+];
+
+vi.mock('../../api/client', () => ({
+  default: {
+    get: vi.fn((url: string) => {
+      if (url === '/teams') return Promise.resolve({ data: mockTeams });
+      return Promise.resolve({ data: [] });
+    }),
+    post: vi.fn(() => Promise.resolve({ data: {} })),
+    put: vi.fn(() => Promise.resolve()),
+    delete: vi.fn(() => Promise.resolve()),
+    interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
+    defaults: { headers: {} },
+  },
+  executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
+  submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
+  listKeys: vi.fn(() => Promise.resolve([])),
+  listAgents: vi.fn(() => Promise.resolve([])),
+  createAgent: vi.fn(),
+  updateAgent: vi.fn(),
+  deleteAgent: vi.fn(),
+  toggleAgent: vi.fn(),
+}));
+
 describe('DevAgentsWorkstation 布局测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -100,10 +141,9 @@ describe('DevAgentsWorkstation 布局测试', () => {
       expect(screen.getByText('描述你的需求，我来帮你分析和规划')).toBeInTheDocument();
     });
 
-    it('should render samples section', () => {
+    it('should render send button', () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
-      const samples = document.querySelector('.devagents-samples');
-      expect(samples).toBeInTheDocument();
+      expect(screen.getByText('发送')).toBeInTheDocument();
     });
   });
 });

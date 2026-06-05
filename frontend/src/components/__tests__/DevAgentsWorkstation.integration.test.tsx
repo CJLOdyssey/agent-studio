@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DevAgentsWorkstation from '../devagents/DevAgentsWorkstation';
 import { TestProviders } from '../../test/setup';
+import { useChatStore } from '../../stores/chatStore';
 
 vi.mock('lucide-react', () => ({
   Bot: () => <span data-testid="icon-bot" />,
@@ -65,9 +66,52 @@ vi.mock('../../api/hooks', () => ({
   prefetchAgents: vi.fn(),
 }));
 
+vi.mock('../../api/client', () => {
+  const teams = [
+    {
+      id: 'team-1',
+      name: '核心开发团队',
+      order: 1,
+      is_expanded: true,
+      agents: [
+        { id: 'a1', name: '产品经理', role: '产品经理', order: 1 },
+        { id: 'a2', name: '前端工程师', role: '前端工程师', order: 2 },
+        { id: 'a3', name: '后端工程师', role: '后端工程师', order: 3 },
+        { id: 'a4', name: '测试工程师', role: '测试工程师', order: 4 },
+        { id: 'a5', name: 'UI/UX 设计师', role: 'UI/UX 设计师', order: 5 },
+        { id: 'a6', name: 'DevOps 工程师', role: 'DevOps 工程师', order: 6 },
+        { id: 'a7', name: '项目经理', role: '项目经理', order: 7 },
+        { id: 'a8', name: '产品经理', role: '产品经理', order: 8 },
+      ],
+    },
+  ];
+  return {
+    default: {
+      get: vi.fn((url: string) => {
+        if (url === '/teams') return Promise.resolve({ data: teams });
+        return Promise.resolve({ data: [] });
+      }),
+      post: vi.fn(() => Promise.resolve({ data: {} })),
+      put: vi.fn(() => Promise.resolve()),
+      delete: vi.fn(() => Promise.resolve()),
+      interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
+      defaults: { headers: {} },
+    },
+  executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
+  submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
+  listKeys: vi.fn(() => Promise.resolve([{ id: 'key-1', is_default: true, is_active: true, models: ['gpt-4'] }])),
+  listAgents: vi.fn(() => Promise.resolve([])),
+    createAgent: vi.fn(),
+    updateAgent: vi.fn(),
+    deleteAgent: vi.fn(),
+    toggleAgent: vi.fn(),
+  };
+});
+
 describe('DevAgentsWorkstation 集成测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useChatStore.getState().reset();
   });
 
   describe('Agent选择和对话流程', () => {
@@ -78,11 +122,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
       fireEvent.change(textarea, { target: { value: '请分析用户登录需求' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
-      const messageArea = document.querySelector('.devagents-home-chat-messages');
       await waitFor(() => {
-        expect(messageArea?.textContent).toContain('请分析用户登录需求');
+        const messagesArea = document.querySelector('.devagents-messages-inner');
+        expect(messagesArea?.textContent).toContain('请分析用户登录需求');
       });
-      const messages = document.querySelectorAll('.devagents-message.user, .devagents-message-user');
+      const messages = document.querySelectorAll('.devagents-message-user, .devagents-message.user');
       expect(messages.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -93,18 +137,18 @@ describe('DevAgentsWorkstation 集成测试', () => {
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
-      const messageArea = document.querySelector('.devagents-home-chat-messages');
       await waitFor(() => {
-        expect(messageArea?.textContent).toContain('测试消息');
+        const messagesArea = document.querySelector('.devagents-messages-inner');
+        expect(messagesArea?.textContent).toContain('测试消息');
       });
     });
   });
 
   describe('团队管理流程', () => {
-    it('should render team with agents', () => {
+    it('should render team with agents', async () => {
       render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
-      expect(screen.getByText('核心开发团队')).toBeInTheDocument();
-      expect(screen.getByText('8')).toBeInTheDocument();
+      expect(await screen.findByText('核心开发团队')).toBeInTheDocument();
+      expect(await screen.findByText('8')).toBeInTheDocument();
     });
 
     it('should toggle team expansion when header clicked', async () => {

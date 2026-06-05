@@ -32,7 +32,7 @@ export default function HomeScreen({ conversationKey, models, selectedModel, onM
           </div>
           <InputToolbar ref={inputToolbarRef} onSend={onSend} models={models}
             selectedModel={selectedModel} onModelChange={onModelChange}
-            placeholder={t('chatInput.placeholder')} commands={commands}
+            placeholder={t('home.placeholder')} commands={commands}
             onExecuteCommand={onExecuteCommand} onConfigureModels={onConfigureModels} />
         </div>
       </div>
