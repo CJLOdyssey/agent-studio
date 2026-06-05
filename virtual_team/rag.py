@@ -356,10 +356,7 @@ def get_rag_pipeline() -> tuple[EmbeddingProvider | None, PgVectorStore]:
 
 def ensure_embedding_provider(api_key: str | None = None):
     global _embedding_provider
-    if api_key:
-        _embedding_provider = EmbeddingProvider(api_key=api_key)
-    else:
-        _embedding_provider = None
+    _embedding_provider = EmbeddingProvider(api_key=api_key) if api_key else None
 
 
 async def ingest_session_messages(

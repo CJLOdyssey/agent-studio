@@ -1,6 +1,7 @@
 """Skill generation API routes: Generate SKILL.md from natural language."""
 
 import hashlib
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -57,9 +58,9 @@ async def validate_skill(req: SkillValidateRequest):
 
 def _generate_skill_from_description(description: str, category: str) -> GeneratedSkill:
     desc_lower = description.lower()
-    
-    skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"
-    
+
+    skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"  # nosec
+
     if any(kw in desc_lower for kw in ['代码审查', 'code review', '审查', 'review']):
         return _generate_code_review_skill(skill_id, description)
     elif any(kw in desc_lower for kw in ['安全', 'security', '漏洞', 'vulnerability']):
@@ -769,10 +770,9 @@ systemctl restart app
 
 
 def _generate_custom_skill(skill_id: str, description: str) -> GeneratedSkill:
-    name = "custom-skill"
     desc = description[:100] if len(description) > 100 else description
     skill_name = description.replace(" ", "-").lower()[:30]
-    
+
     content = f"""---
 name: {skill_name}
 description: {desc}
@@ -826,27 +826,27 @@ metadata:
 
 def _validate_skill_content(content: str) -> SkillValidateResponse:
     suggestions = []
-    
+
     if "---" not in content:
         suggestions.append("缺少 YAML frontmatter（用 --- 包围）")
-    
+
     if "name:" not in content:
         suggestions.append("frontmatter 中缺少 name 字段")
-    
+
     if "description:" not in content:
         suggestions.append("frontmatter 中缺少 description 字段")
-    
+
     if "# " not in content:
         suggestions.append("建议添加一级标题")
-    
+
     if "## " not in content:
         suggestions.append("建议添加二级标题划分章节")
-    
+
     if len(content) < 100:
         suggestions.append("内容较短，建议补充更多细节")
-    
+
     is_valid = len([s for s in suggestions if "缺少" in s]) == 0
-    
+
     return SkillValidateResponse(
         is_valid=is_valid,
         suggestions=suggestions

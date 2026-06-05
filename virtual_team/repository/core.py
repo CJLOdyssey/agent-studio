@@ -1,9 +1,7 @@
-import asyncio
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import desc, select
 
 from virtual_team.database import (
     AgentConfigDB,
@@ -13,8 +11,7 @@ from virtual_team.database import (
     SessionDB,
     get_session_factory,
 )
-from virtual_team.models import AgentConfig
-from virtual_team.prompts import DIRECT_REPLY_KEYWORD
+
 
 async def create_session(title: str = "新对话") -> SessionDB:
     factory = get_session_factory()

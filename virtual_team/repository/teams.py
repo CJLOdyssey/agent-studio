@@ -1,11 +1,10 @@
-import asyncio
-from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
+from sqlalchemy import select
+from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
-from virtual_team.database import TeamDB, TeamAgentDB, get_session_factory
+from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
 
 
 async def get_teams() -> list[dict]:
@@ -76,7 +75,10 @@ async def create_team(name: str) -> TeamDB:
         return team
 
 
-async def update_team(team_id: str, name: str | None = None, order: int | None = None, is_expanded: bool | None = None) -> TeamDB | None:
+async def update_team(
+    team_id: str, name: str | None = None, order: int | None = None,
+    is_expanded: bool | None = None,
+) -> TeamDB | None:
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(TeamDB).where(TeamDB.id == team_id))
