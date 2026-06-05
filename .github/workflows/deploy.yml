@@ -92,13 +92,20 @@ jobs:
           git fetch --depth=1 origin main
           git reset --hard origin/main
 
-      - name: Build frontend
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
+      - name: Extract frontend dist from API image
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
-          docker run --rm -v "$WORK_DIR/frontend:/app" node:20-alpine \
-            sh -c "cd /app && npm ci --legacy-peer-deps && npm run build"
+          IMAGE="crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:latest"
+          docker pull "$IMAGE" --quiet
+          docker create --name temp-extract "$IMAGE"
+          docker cp temp-extract:/app/frontend/dist "$WORK_DIR/frontend/dist"
+          docker rm temp-extract > /dev/null
 
-      - name: Set ACR env and login
+      - name: Update env and restart
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
@@ -109,10 +116,12 @@ jobs:
           IMAGE_TAG=latest
           EOF
 
-          # 登录 ACR
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com -u "${{ secrets.ACR_USERNAME }}" --password-stdin
-
-      - name: Pull and restart services
+          # 拉取新镜像并重启
+          docker compose -p 7 pull
+          docker compose -p 7 up -d --remove-orphans
+          docker image prune -f
+          echo "✅ Deploy complete"
+          docker compose -p 7 ps
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
