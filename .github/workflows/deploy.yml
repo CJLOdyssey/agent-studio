@@ -122,14 +122,6 @@ jobs:
           docker image prune -f
           echo "✅ Deploy complete"
           docker compose -p 7 ps
-        run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
-          cd "$WORK_DIR"
-          docker compose -p 7 pull
-          docker compose -p 7 up -d --remove-orphans
-          docker image prune -f
-          echo "✅ Deploy complete"
-          docker compose -p 7 ps
 
       - name: Notify deploy result
         if: always()
