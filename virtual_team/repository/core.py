@@ -319,7 +319,11 @@ async def get_run_messages(run_id: str) -> list[ChatMessage]:
         return list(result.scalars().all())
 
 
-async def get_session_messages(session_id: str, exclude_run_id: str | None = None, user_id: str | None = None) -> list[ChatMessage]:
+async def get_session_messages(
+    session_id: str,
+    exclude_run_id: str | None = None,
+    user_id: str | None = None,
+) -> list[ChatMessage]:
     """Get all chat messages across all runs in a session, ordered chronologically."""
     factory = get_session_factory()
     async with factory() as session:

@@ -335,7 +335,7 @@ export default function DevAgentsWorkstation() {
             models={models}
             selectedModel={effectiveSelectedModel}
             onModelChange={setSelectedModel}
-            placeholder={t('chatInput.placeholder')}
+            placeholder={t('home.placeholder')}
             commands={allCommands}
             onExecuteCommand={handleExecuteCommand}
             onConfigureModels={() => setIsApiOpen(true)}

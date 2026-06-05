@@ -54,13 +54,12 @@ async def _extract_text(file_path: Path, content_type: str) -> str:
 
 @router.post("/api/attachments", response_model=AttachmentResponse)
 async def upload_attachment(
+    request: Request,
     file: UploadFile = File(...),
     session_id: str = Form(...),
     run_id: str | None = Form(None),
-    request: Request = None,
 ):
-    # Extract user_id; request may be None in unit tests, fall back to "default"
-    user_id = get_user_id(request) if request is not None else "default"
+    user_id = get_user_id(request)
     sess = await get_session(session_id, user_id=user_id)
     if sess is None:
         raise HTTPException(status_code=404, detail="会话不存在")

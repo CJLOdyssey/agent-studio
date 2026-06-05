@@ -321,7 +321,7 @@ async def init_db():
 
         # ── Migration: add user_id columns to existing tables ──────────────
         import logging as _mig_logging
-        _MIGRATIONS = [
+        _migrations = [
             "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
             "CREATE INDEX IF NOT EXISTS ix_sessions_user_id ON sessions(user_id)",
             "ALTER TABLE project_runs ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
@@ -335,7 +335,7 @@ async def init_db():
             "ALTER TABLE attachments ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
             "CREATE INDEX IF NOT EXISTS ix_attachments_user_id ON attachments(user_id)",
         ]
-        for sql in _MIGRATIONS:
+        for sql in _migrations:
             try:
                 await conn.execute(text(sql))
             except Exception as exc:
