@@ -6,26 +6,15 @@
 
 ## 🔴 P0 — 阻塞级
 
-### 1. Dockerfile 未包含前端构建产物
+### ~~1. Dockerfile 未包含前端构建产物~~ ✅ 已解决
 
-**问题：** `Dockerfile` 只 COPY `virtual_team/` 和 `webapp.py`，缺少 `frontend/dist/`。Nginx 容器挂载 `./frontend/dist:/usr/share/nginx/html`，但 Dockerfile 不负责构建前端。
-
-**影响：** 生产环境容器里没有前端静态文件，页面空白。
-
-**建议：**
-- 方案 A：Dockerfile 改为 multi-stage build（`node:20` build → `python:3.12` runtime + 复制 dist）
-- 方案 B：CI 中先构建前端，Dockerfile 只 COPY 已构建的产物
-- 方案 C：移除 Dockerfile 中的前端责任，全部交给 CI artifacts
+**状态：** Dockerfile 已改为 multi-stage build，包含前端构建产物。
 
 ---
 
-### 2. CI Deploy 步骤缺少 ghcr.io 登录
+### ~~2. CI Deploy 步骤缺少 ghcr.io 登录~~ ✅ 已解决
 
-**问题：** `deploy` job 中 `docker compose pull` 之前没有 `docker login ghcr.io`。
-
-**影响：** 私有镜像拉取失败，部署中断。
-
-**建议：** deploy 步骤需先执行 `echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin`
+**状态：** 已迁移至 ACR，不再使用 GHCR。此问题不再适用。
 
 ---
 

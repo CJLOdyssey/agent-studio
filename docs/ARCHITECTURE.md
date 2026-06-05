@@ -236,12 +236,11 @@ Celery Worker:
 ### 8. CI/CD 流水线
 
 ```
-Push → test (Python 3.11/3.12, pytest + coverage)
-     → frontend (npm ci + npm run build)
-     → docker (buildx → ghcr.io, cache GHA)
-     → deploy (self-hosted runner)
-       → rsync 到 /opt/virtual-team/
-       → docker compose pull && up -d
+Push → CI Gate (GitHub API 查询 CI 状态)
+     → Build & Push to ACR (registry.cn-shenzhen.aliyuncs.com)
+     → Deploy to ECS (self-hosted runner)
+       → docker compose pull
+       → docker compose up -d
        → image prune
-       → 钉钉 webhook 通知
+       → webhook 通知
 ```
