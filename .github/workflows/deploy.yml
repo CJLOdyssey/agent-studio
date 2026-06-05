@@ -95,9 +95,8 @@ jobs:
       - name: Build frontend
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
-          cd "$WORK_DIR/frontend"
-          npm ci
-          npm run build
+          docker run --rm -v "$WORK_DIR/frontend:/app" node:20-alpine \
+            sh -c "cd /app && npm ci --legacy-peer-deps && npm run build"
 
       - name: Set ACR env and login
         run: |
