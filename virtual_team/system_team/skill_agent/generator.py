@@ -18,7 +18,7 @@ class SkillGenerator:
         self.templates_dir.mkdir(exist_ok=True)
 
     def generate(self, description: str, category: str = "general") -> dict[str, Any]:
-        skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"
+        skill_id = f"skill_{hashlib.md5(description.encode(), usedforsecurity=False).hexdigest()[:8]}"
 
         if any(kw in description.lower() for kw in ["代码审查", "code review"]):
             return self._create_code_review_skill(skill_id, description)
