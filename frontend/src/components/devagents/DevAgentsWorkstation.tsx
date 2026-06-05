@@ -62,12 +62,7 @@ export default function DevAgentsWorkstation() {
     return conv.conversations.filter(c => !c.agentId || c.agentId === selectedAgentId);
   }, [conv.conversations, selectedAgentId]);
 
-  // Auto-select first available model
-  useEffect(() => {
-    if (!selectedModel && models.length > 0) {
-      setSelectedModel(models[0].id);
-    }
-  }, [selectedModel, models]);
+  const effectiveSelectedModel = useMemo(() => selectedModel || (models.length > 0 ? models[0].id : ''), [selectedModel, models]);
   const hasMessages = apiMessages.length > 0;
   const convRef = useRef(conv);
   useEffect(() => { convRef.current = conv; });
@@ -94,7 +89,7 @@ export default function DevAgentsWorkstation() {
         loadConversation(chatMessages);
       }
     }
-  }, [conv.activeConvId]);
+  }, [conv.activeConvId, filteredConversations, loadConversation]);
   const handleNewChat = useCallback(() => {
     if (apiMessages.length > 0 && conv.activeConvId) {
       conv.updateConversationMessages(conv.activeConvId, apiMessages);
@@ -133,7 +128,7 @@ export default function DevAgentsWorkstation() {
       });
       notify();
     },
-    [conv, submitToApi, notify],
+    [conv, submitToApi, notify, selectedAgentId],
   );
 
   const { isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop } = useDragAndDrop(inputToolbarRef);
@@ -169,8 +164,9 @@ export default function DevAgentsWorkstation() {
       };
       try {
         await updateAgent(agent.id, cfg);
-      } catch (updateErr: any) {
-        if (updateErr?.response?.status === 404 || updateErr?.status === 404) {
+      } catch (updateErr: unknown) {
+        const ue = updateErr as { response?: { status?: number }; status?: number };
+        if (ue.response?.status === 404 || ue.status === 404) {
           await createAgent({
             ...cfg,
             role_identifier: agent.role || 'agent_' + agent.id.slice(0, 8),
@@ -321,7 +317,7 @@ export default function DevAgentsWorkstation() {
             <HomeScreen
               conversationKey={conversationKey}
               models={models}
-              selectedModel={selectedModel}
+              selectedModel={effectiveSelectedModel}
               onModelChange={setSelectedModel}
               commands={allCommands}
               onSend={handleHomeSend}
@@ -337,7 +333,7 @@ export default function DevAgentsWorkstation() {
             ref={inputToolbarRef}
             onSend={handleSendMessage}
             models={models}
-            selectedModel={selectedModel}
+            selectedModel={effectiveSelectedModel}
             onModelChange={setSelectedModel}
             placeholder={t('chatInput.placeholder')}
             commands={allCommands}
