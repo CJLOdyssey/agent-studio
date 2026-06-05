@@ -9,6 +9,7 @@ Security invariants:
 """
 
 import asyncio
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -153,6 +154,7 @@ async def add_key(req: KeyCreateRequest, request: Request):
     return KeyResponse(
         id=obj.id,
         provider=obj.provider,
+        usage_type=obj.usage_type,
         label=obj.label,
         key_masked=mask_api_key(decrypt_api_key(obj.encrypted_key)),
         base_url=obj.base_url,
@@ -192,6 +194,7 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
     return KeyResponse(
         id=result["id"],
         provider=result["provider"],
+        usage_type=result.get("usage_type", "llm"),
         label=result["label"],
         key_masked=result["key_masked"],
         base_url=result.get("base_url"),

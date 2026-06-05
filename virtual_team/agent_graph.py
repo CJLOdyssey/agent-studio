@@ -315,4 +315,4 @@ def write_file(args: str) -> str:
     return f"写入文件：'{path}' (文件系统功能已注册，等待后端接入)"
 
 
-DEFAULT_TOOLS = []
+DEFAULT_TOOLS = [web_search, read_file, write_file]

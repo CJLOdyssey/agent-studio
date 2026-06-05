@@ -4,11 +4,12 @@ import asyncio
 import contextlib
 import logging
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from virtual_team.broker import celery_app, publish_run_message
 from virtual_team.config import load_config
-from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK, run_mock
+from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
+from virtual_team.mock_fallback import run_mock
 from virtual_team.repository import (
     create_memory_entry,
     get_agent_config,
@@ -92,14 +93,14 @@ async def _run_agent_pipeline(
             memories = await get_session_memories(session_id)
             if memories:
                 session_context = _build_session_context(memories)
-            rag_ctx = await _get_rag_context(requirement, session_id, user_id="system")
+            rag_ctx = await _get_rag_context(requirement, session_id)
             if rag_ctx:
                 session_context += "\n" + rag_ctx
         except Exception:
             pass
 
     # ── Short-term memory: collect previous conversation messages ──
-    chat_history: list[HumanMessage | AIMessage] = []
+    chat_history: list[BaseMessage] = []
     if session_id:
         try:
             prev_msgs = await get_session_messages(session_id, exclude_run_id=run_id)

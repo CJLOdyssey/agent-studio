@@ -3,11 +3,11 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
-from virtual_team.database import UserApiKey, get_session_factory
+from virtual_team.database import KeyUsageLog, UserApiKey, get_session_factory
 from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
+
 
 async def create_api_key(
     user_id: str,
@@ -229,7 +229,6 @@ async def test_api_key_connection(key_id: str, user_id: str) -> dict:
 
 def _test_connection_sync(key_cfg: dict) -> dict:
     """Synchronous HTTP connectivity test — runs in thread pool executor."""
-    import json
     import urllib.request
 
     try:
@@ -353,4 +352,10 @@ async def get_key_usage_stats(user_id: str) -> dict:
         )
         result_today = await session.execute(stmt_today)
         today = result_today.one()
+        return {
+            "today": {
+                "requests": today.requests or 0,
+                "tokens": today.tokens or 0,
+            },
+        }
 

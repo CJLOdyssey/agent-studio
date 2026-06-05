@@ -1,16 +1,11 @@
-import asyncio
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 from virtual_team.database import (
     AgentConfigDB,
     ChatMessage,
-    MemoryEntry,
-    ProjectRun,
-    SessionDB,
     get_session_factory,
 )
 
@@ -189,3 +184,4 @@ async def delete_agent_config(id: str) -> bool:
             return False
         await session.delete(config)
         await session.commit()
+        return True

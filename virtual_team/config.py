@@ -35,6 +35,12 @@ class TeamConfig(BaseModel):
         safe["api_key"] = "***" if self.api_key else "(unset)"
         return f"TeamConfig({safe})"
 
+    def validate_required(self) -> list[str]:
+        errors: list[str] = []
+        if not self.api_key:
+            errors.append("API key is required")
+        return errors
+
 
 def load_config() -> TeamConfig:
     """Load configuration from environment variables.
