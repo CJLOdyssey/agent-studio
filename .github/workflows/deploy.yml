@@ -9,8 +9,55 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── CI Gate: only deploy if CI passed for this commit ─────────────
+  ci-check:
+    name: 🔑 CI Gate
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Check CI workflow status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RESULT=$(gh run list \
+            --workflow ci.yml \
+            --commit ${{ github.sha }} \
+            --json conclusion,status \
+            --jq '.[0] // empty' \
+            --limit 1 2>/dev/null)
+
+          if [ -z "$RESULT" ]; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "⚠️  手动触发，未找到对应 CI 运行记录 — 继续部署"
+              exit 0
+            fi
+            echo "❌ 未找到 CI 运行记录 — 请先确保 CI 通过"
+            exit 1
+          fi
+
+          CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion // "null"')
+          STATUS=$(echo "$RESULT" | jq -r '.status // "null"')
+          echo "CI: status=$STATUS / conclusion=$CONCLUSION"
+
+          if [ "$CONCLUSION" = "success" ]; then
+            echo "✅ CI 通过 — 继续部署"
+          elif [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ]; then
+            echo "❌ CI 失败 ($CONCLUSION) — 终止部署"
+            exit 1
+          elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "queued" ]; then
+            echo "⏳ CI 仍在运行 ($STATUS) — 等待 CI 完成后重试部署"
+            exit 1
+          else
+            echo "❌ CI 状态异常 ($STATUS/$CONCLUSION) — 终止部署"
+            exit 1
+          fi
+
+  # ── Build Docker image and push to GHCR ──────────────────────────
   docker:
-    name: Build & Push Docker Image
+    name: 🐳 Build & Push Docker Image
+    needs: ci-check
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,9 +89,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ── Deploy to ECS ────────────────────────────────────────────────
   deploy:
-    name: Deploy to Production
+    name: 🚀 Deploy to Production
     needs: docker
+    if: success()
     runs-on: self-hosted
     steps:
       - name: Checkout via SSH
@@ -96,6 +145,6 @@ jobs:
               "msgtype": "markdown",
               "markdown": {
                 "title": "🚀 部署 $STATUS",
-                "text": "### 🚀 虚拟团队部署\n\n- **状态**: '$STATUS'\n- **分支**: ${{ github.ref_name }}\n- **提交**: ${{ github.sha }}\n- **触发**: ${{ github.actor }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                "text": "### 🚀 虚拟团队部署\n\n- **状态**: '\''$STATUS'\''\n- **分支**: ${{ github.ref_name }}\n- **提交**: ${{ github.sha }}\n- **触发**: ${{ github.actor }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
               }
             }' || echo "⚠️ Webhook notification skipped (DEPLOY_WEBHOOK_URL not configured)"
