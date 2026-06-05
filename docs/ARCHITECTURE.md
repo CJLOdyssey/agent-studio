@@ -237,7 +237,7 @@ Celery Worker:
 
 ```
 Push → CI Gate (GitHub API 查询 CI 状态)
-     → Build & Push to ACR (registry.cn-shenzhen.aliyuncs.com)
+     → Build & Push to ACR (crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com)
      → Deploy to ECS (self-hosted runner)
        → docker compose pull
        → docker compose up -d

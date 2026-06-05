@@ -30,7 +30,7 @@ services:
       retries: 5
 
   api:
-    image: registry.cn-shenzhen.aliyuncs.com/${ACR_NAMESPACE:-virtual-team}/virtual-team:${IMAGE_TAG:-latest}
+    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${ACR_NAMESPACE:-virtual-team}/virtual-team:${IMAGE_TAG:-latest}
     container_name: virtual-team-api
     restart: always
     ports:
@@ -69,7 +69,7 @@ services:
       - 1panel.description=虚拟软件外包团队 API
 
   celery_worker:
-    image: registry.cn-shenzhen.aliyuncs.com/${ACR_NAMESPACE:-virtual-team}/virtual-team:${IMAGE_TAG:-latest}
+    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${ACR_NAMESPACE:-virtual-team}/virtual-team:${IMAGE_TAG:-latest}
     container_name: virtual-team-worker
     restart: always
     command: celery -A virtual_team.broker.celery_app worker --loglevel=info --concurrency=2
