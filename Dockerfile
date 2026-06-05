@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # ── Production image ─────────────────────────────────────────────────────────
 FROM python:3.12-slim
 
+# Create non-root user for container runtime
+RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /bin/bash appuser
+
 WORKDIR /app
 
 # Copy only runtime deps from python-deps stage
@@ -39,6 +42,10 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Copy pre-built frontend assets
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
+# Ensure non-root user can read/write all app files
+RUN chown -R appuser:appuser /app /usr/local/bin/entrypoint.sh
+
+USER appuser
 
 EXPOSE 8080
 

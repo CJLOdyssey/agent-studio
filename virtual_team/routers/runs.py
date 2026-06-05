@@ -184,6 +184,14 @@ async def list_runs(limit: int = 20):
 
 @router.websocket("/ws/runs/{run_id}")
 async def run_websocket(websocket: WebSocket, run_id: str):
+    from virtual_team.auth import AUTH_ENABLED, AUTH_SECRET, decode_jwt
+
+    if AUTH_ENABLED:
+        token = websocket.query_params.get("token", "")
+        if not token or not decode_jwt(token, AUTH_SECRET):
+            await websocket.close(code=4001, reason="Unauthorized")
+            return
+
     await websocket.accept()
     logger.info("WebSocket connected | run_id=%s", run_id)
     try:

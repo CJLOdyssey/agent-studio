@@ -25,6 +25,15 @@ logger = get_logger(__name__)
 AUTH_SECRET = os.environ.get("AUTH_SECRET", "")
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "0") == "1"
 
+if not AUTH_ENABLED:
+    logger.warning("⚠️  Authentication DISABLED — all endpoints are publicly accessible")
+
+if AUTH_ENABLED and not AUTH_SECRET:
+    raise RuntimeError(
+        "AUTH_SECRET must be set when AUTH_ENABLED=1. "
+        "Generate one with: python3 -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+
 # Routes exempt from authentication
 PUBLIC_PATHS = {
     "/api/health",
@@ -32,9 +41,7 @@ PUBLIC_PATHS = {
     "/openapi.json",
     "/redoc",
 }
-PUBLIC_PREFIXES = (
-    "/ws/",
-)
+PUBLIC_PREFIXES = ()
 
 
 def _base64url_decode(data: str) -> bytes:

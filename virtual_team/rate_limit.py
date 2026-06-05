@@ -1,5 +1,11 @@
-"""Rate limiting middleware using token-bucket algorithm backed by Redis."""
+"""Rate limiting middleware using token-bucket algorithm backed by Redis.
 
+Provides two-tier rate limiting:
+  1. Redis-backed (shared across instances) — primary
+  2. In-memory token bucket (local fallback) — when Redis is unavailable
+"""
+
+import threading
 import time
 
 from virtual_team.broker import get_redis
@@ -12,8 +18,37 @@ DEFAULT_RATE = 60
 DEFAULT_WINDOW = 60
 
 
+class MemoryTokenBucket:
+    """Thread-safe in-memory token bucket fallback when Redis is unavailable.
+
+    Uses a sliding-window counter per key. Trade-offs:
+      - Not shared across instances (per-process only)
+      - Approximate (not as precise as Redis INCR/EXPIRE)
+      - Survives Redis outages without rate limit bypass
+    """
+
+    def __init__(self, rate: int = DEFAULT_RATE, window: int = DEFAULT_WINDOW):
+        self.rate = rate
+        self.window = window
+        self._buckets: dict[str, list[float]] = {}
+        self._lock = threading.Lock()
+
+    def is_allowed(self, key: str) -> bool:
+        now = time.time()
+        with self._lock:
+            timestamps = self._buckets.get(key, [])
+            cutoff = now - self.window
+            timestamps = [t for t in timestamps if t > cutoff]
+            if len(timestamps) >= self.rate:
+                self._buckets[key] = timestamps
+                return False
+            timestamps.append(now)
+            self._buckets[key] = timestamps
+            return True
+
+
 class RateLimiter:
-    """Token-bucket rate limiter backed by Redis.
+    """Token-bucket rate limiter backed by Redis with in-memory fallback.
 
     Usage as FastAPI middleware:
         app.add_middleware(RateLimitMiddleware, rate=60, window_seconds=60)
@@ -22,6 +57,7 @@ class RateLimiter:
     def __init__(self, rate: int = DEFAULT_RATE, window_seconds: int = DEFAULT_WINDOW):
         self.rate = rate
         self.window = window_seconds
+        self._memory_fallback = MemoryTokenBucket(rate=rate, window=window_seconds)
 
     async def is_allowed(self, key: str) -> bool:
         """Check if request identified by `key` is within the rate limit."""
@@ -36,8 +72,8 @@ class RateLimiter:
 
             return count <= self.rate
         except Exception:
-            logger.warning("Rate limiter Redis check failed — allowing request")
-            return True
+            logger.warning("Rate limiter Redis unavailable — falling back to in-memory bucket for key=%s", key)
+            return self._memory_fallback.is_allowed(key)
 
 
 _rate_limiter = RateLimiter()

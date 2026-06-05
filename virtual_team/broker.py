@@ -3,6 +3,7 @@
 import contextlib
 import json
 import os
+import weakref
 from collections.abc import AsyncIterator
 
 from celery import Celery
@@ -45,7 +46,10 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 # Per-event-loop connection pool — Celery prefork workers create a new event
 # loop via asyncio.run() in each child process, so a single global pool bound
 # to the parent's loop becomes invalid ("Event loop is closed").
-_pools: dict[int, AsyncRedis] = {}
+# Pool per event loop — WeakKeyDictionary ensures pools are cleaned up
+# when their associated event loop is garbage collected (prevents stale
+# connection references in Celery prefork workers).
+_pools: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 CHANNEL_PREFIX = "run:"
 
 
@@ -63,9 +67,8 @@ def get_redis() -> AsyncRedis:
     import asyncio
 
     loop = asyncio.get_running_loop()
-    loop_id = id(loop)
 
-    pool = _pools.get(loop_id)
+    pool = _pools.get(loop)
     if pool is None:
         pool = AsyncRedis.from_url(
             REDIS_URL,
@@ -74,10 +77,8 @@ def get_redis() -> AsyncRedis:
             socket_connect_timeout=10,
             health_check_interval=30,
             retry_on_timeout=True,
-            # NOTE: do NOT set socket_timeout — pubsub is a long-lived streaming
-            # connection that must remain open indefinitely for WebSocket push.
         )
-        _pools[loop_id] = pool
+        _pools[loop] = pool
     return pool
 
 
@@ -85,8 +86,7 @@ async def close_redis():
     import asyncio
 
     loop = asyncio.get_running_loop()
-    loop_id = id(loop)
-    pool = _pools.pop(loop_id, None)
+    pool = _pools.pop(loop, None)
     if pool is not None:
         await pool.aclose()
 
