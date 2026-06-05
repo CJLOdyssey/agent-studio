@@ -92,6 +92,13 @@ jobs:
           git fetch --depth=1 origin main
           git reset --hard origin/main
 
+      - name: Build frontend
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR/frontend"
+          npm ci
+          npm run build
+
       - name: Set ACR env and login
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
