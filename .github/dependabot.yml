@@ -22,6 +22,10 @@ updates:
     ignore:
       - dependency-name: "@vitejs/plugin-react"
         versions: [">=6.0.0"]
+      - dependency-name: "@types/react"
+        versions: [">=19.0.0"]
+      - dependency-name: "@types/react-dom"
+        versions: [">=19.0.0"]
 
   # GitHub Actions
   - package-ecosystem: github-actions
