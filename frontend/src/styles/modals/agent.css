@@ -46,7 +46,9 @@
   color: var(--da-text-secondary);
   font-size: var(--da-font-size-sm);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .agent-config-tab:hover {
@@ -113,7 +115,7 @@
   flex: 1;
 }
 
-.agent-config-item-info input[type="checkbox"] {
+.agent-config-item-info input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: var(--da-text-secondary);
@@ -162,7 +164,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .agent-config-item-remove:hover {
@@ -191,7 +195,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .agent-config-item-action:hover {
@@ -383,7 +389,9 @@
   display: flex;
   align-items: center;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .tool-generator-copy:hover {
@@ -580,7 +588,9 @@
   display: flex;
   align-items: center;
   border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .skill-generator-copy:hover {

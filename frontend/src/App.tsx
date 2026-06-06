@@ -39,7 +39,9 @@ function Fallback({ error, resetErrorBoundary }: FallbackProps) {
     <div className="error-boundary" role="alert">
       <h2>应用出错了</h2>
       <p>{message}</p>
-      <button className="btn btn-primary" onClick={resetErrorBoundary}>重试</button>
+      <button className="btn btn-primary" onClick={resetErrorBoundary}>
+        重试
+      </button>
     </div>
   );
 }
@@ -54,9 +56,22 @@ export default function App() {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AppInit />
         <ToastProvider>
-          <Suspense fallback={<div className="route-loading" aria-label="Loading page">Loading...</div>}>
+          <Suspense
+            fallback={
+              <div className="route-loading" aria-label="Loading page">
+                Loading...
+              </div>
+            }
+          >
             <Routes>
-              <Route path="*" element={<ErrorBoundary FallbackComponent={Fallback} onError={logError}><DevAgentsWorkstation /></ErrorBoundary>} />
+              <Route
+                path="*"
+                element={
+                  <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                    <DevAgentsWorkstation />
+                  </ErrorBoundary>
+                }
+              />
             </Routes>
           </Suspense>
         </ToastProvider>

@@ -31,14 +31,16 @@ export default function NewProjectModal({ onClose, onCreateProject }: Props) {
       className="new-project-modal"
       footer={
         <>
-          <button className="btn btn-secondary" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleCreate}>{t('newProject.confirmCreate')}</button>
+          <button className="btn btn-secondary" onClick={onClose}>
+            {t('confirm.cancel')}
+          </button>
+          <button className="btn btn-primary" onClick={handleCreate}>
+            {t('newProject.confirmCreate')}
+          </button>
         </>
       }
     >
-      <p style={{ color: 'var(--da-text-secondary)', fontSize: '14px', margin: 0 }}>
-        {t('newProject.message')}
-      </p>
+      <p style={{ color: 'var(--da-text-secondary)', fontSize: '14px', margin: 0 }}>{t('newProject.message')}</p>
     </Modal>
   );
 }

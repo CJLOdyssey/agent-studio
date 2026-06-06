@@ -90,7 +90,16 @@ export interface MessageAction {
 }
 
 // 工作区标签
-export type WorkspaceTab = 'code' | 'preview' | 'ui-code' | 'ui-preview' | 'frontend-code' | 'frontend-test' | 'frontend-preview' | 'backend-code' | 'backend-test';
+export type WorkspaceTab =
+  | 'code'
+  | 'preview'
+  | 'ui-code'
+  | 'ui-preview'
+  | 'frontend-code'
+  | 'frontend-test'
+  | 'frontend-preview'
+  | 'backend-code'
+  | 'backend-test';
 
 // 文件节点
 export interface FileNode {

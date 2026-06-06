@@ -11,8 +11,12 @@ export function useAutoSave(key: string, data: unknown, enabled = true) {
     timerRef.current = setTimeout(() => {
       try {
         localStorage.setItem(key, JSON.stringify(data));
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
     }, 2000);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [data, key, settings.autoSave, enabled]);
 }

@@ -17,19 +17,31 @@ export default function Modal({ title, onClose, children, footer, className = ''
     const prevFocus = document.activeElement as HTMLElement;
     const modal = contentRef.current;
     if (modal) {
-      const firstInput = modal.querySelector<HTMLElement>('input, button, textarea, select, [tabindex]:not([tabindex="-1"])');
+      const firstInput = modal.querySelector<HTMLElement>(
+        'input, button, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
       firstInput?.focus();
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
       if (e.key !== 'Tab' || !modal) return;
-      const focusable = modal.querySelectorAll<HTMLElement>('input, button, textarea, select, [tabindex]:not([tabindex="-1"])');
+      const focusable = modal.querySelectorAll<HTMLElement>(
+        'input, button, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -41,7 +53,13 @@ export default function Modal({ title, onClose, children, footer, className = ''
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-content ${className}`} onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
+      <div
+        className={`modal-content ${className}`}
+        onClick={(e) => e.stopPropagation()}
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modal-header">
           {typeof title === 'string' ? <h3>{title}</h3> : title}
           <button className="modal-close" onClick={onClose}>

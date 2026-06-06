@@ -1,7 +1,15 @@
 import { useState, memo } from 'react';
 import {
-  Bot, User, Code2, Terminal, ChevronRight, ChevronDown,
-  CheckCircle2, Loader2, Copy, Check
+  Bot,
+  User,
+  Code2,
+  Terminal,
+  ChevronRight,
+  ChevronDown,
+  CheckCircle2,
+  Loader2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import type { Message, Agent } from '../../types/devagents';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
@@ -15,38 +23,53 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
   const { copied, copy: handleCopy } = useCopyToClipboard();
 
   if (isUser) {
-    const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', { hour: '2-digit', minute: '2-digit' }) : '';
+    const time = msg.timestamp
+      ? new Date(msg.timestamp).toLocaleTimeString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '';
     return (
       <div className="devagents-message devagents-message-user">
         <div className="devagents-message-avatar user">
           <User size={16} />
         </div>
         <div className="devagents-message-content-wrapper user">
-           <span className="devagents-message-label">{t('teamMessage.you')}</span>
-           <div className="devagents-message-bubble user">
-              {sanitizeHtml(msg.content)}
-           </div>
-      <div className="devagents-message-actions">
-                <button className="devagents-msg-copy" onClick={() => { handleCopy(msg.content); }} title={t('teamMessage.copy')} aria-label={t('teamMessage.copy')}>
-                 {copied ? <Check size={12} /> : <Copy size={12} />}
-               </button>
-              {time && <span className="devagents-message-time">{time}</span>}
-             </div>
+          <span className="devagents-message-label">{t('teamMessage.you')}</span>
+          <div className="devagents-message-bubble user">{sanitizeHtml(msg.content)}</div>
+          <div className="devagents-message-actions">
+            <button
+              className="devagents-msg-copy"
+              onClick={() => {
+                handleCopy(msg.content);
+              }}
+              title={t('teamMessage.copy')}
+              aria-label={t('teamMessage.copy')}
+            >
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+            </button>
+            {time && <span className="devagents-message-time">{time}</span>}
+          </div>
         </div>
       </div>
     );
   }
 
-  const agentInfo = allAgents.find(a => a.id === msg.agentId) || {
+  const agentInfo = allAgents.find((a) => a.id === msg.agentId) || {
     name: t('teamMessage.unknownAgent'),
     role: t('teamMessage.system'),
     icon: Bot,
     color: 'text-[var(--da-text-muted)]',
     bg: 'bg-[var(--da-bg-surface)]',
-    border: 'border-[var(--da-border)]'
+    border: 'border-[var(--da-border)]',
   };
   const Icon = agentInfo.icon;
-  const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', { hour: '2-digit', minute: '2-digit' }) : '';
+  const time = msg.timestamp
+    ? new Date(msg.timestamp).toLocaleTimeString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
 
   return (
     <div className="devagents-message devagents-message-agent">
@@ -61,8 +84,8 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
 
         {msg.isTyping ? (
           <div className="devagents-message-typing">
-             <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />
-             <span>{t('agent.thinking', { name: agentInfo.name })}</span>
+            <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />
+            <span>{t('agent.thinking', { name: agentInfo.name })}</span>
           </div>
         ) : (
           <>
@@ -75,7 +98,12 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
                   tabIndex={0}
                   aria-expanded={isProcessExpanded}
                   aria-controls="process-steps"
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsProcessExpanded(!isProcessExpanded); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setIsProcessExpanded(!isProcessExpanded);
+                    }
+                  }}
                 >
                   <div className="devagents-process-title">
                     <Terminal size={12} className={agentInfo.color} />
@@ -110,7 +138,14 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
 
             <div className="devagents-message-bubble agent">
               {msg.content.split(t('teamMessage.mentionBackend')).map((part, i, arr) =>
-                i === arr.length - 1 ? <span key={`part-${i}`}>{part}</span> : <span key={`part-${i}`}>{part}<span className="devagents-mention">{t('teamMessage.mentionBackend')}</span></span>
+                i === arr.length - 1 ? (
+                  <span key={`part-${i}`}>{part}</span>
+                ) : (
+                  <span key={`part-${i}`}>
+                    {part}
+                    <span className="devagents-mention">{t('teamMessage.mentionBackend')}</span>
+                  </span>
+                ),
               )}
             </div>
 

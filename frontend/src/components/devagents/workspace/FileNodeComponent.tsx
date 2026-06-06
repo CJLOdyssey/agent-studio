@@ -15,12 +15,16 @@ export default function FileNodeComponent({ node, depth }: { node: FileNode; dep
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          {node.children ? <Folder size={14} className="text-[var(--icon-file)]" /> : <FolderKanban size={14} className="text-[var(--icon-file)]" />}
+          {node.children ? (
+            <Folder size={14} className="text-[var(--icon-file)]" />
+          ) : (
+            <FolderKanban size={14} className="text-[var(--icon-file)]" />
+          )}
           <span>{node.name}</span>
         </div>
         {isExpanded && node.children && (
           <div className="devagents-file-children">
-            {node.children.map(child => (
+            {node.children.map((child) => (
               <FileNodeComponent key={child.id} node={child} depth={depth + 1} />
             ))}
           </div>
@@ -30,10 +34,7 @@ export default function FileNodeComponent({ node, depth }: { node: FileNode; dep
   }
 
   return (
-    <div
-      className="devagents-file-item file"
-      style={{ paddingLeft: `${indent + 24}px` }}
-    >
+    <div className="devagents-file-item file" style={{ paddingLeft: `${indent + 24}px` }}>
       <FileCode size={14} className="text-[var(--icon-code)]" />
       <span>{node.name}</span>
     </div>

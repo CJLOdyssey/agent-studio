@@ -25,7 +25,11 @@ const PROVIDER_INFO: Record<string, ProviderInfo> = {
   openai: { baseUrl: 'https://api.openai.com/v1', models: [], capabilities: ['llm', 'embedding'] },
   deepseek: { baseUrl: 'https://api.deepseek.com', models: [], capabilities: ['llm'] },
   anthropic: { baseUrl: 'https://api.anthropic.com', models: [], capabilities: ['llm'] },
-  dashscope: { baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: [], capabilities: ['llm', 'embedding'] },
+  dashscope: {
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    models: [],
+    capabilities: ['llm', 'embedding'],
+  },
   custom: { baseUrl: '', models: [], capabilities: ['llm', 'embedding'] },
 };
 
@@ -49,18 +53,30 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     const prevFocus = document.activeElement as HTMLElement;
     const modal = contentRef.current;
     if (modal) {
-      const firstInput = modal.querySelector<HTMLElement>('input, button, textarea, select, [tabindex]:not([tabindex="-1"])');
+      const firstInput = modal.querySelector<HTMLElement>(
+        'input, button, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
       firstInput?.focus();
     }
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
       if (e.key !== 'Tab' || !modal) return;
-      const focusable = modal.querySelectorAll<HTMLElement>('input, button, textarea, select, [tabindex]:not([tabindex="-1"])');
+      const focusable = modal.querySelectorAll<HTMLElement>(
+        'input, button, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => {
@@ -84,7 +100,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     setProviderType(newProvider);
     const info = PROVIDER_INFO[newProvider];
     if (info) {
-      if (!baseUrl || Object.values(PROVIDER_INFO).some(d => d.baseUrl === baseUrl)) {
+      if (!baseUrl || Object.values(PROVIDER_INFO).some((d) => d.baseUrl === baseUrl)) {
         setBaseUrl(info.baseUrl);
       }
     }
@@ -135,15 +151,23 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content api-edit-modal" onClick={e => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
+      <div
+        className="modal-content api-edit-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modal-header">
           <h3>{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <button className="modal-close" onClick={onClose}>
+            <X size={18} />
+          </button>
         </div>
         <div className="api-edit-form">
           <div className="form-group">
             <label>{t('providerEdit.provider')}</label>
-            <select value={providerType} onChange={e => handleProviderChange(e.target.value)}>
+            <select value={providerType} onChange={(e) => handleProviderChange(e.target.value)}>
               {Object.entries(PROVIDER_INFO).map(([key]) => (
                 <option key={key} value={key}>
                   {t(`providerEdit.providers.${key}`)}
@@ -155,7 +179,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           <div className="form-group">
             <label>支持能力</label>
             <div className="capability-badges">
-              {caps.map(cap => (
+              {caps.map((cap) => (
                 <span key={cap} className={`capability-badge capability-${cap}`}>
                   {CAPABILITY_LABELS[cap]}
                 </span>
@@ -166,7 +190,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           <div className="form-group">
             <label>用途</label>
             <div className="usage-type-options">
-              {caps.map(cap => (
+              {caps.map((cap) => (
                 <label key={cap} className="usage-type-option">
                   <input
                     type="radio"
@@ -193,56 +217,79 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
           <div className="form-group">
             <label>{t('providerEdit.name')}</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('providerEdit.placeholders.name')} />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('providerEdit.placeholders.name')}
+            />
           </div>
           <div className="form-group">
             <label>{t('providerEdit.baseUrl')}</label>
-            <input type="text" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder={t('providerEdit.placeholders.baseUrl')} />
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder={t('providerEdit.placeholders.baseUrl')}
+            />
           </div>
           <div className="form-group">
             <label>{t('providerEdit.apiKey')}</label>
             <div className="api-key-input">
-              <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder={t('providerEdit.placeholders.apiKey')} />
-              <button className="api-key-toggle" onClick={() => setShowKey(!showKey)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={t('providerEdit.placeholders.apiKey')}
+              />
+              <button
+                className="api-key-toggle"
+                onClick={() => setShowKey(!showKey)}
+                aria-label={showKey ? 'Hide API key' : 'Show API key'}
+              >
                 {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
           {showModels && (
-          <div className="form-group">
-            <label>{t('providerEdit.supportedModels')}</label>
-            <div className="models-display">
-              {fetchingModels ? (
-                <div className="models-loading">
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>正在获取模型...</span>
-                </div>
-              ) : models.length > 0 ? (
-                <div className="models-tags">
-                  {models.map(model => (
-                    <span key={model} className="model-tag">{model}</span>
-                  ))}
-                </div>
-              ) : (
-                <div className="models-empty">
-                  <span>请输入 API Key 后点击刷新按钮获取模型</span>
-                </div>
-              )}
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={handleFetchModels}
-                disabled={!apiKey.trim() || fetchingModels}
-                title="从 API 获取可用模型"
-              >
-                {fetchingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              </button>
+            <div className="form-group">
+              <label>{t('providerEdit.supportedModels')}</label>
+              <div className="models-display">
+                {fetchingModels ? (
+                  <div className="models-loading">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>正在获取模型...</span>
+                  </div>
+                ) : models.length > 0 ? (
+                  <div className="models-tags">
+                    {models.map((model) => (
+                      <span key={model} className="model-tag">
+                        {model}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="models-empty">
+                    <span>请输入 API Key 后点击刷新按钮获取模型</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleFetchModels}
+                  disabled={!apiKey.trim() || fetchingModels}
+                  title="从 API 获取可用模型"
+                >
+                  {fetchingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                </button>
+              </div>
             </div>
-          </div>
           )}
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('confirm.cancel')}</button>
+          <button className="btn btn-secondary" onClick={onClose}>
+            {t('confirm.cancel')}
+          </button>
           <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}

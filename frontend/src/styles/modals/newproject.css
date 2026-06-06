@@ -27,12 +27,47 @@
 }
 
 /* Legacy api-toggle (keep until fully migrated) */
-.api-toggle { position: relative; display: inline-block; cursor: pointer; flex-shrink: 0; width: 36px; height: 20px; }
-.api-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-.api-toggle-slider { position: absolute; inset: 0; background: var(--da-bg-hover); border-radius: 20px; transition: background 0.2s; }
-.api-toggle-slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: var(--da-text-muted); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
-.api-toggle input:checked + .api-toggle-slider { background: var(--da-bg-hover); }
-.api-toggle input:checked + .api-toggle-slider::before { transform: translateX(16px); background: var(--da-text-on-accent, #fff); }
+.api-toggle {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+}
+.api-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.api-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--da-bg-hover);
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.api-toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--da-text-muted);
+  border-radius: 50%;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.api-toggle input:checked + .api-toggle-slider {
+  background: var(--da-bg-hover);
+}
+.api-toggle input:checked + .api-toggle-slider::before {
+  transform: translateX(16px);
+  background: var(--da-text-on-accent, #fff);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .modal-close,
@@ -50,4 +85,3 @@
     transition: none;
   }
 }
-

@@ -32,36 +32,32 @@ export function useConversation() {
   }, [conversations]);
 
   /** Save or update a conversation. If convId exists, updates it; otherwise creates new. */
-  const saveConversation = useCallback(
-    (title: string, messages: unknown[], agentId?: string) => {
-      const now = new Date().toISOString();
-      const id = Date.now();
-      const conv: Conversation = {
-        id,
-        title: title.length > 36 ? title.slice(0, 36) + '...' : title,
-        messages: messages as Conversation['messages'],
-        createdAt: now,
-        updatedAt: now,
-        agentId,
-      };
-      setConversations((prev) => [conv, ...prev]);
-      setActiveConvId(id);
-      return id;
-    },
-    [],
-  );
+  const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string) => {
+    const now = new Date().toISOString();
+    const id = Date.now();
+    const conv: Conversation = {
+      id,
+      title: title.length > 36 ? title.slice(0, 36) + '...' : title,
+      messages: messages as Conversation['messages'],
+      createdAt: now,
+      updatedAt: now,
+      agentId,
+    };
+    setConversations((prev) => [conv, ...prev]);
+    setActiveConvId(id);
+    return id;
+  }, []);
 
   /** Update messages for an existing conversation. */
-  const updateConversationMessages = useCallback(
-    (convId: number, messages: unknown[]) => {
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === convId ? { ...c, messages: messages as Conversation['messages'], updatedAt: new Date().toISOString() } : c,
-        ),
-      );
-    },
-    [],
-  );
+  const updateConversationMessages = useCallback((convId: number, messages: unknown[]) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === convId
+          ? { ...c, messages: messages as Conversation['messages'], updatedAt: new Date().toISOString() }
+          : c,
+      ),
+    );
+  }, []);
 
   /** Delete a conversation by ID. */
   const deleteConversation = useCallback((convId: number) => {

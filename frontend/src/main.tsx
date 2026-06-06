@@ -13,7 +13,6 @@ import './styles/chat/index.css';
 import './styles/components/index.css';
 import './styles/modals/index.css';
 
-
 installGlobalErrorHandlers();
 
 if (import.meta.env.VITE_SENTRY_DSN) {

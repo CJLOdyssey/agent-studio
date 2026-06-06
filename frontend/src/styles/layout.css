@@ -134,7 +134,9 @@
   color: var(--da-text-secondary);
   font-size: var(--da-font-size-sm);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 
 .devagents-open-workspace-btn:hover {
@@ -184,7 +186,9 @@
   font-weight: 500;
   color: var(--da-text-muted);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 
 .devagents-workspace-tab:hover {

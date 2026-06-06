@@ -39,7 +39,8 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 function playBeep() {
   try {
-    const AudioCtor = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const AudioCtor =
+      window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     const ctx = new AudioCtor!();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -58,7 +59,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem('devagents-settings');
       return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
-    } catch { return defaultSettings; }
+    } catch {
+      return defaultSettings;
+    }
   });
 
   useEffect(() => {
@@ -80,14 +83,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings.theme]);
 
   const updateSettings = (updates: Partial<Settings>) => {
-    setSettings(prev => ({ ...prev, ...updates }));
+    setSettings((prev) => ({ ...prev, ...updates }));
   };
 
-  return (
-    <SettingsContext.Provider value={{ settings, updateSettings }}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={{ settings, updateSettings }}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings() {

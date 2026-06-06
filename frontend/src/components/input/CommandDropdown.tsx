@@ -67,12 +67,8 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
             type="button"
           >
             <span className="devagents-command-option-name">/{opt.name}</span>
-            {opt.source === 'agent' && (
-              <span className="devagents-command-option-source">Agent</span>
-            )}
-            {opt.description && (
-              <span className="devagents-command-option-desc">{opt.description}</span>
-            )}
+            {opt.source === 'agent' && <span className="devagents-command-option-source">Agent</span>}
+            {opt.description && <span className="devagents-command-option-desc">{opt.description}</span>}
           </button>
         ))}
       </div>

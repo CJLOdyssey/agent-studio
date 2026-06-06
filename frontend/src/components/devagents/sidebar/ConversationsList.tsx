@@ -33,11 +33,14 @@ const ConversationsList = memo(function ConversationsList({
         </div>
       </div>
       <div className="devagents-conversations-list">
-        {conversations.map(conv => (
+        {conversations.map((conv) => (
           <div
             key={conv.id}
             className={`devagents-conv-item ${activeConvId === conv.id && !selectedAgentId ? 'active' : ''}`}
-            onClick={() => { onSelect(conv); onCloseSidebar(); }}
+            onClick={() => {
+              onSelect(conv);
+              onCloseSidebar();
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -54,14 +57,22 @@ const ConversationsList = memo(function ConversationsList({
                 {Array.from(conv.title).length > 26 ? Array.from(conv.title).slice(0, 26).join('') + '...' : conv.title}
               </div>
               <div className="devagents-conv-item-meta">
-                {conv.messages.filter(m => m.role === 'agent').length > 0 ? t('sidebar.replied') : t('sidebar.pendingReply')}
+                {conv.messages.filter((m) => m.role === 'agent').length > 0
+                  ? t('sidebar.replied')
+                  : t('sidebar.pendingReply')}
                 {' · '}
-                {new Date(conv.updatedAt).toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', { month: 'short', day: 'numeric' })}
+                {new Date(conv.updatedAt).toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </div>
             </div>
             <button
               className="devagents-conv-delete"
-              onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(conv.id);
+              }}
               title={t('sidebar.deleteConv')}
               aria-label={t('sidebar.deleteConv')}
             >

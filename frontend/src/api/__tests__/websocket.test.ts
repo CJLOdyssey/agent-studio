@@ -29,7 +29,9 @@ class FakeWebSocket {
     }
   }
 
-  get closed() { return this._closed; }
+  get closed() {
+    return this._closed;
+  }
   send() {}
 }
 

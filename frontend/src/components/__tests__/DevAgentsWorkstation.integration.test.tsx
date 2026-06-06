@@ -97,10 +97,10 @@ vi.mock('../../api/client', () => {
       interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
       defaults: { headers: {} },
     },
-  executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
-  submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
-  listKeys: vi.fn(() => Promise.resolve([{ id: 'key-1', is_default: true, is_active: true, models: ['gpt-4'] }])),
-  listAgents: vi.fn(() => Promise.resolve([])),
+    executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
+    submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
+    listKeys: vi.fn(() => Promise.resolve([{ id: 'key-1', is_default: true, is_active: true, models: ['gpt-4'] }])),
+    listAgents: vi.fn(() => Promise.resolve([])),
     createAgent: vi.fn(),
     updateAgent: vi.fn(),
     deleteAgent: vi.fn(),
@@ -116,7 +116,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
 
   describe('Agent选择和对话流程', () => {
     it('should show message in conversation after sending', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '请分析用户登录需求' } });
@@ -131,7 +135,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     });
 
     it('should show agent response after sending message', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
@@ -146,13 +154,21 @@ describe('DevAgentsWorkstation 集成测试', () => {
 
   describe('团队管理流程', () => {
     it('should render team with agents', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(await screen.findByText('核心开发团队')).toBeInTheDocument();
       expect(await screen.findByText('8')).toBeInTheDocument();
     });
 
     it('should toggle team expansion when header clicked', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       // Team starts expanded — agents list should be visible
       await waitFor(() => {
@@ -174,7 +190,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     });
 
     it('should create conversation after broadcast', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '全体成员请注意' } });
@@ -189,7 +209,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
 
   describe('错误处理测试', () => {
     it('should handle empty input gracefully', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '' } });
@@ -199,7 +223,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     });
 
     it('should clear whitespace-only input on Enter (handleSendMessage always clears)', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '   ' } });
@@ -209,7 +237,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     });
 
     it('should require non-whitespace input before sending', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       const sendBtn = document.querySelector('.devagents-send-btn') as HTMLButtonElement;
       expect(sendBtn.disabled).toBe(true);

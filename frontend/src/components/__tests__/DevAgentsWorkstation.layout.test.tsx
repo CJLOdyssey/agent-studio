@@ -113,36 +113,60 @@ describe('DevAgentsWorkstation 布局测试', () => {
 
   describe('首页结构', () => {
     it('should render devagents-layout container', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const layout = document.querySelector('.devagents-layout');
       expect(layout).toBeInTheDocument();
     });
 
     it('should render devagents-main container', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const mainContainer = document.querySelector('.devagents-main');
       expect(mainContainer).toBeInTheDocument();
     });
 
     it('should render textarea on home page', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const textarea = document.querySelector('.devagents-textarea');
       expect(textarea).toBeInTheDocument();
     });
 
     it('should render input-wrapper on home page', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const inputWrapper = document.querySelector('.devagents-input-wrapper');
       expect(inputWrapper).toBeInTheDocument();
     });
 
     it('should display subtitle text', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByText('描述你的需求，我来帮你分析和规划')).toBeInTheDocument();
     });
 
     it('should render send button', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByText('发送')).toBeInTheDocument();
     });
   });

@@ -1,9 +1,19 @@
 /* Utility classes */
-.text-emerald-500 { color: var(--da-accent-emerald); }
-.text-amber-500 { color: var(--da-accent-amber); }
-.text-cyan-400 { color: var(--da-accent-cyan); }
-.text-red-500 { color: var(--icon-status-error); }
-.text-green-500 { color: var(--da-accent-emerald); }
+.text-emerald-500 {
+  color: var(--da-accent-emerald);
+}
+.text-amber-500 {
+  color: var(--da-accent-amber);
+}
+.text-cyan-400 {
+  color: var(--da-accent-cyan);
+}
+.text-red-500 {
+  color: var(--icon-status-error);
+}
+.text-green-500 {
+  color: var(--da-accent-emerald);
+}
 
 /* WebSocket reconnection banner */
 .devagents-ws-banner {
@@ -21,7 +31,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .devagents-input-wrapper {
     transition: none;
   }

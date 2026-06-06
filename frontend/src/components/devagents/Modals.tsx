@@ -22,8 +22,17 @@ interface Props {
 }
 
 export default function Modals({
-  configuringAgent, isSettingsOpen, isApiOpen, confirmDialog, isNewProjectOpen,
-  onCloseAgentConfig, onSaveAgent, onCloseSettings, onCloseApi, onCloseConfirm, onCloseNewProject,
+  configuringAgent,
+  isSettingsOpen,
+  isApiOpen,
+  confirmDialog,
+  isNewProjectOpen,
+  onCloseAgentConfig,
+  onSaveAgent,
+  onCloseSettings,
+  onCloseApi,
+  onCloseConfirm,
+  onCloseNewProject,
 }: Props) {
   return (
     <Suspense fallback={null}>
@@ -33,8 +42,13 @@ export default function Modals({
       {isSettingsOpen && <SettingsModal onClose={onCloseSettings} />}
       {isApiOpen && <ApiManagementModal onClose={onCloseApi} />}
       {confirmDialog && (
-        <ConfirmModal title={confirmDialog.title} message={confirmDialog.message}
-          onConfirm={confirmDialog.onConfirm} onCancel={onCloseConfirm} danger={confirmDialog.danger} />
+        <ConfirmModal
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={onCloseConfirm}
+          danger={confirmDialog.danger}
+        />
       )}
       {isNewProjectOpen && <NewProjectModal onClose={onCloseNewProject} onCreateProject={() => {}} />}
     </Suspense>

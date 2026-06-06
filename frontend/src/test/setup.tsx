@@ -22,9 +22,7 @@ export function TestProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );

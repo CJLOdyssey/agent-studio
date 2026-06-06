@@ -18,8 +18,8 @@ describe('i18n', () => {
   });
 
   it('zh-CN 和 en-US 的 key 集合相同', () => {
-    const missing = zhKeys.filter(k => !enKeys.includes(k));
-    const extra = enKeys.filter(k => !zhKeys.includes(k));
+    const missing = zhKeys.filter((k) => !enKeys.includes(k));
+    const extra = enKeys.filter((k) => !zhKeys.includes(k));
     expect(missing).toEqual([]);
     expect(extra).toEqual([]);
   });

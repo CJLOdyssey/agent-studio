@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Wand2, CheckCircle, AlertCircle, Copy, Check } from 'lucide-react';
-import { generateTool, generateToolWithLlm, checkLlmStatus, validateTool, type GeneratedTool } from '../../../api/client/tools';
+import {
+  generateTool,
+  generateToolWithLlm,
+  checkLlmStatus,
+  validateTool,
+  type GeneratedTool,
+} from '../../../api/client/tools';
 
 interface Props {
   onAdd: (tool: { id: string; name: string; description: string; enabled: boolean }) => void;
@@ -19,7 +25,9 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
   const [llmAvailable, setLlmAvailable] = useState(false);
 
   useEffect(() => {
-    checkLlmStatus().then(res => setLlmAvailable(res.available)).catch(() => {});
+    checkLlmStatus()
+      .then((res) => setLlmAvailable(res.available))
+      .catch(() => {});
   }, []);
 
   const handleGenerate = async () => {
@@ -86,7 +94,11 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder={llmAvailable ? "描述你想要的工具，例如：发送邮件通知、生成PDF报告" : "描述你想要的工具，例如：查询天气、读取文件"}
+          placeholder={
+            llmAvailable
+              ? '描述你想要的工具，例如：发送邮件通知、生成PDF报告'
+              : '描述你想要的工具，例如：查询天气、读取文件'
+          }
           rows={3}
           className="tool-generator-textarea"
         />
@@ -130,14 +142,17 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
                 {copied ? <Check size={12} /> : <Copy size={12} />}
               </button>
             </div>
-            <pre><code>{generatedTool.code}</code></pre>
+            <pre>
+              <code>{generatedTool.code}</code>
+            </pre>
           </div>
 
           <div className="tool-generator-params">
             <span>参数：</span>
             {Object.entries(generatedTool.parameters).map(([key, param]) => (
               <span key={key} className="tool-generator-param">
-                {key} ({param.type}{param.required ? ', 必填' : ''})
+                {key} ({param.type}
+                {param.required ? ', 必填' : ''})
               </span>
             ))}
           </div>
@@ -154,9 +169,13 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
           {validationResult && (
             <div className={`tool-generator-validation ${validationResult.is_valid ? 'valid' : 'invalid'}`}>
               {validationResult.is_valid ? (
-                <><CheckCircle size={14} /> <span>代码验证通过</span></>
+                <>
+                  <CheckCircle size={14} /> <span>代码验证通过</span>
+                </>
               ) : (
-                <><AlertCircle size={14} /> <span>需要优化</span></>
+                <>
+                  <AlertCircle size={14} /> <span>需要优化</span>
+                </>
               )}
               {validationResult.suggestions.length > 0 && (
                 <ul className="tool-generator-suggestions">

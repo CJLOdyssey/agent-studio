@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  Maximize2, PanelRightClose, FolderKanban, FileCode
-} from 'lucide-react';
+import { Maximize2, PanelRightClose, FolderKanban, FileCode } from 'lucide-react';
 import type { WorkspaceTab } from '../../../types/devagents';
 import { getAgentType, getWorkspaceTabs } from '../../../utils/workspaceConfig';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +43,11 @@ export default function Workspace({
         </div>
 
         <div className="devagents-workspace-actions">
-          <button className="devagents-icon-btn-sm" title={t('workspace.fullscreen')} onClick={toggleWorkspaceFullscreen}>
+          <button
+            className="devagents-icon-btn-sm"
+            title={t('workspace.fullscreen')}
+            onClick={toggleWorkspaceFullscreen}
+          >
             <Maximize2 size={14} />
           </button>
           <button
@@ -93,7 +95,8 @@ export default function Workspace({
           ) : (
             <div className="devagents-code-editor">
               <div className="devagents-code-header">
-                <FileCode size={12}/> <span className="text-[var(--icon-code)]">Agent</span> {t('workspace.committedJustNow')}
+                <FileCode size={12} /> <span className="text-[var(--icon-code)]">Agent</span>{' '}
+                {t('workspace.committedJustNow')}
               </div>
             </div>
           )}
@@ -102,7 +105,7 @@ export default function Workspace({
 
       <div className="devagents-workspace-status">
         <div className="devagents-status-left">
-           <span className="devagents-status-item">{t('workspace.noErrors')}</span>
+          <span className="devagents-status-item">{t('workspace.noErrors')}</span>
         </div>
       </div>
     </aside>

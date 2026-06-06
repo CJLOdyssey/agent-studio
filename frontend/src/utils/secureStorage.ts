@@ -43,10 +43,12 @@ export function encryptAndStore(key: string, data: string): void {
     const payload = JSON.stringify({
       v: CURRENT_VERSION,
       d: encrypted,
-      c: lib.WordArray.create(
+      c: lib.WordArray
+        .create
         // Simple integrity: store first 8 chars of SHA-1 of data
         // (not crypto-grade but prevents casual silent corruption)
-      ).toString(),
+        ()
+        .toString(),
     });
 
     localStorage.setItem(key, payload);

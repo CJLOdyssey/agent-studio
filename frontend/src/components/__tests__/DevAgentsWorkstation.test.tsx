@@ -97,10 +97,10 @@ vi.mock('../../api/client', () => {
       interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } },
       defaults: { headers: {} },
     },
-  executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
-  submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
-  listKeys: vi.fn(() => Promise.resolve([{ id: 'key-1', is_default: true, is_active: true, models: ['gpt-4'] }])),
-  listAgents: vi.fn(() => Promise.resolve([])),
+    executeCommand: vi.fn(() => Promise.resolve({ success: true, message: '' })),
+    submitRequirement: vi.fn(() => Promise.resolve({ run_id: 'r1', session_id: 's1' })),
+    listKeys: vi.fn(() => Promise.resolve([{ id: 'key-1', is_default: true, is_active: true, models: ['gpt-4'] }])),
+    listAgents: vi.fn(() => Promise.resolve([])),
     createAgent: vi.fn(),
     updateAgent: vi.fn(),
     deleteAgent: vi.fn(),
@@ -116,32 +116,52 @@ describe('DevAgentsWorkstation', () => {
 
   describe('团队列表渲染', () => {
     it('should render "我的团队" section header', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByText('我的团队')).toBeInTheDocument();
     });
 
     it('should render "核心开发团队" team', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(await screen.findByText('核心开发团队')).toBeInTheDocument();
     });
 
     it('should show team member count (8)', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(await screen.findByText('8')).toBeInTheDocument();
     });
 
     it('should render "新建对话" button', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByText('新建对话')).toBeInTheDocument();
     });
   });
 
   describe('Agent列表渲染', () => {
     it('should render all 8 agents in sidebar', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       // Team starts expanded — agents are already visible
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-name');
       expect(sidebarAgents.length).toBe(8);
@@ -150,10 +170,14 @@ describe('DevAgentsWorkstation', () => {
 
   describe('Agent点击交互', () => {
     it('should select agent when clicked in sidebar', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       // Team starts expanded — agents are already visible; no toggle needed
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
       fireEvent.click(sidebarAgents[0]);
@@ -162,9 +186,13 @@ describe('DevAgentsWorkstation', () => {
     });
 
     it('should show back button when agent is selected', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
       fireEvent.click(sidebarAgents[0]);
@@ -173,9 +201,13 @@ describe('DevAgentsWorkstation', () => {
     });
 
     it('should render home page structure after returning from agent', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
       fireEvent.click(sidebarAgents[0]);
@@ -189,24 +221,28 @@ describe('DevAgentsWorkstation', () => {
 
   describe('团队展开/折叠', () => {
     it('should toggle team expansion when header clicked', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
 
       // Team starts expanded — agents list should be visible
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       const agentsList = document.querySelector('.devagents-agents-list');
       expect(agentsList).toBeInTheDocument();
 
       // First click: collapse
       const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
       fireEvent.click(teamHeader!);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const agentsListCollapsed = document.querySelectorAll('.devagents-agents-list');
       expect(agentsListCollapsed.length).toBe(0);
 
       // Second click: expand again
       fireEvent.click(teamHeader!);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const agentsListExpanded = document.querySelector('.devagents-agents-list');
       expect(agentsListExpanded).toBeInTheDocument();
@@ -215,19 +251,31 @@ describe('DevAgentsWorkstation', () => {
 
   describe('消息发送', () => {
     it('should render input area with placeholder', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByPlaceholderText(/描述你的需求/)).toBeInTheDocument();
     });
 
     it('should update input value when typing', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const textarea = screen.getByPlaceholderText(/描述你的需求/) as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       expect(textarea.value).toBe('测试消息');
     });
 
     it('should send message on Enter key press', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const textarea = screen.getByPlaceholderText(/描述你的需求/) as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
@@ -240,12 +288,20 @@ describe('DevAgentsWorkstation', () => {
 
   describe('工作区交互', () => {
     it('should not show workspace on main channel', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.queryByText('资源管理器')).not.toBeInTheDocument();
     });
 
     it('should not show workspace when agent selected (workspace closed by default)', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       await waitFor(() => {
         expect(document.querySelectorAll('.devagents-sidebar .devagents-agent-item').length).toBeGreaterThan(0);
       });
@@ -257,25 +313,41 @@ describe('DevAgentsWorkstation', () => {
 
   describe('页面导航', () => {
     it('should display typing animation on home page', async () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const cursor = document.querySelector('.typing-cursor');
       expect(cursor).toBeInTheDocument();
     });
 
     it('should display subtitle on home page', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByText('描述你的需求，我来帮你分析和规划')).toBeInTheDocument();
     });
   });
 
   describe('用户菜单', () => {
     it('should render user button with default user ID', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       expect(screen.getByText('User 1001')).toBeInTheDocument();
     });
 
     it('should open user menu when clicked', () => {
-      render(<TestProviders><DevAgentsWorkstation /></TestProviders>);
+      render(
+        <TestProviders>
+          <DevAgentsWorkstation />
+        </TestProviders>,
+      );
       const userBtn = screen.getByText('User 1001').closest('.devagents-user-btn');
       fireEvent.click(userBtn!);
 

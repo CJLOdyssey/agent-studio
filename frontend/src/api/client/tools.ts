@@ -38,7 +38,10 @@ export async function validateTool(code: string, language: string = 'python'): P
   return data;
 }
 
-export async function executeTool(code: string, language: string = 'python'): Promise<{ success: boolean; output?: string; error?: string }> {
+export async function executeTool(
+  code: string,
+  language: string = 'python',
+): Promise<{ success: boolean; output?: string; error?: string }> {
   const { data } = await api.post('/tools/execute', { code, language });
   return data;
 }

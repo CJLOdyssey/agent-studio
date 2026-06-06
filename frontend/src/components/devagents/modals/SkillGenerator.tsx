@@ -92,13 +92,11 @@ export default function SkillGenerator({ onAdd, onClose }: Props) {
           className="skill-generator-textarea"
         />
         <div className="skill-generator-options">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="skill-generator-select"
-          >
-            {CATEGORIES.map(cat => (
-              <option key={cat.value} value={cat.value}>{cat.label}</option>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="skill-generator-select">
+            {CATEGORIES.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
             ))}
           </select>
           <button
@@ -132,7 +130,9 @@ export default function SkillGenerator({ onAdd, onClose }: Props) {
                 {copied ? <Check size={12} /> : <Copy size={12} />}
               </button>
             </div>
-            <pre><code>{generatedSkill.content}</code></pre>
+            <pre>
+              <code>{generatedSkill.content}</code>
+            </pre>
           </div>
 
           <div className="skill-generator-meta">
@@ -151,9 +151,13 @@ export default function SkillGenerator({ onAdd, onClose }: Props) {
           {validationResult && (
             <div className={`skill-generator-validation ${validationResult.is_valid ? 'valid' : 'invalid'}`}>
               {validationResult.is_valid ? (
-                <><CheckCircle size={14} /> <span>SKILL.md 格式正确</span></>
+                <>
+                  <CheckCircle size={14} /> <span>SKILL.md 格式正确</span>
+                </>
               ) : (
-                <><AlertCircle size={14} /> <span>需要优化</span></>
+                <>
+                  <AlertCircle size={14} /> <span>需要优化</span>
+                </>
               )}
               {validationResult.suggestions.length > 0 && (
                 <ul className="skill-generator-suggestions">

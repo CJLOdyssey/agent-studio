@@ -29,7 +29,13 @@ interface ChatState {
   wsStatus: WsConnectionStatus;
 
   submitRequirement: (requirement: string, session_id?: string, agent_id?: string) => Promise<void>;
-  restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
+  restoreSession: (
+    sessionId: string,
+    runId: string,
+    messages: ChatMessage[],
+    result: RunResult | null,
+    status: AppStatus,
+  ) => void;
   loadConversation: (messages: ChatMessage[]) => void;
   addMessage: (msg: WsMessage) => void;
   setStatus: (status: AppStatus) => void;
@@ -55,7 +61,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
   agentsLoaded: false,
   wsStatus: 'disconnected',
 
-  restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => {
+  restoreSession: (
+    sessionId: string,
+    runId: string,
+    messages: ChatMessage[],
+    result: RunResult | null,
+    status: AppStatus,
+  ) => {
     set({
       currentSessionId: sessionId,
       currentRunId: runId,
@@ -91,7 +103,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     let model: string | undefined;
     try {
       const keys = await listKeys();
-      const defaultKey = keys.find(k => k.is_default && k.is_active) || keys.find(k => k.is_active);
+      const defaultKey = keys.find((k) => k.is_default && k.is_active) || keys.find((k) => k.is_active);
       if (defaultKey) {
         keyId = defaultKey.id;
         model = defaultKey.models[0];
@@ -138,10 +150,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
             set((state) => {
               if (state.streamingId) {
                 return {
-                  messages: state.messages.map(m =>
-                    m.id === state.streamingId
-                      ? { ...m, content: m.content + chunk }
-                      : m,
+                  messages: state.messages.map((m) =>
+                    m.id === state.streamingId ? { ...m, content: m.content + chunk } : m,
                   ),
                   currentRole: msg.agent_name || 'Agent',
                   wsStatus: 'connected' as WsConnectionStatus,
@@ -150,14 +160,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
               const newId = crypto.randomUUID?.() || uid();
               return {
                 streamingId: newId,
-                messages: [...state.messages, {
-                  id: newId,
-                  role: 'agent',
-                  agent_name: msg.agent_name || 'Agent',
-                  content: chunk,
-                  round_number: 0,
-                  created_at: new Date().toISOString(),
-                }],
+                messages: [
+                  ...state.messages,
+                  {
+                    id: newId,
+                    role: 'agent',
+                    agent_name: msg.agent_name || 'Agent',
+                    content: chunk,
+                    round_number: 0,
+                    created_at: new Date().toISOString(),
+                  },
+                ],
                 currentRole: msg.agent_name || 'Agent',
                 wsStatus: 'connected' as WsConnectionStatus,
               };
@@ -194,23 +207,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
             set((state) => {
               let msgs = state.messages;
               if (state.streamingId && codeContent) {
-                msgs = state.messages.map(m =>
-                  m.id === state.streamingId ? { ...m, content: codeContent } : m,
-                );
+                msgs = state.messages.map((m) => (m.id === state.streamingId ? { ...m, content: codeContent } : m));
               } else if (!state.streamingId && codeContent) {
                 // Avoid duplicating the agent message already added by 'message' type
                 const lastMsg = state.messages[state.messages.length - 1];
                 const lastRole = lastMsg?.role?.toLowerCase();
                 const needsNew = !lastMsg || (lastRole !== 'agent' && lastRole !== 'system');
                 if (needsNew) {
-                  msgs = [...state.messages, {
-                    id: crypto.randomUUID?.() || uid(),
-                    role: 'agent',
-                    agent_name: 'Agent',
-                    content: codeContent,
-                    round_number: 0,
-                    created_at: new Date().toISOString(),
-                  }];
+                  msgs = [
+                    ...state.messages,
+                    {
+                      id: crypto.randomUUID?.() || uid(),
+                      role: 'agent',
+                      agent_name: 'Agent',
+                      content: codeContent,
+                      round_number: 0,
+                      created_at: new Date().toISOString(),
+                    },
+                  ];
                 }
               }
               return {

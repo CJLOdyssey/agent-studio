@@ -35,9 +35,7 @@ export function useCommandPalette(commands: CommandOption[]): UseCommandPaletteR
     if (!query) return commands;
     const q = query.toLowerCase();
     return commands.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.description && c.description.toLowerCase().includes(q)),
+      (c) => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q)),
     );
   }, [commands, query]);
 

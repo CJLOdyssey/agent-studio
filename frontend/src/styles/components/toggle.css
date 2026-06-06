@@ -29,7 +29,7 @@
 }
 
 .toggle-slider::before {
-  content: "";
+  content: '';
   position: absolute;
   height: 16px;
   width: 16px;
@@ -37,7 +37,9 @@
   bottom: 3px;
   background: var(--da-text-muted);
   border-radius: 50%;
-  transition: transform 0.2s, background 0.2s;
+  transition:
+    transform 0.2s,
+    background 0.2s;
 }
 
 .toggle-switch.sm .toggle-slider::before {

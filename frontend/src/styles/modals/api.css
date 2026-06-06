@@ -223,7 +223,7 @@
   background: var(--da-bg-hover);
 }
 
-.api-model-item input[type="radio"] {
+.api-model-item input[type='radio'] {
   accent-color: var(--da-text-secondary);
 }
 
@@ -394,6 +394,6 @@
   border-color: var(--da-accent-indigo);
 }
 
-.usage-type-option input[type="radio"] {
+.usage-type-option input[type='radio'] {
   accent-color: var(--da-accent-indigo);
 }

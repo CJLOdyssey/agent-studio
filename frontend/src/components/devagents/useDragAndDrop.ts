@@ -16,13 +16,16 @@ export function useDragAndDrop(inputToolbarRef: RefObject<InputToolbarHandle>) {
     }
   }, []);
 
-  const handlePageDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsPageDragOver(false);
-    if (e.dataTransfer.files.length > 0) {
-      inputToolbarRef.current?.addFiles(Array.from(e.dataTransfer.files));
-    }
-  }, [inputToolbarRef]);
+  const handlePageDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsPageDragOver(false);
+      if (e.dataTransfer.files.length > 0) {
+        inputToolbarRef.current?.addFiles(Array.from(e.dataTransfer.files));
+      }
+    },
+    [inputToolbarRef],
+  );
 
   return { isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop };
 }

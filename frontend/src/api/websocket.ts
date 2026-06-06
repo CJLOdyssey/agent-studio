@@ -70,7 +70,7 @@ function connect(runId: string, options: ConnectOptions): ConnState {
       state.reconnectCount++;
       notifyStatus(state, 'reconnecting');
       Logger.warn(
-        `[ws] run ${runId} disconnected, reconnecting (${state.reconnectCount}/${maxRetries}) in ${delay}ms...`
+        `[ws] run ${runId} disconnected, reconnecting (${state.reconnectCount}/${maxRetries}) in ${delay}ms...`,
       );
       state.reconnectTimer = setTimeout(() => {
         if (connections.has(runId)) {
@@ -101,9 +101,7 @@ function connect(runId: string, options: ConnectOptions): ConnState {
 
 export function connectRun(runId: string, onMessageOrOptions: WsCallback | ConnectOptions): () => void {
   const options: ConnectOptions =
-    typeof onMessageOrOptions === 'function'
-      ? { onMessage: onMessageOrOptions }
-      : onMessageOrOptions;
+    typeof onMessageOrOptions === 'function' ? { onMessage: onMessageOrOptions } : onMessageOrOptions;
 
   const existing = connections.get(runId);
   if (existing) {

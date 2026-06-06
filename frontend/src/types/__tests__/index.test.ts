@@ -4,9 +4,45 @@ import type { AgentConfig } from '../index';
 
 describe('getAgentInfo', () => {
   const agents: AgentConfig[] = [
-    { id: '1', name: '产品经理', role_identifier: 'pm', system_prompt: '分析需求', model: null, temperature: null, order: 1, is_active: true, is_approver: false, icon: '📋', created_at: null },
-    { id: '2', name: '程序员', role_identifier: 'dev', system_prompt: '写代码', model: 'gpt-4', temperature: 0.5, order: 2, is_active: true, is_approver: false, icon: '💻', created_at: null },
-    { id: '3', name: '测试工程师', role_identifier: 'qa', system_prompt: '做测试', model: null, temperature: null, order: 3, is_active: false, is_approver: true, icon: '🧪', created_at: null },
+    {
+      id: '1',
+      name: '产品经理',
+      role_identifier: 'pm',
+      system_prompt: '分析需求',
+      model: null,
+      temperature: null,
+      order: 1,
+      is_active: true,
+      is_approver: false,
+      icon: '📋',
+      created_at: null,
+    },
+    {
+      id: '2',
+      name: '程序员',
+      role_identifier: 'dev',
+      system_prompt: '写代码',
+      model: 'gpt-4',
+      temperature: 0.5,
+      order: 2,
+      is_active: true,
+      is_approver: false,
+      icon: '💻',
+      created_at: null,
+    },
+    {
+      id: '3',
+      name: '测试工程师',
+      role_identifier: 'qa',
+      system_prompt: '做测试',
+      model: null,
+      temperature: null,
+      order: 3,
+      is_active: false,
+      is_approver: true,
+      icon: '🧪',
+      created_at: null,
+    },
   ];
 
   it('找到匹配角色时返回对应图标和名称', () => {

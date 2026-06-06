@@ -1,8 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import {
-  Bot, Users, Plus, Pencil, Trash2, ChevronDown, ChevronRight,
-  Sparkles
-} from 'lucide-react';
+import { Bot, Users, Plus, Pencil, Trash2, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import type { Team, Agent, Conversation } from '../../types/devagents';
 import { useTranslation } from 'react-i18next';
 import UserMenu from './sidebar/UserMenu';
@@ -72,18 +69,24 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
 }: DevAgentsSidebarProps) {
   const { t } = useTranslation();
 
-  const handleConvSelect = useCallback((conv: Conversation) => {
-    setSelectedAgentId(null);
-    setActiveConvId(conv.id);
-    setInputValue('');
-  }, [setSelectedAgentId, setActiveConvId, setInputValue]);
+  const handleConvSelect = useCallback(
+    (conv: Conversation) => {
+      setSelectedAgentId(null);
+      setActiveConvId(conv.id);
+      setInputValue('');
+    },
+    [setSelectedAgentId, setActiveConvId, setInputValue],
+  );
 
-  const handleConvDelete = useCallback((convId: number) => {
-    setConversations(prev => prev.filter(c => c.id !== convId));
-    if (activeConvId === convId) {
-      setActiveConvId(null);
-    }
-  }, [activeConvId, setConversations, setActiveConvId]);
+  const handleConvDelete = useCallback(
+    (convId: number) => {
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+      if (activeConvId === convId) {
+        setActiveConvId(null);
+      }
+    },
+    [activeConvId, setConversations, setActiveConvId],
+  );
 
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), [setIsSidebarOpen]);
 
@@ -100,7 +103,9 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
           </div>
         </div>
         <button className="devagents-sidebar-close" onClick={() => setIsSidebarOpen(false)} aria-label="Close sidebar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
         </button>
       </div>
 
@@ -115,13 +120,18 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
             <Users size={14} />
             {t('sidebar.myTeams')}
           </div>
-          <button className="devagents-icon-btn" onClick={handleAddTeam} title={t('sidebar.newTeam')} aria-label={t('sidebar.newTeam')}>
+          <button
+            className="devagents-icon-btn"
+            onClick={handleAddTeam}
+            title={t('sidebar.newTeam')}
+            aria-label={t('sidebar.newTeam')}
+          >
             <Plus size={14} />
           </button>
         </div>
 
         <div className="devagents-teams-list">
-          {teams.map(team => (
+          {teams.map((team) => (
             <div key={team.id} className="devagents-team">
               <div
                 className="devagents-team-header"
@@ -200,11 +210,14 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
 
               {team.isExpanded && (
                 <ul className="devagents-agents-list">
-                  {team.agents.map(agent => (
+                  {team.agents.map((agent) => (
                     <li
                       key={agent.id}
                       className={`devagents-agent-item ${selectedAgentId === agent.id ? 'selected' : ''}`}
-                      onClick={() => { handleAgentClick(agent); setIsSidebarOpen(false); }}
+                      onClick={() => {
+                        handleAgentClick(agent);
+                        setIsSidebarOpen(false);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
@@ -242,11 +255,7 @@ const DevAgentsSidebar = memo(function DevAgentsSidebar({
                       </div>
                     </li>
                   ))}
-                    {team.agents.length === 0 && (
-                      <li className="devagents-empty-team">
-                        {t('sidebar.noAgents')}
-                      </li>
-                    )}
+                  {team.agents.length === 0 && <li className="devagents-empty-team">{t('sidebar.noAgents')}</li>}
                 </ul>
               )}
             </div>

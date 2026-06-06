@@ -17,7 +17,17 @@ interface Props {
   inputToolbarRef: RefObject<InputToolbarHandle>;
 }
 
-export default function HomeScreen({ conversationKey, models, selectedModel, onModelChange, commands, onSend, onExecuteCommand, onConfigureModels, inputToolbarRef }: Props) {
+export default function HomeScreen({
+  conversationKey,
+  models,
+  selectedModel,
+  onModelChange,
+  commands,
+  onSend,
+  onExecuteCommand,
+  onConfigureModels,
+  inputToolbarRef,
+}: Props) {
   const { t } = useTranslation();
   return (
     <div className="devagents-home">
@@ -30,10 +40,17 @@ export default function HomeScreen({ conversationKey, models, selectedModel, onM
             <GreetingAnimation key={conversationKey} />
             <p className="devagents-home-subtitle">{t('home.subtitle')}</p>
           </div>
-          <InputToolbar ref={inputToolbarRef} onSend={onSend} models={models}
-            selectedModel={selectedModel} onModelChange={onModelChange}
-            placeholder={t('home.placeholder')} commands={commands}
-            onExecuteCommand={onExecuteCommand} onConfigureModels={onConfigureModels} />
+          <InputToolbar
+            ref={inputToolbarRef}
+            onSend={onSend}
+            models={models}
+            selectedModel={selectedModel}
+            onModelChange={onModelChange}
+            placeholder={t('home.placeholder')}
+            commands={commands}
+            onExecuteCommand={onExecuteCommand}
+            onConfigureModels={onConfigureModels}
+          />
         </div>
       </div>
     </div>

@@ -24,7 +24,9 @@
   border: none;
   color: var(--da-text-muted);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +44,9 @@
   border: none;
   color: var(--da-text-muted);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;

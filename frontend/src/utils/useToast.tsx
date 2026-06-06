@@ -20,13 +20,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const toast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
   }, []);
 
-  const remove = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
+  const remove = (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
   const iconMap = {
     success: <CheckCircle2 size={16} className="text-green-500" />,
@@ -38,11 +38,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast }}>
       {children}
       <div className="toast-container" role="status" aria-live="polite" aria-atomic="false">
-        {toasts.map(t => (
+        {toasts.map((t) => (
           <div key={t.id} className={`toast toast-${t.type}`} role="alert">
             {iconMap[t.type]}
             <span>{t.message}</span>
-            <button className="toast-close" onClick={() => remove(t.id)} aria-label="Close notification"><X size={12} /></button>
+            <button className="toast-close" onClick={() => remove(t.id)} aria-label="Close notification">
+              <X size={12} />
+            </button>
           </div>
         ))}
       </div>

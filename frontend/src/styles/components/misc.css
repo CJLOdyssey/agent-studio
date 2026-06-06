@@ -80,7 +80,9 @@
   color: var(--da-text-secondary);
   font-size: 10px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .form-example-btn:hover {

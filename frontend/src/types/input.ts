@@ -37,4 +37,3 @@ export interface FileRejection {
   file: File;
   reason: 'size_exceeded' | 'type_denied';
 }
-

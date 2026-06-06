@@ -57,7 +57,9 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
           aria-label={t('sidebar.settings')}
           ref={triggerRef}
         >
-          <div className="devagents-user-avatar"><UserCircle size={20} /></div>
+          <div className="devagents-user-avatar">
+            <UserCircle size={20} />
+          </div>
           <span className="devagents-user-id">User 1001</span>
         </button>
         {isUserMenuOpen && (
@@ -67,27 +69,45 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
               role="menuitem"
               tabIndex={0}
               onClick={() => handleItemClick(() => setIsSettingsOpen(true))}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleItemClick(() => setIsSettingsOpen(true)); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleItemClick(() => setIsSettingsOpen(true));
+                }
+              }}
             >
-              <Settings size={16} /><span>{t('sidebar.settings')}</span>
+              <Settings size={16} />
+              <span>{t('sidebar.settings')}</span>
             </button>
             <button
               className="devagents-dropdown-item"
               role="menuitem"
               tabIndex={0}
               onClick={() => handleItemClick(() => setIsApiOpen(true))}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleItemClick(() => setIsApiOpen(true)); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleItemClick(() => setIsApiOpen(true));
+                }
+              }}
             >
-              <Key size={16} /><span>{t('api.manage')}</span>
+              <Key size={16} />
+              <span>{t('api.manage')}</span>
             </button>
             <button
               className="devagents-dropdown-item"
               role="menuitem"
               tabIndex={0}
               onClick={() => closeMenu()}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeMenu(); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  closeMenu();
+                }
+              }}
             >
-              <HelpCircle size={16} /><span>{t('sidebar.help')}</span>
+              <HelpCircle size={16} />
+              <span>{t('sidebar.help')}</span>
             </button>
             <div className="devagents-dropdown-divider" role="separator"></div>
             <button
@@ -95,9 +115,15 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
               role="menuitem"
               tabIndex={0}
               onClick={() => closeMenu()}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeMenu(); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  closeMenu();
+                }
+              }}
             >
-              <LogOut size={16} /><span>{t('sidebar.logout')}</span>
+              <LogOut size={16} />
+              <span>{t('sidebar.logout')}</span>
             </button>
           </div>
         )}

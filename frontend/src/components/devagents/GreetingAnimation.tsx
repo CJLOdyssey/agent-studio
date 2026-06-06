@@ -13,12 +13,18 @@ export default function GreetingAnimation() {
       if (index < greeting.length) {
         setDisplayed(greeting.slice(0, index + 1));
         index++;
-      } else { setComplete(true); clearInterval(timer); }
+      } else {
+        setComplete(true);
+        clearInterval(timer);
+      }
     }, 100);
     return () => clearInterval(timer);
   }, [greeting]);
 
   return (
-    <h1 className="devagents-home-greeting">{displayed}{!complete && <span className="typing-cursor">|</span>}</h1>
+    <h1 className="devagents-home-greeting">
+      {displayed}
+      {!complete && <span className="typing-cursor">|</span>}
+    </h1>
   );
 }

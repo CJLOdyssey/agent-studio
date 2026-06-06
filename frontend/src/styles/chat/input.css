@@ -89,7 +89,9 @@
   border-radius: 8px;
   color: var(--da-text-muted);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,7 +115,10 @@
   border-radius: 6px;
   color: var(--da-text-muted);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
   font-weight: 500;
 }
 
@@ -134,7 +139,11 @@
   font-size: var(--da-font-size-base);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
   min-height: 40px;
 }
 

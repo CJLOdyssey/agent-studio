@@ -15,11 +15,7 @@ export default function AgentWelcome({ agent }: Props) {
 
   return (
     <div className="devagents-agent-welcome">
-      <button
-        className="devagents-welcome-close"
-        onClick={() => setDismissed(true)}
-        aria-label={t('common.close')}
-      >
+      <button className="devagents-welcome-close" onClick={() => setDismissed(true)} aria-label={t('common.close')}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>

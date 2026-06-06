@@ -17,7 +17,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   const [focusIdx, setFocusIdx] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const current = models.find(m => m.id === selectedModel);
+  const current = models.find((m) => m.id === selectedModel);
   const isEmpty = models.length === 0;
 
   // Memoize grouped models — not called in render path anymore
@@ -28,10 +28,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   }, [models]);
 
   // All options flattened for keyboard navigation
-  const allOptions = useMemo(
-    () => providers.flatMap(([, list]) => list),
-    [providers],
-  );
+  const allOptions = useMemo(() => providers.flatMap(([, list]) => list), [providers]);
 
   // Close on outside click
   useEffect(() => {
@@ -57,11 +54,11 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
           break;
         case 'ArrowDown':
           e.preventDefault();
-          setFocusIdx(i => Math.min(i + 1, allOptions.length - 1));
+          setFocusIdx((i) => Math.min(i + 1, allOptions.length - 1));
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setFocusIdx(i => Math.max(i - 1, 0));
+          setFocusIdx((i) => Math.max(i - 1, 0));
           break;
         case 'Enter':
           e.preventDefault();
@@ -111,7 +108,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         aria-haspopup={isEmpty ? undefined : 'listbox'}
       >
         <span className="devagents-model-label">
-          {isEmpty ? t('model.configure') : current?.label ?? t('model.noModels')}
+          {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
         </span>
         <ChevronDown size={10} className={`devagents-model-chevron ${open ? 'open' : ''}`} />
       </button>
@@ -160,9 +157,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                   {m.status === 'deprecated' && (
                     <span className="devagents-model-status">{t('model.statusDeprecated')}</span>
                   )}
-                  {m.status === 'sunset' && (
-                    <span className="devagents-model-status">{t('model.statusSunset')}</span>
-                  )}
+                  {m.status === 'sunset' && <span className="devagents-model-status">{t('model.statusSunset')}</span>}
                 </button>
               ))}
         </div>

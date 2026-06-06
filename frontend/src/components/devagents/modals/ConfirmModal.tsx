@@ -11,14 +11,26 @@ interface Props {
   danger?: boolean;
 }
 
-export default function ConfirmModal({ title, message, confirmLabel: confirmLabelProp, onConfirm, onCancel, danger }: Props) {
+export default function ConfirmModal({
+  title,
+  message,
+  confirmLabel: confirmLabelProp,
+  onConfirm,
+  onCancel,
+  danger,
+}: Props) {
   const { t } = useTranslation();
   const confirmLabel = confirmLabelProp ?? t('confirm.confirm');
   return (
-    <Modal title={title} onClose={onCancel} className="confirm-modal"
+    <Modal
+      title={title}
+      onClose={onCancel}
+      className="confirm-modal"
       footer={
         <>
-          <button className="btn btn-secondary" onClick={onCancel}>{t('confirm.cancel')}</button>
+          <button className="btn btn-secondary" onClick={onCancel}>
+            {t('confirm.cancel')}
+          </button>
           <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm}>
             {confirmLabel}
           </button>

@@ -3,13 +3,9 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-const mockRuns = [
-  { id: '1', requirement: 'test', status: 'completed', created_at: '2024-01-01' },
-];
+const mockRuns = [{ id: '1', requirement: 'test', status: 'completed', created_at: '2024-01-01' }];
 
-const mockSessions = [
-  { id: 's1', title: 'Session 1', message_count: 3, updated_at: '2024-01-01' },
-];
+const mockSessions = [{ id: 's1', title: 'Session 1', message_count: 3, updated_at: '2024-01-01' }];
 
 const mockAxiosInstance = {
   get: vi.fn(),
@@ -57,10 +53,10 @@ describe('API hooks', () => {
     mockAxiosInstance.get.mockResolvedValue({ data: mockRuns[0] });
     const { useRun } = await import('../hooks');
 
-    const { result, rerender } = renderHook(
-      (id: string | undefined) => useRun(id),
-      { initialProps: undefined as string | undefined, wrapper: createWrapper() },
-    );
+    const { result, rerender } = renderHook((id: string | undefined) => useRun(id), {
+      initialProps: undefined as string | undefined,
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.isPending).toBe(true);
     expect(mockAxiosInstance.get).not.toHaveBeenCalled();

@@ -26,10 +26,7 @@ interface UseMessageComposerReturn {
  * All input state lives here — no parent re-render on every keystroke.
  * Uses a ref to always read the latest value in callbacks without stale closures.
  */
-export function useMessageComposer({
-  onSend,
-  maxLength = 10000,
-}: UseMessageComposerOptions): UseMessageComposerReturn {
+export function useMessageComposer({ onSend, maxLength = 10000 }: UseMessageComposerOptions): UseMessageComposerReturn {
   const [value, setValue] = useState('');
   const valueRef = useRef(value);
   // Keep ref in sync during render — intentional, avoids stale closures in callbacks

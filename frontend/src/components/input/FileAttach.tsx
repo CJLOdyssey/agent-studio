@@ -15,7 +15,11 @@ interface Props {
 }
 
 const ALLOWED_TYPES = [
-  'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml',
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -29,7 +33,7 @@ const MAX_SIZE = 50 * 1024 * 1024;
 function isAllowed(file: File): boolean {
   if (ALLOWED_TYPES.includes(file.type)) return true;
   const name = file.name.toLowerCase();
-  return ALLOWED_EXTENSIONS.some(ext => name.endsWith(ext));
+  return ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext));
 }
 
 function validateFiles(files: File[]): { accepted: File[]; rejected: FileRejection[] } {
@@ -106,9 +110,7 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
         aria-label={fileCount > 0 ? `${fileCount} files attached` : t('fileAttach.attach')}
       >
         <Paperclip size={16} />
-        {fileCount > 0 && (
-          <span className="devagents-attach-badge">{fileCount}</span>
-        )}
+        {fileCount > 0 && <span className="devagents-attach-badge">{fileCount}</span>}
       </button>
     </>
   );

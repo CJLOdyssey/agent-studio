@@ -61,7 +61,14 @@ describe('chatStore', () => {
 
   it('setResult 存储结果', async () => {
     const { useChatStore } = await import('../chatStore');
-    const result = { requirement: 'test', pm_document: 'doc', code: 'code', review: 'review', approved: true, status: 'converged' };
+    const result = {
+      requirement: 'test',
+      pm_document: 'doc',
+      code: 'code',
+      review: 'review',
+      approved: true,
+      status: 'converged',
+    };
     useChatStore.getState().setResult(result);
     expect(useChatStore.getState().result).toEqual(result);
   });
@@ -122,7 +129,19 @@ describe('chatStore', () => {
   describe('loadAgents', () => {
     it('成功加载代理列表', async () => {
       const mockAgents: AgentConfig[] = [
-        { id: '1', name: 'PM', role_identifier: 'pm', system_prompt: 'prompt', model: null, temperature: null, order: 1, is_active: true, is_approver: false, icon: '📋', created_at: null },
+        {
+          id: '1',
+          name: 'PM',
+          role_identifier: 'pm',
+          system_prompt: 'prompt',
+          model: null,
+          temperature: null,
+          order: 1,
+          is_active: true,
+          is_approver: false,
+          icon: '📋',
+          created_at: null,
+        },
       ];
       const client = await import('../../api/client');
       (client.listAgents as ReturnType<typeof vi.fn>).mockResolvedValue(mockAgents);

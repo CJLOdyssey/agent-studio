@@ -29,7 +29,9 @@
 }
 
 .settings-range:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px var(--da-accent-indigo), 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow:
+    0 0 0 2px var(--da-accent-indigo),
+    0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .settings-range:focus-visible::-moz-range-thumb {
@@ -49,7 +51,7 @@
   border-radius: 50%;
   background: var(--da-accent-indigo);
   margin-top: -5px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
 

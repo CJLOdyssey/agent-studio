@@ -142,7 +142,15 @@ describe('API Client', () => {
     it('createAgent POST /api/agents', async () => {
       mockAxiosInstance.post.mockResolvedValue({ data: { id: 'new-agent' } });
       const { createAgent } = await import('../client');
-      const cfg = { name: '新代理', role_identifier: 'new_role', system_prompt: 'prompt', order: 1, is_active: true, is_approver: false, icon: '◆' };
+      const cfg = {
+        name: '新代理',
+        role_identifier: 'new_role',
+        system_prompt: 'prompt',
+        order: 1,
+        is_active: true,
+        is_approver: false,
+        icon: '◆',
+      };
       const result = await createAgent(cfg);
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/agents', cfg);
       expect(result).toEqual({ id: 'new-agent' });

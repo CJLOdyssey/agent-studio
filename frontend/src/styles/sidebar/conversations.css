@@ -53,7 +53,9 @@
   color: var(--da-text-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s, color 0.15s;
+  transition:
+    opacity 0.15s,
+    color 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;

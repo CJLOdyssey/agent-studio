@@ -88,7 +88,10 @@ export function useCreateAgent() {
 export function useUpdateAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...cfg }: {
+    mutationFn: ({
+      id,
+      ...cfg
+    }: {
       id: string;
       name?: string;
       system_prompt?: string;

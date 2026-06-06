@@ -57,7 +57,12 @@ export async function testKeyConnection(id: string): Promise<{ success: boolean;
   return data;
 }
 
-export async function getKeyUsage(): Promise<{ today_requests: number; today_tokens: number; month_requests: number; month_tokens: number }> {
+export async function getKeyUsage(): Promise<{
+  today_requests: number;
+  today_tokens: number;
+  month_requests: number;
+  month_tokens: number;
+}> {
   const { data } = await api.get('/keys/usage');
   return data;
 }

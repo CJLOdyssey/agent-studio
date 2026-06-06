@@ -35,7 +35,9 @@
   font-size: var(--da-font-size-sm);
   color: var(--da-text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .devagents-file-item:hover {
@@ -86,12 +88,24 @@
   white-space: pre-wrap;
 }
 
-.devagents-code-block .text-pink-400 { color: var(--da-accent-pink); }
-.devagents-code-block .text-green-300 { color: var(--da-accent-emerald); }
-.devagents-code-block .text-blue-300 { color: var(--syntax-blue-300); }
-.devagents-code-block .text-blue-400 { color: var(--syntax-blue-400); }
-.devagents-code-block .text-cyan-200 { color: var(--syntax-cyan-200); }
-.devagents-code-block .text-slate-500 { color: var(--da-text-muted); }
+.devagents-code-block .text-pink-400 {
+  color: var(--da-accent-pink);
+}
+.devagents-code-block .text-green-300 {
+  color: var(--da-accent-emerald);
+}
+.devagents-code-block .text-blue-300 {
+  color: var(--syntax-blue-300);
+}
+.devagents-code-block .text-blue-400 {
+  color: var(--syntax-blue-400);
+}
+.devagents-code-block .text-cyan-200 {
+  color: var(--syntax-cyan-200);
+}
+.devagents-code-block .text-slate-500 {
+  color: var(--da-text-muted);
+}
 
 /* UI preview */
 .devagents-ui-preview {

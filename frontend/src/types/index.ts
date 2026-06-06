@@ -90,7 +90,7 @@ export type AppStatus = 'idle' | 'loading' | 'running' | 'completed' | 'error';
 
 // Agent info is now dynamic from the API
 export function getAgentInfo(agents: AgentConfig[], role: string): { icon: string; label: string; color: string } {
-  const found = agents.find(a => a.role_identifier === role);
+  const found = agents.find((a) => a.role_identifier === role);
   if (found) {
     return {
       icon: found.icon || '◆',

@@ -16,7 +16,9 @@
   font-family: inherit;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
   min-width: 0;
   max-width: 180px;
 }
@@ -60,7 +62,9 @@
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
   max-width: 180px;
 }
 
@@ -203,7 +207,7 @@
   background: var(--da-bg-hover);
 }
 
-.devagents-command-option[aria-selected="true"],
+.devagents-command-option[aria-selected='true'],
 .devagents-command-option.focused {
   background: color-mix(in srgb, var(--da-accent-indigo) 12%, transparent);
 }
