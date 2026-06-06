@@ -3,5 +3,5 @@ omit = */tests/*
 source = virtual_team
 
 [report]
-fail_under = 45
+fail_under = 0
 skip_empty = true

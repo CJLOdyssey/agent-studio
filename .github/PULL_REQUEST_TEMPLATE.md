@@ -35,7 +35,7 @@
 - [ ] Lint passes (ruff, eslint)
 - [ ] Typecheck passes (mypy, tsc)
 - [ ] Tests pass (pytest, vitest)
-- [ ] Coverage >= 60%
+- [ ] diff-cover new lines >= 100%
 - [ ] Format check passes (prettier)
 - [ ] No new warnings
 

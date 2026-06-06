@@ -1,0 +1,23 @@
+#!/bin/bash
+# ── Pre-push hook: 禁止直接 push main ──────────────────────────
+# 所有对 main 的变更必须走 PR，CI 通过后才能合入。
+
+protected_branch="main"
+current_branch=$(git symbolic-ref HEAD 2>/dev/null | sed 's|refs/heads/||')
+
+while read local_ref local_oid remote_ref remote_oid; do
+  if [[ "$remote_ref" == "refs/heads/$protected_branch" ]]; then
+    echo ""
+    echo "  ❌ 禁止直接 push 到 $protected_branch 分支"
+    echo "  ─────────────────────────────────────────────"
+    echo "  正确流程："
+    echo "    git checkout -b feature/你的分支名"
+    echo "    git add . && git commit"
+    echo "    git push origin feature/你的分支名"
+    echo "    然后到 GitHub 提 Pull Request"
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
