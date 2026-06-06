@@ -27,33 +27,44 @@ jobs:
     permissions:
       actions: read
     steps:
-      - name: Check CI workflow status
+      - name: Wait for CI to complete
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          RESULT=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}&status=completed&per_page=5" \
-            | jq '[.workflow_runs[] | select(.name == "CI")] | first // empty')
+          for i in $(seq 1 30); do
+            RESULT=$(curl -s -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}&per_page=5" \
+              | jq '[.workflow_runs[] | select(.name == "CI")] | first // empty')
 
-          if [ -z "$RESULT" ]; then
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-              echo "⚠️  手动触发，未找到对应 CI 运行记录 — 继续部署"
+            if [ -z "$RESULT" ]; then
+              if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                echo "⚠️  手动触发，未找到对应 CI 运行记录 — 继续部署"
+                exit 0
+              fi
+              echo "  等待 $i/30 — CI 尚未触发..."
+              sleep 10
+              continue
+            fi
+
+            CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion // "null"')
+            echo "  等待 $i/30 — CI 状态: $CONCLUSION"
+
+            if [ "$CONCLUSION" = "success" ]; then
+              echo "✅ CI 通过 — 继续部署"
               exit 0
             fi
-            echo "❌ 未找到 CI 运行记录 — 请先确保 CI 通过"
-            exit 1
-          fi
 
-          CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion // "null"')
-          echo "CI conclusion: $CONCLUSION"
+            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ]; then
+              echo "❌ CI 未通过 ($CONCLUSION) — 终止部署"
+              exit 1
+            fi
 
-          if [ "$CONCLUSION" = "success" ]; then
-            echo "✅ CI 通过 — 继续部署"
-          else
-            echo "❌ CI 未通过 ($CONCLUSION) — 终止部署"
-            exit 1
-          fi
+            sleep 10
+          done
+
+          echo "❌ CI 超时（5分钟未完成）— 终止部署"
+          exit 1
 
   # ── Build & Scan ───────────────────────────────────────────────────────
   build-and-scan:
