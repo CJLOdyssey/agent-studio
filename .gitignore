@@ -4,10 +4,12 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+*.pyc
 
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
 frontend/coverage/
@@ -16,10 +18,14 @@ frontend/coverage/
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
 
 # Environment
 .env
 .env.local
+.env.development
+.env.production
 
 # OS
 .DS_Store
@@ -43,6 +49,13 @@ frontend/node_modules/
 # Tool runtimes
 .sisyphus/
 
+# Temporary files
+.impeccable/
+.claude/
+.github/
+
 # Screenshots (move to docs/screenshots/ if needed)
 *.png
 *.jpg
+*.jpeg
+*.gif

@@ -8,6 +8,11 @@ updated: 2026-06-06
 
 > 子域：消息管理
 > 状态：⬜ 未开始 | 🔄 进行中 | ✅ 已完成
+> 优先级：P1
+> 负责人：待分配
+> 预估：待评估
+> 截止：待定
+> 依赖：无
 
 ---
 
@@ -17,11 +22,43 @@ updated: 2026-06-06
 
 ---
 
+
+---
+
+## 接口定义
+
+**[METHOD] /api/[endpoint]**
+
+请求：
+```json
+{
+  "field": "value"
+}
+```
+
+响应 200/201：
+```json
+{
+  "id": "uuid"
+}
+```
+
 ## 验收标准
 
 - [ ] 保存成功返回消息 ID
 - [ ] 包含 role、content、round_number
 - [ ] 关联 run_id
+
+---
+
+
+---
+
+## 风险点
+
+| 风险 | 影响 | 缓解措施 |
+|---|---|---|
+| 待识别 | 中 | 待定 |
 
 ---
 
@@ -80,8 +117,6 @@ async def save_message(run_id: str, role: str, content: str, round_number: int) 
 
 ---
 
----
-
 ## 测试覆盖率
 
 **目标**：该功能相关代码测试覆盖率 ≥ 80%
@@ -112,7 +147,9 @@ npm run test:coverage
 | 测试失败 (RED) | ⬜ |
 | 编写实现 | ⬜ |
 | 测试通过 (GREEN) | ⬜ |
-| 重构 (REFACTOR) | ⬜ |
+| 重构 (REFACTOR) | ⬜ | - |
+| Code Review | ⬜ | - |
+| 部署验证 | ⬜ | - |
 
 ---
 

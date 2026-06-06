@@ -17,11 +17,43 @@ updated: 2026-06-06
 
 ---
 
+
+---
+
+## 接口定义
+
+**[METHOD] /api/[endpoint]**
+
+请求：
+```json
+{
+  "field": "value"
+}
+```
+
+响应 200/201：
+```json
+{
+  "id": "uuid"
+}
+```
+
 ## 验收标准
 
 - [ ] 绑定已有技能
 - [ ] 解绑技能
 - [ ] 查询 Agent 技能列表
+
+---
+
+
+---
+
+## 风险点
+
+| 风险 | 影响 | 缓解措施 |
+|---|---|---|
+| 待识别 | 中 | 待定 |
 
 ---
 
@@ -99,8 +131,6 @@ async def bind_skill(agent_id: str, skill_id: str, ...) -> AgentSkillBindingDB:
 
 ---
 
----
-
 ## 测试覆盖率
 
 **目标**：该功能相关代码测试覆盖率 ≥ 80%
@@ -131,7 +161,9 @@ npm run test:coverage
 | 测试失败 (RED) | ⬜ |
 | 编写实现 | ⬜ |
 | 测试通过 (GREEN) | ⬜ |
-| 重构 (REFACTOR) | ⬜ |
+| 重构 (REFACTOR) | ⬜ | - |
+| Code Review | ⬜ | - |
+| 部署验证 | ⬜ | - |
 
 ---
 
