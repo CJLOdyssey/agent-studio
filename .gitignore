@@ -10,6 +10,7 @@ build/
 .coverage
 coverage.xml
 htmlcov/
+frontend/coverage/
 
 # IDE
 .idea/
