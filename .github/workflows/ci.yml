@@ -31,6 +31,7 @@ jobs:
   # === Phase 0: Fastest gates ==============================================
   format-check:
     name: 🎨 Format Check
+    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -87,6 +88,7 @@ jobs:
 
   frontend-lint:
     name: 🔍 Frontend Lint & Typecheck
+    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -104,6 +106,7 @@ jobs:
 
   frontend-audit:
     name: 🛡️ Frontend Audit
+    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -150,6 +153,7 @@ jobs:
 
   frontend-test:
     name: ✅ Frontend Tests
+    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     needs: [frontend-lint]
     defaults:
