@@ -23,6 +23,10 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # ── Production image ─────────────────────────────────────────────────────────
 FROM python:3.12-slim
 
+# Update system packages to fix base image vulnerabilities
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
 # Create non-root user for container runtime
 RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /bin/bash appuser
 
