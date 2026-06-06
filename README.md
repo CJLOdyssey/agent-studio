@@ -24,7 +24,7 @@
 ### 1. 配置环境变量
 
 ```bash
-cp .env.template .env
+cp config/.env.template .env
 # 编辑 .env，填入 DEEPSEEK_API_KEY
 ```
 
@@ -40,7 +40,7 @@ cd ..
 ### 3. 启动所有服务
 
 ```bash
-docker compose up -d
+docker compose -f config/docker/docker-compose.yml up -d
 ```
 
 访问 http://localhost:80

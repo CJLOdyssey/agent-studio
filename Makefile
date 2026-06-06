@@ -19,16 +19,16 @@ format:
 	cd frontend && npm run format
 
 docker-up:
-	docker compose up -d
+	docker compose -f config/docker/docker-compose.yml up -d
 
 docker-build:
-	docker compose build
+	docker compose -f config/docker/docker-compose.yml build
 
 docker-down:
-	docker compose down
+	docker compose -f config/docker/docker-compose.yml down
 
 docker-logs:
-	docker compose logs -f
+	docker compose -f config/docker/docker-compose.yml logs -f
 
 clean:
 	rm -rf frontend/dist frontend/node_modules

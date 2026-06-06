@@ -1,10 +1,10 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *.egg-info/
 dist/
 build/
-*.pyc
 
 # Testing
 .pytest_cache/
@@ -48,6 +48,8 @@ frontend/node_modules/
 
 # Tool runtimes
 .sisyphus/
+.mypy_cache/
+.ruff_cache/
 
 # Temporary files
 .impeccable/
@@ -59,3 +61,9 @@ frontend/node_modules/
 *.jpg
 *.jpeg
 *.gif
+
+# Config (keep .env.template)
+config/.env
+config/.env.local
+config/.env.development
+config/.env.production

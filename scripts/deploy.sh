@@ -12,7 +12,7 @@
 set -euo pipefail
 
 PROJECT_DIR="/opt/virtual-team"
-COMPOSE_FILE="docker-compose.yml"
+COMPOSE_FILE="config/docker/docker-compose.yml"
 
 cd "$PROJECT_DIR"
 

@@ -27,7 +27,7 @@ if [ -f ".env" ]; then
     fi
     echo "   ✅ .env is properly gitignored"
 else
-    echo "   ⚠️  .env not found — copy from .env.template"
+    echo "   ⚠️  .env not found — copy from config/.env.template"
 fi
 
 # ── Backend ────────────────────────────────────────────────────────────────────
