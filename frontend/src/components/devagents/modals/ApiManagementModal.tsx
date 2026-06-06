@@ -44,17 +44,33 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   };
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    loadKeys();
+    let cancelled = false;
+    api
+      .listKeys()
+      .then((serverKeys) => {
+        if (!cancelled) setKeys(serverKeys);
+      })
+      .catch((err) => Logger.warn('Failed to load API keys from server', err))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Load usage stats
   useEffect(() => {
+    let cancelled = false;
     api
       .getKeyUsage()
-      .then(setUsage)
+      .then((data) => {
+        if (!cancelled) setUsage(data);
+      })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [keys]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────

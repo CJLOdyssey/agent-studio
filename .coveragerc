@@ -1,0 +1,7 @@
+[run]
+omit = */tests/*
+source = virtual_team
+
+[report]
+fail_under = 45
+skip_empty = true

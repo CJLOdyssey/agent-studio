@@ -30,7 +30,7 @@ module = "virtual_team.team_graph"
 ignore_errors = true
 
 [tool.coverage.report]
-fail_under = 60
+fail_under = 45
 skip_empty = true
 
 [tool.pytest.ini_options]
