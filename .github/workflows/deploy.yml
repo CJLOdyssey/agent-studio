@@ -1,0 +1,139 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  # ── CI Gate: only deploy if CI passed for this commit ─────────────
+  ci-check:
+    name: 🔑 CI Gate
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Check CI workflow status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RESULT=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}&status=completed&per_page=5" \
+            | jq '[.workflow_runs[] | select(.name == "CI")] | first // empty')
+
+          if [ -z "$RESULT" ]; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "⚠️  手动触发，未找到对应 CI 运行记录 — 继续部署"
+              exit 0
+            fi
+            echo "❌ 未找到 CI 运行记录 — 请先确保 CI 通过"
+            exit 1
+          fi
+
+          CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion // "null"')
+          echo "CI conclusion: $CONCLUSION"
+
+          if [ "$CONCLUSION" = "success" ]; then
+            echo "✅ CI 通过 — 继续部署"
+          else
+            echo "❌ CI 未通过 ($CONCLUSION) — 终止部署"
+            exit 1
+          fi
+
+  # ── Build image and push to ACR ──────────────────────────────────
+  docker:
+    name: 🐳 Build & Push to ACR
+    needs: ci-check
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:latest
+            crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy to ECS ────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to Production
+    needs: docker
+    if: success()
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest code
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR"
+          # 强制使用 SSH remote，避免 WSL2 Clash TUN 模式下 HTTPS 代理干扰
+          git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
+      - name: Extract frontend dist from API image
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          IMAGE="crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:latest"
+          docker pull "$IMAGE" --quiet
+          docker create --name temp-extract "$IMAGE"
+          docker cp temp-extract:/app/frontend/dist "$WORK_DIR/frontend/dist"
+          docker rm temp-extract > /dev/null
+
+      - name: Update env and restart
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR"
+
+          # 写入 ACR 环境变量到 .env
+          cat >> "$WORK_DIR/.env" <<EOF
+          ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
+          IMAGE_TAG=latest
+          EOF
+
+          # 拉取新镜像并重启
+          docker compose -p 7 pull
+          docker compose -p 7 up -d --remove-orphans
+          docker image prune -f
+          echo "✅ Deploy complete"
+          docker compose -p 7 ps
+
+      - name: Notify deploy result
+        if: always()
+        run: |
+          STATUS='success'
+          [ '${{ job.status }}' != 'success' ] && STATUS='failure'
+          curl -s -X POST '${{ secrets.DEPLOY_WEBHOOK_URL }}' \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "🚀 部署 $STATUS",
+                "text": "### 🚀 虚拟团队部署\n\n- **状态**: '\''$STATUS'\''\n- **分支**: ${{ github.ref_name }}\n- **提交**: ${{ github.sha }}\n- **触发**: ${{ github.actor }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }
+            }' || echo "⚠️ Webhook notification skipped (DEPLOY_WEBHOOK_URL not configured)"
