@@ -44,6 +44,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - name: Cache node_modules for downstream frontend jobs
+        uses: actions/cache/save@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
       - run: npm run format:check
 
   # === Phase 1: Lint / Typecheck / Security (parallel) =====================
@@ -100,6 +105,11 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Restore node_modules from format-check
+        uses: actions/cache/restore@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
@@ -118,6 +128,11 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Restore node_modules from format-check
+        uses: actions/cache/restore@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
       - run: npm ci
       - run: npm audit --audit-level=high --production || echo "⚠️ 安全警告（非阻塞）"
 
@@ -166,6 +181,11 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Restore node_modules from format-check
+        uses: actions/cache/restore@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
       - run: npm ci
       - run: npm run test:coverage
       - name: Upload coverage
