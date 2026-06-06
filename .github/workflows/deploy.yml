@@ -110,6 +110,7 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           skip-dirs: /app/frontend/node_modules
+          ignorefile: config/docker/.trivyignore
 
       - name: Upload Trivy report
         if: always()
