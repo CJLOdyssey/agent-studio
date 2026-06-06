@@ -37,7 +37,7 @@ async def unbind_tool(agent_id: str, tool_id: str) -> bool:
             )
         )
         await session.commit()
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined]
 
 
 async def get_agent_tools(agent_id: str) -> list[AgentToolBindingDB]:
@@ -75,7 +75,7 @@ async def unbind_mcp(agent_id: str, mcp_id: str) -> bool:
             )
         )
         await session.commit()
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined]
 
 
 async def get_agent_mcp(agent_id: str) -> list[AgentMcpBindingDB]:
@@ -112,7 +112,7 @@ async def unbind_skill(agent_id: str, skill_id: str) -> bool:
             )
         )
         await session.commit()
-        return result.rowcount > 0
+        return result.rowcount > 0  # type: ignore[attr-defined]
 
 
 async def get_agent_skills(agent_id: str) -> list[AgentSkillBindingDB]:
