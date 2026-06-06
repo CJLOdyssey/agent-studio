@@ -132,9 +132,13 @@ jobs:
       - name: Install deps
         run: |
           pip install --quiet --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
-      - name: Run tests with coverage gate
-        run: python -m pytest tests/ -v --tb=short --cov-fail-under=60
+          pip install -r requirements.txt -r requirements-dev.txt diff-cover
+      - name: Run tests with coverage report
+        run: python -m pytest tests/ -v --tb=short --cov-report=xml
+      - name: Check diff coverage
+        run: |
+          git fetch origin main --depth=1
+          diff-cover coverage.xml --compare-branch=origin/main --fail-under=100
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
