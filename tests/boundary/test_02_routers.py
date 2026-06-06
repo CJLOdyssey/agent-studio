@@ -53,6 +53,7 @@ def client():
         patch("virtual_team.rate_limit.get_redis", return_value=mock_redis),
     ):
         from fastapi.testclient import TestClient
+
         from virtual_team.app import app
         yield TestClient(app)
 
@@ -141,13 +142,17 @@ class TestFetchModelsBoundary:
 class TestRunRequestBoundary:
 
     def test_requirement_empty(self):
+        from pydantic import ValidationError
+
         from virtual_team.routers.runs import RunRequest
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             RunRequest(requirement="")
 
     def test_requirement_too_long(self):
+        from pydantic import ValidationError
+
         from virtual_team.routers.runs import RunRequest
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             RunRequest(requirement="x" * 2001)
 
     def test_requirement_valid(self):
@@ -220,6 +225,7 @@ class TestSessionCreateBoundary:
             patch("virtual_team.routers.sessions.create_session", new_callable=AsyncMock, return_value=mock_session),
         ):
             from fastapi.testclient import TestClient
+
             from virtual_team.app import app
             tc = TestClient(app)
             resp = tc.post(self.route, json={})

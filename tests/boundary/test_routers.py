@@ -50,6 +50,7 @@ def client():
         patch("virtual_team.rate_limit.get_redis", return_value=mock_redis),
     ):
         from fastapi.testclient import TestClient
+
         from virtual_team.app import app
         yield TestClient(app)
 

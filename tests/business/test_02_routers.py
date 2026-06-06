@@ -1,7 +1,7 @@
 """Business tests: direct calls to all router functions covering all logic paths."""
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import ANY, AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException, WebSocketDisconnect
@@ -159,7 +159,7 @@ class TestUploadAttachment:
 
 
 class TestGetAttachment:
-    async def test_success_returns_FileResponse(self):
+    async def test_success_returns_file_response(self):
         req = _mock_request()
         att = MagicMock()
         att.storage_path = "/tmp/exists.txt"

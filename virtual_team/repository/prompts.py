@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import select, update
-from sqlalchemy.orm import selectinload
 
 from virtual_team.database import AgentPromptDB, get_session_factory
 

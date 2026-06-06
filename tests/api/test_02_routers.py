@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import WebSocketDisconnect
 
-
 # ============================================================
 # Fixtures
 # ============================================================
@@ -55,6 +54,7 @@ def client():
         patch("virtual_team.repository.teams.get_session_factory", mock_factory),
     ):
         from fastapi.testclient import TestClient
+
         from virtual_team.app import app
         yield TestClient(app)
 
@@ -87,18 +87,18 @@ class TestRunsWebSocket:
             patch("virtual_team.routers.runs.get_run", new_callable=AsyncMock, return_value=mock_run),
             patch("virtual_team.routers.runs.get_messages", new_callable=AsyncMock, return_value=[]),
             patch("virtual_team.routers.runs.subscribe_run", side_effect=_mock_subscribe),
+            client.websocket_connect("/ws/runs/run-1") as ws,
         ):
-            with client.websocket_connect("/ws/runs/run-1") as ws:
-                data = ws.receive_json()
-                assert data["type"] == "status"
-                assert data["status"] == "connected"
+            data = ws.receive_json()
+            assert data["type"] == "status"
+            assert data["status"] == "connected"
 
-                data = ws.receive_json()
-                assert data["type"] == "status"
-                assert data.get("status") == "processing"
+            data = ws.receive_json()
+            assert data["type"] == "status"
+            assert data.get("status") == "processing"
 
-                data = ws.receive_json()
-                assert data["type"] == "message"
+            data = ws.receive_json()
+            assert data["type"] == "message"
 
     def test_websocket_run_already_converged(self, client):
         """Run is already converged before WS connects — sends messages then closes."""
@@ -121,18 +121,18 @@ class TestRunsWebSocket:
         with (
             patch("virtual_team.routers.runs.get_run", new_callable=AsyncMock, return_value=mock_run),
             patch("virtual_team.routers.runs.get_messages", new_callable=AsyncMock, return_value=[mock_msg]),
+            client.websocket_connect("/ws/runs/run-1") as ws,
         ):
-            with client.websocket_connect("/ws/runs/run-1") as ws:
-                data = ws.receive_json()
-                assert data["type"] == "status"
+            data = ws.receive_json()
+            assert data["type"] == "status"
 
-                data = ws.receive_json()
-                assert data["type"] == "message"
-                assert data["role"] == "pm"
+            data = ws.receive_json()
+            assert data["type"] == "message"
+            assert data["role"] == "pm"
 
-                data = ws.receive_json()
-                assert data["type"] == "result"
-                assert data["status"] == "converged"
+            data = ws.receive_json()
+            assert data["type"] == "result"
+            assert data["status"] == "converged"
 
     def test_websocket_subscribe_error(self, client):
         """subscribe_run raises an exception — should catch and send error."""
@@ -150,14 +150,14 @@ class TestRunsWebSocket:
             patch("virtual_team.routers.runs.get_run", new_callable=AsyncMock, return_value=mock_run),
             patch("virtual_team.routers.runs.get_messages", new_callable=AsyncMock, return_value=[]),
             patch("virtual_team.routers.runs.subscribe_run", side_effect=Exception("redis down")),
+            client.websocket_connect("/ws/runs/run-1") as ws,
         ):
-            with client.websocket_connect("/ws/runs/run-1") as ws:
-                data = ws.receive_json()
-                assert data["type"] == "status"
+            data = ws.receive_json()
+            assert data["type"] == "status"
 
-                data = ws.receive_json()
-                assert data["type"] == "status"
-                assert data.get("status") == "error"
+            data = ws.receive_json()
+            assert data["type"] == "status"
+            assert data.get("status") == "error"
 
     def test_websocket_send_json_error(self, client):
         """websocket.send_json raises exception during subscribe loop."""
@@ -179,10 +179,10 @@ class TestRunsWebSocket:
             patch("virtual_team.routers.runs.get_run", new_callable=AsyncMock, return_value=mock_run),
             patch("virtual_team.routers.runs.get_messages", new_callable=AsyncMock, return_value=[]),
             patch("virtual_team.routers.runs.subscribe_run", side_effect=_mock_subscribe),
+            client.websocket_connect("/ws/runs/run-1") as ws,
         ):
-            with client.websocket_connect("/ws/runs/run-1") as ws:
-                data = ws.receive_json()
-                assert data["type"] == "status"
+            data = ws.receive_json()
+            assert data["type"] == "status"
 
     def test_websocket_auth_enabled_path(self, client):
         """AUTH_ENABLED=True path (lines 195-200): verify JWT token handling."""
@@ -199,10 +199,10 @@ class TestRunsWebSocket:
             patch("virtual_team.routers.runs.get_run", new_callable=AsyncMock, return_value=mock_run),
             patch("virtual_team.routers.runs.get_messages", new_callable=AsyncMock, return_value=[]),
             patch("virtual_team.routers.runs.subscribe_run", side_effect=_mock_subscribe),
+            client.websocket_connect("/ws/runs/run-1?token=valid-token") as ws,
         ):
-            with client.websocket_connect("/ws/runs/run-1?token=valid-token") as ws:
-                data = ws.receive_json()
-                assert data["type"] == "status"
+            data = ws.receive_json()
+            assert data["type"] == "status"
 
     def test_websocket_pre_check_exception(self, client):
         """get_run raises exception during pre-check (lines 232-233)."""
@@ -217,8 +217,8 @@ class TestRunsWebSocket:
             patch("virtual_team.routers.runs.get_run", side_effect=Exception("db error")),
             patch("virtual_team.routers.runs.get_messages", new_callable=AsyncMock, return_value=[]),
             patch("virtual_team.routers.runs.subscribe_run", side_effect=_mock_subscribe),
+            client.websocket_connect("/ws/runs/run-1") as ws,
         ):
-            with client.websocket_connect("/ws/runs/run-1") as ws:
                 data = ws.receive_json()
                 assert data["type"] == "status"
 

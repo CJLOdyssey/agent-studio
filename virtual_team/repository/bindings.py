@@ -9,7 +9,6 @@ from virtual_team.database import (
     get_session_factory,
 )
 
-
 # ── Tool Bindings ──────────────────────────────────────────────
 
 async def bind_tool(agent_id: str, tool_id: str, config_override: str | None = None) -> AgentToolBindingDB:
