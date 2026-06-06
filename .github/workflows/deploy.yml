@@ -118,11 +118,11 @@ jobs:
           EOF
 
           # 拉取新镜像并重启
-          docker compose -p 7 pull
-          docker compose -p 7 up -d --remove-orphans
+          docker compose -f config/docker/docker-compose.yml -p 7 pull
+          docker compose -f config/docker/docker-compose.yml -p 7 up -d --remove-orphans
           docker image prune -f
           echo "✅ Deploy complete"
-          docker compose -p 7 ps
+          docker compose -f config/docker/docker-compose.yml -p 7 ps
 
       - name: Notify deploy result
         if: always()
