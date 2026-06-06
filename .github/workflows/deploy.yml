@@ -1,3 +1,8 @@
+# ── Deploy: Enterprise-grade pipeline ─────────────────────────────────────
+#   CI Gate → Build + Trivy Scan → Push → Staging Deploy + Verify
+#   → Promote to Production + Verify → Rollback on Failure → Notify
+# ────────────────────────────────────────────────────────────────────────────
+
 name: Deploy
 on:
   push:
@@ -8,8 +13,14 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+env:
+  ACR_REGISTRY: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
+  IMAGE_NAME: virtual-team
+  COMPOSE_FILE: config/docker/docker-compose.yml
+  COMPOSE_STAGING_FILE: config/docker/docker-compose.staging.yml
+
 jobs:
-  # ── CI Gate: only deploy if CI passed for this commit ─────────────
+  # ── CI Gate ────────────────────────────────────────────────────────────
   ci-check:
     name: 🔑 CI Gate
     runs-on: ubuntu-latest
@@ -44,14 +55,15 @@ jobs:
             exit 1
           fi
 
-  # ── Build image and push to ACR ──────────────────────────────────
-  docker:
-    name: 🐳 Build & Push to ACR
+  # ── Build & Scan ───────────────────────────────────────────────────────
+  build-and-scan:
+    name: 🐳 Build + Trivy Scan
     needs: ci-check
-    if: success()
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,68 +73,181 @@ jobs:
       - name: Log in to ACR
         uses: docker/login-action@v3
         with:
-          registry: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
+          registry: ${{ env.ACR_REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: config/docker/Dockerfile
           push: true
           tags: |
-            crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:latest
-            crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:${{ github.sha }}
+            ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── Deploy to ECS ────────────────────────────────────────────────
-  deploy:
-    name: 🚀 Deploy to Production
-    needs: docker
-    if: success()
+      # ── Trivy vulnerability scan before tagging as latest ──────────────
+      - name: Scan image with Trivy
+        id: scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          output: trivy-report.txt
+          skip-dirs: /app/frontend/node_modules
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.txt
+
+      # ── Tag as latest only after scan passes ───────────────────────────
+      - name: Tag image as latest
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  # ── Deploy to Staging ──────────────────────────────────────────────────
+  deploy-staging:
+    name: 🟢 Deploy to Staging
+    needs: build-and-scan
     runs-on: self-hosted
     steps:
       - name: Pull latest code
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
-          # 强制使用 SSH remote，避免 WSL2 Clash TUN 模式下 HTTPS 代理干扰
           git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
           git fetch --depth=1 origin main
           git reset --hard origin/main
 
       - name: Login to ACR
         run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_REGISTRY }} \
+            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
 
-      - name: Extract frontend dist from API image
+      - name: Write env for staging
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
-          IMAGE="crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/virtual-team:latest"
-          docker pull "$IMAGE" --quiet
-          docker create --name temp-extract "$IMAGE"
-          docker cp temp-extract:/app/frontend/dist "$WORK_DIR/frontend/dist"
-          docker rm temp-extract > /dev/null
+          cat > "$WORK_DIR/.env.staging" <<EOF
+          ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
+          IMAGE_TAG=${{ github.sha }}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+          DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+          OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+          OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
+          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-}
+          EOF
 
-      - name: Update env and restart
+      - name: Deploy to staging
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
+          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging pull
+          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging up -d --remove-orphans
 
-          # 写入 ACR 环境变量到 .env
-          cat >> "$WORK_DIR/.env" <<EOF
+      - name: Healthcheck — Staging
+        run: |
+          echo "⏳ 等待 staging 就绪..."
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/health 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Staging healthcheck passed"
+              exit 0
+            fi
+            echo "  尝试 $i/12 — HTTP $STATUS，等待 10s..."
+            sleep 10
+          done
+          echo "❌ Staging healthcheck 失败 — 停止部署"
+          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} -p staging logs --tail=50 api
+          exit 1
+
+  # ── Promote to Production ──────────────────────────────────────────────
+  promote-prod:
+    name: 🚀 Promote to Production
+    needs: deploy-staging
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest code
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR"
+          git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
+          git fetch --depth=1 origin main
+          git reset --hard origin/main
+
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_REGISTRY }} \
+            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
+      - name: Save current tag as rollback target
+        id: rollback
+        run: |
+          # 部署前保存当前运行的 tag，以便健康检查失败时回滚
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          CURRENT_TAG="latest"
+          if [ -f "$WORK_DIR/.deploy-state" ]; then
+            CURRENT_TAG=$(cat "$WORK_DIR/.deploy-state" | jq -r '.current_tag // "latest"')
+          fi
+          echo "current_tag=${CURRENT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "当前运行版本: ${CURRENT_TAG}"
+
+      - name: Write env for production
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cat > "$WORK_DIR/.env" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
-          IMAGE_TAG=latest
+          IMAGE_TAG=${{ github.sha }}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+          DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+          OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+          OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
+          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-}
           EOF
 
-          # 拉取新镜像并重启
-          docker compose -f config/docker/docker-compose.yml -p 7 pull
-          docker compose -f config/docker/docker-compose.yml -p 7 up -d --remove-orphans
-          docker image prune -f
-          echo "✅ Deploy complete"
-          docker compose -f config/docker/docker-compose.yml -p 7 ps
+      - name: Deploy to production
+        id: deploy-prod
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR"
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --remove-orphans
+
+      - name: Healthcheck — Production
+        id: healthcheck
+        run: |
+          echo "⏳ 等待 production 就绪..."
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Production healthcheck passed"
+              # 保存当前 tag 作为 future rollback 目标
+              WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+              echo '{"current_tag":"${{ github.sha }}","deployed_at":"'"$(date -Iseconds)"'"}' \
+                > "$WORK_DIR/.deploy-state"
+              exit 0
+            fi
+            echo "  尝试 $i/12 — HTTP $STATUS，等待 10s..."
+            sleep 10
+          done
+          echo "❌ Production healthcheck 失败 — 触发 rollback"
+          echo "status=failed" >> "$GITHUB_OUTPUT"
+          exit 1
+
+      - name: 🚨 Cleanup staging
+        if: always()
+        run: |
+          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
+          docker image prune -f || true
 
       - name: Notify deploy result
         if: always()
@@ -135,6 +260,69 @@ jobs:
               "msgtype": "markdown",
               "markdown": {
                 "title": "🚀 部署 $STATUS",
-                "text": "### 🚀 虚拟团队部署\n\n- **状态**: '\''$STATUS'\''\n- **分支**: ${{ github.ref_name }}\n- **提交**: ${{ github.sha }}\n- **触发**: ${{ github.actor }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                "text": "### 🚀 虚拟团队部署\n\n- **阶段**: Production\n- **状态**: '\''$STATUS'\''\n- **镜像**: ${{ github.sha }}\n- **分支**: ${{ github.ref_name }}\n- **提交**: ${{ github.sha }}\n- **触发**: ${{ github.actor }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
               }
-            }' || echo "⚠️ Webhook notification skipped (DEPLOY_WEBHOOK_URL not configured)"
+            }' || echo "⚠️ Webhook notification skipped"
+
+  # ── Automated Rollback ─────────────────────────────────────────────────
+  rollback:
+    name: 🔄 Rollback Production
+    needs: [build-and-scan, promote-prod]
+    if: failure() && needs['promote-prod'].result == 'failure'
+    runs-on: self-hosted
+    steps:
+      - name: Login to ACR
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_REGISTRY }} \
+            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
+      - name: Read rollback target tag
+        id: state
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          PREV_TAG="latest"
+          if [ -f "$WORK_DIR/.deploy-state" ]; then
+            PREV_TAG=$(cat "$WORK_DIR/.deploy-state" | jq -r '.current_tag // "latest"')
+          fi
+          echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Rollback production
+        run: |
+          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          cd "$WORK_DIR"
+          ROLLBACK_TAG="${{ steps.state.outputs.prev_tag }}"
+
+          echo "🔄 Rollback 到镜像 tag: $ROLLBACK_TAG"
+          sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$ROLLBACK_TAG/" "$WORK_DIR/.env"
+
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --remove-orphans
+
+          # 验证 rollback
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Rollback 成功 — 已恢复至 $ROLLBACK_TAG"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "❌ Rollback 也失败 — 需要人工介入"
+          exit 1
+
+      - name: Notify rollback
+        if: always()
+        run: |
+          curl -s -X POST '${{ secrets.DEPLOY_WEBHOOK_URL }}' \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "🔄 部署回滚",
+                "text": "### 🔄 部署自动回滚\n\n- **状态**: ${{ job.status }}\n- **回滚至**: ${{ steps.state.outputs.prev_tag }}\n- **提交**: ${{ github.sha }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }
+            }' || true
+
+      - name: Cleanup staging
+        run: |
+          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true

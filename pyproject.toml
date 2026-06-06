@@ -29,6 +29,11 @@ ignore_errors = true
 module = "virtual_team.team_graph"
 ignore_errors = true
 
+[tool.coverage.report]
+fail_under = 60
+skip_empty = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "--cov=virtual_team --cov-report=term --cov-report=xml"
