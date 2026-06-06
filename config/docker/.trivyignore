@@ -1,0 +1,11 @@
+# 以下 CVE 当前无可用修复版本，等上游补丁发布后移除此规则
+# 来源: python:3.12-slim 基础镜像 (debian 13.5)
+# 受影响的软件包: ncurses, perl-base
+# 最后更新: 2026-06-06
+
+CVE-2025-69720   # ncurses — buffer overflow, no fix available
+CVE-2026-42496   # perl-base — path traversal, fix deferred
+CVE-2026-8376    # perl-base — heap buffer overflow, no fix available
+CVE-2026-42497   # perl-base — hardlink attack, fix deferred
+CVE-2026-48962   # perl-base — arbitrary code execution, no fix available
+CVE-2026-9538    # perl-base — memory exhaustion, fix deferred
