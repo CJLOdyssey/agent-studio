@@ -159,6 +159,47 @@ class TeamAgentDB(Base):
     team: Mapped["TeamDB"] = relationship(back_populates="members")
 
 
+class AgentToolBindingDB(Base):
+    __tablename__ = "agent_tool_bindings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    tool_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    config_override: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
+    )
+
+
+class AgentMcpBindingDB(Base):
+    __tablename__ = "agent_mcp_bindings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    mcp_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    tool_filter: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
+    )
+
+
+class AgentSkillBindingDB(Base):
+    __tablename__ = "agent_skill_bindings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    skill_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
+    )
+
+
 class AgentConfigDB(Base):
     __tablename__ = "agent_configs"
 
@@ -176,6 +217,46 @@ class AgentConfigDB(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_approver: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     icon: Mapped[str] = mapped_column(String(8), default="🤖", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC), nullable=False,
+    )
+
+
+class AgentOutputSchemaDB(Base):
+    __tablename__ = "agent_output_schemas"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    format_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    schema_def: Mapped[str] = mapped_column(Text, nullable=False)
+    example: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC), nullable=False,
+    )
+
+
+class AgentPromptDB(Base):
+    __tablename__ = "agent_prompts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    agent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    change_reason: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
     )
