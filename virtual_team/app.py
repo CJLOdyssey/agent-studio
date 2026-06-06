@@ -18,10 +18,13 @@ from virtual_team.logging_config import get_logger
 from virtual_team.routers import (
     agents,
     attachments,
+    bindings,
     commands,
     keys,
     models,
+    prompts,
     runs,
+    schemas,
     sessions,
     skills,
     system_team,
@@ -128,6 +131,9 @@ async def health():
 app.include_router(runs.router)
 app.include_router(sessions.router)
 app.include_router(agents.router)
+app.include_router(prompts.router)
+app.include_router(schemas.router)
+app.include_router(bindings.router)
 app.include_router(attachments.router)
 app.include_router(commands.router)
 app.include_router(models.router)
