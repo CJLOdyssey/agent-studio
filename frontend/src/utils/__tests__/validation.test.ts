@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateInput, sanitizeMessageContent } from '../utils/validation';
+import { validateInput, sanitizeMessageContent } from '../validation';
 
 describe('validateInput', () => {
   it('rejects empty input', () => {

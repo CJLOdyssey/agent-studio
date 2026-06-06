@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import zh from '../i18n/locales/zh-CN.json';
-import en from '../i18n/locales/en-US.json';
+import zh from '../locales/zh-CN.json';
+import en from '../locales/en-US.json';
 
 function flattenKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   return Object.entries(obj).flatMap(([k, v]) => {

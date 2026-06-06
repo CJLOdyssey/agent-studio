@@ -1,4 +1,4 @@
-.PHONY: dev build test lint typecheck format clean docker-up docker-build docker-down docker-logs
+.PHONY: dev build test lint typecheck format clean pip-install pip-install-dev test-backend lint-backend typecheck-backend docker-up docker-build docker-down docker-logs
 
 dev:
 	cd frontend && npm run dev
@@ -17,6 +17,23 @@ typecheck:
 
 format:
 	cd frontend && npm run format
+
+# ── Backend ──────────────────────────────────────────────────────────
+
+pip-install:
+	pip install -r requirements.txt
+
+pip-install-dev:
+	pip install -r requirements.txt -r requirements-dev.txt
+
+test-backend:
+	python3 -m pytest tests/ -v --tb=short
+
+lint-backend:
+	ruff check virtual_team/ tests/ alembic/
+
+typecheck-backend:
+	mypy virtual_team/ --ignore-missing-imports
 
 docker-up:
 	docker compose -f config/docker/docker-compose.yml up -d
