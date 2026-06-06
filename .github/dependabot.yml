@@ -19,6 +19,9 @@ updates:
     labels:
       - dependencies
       - javascript
+    ignore:
+      - dependency-name: "@vitejs/plugin-react"
+        versions: [">=6.0.0"]
 
   # GitHub Actions
   - package-ecosystem: github-actions
