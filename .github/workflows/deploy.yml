@@ -112,12 +112,12 @@ jobs:
           skip-dirs: /app/frontend/node_modules
           ignorefile: config/docker/.trivyignore
 
-      - name: Upload Trivy report
-        if: always()
-        uses: actions/upload-artifact@v4
+      # 缓存 Trivy DB（~95MB），避免每次部署重新下载
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
         with:
-          name: trivy-report
-          path: trivy-report.txt
+          path: /home/runner/.cache/trivy
+          key: trivy-db-${{ hashFiles('.github/workflows/deploy.yml') }}
 
       # ── Tag as latest only after scan passes ───────────────────────────
       - name: Tag image as latest
