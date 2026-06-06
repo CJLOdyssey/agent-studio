@@ -109,7 +109,6 @@ jobs:
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
-          output: trivy-report.txt
           skip-dirs: /app/frontend/node_modules
 
       - name: Upload Trivy report
