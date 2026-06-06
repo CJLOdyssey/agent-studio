@@ -1,5 +1,5 @@
 ---
-version: v1.0.0
+version: v1.1.0
 created: 2026-06-06
 updated: 2026-06-06
 ---
@@ -74,6 +74,30 @@ async def create_team(user_id: str, name: str) -> TeamDB:
 
 ---
 
+---
+
+## 测试覆盖率
+
+**目标**：该功能相关代码测试覆盖率 ≥ 80%
+
+**测试命令**：
+```bash
+# 后端
+pytest tests/test_*.py -v --cov=virtual_team/routers/ --cov=virtual_team/repository/
+
+# 前端（如有）
+npm run test:coverage
+```
+
+**覆盖率报告**：
+- 终端输出：显示行覆盖率百分比
+- HTML 报告：`frontend/coverage/`（前端）或 `htmlcov/`（后端）
+
+**验收标准**：
+- [ ] 所有测试用例通过
+- [ ] 覆盖率 ≥ 80%
+- [ ] 关键路径 100% 覆盖
+
 ## 进度
 
 | 步骤 | 状态 |
@@ -91,3 +115,4 @@ async def create_team(user_id: str, name: str) -> TeamDB:
 | 版本 | 日期 | 作者 | 变更内容 |
 |---|---|---|---|
 | v1.0.0 | 2026-06-06 | Sisyphus | 初始版本 |
+| v1.1.0 | 2026-06-06 | Sisyphus | 添加测试覆盖率要求 |
