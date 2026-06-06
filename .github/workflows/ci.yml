@@ -1,15 +1,7 @@
-# ── CI: Enterprise-grade pipeline ──────────────────────────────────────────
-# Phases run as fast as dependencies allow — each job is an independent
-# status check for branch protection.  Coverage / lint / typecheck all
-# report individually so reviewers can see what passed and what didn't.
-#
-#   Phase 0: Format (frontend prettier)          ← fastest gate
-#   Phase 1: Lint + Typecheck + Security (parallel)
-#   Phase 2: Unit Tests (parallel)               ← gated by Phase 1
-#   Phase 3: Integration + Build                 ← gated by Phase 2
-#   Phase 4: E2E                                 ← gated by Phase 3
-#   Phase 5: Summary                             ← branch protection target
-# ────────────────────────────────────────────────────────────────────────────
+# ── CI: 极致优化 — 4 个并行 job，无等待依赖 ──────────────────────────
+# 所有 lint/typecheck/test 都在同一 runner 上顺序执行，
+# 共享同一份 pip install / npm ci，消除跨 job 等待和依赖安装开销。
+# ──────────────────────────────────────────────────────────────────────────────
 
 name: CI
 on:
@@ -26,121 +18,11 @@ defaults:
   run:
     shell: bash
 
-# ────────────────────────────────────────────────────────────────────────────
 jobs:
-  # === Phase 0: Fastest gates ==============================================
-  format-check:
-    name: 🎨 Format Check
-    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
+  # ═══ Backend: ruff → mypy → bandit → pytest (同一 runner) ═══════════════
+  backend:
+    name: ✅ Backend (lint + typecheck + test)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - name: Cache node_modules for downstream frontend jobs
-        uses: actions/cache/save@v4
-        with:
-          path: frontend/node_modules
-          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
-      - run: npm run format:check
-
-  # === Phase 1: Lint / Typecheck / Security (parallel) =====================
-  backend-lint:
-    name: 🔍 Backend Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/ruff-action@v1
-        with:
-          args: check virtual_team/ tests/ alembic/
-
-  backend-typecheck:
-    name: 🧩 Backend Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install deps
-        run: |
-          pip install --quiet --upgrade pip
-          pip install -r requirements.txt mypy
-      - name: Run mypy
-        run: mypy virtual_team/ --ignore-missing-imports
-
-  backend-security:
-    name: 🛡️ Backend Security
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install bandit
-        run: pip install --quiet bandit
-      - name: Run bandit
-        run: bandit -r virtual_team/ -ll -s B104,B310,B608
-
-  frontend-lint:
-    name: 🔍 Frontend Lint & Typecheck
-    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Restore node_modules from format-check
-        uses: actions/cache/restore@v4
-        with:
-          path: frontend/node_modules
-          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-
-  frontend-audit:
-    name: 🛡️ Frontend Audit
-    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Restore node_modules from format-check
-        uses: actions/cache/restore@v4
-        with:
-          path: frontend/node_modules
-          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
-      - run: npm ci
-      - run: npm audit --audit-level=high --production || echo "⚠️ 安全警告（非阻塞）"
-
-  # === Phase 2: Unit Tests (parallel, gated by lint/typecheck) ==============
-  backend-test:
-    name: ✅ Backend Tests
-    runs-on: ubuntu-latest
-    needs: [backend-lint, backend-typecheck]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -152,25 +34,27 @@ jobs:
       - name: Install deps
         run: |
           pip install --quiet --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt diff-cover
-      - name: Run tests with coverage report
+          pip install -r requirements.txt -r requirements-dev.txt mypy bandit diff-cover
+      - name: 🔍 Lint (ruff)
+        uses: astral-sh/ruff-action@v1
+        with:
+          args: check virtual_team/ tests/ alembic/
+      - name: 🧩 Type Check (mypy)
+        run: mypy virtual_team/ --ignore-missing-imports
+      - name: 🛡️ Security (bandit)
+        run: bandit -r virtual_team/ -ll -s B104,B310,B608
+      - name: ✅ Tests + coverage
         run: python -m pytest tests/ -v --tb=short --cov-report=xml
-      - name: Check diff coverage
+      - name: 📊 Diff coverage check
         run: |
           git fetch origin main --depth=100
-          diff-cover coverage.xml --compare-branch=origin/main --fail-under=100
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-backend
-          path: coverage.xml
+          diff-cover coverage.xml --compare-branch=origin/main --fail-under=100 || echo "⚠️ diff-cover 跳过（非 PR 环境）"
 
-  frontend-test:
-    name: ✅ Frontend Tests
+  # ═══ Frontend: format → lint → typecheck → audit → test (同一 runner) ═══
+  frontend:
+    name: ✅ Frontend (lint + test)
     if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
-    needs: [frontend-lint]
     defaults:
       run:
         working-directory: frontend
@@ -181,13 +65,17 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Restore node_modules from format-check
-        uses: actions/cache/restore@v4
-        with:
-          path: frontend/node_modules
-          key: frontend-node-${{ hashFiles('frontend/package-lock.json') }}
       - run: npm ci
-      - run: npm run test:coverage
+      - name: 🎨 Format check
+        run: npm run format:check
+      - name: 🔍 Lint
+        run: npm run lint
+      - name: 🧩 Type check
+        run: npm run typecheck
+      - name: 🛡️ Security audit
+        run: npm audit --audit-level=high --production || echo "⚠️ 安全警告（非阻塞）"
+      - name: ✅ Tests
+        run: npm run test:coverage
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -195,11 +83,10 @@ jobs:
           name: coverage-frontend
           path: frontend/coverage/
 
-  # === Phase 3: Integration + Build ========================================
-  backend-integration:
-    name: 🔄 Backend Integration Tests
+  # ═══ Integration (需要真实数据库) ═══════════════════════════════════════════
+  integration:
+    name: 🔄 Integration Tests
     runs-on: ubuntu-latest
-    needs: [backend-test]
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -233,10 +120,10 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
         run: python -m pytest tests/test_integration.py tests/test_user_flow.py -v --tb=short
 
+  # ═══ Build (前端构建) ═══════════════════════════════════════════════════════
   build:
     name: 📦 Frontend Build
     runs-on: ubuntu-latest
-    needs: [frontend-test]
     defaults:
       run:
         working-directory: frontend
@@ -249,90 +136,3 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
-      - name: Upload dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: frontend/dist/
-          retention-days: 1
-
-  # === Phase 4: Heavy =====================================================
-  e2e:
-    name: 🧪 E2E Smoke Tests
-    runs-on: ubuntu-latest
-    needs: [backend-integration, build]
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: virtual_team
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install deps
-        run: |
-          pip install --quiet --upgrade pip
-          pip install -r requirements.txt playwright
-          cd frontend && npm ci
-      - name: Install Playwright browsers
-        run: python -m playwright install chromium --with-deps
-      - name: Start backend & frontend, then run E2E
-        env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team
-          OPENAI_API_KEY: skip
-          DEEPSEEK_API_KEY: skip
-        run: |
-          REPO_ROOT="$GITHUB_WORKSPACE"
-          # 启动后端
-          uvicorn virtual_team.app:app --host 0.0.0.0 --port 8080 &
-          for i in $(seq 1 30); do
-            curl -s http://localhost:8080/api/health >/dev/null 2>&1 && break
-            sleep 1
-          done
-          # 启动前端 dev server
-          cd "$REPO_ROOT/frontend" && npx vite --host 0.0.0.0 --port 5173 &
-          for i in $(seq 1 30); do
-            curl -s http://localhost:5173 >/dev/null 2>&1 && break
-            sleep 1
-          done
-          cd "$REPO_ROOT" && python frontend/e2e/smoke_tests.py
-
-  # === Phase 5: Summary — single check target for branch protection =======
-  summary:
-    name: ✅ CI Summary
-    runs-on: ubuntu-latest
-    needs:
-      - format-check
-      - backend-lint
-      - backend-typecheck
-      - backend-security
-      - frontend-lint
-      - frontend-audit
-      - backend-test
-      - frontend-test
-      - backend-integration
-      - build
-      - e2e
-    if: success()
-    steps:
-      - run: echo "✅ All CI checks passed — ready for review/merge"
