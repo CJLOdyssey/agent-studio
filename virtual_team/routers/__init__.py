@@ -1,14 +1,14 @@
-from virtual_team.routers import agents
-from virtual_team.routers import attachments
-from virtual_team.routers import bindings
-from virtual_team.routers import commands
-from virtual_team.routers import keys
-from virtual_team.routers import models
-from virtual_team.routers import prompts
-from virtual_team.routers import runs
-from virtual_team.routers import schemas
-from virtual_team.routers import sessions
-from virtual_team.routers import skills
-from virtual_team.routers import system_team
-from virtual_team.routers import teams
-from virtual_team.routers import tools
+from . import agents as agents
+from . import attachments as attachments
+from . import bindings as bindings
+from . import commands as commands
+from . import keys as keys
+from . import models as models
+from . import prompts as prompts
+from . import runs as runs
+from . import schemas as schemas
+from . import sessions as sessions
+from . import skills as skills
+from . import system_team as system_team
+from . import teams as teams
+from . import tools as tools
