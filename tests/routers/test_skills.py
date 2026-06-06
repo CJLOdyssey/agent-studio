@@ -1,6 +1,4 @@
 """Tests for skill generation API routes."""
-import pytest
-
 from virtual_team.routers.skills import (
     _generate_skill_from_description,
     _validate_skill_content,

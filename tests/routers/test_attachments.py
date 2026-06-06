@@ -1,7 +1,4 @@
 """Tests for attachment API routes (pure helper functions)."""
-from pathlib import Path
-from unittest.mock import patch
-
 import pytest
 
 from virtual_team.routers.attachments import _extract_text, _validate_upload

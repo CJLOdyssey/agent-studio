@@ -1,5 +1,5 @@
 """Tests for system team API routes."""
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
