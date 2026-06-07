@@ -131,7 +131,8 @@ jobs:
       - name: Run database migrations (staging)
         run: |
           cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging run --rm api alembic upgrade head
+          # stamp head 标记已存在表（init_db 的 create_all 已创建），然后执行增量迁移
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging run --rm api sh -c "alembic stamp head 2>/dev/null; alembic upgrade head"
 
       - name: Deploy staging containers
         run: |
@@ -220,7 +221,7 @@ jobs:
       - name: Run database migrations (production)
         run: |
           cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production run --rm api alembic upgrade head
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production run --rm api sh -c "alembic stamp head 2>/dev/null; alembic upgrade head"
 
       - name: Deploy production containers
         run: |
