@@ -10,9 +10,5 @@ __pycache__/
 *.md
 docs/
 frontend/node_modules/
-frontend/src/
-frontend/public/
-frontend/*.config.*
-frontend/tsconfig*.json
 tests/
 !.dockerignore
