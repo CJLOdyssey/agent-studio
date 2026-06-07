@@ -149,7 +149,7 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team
           REDIS_URL: redis://localhost:6379/0
-        run: python -m pytest tests/test_integration.py tests/test_user_flow.py -v --tb=short
+        run: python -m pytest tests/integration/test_integration.py tests/functional/test_user_flow.py -v --tb=short
       - name: Cleanup
         if: always()
         run: |
