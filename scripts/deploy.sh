@@ -23,12 +23,11 @@ echo "[deploy] Pulling latest Docker images..."
 docker compose -f "$COMPOSE_FILE" pull
 
 echo "[deploy] Extracting frontend dist from image..."
+ACR_REG="${ACR_REGISTRY:-crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com}"
+ACR_NS="${ACR_NAMESPACE:-virtual-team}"
 IMAGE_TAG=$(grep IMAGE_TAG .env | cut -d= -f2)
-LATEST_IMAGE="$IMAGE_TAG"
-if [ -z "$LATEST_IMAGE" ]; then
-  LATEST_IMAGE="${ACR_REGISTRY:-crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com}/${ACR_NAMESPACE:-virtual-team}/virtual-team:latest"
-fi
-CONTAINER=$(docker create "$LATEST_IMAGE")
+FULL_IMAGE="${ACR_REG}/${ACR_NS}/virtual-team:${IMAGE_TAG:-latest}"
+CONTAINER=$(docker create "$FULL_IMAGE")
 mkdir -p frontend/dist
 docker cp "$CONTAINER":/app/frontend/dist frontend/ || true
 docker rm "$CONTAINER" > /dev/null
@@ -40,7 +39,7 @@ echo "[deploy] Restarting all containers..."
 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
 echo "[deploy] Cleaning old images..."
-docker image prune -f
+docker image prune -f --filter "until=24h"
 
 echo "[deploy] Done. Status:"
 docker compose -f "$COMPOSE_FILE" ps
