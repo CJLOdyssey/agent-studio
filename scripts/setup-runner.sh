@@ -18,7 +18,7 @@ fi
 
 echo "=== 1. 安装 system 依赖 ==="
 apt-get update -qq
-apt-get install -y -qq curl git docker.io docker-compose-v2 nodejs npm
+apt-get install -y -qq curl git docker.io docker-compose-v2 nodejs npm jq
 
 echo "=== 2. 确保 /opt/virtual-team 存在 ==="
 if [ ! -d /opt/virtual-team ]; then
@@ -61,4 +61,4 @@ echo "   监听目录: /opt/actions-runner"
 echo "   工作目录: /opt/actions-runner/_work"
 echo "   生产目录: /opt/virtual-team"
 echo ""
-echo "   部署流程: 下次 push master 后，CI → Deploy 将直接在 ECS 本地执行"
+echo "   部署流程: 下次 push main 后，CI → Deploy 将直接在 ECS 本地执行"
