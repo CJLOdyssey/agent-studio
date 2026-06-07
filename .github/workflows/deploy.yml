@@ -155,7 +155,7 @@ jobs:
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
           OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
-          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-}
+          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-staging-dev-secret-not-for-production}
           EOF
 
       - name: Deploy to staging
@@ -223,7 +223,7 @@ jobs:
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
           OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
-          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-}
+          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-staging-dev-secret-not-for-production}
           EOF
 
       - name: Deploy to production
