@@ -151,6 +151,7 @@ jobs:
           cat > "$WORK_DIR/.env.staging" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
           IMAGE_TAG=${{ github.sha }}
+          PORT=3001
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
