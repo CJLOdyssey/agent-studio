@@ -178,7 +178,7 @@ jobs:
             sleep 10
           done
           echo "❌ Staging healthcheck 失败 — 停止部署"
-          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} -p staging logs --tail=50 api
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging logs --tail=50 api
           exit 1
 
   # ── Promote to Production ──────────────────────────────────────────────
@@ -258,7 +258,7 @@ jobs:
       - name: 🚨 Cleanup staging
         if: always()
         run: |
-          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
           docker image prune -f || true
 
       - name: Notify deploy result
@@ -337,4 +337,4 @@ jobs:
 
       - name: Cleanup staging
         run: |
-          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
