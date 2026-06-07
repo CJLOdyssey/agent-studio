@@ -396,7 +396,7 @@ async def init_db():
     See alembic/versions/ for migration history.
     """
     # Lazy import to break circular dependency (checkpoint → database → checkpoint)
-    from virtual_team.checkpoint import CheckpointDB  # noqa: F401
+    from virtual_team.checkpoint import CheckpointDB  # noqa: F401  # pragma: no cover
 
     engine = get_async_engine()
     async with engine.begin() as conn:
