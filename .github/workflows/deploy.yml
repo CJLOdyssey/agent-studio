@@ -231,8 +231,9 @@ jobs:
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
         id: healthcheck
