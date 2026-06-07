@@ -24,6 +24,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/virtual_team
 
   frontend:
+    image: nginx:alpine
     container_name: virtual-team-frontend-staging
     ports:
       - "3001:80"
