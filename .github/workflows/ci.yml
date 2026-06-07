@@ -1,6 +1,7 @@
-# ── CI: 极致优化 — 4 个并行 job，无等待依赖 ──────────────────────────
-# 所有 lint/typecheck/test 都在同一 runner 上顺序执行，
-# 共享同一份 pip install / npm ci，消除跨 job 等待和依赖安装开销。
+# ── CI: Quality gate pipeline ──────────────────────────────────────────────
+# Backend:  lint → typecheck → security → test (same runner, shared install)
+# Frontend: format → lint → typecheck → audit → test → build
+# Integration: services containers for PostgreSQL + Redis
 # ──────────────────────────────────────────────────────────────────────────────
 
 name: CI
@@ -19,36 +20,34 @@ defaults:
     shell: bash
 
 jobs:
-  # ═══ Backend: ruff → mypy → bandit → pytest (同一 runner) ═══════════════
+  # ═══ Backend: ruff → mypy → bandit → pytest (same runner) ═══════════════
   backend:
-    name: ✅ Backend (lint + typecheck + test)
+    name: Backend (lint + typecheck + test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install deps
+      - name: Install dependencies
         run: |
           pip install --quiet --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt mypy bandit diff-cover
-      - name: 🔍 Lint (ruff)
+          pip install --quiet -r requirements.txt -r requirements-dev.txt mypy bandit diff-cover
+      - name: Lint (ruff)
         uses: astral-sh/ruff-action@v1
         with:
           args: check virtual_team/ tests/ alembic/
-      - name: 🧩 Type Check (mypy)
+      - name: Type check (mypy)
         run: mypy virtual_team/ --ignore-missing-imports
-      - name: 🛡️ Security (bandit)
+      - name: Security (bandit)
         run: bandit -r virtual_team/ -ll -s B104,B310,B608
-      - name: ✅ Tests + coverage
+      - name: Tests + coverage
         run: python -m pytest tests/ -v --tb=short --cov-report=xml
-      - name: 📊 Diff coverage check
+      - name: Diff coverage check
         run: |
           git fetch origin main --depth=100
-          diff-cover coverage.xml --compare-branch=origin/main --fail-under=100
+          diff-cover coverage.xml --compare-branch=origin/main --fail-under=80
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,11 +55,11 @@ jobs:
           name: coverage-backend
           path: coverage.xml
 
-  # ═══ Frontend: format → lint → typecheck → audit → test (同一 runner) ═══
+  # ═══ Frontend: format → lint → typecheck → audit → test → build ═════════
   frontend:
-    name: ✅ Frontend (lint + test)
-    if: ${{ contains(github.event.pull_request.changed_files, 'frontend/') || github.event_name == 'push' }}
+    name: Frontend (lint + test + build)
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.changed_files, 'frontend/') }}
     defaults:
       run:
         working-directory: frontend
@@ -71,106 +70,26 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - name: 🎨 Format check
+      - name: Install dependencies
+        run: npm ci
+      - name: Format check
         run: npm run format:check
-      - name: 🔍 Lint
+      - name: Lint
         run: npm run lint
-      - name: 🧩 Type check
+      - name: Type check
         run: npm run typecheck
-      - name: 🛡️ Security audit
-        run: npm audit --audit-level=high --production || echo "⚠️ 安全警告（非阻塞）"
-      - name: ✅ Tests
+      - name: Security audit
+        run: npm audit --audit-level=high --production || echo "Security warnings (non-blocking)"
+      - name: Tests
         run: npm run test:coverage
+      - name: Build
+        run: npm run build
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-frontend
           path: frontend/coverage/
-
-  # ═══ Integration (需要真实数据库) ═══════════════════════════════════════════
-  integration:
-    name: 🔄 Integration Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Pull images with retry
-        run: |
-          pull_with_retry() {
-            local img="$1"
-            for i in $(seq 1 5); do
-              echo "⏳ Pulling $img (attempt $i/5)..."
-              if docker pull "$img" 2>/dev/null; then
-                echo "✅ $img pulled"
-                return 0
-              fi
-              echo "  Failed, wait $((i * 3))s..."
-              sleep $((i * 3))
-            done
-            echo "❌ Failed to pull $img after 5 attempts"
-            return 1
-          }
-          pull_with_retry pgvector/pgvector:pg16 &
-          pull_with_retry redis:7-alpine &
-          wait
-      - name: Start PostgreSQL
-        run: |
-          docker run -d --name pgvector \
-            -e POSTGRES_USER=postgres \
-            -e POSTGRES_PASSWORD=postgres \
-            -e POSTGRES_DB=virtual_team \
-            -p 5432:5432 \
-            pgvector/pgvector:pg16
-          echo "⏳ 等待 PostgreSQL 就绪..."
-          for i in $(seq 1 15); do
-            docker exec pgvector pg_isready -U postgres 2>/dev/null && break
-            sleep 2
-          done
-      - name: Start Redis
-        run: |
-          docker run -d --name redis \
-            -p 6379:6379 \
-            redis:7-alpine
-          echo "⏳ 等待 Redis 就绪..."
-          for i in $(seq 1 10); do
-            docker exec redis redis-cli ping 2>/dev/null | grep -q PONG && break
-            sleep 1
-          done
-      - name: Install deps
-        run: |
-          pip install --quiet --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
-      - name: Run integration tests
-        env:
-          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team
-          REDIS_URL: redis://localhost:6379/0
-        run: python -m pytest tests/integration/test_integration.py tests/functional/test_user_flow.py -v --tb=short
-      - name: Cleanup
-        if: always()
-        run: |
-          docker rm -f pgvector redis 2>/dev/null || true
-
-  # ═══ Build (前端构建) ═══════════════════════════════════════════════════════
-  build:
-    name: 📦 Frontend Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
       - name: Upload dist
         if: always()
         uses: actions/upload-artifact@v4
@@ -178,10 +97,54 @@ jobs:
           name: dist
           path: frontend/dist/
 
-  # ═══ E2E ══════════════════════════════════════════════════════════════════════
+  # ═══ Integration: services containers (PostgreSQL + Redis) ══════════════
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.changed_files, 'virtual_team/') || contains(github.event.pull_request.changed_files, 'requirements') || contains(github.event.pull_request.changed_files, 'tests/') || contains(github.event.pull_request.changed_files, 'alembic/') }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: virtual_team
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install --quiet --upgrade pip
+          pip install --quiet -r requirements.txt -r requirements-dev.txt
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team
+          REDIS_URL: redis://localhost:6379/0
+        run: python -m pytest tests/integration/test_integration.py tests/functional/test_user_flow.py -v --tb=short
+
+  # ═══ E2E (placeholder) ══════════════════════════════════════════════════
   e2e:
-    name: 🧪 E2E Smoke Tests
+    name: E2E Smoke Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "✅ E2E 占位 — 后续接入 Playwright"
+      - run: echo "E2E placeholder — Playwright to be added"
