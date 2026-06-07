@@ -73,8 +73,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    outputs:
-      image_tag: ${{ steps.meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -100,6 +98,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # 缓存 Trivy DB（~95MB），避免每次部署重新下载
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/trivy
+          key: trivy-db-v2
+
       # ── Trivy vulnerability scan before tagging as latest ──────────────
       - name: Scan image with Trivy
         id: scan
@@ -111,13 +116,6 @@ jobs:
           severity: CRITICAL,HIGH
           skip-dirs: /app/frontend/node_modules
           trivyignores: config/docker/.trivyignore
-
-      # 缓存 Trivy DB（~95MB），避免每次部署重新下载
-      - name: Cache Trivy DB
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.cache/trivy
-          key: trivy-db-${{ hashFiles('.github/workflows/deploy.yml') }}
 
       # ── Tag as latest only after scan passes ───────────────────────────
       - name: Tag image as latest
@@ -134,7 +132,7 @@ jobs:
     steps:
       - name: Pull latest code
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
           git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
           git fetch --depth=1 origin main
@@ -147,10 +145,11 @@ jobs:
 
       - name: Write env for staging
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           cat > "$WORK_DIR/.env.staging" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
           IMAGE_TAG=${{ github.sha }}
+          PORT=3001
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
@@ -160,9 +159,27 @@ jobs:
 
       - name: Deploy to staging
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
           docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging pull
+
+      - name: Extract frontend dist for staging
+        run: |
+          IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          CONTAINER=$(docker create "$IMAGE")
+          mkdir -p ${{ github.workspace }}/frontend/dist
+          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
+          docker rm "$CONTAINER" > /dev/null
+          echo "✅ Frontend dist extracted"
+
+      - name: Run database migrations (staging)
+        run: |
+          cd "${{ github.workspace }}"
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging run --rm api alembic upgrade head
+
+      - name: Deploy staging containers
+        run: |
+          cd "${{ github.workspace }}"
           docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging up -d --remove-orphans
 
       - name: Healthcheck — Staging
@@ -190,7 +207,7 @@ jobs:
     steps:
       - name: Pull latest code
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
           git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
           git fetch --depth=1 origin main
@@ -205,7 +222,7 @@ jobs:
         id: rollback
         run: |
           # 部署前保存当前运行的 tag，以便健康检查失败时回滚
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           CURRENT_TAG="latest"
           if [ -f "$WORK_DIR/.deploy-state" ]; then
             CURRENT_TAG=$(cat "$WORK_DIR/.deploy-state" | jq -r '.current_tag // "latest"')
@@ -215,7 +232,7 @@ jobs:
 
       - name: Write env for production
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           echo "# 自动生成 — 手动修改会被覆盖" > "$WORK_DIR/.env"
           cat >> "$WORK_DIR/.env" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
@@ -230,10 +247,28 @@ jobs:
       - name: Deploy to production
         id: deploy-prod
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+
+      - name: Extract frontend dist for production
+        run: |
+          IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          CONTAINER=$(docker create "$IMAGE")
+          mkdir -p ${{ github.workspace }}/frontend/dist
+          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
+          docker rm "$CONTAINER" > /dev/null
+          echo "✅ Frontend dist extracted"
+
+      - name: Run database migrations (production)
+        run: |
+          cd "${{ github.workspace }}"
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 run --rm api alembic upgrade head
+
+      - name: Deploy production containers
+        run: |
+          cd "${{ github.workspace }}"
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
@@ -245,7 +280,7 @@ jobs:
             if [ "$STATUS" = "200" ]; then
               echo "✅ Production healthcheck passed"
               # 保存当前 tag 作为 future rollback 目标
-              WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+              WORK_DIR="${{ github.workspace }}"
               echo '{"current_tag":"${{ github.sha }}","deployed_at":"'"$(date -Iseconds)"'"}' \
                 > "$WORK_DIR/.deploy-state"
               exit 0
@@ -293,7 +328,7 @@ jobs:
       - name: Read rollback target tag
         id: state
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           PREV_TAG="latest"
           if [ -f "$WORK_DIR/.deploy-state" ]; then
             PREV_TAG=$(cat "$WORK_DIR/.deploy-state" | jq -r '.current_tag // "latest"')
@@ -302,7 +337,7 @@ jobs:
 
       - name: Rollback production
         run: |
-          WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
+          WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
           ROLLBACK_TAG="${{ steps.state.outputs.prev_tag }}"
 
@@ -311,6 +346,15 @@ jobs:
 
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+
+          # 提取 rollback 版本的前端
+          ROLLBACK_IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:$ROLLBACK_TAG"
+          CONTAINER=$(docker create "$ROLLBACK_IMAGE")
+          mkdir -p ${{ github.workspace }}/frontend/dist
+          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
+          docker rm "$CONTAINER" > /dev/null
+
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 run --rm api alembic upgrade head || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
           # 验证 rollback
