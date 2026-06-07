@@ -21,6 +21,7 @@ env:
   IMAGE_NAME: virtual-team
   COMPOSE_FILE: config/docker/docker-compose.yml
   COMPOSE_STAGING_FILE: config/docker/docker-compose.staging.yml
+  COMPOSE_PROD_FILE: config/docker/docker-compose.prod.yml
 
 jobs:
   # ── Build & Scan ───────────────────────────────────────────────────────
@@ -194,6 +195,7 @@ jobs:
           cat >> "$WORK_DIR/.env" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
           IMAGE_TAG=${{ github.sha }}
+          PORT=3000
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
@@ -212,8 +214,8 @@ jobs:
                    virtual-team-db-staging virtual-team-redis-staging virtual-team-api-staging virtual-team-frontend-staging; do
             docker rm -f "$c" 2>/dev/null || true
           done
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production down --remove-orphans || true
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production pull
 
       - name: Extract frontend dist for production
         run: |
@@ -227,19 +229,19 @@ jobs:
       - name: Run database migrations (production)
         run: |
           cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production run --rm api sh -c "alembic stamp head 2>/dev/null; alembic upgrade head"
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production run --rm api sh -c "alembic stamp head 2>/dev/null; alembic upgrade head"
 
       - name: Deploy production containers
         run: |
           cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
         id: healthcheck
         run: |
           echo "⏳ 等待 production 就绪..."
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/health 2>/dev/null || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "✅ Production healthcheck passed"
               # 保存当前 tag 作为 future rollback 目标
@@ -311,8 +313,8 @@ jobs:
                    virtual-team-db-staging virtual-team-redis-staging virtual-team-api-staging virtual-team-frontend-staging; do
             docker rm -f "$c" 2>/dev/null || true
           done
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production down --remove-orphans || true
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production pull
 
           # 提取 rollback 版本的前端
           ROLLBACK_IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:$ROLLBACK_TAG"
@@ -322,11 +324,11 @@ jobs:
           docker rm "$CONTAINER" > /dev/null
 
           # Rollback 不执行迁移：回滚到的旧代码可能不兼容最新迁移
-          docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_PROD_FILE }} -p production up -d --force-recreate --remove-orphans
 
           # 验证 rollback
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/health 2>/dev/null || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "✅ Rollback 成功 — 已恢复至 $ROLLBACK_TAG"
               exit 0
