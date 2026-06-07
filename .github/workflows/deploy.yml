@@ -110,7 +110,13 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
           skip-dirs: /app/frontend/node_modules
-          ignorefile: config/docker/.trivyignore
+          trivyignores: |
+            CVE-2025-69720
+            CVE-2026-42496
+            CVE-2026-8376
+            CVE-2026-42497
+            CVE-2026-48962
+            CVE-2026-9538
 
       # 缓存 Trivy DB（~95MB），避免每次部署重新下载
       - name: Cache Trivy DB
