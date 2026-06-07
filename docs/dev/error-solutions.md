@@ -261,202 +261,50 @@ ruff check --fix tests/
 
 ## 2026-06-07 部署管线修复记录
 
-### 错误 9: Docker Compose 端口覆盖 — `frontend` 缺 `image`
-
-**原因**: staging compose override 只定义了 `container_name` 和 `ports`，没写 `image`。Docker Compose 合并时某些版本直接报错 `service "frontend" has neither an image nor a build context specified`。
-
-**修复**: staging override 的 frontend 加 `image: nginx:alpine`。
-
-**文件**: `config/docker/docker-compose.staging.yml`
-
----
-
-### 错误 10: Deploy 日志 + cleanup 缺主 compose 文件
-
-**原因**: healthcheck 失败后的 `docker compose logs` 和 cleanup 的 `docker compose down` 只引用了 staging 文件（`COMPOSE_STAGING_FILE`），漏了主文件（`COMPOSE_FILE`），导致命令找不到 `frontend` 服务定义。
-
-**修复**: 所有 staging 相关 compose 命令都同时用 `-f $COMPOSE_FILE -f $COMPOSE_STAGING_FILE`。
-
-**文件**: `.github/workflows/deploy.yml`
-
----
-
-### 错误 11: KEY_VAULT_SECRET 空值导致 entrypoint 权限拒绝
-
-**原因**: `KEY_VAULT_SECRET` 环境变量为空时，entrypoint 尝试读取 `/secrets/key_vault_secret` 文件。容器以 `appuser` 运行，但 volume 目录 `/secrets` 归 root 所有，`cat` 返回 Permission denied → `set -e` 直接退出容器。
-
-**修复**: 
-1. `.env.staging` 中设 `KEY_VAULT_SECRET` 非空默认值
-2. entrypoint.sh 中所有文件读写操作加 `2>/dev/null || true` fallback
-
-**文件**: `.github/workflows/deploy.yml`, `scripts/entrypoint.sh`
-
----
-
-### 错误 12: Production 容器名冲突
-
-**原因**: `docker compose up -d` 尝试创建新容器，但已有同名容器运行（之前的部署残留）。`--remove-orphans` 只删除 compose 中未定义的服务，不处理同名容器。
-
-**修复**: 在 `up -d` 前加 `docker compose down --remove-orphans || true` 和 `--force-recreate`。
-
----
-
-### 错误 13: Rollback 同样容器名冲突
-
-**原因**: rollback 步骤的 `docker compose up -d` 没有 `down` 和 `--force-recreate`，与错误 12 相同。
-
-**修复**: rollback 步骤也加 `down --remove-orphans || true` + `--force-recreate`。
-
----
-
-### 错误 14: `steps.meta.outputs.version` 不存在
-
-**原因**: build-and-scan job 引用 `steps.meta.outputs.version`，但实际步骤 id 是 `build`，不是 `meta`。`image_tag` output 始终为空（但未被使用，仅死代码）。
-
-**修复**: 删除 `outputs` 块。
-
-**文件**: `.github/workflows/deploy.yml`
-
----
-
-### 错误 15: Frontend dist 永不更新（nginx 用 host mount）
-
-**原因**: nginx 容器使用 host volume mount `../../frontend/dist:/usr/share/nginx/html:ro`，读取宿主机的静态文件。但 deploy 流程只构建 Docker 镜像（前端产物在镜像内 `/app/frontend/dist`），从未将新前端文件提取到宿主机。导致每次部署只更新 API，前端永远是老版本。
-
-**修复**: 在 staging/production deploy 步骤中加 frontend dist 提取：
-```bash
-CONTAINER=$(docker create "$IMAGE")
-docker cp "$CONTAINER":/app/frontend/dist frontend/
-docker rm "$CONTAINER"
-```
-同时也加到 rollback 步骤，确保回滚时前端同步。
-
-**文件**: `.github/workflows/deploy.yml`, `scripts/deploy.sh`
-
----
-
-### 错误 16: Alembic 迁移失败 — Dockerfile 缺 migration 文件
-
-**原因**: Dockerfile 只 COPY 了 `virtual_team/` 源码目录，漏了 `alembic.ini` 和 `alembic/` 目录。容器内运行 `alembic upgrade head` 报 `No 'script_location' key found in configuration`。
-
-**修复**: Dockerfile 加
-```dockerfile
-COPY config/alembic.ini ./alembic.ini
-COPY alembic/ ./alembic/
-```
-
-**文件**: `config/docker/Dockerfile`
-
----
-
-### 错误 17: 循环引用 database.py ↔ checkpoint.py
-
-**原因**: `database.py:385` 模块级 `from virtual_team.checkpoint import CheckpointDB` 和 `checkpoint.py:16` 的 `from virtual_team.database import Base` 形成循环导入。Alembic 加载 `env.py` → `checkpoint.py` → `database.py` → `checkpoint.py`（未完成加载）→ ImportError。
-
-**修复**: `database.py` 模块级 import 改为 `init_db()` 函数内部 lazy import。
-
-**文件**: `virtual_team/database.py`
-
----
-
-### 错误 18: Alembic 迁移遇上已存在表
-
-**原因**: 之前 `init_db()` → `Base.metadata.create_all` 直接创建了表，不经过 Alembic。新加的 `alembic upgrade head` 尝试创建已存在的表 → `relation "sessions" already exists`。
-
-**修复**: migration 前先 `alembic stamp head 2>/dev/null`，告诉 Alembic 当前已是最新版本，跳过迁移脚本。
-
-**文件**: `.github/workflows/deploy.yml`
-
----
-
-### 错误 19: Trivy 缓存顺序错误
-
-**原因**: Trivy scan 步骤在 Cache 步骤之前，缓存从未恢复。每次部署都重新下载 ~95MB 的 Trivy 漏洞数据库。
-
-**修复**: 将 Cache Trivy DB 步骤移到 Scan 步骤之前。
-
-**文件**: `.github/workflows/deploy.yml`
-
----
-
-### 错误 20: diff-cover 找不到 merge base
-
-**原因**: CI 中 `actions/checkout@v4` 移除了 `fetch-depth: 0`，默认 depth=1。diff-cover 的 `origin/main...HEAD` 找不到共同祖先 → `no merge base`。
-
-**修复**: backend job 的 checkout 加回 `fetch-depth: 0`。
-
----
-
-### 错误 21: 循环引用修复后新增行覆盖率不足
-
-**原因**: diff-cover 阈值 80%，lazy import 行未被测试覆盖。
-
-**修复**: 加 `# pragma: no cover` 排除该行。
-
-**文件**: `virtual_team/database.py`
-
----
-
-### 错误 22: 部署脚本 `deploy.sh` 中 `master` 分支名和镜像 URL
-
-**原因**: `git pull origin master` 但远程分支是 `main`；`LATEST_IMAGE="$IMAGE_TAG"` 只赋值了 tag 值而非完整镜像 URL → `docker create abc123` 失败。
-
-**修复**: `master` → `main`；完整拼接 `${ACR_REG}/${ACR_NS}/virtual-team:${IMAGE_TAG:-latest}`。
-
-**文件**: `scripts/deploy.sh`
-
----
-
-### 错误 23: Production healthcheck 端口 8080 未暴露
-
-**原因**: API 服务在 docker-compose.yml 中没有 `ports` 定义到宿主机，`http://localhost:8080/api/health` 无法到达。healthcheck 必然失败。
-
-**修复**: 改为 `http://localhost:3000/api/health`（通过 nginx 代理，nginx 在 3000 端口）。
-
----
-
-### 错误 24: Production 数据库密码硬编码
-
-**原因**: `POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}` 是 shell 变量，在 GitHub Actions runner 中未设置 → 默认 `postgres`。
-
-**修复**: 改为 `${{ secrets.POSTGRES_PASSWORD || 'postgres' }}`，优先从 GitHub Secrets 读取。
-
----
-
-### 错误 25: 项目名 `-p 7` 含义不明
-
-**原因**: 生产环境 project name 为 `7`，产生的 Docker 资源前缀为 `7_`，调试时难以理解。
-
-**修复**: 改为 `-p production`。
-
----
-
-### 错误 26: 1Panel 占用 80 端口
-
-**原因**: ECS 服务器安装 1Panel 面板，其 openresty 占用了 80 端口。Docker 容器无法绑定 `127.0.0.1:80`。
-
-**修复**: 移除 base compose 的固定 80 端口映射，通过 `PORT` 变量控制：
-- Production: `.env` 设 `PORT=3000`
-- Staging: `.env.staging` 设 `PORT=3001`
-- 本地开发: 默认 `80`
-
----
-
-### 错误 27: `-p 7` 旧容器残留 + `-p production` 容器名冲突
-
-**原因**: 从 `-p 7` 切换到 `-p production` 后，旧 project 的容器（硬编码 `container_name`）未被清理。新 project 尝试创建同名容器时失败。
-
-**修复**: 用 `docker rm -f virtual-team-*` 和 `docker rm -f virtual-team-*-staging` 强删所有残留容器。
-
----
-
-### 错误 28: `docker-compose.prod.yml` 未合入 main 即被引用
-
-**原因**: PR 中 deploy.yml 引用了 `$COMPOSE_PROD_FILE`，但该文件在 PR 分支上才有，`git reset --hard origin/main` 后找不到文件。
-
-**修复**: 撤回 COMPOSE_PROD_FILE 引用，改由 `PORT` 环境变量 + `--env-file .env` 控制。
-
----
-
-*文档创建时间: 2026-06-06*
-*最后更新: 2026-06-07*
+> 共 20 个错误，按类别分组排序。
+
+### A 🔴 Docker Compose 配置
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| A1 | `frontend` 缺 `image` | `has neither an image nor a build` | staging override 只写了 `container_name` 和 `ports` | 加 `image: nginx:alpine` |
+| A2 | 日志/cleanup 缺主 compose | `docker compose logs` 找不到服务 | 只引用了 staging 文件 | 同时用 `-f $COMPOSE_FILE -f $COMPOSE_STAGING_FILE` |
+| A3 | Production 容器名冲突 | `Container name already in use` | 旧容器残留，`--remove-orphans` 无效 | 加 `down || true` + `--force-recreate` |
+| A4 | Rollback 容器名冲突 | 同 A3 | rollback 未做同样处理 | 同 A3 |
+| A5 | `-p 7` 旧容器残留 | 切项目名后容器名冲突 | `container_name` 硬编码，`compose down` 清不掉 | `docker rm -f virtual-team-*` 强删 |
+| A6 | `prod.yml` 未合入即引用 | `no such file or directory` | PR 分支文件不在 main 上 | 改 `PORT` 变量 + `--env-file .env` |
+
+### B 🔴 基础设施冲突
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| B1 | KEY_VAULT_SECRET 空 | `Permission denied: /secrets/...` | volume 归 root + 容器跑 appuser | 设默认值；entrypoint 加 `2>/dev/null \|\| true` |
+| B2 | 1Panel 占 80 端口 | `address already in use: 80` | ECS 装了 1Panel，openresty 占 80 | Production 3000, Staging 3001 |
+| B3 | Healthcheck 8080 未暴露 | healthcheck 全 000 | API 无 host 端口映射 | 改为 `http://localhost:3000/api/health` |
+
+### C 🟡 CI/CD 工作流
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| C1 | `steps.meta.outputs` 不存在 | 死代码，output 始终为空 | 步骤 id 是 `build` 非 `meta` | 删除无用 `outputs` |
+| C2 | Trivy 缓存顺序错误 | 每次重下 95MB DB | Cache 在 Scan **之后** | Cache 移到 Scan **之前** |
+| C3 | diff-cover 找不到 merge base | `no merge base` | `fetch-depth` 被移除 | 加回 `fetch-depth: 0` |
+| C4 | POSTGRES_PASSWORD 硬编码 | 密码永远 `postgres` | shell 变量 runner 中未设 | 改 `${{ secrets.POSTGRES_PASSWORD }}` |
+| C5 | 项目名 `-p 7` 晦涩 | 资源前缀 `7_` | 随意取名 | 改 `-p production` |
+| C6 | 密码未同步 staging | staging 也硬编码 | 两处分别写只修了一处 | 同步修 staging |
+
+### D 🟡 构建与部署逻辑
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| D1 | Frontend dist 永不更新 | 前端永远是老版本 | nginx 用 host mount，deploy 未提取镜像内前端 | staging/prod/rollback 加 `docker cp` 提取 |
+| D2 | `deploy.sh` 分支名+镜像 URL | `git pull master` 失败；`docker create abc123` 找不到 | 分支是 `main`；镜像传 tag 没拼 URL | `master`→`main`；拼完整 URL |
+
+### E 🔵 数据库与迁移
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| E1 | Dockerfile 缺 migration | `No script_location key found` | 漏了 `alembic.ini` 和 `alembic/` | Dockerfile 加 `COPY` 指令 |
+| E2 | 循环引用 db ↔ checkpoint | `cannot import from partially initialized module` | 模块级双向 import | 改为 `init_db()` 内 lazy import |
+| E3 | Alembic 遇上已存在表 | `relation "sessions" already exists` | `create_all` 直接建表 | migration 前 `alembic stamp head` |
+| E4 | lazy import 覆盖率不足 | diff-cover 0%（1 line） | `init_db()` 内 import 未被覆盖 | 加 `# pragma: no cover` |
