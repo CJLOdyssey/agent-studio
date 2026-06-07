@@ -206,8 +206,12 @@ jobs:
         run: |
           WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
-          # 强删旧容器（硬编码 container_name 导致 compose down 无效）
-          docker rm -f virtual-team-db virtual-team-redis virtual-team-api virtual-team-frontend virtual-team-worker 2>/dev/null || true
+          # 强删所有残留容器（硬编码 container_name 导致 compose down 无效）
+          # 包括旧 -p 7 项目和 -p staging 项目占用的端口
+          for c in virtual-team-db virtual-team-redis virtual-team-api virtual-team-frontend virtual-team-worker \
+                   virtual-team-db-staging virtual-team-redis-staging virtual-team-api-staging virtual-team-frontend-staging; do
+            docker rm -f "$c" 2>/dev/null || true
+          done
           docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
 
@@ -228,12 +232,6 @@ jobs:
       - name: Deploy production containers
         run: |
           cd "${{ github.workspace }}"
-          # 等待端口 80 释放（旧容器 rm 后 Docker 异步释放）
-          for i in $(seq 1 10); do
-            ss -tln 2>/dev/null | grep -q ":80 " || break
-            echo "  等待端口 80 释放... ($i/10)"
-            sleep 2
-          done
           docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
@@ -309,7 +307,10 @@ jobs:
           echo "🔄 Rollback 到镜像 tag: $ROLLBACK_TAG"
           sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$ROLLBACK_TAG/" "$WORK_DIR/.env"
 
-          docker rm -f virtual-team-db virtual-team-redis virtual-team-api virtual-team-frontend virtual-team-worker 2>/dev/null || true
+          for c in virtual-team-db virtual-team-redis virtual-team-api virtual-team-frontend virtual-team-worker \
+                   virtual-team-db-staging virtual-team-redis-staging virtual-team-api-staging virtual-team-frontend-staging; do
+            docker rm -f "$c" 2>/dev/null || true
+          done
           docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
 
@@ -321,11 +322,6 @@ jobs:
           docker rm "$CONTAINER" > /dev/null
 
           # Rollback 不执行迁移：回滚到的旧代码可能不兼容最新迁移
-          for i in $(seq 1 10); do
-            ss -tln 2>/dev/null | grep -q ":80 " || break
-            echo "  等待端口 80 释放... ($i/10)"
-            sleep 2
-          done
           docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
 
           # 验证 rollback
