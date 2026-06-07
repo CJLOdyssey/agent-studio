@@ -93,29 +93,54 @@ jobs:
   integration:
     name: 🔄 Integration Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: virtual_team
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
+      - name: Pull images with retry
+        run: |
+          pull_with_retry() {
+            local img="$1"
+            for i in $(seq 1 5); do
+              echo "⏳ Pulling $img (attempt $i/5)..."
+              if docker pull "$img" 2>/dev/null; then
+                echo "✅ $img pulled"
+                return 0
+              fi
+              echo "  Failed, wait $((i * 3))s..."
+              sleep $((i * 3))
+            done
+            echo "❌ Failed to pull $img after 5 attempts"
+            return 1
+          }
+          pull_with_retry pgvector/pgvector:pg16 &
+          pull_with_retry redis:7-alpine &
+          wait
+      - name: Start PostgreSQL
+        run: |
+          docker run -d --name pgvector \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=virtual_team \
+            -p 5432:5432 \
+            pgvector/pgvector:pg16
+          echo "⏳ 等待 PostgreSQL 就绪..."
+          for i in $(seq 1 15); do
+            docker exec pgvector pg_isready -U postgres 2>/dev/null && break
+            sleep 2
+          done
+      - name: Start Redis
+        run: |
+          docker run -d --name redis \
+            -p 6379:6379 \
+            redis:7-alpine
+          echo "⏳ 等待 Redis 就绪..."
+          for i in $(seq 1 10); do
+            docker exec redis redis-cli ping 2>/dev/null | grep -q PONG && break
+            sleep 1
+          done
       - name: Install deps
         run: |
           pip install --quiet --upgrade pip
@@ -125,6 +150,10 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team
           REDIS_URL: redis://localhost:6379/0
         run: python -m pytest tests/test_integration.py tests/test_user_flow.py -v --tb=short
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f pgvector redis 2>/dev/null || true
 
   # ═══ Build (前端构建) ═══════════════════════════════════════════════════════
   build:
