@@ -39,6 +39,10 @@ COPY --from=python-deps /usr/local/bin /usr/local/bin
 # Copy backend source
 COPY virtual_team/ ./virtual_team/
 
+# Copy Alembic migrations
+COPY config/alembic.ini ./alembic.ini
+COPY alembic/ ./alembic/
+
 # Copy entrypoint script (auto-provision secrets on first run)
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
