@@ -228,6 +228,12 @@ jobs:
       - name: Deploy production containers
         run: |
           cd "${{ github.workspace }}"
+          # 等待端口 80 释放（旧容器 rm 后 Docker 异步释放）
+          for i in $(seq 1 10); do
+            ss -tln 2>/dev/null | grep -q ":80 " || break
+            echo "  等待端口 80 释放... ($i/10)"
+            sleep 2
+          done
           docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
@@ -315,6 +321,11 @@ jobs:
           docker rm "$CONTAINER" > /dev/null
 
           # Rollback 不执行迁移：回滚到的旧代码可能不兼容最新迁移
+          for i in $(seq 1 10); do
+            ss -tln 2>/dev/null | grep -q ":80 " || break
+            echo "  等待端口 80 释放... ($i/10)"
+            sleep 2
+          done
           docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
 
           # 验证 rollback
