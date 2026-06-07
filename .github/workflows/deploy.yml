@@ -162,8 +162,8 @@ jobs:
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
-          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging pull
-          docker compose -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging up -d --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging up -d --remove-orphans
 
       - name: Healthcheck — Staging
         run: |
