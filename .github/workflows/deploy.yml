@@ -98,6 +98,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # 缓存 Trivy DB（~95MB），避免每次部署重新下载
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/trivy
+          key: trivy-db-v2
+
       # ── Trivy vulnerability scan before tagging as latest ──────────────
       - name: Scan image with Trivy
         id: scan
@@ -109,13 +116,6 @@ jobs:
           severity: CRITICAL,HIGH
           skip-dirs: /app/frontend/node_modules
           trivyignores: config/docker/.trivyignore
-
-      # 缓存 Trivy DB（~95MB），避免每次部署重新下载
-      - name: Cache Trivy DB
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.cache/trivy
-          key: trivy-db-v2
 
       # ── Tag as latest only after scan passes ───────────────────────────
       - name: Tag image as latest
@@ -171,6 +171,11 @@ jobs:
           docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
           docker rm "$CONTAINER" > /dev/null
           echo "✅ Frontend dist extracted"
+
+      - name: Run database migrations (staging)
+        run: |
+          cd "${{ github.workspace }}"
+          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging run --rm api alembic upgrade head
 
       - name: Deploy staging containers
         run: |
@@ -255,6 +260,11 @@ jobs:
           docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
           docker rm "$CONTAINER" > /dev/null
           echo "✅ Frontend dist extracted"
+
+      - name: Run database migrations (production)
+        run: |
+          cd "${{ github.workspace }}"
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 run --rm api alembic upgrade head
 
       - name: Deploy production containers
         run: |
@@ -344,6 +354,7 @@ jobs:
           docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
           docker rm "$CONTAINER" > /dev/null
 
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 run --rm api alembic upgrade head || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
           # 验证 rollback
