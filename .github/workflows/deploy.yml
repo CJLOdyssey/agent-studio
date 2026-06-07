@@ -182,7 +182,7 @@ jobs:
           WORK_DIR="${{ github.workspace }}"
           CURRENT_TAG="latest"
           if [ -f "$WORK_DIR/.deploy-state" ]; then
-            CURRENT_TAG=$(cat "$WORK_DIR/.deploy-state" | jq -r '.current_tag // "latest"')
+            CURRENT_TAG=$(python3 -c "import json; print(json.load(open('$WORK_DIR/.deploy-state')).get('current_tag', 'latest'))")
           fi
           echo "current_tag=${CURRENT_TAG}" >> "$GITHUB_OUTPUT"
           echo "当前运行版本: ${CURRENT_TAG}"
@@ -295,7 +295,7 @@ jobs:
           WORK_DIR="${{ github.workspace }}"
           PREV_TAG="latest"
           if [ -f "$WORK_DIR/.deploy-state" ]; then
-            PREV_TAG=$(cat "$WORK_DIR/.deploy-state" | jq -r '.current_tag // "latest"')
+            PREV_TAG=$(python3 -c "import json; print(json.load(open('$WORK_DIR/.deploy-state')).get('current_tag', 'latest'))")
           fi
           echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
 
