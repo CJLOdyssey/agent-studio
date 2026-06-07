@@ -216,7 +216,8 @@ jobs:
       - name: Write env for production
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
-          cat > "$WORK_DIR/.env" <<EOF
+          echo "# 自动生成 — 手动修改会被覆盖" > "$WORK_DIR/.env"
+          cat >> "$WORK_DIR/.env" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
           IMAGE_TAG=${{ github.sha }}
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
@@ -231,8 +232,9 @@ jobs:
         run: |
           WORK_DIR="/home/odyssey/actions-runner/_work/virtual-software-team/virtual-software-team"
           cd "$WORK_DIR"
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
         id: healthcheck
@@ -307,8 +309,9 @@ jobs:
           echo "🔄 Rollback 到镜像 tag: $ROLLBACK_TAG"
           sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$ROLLBACK_TAG/" "$WORK_DIR/.env"
 
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
           # 验证 rollback
           for i in $(seq 1 12); do
