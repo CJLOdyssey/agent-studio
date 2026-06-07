@@ -37,7 +37,7 @@ jobs:
           pip install --quiet --upgrade pip
           pip install --quiet -r requirements.txt -r requirements-dev.txt mypy bandit diff-cover
       - name: Lint (ruff)
-        uses: astral-sh/ruff-action@v1
+        uses: astral-sh/ruff-action@v3
         with:
           args: check virtual_team/ tests/ alembic/
       - name: Type check (mypy)
