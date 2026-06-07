@@ -1,6 +1,7 @@
 """Tests for configuration model and safety."""
 
 import pytest
+from pydantic import ValidationError
 
 from virtual_team.config import TeamConfig
 
@@ -38,5 +39,5 @@ class TestTeamConfig:
 
     def test_extra_fields_rejected(self):
         """Extra fields should be rejected due to model_config extra=forbid."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             TeamConfig(api_key="sk-test", nonexistent_field="value")
