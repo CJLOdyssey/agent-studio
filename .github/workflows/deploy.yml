@@ -206,6 +206,8 @@ jobs:
         run: |
           WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
+          # 清理旧项目（-p 7 迁移到 -p production 的过渡期）
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
 
@@ -301,6 +303,7 @@ jobs:
           echo "🔄 Rollback 到镜像 tag: $ROLLBACK_TAG"
           sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$ROLLBACK_TAG/" "$WORK_DIR/.env"
 
+          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
 
