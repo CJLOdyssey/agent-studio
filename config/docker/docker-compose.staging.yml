@@ -1,32 +1,38 @@
 # ── Staging compose override ─────────────────────────────────────────────
 # Overrides base docker-compose.yml for staging deployment on the same host.
-# All ports are offset to avoid conflicts with production services.
+# All ports are offset and container names are suffixed to avoid conflicts.
 # ────────────────────────────────────────────────────────────────────────────
 
 services:
   postgres:
+    container_name: virtual-team-db-staging
     ports:
       - "5433:5432"
     volumes:
       - pgdata_staging:/var/lib/postgresql/data
 
   redis:
+    container_name: virtual-team-redis-staging
     ports:
       - "6380:6379"
 
   api:
+    container_name: virtual-team-api-staging
     ports:
       - "8081:8080"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/virtual_team
 
-  celery_worker:
-    profiles:
-      - dont-start-automatically
+  frontend:
+    container_name: virtual-team-frontend-staging
+    ports:
+      - "3001:80"
 
-  nginx:
+  celery_worker:
+    container_name: virtual-team-worker-staging
     profiles:
       - dont-start-automatically
 
 volumes:
   pgdata_staging:
+  secrets_staging:
