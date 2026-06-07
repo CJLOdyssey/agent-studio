@@ -20,14 +20,14 @@ services:
     container_name: virtual-team-api-staging
     ports:
       - "8081:8080"
+    volumes:
+      - secrets_staging:/secrets
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/virtual_team
 
   frontend:
     image: nginx:alpine
     container_name: virtual-team-frontend-staging
-    ports:
-      - "3001:80"
 
   celery_worker:
     container_name: virtual-team-worker-staging

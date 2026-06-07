@@ -17,17 +17,24 @@ COMPOSE_FILE="config/docker/docker-compose.yml"
 cd "$PROJECT_DIR"
 
 echo "[deploy] Pulling latest code..."
-git pull origin master
-
-echo "[deploy] Building frontend (via Docker)..."
-docker run --rm \
-  -v "${PROJECT_DIR}/frontend:/app" \
-  -w /app \
-  node:20-alpine \
-  sh -c "npm ci 2>/dev/null || npm install; npx vite build --logLevel error"
+git pull origin main
 
 echo "[deploy] Pulling latest Docker images..."
 docker compose -f "$COMPOSE_FILE" pull
+
+echo "[deploy] Extracting frontend dist from image..."
+IMAGE_TAG=$(grep IMAGE_TAG .env | cut -d= -f2)
+LATEST_IMAGE="$IMAGE_TAG"
+if [ -z "$LATEST_IMAGE" ]; then
+  LATEST_IMAGE="${ACR_REGISTRY:-crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com}/${ACR_NAMESPACE:-virtual-team}/virtual-team:latest"
+fi
+CONTAINER=$(docker create "$LATEST_IMAGE")
+mkdir -p frontend/dist
+docker cp "$CONTAINER":/app/frontend/dist frontend/ || true
+docker rm "$CONTAINER" > /dev/null
+
+echo "[deploy] Running database migrations..."
+docker compose -f "$COMPOSE_FILE" run --rm api alembic upgrade head
 
 echo "[deploy] Restarting all containers..."
 docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
