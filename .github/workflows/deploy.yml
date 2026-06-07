@@ -166,10 +166,10 @@ jobs:
       - name: Extract frontend dist for staging
         run: |
           IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          docker create --name temp-extract-staging "$IMAGE"
+          CONTAINER=$(docker create "$IMAGE")
           mkdir -p ${{ github.workspace }}/frontend/dist
-          docker cp temp-extract-staging:/app/frontend/dist ${{ github.workspace }}/frontend/
-          docker rm temp-extract-staging > /dev/null
+          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
+          docker rm "$CONTAINER" > /dev/null
           echo "✅ Frontend dist extracted"
 
       - name: Deploy staging containers
@@ -250,10 +250,10 @@ jobs:
       - name: Extract frontend dist for production
         run: |
           IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          docker create --name temp-extract-prod "$IMAGE"
+          CONTAINER=$(docker create "$IMAGE")
           mkdir -p ${{ github.workspace }}/frontend/dist
-          docker cp temp-extract-prod:/app/frontend/dist ${{ github.workspace }}/frontend/
-          docker rm temp-extract-prod > /dev/null
+          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
+          docker rm "$CONTAINER" > /dev/null
           echo "✅ Frontend dist extracted"
 
       - name: Deploy production containers
@@ -336,6 +336,14 @@ jobs:
 
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+
+          # 提取 rollback 版本的前端
+          ROLLBACK_IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:$ROLLBACK_TAG"
+          CONTAINER=$(docker create "$ROLLBACK_IMAGE")
+          mkdir -p ${{ github.workspace }}/frontend/dist
+          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
+          docker rm "$CONTAINER" > /dev/null
+
           docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
 
           # 验证 rollback
