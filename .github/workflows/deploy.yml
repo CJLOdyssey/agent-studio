@@ -1,6 +1,9 @@
 # ── Deploy: Enterprise-grade pipeline ─────────────────────────────────────
-#   CI Gate → Build + Trivy Scan → Push → Staging Deploy + Verify
+#   Trigger → Build + Trivy Scan → Push → Staging Deploy + Verify
 #   → Promote to Production + Verify → Rollback on Failure → Notify
+#
+# CI gate is enforced by GitHub branch protection (required status checks).
+# The deploy workflow assumes CI has already passed on the commit.
 # ────────────────────────────────────────────────────────────────────────────
 
 name: Deploy
@@ -20,56 +23,9 @@ env:
   COMPOSE_STAGING_FILE: config/docker/docker-compose.staging.yml
 
 jobs:
-  # ── CI Gate ────────────────────────────────────────────────────────────
-  ci-check:
-    name: 🔑 CI Gate
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-    steps:
-      - name: Wait for CI to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for i in $(seq 1 30); do
-            RESULT=$(curl -s -H "Authorization: token $GH_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}&per_page=5" \
-              | jq '[.workflow_runs[] | select(.name == "CI")] | first // empty')
-
-            if [ -z "$RESULT" ]; then
-              if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-                echo "⚠️  手动触发，未找到对应 CI 运行记录 — 继续部署"
-                exit 0
-              fi
-              echo "  等待 $i/30 — CI 尚未触发..."
-              sleep 10
-              continue
-            fi
-
-            CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion // "null"')
-            echo "  等待 $i/30 — CI 状态: $CONCLUSION"
-
-            if [ "$CONCLUSION" = "success" ]; then
-              echo "✅ CI 通过 — 继续部署"
-              exit 0
-            fi
-
-            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ]; then
-              echo "❌ CI 未通过 ($CONCLUSION) — 终止部署"
-              exit 1
-            fi
-
-            sleep 10
-          done
-
-          echo "❌ CI 超时（5分钟未完成）— 终止部署"
-          exit 1
-
   # ── Build & Scan ───────────────────────────────────────────────────────
   build-and-scan:
-    name: 🐳 Build + Trivy Scan
-    needs: ci-check
+    name: Build + Trivy Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
