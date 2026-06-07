@@ -28,8 +28,6 @@ services:
   frontend:
     image: nginx:alpine
     container_name: virtual-team-frontend-staging
-    ports:
-      - "127.0.0.1:${PORT:-3001}:80"
 
   celery_worker:
     container_name: virtual-team-worker-staging
