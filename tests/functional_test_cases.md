@@ -68,24 +68,70 @@
 
 ---
 
-## 四、Agent配置管理测试
+## 四、Agent配置管理测试（子域 01 01）
 
 ### 4.1 Agent CRUD
 | 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
 |--------|----------|----------|----------|----------|
-| TC-026 | 获取Agent列表 | 服务正常运行 | 1. GET /api/agents<br>2. 检查返回结构 | 返回Agent配置列表，包含所有字段 |
-| TC-027 | 创建Agent | 服务正常运行 | 1. POST /api/agents<br>2. 提供有效参数 | 返回201，包含id和status="created" |
-| TC-028 | 创建重复角色Agent | 角色已存在 | 1. POST /api/agents<br>2. 使用已存在的role_identifier | 返回409错误，提示角色标识已存在 |
-| TC-029 | 更新Agent | Agent已存在 | 1. PUT /api/agents/{agent_id}<br>2. 修改system_prompt | 返回updated状态，配置已更新 |
-| TC-030 | 删除Agent | Agent已存在 | 1. DELETE /api/agents/{agent_id}<br>2. 检查列表 | 返回deleted状态，Agent已移除 |
-| TC-031 | 删除唯一审批者 | Agent是唯一审批者 | 1. DELETE /api/agents/{agent_id}<br>2. 尝试删除 | 返回400错误，提示不能删除唯一的审批者 |
+| TC-026 | 获取Agent列表 | 服务正常运行 | 1. GET /api/agents | 返回Agent配置列表，包含所有字段 |
+| TC-027 | 创建Agent | 服务正常运行 | 1. POST /api/agents<br>2. 提供name, role_identifier, system_prompt | 返回201，包含id和所有字段 |
+| TC-028 | 创建重复角色Agent | 角色已存在 | 1. POST /api/agents<br>2. 使用已存在的role_identifier | 返回409，提示角色标识已存在 |
+| TC-029 | 更新Agent | Agent已存在 | 1. PATCH /api/agents/{agent_id}<br>2. 提供更新字段 | 返回200，字段已更新，updated_at变更 |
+| TC-030 | 删除Agent | Agent已存在 | 1. DELETE /api/agents/{agent_id}<br>2. 再次查询 | 返回200，再次查询返回404 |
+| TC-031 | 删除唯一审批者 | Agent是唯一审批者 | 1. DELETE /api/agents/{agent_id}<br>2. 尝试删除 | 返回400，提示不能删除唯一的审批者 |
+| TC-031B | 获取Agent详情 | Agent已存在 | 1. GET /api/agents/{agent_id} | 返回Agent完整字段，包括id/name/role_identifier/prompt |
+| TC-031C | 获取不存在的Agent | 无 | 1. GET /api/agents/{不存在id} | 返回404 |
+| TC-031D | 删除不存在的Agent | 无 | 1. DELETE /api/agents/{不存在id} | 返回404 |
+| TC-031E | 创建无效Agent | 无 | 1. POST /api/agents<br>2. 缺少必填字段 | 返回422，提示必填字段 |
 
-### 4.2 Agent状态管理
+### 4.2 提示词版本管理
 | 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
 |--------|----------|----------|----------|----------|
-| TC-032 | 切换Agent状态 | Agent已存在 | 1. PUT /api/agents/{agent_id}/toggle<br>2. 检查is_active | 状态切换成功，返回新的is_active值 |
-| TC-033 | 停用唯一活跃审批者 | Agent是唯一活跃审批者 | 1. PUT /api/agents/{agent_id}/toggle<br>2. 尝试停用 | 返回400错误，提示不能停用唯一的活跃审批者 |
-| TC-034 | Agent配置验证 | 服务正常运行 | 1. 创建Agent时提供无效参数（如temperature>1.0）<br>2. 检查响应 | 返回422错误，参数验证失败 |
+| TC-032 | 创建提示词版本 | Agent已存在 | 1. POST /api/agents/{id}/prompts<br>2. 提供content | 返回201，包含version_number |
+| TC-033 | 获取提示词列表 | Agent有多个版本 | 1. GET /api/agents/{id}/prompts | 返回所有版本，按version_number排序 |
+| TC-033B | 激活指定版本 | Agent有多个版本 | 1. PATCH /api/agents/{id}/prompts/{version}/activate | 指定版本激活，其他版本非激活 |
+| TC-033C | 激活不存在的版本 | Agent存在 | 1. PATCH /api/agents/{id}/prompts/{不存在version}/activate | 返回404 |
+| TC-033D | 获取不存在的Agent的提示词 | 无 | 1. GET /api/agents/{不存在id}/prompts | 返回404 |
+
+### 4.3 输出格式管理
+| 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
+|--------|----------|----------|----------|----------|
+| TC-034 | 创建输出格式 | Agent已存在 | 1. POST /api/agents/{id}/schemas<br>2. 提供name, format_type, schema_def | 返回201，包含id |
+| TC-034B | 获取输出格式列表 | Agent有多个格式 | 1. GET /api/agents/{id}/schemas | 返回所有格式定义 |
+| TC-034C | 获取不存在的Agent的输出格式 | 无 | 1. GET /api/agents/{不存在id}/schemas | 返回404 |
+| TC-034D | 创建含无效schema_def的格式 | Agent存在 | 1. POST /api/agents/{id}/schemas<br>2. schema_def为空 | 返回422 |
+
+### 4.4 工具绑定
+| 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
+|--------|----------|----------|----------|----------|
+| TC-034E | 绑定工具到Agent | Agent和工具都存在 | 1. POST /api/agents/{id}/bindings/tools<br>2. 提供tool_id | 返回201，包含binding记录 |
+| TC-034F | 绑定含config_override的工具 | Agent存在 | 1. POST /api/agents/{id}/bindings/tools<br>2. 提供tool_id + config_override | 返回201，config_override字段正确 |
+| TC-034G | 查询Agent的已绑工具 | Agent已绑定工具 | 1. GET /api/agents/{id}/bindings/tools | 返回已绑定的工具列表 |
+| TC-034H | 解绑工具 | Agent已绑定工具 | 1. DELETE /api/agents/{id}/bindings/tools/{tool_id} | 返回200，再次查询列表为空 |
+| TC-034I | 绑定到不存在的Agent | 无 | 1. POST /api/agents/{不存在id}/bindings/tools | 返回404 |
+| TC-034J | 解绑不存在的绑定 | 存在Agent但不含该绑定 | 1. DELETE /api/agents/{id}/bindings/tools/{不存在tool_id} | 返回404 |
+
+### 4.5 MCP绑定
+| 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
+|--------|----------|----------|----------|----------|
+| TC-034K | 绑定MCP到Agent | Agent和MCP都存在 | 1. POST /api/agents/{id}/bindings/mcp<br>2. 提供mcp_id | 返回201，包含binding记录 |
+| TC-034L | 绑定含tool_filter的MCP | Agent存在 | 1. POST /api/agents/{id}/bindings/mcp<br>2. 提供mcp_id + tool_filter | 返回201，tool_filter字段正确 |
+| TC-034M | 查询Agent的已绑MCP | Agent已绑定MCP | 1. GET /api/agents/{id}/bindings/mcp | 返回已绑定的MCP列表 |
+| TC-034N | 解绑MCP | Agent已绑定MCP | 1. DELETE /api/agents/{id}/bindings/mcp/{mcp_id} | 返回200，再次查询列表为空 |
+| TC-034O | 绑定MCP到不存在的Agent | 无 | 1. POST /api/agents/{不存在id}/bindings/mcp | 返回404 |
+
+### 4.6 技能绑定
+| 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
+|--------|----------|----------|----------|----------|
+| TC-034P | 绑定技能到Agent | Agent和技能都存在 | 1. POST /api/agents/{id}/bindings/skills<br>2. 提供skill_id | 返回201，包含binding记录 |
+| TC-034Q | 查询Agent的已绑技能 | Agent已绑定技能 | 1. GET /api/agents/{id}/bindings/skills | 返回已绑定的技能列表 |
+| TC-034R | 解绑技能 | Agent已绑定技能 | 1. DELETE /api/agents/{id}/bindings/skills/{skill_id} | 返回200，再次查询列表为空 |
+| TC-034S | 绑定技能到不存在的Agent | 无 | 1. POST /api/agents/{不存在id}/bindings/skills | 返回404 |
+
+### 4.7 跨组件冒烟路径
+| 用例ID | 测试场景 | 前置条件 | 测试步骤 | 预期结果 |
+|--------|----------|----------|----------|----------|
+| TC-034T | Agent全生命周期 | 服务正常运行 | 1. 创建Agent → 绑定工具/MCP/技能 → 查询含绑定 → 更新字段 → 解绑工具 → 删除Agent | 每一步返回正确状态，跨组件数据一致 |
 
 ---
 
@@ -226,11 +272,11 @@
 ---
 
 ## 测试用例统计
-- **总计**：78个测试用例
+- **总计**：97个测试用例
 - **核心功能**：9个
 - **会话管理**：8个
 - **记忆管理**：8个
-- **Agent配置**：9个
+- **Agent配置**：28个（子域 01 01 完整覆盖：CRUD 11个 + 提示词 5个 + 输出格式 4个 + 工具绑定 6个 + MCP绑定 5个 + 技能绑定 4个 + 冒烟路径 1个）
 - **API接口**：3个
 - **错误处理**：6个
 - **前端界面**：5个
