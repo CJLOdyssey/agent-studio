@@ -1,6 +1,9 @@
 # ── Deploy: Enterprise-grade pipeline ─────────────────────────────────────
-#   CI Gate → Build + Trivy Scan → Push → Staging Deploy + Verify
+#   Trigger → Build + Trivy Scan → Push → Staging Deploy + Verify
 #   → Promote to Production + Verify → Rollback on Failure → Notify
+#
+# CI gate is enforced by GitHub branch protection (required status checks).
+# The deploy workflow assumes CI has already passed on the commit.
 # ────────────────────────────────────────────────────────────────────────────
 
 name: Deploy
@@ -20,56 +23,9 @@ env:
   COMPOSE_STAGING_FILE: config/docker/docker-compose.staging.yml
 
 jobs:
-  # ── CI Gate ────────────────────────────────────────────────────────────
-  ci-check:
-    name: 🔑 CI Gate
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-    steps:
-      - name: Wait for CI to complete
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for i in $(seq 1 30); do
-            RESULT=$(curl -s -H "Authorization: token $GH_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}&per_page=5" \
-              | jq '[.workflow_runs[] | select(.name == "CI")] | first // empty')
-
-            if [ -z "$RESULT" ]; then
-              if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-                echo "⚠️  手动触发，未找到对应 CI 运行记录 — 继续部署"
-                exit 0
-              fi
-              echo "  等待 $i/30 — CI 尚未触发..."
-              sleep 10
-              continue
-            fi
-
-            CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion // "null"')
-            echo "  等待 $i/30 — CI 状态: $CONCLUSION"
-
-            if [ "$CONCLUSION" = "success" ]; then
-              echo "✅ CI 通过 — 继续部署"
-              exit 0
-            fi
-
-            if [ "$CONCLUSION" = "failure" ] || [ "$CONCLUSION" = "cancelled" ]; then
-              echo "❌ CI 未通过 ($CONCLUSION) — 终止部署"
-              exit 1
-            fi
-
-            sleep 10
-          done
-
-          echo "❌ CI 超时（5分钟未完成）— 终止部署"
-          exit 1
-
   # ── Build & Scan ───────────────────────────────────────────────────────
   build-and-scan:
-    name: 🐳 Build + Trivy Scan
-    needs: ci-check
+    name: Build + Trivy Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -150,7 +106,7 @@ jobs:
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
           IMAGE_TAG=${{ github.sha }}
           PORT=3001
-          POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
           OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
@@ -237,7 +193,7 @@ jobs:
           cat >> "$WORK_DIR/.env" <<EOF
           ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
           IMAGE_TAG=${{ github.sha }}
-          POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
           DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
           OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
           OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
@@ -249,8 +205,8 @@ jobs:
         run: |
           WORK_DIR="${{ github.workspace }}"
           cd "$WORK_DIR"
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
 
       - name: Extract frontend dist for production
         run: |
@@ -264,19 +220,19 @@ jobs:
       - name: Run database migrations (production)
         run: |
           cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 run --rm api alembic upgrade head
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production run --rm api alembic upgrade head
 
       - name: Deploy production containers
         run: |
           cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
 
       - name: Healthcheck — Production
         id: healthcheck
         run: |
           echo "⏳ 等待 production 就绪..."
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health 2>/dev/null || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/health 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "✅ Production healthcheck passed"
               # 保存当前 tag 作为 future rollback 目标
@@ -296,7 +252,7 @@ jobs:
         if: always()
         run: |
           docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
-          docker image prune -f || true
+          docker image prune -f --filter "until=24h" || true
 
       - name: Notify deploy result
         if: always()
@@ -344,8 +300,8 @@ jobs:
           echo "🔄 Rollback 到镜像 tag: $ROLLBACK_TAG"
           sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$ROLLBACK_TAG/" "$WORK_DIR/.env"
 
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 down --remove-orphans || true
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 pull
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production down --remove-orphans || true
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production pull
 
           # 提取 rollback 版本的前端
           ROLLBACK_IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:$ROLLBACK_TAG"
@@ -354,12 +310,12 @@ jobs:
           docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
           docker rm "$CONTAINER" > /dev/null
 
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 run --rm api alembic upgrade head || true
-          docker compose -f ${{ env.COMPOSE_FILE }} -p 7 up -d --force-recreate --remove-orphans
+          # Rollback 不执行迁移：回滚到的旧代码可能不兼容最新迁移
+          docker compose -f ${{ env.COMPOSE_FILE }} -p production up -d --force-recreate --remove-orphans
 
           # 验证 rollback
           for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health 2>/dev/null || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/health 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "✅ Rollback 成功 — 已恢复至 $ROLLBACK_TAG"
               exit 0
