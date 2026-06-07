@@ -382,7 +382,6 @@ class KeyUsageLog(Base):
 
 
 # Import checkpoint model so it's registered with Base.metadata
-from virtual_team.checkpoint import CheckpointDB as _CheckpointDB  # noqa: F401
 
 
 async def init_db():
@@ -396,6 +395,9 @@ async def init_db():
 
     See alembic/versions/ for migration history.
     """
+    # Lazy import to break circular dependency (checkpoint → database → checkpoint)
+    from virtual_team.checkpoint import CheckpointDB  # noqa: F401
+
     engine = get_async_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
