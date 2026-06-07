@@ -259,5 +259,52 @@ ruff check --fix tests/
 
 ---
 
-*文档创建时间: 2026-06-06*
-*最后更新: 2026-06-07*
+## 2026-06-07 部署管线修复记录
+
+> 共 20 个错误，按类别分组排序。
+
+### A 🔴 Docker Compose 配置
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| A1 | `frontend` 缺 `image` | `has neither an image nor a build` | staging override 只写了 `container_name` 和 `ports` | 加 `image: nginx:alpine` |
+| A2 | 日志/cleanup 缺主 compose | `docker compose logs` 找不到服务 | 只引用了 staging 文件 | 同时用 `-f $COMPOSE_FILE -f $COMPOSE_STAGING_FILE` |
+| A3 | Production 容器名冲突 | `Container name already in use` | 旧容器残留，`--remove-orphans` 无效 | 加 `down || true` + `--force-recreate` |
+| A4 | Rollback 容器名冲突 | 同 A3 | rollback 未做同样处理 | 同 A3 |
+| A5 | `-p 7` 旧容器残留 | 切项目名后容器名冲突 | `container_name` 硬编码，`compose down` 清不掉 | `docker rm -f virtual-team-*` 强删 |
+| A6 | `prod.yml` 未合入即引用 | `no such file or directory` | PR 分支文件不在 main 上 | 改 `PORT` 变量 + `--env-file .env` |
+
+### B 🔴 基础设施冲突
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| B1 | KEY_VAULT_SECRET 空 | `Permission denied: /secrets/...` | volume 归 root + 容器跑 appuser | 设默认值；entrypoint 加 `2>/dev/null \|\| true` |
+| B2 | 1Panel 占 80 端口 | `address already in use: 80` | ECS 装了 1Panel，openresty 占 80 | Production 3000, Staging 3001 |
+| B3 | Healthcheck 8080 未暴露 | healthcheck 全 000 | API 无 host 端口映射 | 改为 `http://localhost:3000/api/health` |
+
+### C 🟡 CI/CD 工作流
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| C1 | `steps.meta.outputs` 不存在 | 死代码，output 始终为空 | 步骤 id 是 `build` 非 `meta` | 删除无用 `outputs` |
+| C2 | Trivy 缓存顺序错误 | 每次重下 95MB DB | Cache 在 Scan **之后** | Cache 移到 Scan **之前** |
+| C3 | diff-cover 找不到 merge base | `no merge base` | `fetch-depth` 被移除 | 加回 `fetch-depth: 0` |
+| C4 | POSTGRES_PASSWORD 硬编码 | 密码永远 `postgres` | shell 变量 runner 中未设 | 改 `${{ secrets.POSTGRES_PASSWORD }}` |
+| C5 | 项目名 `-p 7` 晦涩 | 资源前缀 `7_` | 随意取名 | 改 `-p production` |
+| C6 | 密码未同步 staging | staging 也硬编码 | 两处分别写只修了一处 | 同步修 staging |
+
+### D 🟡 构建与部署逻辑
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| D1 | Frontend dist 永不更新 | 前端永远是老版本 | nginx 用 host mount，deploy 未提取镜像内前端 | staging/prod/rollback 加 `docker cp` 提取 |
+| D2 | `deploy.sh` 分支名+镜像 URL | `git pull master` 失败；`docker create abc123` 找不到 | 分支是 `main`；镜像传 tag 没拼 URL | `master`→`main`；拼完整 URL |
+
+### E 🔵 数据库与迁移
+
+| # | 错误 | 症状 | 根因 | 修复 |
+|---|------|------|------|------|
+| E1 | Dockerfile 缺 migration | `No script_location key found` | 漏了 `alembic.ini` 和 `alembic/` | Dockerfile 加 `COPY` 指令 |
+| E2 | 循环引用 db ↔ checkpoint | `cannot import from partially initialized module` | 模块级双向 import | 改为 `init_db()` 内 lazy import |
+| E3 | Alembic 遇上已存在表 | `relation "sessions" already exists` | `create_all` 直接建表 | migration 前 `alembic stamp head` |
+| E4 | lazy import 覆盖率不足 | diff-cover 0%（1 line） | `init_db()` 内 import 未被覆盖 | 加 `# pragma: no cover` |
