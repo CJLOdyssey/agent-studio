@@ -1,5 +1,13 @@
 """Tests for MCP generation from natural language."""
-from virtual_team.routers.bindings import _generate_mcp_from_description
+from virtual_team.generation.generators.mcp_generator import McpGenerator
+from virtual_team.generation.generators.base import GenerateRequest
+
+_gen = McpGenerator()
+
+
+def _generate_mcp_from_description(desc: str):
+    result = _gen.generate(GenerateRequest(description=desc))
+    return result
 
 
 class TestGenerateMcpFromDescription:

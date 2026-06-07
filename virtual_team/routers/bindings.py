@@ -174,118 +174,24 @@ async def list_agent_skills(agent_id: str):
 @router.post("/api/mcp/generate", response_model=GeneratedMcp)
 async def generate_mcp(req: McpGenerateRequest):
     try:
-        mcp = _generate_mcp_from_description(req.description)
-        return mcp
+        from virtual_team.generation import registry
+        from virtual_team.generation.generators.base import GenerateRequest as GenReq
+
+        generator = registry.get("mcp")
+        if not generator:
+            raise HTTPException(status_code=500, detail="MCP generator not available")
+
+        result = generator.generate(GenReq(description=req.description))
+        return GeneratedMcp(
+            id=result.id,
+            name=result.name,
+            description=result.description,
+            endpoint=result.content,
+            tool_filter=result.metadata.get("tool_filter"),
+            config=result.metadata.get("config", {}),
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("MCP generation failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"MCP生成失败: {e}")
-
-
-def _generate_mcp_from_description(description: str) -> GeneratedMcp:
-    import hashlib
-
-    mcp_id = f"mcp_{hashlib.md5(description.encode()).hexdigest()[:8]}"  # nosec
-    desc_lower = description.lower()
-
-    if any(kw in desc_lower for kw in ['database', '数据库', 'sql', 'db', 'mongo', 'postgres', 'mysql', 'redis']):
-        name = "database_mcp"
-        desc = "数据库操作MCP服务器"
-        endpoint = "http://localhost:8001/mcp/database"
-        tool_filter = "(db|query|table|schema|insert|select|update|delete)"
-        config = {
-            "type": "database",
-            "driver": "postgresql",
-            "pool_size": 10,
-            "timeout": 30,
-            "max_connections": 20,
-        }
-
-    elif any(kw in desc_lower for kw in ['search', '搜索', 'web', '网页', 'browser', '浏览', 'google', 'bing']):
-        name = "web_search_mcp"
-        desc = "网页搜索MCP服务器"
-        endpoint = "http://localhost:8001/mcp/web-search"
-        tool_filter = "(search|query|browse|fetch|scrape|lookup)"
-        config = {
-            "type": "web_search",
-            "engine": "google",
-            "max_results": 10,
-            "timeout": 15,
-            "user_agent": "MCP-WebSearch/1.0",
-        }
-
-    elif any(kw in desc_lower for kw in ['file', '文件', 'fs', 'filesystem', 'directory', '目录', 'path', 'read', 'write']):
-        name = "filesystem_mcp"
-        desc = "文件系统MCP服务器"
-        endpoint = "http://localhost:8001/mcp/filesystem"
-        tool_filter = "(file|read|write|list|mkdir|delete|move|copy|stat)"
-        config = {
-            "type": "filesystem",
-            "root_path": "/workspace",
-            "allowed_extensions": ["*"],
-            "max_file_size_mb": 100,
-            "readonly": False,
-        }
-
-    elif any(kw in desc_lower for kw in ['api', 'rest', 'http', '接口', 'external', '外部', 'graphql']):
-        name = "external_api_mcp"
-        desc = "外部API调用MCP服务器"
-        endpoint = "http://localhost:8001/mcp/api"
-        tool_filter = "(api|request|fetch|post|get|put|patch|delete)"
-        config = {
-            "type": "api_gateway",
-            "base_url": "https://api.example.com",
-            "auth_type": "bearer",
-            "rate_limit": 100,
-            "retry_count": 3,
-            "timeout": 30,
-        }
-
-    elif any(kw in desc_lower for kw in ['ai', 'llm', '人工智能', 'gpt', 'claude', 'model', '模型', 'chat', '对话', '语言模型']):
-        name = "llm_mcp"
-        desc = "LLM大语言模型MCP服务器"
-        endpoint = "http://localhost:8001/mcp/llm"
-        tool_filter = "(chat|complete|embed|generate|tokenize|classify|summarize)"
-        config = {
-            "type": "llm",
-            "provider": "openai",
-            "model": "gpt-4",
-            "max_tokens": 4096,
-            "temperature": 0.7,
-            "streaming": True,
-        }
-
-    elif any(kw in desc_lower for kw in ['storage', '存储', 'bucket', 's3', 'oss', 'cloud', 'upload', 'download']):
-        name = "storage_mcp"
-        desc = "云存储MCP服务器"
-        endpoint = "http://localhost:8001/mcp/storage"
-        tool_filter = "(upload|download|delete|list|bucket|object|presign)"
-        config = {
-            "type": "storage",
-            "provider": "s3",
-            "region": "us-east-1",
-            "bucket": "default-bucket",
-            "acl": "private",
-            "presigned_url_expiry": 3600,
-        }
-
-    else:
-        name = "custom_mcp"
-        desc = "自定义MCP服务器"
-        endpoint = "http://localhost:8001/mcp/custom"
-        tool_filter = "(custom|execute|run)"
-        config = {
-            "type": "custom",
-            "runtime": "python",
-            "entrypoint": "main.py",
-            "sandbox": True,
-            "timeout": 60,
-        }
-
-    return GeneratedMcp(
-        id=mcp_id,
-        name=name,
-        description=desc,
-        endpoint=endpoint,
-        tool_filter=tool_filter,
-        config=config,
-    )

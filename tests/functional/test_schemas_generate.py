@@ -1,5 +1,12 @@
 """Tests for schema generation from natural language."""
-from virtual_team.routers.schemas import _generate_schema_from_description
+from virtual_team.generation.generators.schema_generator import SchemaGenerator
+from virtual_team.generation.generators.base import GenerateRequest
+
+_gen = SchemaGenerator()
+
+
+def _generate_schema_from_description(desc: str, fmt: str = "json"):
+    return _gen.generate(GenerateRequest(description=desc, context={"format_type": fmt}))
 
 
 class TestGenerateSchemaFromDescription:

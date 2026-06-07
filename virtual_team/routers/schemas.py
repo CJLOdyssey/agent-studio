@@ -126,17 +126,27 @@ class GeneratedSchema(BaseModel):
 @router.post("/api/schemas/generate", response_model=GeneratedSchema)
 async def generate_schema(req: SchemaGenerateRequest):
     try:
-        schema = _generate_schema_from_description(req.description, req.format_type)
-        return schema
+        from virtual_team.generation import registry
+        from virtual_team.generation.generators.base import GenerateRequest as GenReq
+
+        generator = registry.get("schema")
+        if not generator:
+            raise HTTPException(status_code=500, detail="Schema generator not available")
+
+        result = generator.generate(GenReq(description=req.description, context={"format_type": req.format_type}))
+        return GeneratedSchema(
+            id=result.id,
+            name=result.name,
+            description=result.description,
+            format_type=req.format_type,
+            schema_def=result.metadata.get("schema_def", {}),
+            example=result.metadata.get("example", ""),
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Schema generation failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"输出格式生成失败: {e}")
-
-
-def _generate_schema_from_description(description: str, format_type: str) -> GeneratedSchema:
-    desc_lower = description.lower()
-
-    schema_id = f"schema_{hashlib.md5(description.encode()).hexdigest()[:8]}"  # nosec
 
     if any(kw in desc_lower for kw in ['prd', '产品需求', '需求文档', 'product requirement']):
         return _generate_prd_schema(schema_id, description, format_type)

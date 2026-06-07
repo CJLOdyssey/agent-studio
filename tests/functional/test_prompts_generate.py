@@ -1,5 +1,13 @@
 """Tests for prompt generation from natural language."""
-from virtual_team.routers.prompts import _generate_prompt_from_description
+from virtual_team.generation.generators.prompt_generator import PromptGenerator
+from virtual_team.generation.generators.base import GenerateRequest
+
+_gen = PromptGenerator()
+
+
+def _generate_prompt_from_description(desc: str):
+    result = _gen.generate(GenerateRequest(description=desc))
+    return result
 
 
 class TestGeneratePromptFromDescription:
