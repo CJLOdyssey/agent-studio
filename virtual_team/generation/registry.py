@@ -14,6 +14,8 @@ from virtual_team.generation.generators.base import BaseGenerator
 from virtual_team.generation.generators.mcp_generator import McpGenerator
 from virtual_team.generation.generators.prompt_generator import PromptGenerator
 from virtual_team.generation.generators.schema_generator import SchemaGenerator
+from virtual_team.generation.generators.skill_generator import SkillGenerator
+from virtual_team.generation.generators.tool_generator import ToolGenerator
 from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -41,3 +43,5 @@ def list_generators() -> dict[str, Any]:
 register("prompt", PromptGenerator())
 register("schema", SchemaGenerator())
 register("mcp", McpGenerator())
+register("tool", ToolGenerator())
+register("skill", SkillGenerator())
