@@ -18,7 +18,7 @@ fi
 
 echo "=== 1. 安装 system 依赖 ==="
 apt-get update -qq
-apt-get install -y -qq curl git docker.io docker-compose-v2 nodejs npm jq
+apt-get install -y -qq curl git docker.io docker-compose-v2 nodejs npm jq make gh
 
 echo "=== 2. 确保 /opt/virtual-team 存在 ==="
 if [ ! -d /opt/virtual-team ]; then

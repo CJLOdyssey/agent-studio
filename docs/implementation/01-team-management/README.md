@@ -49,7 +49,7 @@ Team (团队)
 | 已完成 | 2 |
 | 进度 | 67% |
 
-> 子域 01-agent-config: 10/10 ✅ | 02-team-organization: 7/7 ✅ | 03-permission-approval: 0/2 ⬜
+> 子域 01-agent-config: 11/11 ✅（含提示词生成器） | 02-team-organization: 7/7 ✅ | 03-permission-approval: 0/2 ⬜
 
 ---
 
@@ -59,3 +59,4 @@ Team (团队)
 |---|---|---|---|
 | v1.0.0 | 2026-06-06 | Sisyphus | 初始版本 |
 | v1.0.1 | 2026-06-07 | Sisyphus | 子域 01-agent-config 闭环完成 |
+| v1.1.0 | 2026-06-07 | Sisyphus | 01-agent-config 新增 提示词生成器（功能 11） |

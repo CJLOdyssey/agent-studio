@@ -2,7 +2,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from virtual_team.repository.prompts import activate_prompt, create_prompt, get_prompts
 
@@ -18,6 +18,19 @@ class PromptCreateRequest(BaseModel):
 
 class PromptActivateRequest(BaseModel):
     prompt_id: str
+
+
+class PromptGenerateRequest(BaseModel):
+    description: str = Field(..., min_length=1, max_length=500, description="自然语言描述")
+
+
+class GeneratedPrompt(BaseModel):
+    id: str
+    name: str
+    description: str
+    content: str
+    version: str = "v1.0"
+    tags: list[str] = []
 
 
 @router.post("/api/agents/{agent_id}/prompts", status_code=201)
@@ -83,3 +96,29 @@ async def activate_agent_prompt(agent_id: str, req: PromptActivateRequest):
     except Exception as e:
         logger.error("Error activating prompt: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/prompts/generate", response_model=GeneratedPrompt)
+async def generate_prompt(req: PromptGenerateRequest):
+    try:
+        from virtual_team.generation import registry
+        from virtual_team.generation.generators.base import GenerateRequest as GenReq
+
+        generator = registry.get("prompt")
+        if not generator:
+            raise HTTPException(status_code=500, detail="Prompt generator not available")
+
+        result = generator.generate(GenReq(description=req.description))
+        return GeneratedPrompt(
+            id=result.id,
+            name=result.name,
+            description=result.description,
+            content=result.content,
+            version=result.metadata.get("version", "v1.0"),
+            tags=result.metadata.get("tags", []),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Prompt generation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"提示词生成失败: {e}")

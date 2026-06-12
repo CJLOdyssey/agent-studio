@@ -2,7 +2,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from virtual_team.repository.bindings import (
     bind_mcp,
@@ -33,6 +33,19 @@ class BindMcpRequest(BaseModel):
 
 class BindSkillRequest(BaseModel):
     skill_id: str
+
+
+class McpGenerateRequest(BaseModel):
+    description: str = Field(..., min_length=1, max_length=500, description="自然语言描述")
+
+
+class GeneratedMcp(BaseModel):
+    id: str
+    name: str
+    description: str
+    endpoint: str
+    tool_filter: str | None = None
+    config: dict
 
 
 # ── Tool Binding Routes ────────────────────────────────────────
@@ -153,3 +166,32 @@ async def list_agent_skills(agent_id: str):
     except Exception as e:
         logger.error("Error listing skills: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── MCP Generation Route ────────────────────────────────────────
+
+
+@router.post("/api/mcp/generate", response_model=GeneratedMcp)
+async def generate_mcp(req: McpGenerateRequest):
+    try:
+        from virtual_team.generation import registry
+        from virtual_team.generation.generators.base import GenerateRequest as GenReq
+
+        generator = registry.get("mcp")
+        if not generator:
+            raise HTTPException(status_code=500, detail="MCP generator not available")
+
+        result = generator.generate(GenReq(description=req.description))
+        return GeneratedMcp(
+            id=result.id,
+            name=result.name,
+            description=result.description,
+            endpoint=result.content,
+            tool_filter=result.metadata.get("tool_filter"),
+            config=result.metadata.get("config", {}),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("MCP generation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"MCP生成失败: {e}")
