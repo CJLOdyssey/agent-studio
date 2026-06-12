@@ -1,6 +1,7 @@
 """Tests for MCP generation from natural language."""
-from virtual_team.generation.generators.mcp_generator import McpGenerator
+
 from virtual_team.generation.generators.base import GenerateRequest
+from virtual_team.generation.generators.mcp_generator import McpGenerator
 
 _gen = McpGenerator()
 

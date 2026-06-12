@@ -176,7 +176,10 @@ def run_command(command: str, cwd: str = None, timeout: int = 60) -> dict:
         "code": '''import requests
 from typing import Dict, Optional
 
-def http_request(url: str, method: str = "GET", headers: Dict = None, data: dict = None, json_data: dict = None, timeout: int = 30) -> dict:
+def http_request(
+    url: str, method: str = "GET", headers: Dict = None,
+    data: dict = None, json_data: dict = None, timeout: int = 30,
+) -> dict:
     """
     发送HTTP请求
 
@@ -204,7 +207,9 @@ def http_request(url: str, method: str = "GET", headers: Dict = None, data: dict
             "status_code": response.status_code,
             "headers": dict(response.headers),
             "text": response.text,
-            "json": response.json() if response.headers.get("content-type", "").startswith("application/json") else None,
+            "json": response.json() if response.headers.get(
+                "content-type", ""
+            ).startswith("application/json") else None,
             "success": 200 <= response.status_code < 300
         }
     except requests.RequestException as e:

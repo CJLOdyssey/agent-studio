@@ -1,6 +1,7 @@
 """Tests for schema generation from natural language."""
-from virtual_team.generation.generators.schema_generator import SchemaGenerator
+
 from virtual_team.generation.generators.base import GenerateRequest
+from virtual_team.generation.generators.schema_generator import SchemaGenerator
 
 _gen = SchemaGenerator()
 

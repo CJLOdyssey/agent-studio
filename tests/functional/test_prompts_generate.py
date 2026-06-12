@@ -1,6 +1,7 @@
 """Tests for prompt generation from natural language."""
-from virtual_team.generation.generators.prompt_generator import PromptGenerator
+
 from virtual_team.generation.generators.base import GenerateRequest
+from virtual_team.generation.generators.prompt_generator import PromptGenerator
 
 _gen = PromptGenerator()
 

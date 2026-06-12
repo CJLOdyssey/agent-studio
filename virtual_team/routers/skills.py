@@ -1,7 +1,5 @@
 """Skill generation API routes: Generate SKILL.md from natural language."""
 
-import hashlib
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -71,31 +69,6 @@ async def validate_skill(req: SkillValidateRequest):
     except Exception as e:
         logger.error("Skill validation failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"验证失败: {e}")
-
-    skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"  # nosec
-
-    if any(kw in desc_lower for kw in ['代码审查', 'code review', '审查', 'review']):
-        return _generate_code_review_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['安全', 'security', '漏洞', 'vulnerability']):
-        return _generate_security_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['api', '接口', '接口设计', 'restful']):
-        return _generate_api_design_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['测试', 'test', '单元测试', 'unit test']):
-        return _generate_testing_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['文档', 'documentation', 'readme']):
-        return _generate_documentation_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['性能', 'performance', '优化', 'optimization']):
-        return _generate_performance_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['重构', 'refactor', '代码质量']):
-        return _generate_refactoring_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['git', '提交', 'commit', '版本控制']):
-        return _generate_git_workflow_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['数据库', 'database', 'sql', '迁移']):
-        return _generate_database_skill(skill_id, description)
-    elif any(kw in desc_lower for kw in ['部署', 'deploy', 'ci/cd', 'docker']):
-        return _generate_deployment_skill(skill_id, description)
-    else:
-        return _generate_custom_skill(skill_id, description)
 
 
 
