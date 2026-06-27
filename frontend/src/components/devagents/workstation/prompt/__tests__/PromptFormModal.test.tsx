@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PromptFormModal from '../PromptFormModal';
 import type { PromptFormData } from '../types';
+import { TestProviders } from '../../../../../test/setup';
 
 const baseFormData: PromptFormData = {
   name: '', content: '', category: '系统提示词', model: 'GPT-4o', status: 'active', version: 'v1.0.0',
@@ -18,7 +19,7 @@ function renderModal(overrides?: Partial<Parameters<typeof renderModal>[0]>) {
     errors: [] as string[],
     ...overrides,
   };
-  return { ...render(<PromptFormModal {...props} />), props };
+  return { ...render(<TestProviders><PromptFormModal {...props} /></TestProviders>), props };
 }
 
 describe('PromptFormModal', () => {
