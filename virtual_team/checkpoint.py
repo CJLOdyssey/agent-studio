@@ -22,22 +22,30 @@ logger = get_logger(__name__)
 
 
 def create_checkpointer(
-    backend: str = "memory",
+    backend: str | None = None,
     dsn: str | None = None,
 ) -> "BaseCheckpointSaver":  # noqa: F821 — lazy import avoids circular dep
     """Create a checkpointer based on environment configuration.
 
-    Uses MemorySaver (sync+async compatible). The ``checkpoints`` DB table
-    is persisted separately via ``save_checkpoint()`` / ``load_latest_checkpoint()``
-    for app-level recovery.
+    When called without arguments, reads ``CHECKPOINTER_BACKEND`` and
+    ``CHECKPOINTER_DSN`` from environment. Defaults to SQLite with an
+    in-process database file.
 
-    Environment variables:
-        CHECKPOINTER_BACKEND: reserved for future SQLite/Postgres support.
-        CHECKPOINTER_DSN: reserved.
+    Supported backends:
+        sqlite (default) — ``SqliteSaver`` backed by a local file.
+        memory — ``MemorySaver`` (no persistence across restarts).
+        postgres — ``PostgresSaver`` (requires ``CHECKPOINTER_DSN``).
 
     Returns a ``BaseCheckpointSaver``-compatible instance for use with
     ``workflow.compile(checkpointer=...)``.
     """
+    import os
+
+    if backend is None:
+        backend = os.environ.get("CHECKPOINTER_BACKEND", "sqlite")
+    if dsn is None:
+        dsn = os.environ.get("CHECKPOINTER_DSN")
+
     logger.info("Creating checkpointer for backend=%s", backend)
 
     if backend == "postgres":
@@ -51,6 +59,22 @@ def create_checkpointer(
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
             ) from exc
         return PostgresSaver.from_conn_string(dsn)
+
+    if backend == "sqlite":
+        if not dsn:
+            dsn = "checkpoints.db"
+        logger.info("Creating SqliteSaver checkpointer (dsn=%s)", dsn)
+        try:
+            import sqlite3
+
+            from langgraph.checkpoint.sqlite import SqliteSaver  # type: ignore[import-untyped]
+
+            conn = sqlite3.connect(dsn, check_same_thread=False)
+            return SqliteSaver(conn)
+        except ImportError as exc:
+            raise ImportError(
+                "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra"
+            ) from exc
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
     return MemorySaver()
