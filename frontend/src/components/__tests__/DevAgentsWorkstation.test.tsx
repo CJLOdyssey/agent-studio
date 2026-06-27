@@ -202,7 +202,7 @@ describe('DevAgentsWorkstation', () => {
       // Team starts expanded — agents are already visible
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-name');
+      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
       expect(sidebarAgents.length).toBe(8);
     });
   });
@@ -218,13 +218,13 @@ describe('DevAgentsWorkstation', () => {
       // Team starts expanded — agents are already visible; no toggle needed
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
+      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
 
       expect(screen.getByText(/与 产品经理 对话/)).toBeInTheDocument();
     });
 
-    it('should show back button when agent is selected', async () => {
+    it('should show workspace (MessagesPanel) when agent is selected', async () => {
       render(
         <TestProviders>
           <DevAgentsWorkstation />
@@ -233,13 +233,14 @@ describe('DevAgentsWorkstation', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
+      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
 
-      expect(screen.getByText('返回')).toBeInTheDocument();
+      // MessagesPanel is rendered when agent is selected
+      expect(screen.getByText(/与 产品经理 对话/)).toBeInTheDocument();
     });
 
-    it('should render home page structure after returning from agent', async () => {
+    it('should show agent-specific header when agent selected', async () => {
       render(
         <TestProviders>
           <DevAgentsWorkstation />
@@ -248,13 +249,13 @@ describe('DevAgentsWorkstation', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
+      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
+      expect(screen.getByText(/与 产品经理 对话/)).toBeInTheDocument();
 
-      fireEvent.click(screen.getByText('返回'));
-
-      const homeSection = document.querySelector('.devagents-home');
-      expect(homeSection).toBeInTheDocument();
+      // Select a different agent
+      fireEvent.click(sidebarAgents[1]);
+      expect(screen.getByText(/与 前端工程师 对话/)).toBeInTheDocument();
     });
   });
 
@@ -268,22 +269,22 @@ describe('DevAgentsWorkstation', () => {
 
       // Team starts expanded — agents list should be visible
       await new Promise((resolve) => setTimeout(resolve, 100));
-      const agentsList = document.querySelector('.devagents-agents-list');
+      const agentsList = document.querySelector('.devagents-team-agents');
       expect(agentsList).toBeInTheDocument();
 
       // First click: collapse
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
+      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-folder-header');
       fireEvent.click(teamHeader!);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const agentsListCollapsed = document.querySelectorAll('.devagents-agents-list');
+      const agentsListCollapsed = document.querySelectorAll('.devagents-team-agents');
       expect(agentsListCollapsed.length).toBe(0);
 
       // Second click: expand again
       fireEvent.click(teamHeader!);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const agentsListExpanded = document.querySelector('.devagents-agents-list');
+      const agentsListExpanded = document.querySelector('.devagents-team-agents');
       expect(agentsListExpanded).toBeInTheDocument();
     });
   });
@@ -342,9 +343,9 @@ describe('DevAgentsWorkstation', () => {
         </TestProviders>,
       );
       await waitFor(() => {
-        expect(document.querySelectorAll('.devagents-sidebar .devagents-agent-item').length).toBeGreaterThan(0);
+        expect(document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item').length).toBeGreaterThan(0);
       });
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-agent-item');
+      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
       expect(screen.queryByText('资源管理器')).not.toBeInTheDocument();
     });
@@ -387,11 +388,11 @@ describe('DevAgentsWorkstation', () => {
           <DevAgentsWorkstation />
         </TestProviders>,
       );
-      const userBtn = screen.getByText('User 1001').closest('.devagents-user-btn');
+      const userBtn = screen.getByText('User 1001').closest('.devagents-user-trigger');
       fireEvent.click(userBtn!);
 
       expect(screen.getByText('系统设置')).toBeInTheDocument();
-      expect(screen.getByText('API 管理')).toBeInTheDocument();
+      expect(screen.getByText('API Key')).toBeInTheDocument();
       expect(screen.getByText('帮助与反馈')).toBeInTheDocument();
       expect(screen.getByText('退出登录')).toBeInTheDocument();
     });

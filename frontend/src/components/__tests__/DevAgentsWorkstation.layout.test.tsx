@@ -157,7 +157,7 @@ describe('DevAgentsWorkstation 布局测试', () => {
           <DevAgentsWorkstation />
         </TestProviders>,
       );
-      const layout = document.querySelector('.devagents-layout');
+      const layout = document.querySelector('.devagents-app');
       expect(layout).toBeInTheDocument();
     });
 
