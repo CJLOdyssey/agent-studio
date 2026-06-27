@@ -57,7 +57,7 @@ const langs: Record<string, [zh: string, en: string]> = {
   'mcp.confirm_batch_delete_desc': ['确定要删除选中的 {n} 个 MCP 吗？', 'Delete {n} selected MCPs?'],
 };
 
-let lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
+const lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
 
 export function t(key: string, ...args: string[]): string {
   let v = (langs[key] ?? ['', ''])[lang === 'zh' ? 0 : 1] || key;

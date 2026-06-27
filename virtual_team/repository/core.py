@@ -1,9 +1,10 @@
-import asyncio
 from datetime import UTC, datetime
+
+# ── RBAC helpers ─────────────────────────────────────────────────────────────
+from typing import TypeVar
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import desc, select
 
 from virtual_team.database import (
     AgentConfigDB,
@@ -13,14 +14,6 @@ from virtual_team.database import (
     SessionDB,
     get_session_factory,
 )
-from virtual_team.models import AgentConfig
-from virtual_team.prompts import DIRECT_REPLY_KEYWORD
-
-
-# ── RBAC helpers ─────────────────────────────────────────────────────────────
-
-from typing import TypeVar
-from sqlalchemy import select
 
 _T = TypeVar("_T")
 
@@ -37,7 +30,10 @@ def apply_owner_filter(stmt, model_class, owner_id: str | None = None):
 
 # ── Session CRUD ─────────────────────────────────────────────────────────────
 
-async def create_session(title: str = "新对话", user_id: str = "default", agent_id: str | None = None) -> SessionDB:
+
+async def create_session(
+    title: str = "新对话", user_id: str = "default", agent_id: str | None = None
+) -> SessionDB:
     factory = get_session_factory()
     async with factory() as session:
         obj = SessionDB(
@@ -53,12 +49,16 @@ async def create_session(title: str = "新对话", user_id: str = "default", age
         await session.refresh(obj)
         return obj
 
+
 async def get_session(session_id: str) -> SessionDB | None:
     factory = get_session_factory()
     async with factory() as session:
         return await session.get(SessionDB, session_id)
 
-async def get_sessions(limit: int = 50, user_id: str | None = None, agent_id: str | None = None) -> list[SessionDB]:
+
+async def get_sessions(
+    limit: int = 50, user_id: str | None = None, agent_id: str | None = None
+) -> list[SessionDB]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(SessionDB).order_by(desc(SessionDB.updated_at)).limit(limit)
@@ -68,6 +68,7 @@ async def get_sessions(limit: int = 50, user_id: str | None = None, agent_id: st
             stmt = stmt.where(SessionDB.user_id == user_id)
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
 
 async def update_session_title(session_id: str, title: str) -> SessionDB | None:
     factory = get_session_factory()
@@ -81,6 +82,7 @@ async def update_session_title(session_id: str, title: str) -> SessionDB | None:
         await session.refresh(obj)
         return obj
 
+
 async def delete_session(session_id: str) -> bool:
     factory = get_session_factory()
     async with factory() as session:
@@ -90,6 +92,7 @@ async def delete_session(session_id: str) -> bool:
         await session.delete(obj)
         await session.commit()
         return True
+
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:
     factory = get_session_factory()
@@ -101,6 +104,7 @@ async def get_session_runs(session_id: str) -> list[ProjectRun]:
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
 
 async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[ProjectRun]]:
     """Batch-load runs for multiple session IDs, keyed by session_id."""
@@ -120,6 +124,7 @@ async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[Proj
             grouped.setdefault(run.session_id or "", []).append(run)
         return grouped
 
+
 async def get_session_memories(session_id: str) -> list[MemoryEntry]:
     factory = get_session_factory()
     async with factory() as session:
@@ -130,6 +135,7 @@ async def get_session_memories(session_id: str) -> list[MemoryEntry]:
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
 
 async def create_memory_entry(
     session_id: str,
@@ -156,6 +162,7 @@ async def create_memory_entry(
         await session.refresh(obj)
         return obj
 
+
 async def clear_session_memories(session_id: str):
     factory = get_session_factory()
     async with factory() as session:
@@ -164,6 +171,7 @@ async def clear_session_memories(session_id: str):
         for obj in result.scalars().all():
             await session.delete(obj)
         await session.commit()
+
 
 async def delete_memory_entry(memory_id: str) -> bool:
     factory = get_session_factory()
@@ -174,6 +182,7 @@ async def delete_memory_entry(memory_id: str) -> bool:
         await session.delete(obj)
         await session.commit()
         return True
+
 
 async def create_run(requirement: str, session_id: str | None = None) -> str:
     run_id = str(uuid4())
@@ -196,6 +205,7 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
                 await session.commit()
     return run_id
 
+
 async def update_run_status(run_id: str, status: str):
     factory = get_session_factory()
     async with factory() as session:
@@ -204,6 +214,7 @@ async def update_run_status(run_id: str, status: str):
             run.status = status
             run.updated_at = datetime.now(UTC)
             await session.commit()
+
 
 async def save_message(run_id: str, role: str, agent_name: str, content: str, round_number: int):
     msg = ChatMessage(
@@ -219,6 +230,7 @@ async def save_message(run_id: str, role: str, agent_name: str, content: str, ro
     async with factory() as session:
         session.add(msg)
         await session.commit()
+
 
 async def update_run_result(
     run_id: str,
@@ -240,11 +252,13 @@ async def update_run_result(
             run.updated_at = datetime.now(UTC)
             await session.commit()
 
+
 async def get_run(run_id: str) -> ProjectRun | None:
     factory = get_session_factory()
     async with factory() as session:
         run = await session.get(ProjectRun, run_id)
         return run
+
 
 async def get_runs(limit: int = 20) -> list[ProjectRun]:
     factory = get_session_factory()
@@ -253,16 +267,16 @@ async def get_runs(limit: int = 20) -> list[ProjectRun]:
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
+
 async def get_messages(run_id: str) -> list[ChatMessage]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
-            select(ChatMessage)
-            .where(ChatMessage.run_id == run_id)
-            .order_by(ChatMessage.created_at)
+            select(ChatMessage).where(ChatMessage.run_id == run_id).order_by(ChatMessage.created_at)
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
 
 async def get_agent_configs() -> list[AgentConfigDB]:
     factory = get_session_factory()
@@ -270,6 +284,7 @@ async def get_agent_configs() -> list[AgentConfigDB]:
         stmt = select(AgentConfigDB).order_by(AgentConfigDB.order, AgentConfigDB.created_at)
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
 
 async def get_active_agent_configs() -> list[AgentConfigDB]:
     factory = get_session_factory()
@@ -282,12 +297,14 @@ async def get_active_agent_configs() -> list[AgentConfigDB]:
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
+
 async def get_agent_config_by_role(role_identifier: str) -> AgentConfigDB | None:
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(AgentConfigDB).where(AgentConfigDB.role_identifier == role_identifier)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+
 
 async def get_agent_config(agent_id: str) -> AgentConfigDB | None:
     factory = get_session_factory()
@@ -296,27 +313,25 @@ async def get_agent_config(agent_id: str) -> AgentConfigDB | None:
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
+
 async def get_run_messages(run_id: str) -> list[ChatMessage]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
-            select(ChatMessage)
-            .where(ChatMessage.run_id == run_id)
-            .order_by(ChatMessage.created_at)
+            select(ChatMessage).where(ChatMessage.run_id == run_id).order_by(ChatMessage.created_at)
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
 
-async def get_session_messages(session_id: str, exclude_run_id: str | None = None) -> list[ChatMessage]:
+async def get_session_messages(
+    session_id: str, exclude_run_id: str | None = None
+) -> list[ChatMessage]:
     """Get all chat messages across all runs in a session, ordered chronologically."""
     factory = get_session_factory()
     async with factory() as session:
         # Get all run IDs for this session
-        runs_stmt = (
-            select(ProjectRun.id)
-            .where(ProjectRun.session_id == session_id)
-        )
+        runs_stmt = select(ProjectRun.id).where(ProjectRun.session_id == session_id)
         if exclude_run_id:
             runs_stmt = runs_stmt.where(ProjectRun.id != exclude_run_id)
         runs_result = await session.execute(runs_stmt)

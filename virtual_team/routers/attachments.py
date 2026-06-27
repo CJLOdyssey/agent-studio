@@ -19,9 +19,14 @@ router = APIRouter(tags=["attachments"])
 
 MAX_FILE_SIZE_MB = 10
 ALLOWED_CONTENT_TYPES = {
-    "image/png", "image/jpeg", "image/gif", "image/webp",
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+    "image/webp",
     "application/pdf",
-    "text/plain", "text/markdown", "text/csv",
+    "text/plain",
+    "text/markdown",
+    "text/csv",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/json",
@@ -52,7 +57,7 @@ async def _extract_text(file_path: Path, content_type: str) -> str:
 
 @router.post("/api/attachments", response_model=AttachmentResponse)
 async def upload_attachment(
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008
     session_id: str = Form(...),
     run_id: str | None = Form(None),
 ):
@@ -73,7 +78,7 @@ async def upload_attachment(
         storage_path.write_bytes(content)
     except Exception as e:
         logger.error("Failed to save attachment: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="文件保存失败")
+        raise HTTPException(status_code=500, detail="文件保存失败") from e
 
     extracted = await _extract_text(storage_path, content_type)
 
@@ -93,7 +98,12 @@ async def upload_attachment(
         db.add(db_attachment)
         await db.commit()
 
-    logger.info("Attachment uploaded | id=%s | session=%s | size=%d", attachment_id, session_id, len(content))
+    logger.info(
+        "Attachment uploaded | id=%s | session=%s | size=%d",
+        attachment_id,
+        session_id,
+        len(content),
+    )
 
     return AttachmentResponse(
         id=attachment_id,
@@ -132,8 +142,11 @@ async def list_session_attachments(session_id: str):
     factory = get_session_factory()
     async with factory() as db:
         from sqlalchemy import select
+
         result = await db.execute(
-            select(Attachment).where(Attachment.session_id == session_id).order_by(Attachment.created_at.desc())
+            select(Attachment)
+            .where(Attachment.session_id == session_id)
+            .order_by(Attachment.created_at.desc())
         )
         attachments = result.scalars().all()
 

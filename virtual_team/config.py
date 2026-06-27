@@ -18,6 +18,7 @@ if _env_file.exists():
             if key and key not in os.environ:
                 os.environ[key] = value
 
+
 class TeamConfig(BaseModel):
     model_config = {"extra": "forbid"}
 

@@ -4,7 +4,6 @@ Unit tests for TeamGraph — multi-agent collaboration graph.
 Tests graph construction, agent configuration, and state structure
 without requiring a live LLM API key.
 """
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -16,10 +15,10 @@ from virtual_team.team_graph import (
     _replace_section,
 )
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # TeamGraph initialization tests
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_team_graph_initialization():
@@ -93,6 +92,7 @@ async def test_set_agents_empty_list():
 # TeamState structure tests
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_team_state_structure():
     """TeamState has all required keys: messages, requirement, pm_document, etc."""
@@ -127,6 +127,7 @@ async def test_team_state_structure():
 # _replace_section unit tests
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def test_replace_section_empty_existing():
     """When existing is empty, _replace_section appends header + content."""
     result = _replace_section("", "## Code", "print('hello')")
@@ -135,13 +136,11 @@ def test_replace_section_empty_existing():
 
 def test_replace_section_updates_existing():
     """When section exists, its content is replaced.
-    
+
     Note: section_header must NOT have trailing newline — the function adds one.
     """
     existing = (
-        "## Frontend Code\nold frontend\n\n"
-        "## Backend Code\nold backend\n\n"
-        "## Tests\nold tests"
+        "## Frontend Code\nold frontend\n\n## Backend Code\nold backend\n\n## Tests\nold tests"
     )
     result = _replace_section(existing, "## Frontend Code", "new frontend\nwith more code")
     assert "new frontend" in result
@@ -165,6 +164,7 @@ def test_replace_section_appends_when_not_found():
 # ──────────────────────────────────────────────────────────────────────────────
 # Constants test
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def test_approval_keyword():
     """APPROVAL_KEYWORD is the expected Chinese marker."""

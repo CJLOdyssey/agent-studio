@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { usePromptImportExport } from '../usePromptImportExport';
 import type { PromptEntry } from '../types';
 

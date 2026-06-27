@@ -19,6 +19,17 @@ import { t } from './locales';
 
 const ALL_PROMPTS = [...MOCK_AGENT_PROMPTS, ...MOCK_PROMPTS];
 
+function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string | null; sortDir: string }) {
+  if (sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
+  return sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
+}
+
+function SortHeader({ field, label, sortField, sortDir, onSort }: { field: SortField; label: string; sortField: SortField | null; sortDir: string; onSort: (field: SortField) => void }) {
+  return (
+    <th className="wsta-th wsta-sortable" scope="col" onClick={() => onSort(field)} aria-sort={sortField === field ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{label} <SortIcon field={field} sortField={sortField} sortDir={sortDir} /></th>
+  );
+}
+
 export default function AgentManagement() {
   const mgmt = useAgentManagement();
   const { toast } = useToast();
@@ -31,15 +42,6 @@ export default function AgentManagement() {
   function handleCopyWrapper(item: typeof mgmt.processed[0]) { mgmt.handleCopy(item); toast(t('agent.toast_copied'), 'success'); }
 
   const statusColors: Record<string, string> = { running: 'wsta-badge-green', stopped: 'wsta-badge-gray', error: 'wsta-badge-red' };
-
-  const SortIcon = ({ field }: { field: 'name' | 'team' | 'status' }) => {
-    if (mgmt.sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
-    return mgmt.sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
-  };
-
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
-    <th className="wsta-th wsta-sortable" scope="col" onClick={() => mgmt.handleSort(field)} aria-sort={mgmt.sortField === field ? (mgmt.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{label} <SortIcon field={field} /></th>
-  );
 
   if (mgmt.isLoading) return <div className="wsta-panel" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
@@ -84,11 +86,11 @@ export default function AgentManagement() {
         <table className="wsta-table" role="grid" aria-label={t('agent.col_name')}>
           <thead><tr>
             <th className="wsta-th wsta-th-check" scope="col"><input type="checkbox" checked={mgmt.allOnPageSelected} onChange={mgmt.toggleSelectAll} aria-label={t('agent.select_all')} /></th>
-            <SortHeader field="name" label={t('agent.col_name')} />
-            <SortHeader field="team" label={t('agent.col_team')} />
+            <SortHeader field="name" label={t('agent.col_name')} sortField={mgmt.sortField} sortDir={mgmt.sortDir} onSort={mgmt.handleSort} />
+            <SortHeader field="team" label={t('agent.col_team')} sortField={mgmt.sortField} sortDir={mgmt.sortDir} onSort={mgmt.handleSort} />
             <th className="wsta-th" scope="col">{t('agent.col_model')}</th>
             <th className="wsta-th" scope="col">提示词</th>
-            <SortHeader field="status" label={t('agent.col_status')} />
+            <SortHeader field="status" label={t('agent.col_status')} sortField={mgmt.sortField} sortDir={mgmt.sortDir} onSort={mgmt.handleSort} />
             <th className="wsta-th" scope="col">{t('agent.col.version')}</th>
             <th className="wsta-th wsta-th-actions" scope="col">{t('agent.col_actions')}</th>
           </tr></thead>

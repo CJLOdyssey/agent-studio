@@ -5,11 +5,11 @@ from pydantic import BaseModel, Field
 
 from virtual_team.logging_config import get_logger
 from virtual_team.system_team.main import get_system_team_manager
-from virtual_team.system_team.tools_agent.generator import ToolGenerator
-from virtual_team.system_team.tools_agent.validator import ToolValidator
+from virtual_team.system_team.shared.llm import llm_client
 from virtual_team.system_team.skill_agent.generator import SkillGenerator
 from virtual_team.system_team.skill_agent.validator import SkillValidator
-from virtual_team.system_team.shared.llm import llm_client
+from virtual_team.system_team.tools_agent.generator import ToolGenerator
+from virtual_team.system_team.tools_agent.validator import ToolValidator
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/system-team", tags=["system-team"])
@@ -81,7 +81,7 @@ async def generate_tool(req: ToolGenerateRequest):
         return result
     except Exception as e:
         logger.error("Tool generation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/tools/save")
@@ -91,7 +91,7 @@ async def save_tool(tool_data: dict):
         return {"success": True, "path": str(path)}
     except Exception as e:
         logger.error("Tool save failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/skills/generate")
@@ -101,7 +101,7 @@ async def generate_skill(req: SkillGenerateRequest):
         return result
     except Exception as e:
         logger.error("Skill generation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/skills/save")
@@ -111,4 +111,4 @@ async def save_skill(skill_data: dict):
         return {"success": True, "path": str(path)}
     except Exception as e:
         logger.error("Skill save failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

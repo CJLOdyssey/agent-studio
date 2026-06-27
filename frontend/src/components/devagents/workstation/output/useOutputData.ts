@@ -19,28 +19,33 @@ export interface OutputData {
 
 export function useOutputData(): OutputData {
   const [items, setItems] = useState<OutputEntry[]>([]);
-  const itemsRef = useRef(items); itemsRef.current = items;
+  const itemsRef = useRef(items);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [search_, setSearch_] = useState('');
+  const [categoryFilter_, setCategoryFilter_] = useState('all');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => { itemsRef.current = items; }, [items]);
+
   useEffect(() => {
-    setIsLoading(true); setError(null);
+    let cancelled = false;
     outputAPI.fetchAll()
-      .then(data => { setItems(data); setIsLoading(false); })
-      .catch(e => { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); });
+      .then(data => { if (!cancelled) { setItems(data); setIsLoading(false); } })
+      .catch(e => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
+    return () => { cancelled = true; };
   }, []);
-  useEffect(() => { setPage(1); }, [search, categoryFilter]);
+
+  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); }, []);
+  const setCategoryFilter = useCallback((v: string) => { setCategoryFilter_(v); setPage(1); }, []);
 
   const filtered = useMemo(() => {
     let r = items;
-    if (search) { const q = search.toLowerCase(); r = r.filter((i) => i.name.toLowerCase().includes(q) || i.content.toLowerCase().includes(q)); }
-    if (categoryFilter !== 'all') r = r.filter((i) => i.category === categoryFilter);
+    if (search_) { const q = search_.toLowerCase(); r = r.filter((i) => i.name.toLowerCase().includes(q) || i.content.toLowerCase().includes(q)); }
+    if (categoryFilter_ !== 'all') r = r.filter((i) => i.category === categoryFilter_);
     return r;
-  }, [items, search, categoryFilter]);
+  }, [items, search_, categoryFilter_]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -75,8 +80,9 @@ export function useOutputData(): OutputData {
     setIsLoading(true); setError(null);
     outputAPI.fetchAll()
       .then(data => { setItems(data); setIsLoading(false); })
-      .catch(e => { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); });
+      .catch(e => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
+    return () => { cancelled = true; };
   }, []);
 
-  return { isLoading, error, filtered, paged, page: safePage, totalPages, search, categoryFilter, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, toggleSelect, toggleSelectAll, addItem, updateItem, removeItem, copyItem, removeMultiple, getAllItems, addItems, clearError, retry };
+  return { isLoading, error, filtered, paged, page: safePage, totalPages, search: search_, categoryFilter: categoryFilter_, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, toggleSelect, toggleSelectAll, addItem, updateItem, removeItem, copyItem, removeMultiple, getAllItems, addItems, clearError, retry };
 }

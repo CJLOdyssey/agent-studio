@@ -6,11 +6,8 @@ restarts and can be resumed from where they left off.
 """
 
 import json
-import os
-import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Literal
 from uuid import uuid4
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -25,6 +22,7 @@ logger = get_logger(__name__)
 
 
 def create_checkpointer(
+    backend: str = "memory",
     dsn: str | None = None,
 ) -> "BaseCheckpointSaver":  # noqa: F821 — lazy import avoids circular dep
     """Create a checkpointer based on environment configuration.
@@ -40,8 +38,7 @@ def create_checkpointer(
     Returns a ``BaseCheckpointSaver``-compatible instance for use with
     ``workflow.compile(checkpointer=...)``.
     """
-    logger.info("Creating MemorySaver checkpointer")
-    return MemorySaver()
+    logger.info("Creating checkpointer for backend=%s", backend)
 
     if backend == "postgres":
         if not dsn:
@@ -55,35 +52,40 @@ def create_checkpointer(
             ) from exc
         return PostgresSaver.from_conn_string(dsn)
 
-    if backend == "memory":
-        logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
-        return MemorySaver()
+    logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
+    return MemorySaver()
 
-    msg = f"Unknown CHECKPOINTER_BACKEND={backend!r}. Supported: sqlite, postgres, memory"
-    raise ValueError(msg)
 
 # ── Database model ───────────────────────────────────────────────────────────
+
 
 class CheckpointDB(Base):
     __tablename__ = "checkpoints"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
+        String(36),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     run_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("project_runs.id", ondelete="SET NULL"), nullable=True,
+        String(36),
+        ForeignKey("project_runs.id", ondelete="SET NULL"),
+        nullable=True,
     )
     step_index: Mapped[int] = mapped_column(Integer, default=0)
     agent_state: Mapped[str] = mapped_column(Text, nullable=False)  # JSON-serialized state
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
 
 @dataclass
 class AgentCheckpoint:
     """In-memory representation of a saved agent state."""
+
     session_id: str
     run_id: str | None
     step_index: int
@@ -93,15 +95,18 @@ class AgentCheckpoint:
     react_steps: list[dict] = field(default_factory=list)
 
     def to_json(self) -> str:
-        return json.dumps({
-            "session_id": self.session_id,
-            "run_id": self.run_id,
-            "step_index": self.step_index,
-            "system_prompt": self.system_prompt,
-            "user_input": self.user_input,
-            "messages": self.messages,
-            "react_steps": self.react_steps,
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "session_id": self.session_id,
+                "run_id": self.run_id,
+                "step_index": self.step_index,
+                "system_prompt": self.system_prompt,
+                "user_input": self.user_input,
+                "messages": self.messages,
+                "react_steps": self.react_steps,
+            },
+            ensure_ascii=False,
+        )
 
     @classmethod
     def from_json(cls, data: str) -> "AgentCheckpoint":
@@ -110,6 +115,7 @@ class AgentCheckpoint:
 
 
 # ── Repository functions ─────────────────────────────────────────────────────
+
 
 async def save_checkpoint(checkpoint: AgentCheckpoint) -> str:
     """Persist an agent checkpoint to the database. Returns checkpoint ID."""
@@ -133,6 +139,7 @@ async def load_latest_checkpoint(session_id: str) -> AgentCheckpoint | None:
     factory = get_session_factory()
     async with factory() as session:
         from sqlalchemy import desc, select
+
         stmt = (
             select(CheckpointDB)
             .where(CheckpointDB.session_id == session_id)
@@ -151,6 +158,7 @@ async def list_checkpoints(session_id: str) -> list[AgentCheckpoint]:
     factory = get_session_factory()
     async with factory() as session:
         from sqlalchemy import select
+
         stmt = (
             select(CheckpointDB)
             .where(CheckpointDB.session_id == session_id)

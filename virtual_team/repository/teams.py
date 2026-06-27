@@ -1,18 +1,21 @@
-import asyncio
-from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
+from sqlalchemy import select
+from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
-from virtual_team.database import TeamDB, TeamAgentDB, get_session_factory
+from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
 
 
 async def get_teams() -> list[dict]:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(TeamDB).order_by(TeamDB.order).options(
-            selectinload(TeamDB.members).selectinload(TeamAgentDB.agent_config),
+        stmt = (
+            select(TeamDB)
+            .order_by(TeamDB.order)
+            .options(
+                selectinload(TeamDB.members).selectinload(TeamAgentDB.agent_config),
+            )
         )
         result = await session.execute(stmt)
         teams = result.scalars().all()
@@ -30,7 +33,9 @@ async def get_teams() -> list[dict]:
                         "order": m.order,
                         "agent_config_id": m.agent_config_id,
                         "system_prompt": m.agent_config.system_prompt if m.agent_config else None,
-                        "output_constraints": m.agent_config.output_constraints if m.agent_config else None,
+                        "output_constraints": m.agent_config.output_constraints
+                        if m.agent_config
+                        else None,
                         "tools": m.agent_config.tools if m.agent_config else [],
                         "mcp": m.agent_config.mcp if m.agent_config else [],
                         "skills": m.agent_config.skills if m.agent_config else [],
@@ -46,8 +51,12 @@ async def get_teams() -> list[dict]:
 async def get_team(team_id: str) -> dict | None:
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(TeamDB).where(TeamDB.id == team_id).options(
-            selectinload(TeamDB.members).selectinload(TeamAgentDB.agent_config),
+        stmt = (
+            select(TeamDB)
+            .where(TeamDB.id == team_id)
+            .options(
+                selectinload(TeamDB.members).selectinload(TeamAgentDB.agent_config),
+            )
         )
         result = await session.execute(stmt)
         t = result.scalar_one_or_none()
@@ -59,7 +68,20 @@ async def get_team(team_id: str) -> dict | None:
             "order": t.order,
             "is_expanded": t.is_expanded,
             "agents": [
-                {"id": m.id, "name": m.name, "role": m.role, "order": m.order, "agent_config_id": m.agent_config_id, "system_prompt": m.agent_config.system_prompt if m.agent_config else None, "output_constraints": m.agent_config.output_constraints if m.agent_config else None, "tools": m.agent_config.tools if m.agent_config else [], "mcp": m.agent_config.mcp if m.agent_config else [], "skills": m.agent_config.skills if m.agent_config else []}
+                {
+                    "id": m.id,
+                    "name": m.name,
+                    "role": m.role,
+                    "order": m.order,
+                    "agent_config_id": m.agent_config_id,
+                    "system_prompt": m.agent_config.system_prompt if m.agent_config else None,
+                    "output_constraints": m.agent_config.output_constraints
+                    if m.agent_config
+                    else None,
+                    "tools": m.agent_config.tools if m.agent_config else [],
+                    "mcp": m.agent_config.mcp if m.agent_config else [],
+                    "skills": m.agent_config.skills if m.agent_config else [],
+                }
                 for m in t.members
             ],
             "created_at": t.created_at.isoformat() if t.created_at else None,
@@ -85,7 +107,9 @@ async def create_team(name: str) -> TeamDB | None:
         return team
 
 
-async def update_team(team_id: str, name: str | None = None, order: int | None = None, is_expanded: bool | None = None) -> TeamDB | None:
+async def update_team(
+    team_id: str, name: str | None = None, order: int | None = None, is_expanded: bool | None = None
+) -> TeamDB | None:
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(TeamDB).where(TeamDB.id == team_id))
@@ -122,7 +146,10 @@ async def add_team_member(team_id: str, name: str, role: str = "待配置角色"
         if not team:
             return None
         count = await session.execute(
-            select(TeamAgentDB).where(TeamAgentDB.team_id == team_id).order_by(TeamAgentDB.order.desc()).limit(1)
+            select(TeamAgentDB)
+            .where(TeamAgentDB.team_id == team_id)
+            .order_by(TeamAgentDB.order.desc())
+            .limit(1)
         )
         last = count.scalar_one_or_none()
         member = TeamAgentDB(
@@ -135,7 +162,13 @@ async def add_team_member(team_id: str, name: str, role: str = "待配置角色"
         session.add(member)
         await session.commit()
         await session.refresh(member)
-        return {"id": member.id, "name": member.name, "role": member.role, "order": member.order, "agent_config_id": member.agent_config_id}
+        return {
+            "id": member.id,
+            "name": member.name,
+            "role": member.role,
+            "order": member.order,
+            "agent_config_id": member.agent_config_id,
+        }
 
 
 async def remove_team_member(team_id: str, member_id: str) -> bool:

@@ -70,7 +70,7 @@ export function useSkillUI(): SkillUI {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!openMenuId) { setMenuAnchorEl(null); return; }
+    if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) {
         setOpenMenuId(null);
@@ -94,7 +94,7 @@ export function useSkillUI(): SkillUI {
 
   const openEdit = useCallback((skill: SkillEntry) => {
     setEditingSkill(skill);
-    const { id, createdAt, ...rest } = skill;
+    const { id: _id, createdAt: _createdAt, ...rest } = skill;
     setFormData_(rest);
     setFormErrors([]);
     setIsFormOpen(true);

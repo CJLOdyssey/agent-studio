@@ -75,6 +75,7 @@ def _machine_fingerprint() -> str:
     """
     import platform
     import uuid
+
     fingerprint = f"{platform.node()}-{uuid.getnode()}"
     return hashlib.sha256(fingerprint.encode()).hexdigest()
 

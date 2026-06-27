@@ -15,7 +15,7 @@ export function useTeamUI() {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!openMenuId) { setMenuAnchorEl(null); return; }
+    if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) { setOpenMenuId(null); setMenuAnchorEl(null); }
     }

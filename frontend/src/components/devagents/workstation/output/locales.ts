@@ -48,7 +48,7 @@ const langs: Record<string, [zh: string, en: string]> = {
   'output.status_archived': ['已归档', 'Archived'],
 };
 
-let lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
+const lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
 
 export function t(key: string, ...args: string[]): string {
   let v = (langs[key] ?? ['', ''])[lang === 'zh' ? 0 : 1] || key;

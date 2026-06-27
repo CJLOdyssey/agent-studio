@@ -8,12 +8,12 @@ Usage::
     raise error_response(ErrorCode.TEAM_001, detail="'MyTeam' already exists")
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from starlette.responses import JSONResponse
 
 
-class ErrorCode(str, Enum):
+class ErrorCode(StrEnum):
     # ── Agent ────────────────────────────────────────────────────────
     AGENT_001 = "AGENT_001"  # Agent config not found
     AGENT_002 = "AGENT_002"  # Duplicate role identifier

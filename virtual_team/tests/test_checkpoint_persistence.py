@@ -27,6 +27,7 @@ if _sys_insert not in sys.path:
 # Helpers
 # ─────────────────────────────────────────────────────────────────────
 
+
 def _make_config(thread_id: str, checkpoint_ns: str = "") -> dict:
     """Build a RunnableConfig-compatible dict for checkpoint operations."""
     return {"configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns}}
@@ -52,6 +53,7 @@ def _make_metadata(source: str = "loop", step: int = 0) -> dict:
 # ─────────────────────────────────────────────────────────────────────
 # Local fixtures — scoped to this test module only
 # ─────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def checkpointer_sqlite(tmp_path):
@@ -90,6 +92,7 @@ def checkpointer_sqlite_fresh(checkpointer_sqlite):
 # Test 1: Cross-process persistence with SQLite
 # ─────────────────────────────────────────────────────────────────────
 
+
 def test_sqlite_persistence_cross_process(checkpointer_sqlite, checkpointer_sqlite_fresh):
     """Process A writes a checkpoint, Process B reads it back from the same DB file.
 
@@ -113,6 +116,7 @@ def test_sqlite_persistence_cross_process(checkpointer_sqlite, checkpointer_sqli
 # ─────────────────────────────────────────────────────────────────────
 # Test 2: Recovery after simulated restart via subprocess
 # ─────────────────────────────────────────────────────────────────────
+
 
 def test_recovery_after_restart(tmp_path):
     """Simulate a hard process exit after writing state, then verify recovery.
@@ -190,6 +194,7 @@ def test_recovery_after_restart(tmp_path):
 # Test 3: PostgreSQL backend — optional import check
 # ─────────────────────────────────────────────────────────────────────
 
+
 def test_postgres_backend_optional():
     """Verify the PostgresSaver import route compiles without crash.
 
@@ -213,6 +218,7 @@ def test_postgres_backend_optional():
 # ─────────────────────────────────────────────────────────────────────
 # Test 4: Error rollback — checkpoint survives mid-step failure
 # ─────────────────────────────────────────────────────────────────────
+
 
 def test_checkpointer_rollback_on_error(checkpointer_sqlite, checkpointer_sqlite_fresh):
     """Verify that a checkpoint written before an error remains retrievable.

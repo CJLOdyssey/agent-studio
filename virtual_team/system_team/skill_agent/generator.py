@@ -207,7 +207,9 @@ metadata:
             "is_valid": True,
         }
 
-    def _create_custom_skill(self, skill_id: str, description: str, category: str) -> dict[str, Any]:
+    def _create_custom_skill(
+        self, skill_id: str, description: str, category: str
+    ) -> dict[str, Any]:
         skill_name = description.replace(" ", "-").lower()[:30]
         content = f"""---
 name: {skill_name}

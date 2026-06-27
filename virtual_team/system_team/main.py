@@ -1,9 +1,9 @@
 """系统团队管理器 - 管理所有 Agent 的生命周期."""
 
-import os
-import yaml
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 from virtual_team.logging_config import get_logger
 
@@ -14,14 +14,16 @@ SYSTEM_TEAM_DIR = Path(__file__).parent
 
 class AgentManager:
     def __init__(self, team_config_path: str | None = None):
-        self.config_path = Path(team_config_path) if team_config_path else SYSTEM_TEAM_DIR / "config.yaml"
+        self.config_path = (
+            Path(team_config_path) if team_config_path else SYSTEM_TEAM_DIR / "config.yaml"
+        )
         self.config: dict[str, Any] = {}
         self.agents: dict[str, Any] = {}
         self._load_config()
 
     def _load_config(self):
         if self.config_path.exists():
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 self.config = yaml.safe_load(f) or {}
             logger.info("Loaded system team config from %s", self.config_path)
         else:
@@ -41,7 +43,7 @@ class AgentManager:
 
         config_path = SYSTEM_TEAM_DIR / agent_def.get("config_path", "")
         if config_path.exists():
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         return {}
 
@@ -54,11 +56,13 @@ class AgentManager:
         for py_file in tools_dir.glob("*.py"):
             if py_file.name.startswith("_"):
                 continue
-            tools.append({
-                "file": py_file.name,
-                "name": py_file.stem,
-                "path": str(py_file),
-            })
+            tools.append(
+                {
+                    "file": py_file.name,
+                    "name": py_file.stem,
+                    "path": str(py_file),
+                }
+            )
         return tools
 
     def get_agent_skills(self, agent_id: str) -> list[dict[str, Any]]:
@@ -70,11 +74,13 @@ class AgentManager:
         for md_file in skills_dir.glob("*.md"):
             if md_file.name.startswith("_"):
                 continue
-            skills.append({
-                "file": md_file.name,
-                "name": md_file.stem,
-                "path": str(md_file),
-            })
+            skills.append(
+                {
+                    "file": md_file.name,
+                    "name": md_file.stem,
+                    "path": str(md_file),
+                }
+            )
         return skills
 
     def get_shared_resources(self) -> dict[str, list[str]]:

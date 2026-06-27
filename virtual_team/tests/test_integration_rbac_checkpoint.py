@@ -26,11 +26,12 @@ class TestOwnedAgentRuns:
 
     def test_apply_owner_filter_exists(self):
         """Verify the RBAC helper function is importable."""
-        from virtual_team.repository.core import apply_owner_filter
-        from virtual_team.database import AgentConfigDB
-
         # Basic sanity — function exists and returns stmt unchanged for None
         from sqlalchemy import select
+
+        from virtual_team.database import AgentConfigDB
+        from virtual_team.repository.core import apply_owner_filter
+
         stmt = select(AgentConfigDB)
         result = apply_owner_filter(stmt, AgentConfigDB, owner_id=None)
         assert result is stmt  # unchanged
@@ -40,6 +41,7 @@ class TestOwnedAgentRuns:
         reason="RBAC integration test requires AUTH_MODE=rbac",
     )
     def test_get_current_user_dependency_importable(self):
-        from virtual_team.auth import get_current_user, CurrentUser
+        from virtual_team.auth import CurrentUser, get_current_user
+
         assert callable(get_current_user)
         assert CurrentUser(id="test", username="test", roles=["admin"])

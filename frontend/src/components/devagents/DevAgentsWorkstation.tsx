@@ -327,7 +327,7 @@ export default function DevAgentsWorkstation() {
     content: m.content,
     thinking: m.thinking,
     thinkingDone: m.thinkingDone === true,
-    timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
+    timestamp: m.created_at ? new Date(m.created_at).getTime() : 0,
     versions: (m as any).versions,
     currentVersion: (m as any).currentVersion,
     thumbsFeedback: (m as any).thumbsFeedback,

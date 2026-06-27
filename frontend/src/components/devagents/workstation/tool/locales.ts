@@ -54,7 +54,7 @@ const langs: Record<string, [zh: string, en: string]> = {
   'tool.status_disabled': ['已禁用', 'Disabled'],
 };
 
-let lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
+const lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
 
 export function t(key: string, ...args: string[]): string {
   let v = (langs[key] ?? ['', ''])[lang === 'zh' ? 0 : 1] || key;

@@ -1,10 +1,12 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.mark.asyncio
 async def test_run_agent_pipeline_importable():
     from virtual_team.tasks import _run_agent_pipeline, run_agent
+
     assert _run_agent_pipeline is not None
     assert run_agent is not None
 
@@ -12,11 +14,18 @@ async def test_run_agent_pipeline_importable():
 @pytest.mark.asyncio
 async def test_stream_emitter_buffers_chunks():
     from virtual_team.streaming import StreamEmitter
-    with (patch("virtual_team.streaming.publish_run_message") as mock_pub,
-          patch("virtual_team.streaming.save_message") as mock_save):
+
+    with (
+        patch("virtual_team.streaming.publish_run_message") as mock_pub,
+        patch("virtual_team.streaming.save_message") as mock_save,
+    ):
         emitter = StreamEmitter("test-run")
-        await emitter({"event": "on_chat_model_stream", "data": {"chunk": MagicMock(content="Hello")}})
-        await emitter({"event": "on_chat_model_stream", "data": {"chunk": MagicMock(content=" World")}})
+        await emitter(
+            {"event": "on_chat_model_stream", "data": {"chunk": MagicMock(content="Hello")}}
+        )
+        await emitter(
+            {"event": "on_chat_model_stream", "data": {"chunk": MagicMock(content=" World")}}
+        )
         await emitter({"event": "on_chat_model_end", "data": {}})
         mock_pub.assert_called_once()
         mock_save.assert_called_once()
@@ -26,8 +35,11 @@ async def test_stream_emitter_buffers_chunks():
 @pytest.mark.asyncio
 async def test_stream_emitter_tool_events():
     from virtual_team.streaming import StreamEmitter
-    with (patch("virtual_team.streaming.publish_run_message") as mock_pub,
-          patch("virtual_team.streaming.save_message") as mock_save):
+
+    with (
+        patch("virtual_team.streaming.publish_run_message"),
+        patch("virtual_team.streaming.save_message") as mock_save,
+    ):
         emitter = StreamEmitter("test-run")
         await emitter({"event": "on_tool_start", "name": "search", "data": {"input": "query"}})
         args = mock_save.call_args[1]

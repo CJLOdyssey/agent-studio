@@ -126,7 +126,9 @@ async def execute_command(req: CommandExecuteRequest):
     return result
 
 
-async def _dispatch_command(command_id: str, session_id: str, payload: dict) -> CommandExecuteResponse:
+async def _dispatch_command(
+    command_id: str, session_id: str, payload: dict
+) -> CommandExecuteResponse:
     if command_id == "clear":
         return CommandExecuteResponse(
             success=True,

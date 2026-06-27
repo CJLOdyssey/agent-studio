@@ -65,4 +65,4 @@ const realImpl: SkillAPIService = {
   },
 };
 
-export let skillAPI: SkillAPIService = realImpl;
+export const skillAPI: SkillAPIService = realImpl;

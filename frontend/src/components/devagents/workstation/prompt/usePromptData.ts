@@ -8,33 +8,33 @@ export type { PromptSortField, CategoryFilter, PromptData };
 export function usePromptData(): PromptData {
   const [items, setItems] = useState<PromptEntry[]>([]);
   const itemsRef = useRef<PromptEntry[]>(items);
-  itemsRef.current = items;
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [search_, setSearch_] = useState('');
+  const [categoryFilter_, setCategoryFilter_] = useState<CategoryFilter>('all');
   const [sortField, setSortField] = useState<PromptSortField | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const load = useCallback(() => {
-    setIsLoading(true); setError(null);
+  useEffect(() => { itemsRef.current = items; }, [items]);
+
+  useEffect(() => {
+    let cancelled = false;
     promptAPI.fetchAll()
-      .then(data => { setItems(data); setIsLoading(false); })
-      .catch(e => { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); });
-    return () => {};
+      .then(data => { if (!cancelled) { setItems(data); setIsLoading(false); } })
+      .catch(e => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
+    return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => { const c = load(); return c; }, [load]);
-
-  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, categoryFilter, sortField, sortDir]);
+  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); setSelectedIds(new Set()); }, []);
+  const setCategoryFilter = useCallback((v: CategoryFilter) => { setCategoryFilter_(v); setPage(1); setSelectedIds(new Set()); }, []);
 
   const processed = useMemo(() => {
-    let r = categoryFilter === 'all' ? items : items.filter((s) => s.category === categoryFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    let r = categoryFilter_ === 'all' ? items : items.filter((s) => s.category === categoryFilter_);
+    if (search_.trim()) {
+      const q = search_.toLowerCase();
       r = r.filter((s) =>
         s.name.toLowerCase().includes(q) ||
         s.category.toLowerCase().includes(q) ||
@@ -50,7 +50,7 @@ export function usePromptData(): PromptData {
       });
     }
     return r;
-  }, [items, search, categoryFilter, sortField, sortDir]);
+  }, [items, search_, categoryFilter_, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -75,6 +75,8 @@ export function usePromptData(): PromptData {
       else setSortDir('asc');
       return field;
     });
+    setPage(1);
+    setSelectedIds(new Set());
   }, []);
 
   const addPrompt = useCallback(async (data: Omit<PromptEntry, 'id' | 'createdAt'>) => {
@@ -112,11 +114,19 @@ export function usePromptData(): PromptData {
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
-  const retry = useCallback(() => { load(); }, [load]);
+  const retry = useCallback(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    promptAPI.fetchAll()
+      .then(data => { if (!cancelled) { setItems(data); setIsLoading(false); } })
+      .catch(e => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
 
   return {
     isLoading, error, paged, processed, page: safePage, totalPages,
-    search, categoryFilter, sortField, sortDir,
+    search: search_, categoryFilter: categoryFilter_, sortField, sortDir,
     selectedIds, allOnPageSelected,
     setSearch, setCategoryFilter, setPage, setSelectedIds,
     handleSort, toggleSelectAll, toggleSelect,

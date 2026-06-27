@@ -9,7 +9,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from virtual_team.broker import celery_app, publish_run_message
 from virtual_team.config import load_config
-from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK, run_mock
+from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
+from virtual_team.mock_fallback import run_mock
 from virtual_team.repository import (
     create_memory_entry,
     get_agent_config,
@@ -41,6 +42,7 @@ async def _get_rag_context(query: str, session_id: str) -> str:
     try:
         from virtual_team.rag import ensure_embedding_provider, retrieve_context
         from virtual_team.repository.keys import get_embedding_api_key
+
         api_key = await get_embedding_api_key()
         ensure_embedding_provider(api_key)
         return await retrieve_context(query=query, session_id=session_id, top_k=3)
@@ -57,16 +59,25 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
         content_type = "review"
     try:
         await create_memory_entry(
-            session_id=session_id, run_id=run_id, agent_role="agent",
-            content_type=content_type, summary=summary, details=response[:2000],
+            session_id=session_id,
+            run_id=run_id,
+            agent_role="agent",
+            content_type=content_type,
+            summary=summary,
+            details=response[:2000],
         )
     except Exception:
         logger.exception("Failed to save memory for run %s", run_id)
 
 
 async def _run_agent_pipeline(
-    requirement: str, run_id: str, session_id: str | None, agent_id: str | None,
-    api_key: str | None = None, api_base: str | None = None, model: str | None = None,
+    requirement: str,
+    run_id: str,
+    session_id: str | None,
+    agent_id: str | None,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    model: str | None = None,
 ) -> dict:
     await update_run_status(run_id, "running")
     cfg = load_config()
@@ -116,7 +127,7 @@ async def _run_agent_pipeline(
             logger.warning("Failed to load chat history for session %s", session_id)
 
     from virtual_team.agent_graph import SingleAgentGraph, ToolConfig
-    from virtual_team.repository import get_tools, get_mcps, get_skills, get_prompts
+    from virtual_team.repository import get_mcps, get_prompts, get_skills, get_tools
 
     emitter = StreamEmitter(run_id)
     graph = SingleAgentGraph(
@@ -141,11 +152,15 @@ async def _run_agent_pipeline(
                         raw_params = json.loads(raw_params)
                     except (json.JSONDecodeError, TypeError):
                         raw_params = None
-                tool_configs.append(ToolConfig(
-                    name=name,
-                    description=match["description"] if match else (item.get("description") or name),
-                    parameters=raw_params,
-                ))
+                tool_configs.append(
+                    ToolConfig(
+                        name=name,
+                        description=match["description"]
+                        if match
+                        else (item.get("description") or name),
+                        parameters=raw_params,
+                    )
+                )
         for item in json.loads(ac.mcp) if isinstance(ac.mcp, str) else (ac.mcp or []):
             name = item.get("name", "")
             if name:
@@ -156,12 +171,14 @@ async def _run_agent_pipeline(
                     mcp_config = json.loads(mcp_config) if mcp_config else {}
                 elif not mcp_config:
                     mcp_config = {}
-                tool_configs.append(ToolConfig(
-                    name=f"mcp_{name}",
-                    description=mcp_config.get("description", name),
-                    mcp_type=match.get("type", "") if match else "",
-                    mcp_endpoint=match.get("endpoint", "") if match else "",
-                ))
+                tool_configs.append(
+                    ToolConfig(
+                        name=f"mcp_{name}",
+                        description=mcp_config.get("description", name),
+                        mcp_type=match.get("type", "") if match else "",
+                        mcp_endpoint=match.get("endpoint", "") if match else "",
+                    )
+                )
         for item in json.loads(ac.skills) if isinstance(ac.skills, str) else (ac.skills or []):
             name = item.get("name", "")
             if name:
@@ -183,14 +200,24 @@ async def _run_agent_pipeline(
                 if match.get("output_constraint"):
                     composed += f"\n\n## 输出约束\n\n{match['output_constraint']}"
                 if match.get("tool_names"):
-                    names = match["tool_names"] if isinstance(match["tool_names"], list) else json.loads(match["tool_names"]) if isinstance(match["tool_names"], str) else []
+                    names = (
+                        match["tool_names"]
+                        if isinstance(match["tool_names"], list)
+                        else json.loads(match["tool_names"])
+                        if isinstance(match["tool_names"], str)
+                        else []
+                    )
                     if names:
-                        composed += f"\n\n## 可用工具\n\n你可以使用以下工具完成任务：{', '.join(names)}"
-                tool_configs.append(ToolConfig(
-                    name=f"skill_{name}",
-                    description=match["description"] if match else name,
-                    instructions=composed
-                ))
+                        composed += (
+                            f"\n\n## 可用工具\n\n你可以使用以下工具完成任务：{', '.join(names)}"
+                        )
+                tool_configs.append(
+                    ToolConfig(
+                        name=f"skill_{name}",
+                        description=match["description"] if match else name,
+                        instructions=composed,
+                    )
+                )
         if tool_configs:
             graph.bind_tools(tool_configs)
     result = await graph.run(
@@ -210,44 +237,75 @@ async def _run_agent_pipeline(
     )
 
     await update_run_result(
-        run_id=run_id, pm_document="", code=response, review=review_summary,
-        approved=True, status="converged",
+        run_id=run_id,
+        pm_document="",
+        code=response,
+        review=review_summary,
+        approved=True,
+        status="converged",
     )
-    await publish_run_message(run_id, {
-        "type": "result", "status": "completed", "approved": True,
-        "pm_document": "", "code": response, "review": review_summary,
-    })
+    await publish_run_message(
+        run_id,
+        {
+            "type": "result",
+            "status": "completed",
+            "approved": True,
+            "pm_document": "",
+            "code": response,
+            "review": review_summary,
+        },
+    )
 
     if session_id:
         try:
             await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
             from virtual_team.rag import ingest_session_messages
+
             messages = await get_run_messages(run_id)
             if messages:
-                msg_dicts = [{"content": m.content, "role": m.role, "agent_name": m.agent_name} for m in messages]
+                msg_dicts = [
+                    {"content": m.content, "role": m.role, "agent_name": m.agent_name}
+                    for m in messages
+                ]
                 await ingest_session_messages(session_id, run_id, msg_dicts)
         except Exception:
             logger.exception("RAG/memory save failed for run %s", run_id)
 
-    logger.info("Agent completed | run=%s | msgs=%d | tools=%d",
-                run_id, result.get("message_count", 0), len(tool_calls))
+    logger.info(
+        "Agent completed | run=%s | msgs=%d | tools=%d",
+        run_id,
+        result.get("message_count", 0),
+        len(tool_calls),
+    )
     return {"run_id": run_id, "status": "completed"}
 
 
 @celery_app.task(bind=True, max_retries=2, default_retry_delay=5)
 def run_agent(
-    self, requirement: str, run_id: str | None = None, session_id: str | None = None,
-    agent_id: str | None = None, api_key: str | None = None,
-    api_base: str | None = None, model: str | None = None,
+    self,
+    requirement: str,
+    run_id: str | None = None,
+    session_id: str | None = None,
+    agent_id: str | None = None,
+    api_key: str | None = None,
+    api_base: str | None = None,
+    model: str | None = None,
 ):
     logger.info("Agent task | run=%s | session=%s | agent=%s", run_id, session_id, agent_id)
     assert run_id is not None, "run_id must be provided"
 
     try:
-        return _run_async(_run_agent_pipeline(
-            requirement, run_id, session_id, agent_id,
-            api_key=api_key, api_base=api_base, model=model,
-        ))
+        return _run_async(
+            _run_agent_pipeline(
+                requirement,
+                run_id,
+                session_id,
+                agent_id,
+                api_key=api_key,
+                api_base=api_base,
+                model=model,
+            )
+        )
     except Exception as exc:
         logger.exception("Agent failed | run=%s", run_id)
 
@@ -255,14 +313,29 @@ def run_agent(
             logger.warning("Mock fallback for run=%s", run_id)
             try:
                 output = _run_async(run_mock(requirement, run_id, session_id))
-                _run_async(update_run_result(
-                    run_id=run_id, pm_document="", code=output.response,
-                    review="LangGraph fallback", approved=True, status="converged",
-                ))
-                _run_async(publish_run_message(run_id, {
-                    "type": "result", "status": "completed", "approved": True,
-                    "pm_document": "", "code": output.response, "review": "LangGraph fallback",
-                }))
+                _run_async(
+                    update_run_result(
+                        run_id=run_id,
+                        pm_document="",
+                        code=output.response,
+                        review="LangGraph fallback",
+                        approved=True,
+                        status="converged",
+                    )
+                )
+                _run_async(
+                    publish_run_message(
+                        run_id,
+                        {
+                            "type": "result",
+                            "status": "completed",
+                            "approved": True,
+                            "pm_document": "",
+                            "code": output.response,
+                            "review": "LangGraph fallback",
+                        },
+                    )
+                )
                 if session_id:
                     with contextlib.suppress(Exception):
                         _run_async(_save_output_memories(session_id, run_id, output.response, {}))
@@ -271,18 +344,32 @@ def run_agent(
                 logger.exception("Mock fallback also failed for run=%s", run_id)
                 try:
                     _run_async(update_run_status(run_id, "error"))
-                    _run_async(publish_run_message(run_id, {
-                        "type": "status", "status": "error", "error": str(exc),
-                    }))
+                    _run_async(
+                        publish_run_message(
+                            run_id,
+                            {
+                                "type": "status",
+                                "status": "error",
+                                "error": str(exc),
+                            },
+                        )
+                    )
                 except Exception:
                     logger.exception("Status update failed for mock fallback run %s", run_id)
                 self.retry(exc=mock_exc)
 
         try:
             _run_async(update_run_status(run_id, "error"))
-            _run_async(publish_run_message(run_id, {
-                "type": "status", "status": "error", "error": str(exc),
-            }))
-        except Exception as status_err:
+            _run_async(
+                publish_run_message(
+                    run_id,
+                    {
+                        "type": "status",
+                        "status": "error",
+                        "error": str(exc),
+                    },
+                )
+            )
+        except Exception:
             logger.exception("Failed to update error status for run %s", run_id)
         self.retry(exc=exc)

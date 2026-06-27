@@ -8,11 +8,12 @@ Run:
     PYTHONPATH=. python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=long
 """
 
+import contextlib
+import string
+import uuid
+
 import httpx
 import pytest
-import uuid
-import string
-import time
 
 
 def _rid(prefix: str = "test") -> str:
@@ -29,18 +30,23 @@ def _clear_rate_limits():
     """Flush Redis rate limit keys so tests don't get 429'd."""
     try:
         import subprocess
+
         keys = subprocess.run(
             ["docker", "exec", "virtual-team-redis", "redis-cli", "KEYS", "ratelimit:*"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if keys.stdout.strip():
             key_list = keys.stdout.strip().split("\n")
             subprocess.run(
                 ["docker", "exec", "virtual-team-redis", "redis-cli", "DEL"] + key_list,
-                capture_output=True, timeout=5
+                capture_output=True,
+                timeout=5,
             )
     except Exception:
         pass
+
 
 BASE = "http://localhost:8080"
 
@@ -48,7 +54,6 @@ BASE = "http://localhost:8080"
 @pytest.fixture(autouse=True)
 def _fresh_rate_limit():
     _clear_rate_limits()
-
 
 
 # ─── Helpers ───
@@ -85,16 +90,15 @@ def _cleanup(*ids_and_endpoints: tuple[str, str]):
     """Best-effort cleanup: delete each id from its endpoint."""
     c = httpx.Client(base_url=BASE, timeout=10)
     for eid, ep in ids_and_endpoints:
-        try:
+        with contextlib.suppress(Exception):
             c.delete(f"{ep}/{eid}")
-        except Exception:
-            pass
     c.close()
 
 
 # ══════════════════════════════════════════════════════════════════
 # 1. TEAM CRUD
 # ══════════════════════════════════════════════════════════════════
+
 
 class TestTeamCRUD:
     def test_create_team(self, api: Api):
@@ -133,22 +137,26 @@ class TestTeamCRUD:
 # 2. AGENT CRUD + FULL CONFIG
 # ══════════════════════════════════════════════════════════════════
 
+
 class TestAgentCRUD:
     def test_create_agent_full_config(self, api: Api):
 
-        r = api.post("/api/agents", json={
-            "name": "E2E-Agent",
-            "role_identifier": _rid("e2e_agent"),
-            "system_prompt": "你是E2E测试助手",
-            "output_constraints": "请用中文回答",
-            "model": "deepseek-v4-flash",
-            "temperature": 0.7,
-            "tools": [{"name": "calculator", "enabled": True}],
-            "mcp": [{"name": "file_server", "config": {"root": "/tmp"}}],
-            "skills": [{"name": "code_review", "version": "1.0"}],
-            "is_active": True,
-            "icon": "🤖",
-        })
+        r = api.post(
+            "/api/agents",
+            json={
+                "name": "E2E-Agent",
+                "role_identifier": _rid("e2e_agent"),
+                "system_prompt": "你是E2E测试助手",
+                "output_constraints": "请用中文回答",
+                "model": "deepseek-v4-flash",
+                "temperature": 0.7,
+                "tools": [{"name": "calculator", "enabled": True}],
+                "mcp": [{"name": "file_server", "config": {"root": "/tmp"}}],
+                "skills": [{"name": "code_review", "version": "1.0"}],
+                "is_active": True,
+                "icon": "🤖",
+            },
+        )
         assert r.status_code == 201, r.text
         body = r.json()
         assert "id" in body
@@ -167,11 +175,14 @@ class TestAgentCRUD:
 
     def test_create_agent_minimal(self, api: Api):
 
-        r = api.post("/api/agents", json={
-            "name": "Minimal-Agent",
-            "role_identifier": _rid("minimal"),
-            "system_prompt": "Hello",
-        })
+        r = api.post(
+            "/api/agents",
+            json={
+                "name": "Minimal-Agent",
+                "role_identifier": _rid("minimal"),
+                "system_prompt": "Hello",
+            },
+        )
         assert r.status_code == 201, r.text
         body = r.json()
         assert "id" in body
@@ -179,15 +190,22 @@ class TestAgentCRUD:
 
     def test_update_agent(self, api: Api):
 
-        r = api.post("/api/agents", json={
-            "name": "Old-Name", "role_identifier": _rid("old"),
-            "system_prompt": "old",
-        })
+        r = api.post(
+            "/api/agents",
+            json={
+                "name": "Old-Name",
+                "role_identifier": _rid("old"),
+                "system_prompt": "old",
+            },
+        )
         aid = r.json()["id"]
-        r2 = api.put(f"/api/agents/{aid}", json={
-            "name": "New-Name",
-            "system_prompt": "new prompt",
-        })
+        r2 = api.put(
+            f"/api/agents/{aid}",
+            json={
+                "name": "New-Name",
+                "system_prompt": "new prompt",
+            },
+        )
         assert r2.status_code == 200
         body = r2.json()
         assert body["status"] == "updated"
@@ -198,9 +216,14 @@ class TestAgentCRUD:
 
     def test_delete_agent(self, api: Api):
 
-        r = api.post("/api/agents", json={
-            "name": "Del-Agent", "role_identifier": _rid("del"), "system_prompt": "x",
-        })
+        r = api.post(
+            "/api/agents",
+            json={
+                "name": "Del-Agent",
+                "role_identifier": _rid("del"),
+                "system_prompt": "x",
+            },
+        )
         assert r.status_code == 201, r.text
         aid = r.json()["id"]
         r2 = api.delete(f"/api/agents/{aid}")
@@ -208,10 +231,15 @@ class TestAgentCRUD:
         assert r2.json()["status"] == "deleted"
 
     def test_toggle_agent(self, api: Api):
-        r = api.post("/api/agents", json={
-            "name": "Toggle-Agent", "role_identifier": "toggle_agent",
-            "system_prompt": "x", "is_active": True,
-        })
+        r = api.post(
+            "/api/agents",
+            json={
+                "name": "Toggle-Agent",
+                "role_identifier": "toggle_agent",
+                "system_prompt": "x",
+                "is_active": True,
+            },
+        )
         aid = r.json()["id"]
         r2 = api.put(f"/api/agents/{aid}/toggle")
         assert r2.status_code == 200
@@ -226,10 +254,23 @@ class TestAgentCRUD:
         assert isinstance(data, list)
         if data:
             item = data[0]
-            expected = {"id", "name", "role_identifier", "system_prompt",
-                        "output_constraints", "tools", "mcp", "skills",
-                        "model", "temperature", "order", "is_active",
-                        "is_approver", "icon", "created_at"}
+            expected = {
+                "id",
+                "name",
+                "role_identifier",
+                "system_prompt",
+                "output_constraints",
+                "tools",
+                "mcp",
+                "skills",
+                "model",
+                "temperature",
+                "order",
+                "is_active",
+                "is_approver",
+                "icon",
+                "created_at",
+            }
             assert expected.issubset(item.keys()), f"Missing keys: {expected - item.keys()}"
 
 
@@ -237,12 +278,18 @@ class TestAgentCRUD:
 # 3. PROMPT CRUD
 # ══════════════════════════════════════════════════════════════════
 
+
 class TestPromptCRUD:
     def test_create_prompt(self, api: Api):
-        r = api.post("/api/prompts", json={
-            "name": "E2E-Prompt", "content": "审查代码安全性",
-            "category": "code_review", "tags": ["security"],
-        })
+        r = api.post(
+            "/api/prompts",
+            json={
+                "name": "E2E-Prompt",
+                "content": "审查代码安全性",
+                "category": "code_review",
+                "tags": ["security"],
+            },
+        )
         assert r.status_code == 201, r.text
         body = r.json()
         assert body["name"] == "E2E-Prompt"
@@ -254,9 +301,14 @@ class TestPromptCRUD:
         assert isinstance(r.json(), list)
 
     def test_update_prompt(self, api: Api):
-        r = api.post("/api/prompts", json={
-            "name": "Old", "content": "old", "category": "general",
-        })
+        r = api.post(
+            "/api/prompts",
+            json={
+                "name": "Old",
+                "content": "old",
+                "category": "general",
+            },
+        )
         pid = r.json()["id"]
         r2 = api.put(f"/api/prompts/{pid}", json={"name": "New"})
         assert r2.status_code == 200
@@ -264,9 +316,14 @@ class TestPromptCRUD:
         _cleanup((pid, "/api/prompts"))
 
     def test_delete_prompt(self, api: Api):
-        r = api.post("/api/prompts", json={
-            "name": "Del", "content": "x", "category": "general",
-        })
+        r = api.post(
+            "/api/prompts",
+            json={
+                "name": "Del",
+                "content": "x",
+                "category": "general",
+            },
+        )
         pid = r.json()["id"]
         r2 = api.delete(f"/api/prompts/{pid}")
         assert r2.status_code in (200, 204)
@@ -276,13 +333,17 @@ class TestPromptCRUD:
 # 4. TOOL CRUD + GENERATE + VALIDATE
 # ══════════════════════════════════════════════════════════════════
 
+
 class TestToolCRUD:
     def test_create_tool(self, api: Api):
-        r = api.post("/api/tools", json={
-            "name": "E2E-Calculator",
-            "category": "utility",
-            "description": "加法计算器",
-        })
+        r = api.post(
+            "/api/tools",
+            json={
+                "name": "E2E-Calculator",
+                "category": "utility",
+                "description": "加法计算器",
+            },
+        )
         assert r.status_code == 201, r.text
         body = r.json()
         assert body["name"] == "E2E-Calculator"
@@ -295,9 +356,14 @@ class TestToolCRUD:
         assert isinstance(r.json(), list)
 
     def test_update_tool(self, api: Api):
-        r = api.post("/api/tools", json={
-            "name": "Old", "category": "general", "description": "x",
-        })
+        r = api.post(
+            "/api/tools",
+            json={
+                "name": "Old",
+                "category": "general",
+                "description": "x",
+            },
+        )
         tid = r.json()["id"]
         r2 = api.put(f"/api/tools/{tid}", json={"name": "New"})
         assert r2.status_code == 200
@@ -305,18 +371,26 @@ class TestToolCRUD:
         _cleanup((tid, "/api/tools"))
 
     def test_delete_tool(self, api: Api):
-        r = api.post("/api/tools", json={
-            "name": "Del", "category": "general", "description": "x",
-        })
+        r = api.post(
+            "/api/tools",
+            json={
+                "name": "Del",
+                "category": "general",
+                "description": "x",
+            },
+        )
         tid = r.json()["id"]
         r2 = api.delete(f"/api/tools/{tid}")
         assert r2.status_code in (200, 204)
 
     def test_generate_tool(self, api: Api):
-        r = api.post("/api/tools/generate", json={
-            "description": "计算两个数字的乘积",
-            "language": "python",
-        })
+        r = api.post(
+            "/api/tools/generate",
+            json={
+                "description": "计算两个数字的乘积",
+                "language": "python",
+            },
+        )
         assert r.status_code == 200, r.text
         body = r.json()
         assert "name" in body
@@ -324,10 +398,13 @@ class TestToolCRUD:
         assert body.get("is_valid") is True or body.get("is_valid") is False
 
     def test_validate_tool(self, api: Api):
-        r = api.post("/api/tools/validate", json={
-            "code": "def multiply(a, b):\n    return a * b",
-            "language": "python",
-        })
+        r = api.post(
+            "/api/tools/validate",
+            json={
+                "code": "def multiply(a, b):\n    return a * b",
+                "language": "python",
+            },
+        )
         assert r.status_code == 200
         body = r.json()
         assert "is_valid" in body
@@ -337,16 +414,20 @@ class TestToolCRUD:
 # 5. MCP CRUD
 # ══════════════════════════════════════════════════════════════════
 
+
 class TestMCPCrud:
     def test_create_mcp(self, api: Api):
-        r = api.post("/api/mcps", json={
-            "name": "E2E-MCP",
-            "server_type": "stdio",
-            "command": "python",
-            "args": ["-m", "mcp_server"],
-            "env": {"ROOT": "/data"},
-            "is_active": True,
-        })
+        r = api.post(
+            "/api/mcps",
+            json={
+                "name": "E2E-MCP",
+                "server_type": "stdio",
+                "command": "python",
+                "args": ["-m", "mcp_server"],
+                "env": {"ROOT": "/data"},
+                "is_active": True,
+            },
+        )
         assert r.status_code == 201, r.text
         body = r.json()
         assert body["name"] == "E2E-MCP"
@@ -358,10 +439,16 @@ class TestMCPCrud:
         assert isinstance(r.json(), list)
 
     def test_update_mcp(self, api: Api):
-        r = api.post("/api/mcps", json={
-            "name": "Old", "server_type": "stdio",
-            "command": "python", "args": [], "env": {},
-        })
+        r = api.post(
+            "/api/mcps",
+            json={
+                "name": "Old",
+                "server_type": "stdio",
+                "command": "python",
+                "args": [],
+                "env": {},
+            },
+        )
         mid = r.json()["id"]
         r2 = api.put(f"/api/mcps/{mid}", json={"name": "New"})
         assert r2.status_code == 200
@@ -369,10 +456,16 @@ class TestMCPCrud:
         _cleanup((mid, "/api/mcps"))
 
     def test_delete_mcp(self, api: Api):
-        r = api.post("/api/mcps", json={
-            "name": "Del", "server_type": "stdio",
-            "command": "python", "args": [], "env": {},
-        })
+        r = api.post(
+            "/api/mcps",
+            json={
+                "name": "Del",
+                "server_type": "stdio",
+                "command": "python",
+                "args": [],
+                "env": {},
+            },
+        )
         mid = r.json()["id"]
         r2 = api.delete(f"/api/mcps/{mid}")
         assert r2.status_code in (200, 204)
@@ -382,16 +475,20 @@ class TestMCPCrud:
 # 6. SKILL CRUD
 # ══════════════════════════════════════════════════════════════════
 
+
 class TestSkillCRUD:
     def test_create_skill(self, api: Api):
-        r = api.post("/api/skills", json={
-            "name": "E2E-Skill",
-            "description": "自动代码审查",
-            "version": "1.0.0",
-            "category": "code_review",
-            "config": {"rules": ["security"]},
-            "is_active": True,
-        })
+        r = api.post(
+            "/api/skills",
+            json={
+                "name": "E2E-Skill",
+                "description": "自动代码审查",
+                "version": "1.0.0",
+                "category": "code_review",
+                "config": {"rules": ["security"]},
+                "is_active": True,
+            },
+        )
         assert r.status_code == 201, r.text
         body = r.json()
         assert body["name"] == "E2E-Skill"
@@ -403,10 +500,16 @@ class TestSkillCRUD:
         assert isinstance(r.json(), list)
 
     def test_update_skill(self, api: Api):
-        r = api.post("/api/skills", json={
-            "name": "Old", "description": "x", "version": "1.0",
-            "category": "general", "config": {},
-        })
+        r = api.post(
+            "/api/skills",
+            json={
+                "name": "Old",
+                "description": "x",
+                "version": "1.0",
+                "category": "general",
+                "config": {},
+            },
+        )
         sid = r.json()["id"]
         r2 = api.put(f"/api/skills/{sid}", json={"name": "New"})
         assert r2.status_code == 200
@@ -414,10 +517,16 @@ class TestSkillCRUD:
         _cleanup((sid, "/api/skills"))
 
     def test_delete_skill(self, api: Api):
-        r = api.post("/api/skills", json={
-            "name": "Del", "description": "x", "version": "1.0",
-            "category": "general", "config": {},
-        })
+        r = api.post(
+            "/api/skills",
+            json={
+                "name": "Del",
+                "description": "x",
+                "version": "1.0",
+                "category": "general",
+                "config": {},
+            },
+        )
         sid = r.json()["id"]
         r2 = api.delete(f"/api/skills/{sid}")
         assert r2.status_code in (200, 204)
@@ -426,6 +535,7 @@ class TestSkillCRUD:
 # ══════════════════════════════════════════════════════════════════
 # 7. SESSION + RUN
 # ══════════════════════════════════════════════════════════════════
+
 
 class TestSessionAndRun:
     def test_create_session(self, api: Api):
@@ -459,6 +569,7 @@ class TestSessionAndRun:
 # 8. FULL E2E FLOW
 # ══════════════════════════════════════════════════════════════════
 
+
 class TestFullE2EFlow:
     def test_complete_business_flow(self, api: Api):
         """Team → Prompt → Tool → MCP → Skill → Agent → Session → Run → Verify"""
@@ -467,67 +578,90 @@ class TestFullE2EFlow:
 
         try:
             # 1. Create team
-    
+
             r = api.post("/api/teams", json={"name": "E2E-Full-Team"})
             assert r.status_code == 201, r.text
             team = r.json()
             cleanup.append((team["id"], "/api/teams"))
 
             # 2. Create prompt
-    
-            r = api.post("/api/prompts", json={
-                "name": "E2E-Full-Prompt", "content": "你是专业助手",
-                "category": "general",
-            })
+
+            r = api.post(
+                "/api/prompts",
+                json={
+                    "name": "E2E-Full-Prompt",
+                    "content": "你是专业助手",
+                    "category": "general",
+                },
+            )
             assert r.status_code == 201, r.text
             prompt = r.json()
             cleanup.append((prompt["id"], "/api/prompts"))
 
             # 3. Create tool
-    
-            r = api.post("/api/tools", json={
-                "name": "E2E-Full-Tool", "category": "utility",
-                "description": "计算器",
-            })
+
+            r = api.post(
+                "/api/tools",
+                json={
+                    "name": "E2E-Full-Tool",
+                    "category": "utility",
+                    "description": "计算器",
+                },
+            )
             assert r.status_code == 201, r.text
             tool = r.json()
             cleanup.append((tool["id"], "/api/tools"))
 
             # 4. Create MCP
-    
-            r = api.post("/api/mcps", json={
-                "name": "E2E-Full-MCP", "server_type": "stdio",
-                "command": "python", "args": ["-m", "mcp"], "env": {},
-            })
+
+            r = api.post(
+                "/api/mcps",
+                json={
+                    "name": "E2E-Full-MCP",
+                    "server_type": "stdio",
+                    "command": "python",
+                    "args": ["-m", "mcp"],
+                    "env": {},
+                },
+            )
             assert r.status_code == 201, r.text
             mcp = r.json()
             cleanup.append((mcp["id"], "/api/mcps"))
 
             # 5. Create skill
-    
-            r = api.post("/api/skills", json={
-                "name": "E2E-Full-Skill", "description": "审查",
-                "version": "1.0", "category": "code_review", "config": {},
-            })
+
+            r = api.post(
+                "/api/skills",
+                json={
+                    "name": "E2E-Full-Skill",
+                    "description": "审查",
+                    "version": "1.0",
+                    "category": "code_review",
+                    "config": {},
+                },
+            )
             assert r.status_code == 201, r.text
             skill = r.json()
             cleanup.append((skill["id"], "/api/skills"))
 
             # 6. Create agent with all config
-    
-            r = api.post("/api/agents", json={
-                "name": "E2E-Full-Agent",
-                "role_identifier": _rid("e2e_full"),
-                "system_prompt": "你是E2E全配置测试助手，请简洁回答。",
-                "output_constraints": "1. 使用中文\n2. 不超过50字",
-                "model": "deepseek-v4-flash",
-                "temperature": 0.5,
-                "tools": [{"id": tool["id"], "name": tool["name"], "enabled": True}],
-                "mcp": [{"id": mcp["id"], "name": mcp["name"], "enabled": False}],
-                "skills": [{"id": skill["id"], "name": skill["name"], "version": "1.0"}],
-                "is_active": True,
-                "icon": "🧪",
-            })
+
+            r = api.post(
+                "/api/agents",
+                json={
+                    "name": "E2E-Full-Agent",
+                    "role_identifier": _rid("e2e_full"),
+                    "system_prompt": "你是E2E全配置测试助手，请简洁回答。",
+                    "output_constraints": "1. 使用中文\n2. 不超过50字",
+                    "model": "deepseek-v4-flash",
+                    "temperature": 0.5,
+                    "tools": [{"id": tool["id"], "name": tool["name"], "enabled": True}],
+                    "mcp": [{"id": mcp["id"], "name": mcp["name"], "enabled": False}],
+                    "skills": [{"id": skill["id"], "name": skill["name"], "version": "1.0"}],
+                    "is_active": True,
+                    "icon": "🧪",
+                },
+            )
             assert r.status_code == 201, r.text
             agent = r.json()
             cleanup.append((agent["id"], "/api/agents"))
@@ -548,18 +682,21 @@ class TestFullE2EFlow:
             assert r.status_code == 200
 
             # 9. Create session
-    
+
             r = api.post("/api/sessions", json={"title": "E2E-Full-Session"})
             assert r.status_code == 201, r.text
             session = r.json()
             cleanup.append((session["id"], "/api/sessions"))
 
             # 10. Create run (may fail if no LLM API key, that's OK)
-            r = api.post("/api/runs", json={
-                "requirement": "1+1等于多少？",
-                "session_id": session["id"],
-                "agent_id": agent["id"],
-            })
+            r = api.post(
+                "/api/runs",
+                json={
+                    "requirement": "1+1等于多少？",
+                    "session_id": session["id"],
+                    "agent_id": agent["id"],
+                },
+            )
             if r.status_code == 200:
                 run = r.json()
                 assert "run_id" in run
@@ -571,7 +708,5 @@ class TestFullE2EFlow:
         finally:
             # Cleanup (reverse order)
             for eid, ep in reversed(cleanup):
-                try:
+                with contextlib.suppress(Exception):
                     api.delete(f"{ep}/{eid}")
-                except Exception:
-                    pass

@@ -11,6 +11,11 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import WstaDropdownPortal from '../shared/WstaDropdownPortal';
 import { useToast } from '../../../../utils/useToast';
 
+function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string | null; sortDir: string }) {
+  if (sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
+  return sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
+}
+
 export default function PromptManagement() {
   const data = usePromptData();
   const ui = usePromptUI();
@@ -54,11 +59,6 @@ export default function PromptManagement() {
     reader.readAsText(file);
     e.target.value = '';
   }
-
-  const SortIcon = ({ field }: { field: 'name' | 'category' | 'status' }) => {
-    if (data.sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
-    return data.sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
-  };
 
   function handleSaveWrapper() {
     ui.save(data);
@@ -129,10 +129,9 @@ export default function PromptManagement() {
         <table className="wsta-table" role="grid" aria-label="提示词列表">
           <thead><tr>
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('prompt.select_all')} /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('prompt.col_name')} <SortIcon field="name" /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('category')} aria-sort={data.sortField === 'category' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('prompt.col_category')} <SortIcon field="category" /></th>
-            <th scope="col">{t('prompt.col_model')}</th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('prompt.col_status')} <SortIcon field="status" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('prompt.col_name')} <SortIcon field="name" sortField={data.sortField} sortDir={data.sortDir} /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('category')} aria-sort={data.sortField === 'category' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('prompt.col_category')} <SortIcon field="category" sortField={data.sortField} sortDir={data.sortDir} /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('prompt.col_status')} <SortIcon field="status" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('prompt.col_version')}</th>
             <th className="wsta-col-actions" scope="col">{t('prompt.col_actions')}</th>
           </tr></thead>

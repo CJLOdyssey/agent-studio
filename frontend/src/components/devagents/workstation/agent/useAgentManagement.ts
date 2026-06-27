@@ -78,8 +78,8 @@ export function useAgentManagement(): AgentManagementReturn {
   const [agents, setAgents] = useState<AgentEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [search_, setSearch_] = useState('');
+  const [statusFilter_, setStatusFilter_] = useState<StatusFilter>('all');
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
@@ -97,21 +97,30 @@ export function useAgentManagement(): AgentManagementReturn {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
-  const fetchAgents = useCallback(() => {
-    setIsLoading(true); setError(null);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try { setAgents(agentAPI.fetchAll()); setIsLoading(false); }
+      catch { setError('Failed to load agents'); setIsLoading(false); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); setSelectedIds(new Set()); }, []);
+  const setStatusFilter = useCallback((v: StatusFilter) => { setStatusFilter_(v); setPage(1); setSelectedIds(new Set()); }, []);
+
+  const retry = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
     setTimeout(() => {
       try { setAgents(agentAPI.fetchAll()); setIsLoading(false); }
       catch { setError('Failed to load agents'); setIsLoading(false); }
     }, 400);
   }, []);
-  const retry = useCallback(() => fetchAgents(), [fetchAgents]);
   const clearError = useCallback(() => setError(null), []);
   const closeMenu = useCallback(() => { setOpenMenuId(null); setMenuAnchorEl(null); }, []);
 
-  useEffect(() => { fetchAgents(); }, [fetchAgents]);
-
   useEffect(() => {
-    if (!openMenuId) { setMenuAnchorEl(null); return; }
+    if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) closeMenu();
     }
@@ -119,12 +128,10 @@ export function useAgentManagement(): AgentManagementReturn {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [openMenuId, closeMenu]);
 
-  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, statusFilter, sortField, sortDir]);
-
   const processed = useMemo(() => {
-    let result = statusFilter === 'all' ? agents : agents.filter((a) => a.status === statusFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    let result = statusFilter_ === 'all' ? agents : agents.filter((a) => a.status === statusFilter_);
+    if (search_.trim()) {
+      const q = search_.toLowerCase();
       result = result.filter((a) => a.name.toLowerCase().includes(q) || a.team.toLowerCase().includes(q) || a.model.toLowerCase().includes(q));
     }
     if (sortField) {
@@ -134,7 +141,7 @@ export function useAgentManagement(): AgentManagementReturn {
       });
     }
     return result;
-  }, [agents, search, statusFilter, sortField, sortDir]);
+  }, [agents, search_, statusFilter_, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -143,6 +150,8 @@ export function useAgentManagement(): AgentManagementReturn {
 
   const handleSort = useCallback((field: SortField) => {
     setSortField((prev) => { if (prev === field) { setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); return prev; } setSortDir('asc'); return field; });
+    setPage(1);
+    setSelectedIds(new Set());
   }, []);
 
   const toggleSelectAll = useCallback(() => {
@@ -202,7 +211,7 @@ export function useAgentManagement(): AgentManagementReturn {
 
   return {
     isLoading, error, paged, processed, page: safePage, totalPages,
-    search, statusFilter, sortField, sortDir, selectedIds, allOnPageSelected,
+    search: search_, statusFilter: statusFilter_, sortField, sortDir, selectedIds, allOnPageSelected,
     formErrors, batchError,
     isFormOpen, isDeleteOpen, isBatchDeleteOpen, isHistoryOpen,
     editingAgent, deletingAgent, historyAgent, formData,

@@ -3,11 +3,11 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 from virtual_team.database import KeyUsageLog, UserApiKey, get_session_factory
 from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
+
 
 async def create_api_key(
     user_id: str,
@@ -51,6 +51,7 @@ async def create_api_key(
         await session.refresh(obj)
         return obj
 
+
 async def get_api_keys(user_id: str) -> list[dict]:
     """List a user's API keys — keys are MASKED, never returned raw.
 
@@ -60,9 +61,7 @@ async def get_api_keys(user_id: str) -> list[dict]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
-            select(UserApiKey)
-            .where(UserApiKey.user_id == user_id)
-            .order_by(UserApiKey.created_at)
+            select(UserApiKey).where(UserApiKey.user_id == user_id).order_by(UserApiKey.created_at)
         )
         result = await session.execute(stmt)
         rows = result.scalars().all()
@@ -83,20 +82,25 @@ async def get_api_keys(user_id: str) -> list[dict]:
                 key_masked = mask_api_key(decrypt_api_key(r.encrypted_key))
             except Exception:
                 key_masked = "**** (解密失败，请重新添加)"
-            results.append({
-                "id": r.id,
-                "provider": r.provider,
-                "usage_type": r.usage_type,
-                "label": r.label,
-                "key_masked": key_masked,
-                "base_url": r.base_url,
-                "models": [m.strip() for m in r.models.split(",") if m.strip()] if r.models else [],
-                "is_active": r.is_active,
-                "is_default": r.is_default,
-                "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-            })
+            results.append(
+                {
+                    "id": r.id,
+                    "provider": r.provider,
+                    "usage_type": r.usage_type,
+                    "label": r.label,
+                    "key_masked": key_masked,
+                    "base_url": r.base_url,
+                    "models": [m.strip() for m in r.models.split(",") if m.strip()]
+                    if r.models
+                    else [],
+                    "is_active": r.is_active,
+                    "is_default": r.is_default,
+                    "last_used_at": r.last_used_at.isoformat() if r.last_used_at else None,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+            )
         return results
+
 
 async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
     """Retrieve and decrypt an API key for LLM invocation.
@@ -129,6 +133,7 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
             "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
         }
 
+
 async def get_default_api_key(user_id: str) -> dict | None:
     """Get the user's default active API key for LLM calls."""
     factory = get_session_factory()
@@ -142,10 +147,15 @@ async def get_default_api_key(user_id: str) -> dict | None:
         row = result.scalar_one_or_none()
         if not row:
             # No default set — use the first active key
-            stmt = select(UserApiKey).where(
-                UserApiKey.user_id == user_id,
-                UserApiKey.is_active,
-            ).order_by(UserApiKey.created_at).limit(1)
+            stmt = (
+                select(UserApiKey)
+                .where(
+                    UserApiKey.user_id == user_id,
+                    UserApiKey.is_active,
+                )
+                .order_by(UserApiKey.created_at)
+                .limit(1)
+            )
             result = await session.execute(stmt)
             row = result.scalar_one_or_none()
 
@@ -162,6 +172,7 @@ async def get_default_api_key(user_id: str) -> dict | None:
             "base_url": row.base_url,
             "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
         }
+
 
 async def update_api_key(
     key_id: str,
@@ -220,6 +231,7 @@ async def update_api_key(
             "is_default": row.is_default,
         }
 
+
 async def delete_api_key(key_id: str, user_id: str) -> bool:
     """Delete an API key. Returns True if deleted, False if not found."""
     factory = get_session_factory()
@@ -230,6 +242,7 @@ async def delete_api_key(key_id: str, user_id: str) -> bool:
         await session.delete(row)
         await session.commit()
         return True
+
 
 async def test_api_key_connection(key_id: str, user_id: str) -> dict:
     """Test connectivity for a stored key. Does NOT return the key itself.
@@ -242,9 +255,9 @@ async def test_api_key_connection(key_id: str, user_id: str) -> dict:
 
     return await asyncio.to_thread(_test_connection_sync, key_cfg)
 
+
 def _test_connection_sync(key_cfg: dict) -> dict:
     """Synchronous HTTP connectivity test — runs in thread pool executor."""
-    import json
     import urllib.request
 
     try:
@@ -296,6 +309,7 @@ def _parse_models_from_response(resp, provider: str) -> list[str]:
     except Exception:
         return []
 
+
 async def get_embedding_api_key() -> str | None:
     """Get the decrypted API key for embedding (any active key with embedding capability)."""
     from virtual_team.database import UserApiKey
@@ -303,10 +317,14 @@ async def get_embedding_api_key() -> str | None:
 
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(UserApiKey).where(
-            UserApiKey.usage_type.in_(["embedding", "both"]),
-            UserApiKey.is_active,
-        ).limit(1)
+        stmt = (
+            select(UserApiKey)
+            .where(
+                UserApiKey.usage_type.in_(["embedding", "both"]),
+                UserApiKey.is_active,
+            )
+            .limit(1)
+        )
         result = await session.execute(stmt)
         row = result.scalar_one_or_none()
         if row:
@@ -347,6 +365,7 @@ async def log_key_usage(
         session.add(log)
         await session.commit()
 
+
 async def get_key_usage_stats(user_id: str) -> dict:
     """Get usage statistics for a user's keys."""
     factory = get_session_factory()
@@ -355,18 +374,14 @@ async def get_key_usage_stats(user_id: str) -> dict:
 
         # Today's stats
         today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        stmt_today = (
-            select(
-                func.count(KeyUsageLog.id).label("requests"),
-                func.sum(KeyUsageLog.tokens_total).label("tokens"),
-            )
-            .where(
-                KeyUsageLog.user_id == user_id,
-                KeyUsageLog.created_at >= today_start,
-                KeyUsageLog.status == "success",
-            )
+        stmt_today = select(
+            func.count(KeyUsageLog.id).label("requests"),
+            func.sum(KeyUsageLog.tokens_total).label("tokens"),
+        ).where(
+            KeyUsageLog.user_id == user_id,
+            KeyUsageLog.created_at >= today_start,
+            KeyUsageLog.status == "success",
         )
         result_today = await session.execute(stmt_today)
         today = result_today.one()
         return {"requests": today.requests or 0, "tokens": today.tokens or 0}
-

@@ -154,7 +154,12 @@ async def buffer_run_messages(run_id: str) -> None:
                     data = msg["data"]
                     if isinstance(data, str):
                         parsed = json.loads(data)
-                        logger.info("Buffer received: type=%s content_len=%d thinking_len=%d", parsed.get("type"), len(parsed.get("content","")), len(parsed.get("thinking","")))
+                        logger.info(
+                            "Buffer received: type=%s content_len=%d thinking_len=%d",
+                            parsed.get("type"),
+                            len(parsed.get("content", "")),
+                            len(parsed.get("thinking", "")),
+                        )
                         buf.append(parsed)
         except asyncio.CancelledError:
             pass

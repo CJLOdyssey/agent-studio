@@ -61,7 +61,7 @@ export function useToolUI(): ToolUI {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!openMenuId) { setMenuAnchorEl(null); return; }
+    if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) { setOpenMenuId(null); setMenuAnchorEl(null); }
     }
@@ -71,7 +71,7 @@ export function useToolUI(): ToolUI {
 
   const setFormData = useCallback((fn: (f: ToolFormData) => ToolFormData) => { setFormData_((p) => fn(p)); }, []);
   const openCreate = useCallback(() => { setEditingItem(null); setFormData_(EMPTY_FORM); setFormErrors([]); setIsFormOpen(true); }, []);
-  const openEdit = useCallback((item: ToolEntry) => { setEditingItem(item); const { id, createdAt, ...rest } = item; setFormData_(rest); setFormErrors([]); setIsFormOpen(true); }, []);
+  const openEdit = useCallback((item: ToolEntry) => { setEditingItem(item); const { id: _id, createdAt: _createdAt, ...rest } = item; setFormData_(rest); setFormErrors([]); setIsFormOpen(true); }, []);
   const openDelete = useCallback((item: ToolEntry) => { setDeletingItem(item); setFormErrors([]); setIsDeleteOpen(true); }, []);
   const openBatchDelete = useCallback(() => { setIsBatchDeleteOpen(true); }, []);
   const openHistory = useCallback((item: ToolEntry) => { setHistoryItem(item); setIsHistoryOpen(true); }, []);
@@ -84,7 +84,7 @@ export function useToolUI(): ToolUI {
   const save = useCallback((d: ToolData) => {
     const errs = validateToolForm(formData, d.processed, editingItem?.id);
     if (errs.length) { setFormErrors(errs); return; }
-    editingItem ? d.updateTool(editingItem.id, formData) : d.addTool(formData);
+    if (editingItem) { d.updateTool(editingItem.id, formData); } else { d.addTool(formData); }
     setIsFormOpen(false);
   }, [formData, editingItem]);
 

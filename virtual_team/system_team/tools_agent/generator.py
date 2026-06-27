@@ -1,5 +1,4 @@
 import hashlib
-import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +28,9 @@ class ToolGenerator:
         if llm_client.is_available():
             code = await llm_client.generate_code(description, language)
             if code:
-                name = self._extract_function_name(code) or description.replace(" ", "_").lower()[:30]
+                name = (
+                    self._extract_function_name(code) or description.replace(" ", "_").lower()[:30]
+                )
                 return {
                     "id": tool_id,
                     "name": name,
@@ -45,6 +46,7 @@ class ToolGenerator:
 
     def _extract_function_name(self, code: str) -> str | None:
         import re
+
         match = re.search(r"def\s+(\w+)\s*\(", code)
         return match.group(1) if match else None
 
@@ -64,7 +66,7 @@ class ToolGenerator:
         return self._create_custom_tool(tool_id, description, language="javascript")
 
     def _create_weather_tool(self, tool_id: str, description: str) -> dict[str, Any]:
-        code = '''import requests
+        code = """import requests
 from typing import Dict, Any
 
 def get_weather(city: str) -> Dict[str, Any]:
@@ -80,7 +82,7 @@ def get_weather(city: str) -> Dict[str, Any]:
         "humidity": current.get("humidity", ""),
         "success": True
     }
-'''
+"""
         return {
             "id": tool_id,
             "name": "get_weather",
@@ -92,14 +94,14 @@ def get_weather(city: str) -> Dict[str, Any]:
         }
 
     def _create_file_tool(self, tool_id: str, description: str) -> dict[str, Any]:
-        code = '''import os
+        code = """import os
 
 def read_file(file_path: str, encoding: str = "utf-8") -> str:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"文件不存在: {file_path}")
     with open(file_path, "r", encoding=encoding) as f:
         return f.read()
-'''
+"""
         return {
             "id": tool_id,
             "name": "read_file",
@@ -114,7 +116,7 @@ def read_file(file_path: str, encoding: str = "utf-8") -> str:
         }
 
     def _create_http_tool(self, tool_id: str, description: str) -> dict[str, Any]:
-        code = '''import requests
+        code = """import requests
 from typing import Dict, Any
 
 def http_request(url: str, method: str = "GET", headers: Dict = None) -> Dict[str, Any]:
@@ -124,7 +126,7 @@ def http_request(url: str, method: str = "GET", headers: Dict = None) -> Dict[st
         "text": resp.text,
         "success": resp.status_code < 400
     }
-'''
+"""
         return {
             "id": tool_id,
             "name": "http_request",
@@ -138,7 +140,9 @@ def http_request(url: str, method: str = "GET", headers: Dict = None) -> Dict[st
             "is_valid": True,
         }
 
-    def _create_custom_tool(self, tool_id: str, description: str, language: str = "python") -> dict[str, Any]:
+    def _create_custom_tool(
+        self, tool_id: str, description: str, language: str = "python"
+    ) -> dict[str, Any]:
         name = description.replace(" ", "_").lower()[:30]
         code = f'''from typing import Any
 

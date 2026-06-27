@@ -85,6 +85,7 @@ class RateLimitMiddleware:
 
     async def _rate_limited_response(self, scope, receive, send):
         from starlette.responses import JSONResponse
+
         response = JSONResponse(
             status_code=429,
             content={"detail": "请求过于频繁，请稍后再试"},

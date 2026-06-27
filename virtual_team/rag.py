@@ -34,6 +34,7 @@ EMBEDDING_DIM = 1024  # text-embedding-v3 output dimension
 
 # ── Data structures ──────────────────────────────────────────────────────────
 
+
 @dataclass
 class Chunk:
     id: str
@@ -46,6 +47,7 @@ class Chunk:
 
 
 # ── Chunking (unchanged) ─────────────────────────────────────────────────────
+
 
 def semantic_chunk(
     text: str,
@@ -67,26 +69,30 @@ def semantic_chunk(
         tags = _extract_tags(section)
 
         if len(section) <= chunk_size:
-            chunks.append(Chunk(
-                id=_hash_id(section),
-                text=section,
-                session_id=session_id,
-                run_id=run_id,
-                tags=tags,
-            ))
+            chunks.append(
+                Chunk(
+                    id=_hash_id(section),
+                    text=section,
+                    session_id=session_id,
+                    run_id=run_id,
+                    tags=tags,
+                )
+            )
         else:
             words = section.split()
             start = 0
             while start < len(words):
                 end = min(start + chunk_size, len(words))
                 chunk_text = " ".join(words[start:end])
-                chunks.append(Chunk(
-                    id=_hash_id(chunk_text + str(start)),
-                    text=chunk_text,
-                    session_id=session_id,
-                    run_id=run_id,
-                    tags=tags,
-                ))
+                chunks.append(
+                    Chunk(
+                        id=_hash_id(chunk_text + str(start)),
+                        text=chunk_text,
+                        session_id=session_id,
+                        run_id=run_id,
+                        tags=tags,
+                    )
+                )
                 start = end - overlap
 
     return chunks
@@ -121,6 +127,7 @@ def _hash_id(text: str) -> str:
 
 # ── Embedding (DashScope) ─────────────────────────────────────────────────────
 
+
 class EmbeddingProvider:
     """DashScope embedding via HTTP API — no heavy SDK dependency required."""
 
@@ -147,11 +154,13 @@ class EmbeddingProvider:
         import json
         import urllib.request
 
-        body = json.dumps({
-            "model": self.model,
-            "input": {"texts": texts},
-            "parameters": {"text_type": "document"},
-        }).encode("utf-8")
+        body = json.dumps(
+            {
+                "model": self.model,
+                "input": {"texts": texts},
+                "parameters": {"text_type": "document"},
+            }
+        ).encode("utf-8")
 
         req = urllib.request.Request(self._base_url, data=body, method="POST")
         req.add_header("Authorization", f"Bearer {self.api_key}")
@@ -161,10 +170,7 @@ class EmbeddingProvider:
             result = json.loads(resp.read().decode("utf-8"))
 
         if result.get("output") and result["output"].get("embeddings"):
-            return [
-                e["embedding"]
-                for e in result["output"]["embeddings"]
-            ]
+            return [e["embedding"] for e in result["output"]["embeddings"]]
         return _fallback_embed(texts)
 
     async def embed_query(self, query: str) -> list[float]:
@@ -183,6 +189,7 @@ def _fallback_embed(texts: list[str]) -> list[list[float]]:
 
 # ── pgvector store ────────────────────────────────────────────────────────────
 
+
 class PgVectorStore:
     """
     PostgreSQL + pgvector vector store.
@@ -200,6 +207,7 @@ class PgVectorStore:
         if self._initialized:
             return
         from virtual_team.database import get_session_factory
+
         factory = get_session_factory()
         async with factory() as session:
             # Enable extension (requires superuser in production — run once manually)
@@ -209,7 +217,8 @@ class PgVectorStore:
                 logger.warning("pgvector extension not available — install it first")
 
             # Create table if not exists
-            await session.execute(text(f"""
+            await session.execute(
+                text(f"""
                 CREATE TABLE IF NOT EXISTS vector_chunks (
                     id TEXT PRIMARY KEY,
                     session_id TEXT NOT NULL,
@@ -218,21 +227,26 @@ class PgVectorStore:
                     tags TEXT[] DEFAULT '{{}}',
                     embedding vector({EMBEDDING_DIM})
                 )
-            """))
+            """)
+            )
 
             # Create index if not exists
             try:
-                await session.execute(text("""
+                await session.execute(
+                    text("""
                     CREATE INDEX IF NOT EXISTS idx_vector_chunks_embedding
                     ON vector_chunks USING hnsw (embedding vector_cosine_ops)
-                """))
+                """)
+                )
             except Exception:
                 # HNSW might not be available — try IVFFlat
                 try:
-                    await session.execute(text("""
+                    await session.execute(
+                        text("""
                         CREATE INDEX IF NOT EXISTS idx_vector_chunks_embedding
                         ON vector_chunks USING ivfflat (embedding vector_cosine_ops)
-                    """))
+                    """)
+                    )
                 except Exception:
                     logger.warning("No vector index available — searches will be sequential")
 
@@ -246,6 +260,7 @@ class PgVectorStore:
         await self._ensure_table()
 
         from virtual_team.database import get_session_factory
+
         factory = get_session_factory()
         async with factory() as session:
             for chunk in chunks:
@@ -261,7 +276,9 @@ class PgVectorStore:
                         INSERT INTO vector_chunks (id, session_id, run_id, text, tags, embedding)
                         VALUES (:id, :sid, :rid, :text, CAST(:tags AS text[]), CAST(:emb AS vector))
                         ON CONFLICT (id) DO UPDATE
-                        SET text = EXCLUDED.text, tags = EXCLUDED.tags, embedding = EXCLUDED.embedding
+                        SET text = EXCLUDED.text,
+                            tags = EXCLUDED.tags,
+                            embedding = EXCLUDED.embedding
                         """
                     ),
                     {
@@ -290,6 +307,7 @@ class PgVectorStore:
         await self._ensure_table()
 
         from virtual_team.database import get_session_factory
+
         factory = get_session_factory()
         async with factory() as session:
             emb_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
@@ -311,14 +329,17 @@ class PgVectorStore:
 
             where_sql = " AND ".join(where_clauses) if where_clauses else "TRUE"
 
-            result = await session.execute(text(f"""
+            result = await session.execute(
+                text(f"""
                 SELECT text, tags, session_id, run_id,
                        1 - (embedding <=> CAST(:emb AS vector)) AS similarity
                 FROM vector_chunks
                 WHERE {where_sql}
                 ORDER BY embedding <=> CAST(:emb AS vector)
                 LIMIT :top_k
-            """), params)
+            """),
+                params,
+            )
 
             rows = result.fetchall()
             return [
@@ -335,6 +356,7 @@ class PgVectorStore:
     async def clear_session(self, session_id: str):
         await self._ensure_table()
         from virtual_team.database import get_session_factory
+
         factory = get_session_factory()
         async with factory() as session:
             await session.execute(
@@ -356,10 +378,7 @@ def get_rag_pipeline() -> tuple[EmbeddingProvider | None, PgVectorStore]:
 
 def ensure_embedding_provider(api_key: str | None = None):
     global _embedding_provider
-    if api_key:
-        _embedding_provider = EmbeddingProvider(api_key=api_key)
-    else:
-        _embedding_provider = None
+    _embedding_provider = EmbeddingProvider(api_key=api_key) if api_key else None
 
 
 async def ingest_session_messages(

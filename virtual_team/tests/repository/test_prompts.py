@@ -1,6 +1,7 @@
 """
 Repository tests for Prompt CRUD operations.
 """
+
 import uuid
 
 import pytest
@@ -16,11 +17,13 @@ from virtual_team.repository.prompts import (
 @pytest.mark.asyncio
 async def test_create_prompt(db_engine):
     """create_prompt persists a new PromptDB row and returns it with an ID."""
-    prompt = await create_prompt({
-        "name": "test-prompt-repo",
-        "category": "general",
-        "content": "You are a helpful assistant.",
-    })
+    prompt = await create_prompt(
+        {
+            "name": "test-prompt-repo",
+            "category": "general",
+            "content": "You are a helpful assistant.",
+        }
+    )
     assert prompt is not None
     assert prompt.id is not None
     assert prompt.name == "test-prompt-repo"
@@ -32,11 +35,13 @@ async def test_create_prompt(db_engine):
 @pytest.mark.asyncio
 async def test_list_prompts(db_engine):
     """get_prompts returns a list of dicts with expected keys."""
-    await create_prompt({
-        "name": f"prompt-{uuid.uuid4().hex[:6]}",
-        "category": "system",
-        "content": "System prompt content",
-    })
+    await create_prompt(
+        {
+            "name": f"prompt-{uuid.uuid4().hex[:6]}",
+            "category": "system",
+            "content": "System prompt content",
+        }
+    )
     prompts = await get_prompts()
     assert isinstance(prompts, list)
     assert len(prompts) >= 1
@@ -52,11 +57,13 @@ async def test_list_prompts(db_engine):
 @pytest.mark.asyncio
 async def test_update_prompt_content(db_engine):
     """Updating a prompt's content persists and is reflected in a fresh read."""
-    prompt = await create_prompt({
-        "name": "update-test",
-        "category": "code",
-        "content": "Original content.",
-    })
+    prompt = await create_prompt(
+        {
+            "name": "update-test",
+            "category": "code",
+            "content": "Original content.",
+        }
+    )
     updated = await update_prompt(prompt.id, {"content": "Modified content."})
     assert updated is not None
     assert updated.content == "Modified content."
@@ -70,11 +77,13 @@ async def test_update_prompt_content(db_engine):
 @pytest.mark.asyncio
 async def test_delete_prompt(db_engine):
     """delete_prompt removes the row and returns True."""
-    prompt = await create_prompt({
-        "name": "delete-test",
-        "category": "general",
-        "content": "To be deleted.",
-    })
+    prompt = await create_prompt(
+        {
+            "name": "delete-test",
+            "category": "general",
+            "content": "To be deleted.",
+        }
+    )
     deleted = await delete_prompt(prompt.id)
     assert deleted is True
     prompts = await get_prompts()
@@ -91,11 +100,13 @@ async def test_delete_prompt_not_found(db_engine):
 @pytest.mark.asyncio
 async def test_update_prompt_name(db_engine):
     """Updating a prompt's name field works independently."""
-    prompt = await create_prompt({
-        "name": "rename-me",
-        "category": "general",
-        "content": "Content.",
-    })
+    prompt = await create_prompt(
+        {
+            "name": "rename-me",
+            "category": "general",
+            "content": "Content.",
+        }
+    )
     updated = await update_prompt(prompt.id, {"name": "renamed"})
     assert updated is not None
     assert updated.name == "renamed"

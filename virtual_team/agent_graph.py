@@ -11,12 +11,13 @@ import json
 import os
 import re
 import subprocess
-import urllib.request
 import urllib.parse
+import urllib.request
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Annotated, Any, TypedDict
+from dataclasses import dataclass
+from typing import Annotated, TypedDict
 
+import httpx
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -25,13 +26,10 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
 from virtual_team.broker import publish_run_message
-import httpx
-
 from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -40,6 +38,7 @@ logger = get_logger(__name__)
 @dataclass
 class ToolConfig:
     """Lightweight tool descriptor for registration with the agent graph."""
+
     name: str
     description: str = ""
     parameters: dict | None = None
@@ -59,7 +58,14 @@ class _ToolWrapper:
       - custom → LLM-powered execution
     """
 
-    def __init__(self, name: str, description: str = "", instructions: str = "", mcp_type: str = "", mcp_endpoint: str = ""):
+    def __init__(
+        self,
+        name: str,
+        description: str = "",
+        instructions: str = "",
+        mcp_type: str = "",
+        mcp_endpoint: str = "",
+    ):
         self.name = name
         self.description = description
         self.instructions = instructions
@@ -74,26 +80,47 @@ class _ToolWrapper:
         n = self.name.lower()
 
         if n.startswith("skill_"):
-            return self.instructions if self.instructions else json.dumps({
-                "role": "skill", "name": self.name,
-                "content": "This skill provides specialized guidance. Follow these instructions to complete the task.",
-            })
+            return (
+                self.instructions
+                if self.instructions
+                else json.dumps(
+                    {
+                        "role": "skill",
+                        "name": self.name,
+                        "content": (
+                            "This skill provides specialized guidance. "
+                            "Follow these instructions to complete the task."
+                        ),
+                    }
+                )
+            )
 
         if n.startswith("mcp_") and (self.mcp_type or self.mcp_endpoint):
             return _execute_mcp(self.name, self.mcp_type, self.mcp_endpoint, args)
 
         if any(k in n for k in ("weather", "天气")):
             city = args.get("city", "北京")
-            return json.dumps({
-                "tool": self.name, "city": city,
-                "temperature": "22°C", "weather": "晴",
-                "humidity": "30%", "wind": "3级",
-            })
+            return json.dumps(
+                {
+                    "tool": self.name,
+                    "city": city,
+                    "temperature": "22°C",
+                    "weather": "晴",
+                    "humidity": "30%",
+                    "wind": "3级",
+                }
+            )
 
         if "calculator" in n or "calc" in n:
             expr = args.get("expression") or args.get("expr") or args.get("query") or ""
             if not expr:
-                return json.dumps({"tool": self.name, "error": "No expression provided. Pass {'expression': '<math>'} or {'expr': '<math>'}."})
+                return json.dumps(
+                    {
+                        "tool": self.name,
+                        "error": "No expression provided. "
+                        "Pass {'expression': '<math>'} or {'expr': '<math>'}.",
+                    }
+                )
             try:
                 result = eval(expr, {"__builtins__": {}}, {})
                 return json.dumps({"tool": self.name, "expression": expr, "result": result})
@@ -112,15 +139,26 @@ class _ToolWrapper:
         # Custom tool: use LLM to generate the actual output
         if self._llm:
             try:
-                prompt = f"""You are the '{self.name}' tool. Your description: {self.description or 'No description'}.
-Execute this tool call and return ONLY the result as plain text or JSON (no markdown, no explanation):
-Arguments: {json.dumps(args, ensure_ascii=False)}
-Output:"""
+                prompt = (
+                    f"You are the '{self.name}' tool. "
+                    f"Your description: {self.description or 'No description'}.\n"
+                    "Execute this tool call and return ONLY the result "
+                    "as plain text or JSON (no markdown, no explanation):\n"
+                    f"Arguments: {json.dumps(args, ensure_ascii=False)}\n"
+                    "Output:"
+                )
                 resp = await self._llm.ainvoke([HumanMessage(content=prompt)])
                 return resp.content
             except Exception as e:
                 return json.dumps({"tool": self.name, "status": "error", "error": str(e)})
-        return json.dumps({"tool": self.name, "status": "executed", "note": "no LLM available, falling back", "args": args})
+        return json.dumps(
+            {
+                "tool": self.name,
+                "status": "executed",
+                "note": "no LLM available, falling back",
+                "args": args,
+            }
+        )
 
 
 def _web_search(query: str, max_results: int = 5) -> list[dict]:
@@ -129,9 +167,6 @@ def _web_search(query: str, max_results: int = 5) -> list[dict]:
     Priority: Baidu Qianfan → Bing → simulated stub.
     Tavily is implemented but blocked in China without proxy.
     """
-    import urllib.request
-    import urllib.parse
-    import re
 
     baidu_key = os.environ.get("BAIDU_QIANFAN_API_KEY", "")
     if baidu_key:
@@ -152,13 +187,17 @@ def _web_search(query: str, max_results: int = 5) -> list[dict]:
 
 
 def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list[dict]:
-    import urllib.request, urllib.parse, re
+    import urllib.parse
+    import urllib.request
 
     url = f"https://www.bing.com/search?q={urllib.parse.quote(query)}"
-    req = urllib.request.Request(url, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-    })
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        },
+    )
     with urllib.request.urlopen(req, timeout=15) as resp:
         html = resp.read().decode("utf-8", errors="ignore")
 
@@ -168,10 +207,10 @@ def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list
             break
         block = match.group(1)
         title_m = re.search(r'<h2[^>]*><a href="([^"]*)"[^>]*>(.*?)</a>', block, re.DOTALL)
-        snippet_m = re.search(r'<p[^>]*>(.*?)</p>', block, re.DOTALL)
+        snippet_m = re.search(r"<p[^>]*>(.*?)</p>", block, re.DOTALL)
         url_found = title_m.group(1) if title_m else ""
-        title = re.sub(r'<[^>]+>', '', title_m.group(2) if title_m else '').strip()
-        snippet = re.sub(r'<[^>]+>', '', snippet_m.group(1) if snippet_m else '').strip()
+        title = re.sub(r"<[^>]+>", "", title_m.group(2) if title_m else "").strip()
+        snippet = re.sub(r"<[^>]+>", "", snippet_m.group(1) if snippet_m else "").strip()
         if title and snippet:
             item = {"title": title, "snippet": snippet, "url": url_found, "full_text": ""}
             if enrich and url_found:
@@ -182,12 +221,17 @@ def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list
 
 
 def _fetch_page(url: str, max_chars: int = 2000) -> str:
-    import urllib.request, re, gzip, io
+    import gzip
+    import urllib.request
+
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept-Encoding": "gzip",
-        })
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept-Encoding": "gzip",
+            },
+        )
         with urllib.request.urlopen(req, timeout=10) as resp:
             raw = resp.read()
             if resp.headers.get("Content-Encoding") == "gzip":
@@ -195,24 +239,28 @@ def _fetch_page(url: str, max_chars: int = 2000) -> str:
             html = raw.decode("utf-8", errors="ignore")
 
         for tag in ("script", "style", "nav", "footer", "header", "aside", "iframe", "noscript"):
-            html = re.sub(rf'<{tag}[^>]*>.*?</{tag}>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r'<[^>]+>', ' ', html)
-        html = re.sub(r'&[a-z]+;', ' ', html)
-        lines = [l.strip() for l in html.splitlines() if l.strip()]
-        text = ' '.join(lines)
-        text = re.sub(r'\s{2,}', ' ', text)
+            html = re.sub(rf"<{tag}[^>]*>.*?</{tag}>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r"<[^>]+>", " ", html)
+        html = re.sub(r"&[a-z]+;", " ", html)
+        lines = [line.strip() for line in html.splitlines() if line.strip()]
+        text = " ".join(lines)
+        text = re.sub(r"\s{2,}", " ", text)
         return text[:max_chars].strip()
     except Exception:
         return ""
 
 
 def _baidu_qianfan_search(query: str, api_key: str, max_results: int = 5) -> list[dict]:
-    import urllib.request, json
-    body = json.dumps({
-        "messages": [{"content": query, "role": "user"}],
-        "search_source": "baidu_search_v2",
-        "resource_type_filter": [{"type": "web", "top_k": max_results}],
-    }).encode()
+    import json
+    import urllib.request
+
+    body = json.dumps(
+        {
+            "messages": [{"content": query, "role": "user"}],
+            "search_source": "baidu_search_v2",
+            "resource_type_filter": [{"type": "web", "top_k": max_results}],
+        }
+    ).encode()
     req = urllib.request.Request(
         "https://qianfan.baidubce.com/v2/ai_search/web_search",
         data=body,
@@ -226,11 +274,13 @@ def _baidu_qianfan_search(query: str, api_key: str, max_results: int = 5) -> lis
         data = json.loads(resp.read())
     results = []
     for ref in (data.get("references") or [])[:max_results]:
-        results.append({
-            "title": ref.get("title", ""),
-            "snippet": ref.get("content", "")[:300],
-            "url": ref.get("url", ""),
-        })
+        results.append(
+            {
+                "title": ref.get("title", ""),
+                "snippet": ref.get("content", "")[:300],
+                "url": ref.get("url", ""),
+            }
+        )
     return results if results else [{"snippet": f"No Baidu results for: {query}"}]
 
 
@@ -240,7 +290,9 @@ def _execute_tool(name: str, endpoint: str, args: dict) -> str:
         if endpoint.startswith("http://") or endpoint.startswith("https://"):
             try:
                 body = json.dumps(args).encode()
-                req = urllib.request.Request(endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST")
+                req = urllib.request.Request(
+                    endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST"
+                )
                 with urllib.request.urlopen(req, timeout=30) as resp:
                     return resp.read().decode("utf-8", errors="ignore")[:5000]
             except Exception as e:
@@ -249,7 +301,13 @@ def _execute_tool(name: str, endpoint: str, args: dict) -> str:
             try:
                 cmd = [endpoint] + [str(v) for v in args.values()]
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                return json.dumps({"stdout": result.stdout[:3000], "stderr": result.stderr[:500], "rc": result.returncode})
+                return json.dumps(
+                    {
+                        "stdout": result.stdout[:3000],
+                        "stderr": result.stderr[:500],
+                        "rc": result.returncode,
+                    }
+                )
             except subprocess.TimeoutExpired:
                 return json.dumps({"error": "timeout (30s)"})
             except Exception as e:
@@ -261,8 +319,17 @@ def _execute_mcp(tool_name: str, tool_type: str, endpoint: str, args: dict) -> s
     """MCP execution: stdio=subprocess, sse=HTTP, optional JSON-RPC discovery."""
     if tool_type == "sse" and endpoint:
         try:
-            body = json.dumps({"jsonrpc": "2.0", "method": "tools/call", "params": {"name": tool_name, "arguments": args}, "id": 1}).encode()
-            req = urllib.request.Request(endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST")
+            body = json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {"name": tool_name, "arguments": args},
+                    "id": 1,
+                }
+            ).encode()
+            req = urllib.request.Request(
+                endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST"
+            )
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return resp.read().decode("utf-8", errors="ignore")[:5000]
         except Exception as e:
@@ -271,7 +338,13 @@ def _execute_mcp(tool_name: str, tool_type: str, endpoint: str, args: dict) -> s
         try:
             cmd = [endpoint] + [str(v) for v in args.values()]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            return json.dumps({"stdout": result.stdout[:3000], "stderr": result.stderr[:500], "rc": result.returncode})
+            return json.dumps(
+                {
+                    "stdout": result.stdout[:3000],
+                    "stderr": result.stderr[:500],
+                    "rc": result.returncode,
+                }
+            )
         except subprocess.TimeoutExpired:
             return json.dumps({"error": "timeout (30s)"})
         except Exception as e:
@@ -279,7 +352,6 @@ def _execute_mcp(tool_name: str, tool_type: str, endpoint: str, args: dict) -> s
     result = _execute_tool(tool_name, endpoint, args)
     logger.debug("MCP fallback to tool execution | tool=%s", tool_name)
     return result
-
 
 
 class AgentState(TypedDict):
@@ -322,6 +394,7 @@ class SingleAgentGraph:
         self._tool_definitions: list[dict] = []
         # Persistent checkpointer — env-controlled (sqlite/postgres/memory)
         from virtual_team.checkpoint import create_checkpointer
+
         self.checkpointer = create_checkpointer()
         self._graph = self._build_graph()
 
@@ -352,11 +425,13 @@ class SingleAgentGraph:
                     ]
                 api_messages.append(entry)
             elif isinstance(msg, ToolMessage):
-                api_messages.append({
-                    "role": "tool",
-                    "tool_call_id": msg.tool_call_id,
-                    "content": msg.content,
-                })
+                api_messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": msg.tool_call_id,
+                        "content": msg.content,
+                    }
+                )
 
         base_url = (self.base_url or "https://api.deepseek.com").rstrip("/")
         url = f"{base_url}/chat/completions"
@@ -374,7 +449,9 @@ class SingleAgentGraph:
             body["tools"] = self._tool_definitions
             body["tool_choice"] = "auto"
 
-        is_deepseek = "deepseek" in (self.base_url or "").lower() or "deepseek" in self.model.lower()
+        is_deepseek = (
+            "deepseek" in (self.base_url or "").lower() or "deepseek" in self.model.lower()
+        )
         if is_deepseek and not self._tool_definitions:
             body["thinking"] = {"type": "enabled"}
 
@@ -386,73 +463,99 @@ class SingleAgentGraph:
 
         cb = self._stream_cb
 
-        logger.info("LLM request | model=%s | msgs=%d | tools=%d | thinking=%s", self.model, len(api_messages), len(self._tool_definitions or []), "thinking" in body)
+        logger.info(
+            "LLM request | model=%s | msgs=%d | tools=%d | thinking=%s",
+            self.model,
+            len(api_messages),
+            len(self._tool_definitions or []),
+            "thinking" in body,
+        )
         if self._tool_definitions:
-            logger.info("Tools sent: %s", json.dumps([t["function"]["name"] for t in self._tool_definitions]))
+            logger.info(
+                "Tools sent: %s",
+                json.dumps([t["function"]["name"] for t in self._tool_definitions]),
+            )
 
         try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=15.0), proxy=None) as client:
-                async with client.stream("POST", url, headers=headers, json=body) as response:
-                    if response.status_code != 200:
-                        body_text = await response.aread()
-                        logger.error("LLM %s %s -> %s: %s", url, body.get("model"), response.status_code, body_text.decode(errors="replace")[:500])
-                    response.raise_for_status()
-                    async for line in response.aiter_lines():
-                        if not line or not line.startswith("data: "):
-                            continue
-                        data_str = line[6:]
-                        if data_str.strip() == "[DONE]":
-                            break
-                        try:
-                            chunk = json.loads(data_str)
-                        except json.JSONDecodeError:
-                            continue
+            async with (
+                httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=15.0), proxy=None) as client,
+                client.stream("POST", url, headers=headers, json=body) as response,
+            ):
+                if response.status_code != 200:
+                    body_text = await response.aread()
+                    logger.error(
+                        "LLM %s %s -> %s: %s",
+                        url,
+                        body.get("model"),
+                        response.status_code,
+                        body_text.decode(errors="replace")[:500],
+                    )
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line or not line.startswith("data: "):
+                        continue
+                    data_str = line[6:]
+                    if data_str.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
 
-                        choices = chunk.get("choices", [])
-                        if not choices:
-                            continue
-                        delta = choices[0].get("delta", {})
-                        fr = choices[0].get("finish_reason")
-                        if fr:
-                            finish_reason = fr
+                    choices = chunk.get("choices", [])
+                    if not choices:
+                        continue
+                    delta = choices[0].get("delta", {})
+                    fr = choices[0].get("finish_reason")
+                    if fr:
+                        finish_reason = fr
 
-                        rc = delta.get("reasoning_content")
-                        if rc:
-                            thinking_chunks.append(rc)
-                            if cb:
-                                try:
-                                    await cb({"event": "on_custom_thinking", "data": {"content": rc}})
-                                except Exception as e:
-                                    logger.error("on_custom_thinking callback failed: %s", e, exc_info=True)
+                    rc = delta.get("reasoning_content")
+                    if rc:
+                        thinking_chunks.append(rc)
+                        if cb:
+                            try:
+                                await cb({"event": "on_custom_thinking", "data": {"content": rc}})
+                            except Exception as e:
+                                logger.error(
+                                    "on_custom_thinking callback failed: %s", e, exc_info=True
+                                )
 
-                        content = delta.get("content")
-                        if content:
-                            if thinking_chunks and not _raw_llm_thinking_flushed:
-                                _raw_llm_thinking_flushed = True
-                                thinking_text = "".join(thinking_chunks).strip()
-                                if thinking_text and self._run_id:
-                                    await publish_run_message(self._run_id, {
+                    content = delta.get("content")
+                    if content:
+                        if thinking_chunks and not _raw_llm_thinking_flushed:
+                            _raw_llm_thinking_flushed = True
+                            thinking_text = "".join(thinking_chunks).strip()
+                            if thinking_text and self._run_id:
+                                await publish_run_message(
+                                    self._run_id,
+                                    {
                                         "type": "thinking_done",
                                         "agent_name": "Agent",
                                         "thinking": thinking_text,
-                                    })
-                            content_chunks.append(content)
-                            if cb:
-                                await cb({"event": "on_custom_token", "data": {"content": content}})
+                                    },
+                                )
+                        content_chunks.append(content)
+                        if cb:
+                            await cb({"event": "on_custom_token", "data": {"content": content}})
 
-                        tc_delta = delta.get("tool_calls")
-                        if tc_delta:
-                            for tc in tc_delta:
-                                idx = tc.get("index", 0)
-                                if idx not in tool_calls_map:
-                                    tool_calls_map[idx] = {"id": tc.get("id", ""), "name": "", "arguments": ""}
-                                fn = tc.get("function", {})
-                                if fn.get("name"):
-                                    tool_calls_map[idx]["name"] += fn["name"]
-                                if fn.get("arguments"):
-                                    tool_calls_map[idx]["arguments"] += fn["arguments"]
-                                if tc.get("id"):
-                                    tool_calls_map[idx]["id"] = tc["id"]
+                    tc_delta = delta.get("tool_calls")
+                    if tc_delta:
+                        for tc in tc_delta:
+                            idx = tc.get("index", 0)
+                            if idx not in tool_calls_map:
+                                tool_calls_map[idx] = {
+                                    "id": tc.get("id", ""),
+                                    "name": "",
+                                    "arguments": "",
+                                }
+                            fn = tc.get("function", {})
+                            if fn.get("name"):
+                                tool_calls_map[idx]["name"] += fn["name"]
+                            if fn.get("arguments"):
+                                tool_calls_map[idx]["arguments"] += fn["arguments"]
+                            if tc.get("id"):
+                                tool_calls_map[idx]["id"] = tc["id"]
 
         except httpx.HTTPError as e:
             logger.error("Raw LLM stream failed: %s", e, exc_info=True)
@@ -473,11 +576,18 @@ class SingleAgentGraph:
 
         logger.info(
             "Raw LLM | content=%d chars | thinking=%d chars | tool_calls=%d | finish=%s",
-            len(full_content), len(thinking), len(final_tool_calls), finish_reason,
+            len(full_content),
+            len(thinking),
+            len(final_tool_calls),
+            finish_reason,
         )
         if final_tool_calls:
             for tc in final_tool_calls:
-                logger.info("  ↳ tool=%s args=%s", tc["name"], json.dumps(tc.get("args", {}), ensure_ascii=False)[:200])
+                logger.info(
+                    "  ↳ tool=%s args=%s",
+                    tc["name"],
+                    json.dumps(tc.get("args", {}), ensure_ascii=False)[:200],
+                )
         return full_content, thinking, final_tool_calls
 
     def _build_graph(self):
@@ -531,15 +641,26 @@ class SingleAgentGraph:
                 else:
                     result = f"Unknown tool: {tool_name}"
                 # If result indicates fallback, use graph's LLM directly
-                if fn and isinstance(result, str) and ('"status":' in result or '"status": "' in result):
+                if (
+                    fn
+                    and isinstance(result, str)
+                    and ('"status":' in result or '"status": "' in result)
+                ):
                     try:
-                        desc = getattr(fn, 'description', '') or ''
-                        prompt = f"Tool: {tool_name}\nDescription: {desc}\nArgs: {json.dumps(tool_args, ensure_ascii=False)}\nExecute and return ONLY the result (no markdown):"
+                        desc = getattr(fn, "description", "") or ""
+                        prompt = (
+                            f"Tool: {tool_name}\n"
+                            f"Description: {desc}\n"
+                            f"Args: {json.dumps(tool_args, ensure_ascii=False)}\n"
+                            "Execute and return ONLY the result (no markdown):"
+                        )
                         llm_result = await self.llm.ainvoke([HumanMessage(content=prompt)])
                         result = llm_result.content
                     except Exception:
                         pass
-                tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_id, name=tool_name))
+                tool_messages.append(
+                    ToolMessage(content=str(result), tool_call_id=tool_id, name=tool_name)
+                )
             return {"messages": tool_messages}
 
         def _should_continue(state: AgentState) -> str:
@@ -565,15 +686,23 @@ class SingleAgentGraph:
             # DeepSeek rejects empty "properties": {} — strip it
             if isinstance(params, dict) and params.get("properties") == {}:
                 params = {k: v for k, v in params.items() if k != "properties"}
-            self._tool_definitions.append({
-                "type": "function",
-                "function": {
-                    "name": tc.name,
-                    "description": tc.description,
-                    "parameters": params,
-                },
-            })
-            wrapper = _ToolWrapper(tc.name, description=tc.description, instructions=getattr(tc, 'instructions', ''), mcp_type=getattr(tc, 'mcp_type', ''), mcp_endpoint=getattr(tc, 'mcp_endpoint', ''))
+            self._tool_definitions.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": tc.name,
+                        "description": tc.description,
+                        "parameters": params,
+                    },
+                }
+            )
+            wrapper = _ToolWrapper(
+                tc.name,
+                description=tc.description,
+                instructions=getattr(tc, "instructions", ""),
+                mcp_type=getattr(tc, "mcp_type", ""),
+                mcp_endpoint=getattr(tc, "mcp_endpoint", ""),
+            )
             wrapper.set_llm(self.llm)
             self._tool_map[tc.name] = wrapper
 
@@ -635,7 +764,9 @@ class SingleAgentGraph:
 
         return {"response": "", "tool_calls": [], "message_count": 0}
 
-    def invoke_sync(self, system_prompt: str, user_input: str, thread_id: str, session_context: str = "") -> dict:
+    def invoke_sync(
+        self, system_prompt: str, user_input: str, thread_id: str, session_context: str = ""
+    ) -> dict:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -643,14 +774,25 @@ class SingleAgentGraph:
 
         if loop and loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(
                     lambda: asyncio.run(
-                        self.run(system_prompt=system_prompt, user_input=user_input, thread_id=thread_id, session_context=session_context)
+                        self.run(
+                            system_prompt=system_prompt,
+                            user_input=user_input,
+                            thread_id=thread_id,
+                            session_context=session_context,
+                        )
                     )
                 )
                 return future.result()
         else:
             return asyncio.run(
-                self.run(system_prompt=system_prompt, user_input=user_input, thread_id=thread_id, session_context=session_context)
+                self.run(
+                    system_prompt=system_prompt,
+                    user_input=user_input,
+                    thread_id=thread_id,
+                    session_context=session_context,
+                )
             )

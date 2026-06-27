@@ -5,15 +5,15 @@ from pydantic import BaseModel, Field
 
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
+    add_team_member,
     create_team,
     delete_team,
     get_team,
     get_teams,
-    update_team,
-    add_team_member,
+    link_agent_config,
     remove_team_member,
     reorder_team_members,
-    link_agent_config,
+    update_team,
 )
 
 logger = get_logger(__name__)
@@ -56,7 +56,7 @@ async def list_teams():
         ]
     except Exception as e:
         logger.error("Error listing teams: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/api/teams", status_code=201)
@@ -76,7 +76,7 @@ async def add_team(req: TeamCreateRequest):
         raise
     except Exception as e:
         logger.error("Error creating team: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/teams/{team_id}")
@@ -98,12 +98,17 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
         )
         if not team:
             raise HTTPException(status_code=404, detail="团队不存在")
-        return {"id": team.id, "name": team.name, "order": team.order, "is_expanded": team.is_expanded}
+        return {
+            "id": team.id,
+            "name": team.name,
+            "order": team.order,
+            "is_expanded": team.is_expanded,
+        }
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error updating team: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/api/teams/{team_id}")
@@ -117,7 +122,7 @@ async def delete_team_endpoint(team_id: str):
         raise
     except Exception as e:
         logger.error("Error deleting team: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/api/teams/{team_id}/members", status_code=201)
@@ -135,7 +140,7 @@ async def add_member(team_id: str, req: MemberAddRequest):
         raise
     except Exception as e:
         logger.error("Error adding member: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/api/teams/{team_id}/members/{member_id}")
@@ -149,7 +154,7 @@ async def remove_member(team_id: str, member_id: str):
         raise
     except Exception as e:
         logger.error("Error removing member: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.put("/api/teams/{team_id}/members/reorder")
@@ -159,7 +164,7 @@ async def reorder_members(team_id: str, req: ReorderRequest):
         return {"ok": True}
     except Exception as e:
         logger.error("Error reordering members: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 class LinkAgentRequest(BaseModel):
@@ -177,4 +182,4 @@ async def link_agent(team_id: str, member_id: str, req: LinkAgentRequest):
         raise
     except Exception as e:
         logger.error("Error linking agent: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

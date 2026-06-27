@@ -13,6 +13,11 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
+function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string | null; sortDir: string }) {
+  if (sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
+  return sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
+}
+
 export default function ToolManagement() {
   const data = useToolData();
   const ui = useToolUI();
@@ -22,11 +27,6 @@ export default function ToolManagement() {
   function handleDelete() { ui.confirmDelete(data); toast(t('tool.toast_deleted'), 'success'); }
   function handleBatchDelete() { ui.confirmBatchDelete(data); toast(t('tool.toast_batch_deleted'), 'success'); }
   function handleCopy(item: typeof data.processed[0]) { data.copyTool(item); toast(t('tool.toast_copied'), 'success'); }
-
-  const SortIcon = ({ field }: { field: 'name' | 'category' | 'status' }) => {
-    if (data.sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
-    return data.sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
-  };
 
   if (data.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('tool.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
@@ -62,10 +62,10 @@ export default function ToolManagement() {
         <table className="wsta-table" role="grid" aria-label={t('tool.col_name')}>
           <thead><tr>
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('tool.select_all')} /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('tool.col_name')} <SortIcon field="name" /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('category')} aria-sort={data.sortField === 'category' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('tool.col_category')} <SortIcon field="category" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('tool.col_name')} <SortIcon field="name" sortField={data.sortField} sortDir={data.sortDir} /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('category')} aria-sort={data.sortField === 'category' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('tool.col_category')} <SortIcon field="category" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('tool.col_desc')}</th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('tool.col_status')} <SortIcon field="status" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('tool.col_status')} <SortIcon field="status" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('tool.col_version')}</th>
             <th className="wsta-col-actions" scope="col">{t('tool.col_actions')}</th>
           </tr></thead>
