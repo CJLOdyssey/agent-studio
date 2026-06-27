@@ -1,7 +1,6 @@
 """Skill generation API routes: Generate SKILL.md from natural language."""
 
 import hashlib
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -58,9 +57,9 @@ async def validate_skill(req: SkillValidateRequest):
 
 def _generate_skill_from_description(description: str, category: str) -> GeneratedSkill:
     desc_lower = description.lower()
-
-    skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"  # nosec
-
+    
+    skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"
+    
     if any(kw in desc_lower for kw in ['代码审查', 'code review', '审查', 'review']):
         return _generate_code_review_skill(skill_id, description)
     elif any(kw in desc_lower for kw in ['安全', 'security', '漏洞', 'vulnerability']):
@@ -770,9 +769,10 @@ systemctl restart app
 
 
 def _generate_custom_skill(skill_id: str, description: str) -> GeneratedSkill:
+    name = "custom-skill"
     desc = description[:100] if len(description) > 100 else description
     skill_name = description.replace(" ", "-").lower()[:30]
-
+    
     content = f"""---
 name: {skill_name}
 description: {desc}
@@ -826,28 +826,98 @@ metadata:
 
 def _validate_skill_content(content: str) -> SkillValidateResponse:
     suggestions = []
-
+    
     if "---" not in content:
         suggestions.append("缺少 YAML frontmatter（用 --- 包围）")
-
+    
     if "name:" not in content:
         suggestions.append("frontmatter 中缺少 name 字段")
-
+    
     if "description:" not in content:
         suggestions.append("frontmatter 中缺少 description 字段")
-
+    
     if "# " not in content:
         suggestions.append("建议添加一级标题")
-
+    
     if "## " not in content:
         suggestions.append("建议添加二级标题划分章节")
-
+    
     if len(content) < 100:
         suggestions.append("内容较短，建议补充更多细节")
-
+    
     is_valid = len([s for s in suggestions if "缺少" in s]) == 0
-
+    
     return SkillValidateResponse(
         is_valid=is_valid,
         suggestions=suggestions
     )
+
+
+# ── CRUD routes ──────────────────────────────────────────────────────────────
+from virtual_team.repository import create_skill as repo_create_skill, delete_skill, get_skills as repo_get_skills, update_skill
+
+class SkillCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=64)
+    category: str = Field(..., min_length=1, max_length=32)
+    description: str = ""
+    instructions: str = ""
+    prompt_id: str | None = None
+    tool_names: list[str] = []
+    output_constraint: str = ""
+
+class SkillUpdate(BaseModel):
+    name: str | None = None
+    category: str | None = None
+    description: str | None = None
+    instructions: str | None = None
+    prompt_id: str | None = None
+    tool_names: list[str] | None = None
+    output_constraint: str | None = None
+    status: str | None = None
+
+
+@router.get("/api/skills")
+async def list_skills():
+    try:
+        return await repo_get_skills()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/skills/{skill_id}")
+async def get_skill(skill_id: str):
+    try:
+        skills = await repo_get_skills()
+        s = next((sk for sk in skills if sk["id"] == skill_id), None)
+        if not s: raise HTTPException(status_code=404, detail="Skill not found")
+        return s
+    except HTTPException: raise
+    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/skills", status_code=201)
+async def add_skill(req: SkillCreate):
+    try:
+        s = await repo_create_skill(req.model_dump())
+        return {"id": s.id, "name": s.name, "category": s.category, "status": s.status, "prompt_id": s.prompt_id, "tool_names": s.tool_names, "output_constraint": s.output_constraint, "instructions": s.instructions, "created_at": s.created_at.isoformat() if s.created_at else None}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/api/skills/{skill_id}")
+async def edit_skill(skill_id: str, req: SkillUpdate):
+    try:
+        s = await update_skill(skill_id, req.model_dump(exclude_unset=True))
+        if not s: raise HTTPException(status_code=404, detail="Skill not found")
+        return {"id": s.id, "name": s.name, "category": s.category, "status": s.status, "prompt_id": s.prompt_id, "tool_names": s.tool_names, "output_constraint": s.output_constraint, "instructions": s.instructions}
+    except HTTPException: raise
+    except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/api/skills/{skill_id}", status_code=204)
+async def remove_skill(skill_id: str):
+    try:
+        ok = await delete_skill(skill_id)
+        if not ok: raise HTTPException(status_code=404, detail="Skill not found")
+    except HTTPException: raise
+    except Exception as e: raise HTTPException(status_code=500, detail=str(e))

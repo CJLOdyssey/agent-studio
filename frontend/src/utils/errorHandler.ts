@@ -9,6 +9,11 @@ export function installGlobalErrorHandlers() {
   };
 
   window.onunhandledrejection = (event) => {
-    logger.error('Unhandled promise rejection', { reason: event.reason });
+    const reason = event.reason;
+    if (reason?.message === 'Transition was skipped') {
+      event.preventDefault();
+      return;
+    }
+    logger.error('Unhandled promise rejection', { reason });
   };
 }

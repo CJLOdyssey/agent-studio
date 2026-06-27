@@ -55,7 +55,7 @@
 
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(18px);
-  background: var(--da-text-on-accent, #fff);
+  background: var(--da-text-on-accent);
 }
 
 .toggle-switch.sm input:checked + .toggle-slider {

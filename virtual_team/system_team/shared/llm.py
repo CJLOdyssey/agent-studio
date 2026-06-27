@@ -1,7 +1,9 @@
+import os
 import httpx
+from typing import Any
 
-from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
+from virtual_team.config import load_config
 
 logger = get_logger(__name__)
 

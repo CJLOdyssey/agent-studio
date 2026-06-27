@@ -1,11 +1,16 @@
+import asyncio
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import desc, select, update as sa_update
+from sqlalchemy.orm import selectinload
 
 from virtual_team.database import (
     AgentConfigDB,
     ChatMessage,
+    MemoryEntry,
+    ProjectRun,
+    SessionDB,
     get_session_factory,
 )
 
@@ -65,26 +70,6 @@ async def get_agent_config_count() -> int:
         return len(result.scalars().all())
 
 
-_DEFAULT_AGENTS = [
-    {
-        "name": "默认助手",
-        "role_identifier": "default_assistant",
-        "system_prompt": "你是一个智能助手，负责理解用户需求并给出最佳回答。",
-        "order": 0,
-        "is_active": True,
-        "icon": "🤖",
-    },
-]
-
-
-async def seed_default_agents():
-    count = await get_agent_config_count()
-    if count > 0:
-        return
-    for agent in _DEFAULT_AGENTS:
-        await create_agent_config(**agent)
-
-
 async def create_agent_config(
     name: str,
     role_identifier: str,
@@ -99,6 +84,7 @@ async def create_agent_config(
     icon: str = "🤖",
     model: str | None = None,
     temperature: float | None = None,
+    owner_id: str | None = None,
 ) -> AgentConfigDB:
     config = AgentConfigDB(
         id=str(uuid4()),
@@ -115,6 +101,7 @@ async def create_agent_config(
         is_active=is_active,
         is_approver=is_approver,
         icon=icon,
+        owner_id=owner_id,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )

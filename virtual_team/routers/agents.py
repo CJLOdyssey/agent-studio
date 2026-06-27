@@ -1,8 +1,11 @@
 """Agent config API routes: CRUD and toggle."""
 
-from fastapi import APIRouter, HTTPException
+import json
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from virtual_team.auth import CurrentUser, get_current_user
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     create_agent_config,
@@ -19,8 +22,8 @@ router = APIRouter(tags=["agents"])
 
 class AgentCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
-    role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
-    system_prompt: str = Field(..., min_length=1)
+    role_identifier: str = Field(..., min_length=1, max_length=64)
+    system_prompt: str = Field(default='')
     output_constraints: str | None = None
     tools: list[dict] | None = None
     mcp: list[dict] | None = None
@@ -79,36 +82,39 @@ async def list_agents():
 
 @router.get("/api/agents/{agent_id}")
 async def get_agent(agent_id: str):
-    try:
-        config = await get_agent_config(agent_id)
-        if not config:
-            raise HTTPException(status_code=404, detail="Agent 不存在")
-        return {
-            "id": config.id,
-            "name": config.name,
-            "role_identifier": config.role_identifier,
-            "system_prompt": config.system_prompt,
-            "output_constraints": config.output_constraints,
-            "tools": config.tools,
-            "mcp": config.mcp,
-            "skills": config.skills,
-            "model": config.model,
-            "temperature": config.temperature,
-            "order": config.order,
-            "is_active": config.is_active,
-            "is_approver": config.is_approver,
-            "icon": config.icon,
-            "created_at": config.created_at.isoformat() if config.created_at else None,
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Error getting agent: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+    configs = await get_agent_configs()
+    c = next((x for x in configs if x.id == agent_id), None)
+    if not c:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    def _parse_json(val):
+        if isinstance(val, str):
+            try:
+                return json.loads(val)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return val or []
+
+    return {
+        "id": c.id,
+        "name": c.name,
+        "role_identifier": c.role_identifier,
+        "system_prompt": c.system_prompt,
+        "output_constraints": c.output_constraints,
+        "tools": _parse_json(c.tools),
+        "mcp": _parse_json(c.mcp),
+        "skills": _parse_json(c.skills),
+        "model": c.model,
+        "temperature": c.temperature,
+        "order": c.order,
+        "is_active": c.is_active,
+        "is_approver": c.is_approver,
+        "icon": c.icon,
+        "created_at": c.created_at.isoformat() if c.created_at else None,
+    }
 
 
 @router.post("/api/agents", status_code=201)
-async def add_agent(req: AgentCreateRequest):
+async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)):
     existing = await get_agent_config_by_role(req.role_identifier)
     if existing:
         raise HTTPException(status_code=409, detail=f"角色标识 '{req.role_identifier}' 已存在")
@@ -128,6 +134,7 @@ async def add_agent(req: AgentCreateRequest):
             icon=req.icon,
             model=req.model,
             temperature=req.temperature,
+            owner_id=current_user.id,
         )
         return {"id": created.id, "status": "created"}
     except Exception as e:
@@ -136,58 +143,46 @@ async def add_agent(req: AgentCreateRequest):
 
 
 @router.put("/api/agents/{agent_id}")
-async def edit_agent(agent_id: str, req: AgentUpdateRequest):
-    try:
-        import json
-        updated = await update_agent_config(
-            id=agent_id,
-            name=req.name,
-            system_prompt=req.system_prompt,
-            output_constraints=req.output_constraints,
-            tools=json.dumps(req.tools) if req.tools is not None else None,
-            mcp=json.dumps(req.mcp) if req.mcp is not None else None,
-            skills=json.dumps(req.skills) if req.skills is not None else None,
-            order=req.order,
-            is_active=req.is_active,
-            is_approver=req.is_approver,
-            icon=req.icon,
-            model=req.model,
-            temperature=req.temperature,
-        )
-        if not updated:
-            raise HTTPException(status_code=404, detail="未找到该 agent 配置")
-        return {"id": updated.id, "status": "updated"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Error updating agent: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+async def edit_agent(agent_id: str, req: AgentUpdateRequest, current_user: CurrentUser = Depends(get_current_user)):
+    import json
+    updated = await update_agent_config(
+        id=agent_id,
+        name=req.name,
+        system_prompt=req.system_prompt,
+        output_constraints=req.output_constraints,
+        tools=json.dumps(req.tools) if req.tools is not None else None,
+        mcp=json.dumps(req.mcp) if req.mcp is not None else None,
+        skills=json.dumps(req.skills) if req.skills is not None else None,
+        order=req.order,
+        is_active=req.is_active,
+        is_approver=req.is_approver,
+        icon=req.icon,
+        model=req.model,
+        temperature=req.temperature,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    return {"id": updated.id, "status": "updated"}
 
 
 @router.delete("/api/agents/{agent_id}")
-async def remove_agent(agent_id: str):
-    try:
+async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):
+    target = await get_agent_config(agent_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    if target.is_approver:
         configs = await get_agent_configs()
-        target = next((c for c in configs if c.id == agent_id), None)
-        if not target:
-            raise HTTPException(status_code=404, detail="未找到该 agent 配置")
-        if target.is_approver:
-            approvers = [c for c in configs if c.is_approver and c.id != agent_id]
-            if not approvers:
-                raise HTTPException(status_code=400, detail="不能删除唯一的审批者，请先设置其他审批者")
-        deleted = await delete_agent_config(agent_id)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="未找到该 agent 配置")
-        return {"status": "deleted"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Error deleting agent: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        approvers = [c for c in configs if c.is_approver and c.id != agent_id]
+        if not approvers:
+            raise HTTPException(status_code=400, detail="不能删除唯一的审批者，请先设置其他审批者")
+    deleted = await delete_agent_config(agent_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    return {"status": "deleted"}
 
 
 @router.put("/api/agents/{agent_id}/toggle")
-async def toggle_agent(agent_id: str):
+async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):
     configs = await get_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)
     if not target:

@@ -1,355 +1,69 @@
-# ── Deploy: Enterprise-grade pipeline ─────────────────────────────────────
-#   Trigger → Build + Trivy Scan → Push → Staging Deploy + Verify
-#   → Promote to Production + Verify → Rollback on Failure → Notify
-#
-# CI gate is enforced by GitHub branch protection (required status checks).
-# The deploy workflow assumes CI has already passed on the commit.
-# ────────────────────────────────────────────────────────────────────────────
+name: Build & Deploy
 
-name: Deploy
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, master]
 
 concurrency:
-  group: deploy
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  ACR_REGISTRY: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
-  IMAGE_NAME: virtual-team
-  COMPOSE_FILE: config/docker/docker-compose.yml
-  COMPOSE_STAGING_FILE: config/docker/docker-compose.staging.yml
+  REGISTRY: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
+  NAMESPACE: virtual-team
+  REMOTE_DIR: /opt/virtual-team
+  REMOTE_HOST: 39.108.61.123
 
 jobs:
-  # ── Build & Scan ───────────────────────────────────────────────────────
-  build-and-scan:
-    name: Build + Trivy Scan
+  build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Log in to ACR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.ACR_REGISTRY }}
+          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build and push
-        id: build
+      - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: config/docker/Dockerfile
+          file: docker/Dockerfile
           push: true
-          tags: |
-            ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/backend:latest
 
-      # 缓存 Trivy DB（~95MB），避免每次部署重新下载
-      - name: Cache Trivy DB
-        uses: actions/cache@v4
+      - name: Build & push celery
+        uses: docker/build-push-action@v6
         with:
-          path: /home/runner/.cache/trivy
-          key: trivy-db-v2
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/celery:latest
 
-      # ── Trivy vulnerability scan before tagging as latest ──────────────
-      - name: Scan image with Trivy
-        id: scan
-        uses: aquasecurity/trivy-action@v0.36.0
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
         with:
-          image-ref: ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          format: table
-          exit-code: 1
-          severity: CRITICAL,HIGH
-          skip-dirs: /app/frontend/node_modules
-          trivyignores: config/docker/.trivyignore
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/frontend:latest
 
-      # ── Tag as latest only after scan passes ───────────────────────────
-      - name: Tag image as latest
-        run: |
-          docker buildx imagetools create \
-            -t ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest \
-            ${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-  # ── Deploy to Staging ──────────────────────────────────────────────────
-  deploy-staging:
-    name: 🟢 Deploy to Staging
-    needs: build-and-scan
-    runs-on: self-hosted
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
     steps:
-      - name: Pull latest code
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          cd "$WORK_DIR"
-          git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
-          git fetch --depth=1 origin main
-          git reset --hard origin/main
-
-      - name: Login to ACR
-        run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_REGISTRY }} \
-            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
-
-      - name: Write env for staging
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          cat > "$WORK_DIR/.env.staging" <<EOF
-          ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
-          IMAGE_TAG=${{ github.sha }}
-          PORT=3001
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
-          DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
-          OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
-          OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
-          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-staging-dev-secret-not-for-production}
-          EOF
-
-      - name: Deploy to staging
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          cd "$WORK_DIR"
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging pull
-
-      - name: Extract frontend dist for staging
-        run: |
-          IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          CONTAINER=$(docker create "$IMAGE")
-          mkdir -p ${{ github.workspace }}/frontend/dist
-          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
-          docker rm "$CONTAINER" > /dev/null
-          echo "✅ Frontend dist extracted"
-
-      - name: Run database migrations (staging)
-        run: |
-          cd "${{ github.workspace }}"
-          # stamp head 标记已存在表（init_db 的 create_all 已创建），然后执行增量迁移
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging run --rm api sh -c "alembic stamp head 2>/dev/null; alembic upgrade head"
-
-      - name: Deploy staging containers
-        run: |
-          cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} --env-file .env.staging -p staging up -d --remove-orphans
-
-      - name: Healthcheck — Staging
-        run: |
-          echo "⏳ 等待 staging 就绪..."
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/health 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Staging healthcheck passed"
-              exit 0
-            fi
-            echo "  尝试 $i/12 — HTTP $STATUS，等待 10s..."
-            sleep 10
-          done
-          echo "❌ Staging healthcheck 失败 — 停止部署"
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging logs --tail=50 api
-          exit 1
-
-  # ── Promote to Production ──────────────────────────────────────────────
-  promote-prod:
-    name: 🚀 Promote to Production
-    needs: deploy-staging
-    environment: production
-    runs-on: self-hosted
-    steps:
-      - name: Pull latest code
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          cd "$WORK_DIR"
-          git remote set-url origin git@github.com:CJLOdyssey/virtual-software-team.git
-          git fetch --depth=1 origin main
-          git reset --hard origin/main
-
-      - name: Login to ACR
-        run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_REGISTRY }} \
-            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
-
-      - name: Save current tag as rollback target
-        id: rollback
-        run: |
-          # 部署前保存当前运行的 tag，以便健康检查失败时回滚
-          WORK_DIR="${{ github.workspace }}"
-          CURRENT_TAG="latest"
-          if [ -f "$WORK_DIR/.deploy-state" ]; then
-            CURRENT_TAG=$(python3 -c "import json; print(json.load(open('$WORK_DIR/.deploy-state')).get('current_tag', 'latest'))")
-          fi
-          echo "current_tag=${CURRENT_TAG}" >> "$GITHUB_OUTPUT"
-          echo "当前运行版本: ${CURRENT_TAG}"
-
-      - name: Write env for production
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          echo "# 自动生成 — 手动修改会被覆盖" > "$WORK_DIR/.env"
-          cat >> "$WORK_DIR/.env" <<EOF
-          ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
-          IMAGE_TAG=${{ github.sha }}
-          PORT=3000
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
-          DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
-          OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
-          OPENAI_MODEL=${OPENAI_MODEL:-deepseek-v4-flash}
-          KEY_VAULT_SECRET=${KEY_VAULT_SECRET:-staging-dev-secret-not-for-production}
-          EOF
-
-      - name: Deploy to production
-        id: deploy-prod
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          cd "$WORK_DIR"
-          # 强删所有残留容器（硬编码 container_name 导致 compose down 无效）
-          # 包括旧 -p 7 项目和 -p staging 项目占用的端口
-          for c in virtual-team-db virtual-team-redis virtual-team-api virtual-team-frontend virtual-team-worker \
-                   virtual-team-db-staging virtual-team-redis-staging virtual-team-api-staging virtual-team-frontend-staging; do
-            docker rm -f "$c" 2>/dev/null || true
-          done
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production down --remove-orphans || true
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production pull
-
-      - name: Extract frontend dist for production
-        run: |
-          IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          CONTAINER=$(docker create "$IMAGE")
-          mkdir -p ${{ github.workspace }}/frontend/dist
-          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
-          docker rm "$CONTAINER" > /dev/null
-          echo "✅ Frontend dist extracted"
-
-      - name: Run database migrations (production)
-        run: |
-          cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production run --rm api sh -c "alembic stamp head 2>/dev/null; alembic upgrade head"
-
-      - name: Deploy production containers
-        run: |
-          cd "${{ github.workspace }}"
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production up -d --force-recreate --remove-orphans
-
-      - name: Healthcheck — Production
-        id: healthcheck
-        run: |
-          echo "⏳ 等待 production 就绪..."
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Production healthcheck passed"
-              # 保存当前 tag 作为 future rollback 目标
-              WORK_DIR="${{ github.workspace }}"
-              echo '{"current_tag":"${{ github.sha }}","deployed_at":"'"$(date -Iseconds)"'"}' \
-                > "$WORK_DIR/.deploy-state"
-              exit 0
-            fi
-            echo "  尝试 $i/12 — HTTP $STATUS，等待 10s..."
-            sleep 10
-          done
-          echo "❌ Production healthcheck 失败 — 触发 rollback"
-          echo "status=failed" >> "$GITHUB_OUTPUT"
-          exit 1
-
-      - name: 🚨 Cleanup staging
-        if: always()
-        run: |
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
-          docker image prune -f --filter "until=24h" || true
-
-      - name: Notify deploy result
-        if: always()
-        run: |
-          STATUS='success'
-          [ '${{ job.status }}' != 'success' ] && STATUS='failure'
-          curl -s -X POST '${{ secrets.DEPLOY_WEBHOOK_URL }}' \
-            -H 'Content-Type: application/json' \
-            -d '{
-              "msgtype": "markdown",
-              "markdown": {
-                "title": "🚀 部署 $STATUS",
-                "text": "### 🚀 虚拟团队部署\n\n- **阶段**: Production\n- **状态**: '\''$STATUS'\''\n- **镜像**: ${{ github.sha }}\n- **分支**: ${{ github.ref_name }}\n- **提交**: ${{ github.sha }}\n- **触发**: ${{ github.actor }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-              }
-            }' || echo "⚠️ Webhook notification skipped"
-
-  # ── Automated Rollback ─────────────────────────────────────────────────
-  rollback:
-    name: 🔄 Rollback Production
-    needs: [build-and-scan, promote-prod]
-    if: failure() && needs['promote-prod'].result == 'failure'
-    runs-on: self-hosted
-    steps:
-      - name: Login to ACR
-        run: |
-          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_REGISTRY }} \
-            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
-
-      - name: Read rollback target tag
-        id: state
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          PREV_TAG="latest"
-          if [ -f "$WORK_DIR/.deploy-state" ]; then
-            PREV_TAG=$(python3 -c "import json; print(json.load(open('$WORK_DIR/.deploy-state')).get('current_tag', 'latest'))")
-          fi
-          echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Rollback production
-        run: |
-          WORK_DIR="${{ github.workspace }}"
-          cd "$WORK_DIR"
-          ROLLBACK_TAG="${{ steps.state.outputs.prev_tag }}"
-
-          echo "🔄 Rollback 到镜像 tag: $ROLLBACK_TAG"
-          sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$ROLLBACK_TAG/" "$WORK_DIR/.env"
-
-          for c in virtual-team-db virtual-team-redis virtual-team-api virtual-team-frontend virtual-team-worker \
-                   virtual-team-db-staging virtual-team-redis-staging virtual-team-api-staging virtual-team-frontend-staging; do
-            docker rm -f "$c" 2>/dev/null || true
-          done
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production down --remove-orphans || true
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production pull
-
-          # 提取 rollback 版本的前端
-          ROLLBACK_IMAGE="${{ env.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/${{ env.IMAGE_NAME }}:$ROLLBACK_TAG"
-          CONTAINER=$(docker create "$ROLLBACK_IMAGE")
-          mkdir -p ${{ github.workspace }}/frontend/dist
-          docker cp "$CONTAINER":/app/frontend/dist ${{ github.workspace }}/frontend/ || true
-          docker rm "$CONTAINER" > /dev/null
-
-          # Rollback 不执行迁移：回滚到的旧代码可能不兼容最新迁移
-          docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env -p production up -d --force-recreate --remove-orphans
-
-          # 验证 rollback
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "✅ Rollback 成功 — 已恢复至 $ROLLBACK_TAG"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "❌ Rollback 也失败 — 需要人工介入"
-          exit 1
-
-      - name: Notify rollback
-        if: always()
-        run: |
-          curl -s -X POST '${{ secrets.DEPLOY_WEBHOOK_URL }}' \
-            -H 'Content-Type: application/json' \
-            -d '{
-              "msgtype": "markdown",
-              "markdown": {
-                "title": "🔄 部署回滚",
-                "text": "### 🔄 部署自动回滚\n\n- **状态**: ${{ job.status }}\n- **回滚至**: ${{ steps.state.outputs.prev_tag }}\n- **提交**: ${{ github.sha }}\n- [查看运行](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-              }
-            }' || true
-
-      - name: Cleanup staging
-        run: |
-          docker compose -f ${{ env.COMPOSE_FILE }} -f ${{ env.COMPOSE_STAGING_FILE }} -p staging down --remove-orphans || true
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.REMOTE_HOST }}
+          username: root
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            cd ${{ env.REMOTE_DIR }}
+            echo "${{ secrets.ACR_PASSWORD }}" | docker login --username ${{ secrets.ACR_USERNAME }} --password-stdin ${{ env.REGISTRY }}
+            docker compose -f docker/compose.prod.yml pull
+            docker compose -f docker/compose.prod.yml up -d
+            docker image prune -f

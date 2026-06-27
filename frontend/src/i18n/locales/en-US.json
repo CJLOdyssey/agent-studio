@@ -6,7 +6,9 @@
     "loading": "Loading...",
     "connecting": "Reconnecting",
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "send": "Send",
+    "cancel": "Cancel"
   },
   "model": {
     "noCommands": "No commands available",
@@ -144,7 +146,8 @@
     "teamRenamed": "Team renamed",
     "agentAdded": "Agent added",
     "agentDeleted": "Agent deleted",
-    "saved": "Auto saved"
+    "saved": "Auto saved",
+    "requestAbandoned": "Switched conversation, current request abandoned"
   },
   "api": {
     "manage": "API Management",
@@ -189,7 +192,22 @@
     "system": "System",
     "executeTask": "Execute Task ({{count}} steps)",
     "mentionBackend": "@Backend Agent",
-    "syncedToWorkspace": "Synced to workspace"
+    "syncedToWorkspace": "Synced to workspace",
+    "thinkingProcess": "Thinking Process",
+    "thinkingComplete": "Thought",
+    "thinkingPending": "Thinking...",
+    "seconds": "s",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "regenerate": "Regenerate",
+    "edit": "Edit",
+    "continue": "Continue",
+    "interrupted": "Interrupted",
+    "continuing": "Continuing...",
+    "thumbsUp": "Helpful",
+    "thumbsDown": "Not helpful",
+    "removeFeedback": "Remove feedback",
+    "thinkingStopped": "Thinking stopped"
   },
   "shortcuts": {
     "newChat": "New Chat",

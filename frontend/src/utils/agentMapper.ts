@@ -126,6 +126,7 @@ export function buildTeamsFromAgents(agentConfigs: AgentConfig[] | undefined | n
       id: 'team-api',
       name: '我的团队',
       isExpanded: true,
+      isPinned: false,
       agents: mappedAgents,
     },
   ];

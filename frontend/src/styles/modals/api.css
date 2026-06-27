@@ -1,11 +1,10 @@
 /* API Management Modal */
 .api-modal {
-  width: 50vw;
-  max-width: 720px;
-  height: 50vh;
-  max-height: 500px;
+  width: var(--modal-m);
+  height: var(--modal-height);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .api-edit-modal {
@@ -359,15 +358,15 @@
 }
 
 .capability-llm {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
+  border: 1px solid color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
 }
 
 .capability-embedding {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: color-mix(in srgb, var(--da-accent-emerald) 15%, transparent);
+  color: var(--da-accent-emerald);
+  border: 1px solid color-mix(in srgb, var(--da-accent-emerald) 30%, transparent);
 }
 
 /* Usage type selector */

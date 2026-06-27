@@ -19,11 +19,35 @@
 .devagents-ws-banner {
   padding: var(--sp-2) var(--sp-4);
   background: var(--da-accent-amber);
-  color: #000;
+  color: var(--da-text-on-accent);
   text-align: center;
   font-size: var(--da-font-size-sm);
   font-weight: 500;
   animation: fadeIn 0.3s ease;
+}
+
+.devagents-ws-banner--error {
+  background: var(--da-accent-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+.devagents-retry-btn {
+  background: var(--da-bg-primary);
+  color: var(--da-accent-red);
+  border: none;
+  padding: 1px 12px;
+  border-radius: 4px;
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  font-weight: 600;
+  line-height: var(--da-line-height);
+}
+
+.devagents-retry-btn:hover {
+  opacity: 0.8;
 }
 
 .animate-spin {

@@ -1,7 +1,7 @@
 /* Input area */
 .devagents-input-container {
   padding: var(--sp-4) var(--sp-6) var(--sp-5);
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }
@@ -149,7 +149,7 @@
 
 .devagents-send-btn.active {
   background: var(--da-accent-indigo);
-  color: var(--da-text-on-accent, #fff);
+  color: var(--da-text-on-accent);
   box-shadow: var(--shadow-sm);
 }
 
@@ -170,4 +170,22 @@
   color: var(--da-text-muted);
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.devagents-send-btn.running {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.devagents-send-btn.running:hover {
+  background: var(--da-accent-indigo);
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.devagents-send-btn.running:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
 }

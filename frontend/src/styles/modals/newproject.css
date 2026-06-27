@@ -1,6 +1,8 @@
 /* New Project Modal */
 .new-project-modal {
-  max-width: 500px;
+  width: var(--modal-m);
+  height: var(--modal-height);
+  overflow: hidden;
 }
 
 .new-project-header {
@@ -17,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--da-text-on-accent, #fff);
+  color: var(--da-text-on-accent);
 }
 
 .new-project-subtitle {
@@ -66,7 +68,7 @@
 }
 .api-toggle input:checked + .api-toggle-slider::before {
   transform: translateX(16px);
-  background: var(--da-text-on-accent, #fff);
+  background: var(--da-text-on-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {

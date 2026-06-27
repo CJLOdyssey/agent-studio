@@ -1,5 +1,17 @@
 import api from './instance';
 
+export interface ToolItem {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  model: string | null;
+  status: string;
+  version: string;
+  endpoint: string;
+  created_at: string;
+}
+
 export interface GeneratedTool {
   id: string;
   name: string;
@@ -16,6 +28,25 @@ export interface ToolValidationResult {
   is_valid: boolean;
   error_message?: string | null;
   suggestions: string[];
+}
+
+export async function listTools(): Promise<ToolItem[]> {
+  const { data } = await api.get('/tools');
+  return data;
+}
+
+export async function createTool(payload: { name: string; description: string; category: string; model?: string; status?: string; version?: string; endpoint?: string; parameters?: string }): Promise<ToolItem> {
+  const { data } = await api.post('/tools', payload);
+  return data;
+}
+
+export async function updateTool(id: string, payload: Partial<{ name: string; description: string; category: string; model: string; status: string; version: string; endpoint: string; parameters: string }>): Promise<ToolItem> {
+  const { data } = await api.put(`/tools/${id}`, payload);
+  return data;
+}
+
+export async function deleteTool(id: string): Promise<void> {
+  await api.delete(`/tools/${id}`);
 }
 
 export async function checkLlmStatus(): Promise<{ available: boolean }> {

@@ -7,7 +7,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const isDev = mode === 'development';
-  const apiOrigin = env.VITE_API_BASE_URL || 'http://localhost:8080';
+  const apiOrigin = env.VITE_API_BASE_URL || 'http://localhost:8081';
   // Derive WS origin from API origin or use env override
   const wsOrigin = env.VITE_WS_URL || apiOrigin.replace(/^http/, 'ws');
 

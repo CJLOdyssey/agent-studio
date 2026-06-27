@@ -1,72 +1,48 @@
 from datetime import UTC, datetime
 from uuid import uuid4
+from sqlalchemy import desc, select, update as sa_update
+from virtual_team.database import PromptDB, get_session_factory
+from virtual_team.logging_config import get_logger
 
-from sqlalchemy import select, update
-
-from virtual_team.database import AgentPromptDB, get_session_factory
+logger = get_logger(__name__)
 
 
-async def create_prompt(
-    agent_id: str,
-    content: str,
-    change_reason: str | None = None,
-) -> AgentPromptDB:
+async def get_prompts() -> list[dict]:
     factory = get_session_factory()
     async with factory() as session:
-        # get current max version
-        result = await session.execute(
-            select(AgentPromptDB.version)
-            .where(AgentPromptDB.agent_id == agent_id)
-            .order_by(AgentPromptDB.version.desc())
-            .limit(1)
-        )
-        max_version = result.scalar_one_or_none() or 0
-        new_version = max_version + 1
-
-        prompt = AgentPromptDB(
-            id=str(uuid4()),
-            agent_id=agent_id,
-            version=new_version,
-            content=content,
-            change_reason=change_reason,
-            is_active=(new_version == 1),  # first version auto-activated
-        )
-        session.add(prompt)
-        await session.commit()
-        await session.refresh(prompt)
-    return prompt
-
-
-async def get_prompts(agent_id: str) -> list[AgentPromptDB]:
-    factory = get_session_factory()
-    async with factory() as session:
-        stmt = (
-            select(AgentPromptDB)
-            .where(AgentPromptDB.agent_id == agent_id)
-            .order_by(AgentPromptDB.version.desc())
-        )
+        stmt = select(PromptDB).order_by(desc(PromptDB.updated_at))
         result = await session.execute(stmt)
-        return list(result.scalars().all())
+        return [{ "id": p.id, "name": p.name, "category": p.category, "content": p.content, "model": p.model, "status": p.status, "version": p.version, "created_at": p.created_at.isoformat() if p.created_at else None, "updated_at": p.updated_at.isoformat() if p.updated_at else None, } for p in result.scalars().all()]
 
 
-async def activate_prompt(agent_id: str, prompt_id: str) -> AgentPromptDB | None:
+async def create_prompt(data: dict) -> PromptDB:
     factory = get_session_factory()
     async with factory() as session:
-        # deactivate all prompts for this agent
-        await session.execute(
-            update(AgentPromptDB)
-            .where(AgentPromptDB.agent_id == agent_id)
-            .values(is_active=False)
-        )
-        # activate the target prompt
-        result = await session.execute(
-            select(AgentPromptDB).where(AgentPromptDB.id == prompt_id, AgentPromptDB.agent_id == agent_id)
-        )
-        prompt = result.scalar_one_or_none()
-        if not prompt:
-            return None
-        prompt.is_active = True
-        prompt.updated_at = datetime.now(UTC)
+        obj = PromptDB(**data)
+        session.add(obj)
         await session.commit()
-        await session.refresh(prompt)
-    return prompt
+        await session.refresh(obj)
+        return obj
+
+
+async def update_prompt(prompt_id: str, data: dict) -> PromptDB | None:
+    factory = get_session_factory()
+    async with factory() as session:
+        obj = await session.get(PromptDB, prompt_id)
+        if not obj: return None
+        for k, v in data.items():
+            if v is not None and hasattr(obj, k): setattr(obj, k, v)
+        obj.updated_at = datetime.now(UTC)
+        await session.commit()
+        await session.refresh(obj)
+        return obj
+
+
+async def delete_prompt(prompt_id: str) -> bool:
+    factory = get_session_factory()
+    async with factory() as session:
+        obj = await session.get(PromptDB, prompt_id)
+        if not obj: return False
+        await session.delete(obj)
+        await session.commit()
+        return True

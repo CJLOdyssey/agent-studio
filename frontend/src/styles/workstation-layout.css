@@ -1,0 +1,89 @@
+/* ============================================================
+   Workstation Layout - 布局容器
+   职责: 页面容器、侧边导航、内容区域
+   ============================================================ */
+
+/* ── Page Container ── */
+.devagents-workstation-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--da-bg-primary);
+  color: var(--da-text-primary);
+}
+
+/* ── Body (左右分栏) ── */
+.devagents-workstation-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.devagents-workstation-sidebar {
+  width: 140px;
+  flex-shrink: 0;
+  padding: var(--sp-2) var(--sp-2);
+  border-right: 1px solid var(--da-border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
+  overflow-y: auto;
+  background: var(--da-bg-card);
+}
+
+.devagents-workstation-sidebar:empty {
+  display: none;
+}
+
+.devagents-workstation-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.devagents-workstation-tab:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.devagents-workstation-tab.active {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+  font-weight: 600;
+}
+
+/* ── Content ── */
+.devagents-workstation-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-3);
+}
+
+/* ── Module panel ── */
+.wsta-panel,
+.wsta-agent-mgmt,
+.wsta-settings,
+.wsta-monitor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}

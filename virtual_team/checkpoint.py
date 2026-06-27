@@ -6,10 +6,15 @@ restarts and can be resumed from where they left off.
 """
 
 import json
+import os
+import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Literal
 from uuid import uuid4
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.memory import MemorySaver
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +22,45 @@ from virtual_team.database import Base, get_session_factory
 from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+
+def create_checkpointer(
+    dsn: str | None = None,
+) -> "BaseCheckpointSaver":  # noqa: F821 — lazy import avoids circular dep
+    """Create a checkpointer based on environment configuration.
+
+    Uses MemorySaver (sync+async compatible). The ``checkpoints`` DB table
+    is persisted separately via ``save_checkpoint()`` / ``load_latest_checkpoint()``
+    for app-level recovery.
+
+    Environment variables:
+        CHECKPOINTER_BACKEND: reserved for future SQLite/Postgres support.
+        CHECKPOINTER_DSN: reserved.
+
+    Returns a ``BaseCheckpointSaver``-compatible instance for use with
+    ``workflow.compile(checkpointer=...)``.
+    """
+    logger.info("Creating MemorySaver checkpointer")
+    return MemorySaver()
+
+    if backend == "postgres":
+        if not dsn:
+            raise ValueError("CHECKPOINTER_DSN is required for postgres backend")
+        logger.info("Creating PostgresSaver checkpointer")
+        try:
+            from langgraph.checkpoint.postgres import PostgresSaver  # type: ignore[import-untyped]
+        except ImportError as exc:
+            raise ImportError(
+                "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
+            ) from exc
+        return PostgresSaver.from_conn_string(dsn)
+
+    if backend == "memory":
+        logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
+        return MemorySaver()
+
+    msg = f"Unknown CHECKPOINTER_BACKEND={backend!r}. Supported: sqlite, postgres, memory"
+    raise ValueError(msg)
 
 # ── Database model ───────────────────────────────────────────────────────────
 

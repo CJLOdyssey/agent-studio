@@ -1,5 +1,6 @@
 """技能生成器测试."""
 
+import pytest
 from virtual_team.system_team.skill_agent.generator import SkillGenerator
 
 

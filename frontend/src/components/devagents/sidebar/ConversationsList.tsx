@@ -1,87 +1,148 @@
-import { memo } from 'react';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { memo, useMemo } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Conversation } from '../../../types/devagents';
+import type { Conversation, Agent } from '../../../types/devagents';
 
 interface ConversationsListProps {
   conversations: Conversation[];
-  activeConvId: number | null;
+  activeConvId: string | null;
   selectedAgentId: string | null;
+  agents?: Agent[];
   onSelect: (conv: Conversation) => void;
-  onDelete: (convId: number) => void;
-  onCloseSidebar: () => void;
+  onDelete: (convId: string) => void;
 }
 
 const ConversationsList = memo(function ConversationsList({
   conversations,
   activeConvId,
   selectedAgentId,
+  agents = [],
   onSelect,
   onDelete,
-  onCloseSidebar,
 }: ConversationsListProps) {
   const { t, i18n } = useTranslation();
 
+  const groupedConversations = useMemo(() => {
+    const groups = {
+      pinned: [] as Conversation[],
+      today: [] as Conversation[],
+      yesterday: [] as Conversation[],
+      threeDays: [] as Conversation[],
+      sevenDays: [] as Conversation[],
+      month: [] as Conversation[],
+      older: [] as Conversation[],
+    };
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    conversations.forEach((conv) => {
+      const convDate = new Date(conv.updatedAt).getTime();
+      const diffDays = Math.floor((todayStart - convDate) / oneDay);
+
+      if (diffDays <= 0) {
+        groups.today.push(conv);
+      } else if (diffDays === 1) {
+        groups.yesterday.push(conv);
+      } else if (diffDays <= 3) {
+        groups.threeDays.push(conv);
+      } else if (diffDays <= 7) {
+        groups.sevenDays.push(conv);
+      } else if (diffDays <= 30) {
+        groups.month.push(conv);
+      } else {
+        groups.older.push(conv);
+      }
+    });
+
+    return groups;
+  }, [conversations]);
+
+  const agentMap = useMemo(() => {
+    const map = new Map<string, Agent>();
+    agents.forEach((a) => map.set(a.id, a));
+    return map;
+  }, [agents]);
+
   if (conversations.length === 0) return null;
 
-  return (
-    <>
-      <div className="devagents-section-header">
-        <div className="devagents-section-title">
-          <MessageSquare size={14} />
-          {t('sidebar.history')}
-        </div>
-      </div>
-      <div className="devagents-conversations-list">
-        {conversations.map((conv) => (
-          <div
-            key={conv.id}
-            className={`devagents-conv-item ${activeConvId === conv.id && !selectedAgentId ? 'active' : ''}`}
-            onClick={() => {
-              onSelect(conv);
-              onCloseSidebar();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onSelect(conv);
-                onCloseSidebar();
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            aria-selected={activeConvId === conv.id && !selectedAgentId}
-          >
-            <div className="devagents-conv-item-content">
-              <div className="devagents-conv-item-title">
-                {Array.from(conv.title).length > 26 ? Array.from(conv.title).slice(0, 26).join('') + '...' : conv.title}
-              </div>
-              <div className="devagents-conv-item-meta">
-                {conv.messages.filter((m) => m.role === 'agent').length > 0
-                  ? t('sidebar.replied')
-                  : t('sidebar.pendingReply')}
-                {' · '}
-                {new Date(conv.updatedAt).toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-            </div>
-            <button
-              className="devagents-conv-delete"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(conv.id);
+  const renderGroup = (label: string, items: Conversation[]) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="devagents-conv-group">
+        <div className="devagents-conv-group-label">{label}</div>
+        {items.map((conv) => {
+          const agent = conv.agentId ? agentMap.get(conv.agentId) : undefined;
+          const AgentIcon = agent?.icon;
+          const isActive = activeConvId === conv.id && !selectedAgentId;
+          return (
+            <div
+              key={conv.id}
+              className={`devagents-conv-item ${isActive ? 'active' : ''}`}
+              onClick={() => onSelect(conv)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(conv);
+                }
               }}
-              title={t('sidebar.deleteConv')}
-              aria-label={t('sidebar.deleteConv')}
+              tabIndex={0}
+              role="button"
+              aria-selected={isActive}
             >
-              <Trash2 size={12} />
-            </button>
-          </div>
-        ))}
+              <div className="devagents-conv-item-content">
+                <div className="devagents-conv-item-title">
+                  {agent && AgentIcon && (
+                    <span className="devagents-conv-item-agent-icon" style={{ color: agent.color }}>
+                      <AgentIcon size={12} />
+                    </span>
+                  )}
+                  {Array.from(conv.title).length > 26
+                    ? Array.from(conv.title).slice(0, 26).join('') + '...'
+                    : conv.title}
+                </div>
+                <div className="devagents-conv-item-meta">
+                  {agent && (
+                    <span className="devagents-conv-item-agent-name">{agent.name}</span>
+                  )}
+                  {conv.messages.filter((m) => m.role === 'agent').length > 0
+                    ? t('sidebar.replied')
+                    : t('sidebar.pendingReply')}
+                  {' · '}
+                  {new Date(conv.updatedAt).toLocaleDateString(
+                    i18n.language === 'en-US' ? 'en-US' : 'zh-CN',
+                    { month: 'short', day: 'numeric' },
+                  )}
+                </div>
+              </div>
+              <button
+                className="devagents-conv-delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(conv.id);
+                }}
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          );
+        })}
       </div>
-    </>
+    );
+  };
+
+  return (
+    <div className="devagents-conversations-list">
+      {renderGroup(t('sidebar.pinned', '📌 置顶'), groupedConversations.pinned)}
+      {renderGroup(t('sidebar.today', '今天'), groupedConversations.today)}
+      {renderGroup(t('sidebar.yesterday', '昨天'), groupedConversations.yesterday)}
+      {renderGroup(t('sidebar.threeDays', '三天以内'), groupedConversations.threeDays)}
+      {renderGroup(t('sidebar.sevenDays', '七天以内'), groupedConversations.sevenDays)}
+      {renderGroup(t('sidebar.month', '一个月以内'), groupedConversations.month)}
+      {renderGroup(t('sidebar.older', '更早'), groupedConversations.older)}
+    </div>
   );
 });
 

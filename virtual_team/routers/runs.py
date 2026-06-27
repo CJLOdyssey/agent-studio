@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisco
 from pydantic import BaseModel, Field
 
 from virtual_team.auth import get_user_id
-from virtual_team.broker import subscribe_run
+from virtual_team.broker import buffer_run_messages, drain_buffer, stop_buffer, subscribe_run
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary
@@ -53,20 +53,20 @@ async def create_run(req: RunRequest, request: Request):
     if not requirement:
         raise HTTPException(status_code=400, detail="需求不能为空")
 
-    user_id = get_user_id(request)
-
     session_id = req.session_id
+    user_id = get_user_id(request)
     if session_id is None:
-        sess = await create_session(title=requirement[:64], user_id=user_id)
+        sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=req.agent_id)
         session_id = sess.id
     else:
         existing_sess = await get_session(session_id)
         if existing_sess is None:
             logger.warning("session_id=%s not found, creating new session", session_id)
-            sess = await create_session(title=requirement[:64], user_id=user_id)
+            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=req.agent_id)
             session_id = sess.id
 
     # ── Resolve API credentials from the enterprise key vault ──────────────
+    user_id = get_user_id(request)
     api_key = None
     api_base = None
     effective_model = req.model or config.model
@@ -91,7 +91,7 @@ async def create_run(req: RunRequest, request: Request):
         raise HTTPException(status_code=400, detail="请先在设置中配置 API Key")
 
     try:
-        run_id = await db_create_run(requirement, session_id=session_id, user_id=user_id)
+        run_id = await db_create_run(requirement, session_id=session_id)
     except Exception as e:
         logger.error("Failed to create run: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"创建失败: {e}")
@@ -103,13 +103,15 @@ async def create_run(req: RunRequest, request: Request):
     except Exception:
         pass
 
+    # Subscribe to Redis *before* Celery task starts — eliminates the timing gap
+    # where early thinking_stream / stream messages would be lost.
+    await buffer_run_messages(run_id)
     try:
         from virtual_team.tasks import run_agent
         run_agent.delay(
             requirement=requirement,
             run_id=run_id,
             session_id=session_id,
-            user_id=user_id,
             agent_id=req.agent_id,
             api_key=api_key,
             api_base=api_base,
@@ -117,17 +119,32 @@ async def create_run(req: RunRequest, request: Request):
         )
         logger.info("Task enqueued | run_id=%s | session_id=%s | model=%s", run_id, session_id, effective_model)
     except Exception as e:
-        logger.error("Failed to enqueue task: %s", e, exc_info=True)
-        await update_run_status(run_id, "error")
+        logger.error("Celery enqueue failed, running synchronously: %s", e)
+        # Fallback: run eagerly (no Celery worker needed)
+        try:
+            from virtual_team.tasks import _run_agent_pipeline
+            result = await _run_agent_pipeline(
+                requirement=requirement,
+                run_id=run_id,
+                session_id=session_id,
+                agent_id=req.agent_id,
+                api_key=api_key,
+                api_base=api_base,
+                model=effective_model,
+            )
+            logger.info("Eager run completed | run_id=%s", run_id)
+        except Exception as e2:
+            logger.exception("Eager run also failed for run=%s", run_id)
+            await update_run_status(run_id, "error")
+            raise HTTPException(status_code=500, detail=f"执行失败: {e2}")
 
     return RunResponse(run_id=run_id, status="pending", session_id=session_id)
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
-async def get_run_detail(run_id: str, request: Request):
+async def get_run_detail(run_id: str):
     try:
-        user_id = get_user_id(request)
-        run = await get_run(run_id, user_id=user_id)
+        run = await get_run(run_id)
         if run is None:
             raise HTTPException(status_code=404, detail="未找到该次讨论")
         messages = await get_messages(run_id)
@@ -162,10 +179,9 @@ async def get_run_detail(run_id: str, request: Request):
 
 
 @router.get("/api/runs", response_model=list[RunSummary])
-async def list_runs(request: Request, limit: int = 20):
+async def list_runs(limit: int = 20):
     try:
-        user_id = get_user_id(request)
-        runs = await get_runs(limit=min(limit, 100), user_id=user_id)
+        runs = await get_runs(limit=min(limit, 100))
         return [
             {
                 "id": r.id,
@@ -188,27 +204,14 @@ async def list_runs(request: Request, limit: int = 20):
 
 @router.websocket("/ws/runs/{run_id}")
 async def run_websocket(websocket: WebSocket, run_id: str):
-    from virtual_team.auth import AUTH_ENABLED, AUTH_SECRET, decode_jwt
-
-    ws_user_id = "default"
-    if AUTH_ENABLED:
-        token = websocket.query_params.get("token", "")
-        payload = decode_jwt(token, AUTH_SECRET) if token else None
-        if not payload:
-            await websocket.close(code=4001, reason="Unauthorized")
-            return
-        ws_user_id = payload["sub"]
-    else:
-        ws_user_id = websocket.query_params.get("X-User-ID", "default")
-
     await websocket.accept()
-    logger.info("WebSocket connected | run_id=%s | user_id=%s", run_id, ws_user_id)
+    logger.info("WebSocket connected | run_id=%s", run_id)
     try:
         await websocket.send_json({"type": "status", "status": "connected"})
 
         # Check if run already completed (race condition: task finished before WS connected)
         try:
-            run = await get_run(run_id, user_id=ws_user_id)
+            run = await get_run(run_id)
             if run and run.status in ("converged", "error"):
                 messages = await get_messages(run_id)
                 for m in messages:
@@ -233,6 +236,13 @@ async def run_websocket(websocket: WebSocket, run_id: str):
             logger.warning("Pre-check run status failed: %s", e)
 
         try:
+            # Replay any messages buffered before WebSocket connected
+            for msg in drain_buffer(run_id):
+                try:
+                    await websocket.send_json(msg)
+                except WebSocketDisconnect:
+                    return
+
             async for message in subscribe_run(run_id):
                 try:
                     await websocket.send_json(message)
@@ -246,6 +256,8 @@ async def run_websocket(websocket: WebSocket, run_id: str):
             logger.error("Redis subscribe error: %s", e, exc_info=True)
             with contextlib.suppress(Exception):
                 await websocket.send_json({"type": "status", "status": "error", "error": str(e)})
+        finally:
+            await stop_buffer(run_id)
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected gracefully | run_id=%s", run_id)
     except Exception as e:

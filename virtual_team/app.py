@@ -15,22 +15,7 @@ from virtual_team.broker import get_redis
 from virtual_team.config import load_config
 from virtual_team.database import get_async_engine, init_db
 from virtual_team.logging_config import get_logger
-from virtual_team.routers import (
-    agents,
-    attachments,
-    bindings,
-    commands,
-    keys,
-    models,
-    prompts,
-    runs,
-    schemas,
-    sessions,
-    skills,
-    system_team,
-    teams,
-    tools,
-)
+from virtual_team.routers import admin, agents, attachments, commands, keys, mcps, models, prompts, runs, sessions, skills, system_team, teams, tools
 
 logger = get_logger(__name__)
 
@@ -46,13 +31,6 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.warning("Database init skipped (might not be available): %s", e)
-
-    try:
-        from virtual_team.repository import seed_default_agents
-        await seed_default_agents()
-        logger.info("Default agents seeded successfully")
-    except Exception as e:
-        logger.warning("Seed default agents skipped: %s", e)
 
     yield
     logger.info("Shutting down")
@@ -77,8 +55,10 @@ app.add_middleware(AuthMiddleware)
 _cors_origins = [
     "http://localhost:5173",
     "http://localhost:8080",
+    "http://localhost:8081",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8080",
+    "http://127.0.0.1:8081",
 ]
 _prod_origin = os.environ.get("CORS_ORIGIN")
 if _prod_origin:
@@ -102,6 +82,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "服务器内部错误，请查看日志了解详情"},
     )
+
+
+@app.get("/api/metrics")
+async def metrics():
+    from virtual_team.metrics import metrics_endpoint
+    return metrics_endpoint()
 
 
 @app.get("/api/health")
@@ -131,9 +117,6 @@ async def health():
 app.include_router(runs.router)
 app.include_router(sessions.router)
 app.include_router(agents.router)
-app.include_router(prompts.router)
-app.include_router(schemas.router)
-app.include_router(bindings.router)
 app.include_router(attachments.router)
 app.include_router(commands.router)
 app.include_router(models.router)
@@ -141,9 +124,13 @@ app.include_router(keys.router)
 app.include_router(teams.router)
 app.include_router(tools.router)
 app.include_router(skills.router)
+app.include_router(prompts.router)
+app.include_router(mcps.router)
+app.include_router(admin.router)
 app.include_router(system_team.router)
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    port = int(os.environ.get("PORT", "8080"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

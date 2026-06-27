@@ -346,6 +346,7 @@ export default function ApiManagementModal({ onClose }: Props) {
                       onChange={(e) => {
                         setSelectedModel(e.target.value);
                         localStorage.setItem('devagents-selected-model', e.target.value);
+                        window.dispatchEvent(new Event('devagents-model-changed'));
                       }}
                     />
                     <div className="api-model-info">

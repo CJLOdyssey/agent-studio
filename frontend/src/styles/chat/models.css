@@ -257,7 +257,7 @@
   padding: 0 3px;
   border-radius: 7px;
   background: var(--da-accent-indigo);
-  color: #fff;
+  color: var(--da-text-on-accent);
   font-size: 9px;
   font-weight: 700;
   line-height: 14px;
@@ -276,7 +276,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--da-accent-indigo) 8%, rgba(0, 0, 0, 0.6));
+  background: color-mix(in srgb, var(--da-accent-indigo) 8%, var(--da-overlay-bg));
   border: 3px dashed var(--da-accent-indigo);
   z-index: 900;
   font-size: 20px;

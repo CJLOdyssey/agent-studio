@@ -1,8 +1,24 @@
 .devagents-conversations-list {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--sp-2);
   margin-bottom: var(--sp-1);
+}
+
+.devagents-conv-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.devagents-conv-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--da-text-muted);
+  padding: var(--sp-1) var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
 }
 
 .devagents-conv-item {
@@ -36,12 +52,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.devagents-conv-item-agent-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .devagents-conv-item-meta {
   font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.devagents-conv-item-agent-name {
+  color: var(--da-text-secondary);
+  font-weight: 500;
 }
 
 .devagents-conv-delete {

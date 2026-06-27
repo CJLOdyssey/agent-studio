@@ -1,13 +1,15 @@
 """Messaging infrastructure: Celery app + Redis pub/sub for streaming."""
 
+import asyncio
 import contextlib
 import json
 import os
-import weakref
 from collections.abc import AsyncIterator
 
 from celery import Celery
 from redis.asyncio import Redis as AsyncRedis
+
+from virtual_team.logging_config import get_logger
 
 # ---------------------------------------------------------------------------
 # Celery app
@@ -46,10 +48,7 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 # Per-event-loop connection pool — Celery prefork workers create a new event
 # loop via asyncio.run() in each child process, so a single global pool bound
 # to the parent's loop becomes invalid ("Event loop is closed").
-# Pool per event loop — WeakKeyDictionary ensures pools are cleaned up
-# when their associated event loop is garbage collected (prevents stale
-# connection references in Celery prefork workers).
-_pools: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+_pools: dict[int, AsyncRedis] = {}
 CHANNEL_PREFIX = "run:"
 
 
@@ -67,8 +66,9 @@ def get_redis() -> AsyncRedis:
     import asyncio
 
     loop = asyncio.get_running_loop()
+    loop_id = id(loop)
 
-    pool = _pools.get(loop)
+    pool = _pools.get(loop_id)
     if pool is None:
         pool = AsyncRedis.from_url(
             REDIS_URL,
@@ -77,8 +77,10 @@ def get_redis() -> AsyncRedis:
             socket_connect_timeout=10,
             health_check_interval=30,
             retry_on_timeout=True,
+            # NOTE: do NOT set socket_timeout — pubsub is a long-lived streaming
+            # connection that must remain open indefinitely for WebSocket push.
         )
-        _pools[loop] = pool
+        _pools[loop_id] = pool
     return pool
 
 
@@ -86,7 +88,8 @@ async def close_redis():
     import asyncio
 
     loop = asyncio.get_running_loop()
-    pool = _pools.pop(loop, None)
+    loop_id = id(loop)
+    pool = _pools.pop(loop_id, None)
     if pool is not None:
         await pool.aclose()
 
@@ -116,3 +119,59 @@ async def subscribe_run(run_id: str) -> AsyncIterator[dict]:
             await pubsub.unsubscribe(_channel(run_id))
         with contextlib.suppress(Exception):
             await pubsub.close()
+
+
+# ---------------------------------------------------------------------------
+# Pre‑subscription buffer — closes the timing gap between Celery task start
+# and WebSocket connect.  The POST handler subscribes before returning so
+# early messages (thinking_stream) are never lost.
+# ---------------------------------------------------------------------------
+
+_buffers: dict[str, list[dict]] = {}
+_buffer_tasks: dict[str, asyncio.Task] = {}
+_lock: asyncio.Lock = asyncio.Lock()
+
+
+async def buffer_run_messages(run_id: str) -> None:
+    """Subscribe to *run_id* and accumulate messages into an in-memory buffer.
+
+    The WebSocket handler later calls :func:`drain_buffer` to replay them.
+    Establishes the Redis subscription synchronously before returning so that
+    no messages (especially early ``thinking_stream`` chunks) are lost.
+    """
+    buf: list[dict] = []
+    _buffers[run_id] = buf
+    logger = get_logger(__name__)
+
+    r = get_redis()
+    pubsub = r.pubsub()
+    await pubsub.subscribe(f"run:{run_id}")
+
+    async def _worker():
+        try:
+            async for msg in pubsub.listen():
+                if msg["type"] == "message":
+                    data = msg["data"]
+                    if isinstance(data, str):
+                        parsed = json.loads(data)
+                        logger.info("Buffer received: type=%s content_len=%d thinking_len=%d", parsed.get("type"), len(parsed.get("content","")), len(parsed.get("thinking","")))
+                        buf.append(parsed)
+        except asyncio.CancelledError:
+            pass
+
+    _buffer_tasks[run_id] = asyncio.create_task(_worker())
+
+
+def drain_buffer(run_id: str) -> list[dict]:
+    """Return and clear the pre‑subscription buffer for *run_id*."""
+    return _buffers.pop(run_id, [])
+
+
+async def stop_buffer(run_id: str) -> None:
+    """Cancel the background worker and discard the buffer."""
+    _buffers.pop(run_id, None)
+    task = _buffer_tasks.pop(run_id, None)
+    if task is not None:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task

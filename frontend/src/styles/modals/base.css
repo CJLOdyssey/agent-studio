@@ -14,8 +14,6 @@
   background: var(--da-bg-secondary);
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
@@ -61,6 +59,9 @@
   padding: var(--sp-5);
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-footer {

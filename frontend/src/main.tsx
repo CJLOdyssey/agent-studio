@@ -12,6 +12,14 @@ import './styles/sidebar/index.css';
 import './styles/chat/index.css';
 import './styles/components/index.css';
 import './styles/modals/index.css';
+import './styles/workstation-layout.css';
+import './styles/workstation-table.css';
+import './styles/workstation-toolbar.css';
+import './styles/workstation-modal.css';
+import './styles/workstation-dropdown.css';
+import './styles/workstation-responsive.css';
+import './styles/workstation-monitor.css';
+import './styles/workstation-settings.css';
 
 installGlobalErrorHandlers();
 

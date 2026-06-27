@@ -9,7 +9,6 @@ Security invariants:
 """
 
 import asyncio
-
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -135,13 +134,8 @@ async def add_key(req: KeyCreateRequest, request: Request):
     test_result = await test_api_key_connection(obj.id, user_id)
 
     if not test_result.get("success"):
-        await delete_api_key(obj.id, user_id)
-        raise HTTPException(
-            status_code=400,
-            detail=f"API Key 验证失败: {test_result.get('message', '连接失败')}",
-        )
-
-    fetched_models = test_result.get("models", [])
+        logger.warning("Key validation failed (non-blocking): %s", test_result.get("message", "connection error"))
+    fetched_models = test_result.get("models", []) if test_result.get("success") else []
     models_to_store = fetched_models if fetched_models else req.models
 
     await update_api_key(
@@ -240,7 +234,8 @@ async def fetch_models_from_provider(req: FetchModelsRequest):
     result = await asyncio.to_thread(_test_connection_sync, key_cfg)
     if result.get("success"):
         return {"success": True, "models": result.get("models", [])}
-    return {"success": False, "message": result.get("message", "Failed to fetch models"), "models": []}
+    logger.warning("Model fetch failed (non-blocking): %s", result.get("message", "unknown"))
+    return {"success": True, "models": [], "warning": result.get("message", "Connection failed")}
 
 
 @router.get("/api/keys/usage")

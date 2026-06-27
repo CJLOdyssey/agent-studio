@@ -6,14 +6,18 @@ export interface AgentTool {
   id: string;
   name: string;
   description: string;
+  type?: string;
   enabled: boolean;
+  parameters?: string;
 }
 
 // Agent MCP 配置
 export interface AgentMCP {
   id: string;
   name: string;
+  description: string;
   serverUrl: string;
+  type?: string;
   enabled: boolean;
 }
 
@@ -22,6 +26,7 @@ export interface AgentSkill {
   id: string;
   name: string;
   description: string;
+  type?: string;
   enabled: boolean;
 }
 
@@ -30,13 +35,14 @@ export interface Agent {
   id: string;
   name: string;
   role: string;
+  agentConfigId?: string;
   icon: LucideIcon;
   color: string;
   bg: string;
   border: string;
-  // 扩展配置
   systemPrompt?: string;
   outputConstraints?: string;
+  responseFormat?: Record<string, unknown>;
   tools?: AgentTool[];
   mcp?: AgentMCP[];
   skills?: AgentSkill[];
@@ -48,33 +54,41 @@ export interface Team {
   id: string;
   name: string;
   isExpanded: boolean;
+  isPinned: boolean;
   agents: Agent[];
 }
 
 // 对话历史记录
 export interface Conversation {
-  id: number;
+  id: string;
   title: string;
   messages: Message[];
   createdAt: string;
   updatedAt: string;
   agentId?: string;
+  sessionId?: string;
 }
 
 // 消息类型
 export interface Message {
-  id: number;
+  id: string;
   role: 'user' | 'agent';
   agentId?: string;
   content: string;
+  thinking?: string;
+  answer?: string;
   timestamp?: number;
   type?: 'process';
+  thinkingDone?: boolean;
   plan?: PlanStep[];
   action?: MessageAction;
   hasArtifact?: boolean;
   artifactType?: string;
   artifactTitle?: string;
   isTyping?: boolean;
+  versions?: string[];
+  currentVersion?: number;
+  thumbsFeedback?: 'up' | 'down' | null;
 }
 
 // 计划步骤

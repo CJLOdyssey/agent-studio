@@ -1,4 +1,7 @@
 :root {
+  /* Color scheme — tells browser how to render native elements (scrollbars, inputs, etc.) */
+  color-scheme: dark;
+
   /* Z-index scale */
   --z-base: 1;
   --z-dropdown: 100;
@@ -22,6 +25,12 @@
   --da-input-radius: 20px;
   --da-toolbar-height: 48px;
 
+  /* Modal sizing (fixed) */
+  --modal-sm: 760px;
+  --modal-m:  760px;
+  --modal-l:  760px;
+  --modal-height: 500px;
+
   /* Spacing scale (4px base) */
   --sp-1: 4px;
   --sp-2: 8px;
@@ -34,77 +43,83 @@
   --sp-12: 48px;
   --sp-16: 64px;
 
-  /* Typography */
-  --da-font-size-base: 13px;
-  --da-font-size-sm: 12px;
-  --da-font-size-xs: 11px;
-  --da-font-size-lg: 15px;
-  --da-font-size-xl: 18px;
+  /* Typography - Enterprise scale (14px base for readability) */
+  --da-font-size-base: 14px;
+  --da-font-size-sm: 13px;
+  --da-font-size-xs: 12px;
+  --da-font-size-lg: 16px;
+  --da-font-size-xl: 20px;
+  --da-font-size-2xl: 24px;
 
   /*
-   * Colors - Dark theme (default)
-   *
-   * DEPRECATED: --bg-* / --text-* / --border-* tokens are maintained for
-   * backward compatibility with legacy components. New code MUST use the
-   * --da-bg-* / --da-text-* / --da-border-* naming scheme.
-   *
-   * WCAG AA compliance: all text colors achieve ≥4.5:1 contrast against
-   * their intended backgrounds at the base font size (13px).
+   * Colors - Dark theme
+   * 本项目仅使用 4 种颜色:
+   *   #000000 — 深色背景 / 浅色文字
+   *   #ffffff — 浅色背景 / 深色文字
+   *   #1a1a1a — 深色 hover, 深色边框
+   *   #e9ecef — 浅色 hover, 浅色边框
+   * 其他色调用 color-mix 从这 4 色派生。
    */
 
-  /* ── Legacy tokens (deprecated, keep for legacy components) ── */
-  --bg-primary: #09090b;
-  --bg-secondary: #111113;
-  --bg-surface: #18181b;
-  --bg-elevated: #1e1e22;
-  --bg-hover: #27272a;
-  --bg-input: #27272a;
-  --border: #27272a;
-  --border-light: #3a3a3a;
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #9ca3af; /* was #8c8c8c — bumped for WCAG AA (≥4.5:1 on #09090b) */
-  --accent: #6366f1;
-  --accent-pm: #6366f1;
-  --accent-programmer: #34d399;
-  --accent-tester: #fbbf24;
-  --accent-approved: #22c55e;
-  --icon-status-success: #34d399;
-  --icon-status-warning: #fbbf24;
-  --icon-status-error: #f87171;
-  --danger: #ef4444;
+  /* ── Legacy tokens (4-color synced) ── */
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-surface: #000000;
+  --bg-elevated: #000000;
+  --bg-hover: #1a1a1a;
+  --bg-input: #1a1a1a;
+  --border: #1a1a1a;
+  --border-light: color-mix(in srgb, #ffffff 20%, #000000);
+  --text-primary: #ffffff;
+  --text-secondary: color-mix(in srgb, #ffffff 65%, #000000);
+  --text-muted: color-mix(in srgb, #ffffff 50%, #000000);
+  --accent: color-mix(in srgb, #ffffff 40%, #000000);
+  --accent-pm: color-mix(in srgb, #ffffff 40%, #000000);
+  --accent-programmer: color-mix(in srgb, #ffffff 40%, #000000);
+  --accent-tester: color-mix(in srgb, #ffffff 30%, #000000);
+  --accent-approved: color-mix(in srgb, #ffffff 60%, #000000);
+  --icon-status-success: color-mix(in srgb, #ffffff 60%, #000000);
+  --icon-status-warning: color-mix(in srgb, #ffffff 30%, #000000);
+  --icon-status-error: color-mix(in srgb, #ffffff 40%, #000000);
+  --danger: color-mix(in srgb, #ffffff 40%, #000000);
 
-  /* ── Current design tokens (use these) ── */
-  --da-bg-primary: #09090b;
-  --da-bg-secondary: #111113;
-  --da-bg-surface: #18181b;
-  --da-bg-elevated: #1e1e22;
-  --da-bg-hover: #27272a;
-  --da-border: #27272a;
-  --da-border-subtle: #1e1e22;
-  --da-text-primary: #fafafa;
-  --da-text-secondary: #a1a1aa;
-  --da-text-muted: #9ca3af; /* was #8c8c8c — bumped for WCAG AA */
-  --da-accent-indigo: #6366f1;
-  --da-accent-cyan: #22d3ee;
-  --da-accent-pink: #f472b6;
-  --da-accent-amber: #fbbf24;
-  --da-accent-emerald: #34d399;
-  --da-accent-purple: #c084fc;
-
-  /* Text on accent backgrounds (always high-contrast) */
+  /* ── Current design tokens (4-color) ── */
+  --da-bg-primary: #000000;
+  --da-bg-secondary: #000000;
+  --da-bg-surface: #000000;
+  --da-bg-elevated: #000000;
+  --da-bg-hover: #1a1a1a;
+  --da-bg-card: #000000;
+  --da-msg-user-bg: #1a1a1a;
+  --da-border: #1a1a1a;
+  --da-border-subtle: #1a1a1a;
+  --da-border-strong: color-mix(in srgb, #ffffff 20%, #000000);
+  --da-text-primary: #ffffff;
+  --da-text-secondary: color-mix(in srgb, #ffffff 65%, #000000);
+  --da-text-muted: color-mix(in srgb, #ffffff 50%, #000000);
   --da-text-on-accent: #ffffff;
+  --da-blend-dark: #000000;
+  --da-accent-indigo: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-accent-cyan: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-accent-pink: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-accent-amber: color-mix(in srgb, #ffffff 30%, #000000);
+  --da-accent-emerald: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-accent-purple: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-accent-red: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-status-active: color-mix(in srgb, #ffffff 60%, #000000);
+  --da-status-error: color-mix(in srgb, #ffffff 40%, #000000);
+  --da-status-warning: color-mix(in srgb, #ffffff 30%, #000000);
 
-  /* Icon colors by category */
-  --icon-planning: #6366f1;
-  --icon-design: #f472b6;
-  --icon-dev-frontend: #22d3ee;
-  --icon-dev-backend: #34d399;
-  --icon-dev-fullstack: #c084fc;
-  --icon-quality: #fbbf24;
-  --icon-ops: #fb923c;
-  --icon-file: #9ca3af;
-  --icon-code: #94a3b8;
+  /* Icon colors */
+  --icon-planning: color-mix(in srgb, #ffffff 40%, #000000);
+  --icon-design: color-mix(in srgb, #ffffff 40%, #000000);
+  --icon-dev-frontend: color-mix(in srgb, #ffffff 40%, #000000);
+  --icon-dev-backend: color-mix(in srgb, #ffffff 40%, #000000);
+  --icon-dev-fullstack: color-mix(in srgb, #ffffff 40%, #000000);
+  --icon-quality: color-mix(in srgb, #ffffff 30%, #000000);
+  --icon-ops: color-mix(in srgb, #ffffff 30%, #000000);
+  --icon-file: color-mix(in srgb, #ffffff 50%, #000000);
+  --icon-code: color-mix(in srgb, #ffffff 50%, #000000);
 
   /* Sidebar */
   --sidebar-width: 280px;
@@ -115,78 +130,105 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
   /* Syntax highlighting */
-  --syntax-blue-300: #93c5fd;
-  --syntax-blue-400: #60a5fa;
-  --syntax-cyan-200: #a5f3fc;
-  --syntax-red: #f87171;
+  --syntax-blue-300: color-mix(in srgb, #ffffff 60%, #000000);
+  --syntax-blue-400: color-mix(in srgb, #ffffff 50%, #000000);
+  --syntax-cyan-200: color-mix(in srgb, #ffffff 70%, #000000);
+  --syntax-red: color-mix(in srgb, #ffffff 40%, #000000);
 
-  /* Focus ring — neutral, subtle, theme-aware */
+  /* Focus ring */
   --da-focus-ring: 0 0 0 2px rgba(255, 255, 255, 0.12);
 
   /* Overlay */
-  --da-overlay-bg: rgba(0, 0, 0, 0.6);
-  --da-overlay-bg-light: rgba(0, 0, 0, 0.5);
+  --da-overlay-bg: color-mix(in srgb, #000000 60%, transparent);
+  --da-overlay-bg-light: color-mix(in srgb, #000000 50%, transparent);
 
-  /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.5);
+  /* Shadows — naturally dark in both themes */
+  --da-shadow-sm: color-mix(in srgb, #000000 5%, transparent);
+  --da-shadow-md: color-mix(in srgb, #000000 15%, transparent);
+  --da-shadow-lg: color-mix(in srgb, #000000 25%, transparent);
+  --da-shadow-xl: color-mix(in srgb, #000000 50%, transparent);
+
+  /* Elevation shadows */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #000000 30%, transparent);
+  --shadow-md: 0 4px 8px -2px color-mix(in srgb, #000000 40%, transparent);
+  --shadow-lg: 0 8px 16px -4px color-mix(in srgb, #000000 50%, transparent);
 }
 
-.light-theme {
+:root:not(.dark) {
+  color-scheme: light;
+
+  /* ── Legacy tokens (4-color synced) ── */
   --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-surface: #f1f3f5;
+  --bg-secondary: #ffffff;
+  --bg-surface: #ffffff;
   --bg-elevated: #ffffff;
   --bg-hover: #e9ecef;
   --bg-input: #e9ecef;
-  --border: #dee2e6;
-  --border-light: #ced4da;
-  --text-primary: #212529;
-  --text-secondary: #495057;
-  --text-muted: #6b7280; /* ≥5.9:1 on #ffffff — passes AA */
-  --accent: #6366f1;
-  --accent-pm: #6366f1;
-  --danger: #dc2626;
-  --icon-status-success: #10b981;
-  --icon-status-warning: #d97706;
-  --icon-status-error: #dc2626;
+  --border: #e9ecef;
+  --border-light: color-mix(in srgb, #000000 15%, #ffffff);
+  --text-primary: #000000;
+  --text-secondary: color-mix(in srgb, #000000 60%, #ffffff);
+  --text-muted: color-mix(in srgb, #000000 40%, #ffffff);
+  --accent: color-mix(in srgb, #000000 60%, #ffffff);
+  --accent-pm: color-mix(in srgb, #000000 60%, #ffffff);
+  --danger: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-status-success: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-status-warning: color-mix(in srgb, #000000 40%, #ffffff);
+  --icon-status-error: color-mix(in srgb, #000000 60%, #ffffff);
 
-  /* Focus ring — subtle gray, invisible on white backgrounds */
-  --da-focus-ring: 0 0 0 2px rgba(0, 0, 0, 0.1);
-
+  /* ── Current design tokens (4-color) ── */
   --da-bg-primary: #ffffff;
-  --da-bg-secondary: #f8f9fa;
-  --da-bg-surface: #f1f3f5;
+  --da-bg-secondary: #ffffff;
+  --da-bg-surface: #ffffff;
   --da-bg-elevated: #ffffff;
   --da-bg-hover: #e9ecef;
-  --da-border: #dee2e6;
+  --da-bg-card: #ffffff;
+  --da-msg-user-bg: #e9ecef;
+  --da-border: #e9ecef;
   --da-border-subtle: #e9ecef;
-  --da-text-primary: #212529;
-  --da-text-secondary: #495057;
-  --da-text-muted: #6b7280; /* ≥5.9:1 on #ffffff — passes AA */
+  --da-border-strong: color-mix(in srgb, #000000 20%, #ffffff);
+  --da-text-primary: #000000;
+  --da-text-secondary: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-text-muted: color-mix(in srgb, #000000 40%, #ffffff);
   --da-text-on-accent: #ffffff;
-  --da-accent-indigo: #6366f1;
-  --da-accent-cyan: #06b6d4;
-  --da-accent-pink: #ec4899;
-  --da-accent-amber: #d97706;
-  --da-accent-emerald: #10b981;
-  --da-accent-purple: #9333ea;
+  --da-blend-dark: #000000;
+  --da-accent-indigo: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-accent-cyan: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-accent-pink: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-accent-amber: color-mix(in srgb, #000000 50%, #ffffff);
+  --da-accent-emerald: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-accent-purple: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-accent-red: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-status-active: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-status-error: color-mix(in srgb, #000000 60%, #ffffff);
+  --da-status-warning: color-mix(in srgb, #000000 50%, #ffffff);
 
-  --icon-planning: #6366f1;
-  --icon-design: #ec4899;
-  --icon-dev-frontend: #06b6d4;
-  --icon-dev-backend: #10b981;
-  --icon-dev-fullstack: #9333ea;
-  --icon-quality: #d97706;
-  --icon-ops: #ea580c;
-  --icon-file: #6b7280;
-  --icon-code: #6b7280;
+  /* Icon colors */
+  --icon-planning: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-design: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-dev-frontend: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-dev-backend: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-dev-fullstack: color-mix(in srgb, #000000 60%, #ffffff);
+  --icon-quality: color-mix(in srgb, #000000 50%, #ffffff);
+  --icon-ops: color-mix(in srgb, #000000 50%, #ffffff);
+  --icon-file: color-mix(in srgb, #000000 40%, #ffffff);
+  --icon-code: color-mix(in srgb, #000000 40%, #ffffff);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  /* Focus ring */
+  --da-focus-ring: 0 0 0 2px rgba(0, 0, 0, 0.1);
 
-  --da-overlay-bg: rgba(0, 0, 0, 0.3);
-  --da-overlay-bg-light: rgba(0, 0, 0, 0.2);
+  /* Shadows */
+  --da-shadow-sm: color-mix(in srgb, #000000 5%, transparent);
+  --da-shadow-md: color-mix(in srgb, #000000 15%, transparent);
+  --da-shadow-lg: color-mix(in srgb, #000000 25%, transparent);
+  --da-shadow-xl: color-mix(in srgb, #000000 50%, transparent);
+
+  /* Elevation shadows */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #000000 30%, transparent);
+  --shadow-md: 0 4px 8px -2px color-mix(in srgb, #000000 40%, transparent);
+  --shadow-lg: 0 8px 16px -4px color-mix(in srgb, #000000 50%, transparent);
+
+  /* Overlay */
+  --da-overlay-bg: color-mix(in srgb, #000000 30%, transparent);
+  --da-overlay-bg-light: color-mix(in srgb, #000000 20%, transparent);
 }
