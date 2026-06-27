@@ -51,12 +51,45 @@ jobs:
     strategy:
       matrix:
         auth_mode: [legacy, rbac]
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+          --name virtual-team-redis
+        ports:
+          - 6379:6379
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: virtual_team
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt -r requirements-test.txt
+      - name: Start backend
+        run: |
+          PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory nohup python3 -m uvicorn virtual_team.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
+          sleep 3
+          # Wait for backend to be ready
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:8080/api/models > /dev/null 2>&1 && break
+            sleep 2
+          done
       - run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short
 
   docs-check:
