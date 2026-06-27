@@ -70,7 +70,8 @@ export function useSkillUI(): SkillUI {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!openMenuId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!openMenuId) { setMenuAnchorEl(null); return; }
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) {
         setOpenMenuId(null);
@@ -94,7 +95,8 @@ export function useSkillUI(): SkillUI {
 
   const openEdit = useCallback((skill: SkillEntry) => {
     setEditingSkill(skill);
-    const { id: _id, createdAt: _createdAt, ...rest } = skill;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, createdAt, ...rest } = skill;
     setFormData_(rest);
     setFormErrors([]);
     setIsFormOpen(true);

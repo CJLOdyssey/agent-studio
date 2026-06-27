@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useToolData } from '../useToolData';
+vi.mock('../api', () => {
+  const toolAPI = {
+    fetchAll: vi.fn().mockResolvedValue([{'id': 't1', 'name': '文件搜索', 'description': '搜索文件', 'category': '内置工具', 'model': '内置', 'status': 'active', 'version': 'v1.0.0', 'endpoint': '', 'parameters': '{"type":"object","properties":{}}', 'createdAt': '2024-01-01'}, {'id': 't2', 'name': '代码执行', 'description': '执行代码', 'category': '内置工具', 'model': '内置', 'status': 'active', 'version': 'v1.0.0', 'endpoint': '', 'parameters': '{"type":"object","properties":{}}', 'createdAt': '2024-01-01'}]),
+    create: vi.fn().mockImplementation((data) => Promise.resolve({ id: "new_"+Date.now(), ...data, createdAt: "2024-01-01" })),
+    update: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+    clone: vi.fn().mockImplementation((item) => Promise.resolve({ ...item, id: item.id+"_copy" })),
+    removeBatch: vi.fn().mockResolvedValue(undefined),
+  };
+  return { toolAPI };
+});
+
+
+
 
 describe('useToolData', () => {
   it('starts loading and loads data on mount', async () => {
