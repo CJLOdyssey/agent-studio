@@ -95,6 +95,7 @@ export function useToolData(): ToolData {
     try { await toolAPI.removeBatch(ids); setItems((prev) => prev.filter((s) => !ids.has(s.id))); setSelectedIds(new Set()); setError(null); }
     catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
   }, []);
+  const clearError = useCallback(() => setError(null), []);
 
   const retry = useCallback(() => {
     let cancelled = false;

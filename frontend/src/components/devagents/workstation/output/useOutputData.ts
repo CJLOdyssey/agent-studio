@@ -77,6 +77,7 @@ export function useOutputData(): OutputData {
   const addItems = useCallback((newItems: OutputEntry[]) => { try { setItems((prev) => [...prev, ...newItems]); setError(null); } catch (e) { setError(`导入失败：${(e as Error).message}`); } }, []);
   const clearError = useCallback(() => setError(null), []);
   const retry = useCallback(() => {
+    let cancelled = false;
     setIsLoading(true); setError(null);
     outputAPI.fetchAll()
       .then(data => { setItems(data); setIsLoading(false); })

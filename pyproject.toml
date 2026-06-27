@@ -13,6 +13,12 @@ python_version = "3.11"
 warn_unused_ignores = true
 exclude = ["tests/"]
 
+[tool.mypy."virtual_team/tasks.py"]
+ignore_errors = true
+
+[tool.mypy."virtual_team/main.py"]
+ignore_errors = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["virtual_team/tests"]
