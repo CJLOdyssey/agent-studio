@@ -23,7 +23,7 @@ router = APIRouter(tags=["agents"])
 class AgentCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     role_identifier: str = Field(..., min_length=1, max_length=64)
-    system_prompt: str = Field(default='')
+    system_prompt: str = Field(default="")
     output_constraints: str | None = None
     tools: list[dict] | None = None
     mcp: list[dict] | None = None
@@ -77,7 +77,7 @@ async def list_agents():
         ]
     except Exception as e:
         logger.error("Error listing agents: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/agents/{agent_id}")
@@ -86,6 +86,7 @@ async def get_agent(agent_id: str):
     c = next((x for x in configs if x.id == agent_id), None)
     if not c:
         raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+
     def _parse_json(val):
         if isinstance(val, str):
             try:
@@ -114,12 +115,13 @@ async def get_agent(agent_id: str):
 
 
 @router.post("/api/agents", status_code=201)
-async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)):
+async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)):  # noqa: B008
     existing = await get_agent_config_by_role(req.role_identifier)
     if existing:
         raise HTTPException(status_code=409, detail=f"角色标识 '{req.role_identifier}' 已存在")
     try:
         import json
+
         created = await create_agent_config(
             name=req.name,
             role_identifier=req.role_identifier,
@@ -139,12 +141,17 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
         return {"id": created.id, "status": "created"}
     except Exception as e:
         logger.error("Error creating agent: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.put("/api/agents/{agent_id}")
-async def edit_agent(agent_id: str, req: AgentUpdateRequest, current_user: CurrentUser = Depends(get_current_user)):
+async def edit_agent(
+    agent_id: str,
+    req: AgentUpdateRequest,
+    current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
+):
     import json
+
     updated = await update_agent_config(
         id=agent_id,
         name=req.name,
@@ -166,7 +173,7 @@ async def edit_agent(agent_id: str, req: AgentUpdateRequest, current_user: Curre
 
 
 @router.delete("/api/agents/{agent_id}")
-async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):
+async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):  # noqa: B008  # noqa: B008
     target = await get_agent_config(agent_id)
     if not target:
         raise HTTPException(status_code=404, detail="未找到该 agent 配置")
@@ -182,13 +189,15 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
 
 
 @router.put("/api/agents/{agent_id}/toggle")
-async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):
+async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):  # noqa: B008
     configs = await get_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)
     if not target:
         raise HTTPException(status_code=404, detail="未找到该 agent 配置")
     if target.is_active and target.is_approver:
-        active_approvers = [c for c in configs if c.is_approver and c.is_active and c.id != agent_id]
+        active_approvers = [
+            c for c in configs if c.is_approver and c.is_active and c.id != agent_id
+        ]
         if not active_approvers:
             raise HTTPException(status_code=400, detail="不能停用唯一的活跃审批者")
     updated = await update_agent_config(id=agent_id, is_active=not target.is_active)

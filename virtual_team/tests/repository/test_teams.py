@@ -1,6 +1,7 @@
 """
 Repository tests for Team CRUD and member management.
 """
+
 import uuid
 
 import pytest
@@ -85,9 +86,7 @@ async def test_link_agent_to_team(db_engine, sample_agent):
 
     fetched = await get_team(team.id)
     assert fetched is not None
-    linked_member = next(
-        (m for m in fetched["agents"] if m["id"] == member["id"]), None
-    )
+    linked_member = next((m for m in fetched["agents"] if m["id"] == member["id"]), None)
     assert linked_member is not None
     assert linked_member["agent_config_id"] == sample_agent.id
 

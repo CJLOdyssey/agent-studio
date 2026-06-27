@@ -1,4 +1,5 @@
 """CLI entry point — runs a single agent via LangGraph."""
+
 import asyncio
 import sys
 
@@ -73,6 +74,7 @@ def main() -> int:
     try:
         result = run_cli(requirement)
         import json
+
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except Exception as e:

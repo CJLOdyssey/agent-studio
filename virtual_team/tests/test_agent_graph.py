@@ -4,6 +4,7 @@ Unit tests for SingleAgentGraph and related components.
 These tests validate graph construction, tool binding, tool execution,
 and checkpointer creation — without requiring a live LLM API key.
 """
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -15,10 +16,10 @@ from virtual_team.agent_graph import (
 )
 from virtual_team.checkpoint import create_checkpointer
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Tool binding tests
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_bind_tools_initializes_correctly():
@@ -83,6 +84,7 @@ async def test_bind_tools_strips_empty_properties():
 # ToolWrapper execution tests
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_tool_wrapper_builtin_handler():
     """_ToolWrapper.invoke calls the correct builtin handler for known tools."""
@@ -136,6 +138,7 @@ async def test_tool_wrapper_no_builtin_no_llm():
 # Checkpointer tests
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_checkpointer_default_is_sqlite():
     """create_checkpointer with default backend returns SqliteSaver."""
@@ -143,6 +146,7 @@ async def test_checkpointer_default_is_sqlite():
         cp = create_checkpointer()
         # SqliteSaver from langgraph.checkpoint.sqlite
         from langgraph.checkpoint.sqlite import SqliteSaver
+
         assert isinstance(cp, SqliteSaver)
 
 
@@ -151,6 +155,7 @@ async def test_checkpointer_memory_backend():
     """create_checkpointer with memory backend returns MemorySaver."""
     with patch.dict("os.environ", {"CHECKPOINTER_BACKEND": "memory"}):
         from langgraph.checkpoint.memory import MemorySaver
+
         cp = create_checkpointer()
         assert isinstance(cp, MemorySaver)
 
@@ -158,6 +163,7 @@ async def test_checkpointer_memory_backend():
 # ──────────────────────────────────────────────────────────────────────────────
 # Graph construction tests
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_graph_constructor_sets_attributes():

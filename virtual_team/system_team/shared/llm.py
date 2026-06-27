@@ -1,9 +1,7 @@
-import os
 import httpx
-from typing import Any
 
-from virtual_team.logging_config import get_logger
 from virtual_team.config import load_config
+from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -45,7 +43,11 @@ class LLMClient:
         messages = [
             {
                 "role": "system",
-                "content": "你是一个代码生成专家。根据用户描述生成完整、可执行的代码。只返回代码，不要其他内容。",
+                "content": (
+                    "你是一个代码生成专家。"
+                    "根据用户描述生成完整、可执行的代码。"
+                    "只返回代码，不要其他内容。"
+                ),
             },
             {"role": "user", "content": prompt},
         ]

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { SortDir } from '../types';
 import type { MCPEntry, MCPFormData } from './mcp.types';
 import { mcpAPI } from './api';
@@ -28,31 +28,28 @@ export function useMCPData(): MCPData {
   const [items, setItems] = useState<MCPEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [search_, setSearch_] = useState('');
+  const [typeFilter_, setTypeFilter_] = useState<TypeFilter>('all');
   const [sortField, setSortField] = useState<MCPSortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const cancelledRef = useRef(false);
 
-  const load = useCallback(() => {
-    setIsLoading(true); setError(null);
-    cancelledRef.current = false;
+  useEffect(() => {
+    let cancelled = false;
     mcpAPI.fetchAll()
-      .then((data) => { if (!cancelledRef.current) setItems(data); })
-      .catch((e) => { if (!cancelledRef.current) setError(`加载失败：${(e as Error).message}`); })
-      .finally(() => { if (!cancelledRef.current) setIsLoading(false); });
-    return () => { cancelledRef.current = true; };
+      .then((data) => { if (!cancelled) { setItems(data); setIsLoading(false); } })
+      .catch((e) => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
+    return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => { const c = load(); return c; }, [load]);
-  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, typeFilter, sortField, sortDir]);
+  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); setSelectedIds(new Set()); }, []);
+  const setTypeFilter = useCallback((v: TypeFilter) => { setTypeFilter_(v); setPage(1); setSelectedIds(new Set()); }, []);
 
   const processed = useMemo(() => {
-    let r = typeFilter === 'all' ? items : items.filter((s) => s.type === typeFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    let r = typeFilter_ === 'all' ? items : items.filter((s) => s.type === typeFilter_);
+    if (search_.trim()) {
+      const q = search_.toLowerCase();
       r = r.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.type.toLowerCase().includes(q));
     }
     if (sortField) {
@@ -63,7 +60,7 @@ export function useMCPData(): MCPData {
       });
     }
     return r;
-  }, [items, search, typeFilter, sortField, sortDir]);
+  }, [items, search_, typeFilter_, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -72,7 +69,11 @@ export function useMCPData(): MCPData {
 
   const toggleSelectAll = useCallback(() => { setSelectedIds(allOnPageSelected ? new Set() : new Set(paged.map((p) => p.id))); }, [allOnPageSelected, paged]);
   const toggleSelect = useCallback((id: string) => { setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }); }, []);
-  const handleSort = useCallback((field: MCPSortField) => { setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; }); }, []);
+  const handleSort = useCallback((field: MCPSortField) => {
+    setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; });
+    setPage(1);
+    setSelectedIds(new Set());
+  }, []);
 
   const addMCP = useCallback(async (data: MCPFormData) => {
     try { const item = await mcpAPI.create(data); setItems((prev) => [...prev, item]); setError(null); }
@@ -96,6 +97,15 @@ export function useMCPData(): MCPData {
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
+  const retry = useCallback(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+    mcpAPI.fetchAll()
+      .then((data) => { if (!cancelled) { setItems(data); setIsLoading(false); } })
+      .catch((e) => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
+    return () => { cancelled = true; };
+  }, []);
 
-  return { isLoading, error, paged, processed, page: safePage, totalPages, search, typeFilter, sortField, sortDir, selectedIds, allOnPageSelected, setSearch, setTypeFilter, setPage, setSelectedIds, handleSort, toggleSelectAll, toggleSelect, addMCP, updateMCP, removeMCP, copyMCP, removeMultiple, clearError, retry: load };
+  return { isLoading, error, paged, processed, page: safePage, totalPages, search: search_, typeFilter: typeFilter_, sortField, sortDir, selectedIds, allOnPageSelected, setSearch, setTypeFilter, setPage, setSelectedIds, handleSort, toggleSelectAll, toggleSelect, addMCP, updateMCP, removeMCP, copyMCP, removeMultiple, clearError, retry };
 }

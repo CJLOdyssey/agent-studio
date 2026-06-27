@@ -18,17 +18,23 @@ export function useTeamData() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const fetchTeams = useCallback(() => {
-    setIsLoading(true); setError(null);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try { setTeams(teamAPI.fetchAll()); setIsLoading(false); }
+      catch { setError('Failed to load teams'); setIsLoading(false); }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const retry = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
     setTimeout(() => {
       try { setTeams(teamAPI.fetchAll()); setIsLoading(false); }
       catch { setError('Failed to load teams'); setIsLoading(false); }
     }, 400);
   }, []);
-  const retry = useCallback(() => fetchTeams(), [fetchTeams]);
   const clearError = useCallback(() => setError(null), []);
-
-  useEffect(() => { fetchTeams(); }, [fetchTeams]);
 
   const handleSort = useCallback((field: TeamSortField) => {
     setSortField((prev) => { if (prev === field) { setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); return prev; } setSortDir('asc'); return field; });

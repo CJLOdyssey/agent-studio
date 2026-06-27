@@ -1,6 +1,8 @@
 """MCP server CRUD API routes."""
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_mcp, delete_mcp, get_mcps, update_mcp
 
@@ -29,17 +31,24 @@ async def list_mcps():
         return await get_mcps()
     except Exception as e:
         logger.error("Error listing MCPs: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/api/mcps", status_code=201)
 async def add_mcp(req: MCPCreate):
     try:
         m = await create_mcp(req.model_dump())
-        return {"id": m.id, "name": m.name, "type": m.type, "endpoint": m.endpoint, "status": m.status, "created_at": m.created_at.isoformat() if m.created_at else None}
+        return {
+            "id": m.id,
+            "name": m.name,
+            "type": m.type,
+            "endpoint": m.endpoint,
+            "status": m.status,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
     except Exception as e:
         logger.error("Error creating MCP: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.put("/api/mcps/{mcp_id}")
@@ -53,7 +62,7 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate):
         raise
     except Exception as e:
         logger.error("Error updating MCP: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
@@ -66,4 +75,4 @@ async def remove_mcp(mcp_id: str):
         raise
     except Exception as e:
         logger.error("Error deleting MCP: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

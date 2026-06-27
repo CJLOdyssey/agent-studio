@@ -31,7 +31,9 @@ _MAX_REQUIREMENT_LENGTH = 2000
 class RunRequest(BaseModel):
     requirement: str = Field(..., min_length=1, max_length=_MAX_REQUIREMENT_LENGTH)
     session_id: str | None = None
-    key_id: str | None = Field(default=None, description="Vaulted API key ID — server resolves key, never exposes it")
+    key_id: str | None = Field(
+        default=None, description="Vaulted API key ID — server resolves key, never exposes it"
+    )
     model: str | None = None
     agent_id: str | None = None
 
@@ -49,7 +51,9 @@ async def create_run(req: RunRequest, request: Request):
     requirement = req.requirement.strip()
     config = load_config()
     if len(requirement) > config.max_requirement_length:
-        raise HTTPException(status_code=400, detail=f"需求不能超过 {config.max_requirement_length} 字")
+        raise HTTPException(
+            status_code=400, detail=f"需求不能超过 {config.max_requirement_length} 字"
+        )
     if not requirement:
         raise HTTPException(status_code=400, detail="需求不能为空")
 
@@ -62,7 +66,9 @@ async def create_run(req: RunRequest, request: Request):
         existing_sess = await get_session(session_id)
         if existing_sess is None:
             logger.warning("session_id=%s not found, creating new session", session_id)
-            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=req.agent_id)
+            sess = await create_session(
+                title=requirement[:64], user_id=user_id, agent_id=req.agent_id
+            )
             session_id = sess.id
 
     # ── Resolve API credentials from the enterprise key vault ──────────────
@@ -94,7 +100,7 @@ async def create_run(req: RunRequest, request: Request):
         run_id = await db_create_run(requirement, session_id=session_id)
     except Exception as e:
         logger.error("Failed to create run: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"创建失败: {e}")
+        raise HTTPException(status_code=500, detail=f"创建失败: {e}") from e
 
     try:
         existing_sess = await get_session(session_id)
@@ -108,6 +114,7 @@ async def create_run(req: RunRequest, request: Request):
     await buffer_run_messages(run_id)
     try:
         from virtual_team.tasks import run_agent
+
         run_agent.delay(
             requirement=requirement,
             run_id=run_id,
@@ -117,13 +124,19 @@ async def create_run(req: RunRequest, request: Request):
             api_base=api_base,
             model=effective_model,
         )
-        logger.info("Task enqueued | run_id=%s | session_id=%s | model=%s", run_id, session_id, effective_model)
+        logger.info(
+            "Task enqueued | run_id=%s | session_id=%s | model=%s",
+            run_id,
+            session_id,
+            effective_model,
+        )
     except Exception as e:
         logger.error("Celery enqueue failed, running synchronously: %s", e)
         # Fallback: run eagerly (no Celery worker needed)
         try:
             from virtual_team.tasks import _run_agent_pipeline
-            result = await _run_agent_pipeline(
+
+            await _run_agent_pipeline(
                 requirement=requirement,
                 run_id=run_id,
                 session_id=session_id,
@@ -136,7 +149,7 @@ async def create_run(req: RunRequest, request: Request):
         except Exception as e2:
             logger.exception("Eager run also failed for run=%s", run_id)
             await update_run_status(run_id, "error")
-            raise HTTPException(status_code=500, detail=f"执行失败: {e2}")
+            raise HTTPException(status_code=500, detail=f"执行失败: {e2}") from e
 
     return RunResponse(run_id=run_id, status="pending", session_id=session_id)
 
@@ -175,7 +188,7 @@ async def get_run_detail(run_id: str):
         raise
     except Exception as e:
         logger.error("Error fetching run %s: %s", run_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/runs", response_model=list[RunSummary])
@@ -199,7 +212,7 @@ async def list_runs(limit: int = 20):
         ]
     except Exception as e:
         logger.error("Error listing runs: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.websocket("/ws/runs/{run_id}")
@@ -215,21 +228,25 @@ async def run_websocket(websocket: WebSocket, run_id: str):
             if run and run.status in ("converged", "error"):
                 messages = await get_messages(run_id)
                 for m in messages:
-                    await websocket.send_json({
-                        "type": "message",
-                        "role": m.role,
-                        "agent_name": m.agent_name,
-                        "content": m.content,
-                        "round_number": m.round_number,
-                    })
-                await websocket.send_json({
-                    "type": "result",
-                    "status": run.status,
-                    "approved": run.approved,
-                    "pm_document": run.pm_document or "",
-                    "code": run.code or "",
-                    "review": run.review or "",
-                })
+                    await websocket.send_json(
+                        {
+                            "type": "message",
+                            "role": m.role,
+                            "agent_name": m.agent_name,
+                            "content": m.content,
+                            "round_number": m.round_number,
+                        }
+                    )
+                await websocket.send_json(
+                    {
+                        "type": "result",
+                        "status": run.status,
+                        "approved": run.approved,
+                        "pm_document": run.pm_document or "",
+                        "code": run.code or "",
+                        "review": run.review or "",
+                    }
+                )
                 await websocket.close()
                 return
         except Exception as e:

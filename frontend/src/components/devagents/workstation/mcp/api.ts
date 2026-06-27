@@ -65,4 +65,4 @@ const realImpl: MCPAPIService = {
   },
 };
 
-export let mcpAPI: MCPAPIService = realImpl;
+export const mcpAPI: MCPAPIService = realImpl;

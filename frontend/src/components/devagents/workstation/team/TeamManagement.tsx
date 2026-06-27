@@ -13,6 +13,11 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
+function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string | null; sortDir: string }) {
+  if (sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
+  return sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
+}
+
 export default function TeamManagement() {
   const data = useTeamData();
   const ui = useTeamUI();
@@ -22,11 +27,6 @@ export default function TeamManagement() {
   function handleDeleteWrapper() { ui.confirmDelete(data); toast(t('team.toast_deleted'), 'success'); }
   function handleBatchDeleteWrapper() { ui.confirmBatchDelete(data); toast(t('team.toast_batch_deleted', String(data.selectedIds.size)), 'success'); }
   function handleCopyWrapper(item: typeof data.processed[0]) { data.copyTeam(item); toast(t('team.toast_copied'), 'success'); }
-
-  const SortIcon = ({ field }: { field: 'name' | 'status' }) => {
-    if (data.sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
-    return data.sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
-  };
 
   if (data.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('team.loading')}><TableSkeleton rows={5} cols={5} /></div>;
 
@@ -68,9 +68,9 @@ export default function TeamManagement() {
         <table className="wsta-table" role="grid" aria-label={t('team.col_name')}>
           <thead><tr>
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('team.select_all')} /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('team.col_name')} <SortIcon field="name" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('team.col_name')}             <SortIcon field="name" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('team.col_leader')}</th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('team.col_status')} <SortIcon field="status" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('team.col_status')} <SortIcon field="status" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('team.col_members')}</th>
             <th className="wsta-col-actions" scope="col">{t('team.col_actions')}</th>
           </tr></thead>

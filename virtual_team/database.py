@@ -1,10 +1,14 @@
-
 import os
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text, text
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, text
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.pool import NullPool
 
@@ -25,22 +29,29 @@ class SessionDB(Base):
     title: Mapped[str] = mapped_column(String(256), default="新对话")
     user_id: Mapped[str] = mapped_column(String(128), default="default")
     agent_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="SET NULL"), nullable=True, index=True,
+        String(36),
+        ForeignKey("agent_configs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
 
     runs: Mapped[list["ProjectRun"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan",
+        back_populates="session",
+        cascade="all, delete-orphan",
         order_by="ProjectRun.created_at",
     )
     memories: Mapped[list["MemoryEntry"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan",
+        back_populates="session",
+        cascade="all, delete-orphan",
         order_by="MemoryEntry.created_at",
     )
 
@@ -50,7 +61,10 @@ class ProjectRun(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True,
+        String(36),
+        ForeignKey("sessions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     requirement: Mapped[str] = mapped_column(Text, nullable=False)
     pm_document: Mapped[str] = mapped_column(Text, default="", server_default="")
@@ -58,20 +72,26 @@ class ProjectRun(Base):
     review: Mapped[str] = mapped_column(Text, default="", server_default="")
     approved: Mapped[bool] = mapped_column(Boolean, default=False, server_default="f")
     status: Mapped[str] = mapped_column(
-        String(32), default="pending", server_default="pending",
+        String(32),
+        default="pending",
+        server_default="pending",
         comment="pending|running|converged|max_rounds_reached|error",
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
 
     session: Mapped["SessionDB | None"] = relationship(back_populates="runs")
     messages: Mapped[list["ChatMessage"]] = relationship(
-        back_populates="run", cascade="all, delete-orphan", order_by="ChatMessage.created_at",
+        back_populates="run",
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.created_at",
     )
 
 
@@ -80,19 +100,27 @@ class MemoryEntry(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
+        String(36),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     run_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("project_runs.id", ondelete="SET NULL"), nullable=True,
+        String(36),
+        ForeignKey("project_runs.id", ondelete="SET NULL"),
+        nullable=True,
     )
     agent_role: Mapped[str] = mapped_column(String(32), nullable=False)
     content_type: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="pm_document|code|review|decision",
+        String(32),
+        nullable=False,
+        comment="pm_document|code|review|decision",
     )
     summary: Mapped[str] = mapped_column(String(512), nullable=False)
     details: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
     session: Mapped["SessionDB"] = relationship(back_populates="memories")
@@ -103,16 +131,22 @@ class ChatMessage(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     run_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("project_runs.id", ondelete="CASCADE"), nullable=False, index=True,
+        String(36),
+        ForeignKey("project_runs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     role: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="pm|programmer|tester",
+        String(32),
+        nullable=False,
+        comment="pm|programmer|tester",
     )
     agent_name: Mapped[str] = mapped_column(String(64), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     round_number: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
     run: Mapped["ProjectRun"] = relationship(back_populates="messages")
@@ -127,15 +161,18 @@ class TeamDB(Base):
     is_expanded: Mapped[bool] = mapped_column(Boolean, default=False)
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
 
     members: Mapped[list["TeamAgentDB"]] = relationship(
-        back_populates="team", cascade="all, delete-orphan",
+        back_populates="team",
+        cascade="all, delete-orphan",
         order_by="TeamAgentDB.order",
     )
 
@@ -144,15 +181,20 @@ class TeamAgentDB(Base):
     __tablename__ = "team_agents"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    team_id: Mapped[str] = mapped_column(String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    team_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     agent_config_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="SET NULL"), nullable=True,
+        String(36),
+        ForeignKey("agent_configs.id", ondelete="SET NULL"),
+        nullable=True,
     )
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     role: Mapped[str] = mapped_column(String(64), default="待配置角色")
     order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
     team: Mapped["TeamDB"] = relationship(back_populates="members")
@@ -164,7 +206,9 @@ class AgentConfigDB(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
-    role_identifier: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    role_identifier: Mapped[str] = mapped_column(
+        String(32), unique=True, nullable=False, index=True
+    )
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     output_constraints: Mapped[str | None] = mapped_column(Text, nullable=True)
     tools: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -178,11 +222,15 @@ class AgentConfigDB(Base):
     icon: Mapped[str] = mapped_column(String(8), default="🤖", nullable=False)
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC), nullable=False,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
     )
 
 
@@ -213,14 +261,18 @@ class CommandLogDB(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
+        String(36),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     command_id: Mapped[str] = mapped_column(String(64), nullable=False)
     command_name: Mapped[str] = mapped_column(String(64), nullable=False)
     payload: Mapped[str] = mapped_column(Text, default="")
     result: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
 
@@ -229,7 +281,10 @@ class AttachmentDB(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
+        String(36),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     filename: Mapped[str] = mapped_column(String(256), nullable=False)
@@ -238,7 +293,8 @@ class AttachmentDB(Base):
     storage_path: Mapped[str] = mapped_column(String(512), nullable=False)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
 
@@ -253,23 +309,25 @@ class UserApiKey(Base):
         String(32), nullable=False, comment="openai|deepseek|anthropic|custom"
     )
     usage_type: Mapped[str] = mapped_column(
-        String(16), default="llm", nullable=False,
+        String(16),
+        default="llm",
+        nullable=False,
         comment="llm|embedding|both — how this key is used",
     )
     label: Mapped[str] = mapped_column(String(64), nullable=False)
     encrypted_key: Mapped[str] = mapped_column(Text, nullable=False)
     base_url: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    models: Mapped[str] = mapped_column(
-        Text, default="", comment="Comma-separated model IDs"
-    )
+    models: Mapped[str] = mapped_column(Text, default="", comment="Comma-separated model IDs")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
 
@@ -281,7 +339,10 @@ class KeyUsageLog(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     key_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("user_api_keys.id", ondelete="SET NULL"), nullable=True, index=True,
+        String(36),
+        ForeignKey("user_api_keys.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     user_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
@@ -295,7 +356,8 @@ class KeyUsageLog(Base):
     status: Mapped[str] = mapped_column(String(16), default="success", comment="success|error")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )
 
 
@@ -309,8 +371,14 @@ class PromptDB(Base):
     status: Mapped[str] = mapped_column(String(16), default="active")
     version: Mapped[str] = mapped_column(String(16), default="v1.0.0")
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
 
 class RegisteredToolDB(Base):
@@ -325,8 +393,14 @@ class RegisteredToolDB(Base):
     endpoint: Mapped[str] = mapped_column(String(256), default="")
     parameters: Mapped[str] = mapped_column(Text, default='{"type":"object","properties":{}}')
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
 
 class MCPServerDB(Base):
@@ -338,8 +412,14 @@ class MCPServerDB(Base):
     config: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="active")
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
 
 class RegisteredSkillDB(Base):
@@ -356,11 +436,18 @@ class RegisteredSkillDB(Base):
     tool_names: Mapped[dict] = mapped_column(JSON, default=list)
     output_constraint: Mapped[str] = mapped_column(Text, default="")
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
 
 # ── RBAC models ──────────────────────────────────────────────────────────────
+
 
 class UserDB(Base):
     __tablename__ = "users"
@@ -368,8 +455,14 @@ class UserDB(Base):
     username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
 
 class RoleDB(Base):
@@ -382,8 +475,12 @@ class RoleDB(Base):
 class UserRoleDB(Base):
     __tablename__ = "user_roles"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    role_id: Mapped[str] = mapped_column(String(36), ForeignKey("roles.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("roles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
 
 
 async def init_db():
@@ -404,15 +501,31 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # Enterprise: add FK + index for agent_id on existing sessions table
-        await conn.execute(text("""
+        await conn.execute(
+            text(
+                """
             DO $$ BEGIN
-                IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'sessions_agent_id_fkey') THEN
-                    UPDATE sessions SET agent_id = NULL WHERE agent_id IS NOT NULL AND agent_id NOT IN (SELECT id FROM agent_configs);
-                    ALTER TABLE sessions ADD CONSTRAINT sessions_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES agent_configs(id) ON DELETE SET NULL;
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'sessions_agent_id_fkey'
+                ) THEN
+                    UPDATE sessions SET agent_id = NULL
+                    WHERE agent_id IS NOT NULL
+                    AND agent_id NOT IN (
+                        SELECT id FROM agent_configs
+                    );
+                    ALTER TABLE sessions
+                    ADD CONSTRAINT sessions_agent_id_fkey
+                    FOREIGN KEY (agent_id) REFERENCES agent_configs(id)
+                    ON DELETE SET NULL;
                 END IF;
             END $$;
-        """))
-        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);"))
+        """
+            )
+        )
+        await conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);")
+        )
 
 
 async def get_session():

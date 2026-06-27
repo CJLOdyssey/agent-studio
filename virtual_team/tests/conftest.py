@@ -29,10 +29,10 @@ if _sys_insert not in sys.path:
 
 import virtual_team.database as _db  # noqa: E402 (needs sys.path first)
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Module-level event_loop override (required for module-scoped async fixtures)
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def event_loop():
@@ -45,6 +45,7 @@ def event_loop():
 # ──────────────────────────────────────────────────────────────────────────────
 # Database fixtures
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest_asyncio.fixture(scope="module")
 async def db_engine():
@@ -95,6 +96,7 @@ async def async_session(db_engine):
 # Celery eager-mode fixture
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def celery_eager():
     """Run Celery tasks synchronously (task_always_eager=True) during tests."""
@@ -110,11 +112,13 @@ def celery_eager():
 # Sample data fixtures
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest_asyncio.fixture
 async def sample_agent(db_engine, async_session):
     """Create a sample AgentConfigDB row and return it."""
-    from virtual_team.database import AgentConfigDB
     from datetime import UTC, datetime
+
+    from virtual_team.database import AgentConfigDB
 
     agent = AgentConfigDB(
         id=str(uuid4()),
@@ -149,6 +153,7 @@ def sample_user():
 # ──────────────────────────────────────────────────────────────────────────────
 # HTTP test client fixture
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @pytest_asyncio.fixture
 async def test_client():

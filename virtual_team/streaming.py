@@ -25,11 +25,14 @@ class StreamEmitter:
             if content:
                 self._stream_buffer.append(content)
                 try:
-                    await publish_run_message(self._run_id, {
-                        "type": "stream",
-                        "agent_name": "Agent",
-                        "content": content,
-                    })
+                    await publish_run_message(
+                        self._run_id,
+                        {
+                            "type": "stream",
+                            "agent_name": "Agent",
+                            "content": content,
+                        },
+                    )
                 except Exception:
                     logger.exception("Stream chunk publish failed for run %s", self._run_id)
 
@@ -38,11 +41,14 @@ class StreamEmitter:
             if rc:
                 self._thinking_buffer.append(rc)
                 try:
-                    await publish_run_message(self._run_id, {
-                        "type": "thinking_stream",
-                        "agent_name": "Agent",
-                        "content": rc,
-                    })
+                    await publish_run_message(
+                        self._run_id,
+                        {
+                            "type": "thinking_stream",
+                            "agent_name": "Agent",
+                            "content": rc,
+                        },
+                    )
                 except Exception:
                     logger.exception("Thinking stream publish failed for run %s", self._run_id)
 
@@ -54,11 +60,14 @@ class StreamEmitter:
             if chunk and hasattr(chunk, "content") and chunk.content:
                 self._stream_buffer.append(chunk.content)
                 try:
-                    await publish_run_message(self._run_id, {
-                        "type": "stream",
-                        "agent_name": "Agent",
-                        "content": chunk.content,
-                    })
+                    await publish_run_message(
+                        self._run_id,
+                        {
+                            "type": "stream",
+                            "agent_name": "Agent",
+                            "content": chunk.content,
+                        },
+                    )
                 except Exception:
                     logger.exception("Stream chunk publish failed for run %s", self._run_id)
 
@@ -73,7 +82,10 @@ class StreamEmitter:
         elif kind == "on_tool_start":
             tool_name = event.get("name", "tool")
             tool_input = data.get("input", "")
-            await self._emit("Agent", f"\U0001f527 \u8c03\u7528\u5de5\u5177: {tool_name}({str(tool_input)[:200]})")
+            await self._emit(
+                "Agent",
+                f"\U0001f527 \u8c03\u7528\u5de5\u5177: {tool_name}({str(tool_input)[:200]})",
+            )
 
         elif kind == "on_tool_end":
             tool_name = event.get("name", "tool")
@@ -91,19 +103,27 @@ class StreamEmitter:
 
         if thinking_text:
             try:
-                await publish_run_message(self._run_id, {
-                    "type": "thinking_done",
-                    "agent_name": "Agent",
-                    "thinking": thinking_text,
-                })
+                await publish_run_message(
+                    self._run_id,
+                    {
+                        "type": "thinking_done",
+                        "agent_name": "Agent",
+                        "thinking": thinking_text,
+                    },
+                )
             except Exception:
                 logger.exception("Thinking publish failed for run %s", self._run_id)
 
-    async def _emit(self, agent_name: str, content: str, msg_type: str = "message", thinking: str | None = None):
+    async def _emit(
+        self, agent_name: str, content: str, msg_type: str = "message", thinking: str | None = None
+    ):
         self._message_index += 1
         payload = {
-            "type": msg_type, "role": agent_name, "agent_name": agent_name,
-            "content": content, "round_number": self._message_index,
+            "type": msg_type,
+            "role": agent_name,
+            "agent_name": agent_name,
+            "content": content,
+            "round_number": self._message_index,
         }
         if not thinking and self._pending_thinking:
             thinking = self._pending_thinking
@@ -114,8 +134,11 @@ class StreamEmitter:
             await publish_run_message(self._run_id, payload)
             if msg_type == "message":
                 await save_message(
-                    run_id=self._run_id, role=agent_name, agent_name=agent_name,
-                    content=content, round_number=self._message_index,
+                    run_id=self._run_id,
+                    role=agent_name,
+                    agent_name=agent_name,
+                    content=content,
+                    round_number=self._message_index,
                 )
         except Exception:
             logger.exception("Stream emit failed for run %s", self._run_id)

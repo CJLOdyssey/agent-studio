@@ -23,7 +23,6 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
@@ -61,6 +60,7 @@ def _replace_section(existing: str, section_header: str, new_content: str) -> st
 
 class TeamState(TypedDict):
     """State shared across all agents in a team discussion."""
+
     messages: Annotated[list[BaseMessage], add_messages]
     requirement: str
     pm_document: str
@@ -110,6 +110,7 @@ class TeamGraph:
         self.llm = ChatOpenAI(**llm_kwargs)
 
         from virtual_team.checkpoint import create_checkpointer
+
         self.checkpointer = create_checkpointer()
         self._agent_prompts: dict[str, str] = {}
         self._graph = self._build_graph()
@@ -128,19 +129,21 @@ class TeamGraph:
 
         # ── PM node ──────────────────────────────────────────────────────
         def _pm_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get("product_manager",
-                "你是产品经理。分析用户需求并输出产品需求文档。"
+            prompt = self._agent_prompts.get(
+                "product_manager", "你是产品经理。分析用户需求并输出产品需求文档。"
             )
             full = [
                 SystemMessage(content=prompt),
-                HumanMessage(content=(
-                    f"用户需求：{state.get('requirement', '')}\n\n"
-                    "请分析需求并输出产品需求文档。如果是简单问候或闲聊，"
-                    f"请在回复末尾加上{DIRECT_REPLY_KEYWORD}。"
-                )),
+                HumanMessage(
+                    content=(
+                        f"用户需求：{state.get('requirement', '')}\n\n"
+                        "请分析需求并输出产品需求文档。如果是简单问候或闲聊，"
+                        f"请在回复末尾加上{DIRECT_REPLY_KEYWORD}。"
+                    )
+                ),
             ]
             response = self.llm.invoke(full)
-            content = response.content if hasattr(response, 'content') else str(response)
+            content = response.content if hasattr(response, "content") else str(response)
             return {
                 "messages": [response],
                 "pm_document": content,
@@ -148,8 +151,8 @@ class TeamGraph:
 
         # ── Frontend node ────────────────────────────────────────────────
         def _frontend_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get("frontend",
-                "你是资深前端工程师。根据产品需求文档编写前端代码。"
+            prompt = self._agent_prompts.get(
+                "frontend", "你是资深前端工程师。根据产品需求文档编写前端代码。"
             )
             pm_doc = state.get("pm_document", "")
             tester_feedback = state.get("review", "")
@@ -159,10 +162,12 @@ class TeamGraph:
 
             full = [
                 SystemMessage(content=prompt),
-                HumanMessage(content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写前端代码实现。"),
+                HumanMessage(
+                    content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写前端代码实现。"
+                ),
             ]
             response = self.llm.invoke(full)
-            content = str(response.content) if hasattr(response, 'content') else str(response)
+            content = str(response.content) if hasattr(response, "content") else str(response)
             # Replace code for this round — old versions are preserved in message history
             existing_code = state.get("code", "")
             new_code = _replace_section(existing_code, "## 前端代码", content)
@@ -173,8 +178,8 @@ class TeamGraph:
 
         # ── Backend node ─────────────────────────────────────────────────
         def _backend_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get("backend",
-                "你是资深后端工程师。根据产品需求文档编写后端代码。"
+            prompt = self._agent_prompts.get(
+                "backend", "你是资深后端工程师。根据产品需求文档编写后端代码。"
             )
             pm_doc = state.get("pm_document", "")
             tester_feedback = state.get("review", "")
@@ -184,10 +189,12 @@ class TeamGraph:
 
             full = [
                 SystemMessage(content=prompt),
-                HumanMessage(content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写后端代码实现。"),
+                HumanMessage(
+                    content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写后端代码实现。"
+                ),
             ]
             response = self.llm.invoke(full)
-            content = str(response.content) if hasattr(response, 'content') else str(response)
+            content = str(response.content) if hasattr(response, "content") else str(response)
             # Replace code for this round — old versions are preserved in message history
             existing_code = state.get("code", "")
             new_code = _replace_section(existing_code, "## 后端代码", content)
@@ -198,24 +205,26 @@ class TeamGraph:
 
         # ── Tester node ──────────────────────────────────────────────────
         def _tester_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get("tester",
-                "你是测试工程师。审查代码质量并在通过时输出【批准】。"
+            prompt = self._agent_prompts.get(
+                "tester", "你是测试工程师。审查代码质量并在通过时输出【批准】。"
             )
             pm_doc = state.get("pm_document", "")
             code = state.get("code", "")
 
             full = [
                 SystemMessage(content=prompt),
-                HumanMessage(content=(
-                    f"产品需求文档：\n{pm_doc}\n\n"
-                    f"代码实现：\n{code}\n\n"
-                    f"请审查代码是否满足需求，检查代码质量和潜在问题。"
-                    f"如全部通过，在回复末尾单独一行输出{APPROVAL_KEYWORD}。"
-                    f"否则列出具体问题要求修改。"
-                )),
+                HumanMessage(
+                    content=(
+                        f"产品需求文档：\n{pm_doc}\n\n"
+                        f"代码实现：\n{code}\n\n"
+                        f"请审查代码是否满足需求，检查代码质量和潜在问题。"
+                        f"如全部通过，在回复末尾单独一行输出{APPROVAL_KEYWORD}。"
+                        f"否则列出具体问题要求修改。"
+                    )
+                ),
             ]
             response = self.llm.invoke(full)
-            content = response.content if hasattr(response, 'content') else str(response)
+            content = response.content if hasattr(response, "content") else str(response)
             approved = APPROVAL_KEYWORD in content
             new_round = state.get("round_number", 1)
             return {
@@ -303,8 +312,12 @@ class TeamGraph:
             }
 
         return {
-            "pm_document": "", "code": "", "review": "",
-            "approved": False, "round_number": 0, "messages_count": 0,
+            "pm_document": "",
+            "code": "",
+            "review": "",
+            "approved": False,
+            "round_number": 0,
+            "messages_count": 0,
         }
 
     def invoke_sync(

@@ -9,6 +9,7 @@ Security invariants:
 """
 
 import asyncio
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -28,17 +29,19 @@ router = APIRouter(tags=["keys"])
 
 
 class KeyCreateRequest(BaseModel):
-    provider: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
-    usage_type: str = Field(default="llm", pattern=r'^(llm|embedding|both)$')
+    provider: str = Field(..., min_length=1, max_length=32, pattern=r"^[a-z_]+$")
+    usage_type: str = Field(default="llm", pattern=r"^(llm|embedding|both)$")
     label: str = Field(..., min_length=1, max_length=64)
-    api_key: str = Field(..., min_length=1, description="Plaintext API key — encrypted before storage")
+    api_key: str = Field(
+        ..., min_length=1, description="Plaintext API key — encrypted before storage"
+    )
     base_url: str | None = None
     models: list[str] = Field(default_factory=list)
     is_default: bool = False
 
 
 class KeyUpdateRequest(BaseModel):
-    usage_type: str | None = Field(default=None, pattern=r'^(llm|embedding|both)$')
+    usage_type: str | None = Field(default=None, pattern=r"^(llm|embedding|both)$")
     label: str | None = None
     api_key: str | None = Field(default=None, description="New plaintext key (optional)")
     base_url: str | None = None
@@ -69,6 +72,7 @@ class KeyResponse(BaseModel):
 
 # ── CRUD routes ──────────────────────────────────────────────────────────────
 
+
 @router.get("/api/keys", response_model=list[KeyResponse])
 async def list_keys(request: Request):
     """List all API keys for the authenticated user. Keys are MASKED."""
@@ -93,15 +97,19 @@ async def list_keys(request: Request):
         ]
     except Exception as e:
         logger.error("Error listing keys for user %s: %s", user_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/api/keys", status_code=201, response_model=KeyResponse)
 async def add_key(req: KeyCreateRequest, request: Request):
     """Save a new API key. Auto-validates connectivity and fetches available models."""
     user_id = get_user_id(request)
-    logger.info("Key creation requested | user=%s | provider=%s | label=%s",
-                user_id, req.provider, req.label)
+    logger.info(
+        "Key creation requested | user=%s | provider=%s | label=%s",
+        user_id,
+        req.provider,
+        req.label,
+    )
 
     obj = await create_api_key(
         user_id=user_id,
@@ -117,6 +125,7 @@ async def add_key(req: KeyCreateRequest, request: Request):
     # For embedding-only and both keys, skip connectivity test and model fetch
     if req.usage_type in ("embedding", "both"):
         from virtual_team.key_vault import decrypt_api_key, mask_api_key
+
         return KeyResponse(
             id=obj.id,
             provider=obj.provider,
@@ -134,7 +143,10 @@ async def add_key(req: KeyCreateRequest, request: Request):
     test_result = await test_api_key_connection(obj.id, user_id)
 
     if not test_result.get("success"):
-        logger.warning("Key validation failed (non-blocking): %s", test_result.get("message", "connection error"))
+        logger.warning(
+            "Key validation failed (non-blocking): %s",
+            test_result.get("message", "connection error"),
+        )
     fetched_models = test_result.get("models", []) if test_result.get("success") else []
     models_to_store = fetched_models if fetched_models else req.models
 
@@ -145,6 +157,7 @@ async def add_key(req: KeyCreateRequest, request: Request):
     )
 
     from virtual_team.key_vault import decrypt_api_key, mask_api_key
+
     return KeyResponse(
         id=obj.id,
         provider=obj.provider,
@@ -247,4 +260,4 @@ async def key_usage(request: Request):
         return stats
     except Exception as e:
         logger.error("Error fetching usage for user %s: %s", user_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

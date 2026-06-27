@@ -13,6 +13,11 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
+function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string | null; sortDir: string }) {
+  if (sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
+  return sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
+}
+
 export default function MCPManagement() {
   const data = useMCPData();
   const ui = useMCPUI();
@@ -22,11 +27,6 @@ export default function MCPManagement() {
   function handleDelete() { ui.confirmDelete(data); toast(t('mcp.toast_deleted'), 'success'); }
   function handleBatchDelete() { ui.confirmBatchDelete(data); toast(t('mcp.toast_batch_deleted', String(data.selectedIds.size)), 'success'); }
   function handleCopy(item: typeof data.processed[0]) { data.copyMCP(item); toast(t('mcp.toast_copied'), 'success'); }
-
-  const SortIcon = ({ field }: { field: 'name' | 'type' | 'status' }) => {
-    if (data.sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
-    return data.sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
-  };
 
   if (data.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
@@ -62,10 +62,10 @@ export default function MCPManagement() {
         <table className="wsta-table" role="grid" aria-label={t('mcp.col_name')}>
           <thead><tr>
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('mcp.select_all')} /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('mcp.col_name')} <SortIcon field="name" /></th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('type')} aria-sort={data.sortField === 'type' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('mcp.col_type')} <SortIcon field="type" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('name')} aria-sort={data.sortField === 'name' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('mcp.col_name')} <SortIcon field="name" sortField={data.sortField} sortDir={data.sortDir} /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('type')} aria-sort={data.sortField === 'type' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('mcp.col_type')} <SortIcon field="type" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('mcp.col_address')}</th>
-            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('mcp.col_status')} <SortIcon field="status" /></th>
+            <th className="wsta-sortable" scope="col" onClick={() => data.handleSort('status')} aria-sort={data.sortField === 'status' ? (data.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{t('mcp.col_status')} <SortIcon field="status" sortField={data.sortField} sortDir={data.sortDir} /></th>
             <th scope="col">{t('mcp.col_version')}</th>
             <th className="wsta-col-actions" scope="col">{t('mcp.col_actions')}</th>
           </tr></thead>

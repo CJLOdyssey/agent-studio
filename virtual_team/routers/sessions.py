@@ -45,17 +45,19 @@ async def list_sessions(limit: int = 50, agent_id: str | None = None, request: R
         result = []
         for s in sessions:
             runs = runs_by_session.get(s.id, [])
-            result.append({
-                "id": s.id,
-                "title": s.title,
-                "run_count": len(runs),
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
-            })
+            result.append(
+                {
+                    "id": s.id,
+                    "title": s.title,
+                    "run_count": len(runs),
+                    "created_at": s.created_at.isoformat() if s.created_at else None,
+                    "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+                }
+            )
         return result
     except Exception as e:
         logger.error("Error listing sessions: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/api/sessions", status_code=201)
@@ -75,7 +77,7 @@ async def add_session(req: SessionCreateRequest, request: Request = None):  # ty
         }
     except Exception as e:
         logger.error("Error creating session: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/sessions/{session_id}", response_model=SessionDetailResponse)
@@ -126,7 +128,7 @@ async def get_session_detail(session_id: str, request: Request = None):  # type:
         raise
     except Exception as e:
         logger.error("Error getting session %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.put("/api/sessions/{session_id}")
@@ -146,7 +148,7 @@ async def rename_session(session_id: str, req: SessionUpdateRequest, request: Re
         raise
     except Exception as e:
         logger.error("Error renaming session %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/api/sessions/{session_id}")
@@ -166,7 +168,7 @@ async def remove_session(session_id: str, request: Request = None):  # type: ign
         raise
     except Exception as e:
         logger.error("Error deleting session %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/sessions/{session_id}/memories")
@@ -194,7 +196,7 @@ async def list_session_memories(session_id: str, request: Request = None):  # ty
         raise
     except Exception as e:
         logger.error("Error listing memories for %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/api/memories/{memory_id}")
@@ -208,7 +210,7 @@ async def delete_session_memory(memory_id: str):
         raise
     except Exception as e:
         logger.error("Error deleting memory %s: %s", memory_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/api/sessions/{session_id}/memories/export")
@@ -248,7 +250,12 @@ async def export_session_memories(session_id: str, format: str = "json", request
         md_lines = [f"# Session Memories ({session_id})\n"]
         for m in memories:
             md_lines.append(f"## Memory: {m.content_type}")
-            md_lines.append(f"**Agent**: {m.agent_role} | **Created**: {m.created_at.isoformat() if m.created_at else 'N/A'}")
+            md_lines.append(
+
+                    f"**Agent**: {m.agent_role} | "
+                    f"**Created**: {m.created_at.isoformat() if m.created_at else 'N/A'}"
+
+            )
             md_lines.append("")
             md_lines.append(f"**Summary**: {m.summary}")
             md_lines.append("")
@@ -266,4 +273,4 @@ async def export_session_memories(session_id: str, format: str = "json", request
         raise
     except Exception as e:
         logger.error("Error exporting memories for %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

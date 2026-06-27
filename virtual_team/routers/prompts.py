@@ -1,6 +1,8 @@
 """Prompt CRUD API routes."""
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_prompt, delete_prompt, get_prompts, update_prompt
 
@@ -32,17 +34,26 @@ async def list_prompts(category: str | None = None):
         return prompts
     except Exception as e:
         logger.error("Error listing prompts: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post("/api/prompts", status_code=201)
 async def add_prompt(req: PromptCreate):
     try:
         p = await create_prompt(req.model_dump())
-        return {"id": p.id, "name": p.name, "category": p.category, "content": p.content, "model": p.model, "status": p.status, "version": p.version, "created_at": p.created_at.isoformat() if p.created_at else None}
+        return {
+            "id": p.id,
+            "name": p.name,
+            "category": p.category,
+            "content": p.content,
+            "model": p.model,
+            "status": p.status,
+            "version": p.version,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        }
     except Exception as e:
         logger.error("Error creating prompt: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.put("/api/prompts/{prompt_id}")
@@ -51,12 +62,18 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate):
         p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
         if not p:
             raise HTTPException(status_code=404, detail="Prompt not found")
-        return {"id": p.id, "name": p.name, "category": p.category, "content": p.content, "status": p.status}
+        return {
+            "id": p.id,
+            "name": p.name,
+            "category": p.category,
+            "content": p.content,
+            "status": p.status,
+        }
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error updating prompt: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
@@ -69,4 +86,4 @@ async def remove_prompt(prompt_id: str):
         raise
     except Exception as e:
         logger.error("Error deleting prompt: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

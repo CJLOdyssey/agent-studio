@@ -1,4 +1,5 @@
 """Admin dashboard API: real stats from existing tables and command logs."""
+
 from datetime import UTC, datetime
 
 from fastapi import APIRouter
@@ -11,7 +12,6 @@ from virtual_team.database import (
     PromptDB,
     RegisteredSkillDB,
     RegisteredToolDB,
-    SessionDB,
     TeamDB,
     get_session_factory,
 )
@@ -26,26 +26,30 @@ async def get_dashboard_stats():
     factory = get_session_factory()
     async with factory() as session:
         agents = await session.execute(
-            select(func.count()).select_from(AgentConfigDB).where(AgentConfigDB.is_active == True)
+            select(func.count()).select_from(AgentConfigDB).where(AgentConfigDB.is_active)
         )
         prompts = await session.execute(
             select(func.count()).select_from(PromptDB).where(PromptDB.status == "active")
         )
         tools = await session.execute(
-            select(func.count()).select_from(RegisteredToolDB).where(RegisteredToolDB.status == "active")
+            select(func.count())
+            .select_from(RegisteredToolDB)
+            .where(RegisteredToolDB.status == "active")
         )
         mcps = await session.execute(
             select(func.count()).select_from(MCPServerDB).where(MCPServerDB.status == "active")
         )
         skills = await session.execute(
-            select(func.count()).select_from(RegisteredSkillDB).where(RegisteredSkillDB.status == "installed")
+            select(func.count())
+            .select_from(RegisteredSkillDB)
+            .where(RegisteredSkillDB.status == "installed")
         )
-        teams = await session.execute(
-            select(func.count()).select_from(TeamDB)
-        )
+        teams = await session.execute(select(func.count()).select_from(TeamDB))
         today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
         logs_today = await session.execute(
-            select(func.count()).select_from(CommandLogDB).where(CommandLogDB.created_at >= today_start)
+            select(func.count())
+            .select_from(CommandLogDB)
+            .where(CommandLogDB.created_at >= today_start)
         )
 
         return {

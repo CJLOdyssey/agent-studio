@@ -11,11 +11,26 @@ from fastapi.responses import JSONResponse
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from virtual_team.broker import get_redis
-from virtual_team.config import load_config
-from virtual_team.database import get_async_engine, init_db
-from virtual_team.logging_config import get_logger
-from virtual_team.routers import admin, agents, attachments, commands, keys, mcps, models, prompts, runs, sessions, skills, system_team, teams, tools
+from virtual_team.broker import get_redis  # noqa: E402
+from virtual_team.config import load_config  # noqa: E402
+from virtual_team.database import get_async_engine, init_db  # noqa: E402
+from virtual_team.logging_config import get_logger  # noqa: E402
+from virtual_team.routers import (  # noqa: E402
+    admin,
+    agents,
+    attachments,
+    commands,
+    keys,
+    mcps,
+    models,
+    prompts,
+    runs,
+    sessions,
+    skills,
+    system_team,
+    teams,
+    tools,
+)
 
 logger = get_logger(__name__)
 
@@ -39,7 +54,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="虚拟软件外包团队", lifespan=lifespan)
 
 # ── Rate limiting ───────────────────────────────────────────────────────────
-from virtual_team.rate_limit import RateLimitMiddleware
+from virtual_team.rate_limit import RateLimitMiddleware  # noqa: E402
 
 app.add_middleware(
     RateLimitMiddleware,
@@ -48,7 +63,7 @@ app.add_middleware(
 )
 
 # ── Authentication ──────────────────────────────────────────────────────────
-from virtual_team.auth import AuthMiddleware
+from virtual_team.auth import AuthMiddleware  # noqa: E402
 
 app.add_middleware(AuthMiddleware)
 
@@ -75,7 +90,9 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    logger.error(
+        "Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True
+    )
     if isinstance(exc, HTTPException):
         raise exc
     return JSONResponse(
@@ -87,6 +104,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/api/metrics")
 async def metrics():
     from virtual_team.metrics import metrics_endpoint
+
     return metrics_endpoint()
 
 
@@ -95,6 +113,7 @@ async def health():
     status = {"status": "ok", "database": "unknown", "redis": "unknown"}
     try:
         from sqlalchemy import text
+
         engine = get_async_engine()
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -132,5 +151,6 @@ app.include_router(system_team.router)
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.environ.get("PORT", "8080"))
     uvicorn.run(app, host="0.0.0.0", port=port)

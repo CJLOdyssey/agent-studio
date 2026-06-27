@@ -23,7 +23,7 @@ class Role(StrEnum):
 class AgentConfig(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = Field(..., min_length=1, max_length=64)
-    role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r'^[a-z_]+$')
+    role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r"^[a-z_]+$")
     system_prompt: str = Field(..., min_length=1)
     model: str | None = Field(default=None)
     temperature: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -64,7 +64,7 @@ class ConversationRound(BaseModel):
 class MemoryEntryItem(BaseModel):
     id: str
     agent_role: str
-    content_type: str = Field(..., pattern=r'^(pm_document|code|review|decision)$')
+    content_type: str = Field(..., pattern=r"^(pm_document|code|review|decision)$")
     summary: str
     details: str
     created_at: datetime

@@ -1,16 +1,11 @@
-import asyncio
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select, update as sa_update
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 from virtual_team.database import (
     AgentConfigDB,
     ChatMessage,
-    MemoryEntry,
-    ProjectRun,
-    SessionDB,
     get_session_factory,
 )
 
@@ -55,9 +50,7 @@ async def get_run_messages(run_id: str) -> list[ChatMessage]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
-            select(ChatMessage)
-            .where(ChatMessage.run_id == run_id)
-            .order_by(ChatMessage.created_at)
+            select(ChatMessage).where(ChatMessage.run_id == run_id).order_by(ChatMessage.created_at)
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
