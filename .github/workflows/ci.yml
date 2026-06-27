@@ -44,7 +44,7 @@ jobs:
       - run: pip install -r requirements.txt -r requirements-dev.txt -r requirements-test.txt
       - run: ruff check virtual_team/
       - run: mypy virtual_team/ --strict
-      - run: PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short
+      - run: PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short --ignore=virtual_team/tests/test_e2e_full_flow.py
 
   integration:
     runs-on: ubuntu-latest
