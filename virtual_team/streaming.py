@@ -59,17 +59,6 @@ class StreamEmitter:
             chunk = data.get("chunk")
             if chunk and hasattr(chunk, "content") and chunk.content:
                 self._stream_buffer.append(chunk.content)
-                try:
-                    await publish_run_message(
-                        self._run_id,
-                        {
-                            "type": "stream",
-                            "agent_name": "Agent",
-                            "content": chunk.content,
-                        },
-                    )
-                except Exception:
-                    logger.exception("Stream chunk publish failed for run %s", self._run_id)
 
         elif kind == "on_chat_model_end":
             await self._flush_buffers()
@@ -99,7 +88,29 @@ class StreamEmitter:
             self._thinking_buffer.clear()
 
         if self._stream_buffer:
+            full_content = "".join(self._stream_buffer)
             self._stream_buffer.clear()
+            self._message_index += 1
+            try:
+                await publish_run_message(
+                    self._run_id,
+                    {
+                        "type": "message",
+                        "role": "Agent",
+                        "agent_name": "Agent",
+                        "content": full_content,
+                        "round_number": self._message_index,
+                    },
+                )
+                await save_message(
+                    run_id=self._run_id,
+                    role="Agent",
+                    agent_name="Agent",
+                    content=full_content,
+                    round_number=self._message_index,
+                )
+            except Exception:
+                logger.exception("Stream publish failed for run %s", self._run_id)
 
         if thinking_text:
             try:
