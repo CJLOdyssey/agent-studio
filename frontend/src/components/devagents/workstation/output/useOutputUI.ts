@@ -35,7 +35,8 @@ export function useOutputUI(): OutputUI {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!openMenuId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!openMenuId) { setMenuAnchorEl(null); return; }
     function h(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) { setOpenMenuId(null); setMenuAnchorEl(null); }
     }

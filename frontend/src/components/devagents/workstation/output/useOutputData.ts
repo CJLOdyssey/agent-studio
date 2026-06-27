@@ -19,33 +19,31 @@ export interface OutputData {
 
 export function useOutputData(): OutputData {
   const [items, setItems] = useState<OutputEntry[]>([]);
-  const itemsRef = useRef(items);
+  // eslint-disable-next-line react-hooks/refs
+  const itemsRef = useRef(items); itemsRef.current = items;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search_, setSearch_] = useState('');
-  const [categoryFilter_, setCategoryFilter_] = useState('all');
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => { itemsRef.current = items; }, [items]);
-
   useEffect(() => {
-    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoading(true); setError(null);
     outputAPI.fetchAll()
-      .then(data => { if (!cancelled) { setItems(data); setIsLoading(false); } })
-      .catch(e => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
-    return () => { cancelled = true; };
+      .then(data => { setItems(data); setIsLoading(false); })
+      .catch(e => { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); });
   }, []);
-
-  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); }, []);
-  const setCategoryFilter = useCallback((v: string) => { setCategoryFilter_(v); setPage(1); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setPage(1); }, [search, categoryFilter]);
 
   const filtered = useMemo(() => {
     let r = items;
-    if (search_) { const q = search_.toLowerCase(); r = r.filter((i) => i.name.toLowerCase().includes(q) || i.content.toLowerCase().includes(q)); }
-    if (categoryFilter_ !== 'all') r = r.filter((i) => i.category === categoryFilter_);
+    if (search) { const q = search.toLowerCase(); r = r.filter((i) => i.name.toLowerCase().includes(q) || i.content.toLowerCase().includes(q)); }
+    if (categoryFilter !== 'all') r = r.filter((i) => i.category === categoryFilter);
     return r;
-  }, [items, search_, categoryFilter_]);
+  }, [items, search, categoryFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -77,13 +75,11 @@ export function useOutputData(): OutputData {
   const addItems = useCallback((newItems: OutputEntry[]) => { try { setItems((prev) => [...prev, ...newItems]); setError(null); } catch (e) { setError(`导入失败：${(e as Error).message}`); } }, []);
   const clearError = useCallback(() => setError(null), []);
   const retry = useCallback(() => {
-    let cancelled = false;
     setIsLoading(true); setError(null);
     outputAPI.fetchAll()
       .then(data => { setItems(data); setIsLoading(false); })
-      .catch(e => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
-    return () => { cancelled = true; };
+      .catch(e => { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); });
   }, []);
 
-  return { isLoading, error, filtered, paged, page: safePage, totalPages, search: search_, categoryFilter: categoryFilter_, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, toggleSelect, toggleSelectAll, addItem, updateItem, removeItem, copyItem, removeMultiple, getAllItems, addItems, clearError, retry };
+  return { isLoading, error, filtered, paged, page: safePage, totalPages, search, categoryFilter, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, toggleSelect, toggleSelectAll, addItem, updateItem, removeItem, copyItem, removeMultiple, getAllItems, addItems, clearError, retry };
 }

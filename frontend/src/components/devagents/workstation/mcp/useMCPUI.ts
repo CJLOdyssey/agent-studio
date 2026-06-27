@@ -62,7 +62,8 @@ export function useMCPUI(): MCPUI {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!openMenuId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!openMenuId) { setMenuAnchorEl(null); return; }
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) { setOpenMenuId(null); setMenuAnchorEl(null); }
     }
@@ -72,7 +73,8 @@ export function useMCPUI(): MCPUI {
 
   const setFormData = useCallback((fn: (f: MCPFormData) => MCPFormData) => { setFormData_((p) => fn(p)); }, []);
   const openCreate = useCallback(() => { setEditingItem(null); setFormData_(EMPTY_FORM); setFormErrors([]); setIsFormOpen(true); }, []);
-  const openEdit = useCallback((item: MCPEntry) => { setEditingItem(item); const { id: _id, createdAt: _createdAt, ...rest } = item; setFormData_(rest); setFormErrors([]); setIsFormOpen(true); }, []);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const openEdit = useCallback((item: MCPEntry) => { setEditingItem(item); const { id, createdAt, ...rest } = item; setFormData_(rest); setFormErrors([]); setIsFormOpen(true); }, []);
   const openDelete = useCallback((item: MCPEntry) => { setDeletingItem(item); setFormErrors([]); setIsDeleteOpen(true); }, []);
   const openBatchDelete = useCallback(() => { setIsBatchDeleteOpen(true); }, []);
   const openHistory = useCallback((item: MCPEntry) => { setHistoryItem(item); setIsHistoryOpen(true); }, []);
@@ -84,7 +86,7 @@ export function useMCPUI(): MCPUI {
   const save = useCallback((d: MCPData) => {
     const errs = validateMCPForm(formData, d.processed, editingItem?.id);
     if (errs.length) { setFormErrors(errs); return; }
-    if (editingItem) { d.updateMCP(editingItem.id, formData); } else { d.addMCP(formData); }
+    editingItem ? d.updateMCP(editingItem.id, formData) : d.addMCP(formData); // eslint-disable-line @typescript-eslint/no-unused-expressions
     setIsFormOpen(false);
   }, [formData, editingItem]);
 

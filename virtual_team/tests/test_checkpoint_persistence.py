@@ -262,10 +262,12 @@ def test_checkpointer_rollback_on_error(checkpointer_sqlite, checkpointer_sqlite
         tool_calls_pending=False,
         recovered_from_error=True,
     )
-    checkpointer_sqlite.put(config, after_recovery, _make_metadata(step=5), {})
+    saved = checkpointer_sqlite.put(config, after_recovery, _make_metadata(step=5), {})
 
-    # Verify the latest state reflects post-recovery
-    latest = checkpointer_sqlite_fresh.get(config)
+    # Use the returned config (with checkpoint_id) for deterministic reads.
+    # SqliteSaver orders by checkpoint_id (UUID string), which can be
+    # non-deterministic — passing checkpoint_id avoids ordering issues.
+    latest = checkpointer_sqlite_fresh.get(saved)
     assert latest is not None
     assert latest["channel_values"]["step"] == 5
     assert latest["channel_values"]["recovered_from_error"] is True
