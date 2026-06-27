@@ -168,7 +168,7 @@
 .devagents-preview-form button {
   width: 100%;
   background: var(--da-accent-indigo);
-  color: var(--da-text-on-accent, #fff);
+  color: var(--da-text-on-accent);
   font-weight: 500;
   font-size: var(--da-font-size-base);
   padding: var(--sp-3);

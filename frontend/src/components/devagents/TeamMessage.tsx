@@ -1,26 +1,83 @@
-import { useState, memo } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   Bot,
-  User,
-  Code2,
   Terminal,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   CheckCircle2,
   Loader2,
   Copy,
   Check,
+  RotateCcw,
+  Sparkles,
+  Pencil,
+  Play,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import type { Message, Agent } from '../../types/devagents';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
 
-const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message; allAgents: Agent[] }) {
+function CopyBtn({ text, label, className }: { text: string; label?: string; className?: string }) {
+  const { copy, isCopied } = useCopyToClipboard();
+  const key = text.slice(0, 32);
+  const copied = isCopied(key);
+  return (
+    <button
+      className={className || 'devagents-msg-copy'}
+      onClick={() => copy(text, key)}
+      title={label}
+      aria-label={label}
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+    </button>
+  );
+}
+
+const TeamMessage = memo(function TeamMessage({
+  msg,
+  allAgents,
+  onEditMessage,
+  onRegenerate,
+  showContinue,
+  onContinue,
+  onSwitchVersion,
+  isContinuing,
+  onThumbsFeedback,
+}: {
+  msg: Message;
+  allAgents: Agent[];
+  onEditMessage?: (msgId: string, newContent: string) => void;
+  onRegenerate?: (msgId: string) => void;
+  showContinue?: boolean;
+  onContinue?: () => void;
+  onSwitchVersion?: (msgId: string, direction: 'prev' | 'next') => void;
+  isContinuing?: boolean;
+  onThumbsFeedback?: (msgId: string, value: 'up' | 'down') => void;
+}) {
   const { t, i18n } = useTranslation();
   const isUser = msg.role === 'user';
   const [isProcessExpanded, setIsProcessExpanded] = useState(true);
-  const { copied, copy: handleCopy } = useCopyToClipboard();
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState('');
+  const thinkingBodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = thinkingBodyRef.current;
+    if (el && isThinkingExpanded) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [msg.thinking?.length, isThinkingExpanded]);
+
+  const versions = (msg as any).versions || [msg.content];
+  const currentVersion = (msg as any).currentVersion ?? 0;
 
   if (isUser) {
     const time = msg.timestamp
@@ -29,24 +86,72 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
           minute: '2-digit',
         })
       : '';
+
+    const startEditing = () => {
+      setEditText(msg.content);
+      setIsEditing(true);
+    };
+
+    const cancelEdit = () => {
+      setIsEditing(false);
+      setEditText('');
+    };
+
+    const saveEdit = () => {
+      if (editText.trim() && onEditMessage) {
+        onEditMessage(msg.id, editText.trim());
+      }
+      setIsEditing(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        saveEdit();
+      }
+      if (e.key === 'Escape') {
+        cancelEdit();
+      }
+    };
+
+    if (isEditing) {
+      return (
+        <div className="devagents-edit-bar-wrapper">
+          <div className="devagents-edit-bar">
+            <textarea
+              className="devagents-edit-input"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              rows={1}
+            />
+            <div className="devagents-edit-actions">
+              <button className="devagents-edit-cancel" onClick={cancelEdit}>
+                {t('common.cancel')}
+              </button>
+              <button className="devagents-edit-send" onClick={saveEdit}>
+                {t('common.send')}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="devagents-message devagents-message-user">
-        <div className="devagents-message-avatar user">
-          <User size={16} />
-        </div>
         <div className="devagents-message-content-wrapper user">
-          <span className="devagents-message-label">{t('teamMessage.you')}</span>
           <div className="devagents-message-bubble user">{sanitizeHtml(msg.content)}</div>
           <div className="devagents-message-actions">
+            <CopyBtn text={msg.content} label={t('teamMessage.copy')} />
             <button
-              className="devagents-msg-copy"
-              onClick={() => {
-                handleCopy(msg.content);
-              }}
-              title={t('teamMessage.copy')}
-              aria-label={t('teamMessage.copy')}
+              className="devagents-msg-edit"
+              onClick={startEditing}
+              title={t('teamMessage.edit')}
+              aria-label={t('teamMessage.edit')}
             >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
+              <Pencil size={12} />
             </button>
             {time && <span className="devagents-message-time">{time}</span>}
           </div>
@@ -63,7 +168,6 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
     bg: 'bg-[var(--da-bg-surface)]',
     border: 'border-[var(--da-border)]',
   };
-  const Icon = agentInfo.icon;
   const time = msg.timestamp
     ? new Date(msg.timestamp).toLocaleTimeString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
         hour: '2-digit',
@@ -73,15 +177,7 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
 
   return (
     <div className="devagents-message devagents-message-agent">
-      <div className={`devagents-message-avatar agent ${agentInfo.bg} ${agentInfo.border}`}>
-        <Icon size={16} className={agentInfo.color} />
-      </div>
       <div className="devagents-message-content-wrapper agent">
-        <div className="devagents-message-header">
-          <span className={`devagents-message-name ${agentInfo.color}`}>{agentInfo.name}</span>
-          <span className="devagents-message-role">{agentInfo.role}</span>
-        </div>
-
         {msg.isTyping ? (
           <div className="devagents-message-typing">
             <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />
@@ -136,32 +232,216 @@ const TeamMessage = memo(function TeamMessage({ msg, allAgents }: { msg: Message
               </div>
             )}
 
-            <div className="devagents-message-bubble agent">
-              {msg.content.split(t('teamMessage.mentionBackend')).map((part, i, arr) =>
-                i === arr.length - 1 ? (
-                  <span key={`part-${i}`}>{part}</span>
-                ) : (
-                  <span key={`part-${i}`}>
-                    {part}
-                    <span className="devagents-mention">{t('teamMessage.mentionBackend')}</span>
-                  </span>
-                ),
+            <div className="devagents-message-bubble-row">
+              <div className="devagents-message-bubble agent ds-markdown">
+              {msg.thinking !== undefined && (
+                <div className="ds-thinking-block">
+                  {msg.thinkingDone ? (
+                    <>
+                      <button
+                        className="ds-thinking-header"
+                        onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+                        aria-expanded={isThinkingExpanded}
+                      >
+                        <Sparkles size={14} className={agentInfo.color} />
+                        <span>{t('teamMessage.thinkingComplete')}</span>
+                        <span className="ds-thinking-time">
+                          {Math.max(1, Math.round((msg.thinking ?? '').length / 50))}{t('teamMessage.seconds')}
+                        </span>
+                        <span className="ds-thinking-meta">
+                          {isThinkingExpanded ? t('teamMessage.collapse') : t('teamMessage.expand')}
+                        </span>
+                        {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                      {isThinkingExpanded && (() => {
+                        const nodes = (msg.thinking ?? '').split(/\n{2,}/).filter(Boolean);
+                        return (
+                          <div className="ds-thinking-body" ref={thinkingBodyRef}>
+                            {nodes.map((node, i) => (
+                              <div key={i} className="ds-think-node">
+                                <div className="ds-think-dot" />
+                                <div className="ds-think-branch" />
+                                <div className="ds-think-text">{node.trim()}</div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  ) : showContinue ? (
+                    <>
+                      <div className="ds-thinking-header" style={{ cursor: 'default' }}>
+                        <Sparkles size={14} className={agentInfo.color} />
+                        <span>{t('teamMessage.thinkingStopped')}</span>
+                      </div>
+                      {msg.thinking && (() => {
+                        const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
+                        return (
+                          <div className="ds-thinking-body" ref={thinkingBodyRef}>
+                            {nodes.map((node, i) => (
+                              <div key={i} className="ds-think-node">
+                                <div className="ds-think-dot" />
+                                <div className="ds-think-branch" />
+                                <div className="ds-think-text">{node.trim()}</div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="ds-thinking-header"
+                        onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
+                        aria-expanded={isThinkingExpanded}
+                      >
+                        <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />
+                        <span>{t('teamMessage.thinkingPending')}</span>
+                        <span className="ds-thinking-meta">
+                          {isThinkingExpanded ? t('teamMessage.collapse') : t('teamMessage.expand')}
+                        </span>
+                        {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                      {isThinkingExpanded && (
+                        <div className="ds-thinking-body" ref={thinkingBodyRef}>
+                          {msg.thinking ? (() => {
+                            const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
+                            return nodes.map((node, i) => (
+                              <div key={i} className="ds-think-node">
+                                <div className="ds-think-dot" />
+                                <div className="ds-think-branch" />
+                                <div className="ds-think-text">{node.trim()}</div>
+                              </div>
+                            ));
+                          })() : null}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+              <ReactMarkdown
+                components={{
+                  ul({ children, ...props }) {
+                    return <ul className="ds-markdown-list" {...props}>{children}</ul>;
+                  },
+                  ol({ children, ...props }) {
+                    return <ol className="ds-markdown-list ds-markdown-ordered" {...props}>{children}</ol>;
+                  },
+                  li({ children, ...props }) {
+                    return <li className="ds-markdown-list-item" {...props}>{children}</li>;
+                  },
+                  p({ children, ...props }) {
+                    return <p className="ds-markdown-paragraph" {...props}>{children}</p>;
+                  },
+                  code({ className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const codeString = String(children).replace(/\n$/, '');
+                    if (match) {
+                      return (
+                        <div className="ds-code-block">
+                          <div className="ds-code-header">
+                            <span className="ds-code-lang">{match[1]}</span>
+                            <CopyBtn text={codeString} label={t('teamMessage.copy')} className="ds-code-copy" />
+                          </div>
+                          <SyntaxHighlighter
+                            style={oneDark}
+                            language={match[1]}
+                            PreTag="div"
+                            customStyle={{ margin: 0, borderRadius: '0 0 6px 6px' }}
+                          >
+                            {codeString}
+                          </SyntaxHighlighter>
+                        </div>
+                      );
+                    }
+                    return (
+                      <code className="ds-inline-code" {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              >
+                {msg.content}
+              </ReactMarkdown>
+            </div>
+            </div>
+
+            {showContinue && !isContinuing && (
+              <div className="devagents-msg-interrupted">
+                <span className="devagents-msg-interrupted-line" />
+                <span className="devagents-msg-interrupted-label">{t('teamMessage.interrupted')}</span>
+              </div>
+            )}
+
+            <div className="devagents-message-actions">
+              {versions.length > 1 && (
+                <div className="devagents-version-pagination">
+                  <button
+                    className="devagents-version-btn"
+                    onClick={() => onSwitchVersion?.(msg.id, 'prev')}
+                    disabled={currentVersion === 0}
+                    aria-label="Previous version"
+                  >
+                    <ChevronRight size={12} style={{ transform: 'rotate(180deg)' }} />
+                  </button>
+                  <span className="devagents-version-count">{currentVersion + 1}/{versions.length}</span>
+                  <button
+                    className="devagents-version-btn"
+                    onClick={() => onSwitchVersion?.(msg.id, 'next')}
+                    disabled={currentVersion === versions.length - 1}
+                    aria-label="Next version"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              )}
+              <CopyBtn text={msg.content} label={t('teamMessage.copy')} />
+              <button
+                className="devagents-msg-regenerate"
+                onClick={() => onRegenerate?.(msg.id)}
+                title={t('teamMessage.regenerate')}
+                aria-label={t('teamMessage.regenerate')}
+              >
+                <RotateCcw size={12} />
+              </button>
+              {!isUser && (
+                <>
+                  <button
+                    className={`devagents-msg-thumb${msg.thumbsFeedback === 'up' ? ' active' : ''}`}
+                    onClick={() => onThumbsFeedback?.(msg.id, msg.thumbsFeedback === 'up' ? 'down' : 'up')}
+                    title={msg.thumbsFeedback === 'up' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsUp')}
+                    aria-label={msg.thumbsFeedback === 'up' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsUp')}
+                  >
+                    <ThumbsUp size={12} />
+                  </button>
+                  <button
+                    className={`devagents-msg-thumb${msg.thumbsFeedback === 'down' ? ' active' : ''}`}
+                    onClick={() => onThumbsFeedback?.(msg.id, msg.thumbsFeedback === 'down' ? 'up' : 'down')}
+                    title={msg.thumbsFeedback === 'down' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsDown')}
+                    aria-label={msg.thumbsFeedback === 'down' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsDown')}
+                  >
+                    <ThumbsDown size={12} />
+                  </button>
+                </>
+              )}
+              {time && <span className="devagents-message-time">{time}</span>}
+              {(showContinue || isContinuing) && (
+                <button
+                  className={`devagents-msg-continue${isContinuing ? ' loading' : ''}`}
+                  onClick={isContinuing ? undefined : onContinue}
+                  disabled={isContinuing}
+                  title={isContinuing ? t('teamMessage.continuing') : t('teamMessage.continue')}
+                  aria-label={isContinuing ? t('teamMessage.continuing') : t('teamMessage.continue')}
+                >
+                  {isContinuing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+                  <span>{isContinuing ? t('teamMessage.continuing') : t('teamMessage.continue')}</span>
+                </button>
               )}
             </div>
 
-            {msg.hasArtifact && (
-              <div className="devagents-artifact-card">
-                <div className="devagents-artifact-icon">
-                  <Code2 size={16} />
-                </div>
-                <div className="devagents-artifact-info">
-                  <div className="devagents-artifact-title">{msg.artifactTitle}</div>
-                  <div className="devagents-artifact-status">{t('teamMessage.syncedToWorkspace')}</div>
-                </div>
-                <button className="devagents-artifact-review">Review</button>
-              </div>
-            )}
-            {time && <span className="devagents-message-time">{time}</span>}
           </>
         )}
       </div>

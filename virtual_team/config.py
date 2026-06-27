@@ -23,7 +23,7 @@ class TeamConfig(BaseModel):
 
     api_key: str = Field(default="", repr=False)
     api_base: str | None = Field(default=None)
-    model: str = Field(default="gpt-4o", min_length=1)
+    model: str = Field(default="deepseek-v4-flash", min_length=1)
     temperature: float = Field(default=0.7, ge=0.0, le=1.0)
     max_rounds: int = Field(default=5, ge=1)
     timeout: int = Field(default=120, ge=10)
@@ -35,12 +35,6 @@ class TeamConfig(BaseModel):
         safe["api_key"] = "***" if self.api_key else "(unset)"
         return f"TeamConfig({safe})"
 
-    def validate_required(self) -> list[str]:
-        errors: list[str] = []
-        if not self.api_key:
-            errors.append("API key is required")
-        return errors
-
 
 def load_config() -> TeamConfig:
     """Load configuration from environment variables.
@@ -51,7 +45,7 @@ def load_config() -> TeamConfig:
     """
     api_key = os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
     api_base = os.environ.get("OPENAI_BASE_URL") or None
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o")
+    model = os.environ.get("OPENAI_MODEL", "deepseek-v4-flash")
     temperature = _safe_float("TEMPERATURE", 0.7)
     max_rounds = _safe_int("MAX_ROUNDS", 5)
     timeout = _safe_int("TIMEOUT", 120)

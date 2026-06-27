@@ -1,39 +1,17 @@
 [tool.ruff]
-line-length = 120
-target-version = "py312"
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["E501", "N801"]          # N801: TestScenario1_FirstVisit is intentional
-"virtual_team/app.py" = ["E402"]       # middleware imports after app init
-"virtual_team/database.py" = ["E402"]  # circular-import avoidance
-"virtual_team/repository.py" = ["E402", "E501"]  # import grouping; long Chinese strings
-"virtual_team/routers/*" = ["B904", "E501"]  # HTTPException pattern; long lines
-"virtual_team/routers/attachments.py" = ["B904", "E501", "B008"]  # + FastAPI File() convention
-"frontend/e2e/*" = ["SIM105", "B011"]        # e2e test conventions
-"tests/test_config.py" = ["B017"]            # pytest.raises(Exception) intentional
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = []
 
 [tool.mypy]
-python_version = "3.12"
-warn_return_any = false
-warn_unused_configs = true
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.agent_graph"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.team_graph"
-ignore_errors = true
-
-[tool.coverage.report]
-fail_under = 0
-skip_empty = true
+strict = true
+plugins = ["pydantic.mypy"]
+python_version = "3.11"
+warn_unused_ignores = true
+exclude = ["tests/"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "--cov=virtual_team --cov-report=term --cov-report=xml"
+testpaths = ["virtual_team/tests"]
+python_files = ["test_*.py"]

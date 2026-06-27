@@ -100,6 +100,22 @@ export default function SettingsModal({ onClose }: Props) {
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
+                  <label>{t('settings.timezone', '时区')}</label>
+                  <span className="settings-item-desc">{t('settings.timezoneDesc', '选择系统时区')}</span>
+                </div>
+                <select
+                  value={settings.timezone}
+                  onChange={(e) => updateSettings({ timezone: e.target.value })}
+                  className="settings-select"
+                >
+                  <option value="Asia/Shanghai">北京时间 (UTC+8)</option>
+                  <option value="Asia/Tokyo">东京 (UTC+9)</option>
+                  <option value="Europe/London">伦敦 (UTC+0)</option>
+                  <option value="America/New_York">纽约 (UTC-5)</option>
+                </select>
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
                   <label>{t('settings.theme')}</label>
                   <span className="settings-item-desc">{t('settings.themeDesc')}</span>
                 </div>

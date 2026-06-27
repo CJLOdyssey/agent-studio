@@ -14,6 +14,7 @@ interface Settings {
   tabSize: number;
   wordWrap: boolean;
   lineNumber: boolean;
+  timezone: string;
 }
 
 interface SettingsContextType {
@@ -33,6 +34,7 @@ const defaultSettings: Settings = {
   tabSize: 2,
   wordWrap: true,
   lineNumber: true,
+  timezone: 'Asia/Shanghai',
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -74,11 +76,29 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light-theme');
-    if (settings.theme === 'light') root.classList.add('light-theme');
-    else if (settings.theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (!prefersDark) root.classList.add('light-theme');
+    const setThemeClass = (theme: Theme) => {
+      root.classList.remove('dark');
+      if (theme === 'dark') root.classList.add('dark');
+      else if (theme === 'system') {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.classList.add('dark');
+      }
+    };
+    const applyTheme = () => {
+      if (document.startViewTransition) {
+        document.startViewTransition(() => setThemeClass(settings.theme));
+      } else {
+        setThemeClass(settings.theme);
+      }
+    };
+    applyTheme();
+
+    if (settings.theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const onChange = () => setThemeClass('system');
+      mq.addEventListener('change', onChange);
+      return () => {
+        mq.removeEventListener('change', onChange);
+      };
     }
   }, [settings.theme]);
 

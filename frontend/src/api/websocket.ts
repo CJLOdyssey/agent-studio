@@ -58,6 +58,13 @@ function connect(runId: string, options: ConnectOptions): ConnState {
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
+      if (data.type === 'thinking_stream' || data.type === 'thinking_done' || data.type === 'stream') {
+        console.log('[WS]', data.type, 
+          'content:', (data.content || '').substring(0, 40),
+          'thinking:', (data.thinking || '').substring(0, 40),
+          '| len:', (data.content || '').length, 
+          'thinking_len:', (data.thinking || '').length);
+      }
       state.listeners.forEach((cb) => cb(data));
     } catch {
       // ignore parse errors — malformed messages are logged but not fatal

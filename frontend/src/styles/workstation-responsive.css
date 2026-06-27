@@ -1,0 +1,122 @@
+@media (max-width: 768px) {
+  .wsta-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wsta-toolbar-right {
+    flex-wrap: wrap;
+  }
+
+  .wsta-search-wrap,
+  .wsta-search-box {
+    max-width: none;
+  }
+
+  .wsta-filter-select {
+    width: auto;
+  }
+
+  .wsta-form-row {
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+
+  .wsta-col-checkbox {
+    display: none;
+  }
+
+  /* Hide team + prompt columns on narrow screens; keep name, model, status, version, actions */
+  .wsta-table th:nth-child(3),
+  .wsta-table td:nth-child(3),
+  .wsta-table th:nth-child(5),
+  .wsta-table td:nth-child(5) {
+    display: none;
+  }
+
+  .wsta-col-actions,
+  .wsta-th-actions {
+    width: auto;
+  }
+
+  .wsta-modal {
+    width: 95%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .wsta-toolbar-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wsta-create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wsta-table-wrap {
+    overflow-x: auto;
+  }
+
+  .wsta-table th,
+  .wsta-table td {
+    padding: var(--sp-2) var(--sp-2);
+    font-size: var(--da-font-size-xs);
+  }
+
+  .wsta-table th:nth-child(4),
+  .wsta-table td:nth-child(4),
+  .wsta-table th:nth-child(6),
+  .wsta-table td:nth-child(6) {
+    display: none;
+  }
+
+  .wsta-batch-bar {
+    flex-wrap: wrap;
+  }
+
+  .wsta-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--sp-1);
+  }
+
+  .wsta-footer {
+    flex-direction: column;
+    gap: var(--sp-2);
+    align-items: center;
+  }
+
+  .wsta-monitor-header {
+    flex-direction: column;
+    gap: var(--sp-2);
+    align-items: flex-start;
+  }
+
+  .wsta-monitor-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .wsta-settings-header {
+    flex-direction: column;
+    gap: var(--sp-3);
+    align-items: flex-start;
+  }
+
+  .wsta-settings-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+
+  .wsta-settings-field-control .wsta-input,
+  .wsta-settings-field-control .wsta-select {
+    min-width: 100%;
+  }
+
+  .wsta-wrapper {
+    overflow-x: hidden;
+  }
+}

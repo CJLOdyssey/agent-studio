@@ -6,7 +6,9 @@
     "loading": "加载中...",
     "connecting": "正在重新连接",
     "show": "显示",
-    "hide": "隐藏"
+    "hide": "隐藏",
+    "send": "发送",
+    "cancel": "取消"
   },
   "model": {
     "noCommands": "暂无可用命令",
@@ -144,7 +146,8 @@
     "teamRenamed": "团队已重命名",
     "agentAdded": "Agent 已添加",
     "agentDeleted": "Agent 已删除",
-    "saved": "已自动保存"
+    "saved": "已自动保存",
+    "requestAbandoned": "已切换对话，当前请求已中断"
   },
   "api": {
     "manage": "API 管理",
@@ -189,7 +192,22 @@
     "system": "系统",
     "executeTask": "执行任务 ({{count}} 步)",
     "mentionBackend": "@后端 Agent",
-    "syncedToWorkspace": "已同步至工作区"
+    "syncedToWorkspace": "已同步至工作区",
+    "thinkingProcess": "思考过程",
+    "thinkingComplete": "已思考",
+    "thinkingPending": "思考中",
+    "seconds": "s",
+    "expand": "展开",
+    "collapse": "收起",
+    "regenerate": "重新生成",
+    "edit": "编辑",
+    "continue": "继续生成",
+    "interrupted": "内容被中断",
+    "continuing": "正在继续...",
+    "thumbsUp": "有用",
+    "thumbsDown": "没用",
+    "removeFeedback": "取消评价",
+    "thinkingStopped": "思考已停止"
   },
   "shortcuts": {
     "newChat": "新建对话",

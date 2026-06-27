@@ -3,11 +3,11 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import desc, select, update as sa_update
+from sqlalchemy.orm import selectinload
 
 from virtual_team.database import KeyUsageLog, UserApiKey, get_session_factory
 from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
-
 
 async def create_api_key(
     user_id: str,
@@ -52,7 +52,11 @@ async def create_api_key(
         return obj
 
 async def get_api_keys(user_id: str) -> list[dict]:
-    """List a user's API keys — keys are MASKED, never returned raw."""
+    """List a user's API keys — keys are MASKED, never returned raw.
+
+    Falls back to 'anonymous' user's keys when the current user has none,
+    so new browsers can use pre-configured keys without re-entering.
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -62,6 +66,17 @@ async def get_api_keys(user_id: str) -> list[dict]:
         )
         result = await session.execute(stmt)
         rows = result.scalars().all()
+
+        # Fallback: if current user has no keys, show anonymous user's keys
+        if not rows and user_id != "anonymous":
+            stmt = (
+                select(UserApiKey)
+                .where(UserApiKey.user_id == "anonymous")
+                .order_by(UserApiKey.created_at)
+            )
+            result = await session.execute(stmt)
+            rows = result.scalars().all()
+
         results = []
         for r in rows:
             try:
@@ -229,6 +244,7 @@ async def test_api_key_connection(key_id: str, user_id: str) -> dict:
 
 def _test_connection_sync(key_cfg: dict) -> dict:
     """Synchronous HTTP connectivity test — runs in thread pool executor."""
+    import json
     import urllib.request
 
     try:
@@ -352,10 +368,5 @@ async def get_key_usage_stats(user_id: str) -> dict:
         )
         result_today = await session.execute(stmt_today)
         today = result_today.one()
-        return {
-            "today": {
-                "requests": today.requests or 0,
-                "tokens": today.tokens or 0,
-            },
-        }
+        return {"requests": today.requests or 0, "tokens": today.tokens or 0}
 

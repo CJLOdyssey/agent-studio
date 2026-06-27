@@ -1,6 +1,8 @@
 /* Confirm Modal */
 .confirm-modal {
-  width: 360px;
+  width: var(--modal-sm);
+  height: var(--modal-height);
+  overflow: hidden;
 }
 
 .confirm-body {

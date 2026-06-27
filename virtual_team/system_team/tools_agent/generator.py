@@ -1,4 +1,5 @@
 import hashlib
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -16,14 +17,14 @@ class ToolGenerator:
         self.tools_dir.mkdir(exist_ok=True)
 
     def generate(self, description: str, language: str = "python") -> dict[str, Any]:
-        tool_id = f"tool_{hashlib.md5(description.encode(), usedforsecurity=False).hexdigest()[:8]}"
+        tool_id = f"tool_{hashlib.md5(description.encode()).hexdigest()[:8]}"
 
         if language == "python":
             return self._generate_python(tool_id, description)
         return self._generate_javascript(tool_id, description)
 
     async def generate_with_llm(self, description: str, language: str = "python") -> dict[str, Any]:
-        tool_id = f"tool_{hashlib.md5(description.encode(), usedforsecurity=False).hexdigest()[:8]}"
+        tool_id = f"tool_{hashlib.md5(description.encode()).hexdigest()[:8]}"
 
         if llm_client.is_available():
             code = await llm_client.generate_code(description, language)

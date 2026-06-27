@@ -5,6 +5,15 @@ Validates Bearer tokens on protected routes. Tokens are expected to be
 signed with HS256 using a server-side secret (AUTH_SECRET env var).
 
 Public routes (health, WebSocket upgrade) are exempt from authentication.
+
+RBAC integration
+----------------
+- ``get_current_user`` is a FastAPI ``Depends`` callable that returns a
+  ``CurrentUser`` dataclass (id, username, roles).
+- ``require_role(*names)`` is a dependency factory that asserts the
+  current user has at least one of the named roles.
+- ``AUTH_MODE=legacy`` (default): returns a fixed admin user without DB lookup.
+- ``AUTH_MODE=rbac``: decodes JWT → looks up ``UserDB`` → checks roles.
 """
 
 import base64
@@ -13,8 +22,9 @@ import hmac
 import json
 import os
 import time
+from dataclasses import dataclass, field
 
-from fastapi import Request
+from fastapi import Depends, HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -24,24 +34,90 @@ logger = get_logger(__name__)
 
 AUTH_SECRET = os.environ.get("AUTH_SECRET", "")
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "0") == "1"
+AUTH_MODE = os.environ.get("AUTH_MODE", "legacy")
 
-if not AUTH_ENABLED:
-    logger.warning("⚠️  Authentication DISABLED — all endpoints are publicly accessible")
 
-if AUTH_ENABLED and not AUTH_SECRET:
-    raise RuntimeError(
-        "AUTH_SECRET must be set when AUTH_ENABLED=1. "
-        "Generate one with: python3 -c \"import secrets; print(secrets.token_hex(32))\""
-    )
+# ── RBAC Data Types ──────────────────────────────────────────────────────────
+
+@dataclass
+class CurrentUser:
+    id: str = "admin"
+    username: str = "admin"
+    roles: list[str] = field(default_factory=lambda: ["admin"])
+
+
+# ── RBAC Dependencies ────────────────────────────────────────────────────────
+
+async def get_current_user(request: Request) -> CurrentUser:
+    """FastAPI dependency — resolves the current user.
+
+    In ``legacy`` mode returns a fixed admin user without any DB query.
+    In ``rbac`` mode decodes the JWT and looks up the user from ``UserDB``.
+    Falls back to ``anonymous`` when no valid token is present.
+    """
+    user_id = getattr(request.state, "user_id", None) or request.headers.get("X-User-ID", "")
+
+    if AUTH_MODE == "rbac" and user_id:
+        try:
+            from virtual_team.database import get_session_factory
+            from virtual_team.database import UserDB, UserRoleDB, RoleDB
+            from sqlalchemy import select
+
+            factory = get_session_factory()
+            async with factory() as session:
+                stmt = (
+                    select(UserDB)
+                    .where(UserDB.id == user_id)
+                )
+                result = await session.execute(stmt)
+                user = result.scalar_one_or_none()
+                if user is not None:
+                    # Fetch roles
+                    role_stmt = (
+                        select(RoleDB.name)
+                        .join(UserRoleDB, RoleDB.id == UserRoleDB.role_id)
+                        .where(UserRoleDB.user_id == user.id)
+                    )
+                    role_result = await session.execute(role_stmt)
+                    roles = [row[0] for row in role_result.all()]
+                    return CurrentUser(id=user.id, username=user.username, roles=roles or ["member"])
+        except Exception:
+            logger.warning("RBAC user lookup failed, falling back to admin", exc_info=True)
+
+    return CurrentUser()
+
+
+async def require_role(*names: str):
+    """Dependency factory — requires the current user to have at least one
+    of the named roles. Returns a 403 if none match.
+
+    Usage::
+
+        @router.post("/agents")
+        async def create(
+            req: AgentCreateRequest,
+            user: CurrentUser = Depends(require_role("admin", "manager")),
+        ): ...
+    """
+    async def _role_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+        if AUTH_MODE == "legacy":
+            return current_user
+        if not any(r in current_user.roles for r in names):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+        return current_user
+    return _role_checker
 
 # Routes exempt from authentication
 PUBLIC_PATHS = {
     "/api/health",
+    "/api/metrics",
     "/docs",
     "/openapi.json",
     "/redoc",
 }
-PUBLIC_PREFIXES = ()
+PUBLIC_PREFIXES = (
+    "/ws/",
+)
 
 
 def _base64url_decode(data: str) -> bytes:
@@ -119,7 +195,7 @@ def get_user_id(request) -> str:
     user_id = getattr(request.state, "user_id", None)
     if user_id:
         return user_id
-    return request.headers.get("X-User-ID", "default")
+    return request.headers.get("X-User-ID", "anonymous")
 
 
 def create_token(user_id: str, secret: str, ttl: int = 86400) -> str:

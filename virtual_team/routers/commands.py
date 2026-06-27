@@ -3,9 +3,8 @@
 import json
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 
-from virtual_team.auth import get_user_id
 from virtual_team.database import CommandLogDB as CommandLog
 from virtual_team.database import get_session_factory
 from virtual_team.logging_config import get_logger
@@ -99,22 +98,19 @@ async def get_command(command_id: str):
 
 
 @router.post("/api/commands/execute", response_model=CommandExecuteResponse)
-async def execute_command(req: CommandExecuteRequest, request: Request):
-    user_id = get_user_id(request)
-
+async def execute_command(req: CommandExecuteRequest):
     cmd = next((c for c in BUILTIN_COMMANDS if c["id"] == req.command_id), None)
     if cmd is None:
         raise HTTPException(status_code=404, detail=f"未知命令: {req.command_id}")
 
-    sess = await get_session(req.session_id, user_id=user_id)
+    sess = await get_session(req.session_id)
     if sess is None:
         raise HTTPException(status_code=404, detail="会话不存在")
 
-    result = await _dispatch_command(cmd["id"], req.session_id, req.payload, user_id)
+    result = await _dispatch_command(cmd["id"], req.session_id, req.payload)
 
     log = CommandLog(
         id=str(uuid4()),
-        user_id=user_id,
         session_id=req.session_id,
         command_id=cmd["id"],
         command_name=cmd["name"],
@@ -130,7 +126,7 @@ async def execute_command(req: CommandExecuteRequest, request: Request):
     return result
 
 
-async def _dispatch_command(command_id: str, session_id: str, payload: dict, user_id: str = "default") -> CommandExecuteResponse:
+async def _dispatch_command(command_id: str, session_id: str, payload: dict) -> CommandExecuteResponse:
     if command_id == "clear":
         return CommandExecuteResponse(
             success=True,
@@ -152,7 +148,7 @@ async def _dispatch_command(command_id: str, session_id: str, payload: dict, use
         if len(new_title) > 256:
             return CommandExecuteResponse(success=False, message="标题过长(最多256字符)", data={})
         try:
-            await update_session_title(session_id, new_title, user_id=user_id)
+            await update_session_title(session_id, new_title)
             return CommandExecuteResponse(
                 success=True,
                 message="对话已重命名",

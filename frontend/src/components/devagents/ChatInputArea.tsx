@@ -9,6 +9,8 @@ interface ChatInputAreaProps {
   visible: boolean;
   onSend: (text: string, files: AttachedFile[], model: string) => void;
   onConfigureModels?: () => void;
+  isRunning?: boolean;
+  onStop?: () => void;
   /** Teams with configured agents — used to derive agent MCP/skill commands */
   teams?: Team[];
 }
@@ -22,10 +24,16 @@ interface ChatInputAreaProps {
  */
 const ChatInputArea = memo(
   forwardRef<InputToolbarHandle, ChatInputAreaProps>(function ChatInputArea(
-    { visible, onSend, onConfigureModels, teams = [] },
+    { visible, onSend, onConfigureModels, isRunning, onStop, teams = [] },
     ref,
   ) {
-    const [selectedModel, setSelectedModel] = useState('');
+    const [selectedModel, setSelectedModel] = useState(() => {
+      try {
+        return localStorage.getItem('devagents-selected-model') || '';
+      } catch {
+        return '';
+      }
+    });
 
     const { data: apiCommands } = useCommands();
     const models = useAvailableModels();
@@ -51,8 +59,23 @@ const ChatInputArea = memo(
       }
     }, [selectedModel, models]);
 
+    // Listen for model changes from ApiManagementModal
+    useEffect(() => {
+      const handler = () => {
+        try {
+          const stored = localStorage.getItem('devagents-selected-model');
+          if (stored) setSelectedModel(stored);
+        } catch { /* non-fatal */ }
+      };
+      window.addEventListener('devagents-model-changed', handler);
+      return () => window.removeEventListener('devagents-model-changed', handler);
+    }, []);
+
     const handleModelChange = useCallback((id: string) => {
       setSelectedModel(id);
+      try {
+        localStorage.setItem('devagents-selected-model', id);
+      } catch { /* non-fatal */ }
     }, []);
 
     const handleSend = useCallback(
@@ -73,6 +96,8 @@ const ChatInputArea = memo(
         onModelChange={handleModelChange}
         onConfigureModels={onConfigureModels}
         commands={commands}
+        isRunning={isRunning}
+        onStop={onStop}
       />
     );
   }),

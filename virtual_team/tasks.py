@@ -2,14 +2,14 @@
 
 import asyncio
 import contextlib
+import json
 import logging
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from virtual_team.broker import celery_app, publish_run_message
 from virtual_team.config import load_config
-from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
-from virtual_team.mock_fallback import run_mock
+from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK, run_mock
 from virtual_team.repository import (
     create_memory_entry,
     get_agent_config,
@@ -48,7 +48,7 @@ async def _get_rag_context(query: str, session_id: str) -> str:
         return ""
 
 
-async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict, user_id: str = "default"):
+async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict):
     summary = response[:200].replace("\n", " ")
     content_type = "code"
     if "<pm_document>" in response or "需求分析" in response:
@@ -59,7 +59,6 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
         await create_memory_entry(
             session_id=session_id, run_id=run_id, agent_role="agent",
             content_type=content_type, summary=summary, details=response[:2000],
-            user_id=user_id,
         )
     except Exception:
         logger.exception("Failed to save memory for run %s", run_id)
@@ -68,15 +67,15 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
 async def _run_agent_pipeline(
     requirement: str, run_id: str, session_id: str | None, agent_id: str | None,
     api_key: str | None = None, api_base: str | None = None, model: str | None = None,
-    user_id: str = "default",
 ) -> dict:
     await update_run_status(run_id, "running")
     cfg = load_config()
-    effective_api_key = api_key or cfg.api_key
-    effective_api_base = api_base or cfg.api_base
+    effective_api_key = api_key
+    effective_api_base = api_base
     effective_model = model or cfg.model
 
     system_prompt = "你是一个智能助手，负责理解用户需求并完成任务。"
+    ac = None
     if agent_id:
         try:
             ac = await get_agent_config(agent_id)
@@ -86,8 +85,10 @@ async def _run_agent_pipeline(
                     system_prompt += f"\n\n输出约束：{ac.output_constraints}"
                 if ac.model:
                     effective_model = ac.model
-        except Exception:
-            pass
+            else:
+                logger.warning("[TASKS] agent_id=%s NOT FOUND in agent_configs", agent_id)
+        except Exception as e:
+            logger.warning("[TASKS] Failed to load agent config for %s: %s", agent_id, e)
 
     session_context = ""
     if session_id:
@@ -102,7 +103,7 @@ async def _run_agent_pipeline(
             pass
 
     # ── Short-term memory: collect previous conversation messages ──
-    chat_history: list[BaseMessage] = []
+    chat_history: list[HumanMessage | AIMessage] = []
     if session_id:
         try:
             prev_msgs = await get_session_messages(session_id, exclude_run_id=run_id)
@@ -114,19 +115,90 @@ async def _run_agent_pipeline(
         except Exception:
             logger.warning("Failed to load chat history for session %s", session_id)
 
-    from virtual_team.agent_graph import SingleAgentGraph
+    from virtual_team.agent_graph import SingleAgentGraph, ToolConfig
+    from virtual_team.repository import get_tools, get_mcps, get_skills, get_prompts
+
     emitter = StreamEmitter(run_id)
     graph = SingleAgentGraph(
         model=effective_model,
-        api_key=effective_api_key,
+        api_key=effective_api_key or "",
         base_url=effective_api_base,
     )
+
+    # ── Bind agent tools / MCP / skills to the graph ──
+    if agent_id and ac:
+        tool_configs: list[ToolConfig] = []
+        for item in json.loads(ac.tools) if isinstance(ac.tools, str) else (ac.tools or []):
+            if not item.get("enabled", True):
+                continue
+            name = item.get("name", "")
+            if name:
+                all_tools = await get_tools()
+                match = next((t for t in all_tools if t["name"] == name), None)
+                raw_params = match.get("parameters") if match else (item.get("parameters"))
+                if isinstance(raw_params, str):
+                    try:
+                        raw_params = json.loads(raw_params)
+                    except (json.JSONDecodeError, TypeError):
+                        raw_params = None
+                tool_configs.append(ToolConfig(
+                    name=name,
+                    description=match["description"] if match else (item.get("description") or name),
+                    parameters=raw_params,
+                ))
+        for item in json.loads(ac.mcp) if isinstance(ac.mcp, str) else (ac.mcp or []):
+            name = item.get("name", "")
+            if name:
+                all_mcps = await get_mcps()
+                match = next((m for m in all_mcps if m["name"] == name), None)
+                mcp_config = match.get("config") if match else None
+                if isinstance(mcp_config, str):
+                    mcp_config = json.loads(mcp_config) if mcp_config else {}
+                elif not mcp_config:
+                    mcp_config = {}
+                tool_configs.append(ToolConfig(
+                    name=f"mcp_{name}",
+                    description=mcp_config.get("description", name),
+                    mcp_type=match.get("type", "") if match else "",
+                    mcp_endpoint=match.get("endpoint", "") if match else "",
+                ))
+        for item in json.loads(ac.skills) if isinstance(ac.skills, str) else (ac.skills or []):
+            name = item.get("name", "")
+            if name:
+                all_skills = await get_skills()
+                match = next((s for s in all_skills if s["name"] == name), None)
+                if not match:
+                    continue
+                # Fetch linked prompt content
+                skill_prompt = ""
+                if match.get("prompt_id"):
+                    all_prompts = await get_prompts()
+                    pm = next((p for p in all_prompts if p["id"] == match["prompt_id"]), None)
+                    if pm:
+                        skill_prompt = pm.get("content", "")
+                # Build composed instructions
+                composed = match.get("instructions", "")
+                if skill_prompt:
+                    composed = f"## 角色设定\n\n{skill_prompt}\n\n---\n\n{composed}"
+                if match.get("output_constraint"):
+                    composed += f"\n\n## 输出约束\n\n{match['output_constraint']}"
+                if match.get("tool_names"):
+                    names = match["tool_names"] if isinstance(match["tool_names"], list) else json.loads(match["tool_names"]) if isinstance(match["tool_names"], str) else []
+                    if names:
+                        composed += f"\n\n## 可用工具\n\n你可以使用以下工具完成任务：{', '.join(names)}"
+                tool_configs.append(ToolConfig(
+                    name=f"skill_{name}",
+                    description=match["description"] if match else name,
+                    instructions=composed
+                ))
+        if tool_configs:
+            graph.bind_tools(tool_configs)
     result = await graph.run(
         system_prompt=system_prompt,
         user_input=requirement,
         thread_id=run_id,
         session_context=session_context,
-        chat_history=chat_history,
+        chat_history=chat_history if chat_history else None,
         stream_callback=emitter,
     )
 
@@ -148,7 +220,7 @@ async def _run_agent_pipeline(
 
     if session_id:
         try:
-            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls}, user_id=user_id)
+            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
             from virtual_team.rag import ingest_session_messages
             messages = await get_run_messages(run_id)
             if messages:
@@ -167,15 +239,14 @@ def run_agent(
     self, requirement: str, run_id: str | None = None, session_id: str | None = None,
     agent_id: str | None = None, api_key: str | None = None,
     api_base: str | None = None, model: str | None = None,
-    user_id: str = "default",
 ):
-    logger.info("Agent task | run=%s | session=%s | agent=%s | user=%s", run_id, session_id, agent_id, user_id)
+    logger.info("Agent task | run=%s | session=%s | agent=%s", run_id, session_id, agent_id)
     assert run_id is not None, "run_id must be provided"
 
     try:
         return _run_async(_run_agent_pipeline(
             requirement, run_id, session_id, agent_id,
-            api_key=api_key, api_base=api_base, model=model, user_id=user_id,
+            api_key=api_key, api_base=api_base, model=model,
         ))
     except Exception as exc:
         logger.exception("Agent failed | run=%s", run_id)
@@ -194,7 +265,7 @@ def run_agent(
                 }))
                 if session_id:
                     with contextlib.suppress(Exception):
-                        _run_async(_save_output_memories(session_id, run_id, output.response, {}, user_id=user_id))
+                        _run_async(_save_output_memories(session_id, run_id, output.response, {}))
                 return {"run_id": run_id, "status": "completed", "fallback": True}
             except Exception as mock_exc:
                 logger.exception("Mock fallback also failed for run=%s", run_id)
@@ -204,7 +275,7 @@ def run_agent(
                         "type": "status", "status": "error", "error": str(exc),
                     }))
                 except Exception:
-                    pass
+                    logger.exception("Status update failed for mock fallback run %s", run_id)
                 self.retry(exc=mock_exc)
 
         try:
@@ -212,6 +283,6 @@ def run_agent(
             _run_async(publish_run_message(run_id, {
                 "type": "status", "status": "error", "error": str(exc),
             }))
-        except Exception:
-            pass
+        except Exception as status_err:
+            logger.exception("Failed to update error status for run %s", run_id)
         self.retry(exc=exc)

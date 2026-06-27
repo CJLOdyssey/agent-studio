@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ChevronRight, MessageSquare } from 'lucide-react';
-import type { Agent, Team, WorkspaceTab, Message } from '../../types/devagents';
+import { PanelLeft, Sun, Moon, Bell } from 'lucide-react';
+import type { Agent, WorkspaceTab, Message } from '../../types/devagents';
 import DevAgentsSidebar from './DevAgentsSidebar';
 import Workspace from './workspace/Workspace';
 import { useToast } from '../../utils/useToast';
@@ -18,10 +18,12 @@ import MessagesPanel from './MessagesPanel';
 import Modals from './Modals';
 import { useDragAndDrop } from './useDragAndDrop';
 import Logger from '../../utils/logger';
+import WorkstationPage from './WorkstationPage';
 
 export default function DevAgentsWorkstation() {
   const workspaceRef = useRef<HTMLElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputToolbarRef = useRef<InputToolbarHandle>(null);
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -40,14 +42,24 @@ export default function DevAgentsWorkstation() {
   const wsStatus = useChatStore((s) => s.wsStatus);
   const submitToApi = useChatStore((s) => s.submitRequirement);
   const resetApi = useChatStore((s) => s.reset);
+  const cancelRun = useChatStore((s) => s.cancelRun);
+  const retryApi = useChatStore((s) => s.retry);
   const loadConversation = useChatStore((s) => s.loadConversation);
+  const abandonedRunId = useChatStore((s) => s.lastAbandonedRunId);
+
+  // Toast when a running response is abandoned by switching conversations
+  useEffect(() => {
+    if (abandonedRunId) {
+      toast(t('toast.requestAbandoned'), 'info');
+    }
+  }, [abandonedRunId, toast, t]);
 
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [configuringAgent, setConfiguringAgent] = useState<Agent | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isApiOpen, setIsApiOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -60,7 +72,21 @@ export default function DevAgentsWorkstation() {
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('code');
   const [selectedModel, setSelectedModel] = useState('');
+  const [isWorkstationOpen, setIsWorkstationOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('devagents-dark-mode');
+      if (saved !== null) return saved === 'true';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return true;
+  });
   const showAgentChat = selectedAgentId !== null;
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('devagents-dark-mode', String(isDarkMode));
+  }, [isDarkMode]);
 
   const filteredConversations = useMemo(() => {
     if (!selectedAgentId) return conv.conversations;
@@ -76,32 +102,80 @@ export default function DevAgentsWorkstation() {
   useEffect(() => {
     convRef.current = conv;
   });
+
+  // Track last message content for streaming auto-scroll.
+  // Combines both length (new msg) and thinking/content (streaming) as trigger.
+  const lastMsgLen = apiMessages.length;
+  const lastMsgStream = (() => {
+    const m = apiMessages[apiMessages.length - 1];
+    if (!m) return '';
+    return `${m.thinking ?? ''}|${m.content ?? ''}`;
+  })();
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [apiMessages, selectedAgentId]);
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    // Explicit 'auto' overrides CSS scroll-behavior: smooth which can't keep up
+    el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
+  }, [lastMsgLen, lastMsgStream]);
   useEffect(() => {
+    // Skip conversation sync during active streaming to avoid infinite re-render loop
+    // (thinking_stream → new messages array → effect fires → conversation update → re-render → loop)
+    // Sync when streaming is done (completed/error) or idle.
+    if (apiStatus === 'loading' || apiStatus === 'running') return;
     const activeId = convRef.current.activeConvId;
-    if (activeId && apiMessages.length > 0) {
-      convRef.current.updateConversationMessages(activeId, apiMessages);
-    }
-  }, [apiMessages]);
-  useEffect(() => {
-    const activeId = conv.activeConvId;
     if (activeId) {
-      const found = filteredConversations.find((c) => c.id === activeId);
-      if (found && found.messages.length > 0) {
-        const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m) => ({
-          id: String(m.id),
-          role: m.role === 'user' ? 'user' : 'agent',
-          agent_name: m.agentId ?? (m.role === 'user' ? '我' : 'Agent'),
-          content: m.content,
-          round_number: 0,
-          created_at: m.timestamp ? new Date(m.timestamp).toISOString() : null,
-        }));
-        loadConversation(chatMessages);
+      const state = useChatStore.getState();
+      if (state.messages.length > 0) {
+        Logger.debug(`[chat] sync effect: saving ${state.messages.length} msgs to conv ${activeId} (status=${apiStatus})`);
+        convRef.current.updateConversationMessages(activeId, state.messages);
+      }
+      if (state.currentSessionId) {
+        convRef.current.updateConversationSessionId(activeId, state.currentSessionId);
       }
     }
-  }, [conv.activeConvId, filteredConversations, loadConversation]);
+  }, [apiMessages, apiStatus]);
+  useEffect(() => {
+    const activeId = conv.activeConvId;
+    if (!activeId) return;
+    const found = filteredConversations.find((c) => c.id === activeId);
+    if (!found || found.messages.length === 0) { resetApi(); return; }
+
+    Logger.debug(`[chat] loading conv ${activeId} with ${found.messages.length} msgs`);
+    const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m, idx) => ({
+      id: typeof m.id === 'number' ? `${activeId}-${idx}` : m.id,
+      role: m.role === 'user' ? 'user' : 'agent',
+      agent_name: m.agentId ?? (m.role === 'user' ? '我' : 'Agent'),
+      content: m.content,
+      thinking: (m as any).thinking ?? undefined,
+      versions: (m as any).versions ?? undefined,
+      currentVersion: (m as any).currentVersion ?? undefined,
+      thumbsFeedback: (m as any).thumbsFeedback ?? undefined,
+      round_number: 0,
+      created_at: m.timestamp ? new Date(m.timestamp).toISOString() : null,
+    }));
+    // Carry over thinking and version data from live chatStore messages (conversation cache may lack it)
+    const current = useChatStore.getState().messages;
+    for (const msg of chatMessages) {
+      if (!msg.thinking) {
+        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+        if (live?.thinking) msg.thinking = live.thinking;
+      }
+      if (!msg.versions) {
+        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+        if (live?.versions) {
+          msg.versions = live.versions;
+          msg.currentVersion = live.currentVersion;
+        }
+      }
+      if (!msg.thumbsFeedback) {
+        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+        if (live?.thumbsFeedback) msg.thumbsFeedback = live.thumbsFeedback;
+      }
+    }
+    loadConversation(chatMessages, found.id, found.sessionId);
+    // Only react to activeConvId changes — filteredConversations is read via snapshot
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conv.activeConvId]);
   const handleNewChat = useCallback(() => {
     if (apiMessages.length > 0 && conv.activeConvId) {
       conv.updateConversationMessages(conv.activeConvId, apiMessages);
@@ -111,6 +185,7 @@ export default function DevAgentsWorkstation() {
     conv.setActiveConvId(null);
     setConversationKey((prev) => prev + 1);
   }, [apiMessages, conv, resetApi, setSelectedAgentId, setConversationKey]);
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
@@ -133,9 +208,15 @@ export default function DevAgentsWorkstation() {
   );
   const handleHomeSend = useCallback(
     (text: string, _files: AttachedFile[]) => {
-      const convId = conv.activeConvId ?? conv.saveConversation(text, [], selectedAgentId ?? undefined);
+      const userMessage: import('../../types/devagents').Message = {
+        id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
+        role: 'user',
+        content: text,
+        timestamp: Date.now(),
+      };
+      const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined);
       if (convId) conv.setActiveConvId(convId);
-      submitToApi(text).catch(() => {
+      submitToApi(text, undefined, undefined, true).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
@@ -154,59 +235,6 @@ export default function DevAgentsWorkstation() {
     }
   }, []);
 
-  const handleSidebarAddAgent = useCallback(
-    (e: React.MouseEvent, id: string) => {
-      e.stopPropagation();
-      teamMgmt.handleAddAgent(id);
-    },
-    [teamMgmt],
-  );
-  const handleSidebarStartEditTeam = useCallback(
-    (e: React.MouseEvent, team: Team) => {
-      e.stopPropagation();
-      teamMgmt.startEditTeam(team);
-    },
-    [teamMgmt],
-  );
-  const handleSidebarDeleteTeam = useCallback(
-    (e: React.MouseEvent, teamId: string) => {
-      e.stopPropagation();
-      setConfirmDialog({
-        title: t('sidebar.deleteTeam'),
-        message: t('confirm.deleteTeam'),
-        danger: true,
-        onConfirm: () => {
-          teamMgmt.handleDeleteTeam(teamId);
-          setConfirmDialog(null);
-        },
-      });
-    },
-    [teamMgmt, t],
-  );
-  const handleSidebarDeleteAgent = useCallback(
-    (e: React.MouseEvent, teamId: string, agentId: string) => {
-      e.stopPropagation();
-      setConfirmDialog({
-        title: t('sidebar.deleteAgent'),
-        message: t('confirm.deleteAgent'),
-        danger: true,
-        onConfirm: () => {
-          teamMgmt.handleDeleteAgent(teamId, agentId);
-          setConfirmDialog(null);
-        },
-      });
-    },
-    [teamMgmt, t],
-  );
-  const selectAgent = useCallback((agent: Agent) => {
-    setSelectedAgentId(agent.id);
-    setIsWorkspaceOpen(false);
-  }, []);
-  const openAgentConfig = useCallback((e: React.MouseEvent, agent: Agent) => {
-    e.stopPropagation();
-    setConfiguringAgent(agent);
-  }, []);
-
   const handleSaveAgent = useCallback(
     async (agent: Agent) => {
       try {
@@ -219,32 +247,47 @@ export default function DevAgentsWorkstation() {
           mcp: agent.mcp || undefined,
           skills: agent.skills || undefined,
         };
+        const oldId = agent.id;
         try {
-          await updateAgent(agent.id, cfg);
+          await updateAgent(oldId, cfg);
         } catch (updateErr: unknown) {
           const ue = updateErr as { response?: { status?: number }; status?: number };
           if (ue.response?.status === 404 || ue.status === 404) {
-            await createAgent({
+            const created = await createAgent({
               ...cfg,
-              role_identifier: agent.role || 'agent_' + agent.id.slice(0, 8),
+              role_identifier: 'agent_' + (crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10))).slice(0, 8),
               order: 0,
               is_active: true,
               is_approver: false,
               icon: '🤖',
             });
+            const team = teamMgmt.teams.find((t) => t.agents.some((a) => a.id === oldId));
+            agent.id = created.id;
+            teamMgmt.replaceAgentId(oldId, created.id);
+            if (team) teamMgmt.linkMemberAgent(team.id, oldId, created.id);
           } else {
             throw updateErr;
           }
         }
-        setConfiguringAgent(null);
-        toast(t('common.saved'), 'success');
+        setTimeout(() => {
+          teamMgmt.handleAgentConfigSave(agent);
+          toast(t('common.saved'), 'success');
+          setConfiguringAgent(null);
+        }, 0);
       } catch (err) {
         Logger.error('Failed to save agent config', err);
         toast(t('common.error'), 'error');
       }
     },
-    [toast, t],
+    [toast, t, teamMgmt],
   );
+
+  const handleCloseAgentConfig = useCallback(() => setConfiguringAgent(null), []);
+  const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const handleCloseApi = useCallback(() => setIsApiOpen(false), []);
+  const handleCloseConfirm = useCallback(() => setConfirmDialog(null), []);
+  const handleCloseNewProject = useCallback(() => setIsNewProjectOpen(false), []);
+
   const allCommands = [
     ...(apiCommands ?? []).map((c) => ({
       id: c.id,
@@ -275,29 +318,31 @@ export default function DevAgentsWorkstation() {
     [currentSessionId, toast, t],
   );
 
-  const getFallbackId = (() => {
-    let i = 0;
-    return () => ++i;
-  })();
-  const displayMessages: Message[] = apiMessages.map((m) => {
-    const fallbackId = getFallbackId();
-    return {
-      id: parseInt(m.id, 36) || fallbackId,
-      role: m.role === 'user' ? 'user' : 'agent',
-      agentId: m.role,
-      content: m.content,
-      timestamp: m.created_at ? new Date(m.created_at).getTime() : fallbackId,
-    };
-  });
+  console.log('[render] apiMessages count:', apiMessages.length, 'thinking:', apiMessages.map(m => ({id: m.id?.substring(0,8), t: (m.thinking || '').substring(0,20), td: m.thinkingDone})));
+
+  const displayMessages: Message[] = apiMessages.map((m) => ({
+    id: m.id,
+    role: m.role === 'user' ? 'user' : 'agent',
+    agentId: m.role,
+    content: m.content,
+    thinking: m.thinking,
+    thinkingDone: m.thinkingDone === true,
+    timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
+    versions: (m as any).versions,
+    currentVersion: (m as any).currentVersion,
+    thumbsFeedback: (m as any).thumbsFeedback,
+  }));
 
   return (
-    <div className="devagents-layout">
-      <DevAgentsSidebar
+    <div className="devagents-app">
+      <div className="devagents-body">
+        {isSidebarOpen && (
+          <div className="devagents-mobile-overlay visible" onClick={() => setIsSidebarOpen(false)} />
+        )}
+
+        <DevAgentsSidebar
         teams={teamMgmt.teams}
         selectedAgentId={selectedAgentId}
-        editingTeamId={teamMgmt.editingTeamId}
-        editTeamName={teamMgmt.editTeamName}
-        setEditTeamName={teamMgmt.setEditTeamName}
         conversations={filteredConversations}
         activeConvId={conv.activeConvId}
         isUserMenuOpen={isUserMenuOpen}
@@ -307,24 +352,48 @@ export default function DevAgentsWorkstation() {
         setSelectedAgentId={setSelectedAgentId}
         setActiveConvId={conv.setActiveConvId}
         setInputValue={() => {}}
-        setConversationKey={setConversationKey}
         setConversations={conv.setConversations}
         onNewChat={handleNewChat}
         toggleTeam={teamMgmt.toggleTeam}
         handleAddTeam={teamMgmt.handleAddTeam}
-        handleAddAgent={handleSidebarAddAgent}
-        startEditTeam={handleSidebarStartEditTeam}
-        saveTeamName={teamMgmt.saveTeamName}
-        handleTeamNameKeyDown={teamMgmt.handleTeamNameKeyDown}
-        handleDeleteTeam={handleSidebarDeleteTeam}
-        handleDeleteAgent={handleSidebarDeleteAgent}
-        handleAgentClick={selectAgent}
-        handleOpenAgentConfig={openAgentConfig}
+        handleAddAgent={teamMgmt.handleAddAgent}
+        handleDeleteTeam={teamMgmt.handleDeleteTeam}
+        handleDeleteAgent={teamMgmt.handleDeleteAgent}
+        handleRenameTeam={teamMgmt.handleRename}
+        handleRenameAgent={teamMgmt.handleRenameAgent}
+        handleTogglePinTeam={teamMgmt.handleTogglePinTeam}
+        handleAgentClick={(agent) => { useChatStore.getState().selectAgent(agent.id); setSelectedAgentId(agent.id); }}
+        onEditAgent={(agent) => { setConfiguringAgent(agent); }}
         isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
+        onOpenWorkstation={() => {
+          setIsWorkstationOpen(true);
+        }}
       />
-      {isSidebarOpen && <div className="devagents-sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />}
-
+      <div className="devagents-right">
+        <header className="devagents-global-header">
+          <div className="devagents-header-left">
+            <button
+              className="devagents-header-btn"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              aria-label="Toggle sidebar"
+            >
+              <PanelLeft size={18} />
+            </button>
+          </div>
+          <div className="devagents-header-right">
+            <button
+              className="devagents-header-btn"
+              onClick={() => setIsDarkMode(prev => !prev)}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <button className="devagents-header-btn" aria-label="Notifications">
+              <Bell size={16} />
+              <span className="devagents-header-notif-dot" />
+            </button>
+          </div>
+        </header>
       <main
         className={`devagents-main ${isPageDragOver ? 'devagents-drag-over' : ''}`}
         id="main-content"
@@ -332,73 +401,27 @@ export default function DevAgentsWorkstation() {
         onDragLeave={handlePageDragLeave}
         onDrop={handlePageDrop}
       >
-        {isPageDragOver && (
-          <div className="devagents-page-drop-overlay">
-            <span>{t('fileAttach.dropHere')}</span>
-          </div>
-        )}
-        {wsStatus === 'reconnecting' && (
-          <div className="devagents-ws-banner" role="status" aria-live="polite">
-            {t('common.connecting')}...
-          </div>
-        )}
-        {apiStatus === 'error' && apiError && (
-          <div className="devagents-ws-banner devagents-ws-banner--error" role="alert">
-            {apiError}
-          </div>
-        )}
-        <button
-          className="devagents-hamburger"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          aria-label="Toggle sidebar"
-        >
-          <MessageSquare size={18} />
-        </button>
-
-        {(showAgentChat || hasMessages) && (
-          <header className="devagents-header">
-            <div className="devagents-header-title">
-              {showAgentChat ? (
-                (() => {
-                  const agent = teamMgmt.allAgents.find((a) => a.id === selectedAgentId);
-                  return agent ? (
-                    <>
-                      <div className={`devagents-agent-icon-sm ${agent.bg} ${agent.border}`}>
-                        <agent.icon size={14} className={agent.color} />
-                      </div>
-                      {agent.name}
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare size={16} />
-                    </>
-                  );
-                })()
-              ) : (
-                <>
-                  <MessageSquare size={16} />
-                  <span>{t('home.title')}</span>
-                </>
-              )}
-              <button
-                onClick={() => {
-                  if (showAgentChat) {
-                    setSelectedAgentId(null);
-                  } else {
-                    resetApi();
-                  }
-                }}
-                className="devagents-back-btn"
-                title="返回"
-              >
-                <ChevronRight size={14} className="rotate-180" />
-                {t('workspace.back')}
+        <div className="devagents-main-bottom">
+          {isPageDragOver && (
+            <div className="devagents-page-drop-overlay">
+              <span>{t('fileAttach.dropHere')}</span>
+            </div>
+          )}
+          {wsStatus === 'reconnecting' && (
+            <div className="devagents-ws-banner" role="status" aria-live="polite">
+              {t('common.connecting')}...
+            </div>
+          )}
+          {apiStatus === 'error' && apiError && (
+            <div className="devagents-ws-banner devagents-ws-banner--error" role="alert">
+              {apiError}
+              <button className="devagents-retry-btn" onClick={retryApi}>
+                {t('common.retry')}
               </button>
             </div>
-          </header>
-        )}
+          )}
 
-        <div className="devagents-messages">
+        <div className="devagents-messages" ref={messagesContainerRef}>
           {showAgentChat || hasMessages ? (
             <MessagesPanel
               showAgentChat={showAgentChat}
@@ -421,6 +444,8 @@ export default function DevAgentsWorkstation() {
               onExecuteCommand={handleExecuteCommand}
               onConfigureModels={() => setIsApiOpen(true)}
               inputToolbarRef={inputToolbarRef}
+              isRunning={apiStatus === 'loading' || apiStatus === 'running'}
+              onStop={cancelRun}
             />
           )}
         </div>
@@ -436,9 +461,14 @@ export default function DevAgentsWorkstation() {
             commands={allCommands}
             onExecuteCommand={handleExecuteCommand}
             onConfigureModels={() => setIsApiOpen(true)}
+            isRunning={apiStatus === 'loading' || apiStatus === 'running'}
+            onStop={cancelRun}
           />
         )}
+        </div>
       </main>
+      </div>
+      </div>
 
       <Workspace
         selectedAgentId={selectedAgentId}
@@ -455,13 +485,25 @@ export default function DevAgentsWorkstation() {
         isApiOpen={isApiOpen}
         confirmDialog={confirmDialog}
         isNewProjectOpen={isNewProjectOpen}
-        onCloseAgentConfig={() => setConfiguringAgent(null)}
+        onCloseAgentConfig={handleCloseAgentConfig}
         onSaveAgent={handleSaveAgent}
-        onCloseSettings={() => setIsSettingsOpen(false)}
-        onCloseApi={() => setIsApiOpen(false)}
-        onCloseConfirm={() => setConfirmDialog(null)}
-        onCloseNewProject={() => setIsNewProjectOpen(false)}
+        onCloseSettings={handleCloseSettings}
+        onCloseApi={handleCloseApi}
+        onCloseConfirm={handleCloseConfirm}
+        onCloseNewProject={handleCloseNewProject}
       />
+
+      {isWorkstationOpen && (
+        <div className="devagents-modal-overlay" onClick={() => setIsWorkstationOpen(false)}>
+          <div className="devagents-modal devagents-modal--workstation" onClick={(e) => e.stopPropagation()}>
+            <div className="devagents-modal-header">
+              <h3>管理工作台</h3>
+              <button className="devagents-modal-close" onClick={() => setIsWorkstationOpen(false)}>×</button>
+            </div>
+            <WorkstationPage />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Agent, Message } from '../../types/devagents';
 import TeamMessage from './TeamMessage';
+import { useChatStore } from '../../stores/chatStore';
 
 interface Props {
   showAgentChat: boolean;
@@ -26,6 +27,35 @@ export default function MessagesPanel({
   onDismissWelcome,
 }: Props) {
   const { t } = useTranslation();
+  const editMessage = useChatStore((s) => s.editMessage);
+  const regenerateMessage = useChatStore((s) => s.regenerateMessage);
+  const interruptedMessageId = useChatStore((s) => s.interruptedMessageId);
+  const continueGeneration = useChatStore((s) => s.continueGeneration);
+  const switchVersion = useChatStore((s) => s.switchVersion);
+  const continuingId = useChatStore((s) => s.continuingId);
+  const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);
+
+  const handleEditMessage = (msgId: string, newContent: string) => {
+    const idx = displayMessages.findIndex((m) => m.id === msgId);
+    if (idx >= 0) {
+      editMessage(idx, newContent);
+    }
+  };
+
+  const handleRegenerate = (msgId: string) => {
+    const idx = displayMessages.findIndex((m) => m.id === msgId);
+    if (idx >= 0) {
+      regenerateMessage(idx);
+    }
+  };
+
+  const handleSwitchVersion = (msgId: string, direction: 'prev' | 'next') => {
+    switchVersion(msgId, direction);
+  };
+
+  const handleThumbsFeedback = (msgId: string, value: 'up' | 'down') => {
+    setThumbsFeedback(msgId, value);
+  };
 
   if (showAgentChat) {
     return (
@@ -48,7 +78,18 @@ export default function MessagesPanel({
           </div>
         )}
         {displayMessages.map((msg) => (
-          <TeamMessage key={msg.id} msg={msg} allAgents={allAgents} />
+          <TeamMessage
+            key={msg.id}
+            msg={msg}
+            allAgents={allAgents}
+            onEditMessage={handleEditMessage}
+            onRegenerate={handleRegenerate}
+            showContinue={msg.id === interruptedMessageId}
+            onContinue={continueGeneration}
+            onSwitchVersion={handleSwitchVersion}
+            isContinuing={msg.id === continuingId}
+            onThumbsFeedback={handleThumbsFeedback}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>
@@ -59,7 +100,18 @@ export default function MessagesPanel({
     return (
       <div className="devagents-messages-inner" aria-live="polite">
         {displayMessages.map((msg) => (
-          <TeamMessage key={msg.id} msg={msg} allAgents={allAgents} />
+          <TeamMessage
+            key={msg.id}
+            msg={msg}
+            allAgents={allAgents}
+            onEditMessage={handleEditMessage}
+            onRegenerate={handleRegenerate}
+            showContinue={msg.id === interruptedMessageId}
+            onContinue={continueGeneration}
+            onSwitchVersion={handleSwitchVersion}
+            isContinuing={msg.id === continuingId}
+            onThumbsFeedback={handleThumbsFeedback}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>

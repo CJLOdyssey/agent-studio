@@ -9,31 +9,56 @@
   flex-direction: column;
 }
 
-.devagents-team-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-2);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
+/* Team Folder Styles */
+.devagents-team-folder {
+  margin-bottom: 2px; /* 更紧凑的垂直间距 */
+  border-radius: 8px;
+  overflow: visible !important;
 }
 
-.devagents-team-header:hover {
+.devagents-team-folder-header {
+  display: flex;
+  align-items: center; /* 垂直居中对齐 */
+  gap: var(--sp-2);
+  padding: 10px 12px; /* 统一高度 */
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  position: relative;
+  min-height: 40px; /* 固定最小高度确保对齐 */
+}
+
+.devagents-team-folder-header:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-team-title {
+.devagents-team-toggle {
+  background: transparent;
+  border: none;
+  padding: 4px; /* 调整点击区域 */
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  flex: 1;
-  min-width: 0;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
 }
 
-.devagents-team-title svg {
-  color: var(--da-text-muted);
-  flex-shrink: 0;
+.devagents-team-toggle:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.devagents-team-toggle svg {
+  transition: transform 0.2s ease;
+}
+
+.devagents-team-toggle svg.collapsed {
+  transform: rotate(-90deg);
 }
 
 .devagents-team-name {
@@ -43,27 +68,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  line-height: 24px; /* 与按钮高度对齐 */
 }
 
 .devagents-team-count {
-  font-size: 10px;
-  background: var(--da-bg-hover);
+  font-size: 11px; /* 稍大一点更清晰 */
+  background: var(--da-bg-secondary);
   color: var(--da-text-muted);
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: 10px;
   flex-shrink: 0;
-}
-
-.devagents-team-input {
-  background: var(--da-bg-primary);
-  font-size: var(--da-font-size-sm);
   font-weight: 500;
-  color: var(--da-text-primary);
-  border: 1px solid var(--da-accent-indigo);
-  border-radius: 4px;
-  padding: var(--sp-1) var(--sp-2);
-  outline: none;
-  width: 100%;
+  min-height: 20px; /* 固定高度确保对齐 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .devagents-team-actions {
@@ -71,175 +92,452 @@
   align-items: center;
   gap: var(--sp-1);
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
 }
 
-.devagents-team-header:hover .devagents-team-actions {
+.devagents-team-folder-header:hover .devagents-team-actions {
   opacity: 1;
 }
 
-/* Agents */
-.devagents-agents-list {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 0 var(--sp-4);
-  border-left: 1px solid var(--da-border-subtle);
-  margin-left: var(--sp-3);
-}
-
-.devagents-agent-item {
+.devagents-team-action-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2);
-  padding-right: 52px;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.devagents-team-action-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.devagents-team-action-btn:hover svg path {
+  stroke: var(--da-text-primary);
+}
+
+/* Team Menu Button */
+.devagents-team-menu-btn {
+  background: transparent;
+  border: none;
+  padding: 4px; /* 统一内边距 */
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  opacity: 0.8;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
+}
+
+.devagents-team-folder-header:hover .devagents-team-menu-btn {
+  opacity: 1;
+}
+
+.devagents-team-menu-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+  opacity: 1;
+}
+
+/* Agent Menu Button */
+.devagents-agent-menu-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  opacity: 0.8;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.devagents-team-agent-item-wrapper:hover .devagents-agent-menu-btn {
+  opacity: 1;
+}
+
+.devagents-agent-menu-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Team Pin Icon */
+.devagents-team-pin {
+  color: var(--da-accent-amber);
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+
+/* Team Dropdown Menu */
+.devagents-team-folder > .devagents-team-folder-header {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important; /* 确保垂直居中 */
+  gap: var(--sp-2) !important;
+  padding: 10px 12px !important; /* 统一内边距 */
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+  width: auto !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: var(--da-text-primary) !important;
+  font-size: 14px !important;
+  text-align: left !important;
+  min-height: 40px !important; /* 固定最小高度 */
+}
+
+.devagents-team-folder > .devagents-team-folder-header:hover {
+  background: var(--da-bg-hover) !important;
+}
+
+.devagents-team-dropdown {
+  background: var(--da-bg-secondary);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  padding: var(--sp-1);
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+}
+
+.devagents-team-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s;
-  margin-bottom: var(--sp-1);
+  transition: background 0.15s ease;
   border: none;
-  position: relative;
+  background: transparent;
+  width: 100%;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
 }
 
-.devagents-agent-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.devagents-agent-role {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.devagents-agent-item:hover {
+.devagents-team-dropdown-item:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-agent-item.selected {
-  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+.devagents-team-dropdown-item.danger {
+  color: var(--da-accent-red);
 }
 
-.devagents-agent-item.selected .devagents-agent-name {
-  color: var(--da-accent-indigo);
+.devagents-team-dropdown-item.danger:hover {
+  background: color-mix(in srgb, var(--da-accent-red) 10%, transparent);
 }
 
-.devagents-agent-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+.devagents-team-edit {
+  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  gap: var(--sp-1);
+  min-width: 0;
 }
 
-.devagents-agent-icon-sm {
-  width: 24px;
-  height: 24px;
+.devagents-team-edit-input {
+  background: var(--da-bg-secondary);
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-primary);
+  border: 1px solid var(--da-accent-indigo);
   border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.devagents-agent-info {
+  padding: var(--sp-1) var(--sp-2);
+  outline: none;
   flex: 1;
   min-width: 0;
 }
 
-.devagents-agent-header {
+.devagents-team-edit-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
+}
+
+.devagents-team-edit-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-}
-
-.devagents-agent-name {
-  font-size: var(--da-font-size-sm);
-  font-weight: 500;
-  color: var(--da-text-primary);
-}
-
-.devagents-agent-status {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  justify-content: center;
+  transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
-.devagents-agent-status.idle {
-  background: var(--da-accent-emerald);
+.devagents-team-edit-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
 }
 
-.devagents-agent-status.working {
-  background: var(--da-accent-amber);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.devagents-agent-role {
-  font-size: 10px;
-  color: var(--da-text-muted);
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* Agent Edit */
 .devagents-agent-edit {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.devagents-agent-input {
-  background: var(--da-bg-primary);
-  border: 1px solid var(--da-border);
-  border-radius: 4px;
-  padding: var(--sp-1) var(--sp-2);
-  font-size: var(--da-font-size-xs);
-  color: var(--da-text-primary);
-  outline: none;
-  width: 100%;
-}
-
-.devagents-agent-input:focus {
-  border-color: var(--da-accent-indigo);
-}
-
-.devagents-agent-actions {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
   align-items: center;
   gap: var(--sp-1);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease;
+  min-width: 0;
 }
 
-.devagents-agent-item:hover .devagents-agent-actions {
-  opacity: 1;
-  pointer-events: auto;
+.devagents-agent-edit-input {
+  background: var(--da-bg-secondary);
+  font-size: var(--da-font-size-sm);
+  font-weight: 400;
+  color: var(--da-text-primary);
+  border: 1px solid var(--da-accent-indigo);
+  border-radius: 6px;
+  padding: var(--sp-1) var(--sp-2);
+  outline: none;
+  flex: 1;
+  min-width: 0;
 }
 
-.devagents-empty-team {
-  font-size: var(--da-font-size-xs);
+.devagents-agent-edit-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
+}
+
+.devagents-agent-edit-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
   color: var(--da-text-muted);
-  padding: var(--sp-2) var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
-@media (pointer: coarse) {
-  .devagents-team-actions button,
-  .devagents-agent-actions button {
-    min-width: 44px;
-    min-height: 44px;
+.devagents-agent-edit-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Team Agents */
+.devagents-team-agents {
+  padding: var(--sp-1) 0;
+  margin-left: 20px; /* 统一缩进距离 */
+}
+
+.devagents-team-agent-item-wrapper {
+  position: relative;
+  padding: 0 8px; /* 统一内边距 */
+}
+
+.devagents-team-agent-item {
+  display: flex;
+  align-items: center; /* 垂直居中对齐 */
+  gap: var(--sp-3);
+  padding: 8px 10px; /* 统一内边距和高度 */
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  min-height: 36px; /* 固定最小高度确保对齐 */
+}
+
+.devagents-team-agent-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.devagents-team-agent-item.active {
+  background: color-mix(in srgb, var(--da-accent-indigo) 12%, transparent);
+}
+
+.devagents-team-agent-item.active .agent-dot {
+  color: var(--da-accent-indigo);
+}
+
+.devagents-team-agent-item.active span {
+  color: var(--da-accent-indigo);
+}
+
+.devagents-team-agent-item.devagents-add-agent {
+  color: var(--da-text-primary);
+}
+
+.devagents-team-agent-item.devagents-add-agent:hover {
+  color: var(--da-text-primary);
+}
+
+.agent-dot {
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.devagents-team-agent-item span {
+  font-size: var(--da-font-size-sm);
+  font-weight: 400;
+  color: var(--da-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  line-height: 24px; /* 与图标高度对齐 */
+}
+
+.devagents-agent-menu-btn {
+  position: absolute;
+  right: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.devagents-team-agent-item-wrapper:hover .devagents-agent-menu-btn {
+  opacity: 1;
+}
+
+.devagents-agent-menu-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.devagents-agent-dropdown {
+  background: var(--da-bg-secondary);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  padding: var(--sp-1);
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.devagents-agent-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+}
+
+.devagents-agent-dropdown-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.devagents-agent-dropdown-item.danger {
+  color: var(--da-accent-red);
+}
+
+.devagents-agent-dropdown-item.danger:hover {
+  background: color-mix(in srgb, var(--da-accent-red) 10%, transparent);
+}
+
+/* Sidebar Section Header */
+.devagents-sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) 0;
+  margin-bottom: var(--sp-1);
+}
+
+.devagents-sidebar-section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.devagents-sidebar-section-action {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.devagents-sidebar-section-action:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-accent-indigo);
+}
+
+/* Chevron icon animation */
+.chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .devagents-team-folder-header {
     padding: var(--sp-2);
+  }
+
+  .devagents-team-agents {
+    margin-left: var(--sp-3);
   }
 }
 
-/* Conversations */
+/* Portal Dropdown (rendered at body level) */
+.devagents-portal-dropdown {
+  z-index: 99999 !important;
+}
+
+/* Error Messages for Validation */
+.devagents-edit-error {
+  color: var(--da-accent-red);
+  font-size: var(--da-font-size-xs);
+  margin-top: 4px;
+  padding-left: var(--sp-2);
+  line-height: 1.4;
+}
+
+.devagents-team-edit-input.has-error,
+.devagents-agent-edit-input.has-error {
+  border-color: var(--da-accent-red) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-red) 20%, transparent) !important;
+}

@@ -1,5 +1,7 @@
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ListItem {
   id: string;
@@ -14,12 +16,53 @@ interface Props<T extends ListItem> {
   presets: { id: string; name: string; description?: string }[];
   editingId: string | null;
   emptyLabel: string;
+  hideHeader?: boolean;
   onToggle: (id: string) => void;
   onAdd: () => void;
   onUpdate: (id: string, name: string, desc: string) => void;
   onRemove: (id: string) => void;
   onStartEdit: (id: string) => void;
   onFinishEdit: () => void;
+  onEditFull?: (item: T) => void;
+}
+
+function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRename: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (!open) return;
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (rect) setPos({ top: rect.bottom + 4, left: rect.left - 80 });
+    const close = () => setOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [open]);
+
+  return (
+    <>
+      <button ref={btnRef} className="agent-config-item-action" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+        <MoreVertical size={14} />
+      </button>
+      {open && createPortal(
+        <div className="devagents-team-dropdown devagents-portal-dropdown" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
+          {onEdit && (
+            <button className="devagents-team-dropdown-item" onClick={() => { onEdit(); setOpen(false); }}>
+              <Pencil size={14} /><span>编辑</span>
+            </button>
+          )}
+          <button className="devagents-team-dropdown-item" onClick={() => { onRename(); setOpen(false); }}>
+            <Pencil size={14} /><span>重命名</span>
+          </button>
+          <button className="devagents-team-dropdown-item danger" onClick={() => { onDelete(); setOpen(false); }}>
+            <Trash2 size={14} /><span>删除</span>
+          </button>
+        </div>,
+        document.body,
+      )}
+    </>
+  );
 }
 
 export default function ConfigItemList<T extends ListItem>({
@@ -28,24 +71,28 @@ export default function ConfigItemList<T extends ListItem>({
   presets,
   editingId,
   emptyLabel,
+  hideHeader = false,
   onToggle,
   onAdd,
   onUpdate,
   onRemove,
   onStartEdit,
   onFinishEdit,
+  onEditFull,
 }: Props<T>) {
   const { t } = useTranslation();
   return (
     <div className="agent-config-list">
-      <div className="agent-config-list-header">
-        <span>
-          {title} ({items.length})
-        </span>
-        <button className="btn btn-sm btn-secondary" onClick={onAdd}>
-          <Plus size={14} /> {t('configItem.add')}
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="agent-config-list-header">
+          <span>
+            {title} ({items.length})
+          </span>
+          <button className="btn btn-sm btn-secondary" onClick={onAdd}>
+            <Plus size={14} /> {t('configItem.add')}
+          </button>
+        </div>
+      )}
       <div className="agent-config-items">
         {items.map((item) => (
           <div key={item.id} className={`agent-config-item ${item.enabled ? 'enabled' : ''}`}>
@@ -64,17 +111,12 @@ export default function ConfigItemList<T extends ListItem>({
             </div>
             <div className="agent-config-item-actions">
               {editingId !== item.id && (
-                <button
-                  className="agent-config-item-action"
-                  onClick={() => onStartEdit(item.id)}
-                  title={t('configItem.add')}
-                >
-                  <Pencil size={14} />
-                </button>
+                <ItemMenu
+                  onEdit={onEditFull ? () => onEditFull(item) : undefined}
+                  onRename={() => onStartEdit(item.id)}
+                  onDelete={() => onRemove(item.id)}
+                />
               )}
-              <button className="agent-config-item-remove" onClick={() => onRemove(item.id)} title="删除">
-                <Trash2 size={14} />
-              </button>
             </div>
           </div>
         ))}

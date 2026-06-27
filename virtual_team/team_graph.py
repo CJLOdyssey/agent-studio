@@ -15,7 +15,7 @@ Architecture:
 """
 
 from collections.abc import Callable
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import (
     BaseMessage,
@@ -89,7 +89,7 @@ class TeamGraph:
         api_key: str = "",
         base_url: str | None = None,
         temperature: float = 0.7,
-        max_tokens: int = 4096,
+        max_tokens: int = 65536,
         max_rounds: int = 5,
     ):
         self.model = model
@@ -109,7 +109,8 @@ class TeamGraph:
             llm_kwargs["base_url"] = base_url
         self.llm = ChatOpenAI(**llm_kwargs)
 
-        self.checkpointer = MemorySaver()
+        from virtual_team.checkpoint import create_checkpointer
+        self.checkpointer = create_checkpointer()
         self._agent_prompts: dict[str, str] = {}
         self._graph = self._build_graph()
 
@@ -122,7 +123,7 @@ class TeamGraph:
             self._agent_prompts[a["role_identifier"]] = a["system_prompt"]
         self._graph = self._build_graph()
 
-    def _build_graph(self) -> StateGraph:
+    def _build_graph(self) -> Any:
         workflow = StateGraph(TeamState)
 
         # ── PM node ──────────────────────────────────────────────────────
@@ -161,7 +162,7 @@ class TeamGraph:
                 HumanMessage(content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写前端代码实现。"),
             ]
             response = self.llm.invoke(full)
-            content = response.content if hasattr(response, 'content') else str(response)
+            content = str(response.content) if hasattr(response, 'content') else str(response)
             # Replace code for this round — old versions are preserved in message history
             existing_code = state.get("code", "")
             new_code = _replace_section(existing_code, "## 前端代码", content)
@@ -186,7 +187,7 @@ class TeamGraph:
                 HumanMessage(content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写后端代码实现。"),
             ]
             response = self.llm.invoke(full)
-            content = response.content if hasattr(response, 'content') else str(response)
+            content = str(response.content) if hasattr(response, 'content') else str(response)
             # Replace code for this round — old versions are preserved in message history
             existing_code = state.get("code", "")
             new_code = _replace_section(existing_code, "## 后端代码", content)
@@ -280,7 +281,7 @@ class TeamGraph:
         }
 
         final_state = None
-        async for event in self._graph.astream_events(initial_state, config=config, version="v2"):
+        async for event in self._graph.astream_events(initial_state, config=config, version="v2"):  # type: ignore[union-attr]
             kind = event.get("event", "")
 
             if stream_callback:
@@ -326,7 +327,7 @@ class TeamGraph:
             "approved": False,
             "round_number": 0,
         }
-        result = self._graph.invoke(initial_state, config=config)
+        result = self._graph.invoke(initial_state, config=config)  # type: ignore[union-attr]
         return {
             "pm_document": result.get("pm_document", ""),
             "code": result.get("code", ""),

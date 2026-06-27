@@ -87,7 +87,7 @@
 
 .form-example-btn:hover {
   background: var(--da-accent-indigo);
-  color: var(--da-text-on-accent, #fff);
+  color: var(--da-text-on-accent);
   border-color: var(--da-accent-indigo);
 }
 

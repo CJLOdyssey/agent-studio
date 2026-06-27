@@ -1,5 +1,5 @@
 import { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ModelOption, AttachedFile, CommandOption, FileRejection } from '../../types/input';
 import ModelSelector from './ModelSelector';
@@ -23,6 +23,10 @@ interface InputToolbarProps {
   commands?: CommandOption[];
   placeholder?: string;
   maxLength?: number;
+  /** Show stop button instead of send button (interrupt streaming) */
+  isRunning?: boolean;
+  /** Called when stop button is clicked */
+  onStop?: () => void;
 }
 
 const MAX_FILES = 5;
@@ -38,6 +42,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
     commands = [],
     placeholder,
     maxLength = 10000,
+    isRunning = false,
+    onStop,
   },
   ref,
 ) {
@@ -179,15 +185,26 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
             <FileAttach onAdd={addFiles} onReject={handleReject} fileCount={files.length} />
           </div>
 
-          <button
-            onClick={composer.submit}
-            disabled={!composer.hasContent}
-            className={`devagents-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
-            aria-label={t('home.send')}
-          >
-            <span>{t('home.send')}</span>
-            <Send size={14} />
-          </button>
+          {isRunning ? (
+            <button
+              onClick={onStop}
+              className="devagents-send-btn running"
+              aria-label={t('home.stop', '停止')}
+            >
+              <Square size={14} fill="currentColor" />
+              <span>{t('home.stop', '停止')}</span>
+            </button>
+          ) : (
+            <button
+              onClick={composer.submit}
+              disabled={!composer.hasContent}
+              className={`devagents-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
+              aria-label={t('home.send')}
+            >
+              <span>{t('home.send')}</span>
+              <Send size={14} />
+            </button>
+          )}
         </div>
       </div>
     </div>

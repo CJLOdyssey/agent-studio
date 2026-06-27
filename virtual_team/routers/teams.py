@@ -1,19 +1,19 @@
 """Team API routes: CRUD and member management."""
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from virtual_team.auth import get_user_id
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
-    add_team_member,
     create_team,
     delete_team,
     get_team,
     get_teams,
+    update_team,
+    add_team_member,
     remove_team_member,
     reorder_team_members,
-    update_team,
+    link_agent_config,
 )
 
 logger = get_logger(__name__)
@@ -40,10 +40,9 @@ class ReorderRequest(BaseModel):
 
 
 @router.get("/api/teams")
-async def list_teams(request: Request):
+async def list_teams():
     try:
-        user_id = get_user_id(request)
-        teams = await get_teams(user_id=user_id)
+        teams = await get_teams()
         return [
             {
                 "id": t["id"],
@@ -61,10 +60,11 @@ async def list_teams(request: Request):
 
 
 @router.post("/api/teams", status_code=201)
-async def add_team(req: TeamCreateRequest, request: Request):
+async def add_team(req: TeamCreateRequest):
     try:
-        user_id = get_user_id(request)
-        team = await create_team(name=req.name, user_id=user_id)
+        team = await create_team(name=req.name)
+        if team is None:
+            raise HTTPException(status_code=409, detail="团队名称已存在")
         return {
             "id": team.id,
             "name": team.name,
@@ -72,30 +72,29 @@ async def add_team(req: TeamCreateRequest, request: Request):
             "is_expanded": team.is_expanded,
             "agents": [],
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Error creating team: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/api/teams/{team_id}")
-async def get_team_detail(team_id: str, request: Request):
-    user_id = get_user_id(request)
-    team = await get_team(team_id, user_id=user_id)
+async def get_team_detail(team_id: str):
+    team = await get_team(team_id)
     if not team:
         raise HTTPException(status_code=404, detail="团队不存在")
     return team
 
 
 @router.put("/api/teams/{team_id}")
-async def update_team_endpoint(team_id: str, req: TeamUpdateRequest, request: Request):
+async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
     try:
-        user_id = get_user_id(request)
         team = await update_team(
             team_id=team_id,
             name=req.name,
             order=req.order,
             is_expanded=req.is_expanded,
-            user_id=user_id,
         )
         if not team:
             raise HTTPException(status_code=404, detail="团队不存在")
@@ -108,10 +107,9 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest, request: Re
 
 
 @router.delete("/api/teams/{team_id}")
-async def delete_team_endpoint(team_id: str, request: Request):
+async def delete_team_endpoint(team_id: str):
     try:
-        user_id = get_user_id(request)
-        deleted = await delete_team(team_id, user_id=user_id)
+        deleted = await delete_team(team_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="团队不存在")
         return {"ok": True}
@@ -123,14 +121,12 @@ async def delete_team_endpoint(team_id: str, request: Request):
 
 
 @router.post("/api/teams/{team_id}/members", status_code=201)
-async def add_member(team_id: str, req: MemberAddRequest, request: Request):
+async def add_member(team_id: str, req: MemberAddRequest):
     try:
-        user_id = get_user_id(request)
         member = await add_team_member(
             team_id=team_id,
             name=req.name,
             role=req.role,
-            user_id=user_id,
         )
         if not member:
             raise HTTPException(status_code=404, detail="团队不存在")
@@ -143,10 +139,9 @@ async def add_member(team_id: str, req: MemberAddRequest, request: Request):
 
 
 @router.delete("/api/teams/{team_id}/members/{member_id}")
-async def remove_member(team_id: str, member_id: str, request: Request):
+async def remove_member(team_id: str, member_id: str):
     try:
-        user_id = get_user_id(request)
-        deleted = await remove_team_member(team_id, member_id, user_id=user_id)
+        deleted = await remove_team_member(team_id, member_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="成员不存在")
         return {"ok": True}
@@ -158,11 +153,28 @@ async def remove_member(team_id: str, member_id: str, request: Request):
 
 
 @router.put("/api/teams/{team_id}/members/reorder")
-async def reorder_members(team_id: str, req: ReorderRequest, request: Request):
+async def reorder_members(team_id: str, req: ReorderRequest):
     try:
-        user_id = get_user_id(request)
-        await reorder_team_members(team_id, req.member_ids, user_id=user_id)
+        await reorder_team_members(team_id, req.member_ids)
         return {"ok": True}
     except Exception as e:
         logger.error("Error reordering members: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class LinkAgentRequest(BaseModel):
+    agent_config_id: str
+
+
+@router.put("/api/teams/{team_id}/members/{member_id}/link-agent")
+async def link_agent(team_id: str, member_id: str, req: LinkAgentRequest):
+    try:
+        ok = await link_agent_config(member_id, req.agent_config_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="成员不存在")
+        return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error linking agent: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

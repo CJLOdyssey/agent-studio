@@ -3,7 +3,7 @@ import os
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.pool import NullPool
@@ -22,8 +22,11 @@ class SessionDB(Base):
     __tablename__ = "sessions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     title: Mapped[str] = mapped_column(String(256), default="新对话")
+    user_id: Mapped[str] = mapped_column(String(128), default="default")
+    agent_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="SET NULL"), nullable=True, index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
@@ -46,7 +49,6 @@ class ProjectRun(Base):
     __tablename__ = "project_runs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True,
     )
@@ -77,7 +79,6 @@ class MemoryEntry(Base):
     __tablename__ = "memory_entries"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
     )
@@ -121,10 +122,10 @@ class TeamDB(Base):
     __tablename__ = "teams"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
     is_expanded: Mapped[bool] = mapped_column(Boolean, default=False)
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC),
     )
@@ -143,9 +144,7 @@ class TeamAgentDB(Base):
     __tablename__ = "team_agents"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    team_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True,
-    )
+    team_id: Mapped[str] = mapped_column(String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True)
     agent_config_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("agent_configs.id", ondelete="SET NULL"), nullable=True,
     )
@@ -157,47 +156,7 @@ class TeamAgentDB(Base):
     )
 
     team: Mapped["TeamDB"] = relationship(back_populates="members")
-
-
-class AgentToolBindingDB(Base):
-    __tablename__ = "agent_tool_bindings"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    agent_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
-    )
-    tool_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    config_override: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
-    )
-
-
-class AgentMcpBindingDB(Base):
-    __tablename__ = "agent_mcp_bindings"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    agent_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
-    )
-    mcp_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    tool_filter: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
-    )
-
-
-class AgentSkillBindingDB(Base):
-    __tablename__ = "agent_skill_bindings"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    agent_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
-    )
-    skill_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
-    )
+    agent_config: Mapped["AgentConfigDB | None"] = relationship()
 
 
 class AgentConfigDB(Base):
@@ -217,46 +176,7 @@ class AgentConfigDB(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_approver: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     icon: Mapped[str] = mapped_column(String(8), default="🤖", nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC), nullable=False,
-    )
-
-
-class AgentOutputSchemaDB(Base):
-    __tablename__ = "agent_output_schemas"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    agent_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
-    )
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
-    format_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    schema_def: Mapped[str] = mapped_column(Text, nullable=False)
-    example: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC), nullable=False,
-    )
-
-
-class AgentPromptDB(Base):
-    __tablename__ = "agent_prompts"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    agent_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="CASCADE"), nullable=False, index=True,
-    )
-    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    change_reason: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False,
     )
@@ -292,7 +212,6 @@ class CommandLogDB(Base):
     __tablename__ = "command_logs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
     )
@@ -309,7 +228,6 @@ class AttachmentDB(Base):
     __tablename__ = "attachments"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="default", index=True)
     session_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True,
     )
@@ -381,11 +299,95 @@ class KeyUsageLog(Base):
     )
 
 
-# Import checkpoint model so it's registered with Base.metadata
+class PromptDB(Base):
+    __tablename__ = "prompts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    version: Mapped[str] = mapped_column(String(16), default="v1.0.0")
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class RegisteredToolDB(Base):
+    __tablename__ = "registered_tools"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    model: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    version: Mapped[str] = mapped_column(String(16), default="v1.0.0")
+    endpoint: Mapped[str] = mapped_column(String(256), default="")
+    parameters: Mapped[str] = mapped_column(Text, default='{"type":"object","properties":{}}')
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class MCPServerDB(Base):
+    __tablename__ = "mcp_servers"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    type: Mapped[str] = mapped_column(String(32), default="stdio")
+    endpoint: Mapped[str] = mapped_column(String(256), default="")
+    config: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class RegisteredSkillDB(Base):
+    __tablename__ = "registered_skills"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    version: Mapped[str] = mapped_column(String(16), default="v1.0.0")
+    status: Mapped[str] = mapped_column(String(16), default="installed")
+    author: Mapped[str] = mapped_column(String(64), default="admin")
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    prompt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    tool_names: Mapped[dict] = mapped_column(JSON, default=list)
+    output_constraint: Mapped[str] = mapped_column(Text, default="")
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+# ── RBAC models ──────────────────────────────────────────────────────────────
+
+class UserDB(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class RoleDB(Base):
+    __tablename__ = "roles"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    name: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    permissions: Mapped[dict] = mapped_column(JSON, default=dict)
+
+
+class UserRoleDB(Base):
+    __tablename__ = "user_roles"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role_id: Mapped[str] = mapped_column(String(36), ForeignKey("roles.id", ondelete="CASCADE"), nullable=False, index=True)
 
 
 async def init_db():
-    """Bootstrap database tables on first run + apply migrations.
+    """Bootstrap database tables on first run.
 
     Uses create_all() which is idempotent — only creates tables that don't
     already exist. For production deployments with existing data, use Alembic
@@ -395,34 +397,22 @@ async def init_db():
 
     See alembic/versions/ for migration history.
     """
-    # Lazy import to break circular dependency (checkpoint → database → checkpoint)
-    from virtual_team.checkpoint import CheckpointDB  # noqa: F401  # pragma: no cover
+    # Lazy-register checkpoint model to avoid circular import
+    from virtual_team.checkpoint import CheckpointDB  # noqa: F401
 
     engine = get_async_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
-        # ── Migration: add user_id columns to existing tables ──────────────
-        import logging as _mig_logging
-        _migrations = [
-            "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
-            "CREATE INDEX IF NOT EXISTS ix_sessions_user_id ON sessions(user_id)",
-            "ALTER TABLE project_runs ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
-            "CREATE INDEX IF NOT EXISTS ix_project_runs_user_id ON project_runs(user_id)",
-            "ALTER TABLE memory_entries ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
-            "CREATE INDEX IF NOT EXISTS ix_memory_entries_user_id ON memory_entries(user_id)",
-            "ALTER TABLE teams ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
-            "CREATE INDEX IF NOT EXISTS ix_teams_user_id ON teams(user_id)",
-            "ALTER TABLE command_logs ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
-            "CREATE INDEX IF NOT EXISTS ix_command_logs_user_id ON command_logs(user_id)",
-            "ALTER TABLE attachments ADD COLUMN IF NOT EXISTS user_id VARCHAR(128) NOT NULL DEFAULT 'default'",
-            "CREATE INDEX IF NOT EXISTS ix_attachments_user_id ON attachments(user_id)",
-        ]
-        for sql in _migrations:
-            try:
-                await conn.execute(text(sql))
-            except Exception as exc:
-                _mig_logging.warning("Migration SQL skipped (%s): %s", sql[:60], exc)
+        # Enterprise: add FK + index for agent_id on existing sessions table
+        await conn.execute(text("""
+            DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'sessions_agent_id_fkey') THEN
+                    UPDATE sessions SET agent_id = NULL WHERE agent_id IS NOT NULL AND agent_id NOT IN (SELECT id FROM agent_configs);
+                    ALTER TABLE sessions ADD CONSTRAINT sessions_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES agent_configs(id) ON DELETE SET NULL;
+                END IF;
+            END $$;
+        """))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);"))
 
 
 async def get_session():

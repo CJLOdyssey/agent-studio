@@ -5,11 +5,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 0;
 }
 
 .devagents-home-centered {
   width: 100%;
-  max-width: 860px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -48,6 +49,10 @@
   justify-content: center;
 }
 
+.devagents-home-logo-icon {
+  color: var(--icon-planning);
+}
+
 .devagents-home-greeting {
   font-size: clamp(24px, 4vw, 32px);
   font-weight: 700;
@@ -73,7 +78,7 @@
 }
 
 .devagents-home-chat-messages {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -100,4 +105,39 @@
   50% {
     opacity: 0;
   }
+}
+
+.devagents-input-features {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.devagents-feature-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius);
+  color: var(--da-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.devagents-feature-btn:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+  border-color: var(--da-border-strong);
+}
+
+.devagents-feature-btn .lucide-icon {
+  width: 14px;
+  height: 14px;
 }

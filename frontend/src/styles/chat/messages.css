@@ -2,21 +2,19 @@
 .devagents-messages {
   flex: 1;
   overflow-y: auto;
-  padding: var(--sp-6);
-  scroll-behavior: smooth;
   background: var(--da-bg-primary);
   display: flex;
   flex-direction: column;
 }
 
 .devagents-messages-inner {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
-  padding-bottom: var(--sp-12);
+  padding: var(--sp-6) var(--sp-6) var(--sp-12);
 }
 
 .devagents-iteration-marker {
@@ -25,7 +23,6 @@
   color: var(--da-text-muted);
   margin-bottom: var(--sp-8);
   padding-bottom: var(--sp-4);
-  border-bottom: 1px solid var(--da-border-subtle);
 }
 
 .devagents-message {
@@ -61,15 +58,30 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  max-width: 80%;
+  max-width: 100%;
 }
 
 .devagents-message-content-wrapper.user {
   align-items: flex-end;
+  max-width: 80%;
 }
 
 .devagents-message-content-wrapper.agent {
   align-items: flex-start;
+  max-width: 100%;
+}
+
+.devagents-message-bubble-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.devagents-message-bubble-row .devagents-message-bubble {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .devagents-message-label {
@@ -102,15 +114,16 @@
 }
 
 .devagents-message-bubble.user {
-  background: var(--da-bg-elevated);
+  background: var(--da-msg-user-bg);
   color: var(--da-text-primary);
   border-radius: 12px 12px 4px 12px;
 }
 
 .devagents-message-bubble.agent {
-  background: var(--da-bg-surface);
+  background: transparent;
   color: var(--da-text-primary);
-  border-radius: 12px 12px 12px 4px;
+  border-radius: 0;
+  padding: 0;
 }
 
 .devagents-mention {
@@ -152,12 +165,6 @@
   align-items: center;
   gap: var(--sp-2);
   margin-top: var(--sp-1);
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.devagents-message:hover .devagents-message-actions {
-  opacity: 1;
 }
 
 .devagents-msg-copy {
@@ -176,6 +183,497 @@
   background: var(--da-bg-hover);
 }
 
+.devagents-msg-edit,
+.devagents-msg-regenerate {
+  padding: 2px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.devagents-msg-edit:hover,
+.devagents-msg-regenerate:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+.devagents-msg-continue {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--da-accent-indigo);
+  border-radius: 6px;
+  color: var(--da-accent-indigo);
+  cursor: pointer;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.devagents-msg-continue:hover {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+}
+
+.devagents-edit-bar-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.devagents-edit-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--da-border);
+  border-radius: 12px;
+  background: var(--da-bg-surface);
+}
+
+.devagents-edit-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-base);
+  font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  min-height: 24px;
+  max-height: 120px;
+}
+
+.devagents-edit-input::placeholder {
+  color: var(--da-text-muted);
+}
+
+.devagents-edit-actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.devagents-edit-cancel {
+  padding: 6px 16px;
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.devagents-edit-cancel:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+.devagents-edit-send {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--da-accent);
+  color: #ffffff;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.devagents-edit-send:hover {
+  opacity: 0.9;
+}
+
+.devagents-edit-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .devagents-message-content-wrapper.user .devagents-message-actions {
   justify-content: flex-end;
 }
+
+/* Agent Markdown Content — no bubble, DeepSeek native style */
+.devagents-message-bubble.agent.ds-markdown {
+  background: transparent;
+  color: var(--da-text-primary);
+  border-radius: 0;
+  padding: 0;
+}
+
+.ds-markdown {
+  font-size: var(--da-font-size-base);
+  line-height: 1.7;
+}
+
+.ds-markdown-paragraph {
+  margin: 0 0 12px 0;
+}
+
+.ds-markdown-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.ds-markdown-list {
+  margin: 8px 0;
+  padding-left: 24px;
+  list-style-position: outside;
+}
+
+.ds-markdown-ordered {
+  list-style-type: decimal;
+}
+
+.ds-markdown-list-item {
+  margin: 4px 0;
+  padding-left: 4px;
+}
+
+.ds-markdown-list-item > .ds-markdown-paragraph {
+  margin: 2px 0;
+}
+
+.ds-markdown-strong {
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+.ds-markdown-h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 16px 0 8px 0;
+  padding-bottom: 8px;
+}
+
+.ds-markdown-h2 {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin: 14px 0 6px 0;
+}
+
+.ds-markdown-h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 12px 0 4px 0;
+}
+
+.ds-markdown-blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--da-accent-blue) 8%, transparent);
+  border-radius: 0 8px 8px 0;
+  color: var(--da-text-secondary);
+}
+
+.ds-markdown-link {
+  color: var(--da-accent-blue);
+  text-decoration: none;
+}
+
+.ds-markdown-link:hover {
+  text-decoration: underline;
+}
+
+/* Inline Code */
+.ds-inline-code {
+  background: color-mix(in srgb, var(--da-accent-amber) 15%, transparent);
+  color: var(--da-accent-amber);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.9em;
+}
+
+/* Code Block */
+.ds-code-block {
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--da-bg-elevated);
+}
+
+.ds-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--da-bg-surface);
+}
+
+.ds-code-lang {
+  font-size: 12px;
+  color: var(--da-text-muted);
+  font-family: 'SF Mono', Monaco, monospace;
+}
+
+.ds-code-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.ds-code-copy:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Action Buttons Bar */
+.devagents-message-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.devagents-message:hover .devagents-message-actions-bar {
+  opacity: 1;
+}
+
+.devagents-msg-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.devagents-msg-action:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.devagents-message-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--da-text-muted);
+  opacity: 0.7;
+}
+
+/* ── Thinking block (DeepSeek native style, enterprise-grade) ── */
+.ds-thinking-block {
+  margin-bottom: 12px;
+}
+
+.ds-thinking-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--da-text-muted);
+  transition: color 0.15s;
+}
+
+.ds-thinking-header:hover {
+  color: var(--da-text-primary);
+}
+
+.ds-thinking-meta {
+  font-size: 11px;
+  color: var(--da-text-muted);
+}
+
+.ds-thinking-time {
+  font-size: 11px;
+  color: var(--da-text-muted);
+  margin-left: 4px;
+}
+
+.ds-thinking-body {
+  position: relative;
+  margin-top: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  font-size: 12.5px;
+  color: var(--da-text-muted);
+  line-height: 1.65;
+}
+
+/* Tree nodes - enterprise precision */
+.ds-think-node {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 10px;
+  min-height: 18px;
+}
+
+.ds-think-node:last-child {
+  margin-bottom: 0;
+}
+
+/* Vertical tree line - exact center alignment */
+.ds-think-branch {
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: var(--da-border);
+  z-index: 0;
+}
+
+/* First node: line starts from dot center */
+.ds-think-node:first-child .ds-think-branch {
+  top: 8px;
+}
+
+/* Non-last node: line extends through margin gap */
+.ds-think-node:not(:last-child) .ds-think-branch {
+  bottom: -10px;
+}
+
+/* Dot at each node - on top of the line */
+.ds-think-dot {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--da-text-muted);
+  border: 2px solid var(--da-bg-primary);
+  z-index: 1;
+}
+
+.ds-think-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.65;
+}
+
+/* Version pagination */
+.devagents-version-pagination {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.devagents-version-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: 1px solid var(--da-border);
+  border-radius: 4px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+
+.devagents-version-btn:hover:not(:disabled) {
+  background: var(--da-surface-hover);
+  color: var(--da-text-primary);
+  border-color: var(--da-border-hover);
+}
+
+.devagents-version-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.devagents-version-count {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  min-width: 28px;
+  text-align: center;
+  user-select: none;
+}
+
+/* Interruption indicator */
+.devagents-msg-interrupted {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 0;
+  width: 100%;
+}
+
+.devagents-msg-interrupted-line {
+  flex: 1;
+  height: 1px;
+  border-top: 1px dashed var(--da-text-muted);
+  opacity: 0.5;
+}
+
+.devagents-msg-interrupted-label {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Thumbs up/down */
+.devagents-msg-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid var(--da-border);
+  border-radius: 4px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  padding: 0;
+}
+
+.devagents-msg-thumb:hover {
+  background: var(--da-surface-hover);
+  color: var(--da-accent-indigo);
+  border-color: var(--da-accent-indigo);
+}
+
+.devagents-msg-thumb.active {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+  border-color: var(--da-accent-indigo);
+}
+
+/* Continue button loading state */
+.devagents-msg-continue.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.devagents-msg-continue.loading:hover {
+  background: transparent;
+  color: var(--da-accent-indigo);
+}
+
