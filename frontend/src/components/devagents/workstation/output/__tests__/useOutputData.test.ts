@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useOutputData } from '../useOutputData';
+vi.mock('../api', () => {
+  const outputAPI = {
+    fetchAll: vi.fn().mockResolvedValue([{'id': 'o1', 'name': 'JSON格式', 'content': '以JSON格式输出', 'category': '格式约束', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}, {'id': 'o2', 'name': 'Markdown格式', 'content': '以Markdown输出', 'category': '格式约束', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}]),
+    create: vi.fn().mockImplementation((data) => Promise.resolve({ id: "new_"+Date.now(), ...data, createdAt: "2024-01-01" })),
+    update: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+    clone: vi.fn().mockImplementation((item) => Promise.resolve({ ...item, id: item.id+"_copy" })),
+    removeBatch: vi.fn().mockResolvedValue(undefined),
+  };
+  return { outputAPI };
+});
+
+
+
 
 describe('useOutputData', () => {
   it('starts loading and loads data on mount', async () => {

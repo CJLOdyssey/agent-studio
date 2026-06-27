@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePromptData } from '../usePromptData';
+vi.mock('../api', () => {
+  const promptAPI = {
+    fetchAll: vi.fn().mockResolvedValue([{'id': 'p1', 'name': '系统提示', 'content': '你是一个助手', 'category': '系统提示词', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}, {'id': 'p2', 'name': '用户提示', 'content': '请帮助我', 'category': '用户提示词', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}, {'id': 'p3', 'name': '代码审查', 'content': '审查代码质量', 'category': '任务模板', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}]),
+    create: vi.fn().mockImplementation((data) => Promise.resolve({ id: "new_"+Date.now(), ...data, createdAt: "2024-01-01" })),
+    update: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+    clone: vi.fn().mockImplementation((item) => Promise.resolve({ ...item, id: item.id+"_copy" })),
+    removeBatch: vi.fn().mockResolvedValue(undefined),
+  };
+  return { promptAPI };
+});
+
+
+
 
 describe('usePromptData', () => {
   it('starts loading and loads on mount', async () => {

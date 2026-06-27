@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { SortDir } from '../types';
 import type { ToolEntry } from './tool.types';
 import { toolAPI } from './api';
@@ -28,29 +28,34 @@ export function useToolData(): ToolData {
   const [items, setItems] = useState<ToolEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search_, setSearch_] = useState('');
-  const [categoryFilter_, setCategoryFilter_] = useState<CategoryFilter>('all');
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [sortField, setSortField] = useState<ToolSortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const cancelledRef = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = useCallback(() => {
+    setIsLoading(true); setError(null);
+    cancelledRef.current = false;
     toolAPI.fetchAll()
-      .then((data) => { if (!cancelled) { setItems(data); setIsLoading(false); } })
-      .catch((e) => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
-    return () => { cancelled = true; };
+      .then((data) => { if (!cancelledRef.current) setItems(data); })
+      .catch((e) => { if (!cancelledRef.current) setError(`加载失败：${(e as Error).message}`); })
+      .finally(() => { if (!cancelledRef.current) setIsLoading(false); });
+    return () => { cancelledRef.current = true; };
   }, []);
 
-  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); setSelectedIds(new Set()); }, []);
-  const setCategoryFilter = useCallback((v: CategoryFilter) => { setCategoryFilter_(v); setPage(1); setSelectedIds(new Set()); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { const c = load(); return c; }, [load]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, categoryFilter, sortField, sortDir]);
 
   const processed = useMemo(() => {
-    let r = categoryFilter_ === 'all' ? items : items.filter((s) => s.category === categoryFilter_);
-    if (search_.trim()) {
-      const q = search_.toLowerCase();
-      r = r.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
+    let r = categoryFilter === 'all' ? items : items.filter((s) => s.category === categoryFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      r = r.filter((s) => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q) || s.description.toLowerCase().includes(q));
     }
     if (sortField) {
       r = [...r].sort((a, b) => {
@@ -60,7 +65,7 @@ export function useToolData(): ToolData {
       });
     }
     return r;
-  }, [items, search_, categoryFilter_, sortField, sortDir]);
+  }, [items, search, categoryFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -69,11 +74,7 @@ export function useToolData(): ToolData {
 
   const toggleSelectAll = useCallback(() => { setSelectedIds(allOnPageSelected ? new Set() : new Set(paged.map((p) => p.id))); }, [allOnPageSelected, paged]);
   const toggleSelect = useCallback((id: string) => { setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }); }, []);
-  const handleSort = useCallback((field: ToolSortField) => {
-    setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; });
-    setPage(1);
-    setSelectedIds(new Set());
-  }, []);
+  const handleSort = useCallback((field: ToolSortField) => { setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; }); }, []);
 
   const addTool = useCallback(async (data: Omit<ToolEntry, 'id' | 'createdAt'>) => {
     try { const item = await toolAPI.create(data); setItems((prev) => [...prev, item]); setError(null); }
@@ -95,17 +96,8 @@ export function useToolData(): ToolData {
     try { await toolAPI.removeBatch(ids); setItems((prev) => prev.filter((s) => !ids.has(s.id))); setSelectedIds(new Set()); setError(null); }
     catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
   }, []);
+
   const clearError = useCallback(() => setError(null), []);
 
-  const retry = useCallback(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-    toolAPI.fetchAll()
-      .then((data) => { if (!cancelled) { setItems(data); setIsLoading(false); } })
-      .catch((e) => { if (!cancelled) { setError(`加载失败：${(e as Error).message}`); setIsLoading(false); } });
-    return () => { cancelled = true; };
-  }, []);
-
-  return { isLoading, error, paged, processed, page: safePage, totalPages, search: search_, categoryFilter: categoryFilter_, sortField, sortDir, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, setSelectedIds, handleSort, toggleSelectAll, toggleSelect, addTool, updateTool, removeTool, copyTool, removeMultiple, clearError, retry };
+  return { isLoading, error, paged, processed, page: safePage, totalPages, search, categoryFilter, sortField, sortDir, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, setSelectedIds, handleSort, toggleSelectAll, toggleSelect, addTool, updateTool, removeTool, copyTool, removeMultiple, clearError, retry: load };
 }

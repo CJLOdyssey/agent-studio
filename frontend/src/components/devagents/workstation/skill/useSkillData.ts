@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { SortDir } from '../types';
 import type { SkillEntry, SkillFormData } from './skill.types';
 import { skillAPI } from './api';
@@ -40,28 +40,36 @@ export function useSkillData(): SkillData {
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search_, setSearch_] = useState('');
-  const [categoryFilter_, setCategoryFilter_] = useState<CategoryFilter>('all');
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [sortField, setSortField] = useState<SkillSortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const cancelledRef = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchSkills = useCallback(() => {
+    setIsLoading(true); setError(null);
+    cancelledRef.current = false;
     skillAPI.fetchAll()
-      .then((data) => { if (!cancelled) { setSkills(data); setIsLoading(false); } })
-      .catch(() => { if (!cancelled) { setError('Failed to load skills'); setIsLoading(false); } });
-    return () => { cancelled = true; };
+      .then((data) => { if (!cancelledRef.current) setSkills(data); })
+      .catch(() => { if (!cancelledRef.current) setError('Failed to load skills'); })
+      .finally(() => { if (!cancelledRef.current) setIsLoading(false); });
+    return () => { cancelledRef.current = true; };
   }, []);
 
-  const setSearch = useCallback((v: string) => { setSearch_(v); setPage(1); setSelectedIds(new Set()); }, []);
-  const setCategoryFilter = useCallback((v: CategoryFilter) => { setCategoryFilter_(v); setPage(1); setSelectedIds(new Set()); }, []);
+  const retry = useCallback(() => fetchSkills(), [fetchSkills]);
+  const clearError = useCallback(() => setError(null), []);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { const c = fetchSkills(); return c; }, [fetchSkills]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, categoryFilter, sortField, sortDir]);
 
   const processed = useMemo(() => {
-    let result = categoryFilter_ === 'all' ? skills : skills.filter((s) => s.category === categoryFilter_);
-    if (search_.trim()) {
-      const q = search_.toLowerCase();
+    let result = categoryFilter === 'all' ? skills : skills.filter((s) => s.category === categoryFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
       result = result.filter((s) => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q) || s.description.toLowerCase().includes(q));
     }
     if (sortField) {
@@ -72,7 +80,7 @@ export function useSkillData(): SkillData {
       });
     }
     return result;
-  }, [skills, search_, categoryFilter_, sortField, sortDir]);
+  }, [skills, search, categoryFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -85,11 +93,7 @@ export function useSkillData(): SkillData {
 
   const toggleSelectAll = useCallback(() => { setSelectedIds(allOnPageSelected ? new Set() : new Set(paged.map((p) => p.id))); }, [allOnPageSelected, paged]);
   const toggleSelect = useCallback((id: string) => { setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }); }, []);
-  const handleSort = useCallback((field: SkillSortField) => {
-    setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; });
-    setPage(1);
-    setSelectedIds(new Set());
-  }, []);
+  const handleSort = useCallback((field: SkillSortField) => { setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; }); }, []);
 
   const addSkill = useCallback(async (data: SkillFormData) => {
     try { const created = await skillAPI.create(data); setSkills((prev) => [...prev, created]); setError(null); }
@@ -112,20 +116,9 @@ export function useSkillData(): SkillData {
     catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
   }, []);
 
-  const retry = useCallback(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-    skillAPI.fetchAll()
-      .then((data) => { if (!cancelled) { setSkills(data); setIsLoading(false); } })
-      .catch(() => { if (!cancelled) { setError('Failed to load skills'); setIsLoading(false); } });
-    return () => { cancelled = true; };
-  }, []);
-  const clearError = useCallback(() => setError(null), []);
-
   return {
     isLoading, error, paged, processed, page: safePage, totalPages,
-    search: search_, categoryFilter: categoryFilter_, sortField, sortDir, selectedIds, allOnPageSelected,
+    search, categoryFilter, sortField, sortDir, selectedIds, allOnPageSelected,
     setSearch, setCategoryFilter, setPage, setSelectedIds,
     handleSort, toggleSelectAll, toggleSelect,
     addSkill, updateSkill, removeSkill, copySkill, removeMultiple,
