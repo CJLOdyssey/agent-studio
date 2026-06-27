@@ -211,16 +211,16 @@ describe('DevAgentsWorkstation 集成测试', () => {
 
       // Team starts expanded — agents list should be visible
       await waitFor(() => {
-        const lists = document.querySelectorAll('.devagents-agents-list');
+        const lists = document.querySelectorAll('.devagents-team-agents');
         expect(lists.length).toBeGreaterThanOrEqual(1);
       });
 
       // Click to collapse
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-header');
+      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-folder-header');
       fireEvent.click(teamHeader!);
 
       await waitFor(() => {
-        const lists = document.querySelectorAll('.devagents-agents-list');
+        const lists = document.querySelectorAll('.devagents-team-agents');
         expect(lists.length).toBe(0);
       });
 
