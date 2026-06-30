@@ -4,7 +4,7 @@
    ============================================================ */
 
 /* ── Page Container ── */
-.devagents-workstation-page {
+.agentstudio-workstation-page {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -14,7 +14,7 @@
 }
 
 /* ── Body (左右分栏) ── */
-.devagents-workstation-body {
+.agentstudio-workstation-body {
   display: flex;
   flex: 1;
   min-height: 0;
@@ -22,7 +22,7 @@
 }
 
 /* ── Sidebar ── */
-.devagents-workstation-sidebar {
+.agentstudio-workstation-sidebar {
   width: 140px;
   flex-shrink: 0;
   padding: var(--sp-2) var(--sp-2);
@@ -35,11 +35,11 @@
   background: var(--da-bg-card);
 }
 
-.devagents-workstation-sidebar:empty {
+.agentstudio-workstation-sidebar:empty {
   display: none;
 }
 
-.devagents-workstation-tab {
+.agentstudio-workstation-tab {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -55,19 +55,19 @@
   white-space: nowrap;
 }
 
-.devagents-workstation-tab:hover {
+.agentstudio-workstation-tab:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-workstation-tab.active {
+.agentstudio-workstation-tab.active {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
   font-weight: 600;
 }
 
 /* ── Content ── */
-.devagents-workstation-content {
+.agentstudio-workstation-content {
   flex: 1;
   min-width: 0;
   min-height: 0;

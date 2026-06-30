@@ -1,12 +1,12 @@
 /* Process panel */
-.devagents-process-panel {
+.agentstudio-process-panel {
   background: var(--da-bg-surface);
   border-radius: 8px;
   overflow: hidden;
   margin-top: var(--sp-1);
 }
 
-.devagents-process-header {
+.agentstudio-process-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -15,11 +15,11 @@
   transition: background 0.15s;
 }
 
-.devagents-process-header:hover {
+.agentstudio-process-header:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-process-title {
+.agentstudio-process-title {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -28,14 +28,14 @@
   color: var(--da-text-secondary);
 }
 
-.devagents-process-steps {
+.agentstudio-process-steps {
   padding: var(--sp-3);
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
 }
 
-.devagents-process-step {
+.agentstudio-process-step {
   display: flex;
   align-items: center;
   gap: var(--sp-2);

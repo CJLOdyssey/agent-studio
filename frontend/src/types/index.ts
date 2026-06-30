@@ -19,7 +19,7 @@ export interface AgentConfig {
 }
 
 export interface WsMessage {
-  type: 'message' | 'stream' | 'thinking_stream' | 'thinking_done' | 'status' | 'result';
+  type: 'message' | 'stream' | 'thinking_stream' | 'thinking_done' | 'status' | 'result' | 'error';
   role?: AgentRole;
   agent_name?: string;
   content?: string;
@@ -52,8 +52,10 @@ export interface ChatMessage {
   round_number: number;
   created_at: string | null;
   versions?: string[];
+  thinkingVersions?: string[];
   currentVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
+  interrupted?: boolean;
 }
 
 export interface ProjectRun {

@@ -1,24 +1,40 @@
-# AGENTS.md — 虚拟软件外包团队
+# AGENTS.md — AgentStudio
 
-Multi-repo structure: `frontend/` (React 18 + Vite 6) + `virtual_team/` (FastAPI + SQLAlchemy async).  
-Two entrypoints, no monorepo tool. Frontend proxies `/api` to `localhost:8081` in dev (`vite.config.ts`).
+Multi-repo: `frontend/` (React 18 + Vite 6 + Tailwind 3) + `virtual_team/` (FastAPI + SQLAlchemy async).  
+Frontend proxies `/api` → `localhost:8080` and `/ws` → backend WebSocket.
+
+## Quick start
+
+```bash
+# Docker (everything, no manual setup needed)
+docker compose -f docker/compose.local.yml up -d
+
+# Local dev (needs PostgreSQL + Redis running)
+cp .env.example .env && pip install -r requirements.txt
+PYTHONPATH=. uvicorn virtual_team.app:app --reload          # → :8080
+cd frontend && npm install && npm run dev                   # → :5173
+
+# CLI single run (needs DB + Redis)
+PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
+```
+
+**Always `PYTHONPATH=.`** for backend commands — project is not installed as a package.
 
 ## Commands
 
-| Action | Frontend (`frontend/`) | Backend (project root) |
-|--------|----------------------|------------------------|
-| Dev server | `npm run dev` | `PYTHONPATH=. python3 -m uvicorn virtual_team.app:app --reload` |
+| Action | Frontend (`frontend/`) | Backend (root) |
+|--------|----------------------|----------------|
 | Build | `npm run build` (`tsc -b && vite build`) | — |
-| Typecheck | `npm run typecheck` (`tsc --noEmit`) | `mypy virtual_team/ --strict` |
+| Typecheck | `npm run typecheck` | `mypy virtual_team/ --strict` |
 | Lint | `npm run lint` (ESLint) | `ruff check virtual_team/` |
 | Format | `npm run format` (Prettier) | — (ruff handles) |
-| Test (unit) | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short` |
-| Test (e2e) | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short` |
+| Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short` |
+| E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short` |
 | Coverage | `npm run test:coverage` | — |
-| CLI | — | `PYTHONPATH=. python3 -m virtual_team.main "<requirement>"` |
+| DB migrate | — | `PYTHONPATH=. alembic upgrade head` |
+| Celery worker | — | `celery -A virtual_team.broker.celery_app worker --loglevel=info --concurrency=2 --pool=threads` |
 
-**Always use `PYTHONPATH=.`** for backend commands — the project is not installed as a package.  
-**Backend Ruff + mypy + pytest all run in CI** — run all three before pushing. Frontend order: `typecheck → lint → build → test` (matching CI).
+**CI order** (match locally): Frontend `typecheck → lint → build → test`, Backend `ruff → mypy → pytest`.
 
 ## Architecture
 
@@ -26,70 +42,82 @@ Two entrypoints, no monorepo tool. Frontend proxies `/api` to `localhost:8081` i
 
 ```
 DevAgentsWorkstation.tsx (chat + sidebar + workstation layout)
-  └─ WorkstationPage.tsx (10-tab menu → ErrorBoundary per module)
-       ├─ agent/, prompt/, output/, tool/, mcp/, skill/, team/  ← CRUD modules
-       ├─ monitor/, logs/, settings/                            ← display-only modules
-       └─ shared/ (ErrorBoundary, LoadingSkeleton, DeleteConfirmModal, ResourcePickerModal, ...)
-  └─ modals/ (AgentConfigModal + tabs: SystemPrompt, OutputConstraint, Tools, MCP, Skills)
+  └─ WorkstationPage.tsx (10-tab → ErrorBoundary per module)
+       ├─ agent/, prompt/, output/, tool/, mcp/, skill/, team/  ← CRUD
+       ├─ monitor/, logs/, settings/                            ← display-only
+       └─ shared/ (ErrorBoundary, LoadingSkeleton, modals, ...)
+  └─ modals/ (AgentConfigModal + tabs)
 ```
 
-**Module file convention** (each CRUD module in its own directory):
-```
-Management.tsx + FormModal.tsx + types.ts + constants.ts + mock-data.ts + api.ts + locales.ts + useXxxData.ts + useXxxUI.ts + index.ts
-```
-Always import via `index.ts` barrel exports, never from internal files directly.
+**Module convention**: Each CRUD module in its own dir with: `Management.tsx` + `FormModal.tsx` + `types.ts` + `constants.ts` + `mock-data.ts` + `api.ts` + `locales.ts` + `useXxxManagement.ts` + `index.ts`. Import via `index.ts` barrel only.
 
-**DI pattern**: Each workstation module's `api.ts` exports `let xxxAPI: XxxService = realImpl` plus a `setXxxAPI(mock)` for tests. Components import from the module's `api.ts` re-exported via `index.ts`. Test code can swap implementations via `setXxxAPI()`.
+**DI pattern**: Each `api.ts` exports `let xxxAPI: XxxService = realImpl` + `setXxxAPI(mock)` for test swaps.
 
-**State split**: Zustand `chatStore.ts` for UI/chat state. TanStack Query for server data (via hooks in `api/hooks.ts`). Each workstation module has `useXxxData` (data+CRUD+error+retry) + `useXxxUI` (sort/filter/selection/modal state) hooks.
+**State split**: Zustand `chatStore.ts` for UI/chat. TanStack Query for server data. Per-module `useXxxManagement.ts` hooks.
 
-**i18n**: i18next with `zh-CN` fallback. Global keys in `src/i18n/locales/{zh-CN,en-US}.json`. Module-specific keys in each module's `locales.ts` (tuple format with `t()` function). Use `useTranslation()` from react-i18next in components or `t()` from module locales.
+**i18n**: i18next, `zh-CN` fallback. Global keys in `src/i18n/locales/`. Module keys in `locales.ts`.
 
-**CSS**: 15 CSS files in `src/styles/` — `tokens.css` (design tokens), `layout.css`, per-module files (`workstation-*.css`). Not CSS modules — plain CSS with `.wsta-*` prefix convention.
+**CSS**: Plain CSS in `src/styles/` — `.wsta-*` prefix. Not CSS modules.
 
-**Coverage thresholds** (enforced): statements 30%, branches 19%, functions 20%, lines 30%.
+**Build chunks** (vite manualChunks): `vendor` (react/react-dom/router), `utils` (axios/zustand/crypto-js), `sentry`, `syntax`.
 
-**TypeScript**: `strict: true`, `noUnusedLocals: true`, `noUnusedParameters: true`. No `as any` / `@ts-ignore` / `@ts-expect-error` anywhere.
+**TypeScript**: `strict: true`, `noUnusedLocals`, `noUnusedParameters`. No `as any` / `@ts-ignore` / `@ts-expect-error`.
+
+**Coverage thresholds** (Vitest enforced): statements 30%, branches 19%, functions 20%, lines 30%.
+
+**Test setup** (`src/test/setup.tsx`): `TestProviders` wrapping QueryClient + SettingsProvider + ToastProvider. `scrollIntoView` / `scrollTo` / `matchMedia` mocked globally.
+
+**nginx** (prod): API proxy → `backend:8080`, WS at `/ws`, assets cached 1y, SPA fallback.
 
 ### Backend
 
 ```
-app.py (FastAPI lifespan, middleware stack: RateLimit → Auth → CORS)
-  └─ routers/ (14 modules: admin, agents, attachments, commands, keys, mcps, models, prompts, runs,
-  │            sessions, skills, system_team, teams, tools)
+app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS)
+  └─ routers/ (14 modules: admin, agents, attachments, commands, keys, mcps, models,
+  │            prompts, runs, sessions, skills, system_team, teams, tools)
   │    └─ repository/ (8 modules: core, agents, keys, teams, prompts, tools, mcps, skills)
-  │         └─ database.py (18 ORM models)
-  └─ checkpoint.py (CheckpointDB model + create_checkpointer factory)
+  │         └─ database.py (18 ORM models, 19 tables incl. checkpoint)
+  └─ checkpoint.py (CheckpointDB + create_checkpointer factory)
+  └─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
 ```
 
-**Three-layer strict**: `database.py` (ORM models) → `repository/` (async queries) → `routers/` (HTTP endpoints). Routers never touch database.py directly.
+**Three-layer strict**: `database.py` (models) → `repository/` (async queries) → `routers/` (HTTP). Routers never touch database.py.
 
-**Star-import barrel**: `virtual_team/repository/__init__.py` uses star imports from all repository modules — any new repository function is available via `from virtual_team.repository import *`.
+**Star-import barrel**: `repository/__init__.py` uses `from x import *` — new repo functions auto-available.
 
 **Two graph engines**:
-- `agent_graph.py` — LangGraph **single-agent** engine (`SingleAgentGraph`). Key classes: `ToolConfig` (lightweight tool descriptor), `_ToolWrapper` (invocation wrapper with built-in handlers: calculator/weather/websearch, MCP handlers, LLM fallback). Tool name prefix convention: raw tools get original name, MCP gets `mcp_{name}`, skills get `skill_{name}`.
-- `team_graph.py` — LangGraph **multi-agent** collaboration (`TeamGraph`). PM → Frontend → Backend → Tester loop with up to `max_rounds` iterations.
+- `agent_graph.py`: LangGraph single-agent (`SingleAgentGraph`). Tool name prefixes: raw → none, MCP → `mcp_`, skill → `skill_`.
+- `team_graph.py`: LangGraph multi-agent (`TeamGraph`). PM → Frontend → Backend → Tester loop, up to `MAX_ROUNDS`.
 
-**Task execution** (`tasks.py`): Celery tasks parse agent config JSON fields (tools, mcp, skills), look up `registered_tools`/`mcp_servers`/`registered_skills` from DB, create `ToolConfig` objects, bind to graph, then execute. Uses `asyncio.run()` internally.
+**Celery tasks** (`tasks.py`): Parse JSON config fields → look up DB → create `ToolConfig` → bind to graph → execute via `asyncio.run()` (`_run_async` wrapper).
 
-**Config loading**: `config.py` reads `.env` file at startup (manually, not python-dotenv) — env vars take precedence. Loaded via `load_config()` in FastAPI lifespan.
+**Continuation flow** (interrupted → "继续生成"): POST `/api/runs/complete` → `routers/runs.py:create_complete_run`. Unlike the main flow (which goes through Celery), continuation runs **directly in the uvicorn process** via `asyncio.create_task(_complete_pipeline(...))`. This avoids Docker Celery worker image rebuilds when modifying continuation logic. The pipeline uses DeepSeek's prefix completion API (`/beta/chat/completions` with `thinking: {type: "enabled"}`) and streams results through the same Redis → WebSocket pipeline. Key constraint: the HTTP response returns immediately (background task), so the frontend must not depend on the POST response body for stream data.
 
-**Checkpointer**: `checkpoint.py` `create_checkpointer()` — currently always returns `MemorySaver`. `CHECKPOINTER_BACKEND=sqlite|memory|postgres` supported in code but only memory is wired. `CHECKPOINTER_DSN` reserved for future.
+**Streaming**: `StreamEmitter` → Redis pub/sub → frontend WebSocket. Thinking tokens buffered in `_pending_thinking`.
 
-**Auth**: Two modes via `AUTH_MODE`:
-- `legacy` (default): fixed admin user, no DB query
-- `rbac`: JWT (HS256) + `UserDB`/`RoleDB`/`UserRoleDB` lookup. `AUTH_ENABLED=1` required for enforcement.
-`get_current_user` is a FastAPI `Depends` callable returning `CurrentUser` dataclass. `require_role(*names)` is a dependency factory.
+**Config** (`config.py`): Manual `.env` parser (env vars take precedence). `TeamConfig` Pydantic model with `extra="forbid"`.
 
-**Error codes**: `ErrorCode` enum in `error_codes.py` (23 codes). Format `{MODULE}_3DIGIT`, e.g. `TEAM_001`. Use `error_response(ErrorCode.TEAM_001, detail="...")` to return structured errors. Conflicts mapped to HTTP 409, auth errors to 401/403, rate limiting to 429.
+**Checkpointer**: `create_checkpointer()` supports `memory` (test/CI), `sqlite` (default, writes `checkpoints.db`), `postgres`.
 
-**Team name uniqueness**: Enforced at DB level (`teams.name` UNIQUE + INDEX) and repository level → router returns 409.
+**Auth** (`AUTH_MODE`): `legacy` (fixed admin, no DB) or `rbac` (JWT HS256 + role lookup). `AUTH_ENABLED=1` to enforce.
 
-**Rate limiting**: Token-bucket backed by Redis (`RateLimitMiddleware`). Default 60 req / 60s per IP.
+**Error codes**: `ErrorCode` enum, 23 codes, format `{MODULE}_3DIGIT`. Use `error_response(ErrorCode.X, detail="...")`.
+
+**Rate limiting**: Token-bucket via Redis. Default 60 req/60s per IP. Configurable.
+
+**Key Vault**: Fernet-encrypted at-rest key storage. `KEY_VAULT_SECRET` ≥ 32 bytes.
+
+**Streaming**: `StreamEmitter` → Redis pub/sub → frontend WebSocket. Thinking tokens buffered in `_pending_thinking`.
+
+**Metrics**: Prometheus RED counters (`/metrics` endpoint).
+
+**Mock fallback**: `ENABLE_MOCK_FALLBACK=1` returns canned LLM responses.
 
 ## Database
 
-19 tables across models (18 in `database.py` + 1 `checkpoints` in `checkpoint.py`). Key foreign key chains:
+19 tables (18 models in `database.py` + `checkpoints` in `checkpoint.py`).
+
+Key FK chains:
 ```
 sessions (1) → project_runs (N) → chat_messages (N)
 sessions (1) → memory_entries (N) → checkpoints (N)
@@ -98,34 +126,46 @@ user_api_keys (1) → key_usage_logs (N)
 users (1) → user_roles (N) ← roles (1)
 ```
 
-Env var `DATABASE_URL` defaults to `postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team`.
+Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
-## CLI
+## Docker
 
-`python3 -m virtual_team.main "<requirement>"` runs a single agent via LangGraph from the command line. Reads `DEEPSEEK_API_KEY`/`OPENAI_API_KEY` from env or `.env`. Uses first active agent config's system prompt.
+- **Backend** (`docker/Dockerfile`): Python 3.12-slim, pip install, entrypoint runs migrations. Same image for API + Celery (cmd differs).
+- **Frontend** (`frontend/Dockerfile`): Multi-stage — Node 22-alpine build → nginx 1.27-alpine serve.
+- **Local** (`docker/compose.local.yml`): postgres (pgvector/pg16), redis (7-alpine), backend, celery.
+- **Prod** (`docker/compose.prod.yml`): Pulls from Alibaba Cloud ACR.
 
 ## CI/CD (GitHub Actions)
 
-5 jobs in `.github/workflows/ci.yml`, all must pass:
-1. `frontend-quality` — `npm ci → typecheck → lint → build → test`
-2. `backend-quality` — `pip install → ruff → mypy → pytest`
-3. `integration` — Matrix on `AUTH_MODE=legacy|rbac` with `CHECKPOINTER_BACKEND=memory`
-4. `docs-check` — Verifies `.env.example` covers all env vars in code; checks table count matches CLAUDE.md
-5. `build-frontend` — Separate `npm ci → build` + uploads `frontend/dist/` as artifact
+**CI** (`.github/workflows/ci.yml`, 5 jobs):
+1. `frontend-quality` — npm ci → typecheck → lint → build → test
+2. `backend-quality` — pip install → ruff → mypy → pytest (skips E2E)
+3. `integration` — matrix `AUTH_MODE=legacy|rbac`, needs Redis + PostgreSQL services
+4. `docs-check` — verifies `.env.example` covers all env vars; checks module count matches CLAUDE.md
+5. `build-frontend` — npm ci → build → uploads `frontend/dist/`
 
-## Testing Quirks
+**Deploy** (`.github/workflows/deploy.yml`): Build 3 images (backend, celery, frontend) → push to Alibaba ACR → SSH deploy to `39.108.61.123` with `docker compose -f docker/compose.prod.yml up -d --force-recreate`.
 
-- **Frontend**: Vitest with jsdom. Setup in `src/test/setup.tsx` — wraps in `TestProviders` (QueryClient + SettingsProvider + ToastProvider). `scrollIntoView` mocked globally.
-- **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures in `conftest.py` — monkey-patches in-memory SQLite engine. Module-scoped `db_engine`, function-scoped `async_session`.
-- **E2E test** (`test_e2e_full_flow.py`): Requires **Docker** (`virtual-team-redis` container) for Redis rate-limit flushing. Runs against `localhost:8080`. See `.github/workflows/ci.yml` for exact runner env.
-- **Pre-existing failures**: `test_conversation.py` has 2 known failures related to `StreamEmitter._pending_thinking` — not related to most changes.
+**Release** (`.github/workflows/release.yml`): Triggered by `v*` tags. Tags with `-beta`/`-alpha`/`-rc` → prerelease. Auto-generated release notes.
 
-## Key Constraints
+## Testing quirks
 
-- **No `as any` / `@ts-ignore` / `@ts-expect-error`** anywhere in frontend.
-- **Frontend coverage thresholds are low but enforced** — don't drop below current values.
-- **Chinese is the primary UI language** (`zh-CN` fallback in i18next). English translations must be kept in sync.
-- **New modules must follow the 10-file pattern** and be registered in `WorkstationPage.tsx` tabs and `CLAUDE.md`.
-- **`repository/__init__.py`** re-exports all functions via star imports — any new repository function is automatically available via `from virtual_team.repository import *`.
-- **`tasks.py`** is Celery-based but uses `asyncio.run()` internally — async functions must be wrapped in `_run_async`.
-- **Docker** is used in CI and for Redis in E2E tests (not for local dev server).
+- **Frontend**: jsdom via Vitest. `TestProviders` wrapper for component tests.
+- **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
+- **E2E** (`test_e2e_full_flow.py`): Requires Docker (`virtual-team-redis` container). Runs against `localhost:8080`.
+- **Pre-existing failures**: `test_conversation.py` — 2 known failures in `StreamEmitter._pending_thinking`.
+
+## Git & Hooks
+
+- **Pre-push** (`.githooks/pre-push`): Blocks direct pushes to `main`. Activate: `git config core.hooksPath .githooks`.
+- **Pre-commit** (`.husky/pre-commit`): `lint-staged` on frontend `*.{ts,tsx,css}` (ESLint fix + Prettier).
+
+## Key constraints
+
+- No `as any` / `@ts-ignore` / `@ts-expect-error` in frontend.
+- Frontend coverage thresholds enforced — don't drop.
+- Chinese (`zh-CN`) is primary UI language. English translations must stay in sync.
+- New modules follow the 9-10 file pattern + register in `WorkstationPage.tsx` and `CLAUDE.md`.
+- New repo functions auto-exported via `repository/__init__.py` star imports.
+- Celery tasks must wrap async code in `_run_async(coro)`.
+- Backend mypy `--strict` has many module-level `ignore_errors` overrides in `pyproject.toml` — not fully enforced.

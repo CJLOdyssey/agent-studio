@@ -1,8 +1,8 @@
-.devagents-user-menu {
+.agentstudio-user-menu {
   position: relative;
 }
 
-.devagents-user-btn {
+.agentstudio-user-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -18,12 +18,12 @@
   transition: background 0.15s;
 }
 
-.devagents-user-btn:hover {
+.agentstudio-user-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-user-avatar {
+.agentstudio-user-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -35,12 +35,12 @@
   flex-shrink: 0;
 }
 
-.devagents-user-id {
+.agentstudio-user-id {
   flex: 1;
   text-align: left;
 }
 
-.devagents-user-dropdown {
+.agentstudio-user-dropdown {
   position: absolute;
   bottom: 100%;
   left: 0;
@@ -53,7 +53,7 @@
   z-index: var(--z-dropdown);
 }
 
-.devagents-dropdown-item {
+.agentstudio-dropdown-item {
   width: 100%;
   display: flex;
   align-items: center;
@@ -70,20 +70,20 @@
     color 0.15s;
 }
 
-.devagents-dropdown-item:hover {
+.agentstudio-dropdown-item:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-dropdown-item.danger {
+.agentstudio-dropdown-item.danger {
   color: var(--icon-status-error);
 }
 
-.devagents-dropdown-item.danger:hover {
+.agentstudio-dropdown-item.danger:hover {
   background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
 }
 
-.devagents-dropdown-divider {
+.agentstudio-dropdown-divider {
   height: 1px;
   background: var(--da-border-subtle);
   margin: var(--sp-1) 0;

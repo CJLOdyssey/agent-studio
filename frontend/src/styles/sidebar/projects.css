@@ -1,10 +1,10 @@
-.devagents-projects-list {
+.agentstudio-projects-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.devagents-project-item {
+.agentstudio-project-item {
   font-size: var(--da-font-size-sm);
   padding: var(--sp-2);
   border-radius: 6px;
@@ -12,11 +12,11 @@
   transition: background 0.15s;
 }
 
-.devagents-project-item:hover {
+.agentstudio-project-item:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-project-item.active {
+.agentstudio-project-item.active {
   color: var(--da-accent-indigo);
 }
 

@@ -59,7 +59,7 @@ function playBeep() {
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(() => {
     try {
-      const saved = localStorage.getItem('devagents-settings');
+      const saved = localStorage.getItem('agentstudio-settings');
       return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
     } catch {
       return defaultSettings;
@@ -67,7 +67,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    localStorage.setItem('devagents-settings', JSON.stringify(settings));
+    localStorage.setItem('agentstudio-settings', JSON.stringify(settings));
   }, [settings]);
 
   useEffect(() => {

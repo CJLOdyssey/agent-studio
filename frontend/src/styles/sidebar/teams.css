@@ -1,22 +1,22 @@
-.devagents-teams-list {
+.agentstudio-teams-list {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
 }
 
-.devagents-team {
+.agentstudio-team {
   display: flex;
   flex-direction: column;
 }
 
 /* Team Folder Styles */
-.devagents-team-folder {
+.agentstudio-team-folder {
   margin-bottom: 2px; /* 更紧凑的垂直间距 */
   border-radius: 8px;
   overflow: visible !important;
 }
 
-.devagents-team-folder-header {
+.agentstudio-team-folder-header {
   display: flex;
   align-items: center; /* 垂直居中对齐 */
   gap: var(--sp-2);
@@ -28,11 +28,11 @@
   min-height: 40px; /* 固定最小高度确保对齐 */
 }
 
-.devagents-team-folder-header:hover {
+.agentstudio-team-folder-header:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-team-toggle {
+.agentstudio-team-toggle {
   background: transparent;
   border: none;
   padding: 4px; /* 调整点击区域 */
@@ -48,20 +48,20 @@
   height: 24px; /* 固定高度 */
 }
 
-.devagents-team-toggle:hover {
+.agentstudio-team-toggle:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-team-toggle svg {
+.agentstudio-team-toggle svg {
   transition: transform 0.2s ease;
 }
 
-.devagents-team-toggle svg.collapsed {
+.agentstudio-team-toggle svg.collapsed {
   transform: rotate(-90deg);
 }
 
-.devagents-team-name {
+.agentstudio-team-name {
   font-size: var(--da-font-size-sm);
   font-weight: 500;
   color: var(--da-text-primary);
@@ -73,7 +73,7 @@
   line-height: 24px; /* 与按钮高度对齐 */
 }
 
-.devagents-team-count {
+.agentstudio-team-count {
   font-size: 11px; /* 稍大一点更清晰 */
   background: var(--da-bg-secondary);
   color: var(--da-text-muted);
@@ -87,7 +87,7 @@
   justify-content: center;
 }
 
-.devagents-team-actions {
+.agentstudio-team-actions {
   display: flex;
   align-items: center;
   gap: var(--sp-1);
@@ -96,11 +96,11 @@
   flex-shrink: 0;
 }
 
-.devagents-team-folder-header:hover .devagents-team-actions {
+.agentstudio-team-folder-header:hover .agentstudio-team-actions {
   opacity: 1;
 }
 
-.devagents-team-action-btn {
+.agentstudio-team-action-btn {
   background: transparent;
   border: none;
   padding: var(--sp-1);
@@ -113,17 +113,17 @@
   transition: all 0.15s ease;
 }
 
-.devagents-team-action-btn:hover {
+.agentstudio-team-action-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-team-action-btn:hover svg path {
+.agentstudio-team-action-btn:hover svg path {
   stroke: var(--da-text-primary);
 }
 
 /* Team Menu Button */
-.devagents-team-menu-btn {
+.agentstudio-team-menu-btn {
   background: transparent;
   border: none;
   padding: 4px; /* 统一内边距 */
@@ -141,18 +141,18 @@
   height: 24px; /* 固定高度 */
 }
 
-.devagents-team-folder-header:hover .devagents-team-menu-btn {
+.agentstudio-team-folder-header:hover .agentstudio-team-menu-btn {
   opacity: 1;
 }
 
-.devagents-team-menu-btn:hover {
+.agentstudio-team-menu-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
   opacity: 1;
 }
 
 /* Agent Menu Button */
-.devagents-agent-menu-btn {
+.agentstudio-agent-menu-btn {
   background: transparent;
   border: none;
   padding: var(--sp-1);
@@ -167,24 +167,24 @@
   justify-content: center;
 }
 
-.devagents-team-agent-item-wrapper:hover .devagents-agent-menu-btn {
+.agentstudio-team-agent-item-wrapper:hover .agentstudio-agent-menu-btn {
   opacity: 1;
 }
 
-.devagents-agent-menu-btn:hover {
+.agentstudio-agent-menu-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
 /* Team Pin Icon */
-.devagents-team-pin {
+.agentstudio-team-pin {
   color: var(--da-accent-amber);
   flex-shrink: 0;
   margin-left: -4px;
 }
 
 /* Team Dropdown Menu */
-.devagents-team-folder > .devagents-team-folder-header {
+.agentstudio-team-folder > .agentstudio-team-folder-header {
   position: relative !important;
   display: flex !important;
   align-items: center !important; /* 确保垂直居中 */
@@ -202,11 +202,11 @@
   min-height: 40px !important; /* 固定最小高度 */
 }
 
-.devagents-team-folder > .devagents-team-folder-header:hover {
+.agentstudio-team-folder > .agentstudio-team-folder-header:hover {
   background: var(--da-bg-hover) !important;
 }
 
-.devagents-team-dropdown {
+.agentstudio-team-dropdown {
   background: var(--da-bg-secondary);
   border: 1px solid var(--da-border);
   border-radius: 8px;
@@ -216,7 +216,7 @@
   z-index: 9999;
 }
 
-.devagents-team-dropdown-item {
+.agentstudio-team-dropdown-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -231,19 +231,19 @@
   color: var(--da-text-primary);
 }
 
-.devagents-team-dropdown-item:hover {
+.agentstudio-team-dropdown-item:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-team-dropdown-item.danger {
+.agentstudio-team-dropdown-item.danger {
   color: var(--da-accent-red);
 }
 
-.devagents-team-dropdown-item.danger:hover {
+.agentstudio-team-dropdown-item.danger:hover {
   background: color-mix(in srgb, var(--da-accent-red) 10%, transparent);
 }
 
-.devagents-team-edit {
+.agentstudio-team-edit {
   flex: 1;
   display: flex;
   align-items: center;
@@ -251,7 +251,7 @@
   min-width: 0;
 }
 
-.devagents-team-edit-input {
+.agentstudio-team-edit-input {
   background: var(--da-bg-secondary);
   font-size: var(--da-font-size-sm);
   font-weight: 500;
@@ -264,11 +264,11 @@
   min-width: 0;
 }
 
-.devagents-team-edit-input:focus {
+.agentstudio-team-edit-input:focus {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
 }
 
-.devagents-team-edit-btn {
+.agentstudio-team-edit-btn {
   background: transparent;
   border: none;
   padding: var(--sp-1);
@@ -282,13 +282,13 @@
   flex-shrink: 0;
 }
 
-.devagents-team-edit-btn:hover {
+.agentstudio-team-edit-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
 /* Agent Edit */
-.devagents-agent-edit {
+.agentstudio-agent-edit {
   flex: 1;
   display: flex;
   align-items: center;
@@ -296,7 +296,7 @@
   min-width: 0;
 }
 
-.devagents-agent-edit-input {
+.agentstudio-agent-edit-input {
   background: var(--da-bg-secondary);
   font-size: var(--da-font-size-sm);
   font-weight: 400;
@@ -309,11 +309,11 @@
   min-width: 0;
 }
 
-.devagents-agent-edit-input:focus {
+.agentstudio-agent-edit-input:focus {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
 }
 
-.devagents-agent-edit-btn {
+.agentstudio-agent-edit-btn {
   background: transparent;
   border: none;
   padding: var(--sp-1);
@@ -327,23 +327,23 @@
   flex-shrink: 0;
 }
 
-.devagents-agent-edit-btn:hover {
+.agentstudio-agent-edit-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
 /* Team Agents */
-.devagents-team-agents {
+.agentstudio-team-agents {
   padding: var(--sp-1) 0;
   margin-left: 20px; /* 统一缩进距离 */
 }
 
-.devagents-team-agent-item-wrapper {
+.agentstudio-team-agent-item-wrapper {
   position: relative;
   padding: 0 8px; /* 统一内边距 */
 }
 
-.devagents-team-agent-item {
+.agentstudio-team-agent-item {
   display: flex;
   align-items: center; /* 垂直居中对齐 */
   gap: var(--sp-3);
@@ -357,27 +357,27 @@
   min-height: 36px; /* 固定最小高度确保对齐 */
 }
 
-.devagents-team-agent-item:hover {
+.agentstudio-team-agent-item:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-team-agent-item.active {
+.agentstudio-team-agent-item.active {
   background: color-mix(in srgb, var(--da-accent-indigo) 12%, transparent);
 }
 
-.devagents-team-agent-item.active .agent-dot {
+.agentstudio-team-agent-item.active .agent-dot {
   color: var(--da-accent-indigo);
 }
 
-.devagents-team-agent-item.active span {
+.agentstudio-team-agent-item.active span {
   color: var(--da-accent-indigo);
 }
 
-.devagents-team-agent-item.devagents-add-agent {
+.agentstudio-team-agent-item.agentstudio-add-agent {
   color: var(--da-text-primary);
 }
 
-.devagents-team-agent-item.devagents-add-agent:hover {
+.agentstudio-team-agent-item.agentstudio-add-agent:hover {
   color: var(--da-text-primary);
 }
 
@@ -391,7 +391,7 @@
   transition: all 0.15s ease;
 }
 
-.devagents-team-agent-item span {
+.agentstudio-team-agent-item span {
   font-size: var(--da-font-size-sm);
   font-weight: 400;
   color: var(--da-text-primary);
@@ -403,7 +403,7 @@
   line-height: 24px; /* 与图标高度对齐 */
 }
 
-.devagents-agent-menu-btn {
+.agentstudio-agent-menu-btn {
   position: absolute;
   right: var(--sp-2);
   top: 50%;
@@ -418,16 +418,16 @@
   transition: all 0.15s ease;
 }
 
-.devagents-team-agent-item-wrapper:hover .devagents-agent-menu-btn {
+.agentstudio-team-agent-item-wrapper:hover .agentstudio-agent-menu-btn {
   opacity: 1;
 }
 
-.devagents-agent-menu-btn:hover {
+.agentstudio-agent-menu-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-agent-dropdown {
+.agentstudio-agent-dropdown {
   background: var(--da-bg-secondary);
   border: 1px solid var(--da-border);
   border-radius: 8px;
@@ -437,7 +437,7 @@
   z-index: 100;
 }
 
-.devagents-agent-dropdown-item {
+.agentstudio-agent-dropdown-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -452,20 +452,20 @@
   color: var(--da-text-primary);
 }
 
-.devagents-agent-dropdown-item:hover {
+.agentstudio-agent-dropdown-item:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-agent-dropdown-item.danger {
+.agentstudio-agent-dropdown-item.danger {
   color: var(--da-accent-red);
 }
 
-.devagents-agent-dropdown-item.danger:hover {
+.agentstudio-agent-dropdown-item.danger:hover {
   background: color-mix(in srgb, var(--da-accent-red) 10%, transparent);
 }
 
 /* Sidebar Section Header */
-.devagents-sidebar-section-header {
+.agentstudio-sidebar-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -473,7 +473,7 @@
   margin-bottom: var(--sp-1);
 }
 
-.devagents-sidebar-section-label {
+.agentstudio-sidebar-section-label {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -484,7 +484,7 @@
   letter-spacing: 0.5px;
 }
 
-.devagents-sidebar-section-action {
+.agentstudio-sidebar-section-action {
   background: transparent;
   border: none;
   padding: var(--sp-1);
@@ -497,7 +497,7 @@
   transition: all 0.15s ease;
 }
 
-.devagents-sidebar-section-action:hover {
+.agentstudio-sidebar-section-action:hover {
   background: var(--da-bg-hover);
   color: var(--da-accent-indigo);
 }
@@ -513,22 +513,22 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .devagents-team-folder-header {
+  .agentstudio-team-folder-header {
     padding: var(--sp-2);
   }
 
-  .devagents-team-agents {
+  .agentstudio-team-agents {
     margin-left: var(--sp-3);
   }
 }
 
 /* Portal Dropdown (rendered at body level) */
-.devagents-portal-dropdown {
+.agentstudio-portal-dropdown {
   z-index: 99999 !important;
 }
 
 /* Error Messages for Validation */
-.devagents-edit-error {
+.agentstudio-edit-error {
   color: var(--da-accent-red);
   font-size: var(--da-font-size-xs);
   margin-top: 4px;
@@ -536,8 +536,8 @@
   line-height: 1.4;
 }
 
-.devagents-team-edit-input.has-error,
-.devagents-agent-edit-input.has-error {
+.agentstudio-team-edit-input.has-error,
+.agentstudio-agent-edit-input.has-error {
   border-color: var(--da-accent-red) !important;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-red) 20%, transparent) !important;
 }

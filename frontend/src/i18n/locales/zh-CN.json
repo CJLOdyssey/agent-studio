@@ -30,7 +30,7 @@
     "tools": "工具"
   },
   "app": {
-    "title": "DevAgents OS",
+    "title": "AgentStudio",
     "subtitle": "虚拟开发团队"
   },
   "sidebar": {
@@ -188,6 +188,7 @@
   "teamMessage": {
     "you": "你",
     "copy": "复制",
+    "copied": "已复制",
     "unknownAgent": "DevAgent",
     "system": "系统",
     "executeTask": "执行任务 ({{count}} 步)",

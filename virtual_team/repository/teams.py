@@ -23,6 +23,8 @@ async def get_teams() -> list[dict]:
             {
                 "id": t.id,
                 "name": t.name,
+                "description": t.description,
+                "status": t.status,
                 "order": t.order,
                 "is_expanded": t.is_expanded,
                 "agents": [
@@ -65,6 +67,8 @@ async def get_team(team_id: str) -> dict | None:
         return {
             "id": t.id,
             "name": t.name,
+            "description": t.description,
+            "status": t.status,
             "order": t.order,
             "is_expanded": t.is_expanded,
             "agents": [
@@ -88,7 +92,9 @@ async def get_team(team_id: str) -> dict | None:
         }
 
 
-async def create_team(name: str) -> TeamDB | None:
+async def create_team(
+    name: str, description: str | None = None, status: str | None = None
+) -> TeamDB | None:
     factory = get_session_factory()
     async with factory() as session:
         existing = await session.execute(select(TeamDB).where(TeamDB.name == name))
@@ -99,6 +105,8 @@ async def create_team(name: str) -> TeamDB | None:
         team = TeamDB(
             id=str(uuid4()),
             name=name,
+            description=description,
+            status=status or "active",
             order=(last.order + 1) if last else 0,
         )
         session.add(team)
@@ -108,7 +116,12 @@ async def create_team(name: str) -> TeamDB | None:
 
 
 async def update_team(
-    team_id: str, name: str | None = None, order: int | None = None, is_expanded: bool | None = None
+    team_id: str,
+    name: str | None = None,
+    description: str | None = None,
+    status: str | None = None,
+    order: int | None = None,
+    is_expanded: bool | None = None,
 ) -> TeamDB | None:
     factory = get_session_factory()
     async with factory() as session:
@@ -118,6 +131,10 @@ async def update_team(
             return None
         if name is not None:
             team.name = name
+        if description is not None:
+            team.description = description
+        if status is not None:
+            team.status = status
         if order is not None:
             team.order = order
         if is_expanded is not None:

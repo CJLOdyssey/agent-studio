@@ -30,7 +30,7 @@
     "tools": "Tools"
   },
   "app": {
-    "title": "DevAgents OS",
+    "title": "AgentStudio",
     "subtitle": "Virtual Dev Team"
   },
   "sidebar": {
@@ -188,6 +188,7 @@
   "teamMessage": {
     "you": "You",
     "copy": "Copy",
+    "copied": "Copied",
     "unknownAgent": "DevAgent",
     "system": "System",
     "executeTask": "Execute Task ({{count}} steps)",

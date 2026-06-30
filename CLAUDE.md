@@ -26,7 +26,7 @@
 ## 🏗️ 项目结构概览
 
 ```
-项目 7：虚拟软件外包团队/
+项目 7：AgentStudio/
 ├── CLAUDE.md                    ← 你在这里
 ├── frontend/                    # React + Vite + TanStack Query + Zustand
 │   └── src/

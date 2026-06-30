@@ -1,4 +1,4 @@
-.devagents-section-header {
+.agentstudio-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6,7 +6,7 @@
   padding: var(--sp-2) 0;
 }
 
-.devagents-section-title {
+.agentstudio-section-title {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -17,7 +17,7 @@
   letter-spacing: 0.5px;
 }
 
-.devagents-icon-btn {
+.agentstudio-icon-btn {
   padding: var(--sp-1);
   border-radius: 6px;
   background: transparent;
@@ -32,12 +32,12 @@
   justify-content: center;
 }
 
-.devagents-icon-btn:hover {
+.agentstudio-icon-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-icon-btn-sm {
+.agentstudio-icon-btn-sm {
   padding: var(--sp-1);
   border-radius: 4px;
   background: transparent;
@@ -52,14 +52,14 @@
   justify-content: center;
 }
 
-.devagents-icon-btn-sm:hover {
+.agentstudio-icon-btn-sm:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
 @media (pointer: coarse) {
-  .devagents-icon-btn,
-  .devagents-icon-btn-sm {
+  .agentstudio-icon-btn,
+  .agentstudio-icon-btn-sm {
     min-width: 44px;
     min-height: 44px;
     padding: var(--sp-2);

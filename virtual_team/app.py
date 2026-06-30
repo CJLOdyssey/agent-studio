@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down")
 
 
-app = FastAPI(title="虚拟软件外包团队", lifespan=lifespan)
+app = FastAPI(title="AgentStudio", lifespan=lifespan)
 
 # ── Rate limiting ───────────────────────────────────────────────────────────
 from virtual_team.rate_limit import RateLimitMiddleware  # noqa: E402
@@ -70,10 +70,8 @@ app.add_middleware(AuthMiddleware)
 _cors_origins = [
     "http://localhost:5173",
     "http://localhost:8080",
-    "http://localhost:8081",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8080",
-    "http://127.0.0.1:8081",
 ]
 _prod_origin = os.environ.get("CORS_ORIGIN")
 if _prod_origin:
