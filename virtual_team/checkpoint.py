@@ -48,13 +48,27 @@ def create_checkpointer(
 
     logger.info("Creating checkpointer for backend=%s", backend)
 
+    # Helper to run a coroutine from a synchronous context, safely handling
+    # both cases: no running event loop (asyncio.run) and already in a loop.
+    def _run_coro(coro):
+        import asyncio
+
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coro)
+        # Already in a running loop — schedule and block via run_until_complete.
+        # We use a separate loop on a new thread to avoid nested event loop errors.
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
+            return _pool.submit(asyncio.run, coro).result()
+
     if backend == "postgres":
         if not dsn:
             raise ValueError("CHECKPOINTER_DSN is required for postgres backend")
         logger.info("Creating AsyncPostgresSaver checkpointer")
         try:
-            import asyncio
-
             from langgraph.checkpoint.postgres.aio import (
                 AsyncPostgresSaver,  # type: ignore[import-untyped]
             )
@@ -77,15 +91,13 @@ def create_checkpointer(
             await saver.setup()
             return saver
 
-        return asyncio.run(_init_pg())
+        return _run_coro(_init_pg())
 
     if backend == "sqlite":
         if not dsn:
             dsn = "checkpoints.db"
         logger.info("Creating AsyncSqliteSaver checkpointer (dsn=%s)", dsn)
         try:
-            import asyncio
-
             import aiosqlite
             from langgraph.checkpoint.sqlite.aio import (
                 AsyncSqliteSaver,  # type: ignore[import-untyped]
@@ -95,7 +107,7 @@ def create_checkpointer(
                 conn = await aiosqlite.connect(dsn)
                 return AsyncSqliteSaver(conn)
 
-            return asyncio.run(_init_sqlite())
+            return _run_coro(_init_sqlite())
         except ImportError as exc:
             raise ImportError(
                 "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra "
