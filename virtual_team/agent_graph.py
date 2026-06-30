@@ -802,7 +802,7 @@ class SingleAgentGraph:
 DEFAULT_TOOLS: list[ToolConfig] = [
     ToolConfig(
         name="web_search",
-        description="Search the web for current information. Use this to find recent news, facts, and data.",
+        description="Search the web for current information. Finds recent news, facts, and data.",
         parameters={
             "type": "object",
             "properties": {
@@ -816,7 +816,7 @@ DEFAULT_TOOLS: list[ToolConfig] = [
     ),
     ToolConfig(
         name="calculator",
-        description="Evaluate mathematical expressions. Supports +, -, *, /, **, %, sqrt, sin, cos, etc.",
+        description="Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.",
         parameters={
             "type": "object",
             "properties": {

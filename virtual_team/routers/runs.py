@@ -204,8 +204,8 @@ async def create_complete_run(req: CompleteRunRequest, request: Request):
     await buffer_run_messages(run_id)
 
     async def _run_pipeline():
-        """Run the completion pipeline in a background task so the HTTP response returns immediately.
-        The streaming output is pushed through Redis → WebSocket."""
+        """Run completion pipeline in background so HTTP returns immediately.
+        Streaming output goes through Redis → WebSocket."""
         try:
             from virtual_team.tasks import _complete_pipeline
 
@@ -217,7 +217,7 @@ async def create_complete_run(req: CompleteRunRequest, request: Request):
                 model=effective_model,
                 thinking=req.thinking,
             )
-        except Exception as e:
+        except Exception:
             logger.exception("Complete pipeline failed for run=%s", run_id)
             await update_run_status(run_id, "error")
 
