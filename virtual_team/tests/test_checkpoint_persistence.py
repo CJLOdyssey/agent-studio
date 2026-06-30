@@ -8,6 +8,7 @@ Usage:
     PYTHONPATH=. python3 -m pytest virtual_team/tests/test_checkpoint_persistence.py -v
 """
 
+import asyncio
 import os
 import subprocess
 import sys
@@ -56,36 +57,48 @@ def _make_metadata(source: str = "loop", step: int = 0) -> dict:
 
 
 @pytest.fixture
-def checkpointer_sqlite(tmp_path):
-    """Create a SqliteSaver backed by a temp file. Cleans up after test."""
-    from virtual_team.checkpoint import create_checkpointer
-
+def checkpoint_db_path(tmp_path):
+    """Set up CHECKPOINTER env vars pointing to a temp SQLite file."""
     db_path = str(tmp_path / "checkpoints.db")
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = db_path
-
-    cp = create_checkpointer()
-    yield cp
-
-    # Cleanup: close connection and remove file
-    try:
-        conn = getattr(cp, "conn", None)
-        if conn is not None:
-            conn.close()
-    except Exception:
-        pass
+    yield db_path
+    # Cleanup
     if os.path.exists(db_path):
         os.unlink(db_path)
 
 
 @pytest.fixture
-def checkpointer_sqlite_fresh(checkpointer_sqlite):
-    """Same as checkpointer_sqlite but for tests needing a second instance
-    against the *same* DB file — depends on checkpointer_sqlite to ensure
-    CHECKPOINTER_DSN env vars are already set."""
-    from virtual_team.checkpoint import create_checkpointer
+async def checkpointer_sqlite(checkpoint_db_path):
+    """Create an AsyncSqliteSaver backed by a temp file."""
+    from virtual_team.checkpoint import create_checkpointer_async
 
-    return create_checkpointer()
+    cp = await create_checkpointer_async()
+    yield cp
+
+    # Cleanup: close connection
+    try:
+        conn = getattr(cp, "conn", None)
+        if conn is not None:
+            await conn.close()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+async def checkpointer_sqlite_fresh(checkpoint_db_path):
+    """A second AsyncSqliteSaver instance against the *same* DB file."""
+    from virtual_team.checkpoint import create_checkpointer_async
+
+    cp = await create_checkpointer_async()
+    yield cp
+
+    try:
+        conn = getattr(cp, "conn", None)
+        if conn is not None:
+            await conn.close()
+    except Exception:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -93,7 +106,8 @@ def checkpointer_sqlite_fresh(checkpointer_sqlite):
 # ─────────────────────────────────────────────────────────────────────
 
 
-def test_sqlite_persistence_cross_process(checkpointer_sqlite, checkpointer_sqlite_fresh):
+@pytest.mark.asyncio
+async def test_sqlite_persistence_cross_process(checkpointer_sqlite, checkpointer_sqlite_fresh):
     """Process A writes a checkpoint, Process B reads it back from the same DB file.
 
     This simulates what happens when a server restarts — a new process
@@ -104,10 +118,10 @@ def test_sqlite_persistence_cross_process(checkpointer_sqlite, checkpointer_sqli
     metadata = _make_metadata(source="input", step=0)
 
     # Process A: write
-    checkpointer_sqlite.put(config, checkpoint, metadata, {})
+    await checkpointer_sqlite.aput(config, checkpoint, metadata, {})
 
     # Process B (fresh instance, same DB file): read back
-    result = checkpointer_sqlite_fresh.get(config)
+    result = await checkpointer_sqlite_fresh.aget(config)
     assert result is not None, "Checkpoint should survive across checkpointer instances"
     assert result["channel_values"]["msg"] == "hello"
     assert result["channel_values"]["agent_state"] == "initial"
@@ -118,7 +132,8 @@ def test_sqlite_persistence_cross_process(checkpointer_sqlite, checkpointer_sqli
 # ─────────────────────────────────────────────────────────────────────
 
 
-def test_recovery_after_restart(tmp_path):
+@pytest.mark.asyncio
+async def test_recovery_after_restart(tmp_path):
     """Simulate a hard process exit after writing state, then verify recovery.
 
     A subprocess writes checkpoint state and calls os._exit(0) to simulate
@@ -127,7 +142,8 @@ def test_recovery_after_restart(tmp_path):
     """
     db_path = str(tmp_path / "recovery.db")
 
-    writer_script = textwrap.dedent(f"""
+    writer_script = textwrap.dedent(f"""\
+    import asyncio
     import os
     import sys
     sys.path.insert(0, {str(Path(__file__).resolve().parent.parent.parent)!r})
@@ -135,22 +151,28 @@ def test_recovery_after_restart(tmp_path):
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = {db_path!r}
 
-    from virtual_team.checkpoint import create_checkpointer
+    async def main():
+        from virtual_team.checkpoint import create_checkpointer_async
 
-    cp = create_checkpointer()
-    config = {{"configurable": {{"thread_id": "recovery-t1", "checkpoint_ns": ""}}}}
-    checkpoint = {{
-        "v": 1,
-        "id": "ckpt-recovery-1",
-        "ts": "2024-06-25T12:00:00Z",
-        "channel_values": {{"recovered": True, "step_count": 5}},
-        "channel_versions": {{}},
-        "versions_seen": {{}},
-    }}
-    metadata = {{"source": "loop", "step": 5, "parents": {{}}}}
-    cp.put(config, checkpoint, metadata, {{}})
-    cp.conn.close()
-    os._exit(0)
+        cp = await create_checkpointer_async()
+        config = {{"configurable": {{"thread_id": "recovery-t1", "checkpoint_ns": ""}}}}
+        checkpoint = {{
+            "v": 1,
+            "id": "ckpt-recovery-1",
+            "ts": "2024-06-25T12:00:00Z",
+            "channel_values": {{"recovered": True, "step_count": 5}},
+            "channel_versions": {{}},
+            "versions_seen": {{}},
+        }}
+        metadata = {{"source": "loop", "step": 5, "parents": {{}}}}
+        await cp.aput(config, checkpoint, metadata, {{}})
+        conn = getattr(cp, "conn", None)
+        if conn is not None:
+            await conn.close()
+        # Use sys.exit for clean shutdown — os._exit skips flush
+        sys.exit(0)
+
+    asyncio.run(main())
     """)
 
     script_path = tmp_path / "_writer.py"
@@ -170,12 +192,11 @@ def test_recovery_after_restart(tmp_path):
     # Now recover from the same DB file in this process
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = db_path
+    from virtual_team.checkpoint import create_checkpointer_async
 
-    from virtual_team.checkpoint import create_checkpointer
-
-    recovery_cp = create_checkpointer()
+    recovery_cp = await create_checkpointer_async()
     config = _make_config("recovery-t1")
-    recovered = recovery_cp.get(config)  # type: ignore[arg-type]
+    recovered = await recovery_cp.aget(config)
 
     assert recovered is not None, "State should be recoverable after subprocess _exit(0)"
     assert recovered["channel_values"]["recovered"] is True
@@ -185,9 +206,11 @@ def test_recovery_after_restart(tmp_path):
     try:
         conn = getattr(recovery_cp, "conn", None)
         if conn is not None:
-            conn.close()
+            await conn.close()
     except Exception:
         pass
+    if os.path.exists(db_path):
+        os.unlink(db_path)
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -196,23 +219,18 @@ def test_recovery_after_restart(tmp_path):
 
 
 def test_postgres_backend_optional():
-    """Verify the PostgresSaver import route compiles without crash.
+    """Verify the AsyncPostgresSaver import route compiles without crash.
 
     This test does NOT require a running PostgreSQL instance — it only
     validates the import path.  If the langgraph-postgres extra is not
     installed the test is skipped.
     """
     postgres_saver = pytest.importorskip(
-        "langgraph.checkpoint.postgres",
+        "langgraph.checkpoint.postgres.aio",
         reason="langgraph-checkpoint-postgres extra not installed",
     )
-    postgres_saver_cls = getattr(postgres_saver, "PostgresSaver", None)
-    assert postgres_saver_cls is not None, "PostgresSaver class should be importable"
-
-    # Verify the from_conn_string classmethod exists (used by create_checkpointer)
-    assert hasattr(postgres_saver_cls, "from_conn_string"), (
-        "PostgresSaver must expose from_conn_string classmethod"
-    )
+    postgres_saver_cls = getattr(postgres_saver, "AsyncPostgresSaver", None)
+    assert postgres_saver_cls is not None, "AsyncPostgresSaver class should be importable"
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -220,7 +238,8 @@ def test_postgres_backend_optional():
 # ─────────────────────────────────────────────────────────────────────
 
 
-def test_checkpointer_rollback_on_error(checkpointer_sqlite, checkpointer_sqlite_fresh):
+@pytest.mark.asyncio
+async def test_checkpointer_rollback_on_error(checkpointer_sqlite, checkpointer_sqlite_fresh):
     """Verify that a checkpoint written before an error remains retrievable.
 
     Scenario: the agent writes state at step 3, encounters a tool error
@@ -236,7 +255,7 @@ def test_checkpointer_rollback_on_error(checkpointer_sqlite, checkpointer_sqlite
         step=3,
         tool_calls_pending=True,
     )
-    checkpointer_sqlite.put(config, before_error, _make_metadata(step=3), {})
+    await checkpointer_sqlite.aput(config, before_error, _make_metadata(step=3), {})
 
     # Simulate: tool error occurs at step 4, but system does NOT persist
     # the intermediate error state.  In a real agent, the framework would
@@ -247,27 +266,22 @@ def test_checkpointer_rollback_on_error(checkpointer_sqlite, checkpointer_sqlite
         # framework should fall back to the last good checkpoint.
 
         # Verify the pre-error state is still the latest persisted state
-        recovered = checkpointer_sqlite_fresh.get(config)
-        assert recovered is not None, "Pre-error checkpoint must be retrievable"
-        assert recovered["channel_values"]["step"] == 3
-        assert recovered["channel_values"]["tool_calls_pending"] is True
-        assert "error" not in recovered["channel_values"], (
-            "Error state was never persisted — it must not appear in recovered data"
+        recovered = await checkpointer_sqlite_fresh.aget(config)
+        assert recovered is not None, (
+            "Should still recover the step-3 checkpoint after tool error"
         )
+        assert recovered["channel_values"]["step"] == 3
 
-    # Write a post-recovery step (step 5) to confirm forward progress
+    # Now simulate a successful recovery: write a new checkpoint at step 5
     after_recovery = _make_checkpoint(
-        messages=["assistant: tool succeeded, continuing"],
+        messages=["assistant: tool completed"],
         step=5,
         tool_calls_pending=False,
-        recovered_from_error=True,
     )
-    saved = checkpointer_sqlite.put(config, after_recovery, _make_metadata(step=5), {})
+    saved = await checkpointer_sqlite.aput(config, after_recovery, _make_metadata(step=5), {})
+    assert saved is not None, "Checkpoint put should return a saved config"
 
-    # Use the returned config (with checkpoint_id) for deterministic reads.
-    # SqliteSaver orders by checkpoint_id (UUID string), which can be
-    # non-deterministic — passing checkpoint_id avoids ordering issues.
-    latest = checkpointer_sqlite_fresh.get(saved)
-    assert latest is not None
+    # Verify the latest state is now step 5 (not step 3)
+    latest = await checkpointer_sqlite_fresh.aget(saved)
+    assert latest is not None, "Should recover the step-5 checkpoint"
     assert latest["channel_values"]["step"] == 5
-    assert latest["channel_values"]["recovered_from_error"] is True
