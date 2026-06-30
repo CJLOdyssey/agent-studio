@@ -142,7 +142,6 @@ async def test_tool_wrapper_no_builtin_no_llm():
 @pytest.mark.asyncio
 async def test_checkpointer_returns_memory_saver():
     """create_checkpointer returns MemorySaver when backend is memory."""
-    import os
     from langgraph.checkpoint.memory import MemorySaver
 
     cp = create_checkpointer(backend="memory")
