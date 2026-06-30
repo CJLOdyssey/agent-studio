@@ -91,6 +91,7 @@ class TeamGraph:
         temperature: float = 0.7,
         max_tokens: int = 65536,
         max_rounds: int = 5,
+        checkpointer: Any | None = None,
     ):
         self.model = model
         self.api_key = api_key
@@ -109,9 +110,12 @@ class TeamGraph:
             llm_kwargs["base_url"] = base_url
         self.llm = ChatOpenAI(**llm_kwargs)
 
-        from virtual_team.checkpoint import create_checkpointer
+        if checkpointer is not None:
+            self.checkpointer = checkpointer
+        else:
+            from virtual_team.checkpoint import create_checkpointer
 
-        self.checkpointer = create_checkpointer()
+            self.checkpointer = create_checkpointer()
         self._agent_prompts: dict[str, str] = {}
         self._graph = self._build_graph()
 

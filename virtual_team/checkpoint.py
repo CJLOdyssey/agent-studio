@@ -24,46 +24,62 @@ logger = get_logger(__name__)
 def create_checkpointer(
     backend: str | None = None,
     dsn: str | None = None,
-) -> "BaseCheckpointSaver":  # noqa: F821 — lazy import avoids circular dep
-    """Create a checkpointer based on environment configuration.
+) -> BaseCheckpointSaver:
+    """Create a checkpointer (sync wrapper — suitable for CLI / tests).
 
     When called without arguments, reads ``CHECKPOINTER_BACKEND`` and
-    ``CHECKPOINTER_DSN`` from environment. Defaults to SQLite with an
-    in-process database file.
+    ``CHECKPOINTER_DSN`` from environment. Defaults to SQLite.
 
-    Supported backends:
-        sqlite (default) — ``SqliteSaver`` backed by a local file.
-        memory — ``MemorySaver`` (no persistence across restarts).
-        postgres — ``PostgresSaver`` (requires ``CHECKPOINTER_DSN``).
-
-    Returns a ``BaseCheckpointSaver``-compatible instance for use with
-    ``workflow.compile(checkpointer=...)``.
+    For async contexts (Celery worker, FastAPI lifespan) call
+    ``create_checkpointer_async`` instead.
     """
+    import asyncio
+
+    backend, dsn = _resolve_backend(backend, dsn)
+    logger.info("Creating checkpointer for backend=%s", backend)
+
+    if backend == "memory":
+        return MemorySaver()
+
+    # If no loop is running we can safely call asyncio.run().
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(_create_checkpointer_async(backend, dsn))
+
+    # Already inside a running loop — run in a fresh loop on another thread.
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
+        return _pool.submit(asyncio.run, _create_checkpointer_async(backend, dsn)).result()
+
+
+async def create_checkpointer_async(
+    backend: str | None = None,
+    dsn: str | None = None,
+) -> BaseCheckpointSaver:
+    """Async checkpointer factory — safe to await inside a running loop.
+
+    Preferred over ``create_checkpointer`` in Celery tasks and other async
+    contexts because it avoids the overhead and edge-cases of crossing thread
+    boundaries.
+    """
+    backend, dsn = _resolve_backend(backend, dsn)
+    return await _create_checkpointer_async(backend, dsn)
+
+
+def _resolve_backend(backend: str | None, dsn: str | None) -> tuple[str, str | None]:
     import os
 
     if backend is None:
         backend = os.environ.get("CHECKPOINTER_BACKEND", "sqlite")
     if dsn is None:
         dsn = os.environ.get("CHECKPOINTER_DSN")
+    return backend, dsn
 
-    logger.info("Creating checkpointer for backend=%s", backend)
 
-    # Helper to run a coroutine from a synchronous context, safely handling
-    # both cases: no running event loop (asyncio.run) and already in a loop.
-    def _run_coro(coro):
-        import asyncio
-
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError:
-            return asyncio.run(coro)
-        # Already in a running loop — schedule and block via run_until_complete.
-        # We use a separate loop on a new thread to avoid nested event loop errors.
-        import concurrent.futures
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
-            return _pool.submit(asyncio.run, coro).result()
-
+async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheckpointSaver:
+    """Internal — shared async logic for both entry-points."""
     if backend == "postgres":
         if not dsn:
             raise ValueError("CHECKPOINTER_DSN is required for postgres backend")
@@ -77,21 +93,18 @@ def create_checkpointer(
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
             ) from exc
 
-        async def _init_pg() -> AsyncPostgresSaver:
-            from psycopg import AsyncConnection
-            from psycopg.rows import dict_row
+        from psycopg import AsyncConnection
+        from psycopg.rows import dict_row
 
-            conn = await AsyncConnection.connect(
-                dsn,
-                autocommit=True,
-                prepare_threshold=0,
-                row_factory=dict_row,  # type: ignore[arg-type]
-            )
-            saver = AsyncPostgresSaver(conn)  # type: ignore[arg-type]
-            await saver.setup()
-            return saver
-
-        return _run_coro(_init_pg())
+        conn = await AsyncConnection.connect(
+            dsn,
+            autocommit=True,
+            prepare_threshold=0,
+            row_factory=dict_row,  # type: ignore[arg-type]
+        )
+        saver = AsyncPostgresSaver(conn)  # type: ignore[arg-type]
+        await saver.setup()
+        return saver
 
     if backend == "sqlite":
         if not dsn:
@@ -102,17 +115,14 @@ def create_checkpointer(
             from langgraph.checkpoint.sqlite.aio import (
                 AsyncSqliteSaver,  # type: ignore[import-untyped]
             )
-
-            async def _init_sqlite() -> AsyncSqliteSaver:
-                conn = await aiosqlite.connect(dsn)
-                return AsyncSqliteSaver(conn)
-
-            return _run_coro(_init_sqlite())
         except ImportError as exc:
             raise ImportError(
                 "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra "
                 "and `aiosqlite` package"
             ) from exc
+
+        conn = await aiosqlite.connect(dsn)
+        return AsyncSqliteSaver(conn)
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
     return MemorySaver()

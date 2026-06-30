@@ -127,13 +127,16 @@ async def _run_agent_pipeline(
             logger.warning("Failed to load chat history for session %s", session_id)
 
     from virtual_team.agent_graph import SingleAgentGraph, ToolConfig
+    from virtual_team.checkpoint import create_checkpointer_async
     from virtual_team.repository import get_mcps, get_prompts, get_skills, get_tools
 
+    checkpointer = await create_checkpointer_async()
     emitter = StreamEmitter(run_id)
     graph = SingleAgentGraph(
         model=effective_model,
         api_key=effective_api_key or "",
         base_url=effective_api_base,
+        checkpointer=checkpointer,
     )
 
     # ── Bind agent tools / MCP / skills to the graph ──
