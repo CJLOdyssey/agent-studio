@@ -5,7 +5,7 @@ These tests validate graph construction, tool binding, tool execution,
 and checkpointer creation — without requiring a live LLM API key.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

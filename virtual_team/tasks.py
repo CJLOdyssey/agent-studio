@@ -457,8 +457,8 @@ async def _complete_pipeline(
     logger.info("[complete] Starting completion for run %s | model=%s", run_id, effective_model)
 
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=15.0)) as client:
-            async with client.stream("POST", url, headers=headers, json=body) as resp:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=15.0)) as client, \
+                client.stream("POST", url, headers=headers, json=body) as resp:
                 if resp.status_code != 200:
                     body_text = await resp.aread()
                     logger.error(

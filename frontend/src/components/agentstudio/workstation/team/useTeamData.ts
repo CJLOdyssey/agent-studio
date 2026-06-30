@@ -21,8 +21,11 @@ export function useTeamData() {
   const fetchTeams = useCallback(() => {
     setIsLoading(true); setError(null);
     setTimeout(() => {
-      try { setTeams(teamAPI.fetchAll()); setIsLoading(false); }
-      catch { setError('Failed to load teams'); setIsLoading(false); }
+      teamAPI.fetchAll().then((items) => {
+        setTeams(items); setIsLoading(false);
+      }).catch(() => {
+        setError('Failed to load teams'); setIsLoading(false);
+      });
     }, 400);
   }, []);
   const retry = useCallback(() => fetchTeams(), [fetchTeams]);
@@ -39,7 +42,7 @@ export function useTeamData() {
   const processed = useMemo(() => {
     let arr = [...teams];
     const q = search.toLowerCase();
-    if (q) arr = arr.filter((t) => t.name.toLowerCase().includes(q) || t.leader.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+    if (q) arr = arr.filter((t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
     if (statusFilter !== 'all') arr = arr.filter((t) => t.status === statusFilter);
     arr.sort((a, b) => {
       const cmp = a[sortField] < b[sortField] ? -1 : 1;
@@ -60,8 +63,8 @@ export function useTeamData() {
     setSelectedIds((prev) => paged.every((t) => prev.has(t.id)) ? new Set() : new Set(paged.map((t) => t.id)));
   }, [paged]);
 
-  const addTeam = useCallback((data: TeamFormData) => {
-    const created = teamAPI.create(data);
+  const addTeam = useCallback(async (data: TeamFormData) => {
+    const created = await teamAPI.create(data);
     setTeams((prev) => [created, ...prev]);
     return created;
   }, []);
@@ -74,8 +77,8 @@ export function useTeamData() {
     setTeams((prev) => prev.filter((t) => t.id !== id));
     setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
   }, []);
-  const copyTeam = useCallback((item: TeamEntry) => {
-    const cloned = teamAPI.clone(item);
+  const copyTeam = useCallback(async (item: TeamEntry) => {
+    const cloned = await teamAPI.clone(item);
     setTeams((prev) => [cloned, ...prev]);
     setPage(1);
   }, []);

@@ -100,8 +100,11 @@ export function useAgentManagement(): AgentManagementReturn {
   const fetchAgents = useCallback(() => {
     setIsLoading(true); setError(null);
     setTimeout(() => {
-      try { setAgents(agentAPI.fetchAll()); setIsLoading(false); }
-      catch { setError('Failed to load agents'); setIsLoading(false); }
+      agentAPI.fetchAll().then((items) => {
+        setAgents(items); setIsLoading(false);
+      }).catch(() => {
+        setError('Failed to load agents'); setIsLoading(false);
+      });
     }, 400);
   }, []);
   const retry = useCallback(() => fetchAgents(), [fetchAgents]);
@@ -168,7 +171,7 @@ export function useAgentManagement(): AgentManagementReturn {
     const errs = validateForm(formData, agents, editingAgent?.id);
     if (errs.length) { setFormErrors(errs); return; }
     if (editingAgent) { agentAPI.update(editingAgent.id, formData); setAgents((p) => p.map((a) => (a.id === editingAgent.id ? { ...a, ...formData } : a))); }
-    else { const created = agentAPI.create(formData); setAgents((p) => [...p, created]); }
+    else { agentAPI.create(formData).then((created) => setAgents((p) => [...p, created])); }
     setIsFormOpen(false);
   }, [formData, editingAgent, agents]);
 
@@ -185,8 +188,7 @@ export function useAgentManagement(): AgentManagementReturn {
   }, [deletingAgent]);
 
   const handleCopy = useCallback((agent: AgentEntry) => {
-    const cloned = agentAPI.clone(agent);
-    setAgents((prev) => [...prev, cloned]);
+    agentAPI.clone(agent).then((cloned) => setAgents((prev) => [...prev, cloned]));
   }, []);
 
   const openHistory = useCallback((agent: AgentEntry) => { setHistoryAgent(agent); setIsHistoryOpen(true); }, []);
