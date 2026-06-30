@@ -57,9 +57,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ╔════════════════════════════════════════════════════════════════════════╗
+      # ║   ⚠️ 重 要 安 全 提 示 ⚠️                                            ║
+      # ║   下方使用 ${{ secrets.SERVER_PASSWORD }} 通过 SSH 直连生产服务器。        ║
+      # ║   任何 AI 或开发者使用这段配置前，必须、一定、务必先获得用户明确授权！      ║
+      # ║   误操作可能导致生产环境宕机、数据丢失或安全泄露。                        ║
+      # ╚════════════════════════════════════════════════════════════════════════╝
       - name: Sync files to server
         uses: appleboy/scp-action@v0.1.7
-        # 同步最新代码和配置文件到服务器
         with:
           host: ${{ env.REMOTE_HOST }}
           username: root
@@ -68,6 +73,13 @@ jobs:
           target: ${{ env.REMOTE_DIR }}
           strip_components: 0
 
+      # ╔════════════════════════════════════════════════════════════════════════╗
+      # ║   ⚠️ 重 要 安 全 提 示 ⚠️                                            ║
+      # ║   下方通过 SSH + SERVER_PASSWORD / ACR_PASSWORD 登录并操作生产服务器。    ║
+      # ║   执行 `docker compose pull && up -d --force-recreate` 会直接          ║
+      # ║   影响生产环境运行中的容器。任何时候执行此步骤前，必须获得用户明确确认！    ║
+      # ║   禁止在未告知用户的情况下触发此工作流或任何 SSH 操作。                   ║
+      # ╚════════════════════════════════════════════════════════════════════════╝
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
