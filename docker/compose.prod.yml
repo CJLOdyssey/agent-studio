@@ -103,7 +103,10 @@ services:
       dockerfile: docker/Dockerfile
       args:
         - BUILDKIT_INLINE_CACHE=1
-    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/celery:latest
+    # Use backend image — both are built from the same Dockerfile, and
+    # backend is always rebuilt first, so this ensures celery always gets
+    # the freshest code even if the celery:latest tag is stale on ACR.
+    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/backend:latest
     container_name: virtual-team-worker-prod
     <<: *restart-policy
     logging: *default-logging
