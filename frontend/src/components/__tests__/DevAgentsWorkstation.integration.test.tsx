@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import DevAgentsWorkstation from '../devagents/DevAgentsWorkstation';
+import AgentStudioWorkstation from '../agentstudio/AgentStudioWorkstation';
 import { TestProviders } from '../../test/setup';
 import { useChatStore } from '../../stores/chatStore';
 
@@ -147,7 +147,7 @@ vi.mock('../../api/client', () => {
   };
 });
 
-describe('DevAgentsWorkstation 集成测试', () => {
+describe('AgentStudioWorkstation 集成测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useChatStore.getState().reset();
@@ -157,35 +157,35 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should show message in conversation after sending', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '请分析用户登录需求' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
       await waitFor(() => {
-        const messagesArea = document.querySelector('.devagents-messages-inner');
+        const messagesArea = document.querySelector('.agentstudio-messages-inner');
         expect(messagesArea?.textContent).toContain('请分析用户登录需求');
       });
-      const messages = document.querySelectorAll('.devagents-message-user, .devagents-message.user');
+      const messages = document.querySelectorAll('.agentstudio-message-user, .agentstudio-message.user');
       expect(messages.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should show agent response after sending message', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
       await waitFor(() => {
-        const messagesArea = document.querySelector('.devagents-messages-inner');
+        const messagesArea = document.querySelector('.agentstudio-messages-inner');
         expect(messagesArea?.textContent).toContain('测试消息');
       });
     });
@@ -195,7 +195,7 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should render team with agents', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(await screen.findByText('核心开发团队')).toBeInTheDocument();
@@ -205,22 +205,22 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should toggle team expansion when header clicked', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
       // Team starts expanded — agents list should be visible
       await waitFor(() => {
-        const lists = document.querySelectorAll('.devagents-team-agents');
+        const lists = document.querySelectorAll('.agentstudio-team-agents');
         expect(lists.length).toBeGreaterThanOrEqual(1);
       });
 
       // Click to collapse
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-folder-header');
+      const teamHeader = screen.getByText('核心开发团队').closest('.agentstudio-team-folder-header');
       fireEvent.click(teamHeader!);
 
       await waitFor(() => {
-        const lists = document.querySelectorAll('.devagents-team-agents');
+        const lists = document.querySelectorAll('.agentstudio-team-agents');
         expect(lists.length).toBe(0);
       });
 
@@ -231,16 +231,16 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should create conversation after broadcast', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '全体成员请注意' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
       await waitFor(() => {
-        const convItems = document.querySelectorAll('.devagents-conv-item');
+        const convItems = document.querySelectorAll('.agentstudio-conv-item');
         expect(convItems.length).toBeGreaterThanOrEqual(1);
       });
     });
@@ -250,11 +250,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should handle empty input gracefully', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
@@ -264,11 +264,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should clear whitespace-only input on Enter (handleSendMessage always clears)', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.devagents-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '   ' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
@@ -278,11 +278,11 @@ describe('DevAgentsWorkstation 集成测试', () => {
     it('should require non-whitespace input before sending', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
-      const sendBtn = document.querySelector('.devagents-send-btn') as HTMLButtonElement;
+      const sendBtn = document.querySelector('.agentstudio-send-btn') as HTMLButtonElement;
       expect(sendBtn.disabled).toBe(true);
     });
   });

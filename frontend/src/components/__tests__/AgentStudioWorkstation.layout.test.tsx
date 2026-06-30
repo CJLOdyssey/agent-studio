@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import DevAgentsWorkstation from '../devagents/DevAgentsWorkstation';
+import AgentStudioWorkstation from '../agentstudio/AgentStudioWorkstation';
 import { TestProviders } from '../../test/setup';
 
 vi.mock('lucide-react', () => ({
@@ -145,56 +145,56 @@ vi.mock('../../api/client', () => ({
   toggleAgent: vi.fn(),
 }));
 
-describe('DevAgentsWorkstation 布局测试', () => {
+describe('AgentStudioWorkstation 布局测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('首页结构', () => {
-    it('should render devagents-layout container', () => {
+    it('should render agentstudio-layout container', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const layout = document.querySelector('.devagents-app');
+      const layout = document.querySelector('.agentstudio-app');
       expect(layout).toBeInTheDocument();
     });
 
-    it('should render devagents-main container', () => {
+    it('should render agentstudio-main container', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const mainContainer = document.querySelector('.devagents-main');
+      const mainContainer = document.querySelector('.agentstudio-main');
       expect(mainContainer).toBeInTheDocument();
     });
 
     it('should render textarea on home page', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const textarea = document.querySelector('.devagents-textarea');
+      const textarea = document.querySelector('.agentstudio-textarea');
       expect(textarea).toBeInTheDocument();
     });
 
     it('should render input-wrapper on home page', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const inputWrapper = document.querySelector('.devagents-input-wrapper');
+      const inputWrapper = document.querySelector('.agentstudio-input-wrapper');
       expect(inputWrapper).toBeInTheDocument();
     });
 
     it('should display subtitle text', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByText('描述你的需求，我来帮你分析和规划')).toBeInTheDocument();
@@ -203,7 +203,7 @@ describe('DevAgentsWorkstation 布局测试', () => {
     it('should render send button', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByText('发送')).toBeInTheDocument();

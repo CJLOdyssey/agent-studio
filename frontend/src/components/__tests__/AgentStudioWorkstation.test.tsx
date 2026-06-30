@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import DevAgentsWorkstation from '../devagents/DevAgentsWorkstation';
+import AgentStudioWorkstation from '../agentstudio/AgentStudioWorkstation';
 import { TestProviders } from '../../test/setup';
 import { useChatStore } from '../../stores/chatStore';
 
@@ -147,7 +147,7 @@ vi.mock('../../api/client', () => {
   };
 });
 
-describe('DevAgentsWorkstation', () => {
+describe('AgentStudioWorkstation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useChatStore.getState().reset();
@@ -157,7 +157,7 @@ describe('DevAgentsWorkstation', () => {
     it('should render "我的团队" section header', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByText('我的团队')).toBeInTheDocument();
@@ -166,7 +166,7 @@ describe('DevAgentsWorkstation', () => {
     it('should render "核心开发团队" team', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(await screen.findByText('核心开发团队')).toBeInTheDocument();
@@ -175,7 +175,7 @@ describe('DevAgentsWorkstation', () => {
     it('should show team member count (8)', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(await screen.findByText('8')).toBeInTheDocument();
@@ -184,7 +184,7 @@ describe('DevAgentsWorkstation', () => {
     it('should render "新建对话" button', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByText('新建对话')).toBeInTheDocument();
@@ -195,14 +195,14 @@ describe('DevAgentsWorkstation', () => {
     it('should render all 8 agents in sidebar', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
       // Team starts expanded — agents are already visible
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
+      const sidebarAgents = document.querySelectorAll('.agentstudio-sidebar .agentstudio-team-agent-item');
       expect(sidebarAgents.length).toBe(8);
     });
   });
@@ -211,14 +211,14 @@ describe('DevAgentsWorkstation', () => {
     it('should select agent when clicked in sidebar', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
       // Team starts expanded — agents are already visible; no toggle needed
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
+      const sidebarAgents = document.querySelectorAll('.agentstudio-sidebar .agentstudio-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
 
       expect(screen.getByText(/与 产品经理 对话/)).toBeInTheDocument();
@@ -227,13 +227,13 @@ describe('DevAgentsWorkstation', () => {
     it('should show workspace (MessagesPanel) when agent is selected', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
+      const sidebarAgents = document.querySelectorAll('.agentstudio-sidebar .agentstudio-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
 
       // MessagesPanel is rendered when agent is selected
@@ -243,13 +243,13 @@ describe('DevAgentsWorkstation', () => {
     it('should show agent-specific header when agent selected', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
+      const sidebarAgents = document.querySelectorAll('.agentstudio-sidebar .agentstudio-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
       expect(screen.getByText(/与 产品经理 对话/)).toBeInTheDocument();
 
@@ -263,28 +263,28 @@ describe('DevAgentsWorkstation', () => {
     it('should toggle team expansion when header clicked', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
 
       // Team starts expanded — agents list should be visible
       await new Promise((resolve) => setTimeout(resolve, 100));
-      const agentsList = document.querySelector('.devagents-team-agents');
+      const agentsList = document.querySelector('.agentstudio-team-agents');
       expect(agentsList).toBeInTheDocument();
 
       // First click: collapse
-      const teamHeader = screen.getByText('核心开发团队').closest('.devagents-team-folder-header');
+      const teamHeader = screen.getByText('核心开发团队').closest('.agentstudio-team-folder-header');
       fireEvent.click(teamHeader!);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const agentsListCollapsed = document.querySelectorAll('.devagents-team-agents');
+      const agentsListCollapsed = document.querySelectorAll('.agentstudio-team-agents');
       expect(agentsListCollapsed.length).toBe(0);
 
       // Second click: expand again
       fireEvent.click(teamHeader!);
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const agentsListExpanded = document.querySelector('.devagents-team-agents');
+      const agentsListExpanded = document.querySelector('.agentstudio-team-agents');
       expect(agentsListExpanded).toBeInTheDocument();
     });
   });
@@ -293,7 +293,7 @@ describe('DevAgentsWorkstation', () => {
     it('should render input area with placeholder', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByPlaceholderText(/描述你的需求/)).toBeInTheDocument();
@@ -302,7 +302,7 @@ describe('DevAgentsWorkstation', () => {
     it('should update input value when typing', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       const textarea = screen.getByPlaceholderText(/描述你的需求/) as HTMLTextAreaElement;
@@ -313,14 +313,14 @@ describe('DevAgentsWorkstation', () => {
     it('should send message on Enter key press', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       const textarea = screen.getByPlaceholderText(/描述你的需求/) as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
       await waitFor(() => {
-        const messagesArea = document.querySelector('.devagents-messages-inner');
+        const messagesArea = document.querySelector('.agentstudio-messages-inner');
         expect(messagesArea?.textContent).toContain('测试消息');
       });
     });
@@ -330,7 +330,7 @@ describe('DevAgentsWorkstation', () => {
     it('should not show workspace on main channel', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.queryByText('资源管理器')).not.toBeInTheDocument();
@@ -339,13 +339,13 @@ describe('DevAgentsWorkstation', () => {
     it('should not show workspace when agent selected (workspace closed by default)', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       await waitFor(() => {
-        expect(document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item').length).toBeGreaterThan(0);
+        expect(document.querySelectorAll('.agentstudio-sidebar .agentstudio-team-agent-item').length).toBeGreaterThan(0);
       });
-      const sidebarAgents = document.querySelectorAll('.devagents-sidebar .devagents-team-agent-item');
+      const sidebarAgents = document.querySelectorAll('.agentstudio-sidebar .agentstudio-team-agent-item');
       fireEvent.click(sidebarAgents[0]);
       expect(screen.queryByText('资源管理器')).not.toBeInTheDocument();
     });
@@ -355,7 +355,7 @@ describe('DevAgentsWorkstation', () => {
     it('should display typing animation on home page', async () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       const cursor = document.querySelector('.typing-cursor');
@@ -365,7 +365,7 @@ describe('DevAgentsWorkstation', () => {
     it('should display subtitle on home page', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByText('描述你的需求，我来帮你分析和规划')).toBeInTheDocument();
@@ -376,7 +376,7 @@ describe('DevAgentsWorkstation', () => {
     it('should render user button with default user ID', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
       expect(screen.getByText('User 1001')).toBeInTheDocument();
@@ -385,10 +385,10 @@ describe('DevAgentsWorkstation', () => {
     it('should open user menu when clicked', () => {
       render(
         <TestProviders>
-          <DevAgentsWorkstation />
+          <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const userBtn = screen.getByText('User 1001').closest('.devagents-user-trigger');
+      const userBtn = screen.getByText('User 1001').closest('.agentstudio-user-trigger');
       fireEvent.click(userBtn!);
 
       expect(screen.getByText('系统设置')).toBeInTheDocument();
