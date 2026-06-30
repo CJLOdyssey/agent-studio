@@ -14,7 +14,6 @@
 }
 
 .wsta-table {
-  flex: 1;
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
@@ -539,4 +538,98 @@
 .wsta-search-box input:focus {
   border-color: var(--da-accent-indigo);
   box-shadow: var(--da-focus-ring);
+}
+
+/* ── Expand column ── */
+.wsta-col-expand {
+  width: 32px;
+  text-align: center;
+  padding: var(--sp-1) 0 !important;
+}
+
+.wsta-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wsta-expand-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* ── Expanded row ── */
+.wsta-expanded-row td {
+  padding: var(--sp-3) var(--sp-6) !important;
+  background: var(--da-bg-surface);
+}
+
+.wsta-empty-members {
+  text-align: center;
+  padding: var(--sp-6);
+  color: var(--da-text-muted);
+  font-size: var(--da-font-size-sm);
+}
+
+/* ── Member count ── */
+.wsta-member-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 var(--sp-1);
+  background: var(--da-bg-surface);
+  border-radius: 10px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-secondary);
+}
+
+/* ── Member icon ── */
+.wsta-member-icon {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 4px;
+  color: var(--da-text-muted);
+}
+
+/* ── Sub table (expanded members) ── */
+.wsta-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--da-font-size-xs);
+}
+
+.wsta-sub-table th {
+  padding: var(--sp-1) var(--sp-2);
+  text-align: left;
+  font-weight: 600;
+  color: var(--da-text-secondary);
+  border-bottom: 1px solid var(--da-border);
+  font-size: var(--da-font-size-xs);
+}
+
+.wsta-sub-table td {
+  padding: var(--sp-1) var(--sp-2) !important;
+  border-bottom: 1px solid var(--da-border-subtle);
+  background: transparent !important;
+}
+
+.wsta-sub-table tbody tr:hover {
+  background: var(--da-bg-hover) !important;
+}
+
+/* ── Badge blue (for linked config) ── */
+.wsta-badge-blue {
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
 }

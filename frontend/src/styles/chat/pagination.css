@@ -1,5 +1,5 @@
 /* Pagination */
-.devagents-pagination {
+.agentstudio-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7,7 +7,7 @@
   margin-top: var(--sp-6);
 }
 
-.devagents-pagination-btn {
+.agentstudio-pagination-btn {
   padding: var(--sp-2) var(--sp-4);
   background: var(--da-bg-surface);
   border: none;
@@ -20,17 +20,17 @@
     color 0.15s;
 }
 
-.devagents-pagination-btn:hover:not(:disabled) {
+.agentstudio-pagination-btn:hover:not(:disabled) {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-pagination-btn:disabled {
+.agentstudio-pagination-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.devagents-pagination-info {
+.agentstudio-pagination-info {
   font-size: var(--da-font-size-sm);
   color: var(--da-text-muted);
   min-width: 50px;

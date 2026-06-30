@@ -14,19 +14,19 @@ function deriveKey(salt: string, passphrase: string): string {
 }
 
 function getOrCreateSalt(): string {
-  let salt = localStorage.getItem('devagents_salt');
+  let salt = localStorage.getItem('agentstudio_salt');
   if (!salt) {
     salt = lib.WordArray.random(128 / 8).toString(enc.Hex);
-    localStorage.setItem('devagents_salt', salt);
+    localStorage.setItem('agentstudio_salt', salt);
   }
   return salt;
 }
 
 function getEncryptionKey(): string {
   const salt = getOrCreateSalt();
-  const userId = localStorage.getItem('devagents_user_id') || 'default_user';
+  const userId = localStorage.getItem('agentstudio_user_id') || 'default_user';
   // Combine a machine fingerprint with the user id as passphrase
-  const passphrase = `devagents_v2_${userId}_${salt.slice(0, 8)}`;
+  const passphrase = `agentstudio_v2_${userId}_${salt.slice(0, 8)}`;
   return deriveKey(salt, passphrase);
 }
 
@@ -94,7 +94,7 @@ export function getAndDecrypt(key: string): string | null {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
-      const legacyKey = `devagents_secure_storage_v1_${localStorage.getItem('devagents_user_id') || 'default_user'}`;
+      const legacyKey = `agentstudio_secure_storage_v1_${localStorage.getItem('agentstudio_user_id') || 'default_user'}`;
       const decrypted = AES.decrypt(raw, legacyKey).toString(enc.Utf8);
       if (decrypted) return decrypted;
     } catch {
@@ -115,7 +115,7 @@ export function removeEncrypted(key: string): void {
  * Initialize user identifier for key derivation.
  */
 export function initUserId(userId: string): void {
-  localStorage.setItem('devagents_user_id', userId);
+  localStorage.setItem('agentstudio_user_id', userId);
 }
 
 /**

@@ -1,6 +1,6 @@
-# 🤖 虚拟软件外包团队
+# 🤖 AgentStudio
 
-> 基于 AI Agent 的虚拟软件外包团队协作系统
+> 基于 AI Agent 的AgentStudio协作系统
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
@@ -26,7 +26,7 @@
 
 ## 🎯 项目简介
 
-虚拟软件外包团队是一个基于 AI Agent 的智能协作系统，用户可以通过配置不同类型的 AI Agent 组建虚拟团队完成软件项目。
+AgentStudio是一个基于 AI Agent 的智能协作系统，用户可以通过配置不同类型的 AI Agent 组建虚拟团队完成软件项目。
 
 ### 核心价值
 
@@ -127,97 +127,74 @@
 
 ## 🚀 快速开始
 
+> 完整启动方式（本地开发 / Docker / CLI）见 **[QUICKSTART.md](QUICKSTART.md)**，以下仅列出最简步骤。
+
 ### 环境要求
 
 - Node.js >= 18.0
 - Python >= 3.11
 - PostgreSQL >= 16
 - Redis >= 7.2
+- Docker（可选，用于 Docker 启动）
 
-### 安装
+### 安装 & 配置
 
 ```bash
 # 克隆项目
 git clone https://github.com/your-org/virtual-team.git
 cd virtual-team
 
-# 安装前端依赖
-cd frontend
-npm install
+# 前端依赖
+cd frontend && npm install && cd ..
 
-# 安装后端依赖
-cd ..
-python -m venv .venv
-source .venv/bin/activate
+# 后端依赖
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 配置
-
-```bash
-# 复制环境变量模板
-cp .env.example .env
-
-# 编辑环境变量
-vim .env
+# 环境变量
+cp .env.example .env && vim .env
 ```
 
 ### 启动
 
 ```bash
-# 启动前端
-cd frontend
-npm run dev
+# 终端 1：前端
+cd frontend && npm run dev       # → http://localhost:5173
 
-# 启动后端
-cd ..
-python -m virtual_team.main
+# 终端 2：后端
+PYTHONPATH=. python3 -m uvicorn virtual_team.app:app --reload  # → http://localhost:8080
 ```
 
-访问 http://localhost:5173
+或用 Docker 一键启动：
+
+```bash
+docker compose -f docker/compose.local.yml up -d  # 前端 :5173，后端 :8080
+```
 
 ---
 
 ## 📁 项目结构
 
 ```
-项目 7：虚拟软件外包团队/
-├── CLAUDE.md                    # 🗺️ AI 导航入口
+项目 7：AgentStudio/
+├── AGENTS.md                    # 🗺️ AI 导航入口
+├── CLAUDE.md                    # 🤖 AI 导航入口（同 AGENTS.md）
 ├── README.md                    # 📖 项目说明
+├── QUICKSTART.md                # 🚀 快速启动指南（4 种方式）
 ├── CONTRIBUTING.md              # 📝 贡献指南
 ├── CHANGELOG.md                 # 📋 变更日志
 ├── frontend/                    # 🎨 React 前端
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── devagents/       # Agent 管理组件
-│   │   ├── hooks/
-│   │   ├── types/
-│   │   └── styles/
-│   ├── package.json
-│   └── tsconfig.json
 ├── virtual_team/                # 🐍 Python 后端
-│   ├── app.py                   # FastAPI 入口
-│   ├── main.py                  # 启动入口
-│   ├── models.py                # 数据模型
-│   ├── routers/                 # API 路由
-│   ├── repository/              # 数据访问层
-│   └── system_team/             # 系统团队配置
+├── docker/                      # 🐳 Docker 编排
+│   ├── compose.local.yml        #   本地开发
+│   ├── compose.prod.yml         #   生产部署
+│   └── Dockerfile               #   后端镜像
 ├── docs/                        # 📚 文档
-│   ├── architecture.md          # 架构说明
-│   ├── modules.md               # 模块说明
-│   └── superpowers/specs/       # 设计规范
 ├── scripts/                     # 🔧 脚本
-│   ├── check-docs.js            # 文档检查
-│   └── generate-docs.js         # 文档生成
-├── .github/                     # GitHub 配置
-│   └── workflows/
-│       └── ci.yml               # CI 流程
-├── docker-compose.yml           # Docker 编排
-├── Dockerfile                   # Docker 镜像
-└── requirements.txt             # Python 依赖
+└── .github/workflows/           # 🤖 CI/CD
 ```
 
-详细结构请查看 [docs/modules.md](docs/modules.md)
+详细结构请查看 [docs/module-map.md](docs/module-map.md)
 
 ---
 
@@ -284,8 +261,8 @@ main          # 生产分支
 
 启动后端后访问：
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8080/docs
+- ReDoc: http://localhost:8080/redoc
 
 ### 主要 API 端点
 
@@ -304,35 +281,37 @@ main          # 生产分支
 ### Docker 部署
 
 ```bash
-# 构建镜像
-docker-compose build
+# 本地开发环境（含 PostgreSQL / Redis）
+docker compose -f docker/compose.local.yml up -d
 
-# 启动服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
+# 生产环境（拉取远程镜像）
+docker compose -f docker/compose.prod.yml up -d
 ```
+
+所有服务的 Docker 编排文件在 `docker/` 目录下。
 
 ### 生产环境
 
-```bash
-# 前端构建
-cd frontend
-npm run build
+生产环境通过 GitHub Actions 自动部署到阿里云 ECS：
 
-# 后端部署
-gunicorn virtual_team.app:app -w 4 -k uvicorn.workers.UvicornWorker
+```bash
+# 手动触发部署
+git push origin main  # 或 GitHub → Actions → Deploy → Run workflow
 ```
 
 ### 环境变量
 
+完整环境变量见 `.env.example`，核心变量如下：
+
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `DATABASE_URL` | 数据库连接 | `postgresql://localhost/virtual_team` |
-| `REDIS_URL` | Redis 连接 | `redis://localhost:6379` |
-| `OPENAI_API_KEY` | OpenAI API 密钥 | - |
-| `SECRET_KEY` | JWT 密钥 | - |
+| `DATABASE_URL` | 数据库连接 | `postgresql+asyncpg://postgres@localhost:5432/virtual_team` |
+| `DEEPSEEK_API_KEY` | DeepSeek API 密钥（LLM 响应必需） | - |
+| `OPENAI_BASE_URL` | OpenAI 兼容 API 地址 | `https://api.deepseek.com` |
+| `OPENAI_MODEL` | 模型名称 | `deepseek-v4-flash` |
+| `AUTH_MODE` | 认证模式（`legacy` / `rbac`） | `legacy` |
+| `CORS_ORIGIN` | 跨域允许的源 | `http://localhost:5173` |
+| `CHECKPOINTER_BACKEND` | 检查点存储后端 | `sqlite` |
 
 ---
 
@@ -369,4 +348,4 @@ gunicorn virtual_team.app:app -w 4 -k uvicorn.workers.UvicornWorker
 - [React](https://reactjs.org/)
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [LangGraph](https://langchain-ai.github.io/langgraph/)
-# SERVER_PASSWORD configured
+

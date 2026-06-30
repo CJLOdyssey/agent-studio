@@ -7,7 +7,7 @@ import { useChatStore } from './stores/chatStore';
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';
 
-const DevAgentsWorkstation = lazy(() => import('./components/devagents/DevAgentsWorkstation'));
+const AgentStudioWorkstation = lazy(() => import('./components/agentstudio/AgentStudioWorkstation'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,7 +68,7 @@ export default function App() {
                 path="*"
                 element={
                   <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
-                    <DevAgentsWorkstation />
+                    <AgentStudioWorkstation />
                   </ErrorBoundary>
                 }
               />

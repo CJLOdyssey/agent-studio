@@ -157,6 +157,8 @@ class TeamDB(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    description: Mapped[str | None] = mapped_column(String(256), nullable=True, default=None)
+    status: Mapped[str] = mapped_column(String(16), default="active")
     order: Mapped[int] = mapped_column(Integer, default=0)
     is_expanded: Mapped[bool] = mapped_column(Boolean, default=False)
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)

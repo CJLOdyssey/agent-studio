@@ -8,13 +8,13 @@ BASE_URL = 'http://localhost:5173'
 def test_homepage_welcome_screen(page):
     page.goto(BASE_URL)
     page.wait_for_load_state('networkidle')
-    expect(page.locator('.empty-state-title')).to_have_text('虚拟软件外包团队')
+    expect(page.locator('.empty-state-title')).to_have_text('AgentStudio')
     steps = page.locator('.empty-state-desc + div [style*="textAlign"]')
     expect(steps).to_have_count(3)
     expect(steps.nth(0)).to_contain_text('分析需求')
     expect(steps.nth(1)).to_contain_text('分组讨论')
     expect(steps.nth(2)).to_contain_text('产出结果')
-    expect(page).to_have_title('虚拟软件外包团队')
+    expect(page).to_have_title('AgentStudio')
 
 
 def test_sidebar_renders(page):

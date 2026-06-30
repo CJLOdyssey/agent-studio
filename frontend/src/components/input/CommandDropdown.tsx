@@ -46,29 +46,29 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
 
   if (commands.length === 0) {
     return (
-      <div className="devagents-command-popover" ref={ref}>
-        <div className="devagents-command-empty">{t('model.noCommands')}</div>
+      <div className="agentstudio-command-popover" ref={ref}>
+        <div className="agentstudio-command-empty">{t('model.noCommands')}</div>
       </div>
     );
   }
 
   return (
-    <div className="devagents-command-popover" ref={ref} role="listbox">
+    <div className="agentstudio-command-popover" ref={ref} role="listbox">
       <div ref={listRef}>
         {commands.map((opt, idx) => (
           <button
             key={opt.id}
             data-cmd-option
-            className={`devagents-command-option ${idx === activeIndex ? 'focused' : ''}`}
+            className={`agentstudio-command-option ${idx === activeIndex ? 'focused' : ''}`}
             onClick={() => handleClick(idx)}
             onMouseEnter={() => onHover(idx)}
             role="option"
             aria-selected={idx === activeIndex}
             type="button"
           >
-            <span className="devagents-command-option-name">/{opt.name}</span>
-            {opt.source === 'agent' && <span className="devagents-command-option-source">Agent</span>}
-            {opt.description && <span className="devagents-command-option-desc">{opt.description}</span>}
+            <span className="agentstudio-command-option-name">/{opt.name}</span>
+            {opt.source === 'agent' && <span className="agentstudio-command-option-source">Agent</span>}
+            {opt.description && <span className="agentstudio-command-option-desc">{opt.description}</span>}
           </button>
         ))}
       </div>

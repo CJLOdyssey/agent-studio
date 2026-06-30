@@ -1,12 +1,12 @@
 /* Input area */
-.devagents-input-container {
+.agentstudio-input-container {
   padding: var(--sp-4) var(--sp-6) var(--sp-5);
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }
 
-.devagents-input-wrapper {
+.agentstudio-input-wrapper {
   position: relative;
   background: var(--da-bg-surface);
   border: none;
@@ -17,15 +17,15 @@
 }
 
 /* Let popovers escape the wrapper's overflow clip */
-.devagents-input-wrapper:has(.devagents-command-popover) {
+.agentstudio-input-wrapper:has(.agentstudio-command-popover) {
   overflow: visible;
 }
 
-.devagents-input-wrapper:focus-within {
+.agentstudio-input-wrapper:focus-within {
   box-shadow: var(--da-focus-ring);
 }
 
-.devagents-textarea {
+.agentstudio-textarea {
   width: 100%;
   background: transparent;
   border: none;
@@ -44,29 +44,29 @@
   scrollbar-color: transparent transparent;
 }
 
-.devagents-textarea:hover {
+.agentstudio-textarea:hover {
   scrollbar-color: var(--da-border-subtle) transparent;
 }
 
-.devagents-textarea::-webkit-scrollbar {
+.agentstudio-textarea::-webkit-scrollbar {
   width: 4px;
 }
 
-.devagents-textarea::-webkit-scrollbar-thumb {
+.agentstudio-textarea::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 2px;
 }
 
-.devagents-textarea:hover::-webkit-scrollbar-thumb {
+.agentstudio-textarea:hover::-webkit-scrollbar-thumb {
   background: var(--da-border-subtle);
 }
 
-.devagents-textarea::placeholder {
+.agentstudio-textarea::placeholder {
   color: var(--da-text-muted);
   font-weight: 400;
 }
 
-.devagents-input-toolbar {
+.agentstudio-input-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -76,13 +76,13 @@
   min-height: var(--da-toolbar-height);
 }
 
-.devagents-input-tools {
+.agentstudio-input-tools {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
 }
 
-.devagents-tool-btn {
+.agentstudio-tool-btn {
   padding: var(--sp-2);
   background: transparent;
   border: none;
@@ -97,17 +97,17 @@
   justify-content: center;
 }
 
-.devagents-tool-btn:hover {
+.agentstudio-tool-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
 /* Hide native file input — the paperclip button triggers it programmatically */
-.devagents-file-input {
+.agentstudio-file-input {
   display: none;
 }
 
-.devagents-tool-btn-text {
+.agentstudio-tool-btn-text {
   font-size: var(--da-font-size-xs);
   padding: var(--sp-1) var(--sp-3);
   background: transparent;
@@ -122,13 +122,13 @@
   font-weight: 500;
 }
 
-.devagents-tool-btn-text:hover {
+.agentstudio-tool-btn-text:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
   border-color: var(--da-border);
 }
 
-.devagents-send-btn {
+.agentstudio-send-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -147,45 +147,45 @@
   min-height: 40px;
 }
 
-.devagents-send-btn.active {
+.agentstudio-send-btn.active {
   background: var(--da-accent-indigo);
   color: var(--da-text-on-accent);
   box-shadow: var(--shadow-sm);
 }
 
-.devagents-send-btn.active:hover {
+.agentstudio-send-btn.active:hover {
   background: var(--da-accent-indigo);
   filter: brightness(1.15);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-.devagents-send-btn.active:active {
+.agentstudio-send-btn.active:active {
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }
 
-.devagents-send-btn.disabled {
+.agentstudio-send-btn.disabled {
   background: var(--da-bg-hover);
   color: var(--da-text-muted);
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-.devagents-send-btn.running {
+.agentstudio-send-btn.running {
   background: var(--da-accent-indigo);
   color: var(--da-text-on-accent);
   box-shadow: var(--shadow-sm);
 }
 
-.devagents-send-btn.running:hover {
+.agentstudio-send-btn.running:hover {
   background: var(--da-accent-indigo);
   filter: brightness(1.15);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-.devagents-send-btn.running:active {
+.agentstudio-send-btn.running:active {
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }

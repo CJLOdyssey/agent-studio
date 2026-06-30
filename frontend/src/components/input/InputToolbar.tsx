@@ -151,8 +151,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   );
 
   return (
-    <div className="devagents-input-container">
-      <div className="devagents-input-wrapper">
+    <div className="agentstudio-input-container">
+      <div className="agentstudio-input-wrapper">
         {palette.open && (
           <CommandDropdown
             commands={palette.filtered}
@@ -164,7 +164,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         )}
 
         <textarea
-          className="devagents-textarea"
+          className="agentstudio-textarea"
           placeholder={placeholder ?? t('home.placeholder')}
           value={composer.value}
           maxLength={maxLength}
@@ -174,8 +174,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onPaste={handlePaste}
         />
 
-        <div className="devagents-input-toolbar">
-          <div className="devagents-input-tools">
+        <div className="agentstudio-input-toolbar">
+          <div className="agentstudio-input-tools">
             <ModelSelector
               models={models}
               selectedModel={selectedModel}
@@ -188,7 +188,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           {isRunning ? (
             <button
               onClick={onStop}
-              className="devagents-send-btn running"
+              className="agentstudio-send-btn running"
               aria-label={t('home.stop', '停止')}
             >
               <Square size={14} fill="currentColor" />
@@ -198,7 +198,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
             <button
               onClick={composer.submit}
               disabled={!composer.hasContent}
-              className={`devagents-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
+              className={`agentstudio-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
               aria-label={t('home.send')}
             >
               <span>{t('home.send')}</span>

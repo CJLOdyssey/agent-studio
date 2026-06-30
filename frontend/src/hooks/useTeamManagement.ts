@@ -1,11 +1,14 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Bot } from 'lucide-react';
-import type { Team, Agent } from '../types/devagents';
+import type { Team, Agent } from '../types/agentstudio';
+import type { TeamMember } from '../types/team';
 import { getAllAgents } from '../utils/agentMapper';
 import { validateName, checkTeamLimit, checkAgentLimit } from '../utils/validation';
+import { listTeams, createTeam, updateTeam, deleteTeam } from '../api/client/teams';
+import { updateAgent } from '../api/client/agents';
 import api from '../api/client';
 
-const STORAGE_KEY = 'devagents-conversations';
+const STORAGE_KEY = 'agentstudio-conversations';
 
 function removeConversationsByAgentIds(agentIds: string[]) {
   if (!agentIds.length) return;
@@ -14,80 +17,47 @@ function removeConversationsByAgentIds(agentIds: string[]) {
       JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const filtered = existing.filter((c) => !c.agentId || !agentIds.includes(c.agentId));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    window.dispatchEvent(new Event('devagents-conversations-updated'));
+    window.dispatchEvent(new Event('agentstudio-conversations-updated'));
   } catch { /* non-fatal */ }
 }
 
 type ToastFn = (msg: string, type: 'success' | 'info' | 'error') => void;
 
-interface ApiTeam {
-  id: string;
-  name: string;
-  order: number;
-  is_expanded: boolean;
-  agents: ApiTeamMember[];
-}
-
-interface ApiTeamMember {
-  id: string;
-  name: string;
-  role: string;
-  order: number;
-  agent_config_id: string | null;
-  system_prompt: string | null;
-  output_constraints: string | null;
-  tools?: { name: string; enabled?: boolean }[] | string;
-  mcp?: { name: string; enabled?: boolean }[] | string;
-  skills?: { name: string; enabled?: boolean }[] | string;
+function teamMemberToAgent(a: TeamMember): Agent {
+  const parseJsonArray = (val: unknown): { name: string; enabled?: boolean }[] => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') { try { return JSON.parse(val); } catch { return []; } }
+    return [];
+  };
+  return {
+    id: a.agentConfigId || a.id,
+    name: a.name,
+    role: a.role,
+    systemPrompt: a.systemPrompt || undefined,
+    outputConstraints: a.outputConstraints || undefined,
+    tools: parseJsonArray(a.tools).map((t: { name: string; enabled?: boolean }) => ({ id: t.name, name: t.name, description: '', enabled: t.enabled ?? true })),
+    mcp: parseJsonArray(a.mcp).map((m: { name: string; enabled?: boolean }) => ({ id: m.name, name: m.name, description: '', serverUrl: '', enabled: m.enabled ?? true })),
+    skills: parseJsonArray(a.skills).map((s: { name: string; enabled?: boolean }) => ({ id: s.name, name: s.name, description: '', enabled: s.enabled ?? true })),
+    icon: Bot,
+    color: 'text-[var(--da-text-muted)]',
+    bg: 'bg-[var(--da-bg-surface)]',
+    border: 'border-[var(--da-border)]',
+  };
 }
 
 async function fetchTeams(): Promise<Team[]> {
   try {
-    const res = await api.get('/teams');
-    const data: ApiTeam[] = res.data;
-    return data.map((t) => ({
+    const items = await listTeams();
+    return items.map((t) => ({
       id: t.id,
       name: t.name,
       isExpanded: t.is_expanded,
       isPinned: false,
-      agents: t.agents.map((a) => {
-        const parseJsonArray = (val: unknown): { name: string; enabled?: boolean }[] => {
-          if (Array.isArray(val)) return val;
-          if (typeof val === 'string') { try { return JSON.parse(val); } catch { return []; } }
-          return [];
-        };
-        return {
-          id: a.agent_config_id || a.id,
-          name: a.name,
-          role: a.role,
-          systemPrompt: a.system_prompt || undefined,
-          outputConstraints: a.output_constraints || undefined,
-          tools: parseJsonArray(a.tools).map((t: { name: string; enabled?: boolean }) => ({ id: t.name, name: t.name, description: '', enabled: t.enabled ?? true })),
-          mcp: parseJsonArray(a.mcp).map((m: { name: string; enabled?: boolean }) => ({ id: m.name, name: m.name, description: '', serverUrl: '', enabled: m.enabled ?? true })),
-          skills: parseJsonArray(a.skills).map((s: { name: string; enabled?: boolean }) => ({ id: s.name, name: s.name, description: '', enabled: s.enabled ?? true })),
-          icon: Bot,
-          color: 'text-[var(--da-text-muted)]',
-          bg: 'bg-[var(--da-bg-surface)]',
-          border: 'border-[var(--da-border)]',
-        };
-      }),
+      agents: (t.agents ?? []).map(teamMemberToAgent),
     }));
   } catch {
     return [];
   }
-}
-
-async function apiPost(url: string, data: unknown) {
-  const res = await api.post(url, data);
-  return res.data;
-}
-
-async function apiPut(url: string, data: unknown) {
-  await api.put(url, data);
-}
-
-async function apiDelete(url: string) {
-  await api.delete(url);
 }
 
 export function useTeamManagement(toast?: ToastFn) {
@@ -105,7 +75,7 @@ export function useTeamManagement(toast?: ToastFn) {
       if (!team) return;
       const newExpanded = !team.isExpanded;
       setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, isExpanded: newExpanded } : t)));
-      await apiPut(`/teams/${teamId}`, { is_expanded: newExpanded }).catch(() => {});
+      await updateTeam(teamId, { is_expanded: newExpanded }).catch(() => {});
     },
     [teams],
   );
@@ -130,7 +100,7 @@ export function useTeamManagement(toast?: ToastFn) {
     }
 
     try {
-      const res = await apiPost('/teams', { name: teamName });
+      const res = await createTeam({ name: teamName });
       setTeams((prev) => [...prev, { id: res.id, name: res.name, isExpanded: false, isPinned: false, agents: [] }]);
       toast?.('团队已创建', 'success');
     } catch {
@@ -162,7 +132,7 @@ export function useTeamManagement(toast?: ToastFn) {
       }
 
       try {
-        const member = await apiPost(`/teams/${teamId}/members`, { name: agentName });
+        const member = (await api.post(`/api/teams/${teamId}/members`, { name: agentName })).data;
         const newAgent: Agent = {
           id: member.id,
           name: member.name,
@@ -205,7 +175,7 @@ export function useTeamManagement(toast?: ToastFn) {
     setTeams((prev) => prev.map((t) => (t.id === editingTeamId ? { ...t, name } : t)));
     setEditingTeamId(null);
     setEditTeamName('');
-    await apiPut(`/teams/${editingTeamId}`, { name }).catch(() => {});
+    await updateTeam(editingTeamId, { name }).catch(() => {});
   }, [editingTeamId, editTeamName, teams, toast]);
 
   const cancelEditTeam = useCallback(() => {
@@ -223,7 +193,7 @@ export function useTeamManagement(toast?: ToastFn) {
       return;
     }
     setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, name: trimmed } : t)));
-    apiPut(`/teams/${teamId}`, { name: trimmed }).catch(() => {});
+    updateTeam(teamId, { name: trimmed }).catch(() => {});
   }, [teams, toast]);
 
   const handleRenameAgent = useCallback((agentId: string, name: string) => {
@@ -247,7 +217,7 @@ export function useTeamManagement(toast?: ToastFn) {
         agents: t.agents.map((a) => (a.id === agentId ? { ...a, name: trimmed } : a)),
       })),
     );
-    apiPut(`/agents/${agentId}`, { name: trimmed }).catch(() => {});
+    updateAgent(agentId, { name: trimmed }).catch(() => {});
   }, [teams, toast]);
 
   const handleDeleteTeam = useCallback(
@@ -256,7 +226,7 @@ export function useTeamManagement(toast?: ToastFn) {
       const agentIds = team?.agents.map((a) => a.id) ?? [];
       setTeams((prev) => prev.filter((t) => t.id !== teamId));
       removeConversationsByAgentIds(agentIds);
-      await apiDelete(`/teams/${teamId}`).catch(() => {});
+      await deleteTeam(teamId).catch(() => {});
       toast?.('团队已删除', 'info');
     },
     [toast, teams],
@@ -267,7 +237,7 @@ export function useTeamManagement(toast?: ToastFn) {
       prev.map((t) => (t.id === teamId ? { ...t, agents: t.agents.filter((a) => a.id !== agentId) } : t)),
     );
     removeConversationsByAgentIds([agentId]);
-    await apiDelete(`/teams/${teamId}/members/${agentId}`).catch(() => {});
+    await api.delete(`/api/teams/${teamId}/members/${agentId}`).catch(() => {});
   }, []);
 
   const handleTogglePinTeam = useCallback((teamId: string) => {

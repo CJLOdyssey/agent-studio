@@ -17,10 +17,10 @@ if (api.interceptors?.request) {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    let uid = localStorage.getItem('devagents_user_id');
+    let uid = localStorage.getItem('agentstudio_user_id');
     if (!uid) {
       uid = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-      localStorage.setItem('devagents_user_id', uid);
+      localStorage.setItem('agentstudio_user_id', uid);
     }
     config.headers['X-User-ID'] = uid;
     return config;

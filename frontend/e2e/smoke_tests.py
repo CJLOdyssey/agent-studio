@@ -1,5 +1,5 @@
 """
-虚拟软件外包团队 — 灰盒冒烟测试套件
+AgentStudio — 灰盒冒烟测试套件
 =========================================
 测试类型: 灰盒测试（结合内部代码结构与用户视角）
 测试范围: API 接口 / 前端 UI / 集成工作流
@@ -277,7 +277,7 @@ def test_b01_homepage_renders(page):
     page.wait_for_load_state('networkidle')
     expect(page.get_by_role('heading', name='DevAgents OS')).to_be_visible()
     expect(page.get_by_role('textbox')).to_be_visible()
-    expect(page).to_have_title('虚拟软件外包团队')
+    expect(page).to_have_title('AgentStudio')
 
 
 def test_b02_sidebar_elements(page):
