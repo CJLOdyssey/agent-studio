@@ -55,7 +55,9 @@ def create_checkpointer(
         try:
             import asyncio
 
-            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver  # type: ignore[import-untyped]
+            from langgraph.checkpoint.postgres.aio import (
+                AsyncPostgresSaver,  # type: ignore[import-untyped]
+            )
         except ImportError as exc:
             raise ImportError(
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
@@ -85,8 +87,9 @@ def create_checkpointer(
             import asyncio
 
             import aiosqlite
-
-            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver  # type: ignore[import-untyped]
+            from langgraph.checkpoint.sqlite.aio import (
+                AsyncSqliteSaver,  # type: ignore[import-untyped]
+            )
 
             async def _init_sqlite() -> AsyncSqliteSaver:
                 conn = await aiosqlite.connect(dsn)
