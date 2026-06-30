@@ -8,7 +8,6 @@ Usage:
     PYTHONPATH=. python3 -m pytest virtual_team/tests/test_checkpoint_persistence.py -v
 """
 
-import asyncio
 import os
 import subprocess
 import sys
