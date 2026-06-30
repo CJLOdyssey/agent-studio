@@ -99,11 +99,10 @@ export function useAgentManagement(): AgentManagementReturn {
 
   const fetchAgents = useCallback(() => {
     setIsLoading(true); setError(null);
-    agentAPI.fetchAll().then((items) => {
-      setAgents(items); setIsLoading(false);
-    }).catch(() => {
-      setError('Failed to load agents'); setIsLoading(false);
-    });
+    setTimeout(() => {
+      try { setAgents(agentAPI.fetchAll()); setIsLoading(false); }
+      catch { setError('Failed to load agents'); setIsLoading(false); }
+    }, 400);
   }, []);
   const retry = useCallback(() => fetchAgents(), [fetchAgents]);
   const clearError = useCallback(() => setError(null), []);
@@ -168,66 +167,40 @@ export function useAgentManagement(): AgentManagementReturn {
   const handleSave = useCallback(() => {
     const errs = validateForm(formData, agents, editingAgent?.id);
     if (errs.length) { setFormErrors(errs); return; }
-    (async () => {
-      try {
-        if (editingAgent) {
-          await agentAPI.update(editingAgent.id, formData);
-          setAgents((p) => p.map((a) => (a.id === editingAgent.id ? { ...a, ...formData } : a)));
-        } else {
-          const created = await agentAPI.create(formData);
-          setAgents((p) => [...p, created]);
-        }
-        setIsFormOpen(false);
-      } catch {
-        setFormErrors(['保存失败，请重试']);
-      }
-    })();
+    if (editingAgent) { agentAPI.update(editingAgent.id, formData); setAgents((p) => p.map((a) => (a.id === editingAgent.id ? { ...a, ...formData } : a))); }
+    else { const created = agentAPI.create(formData); setAgents((p) => [...p, created]); }
+    setIsFormOpen(false);
   }, [formData, editingAgent, agents]);
 
   const openDelete = useCallback((agent: AgentEntry) => {
+    if (agent.status === 'running') { setBatchError('运行中 Agent 不可删除，请先停止'); setTimeout(() => setBatchError(''), 3000); return; }
     setDeletingAgent(agent); setIsDeleteOpen(true);
   }, []);
 
   const handleDelete = useCallback(() => {
     if (!deletingAgent) return;
-    (async () => {
-      try {
-        await agentAPI.remove(deletingAgent.id);
-        setAgents((prev) => prev.filter((a) => a.id !== deletingAgent.id));
-        setIsDeleteOpen(false); setDeletingAgent(null);
-      } catch {
-        setBatchError('删除失败，请重试');
-      }
-    })();
+    agentAPI.remove(deletingAgent.id);
+    setAgents((prev) => prev.filter((a) => a.id !== deletingAgent.id));
+    setIsDeleteOpen(false); setDeletingAgent(null);
   }, [deletingAgent]);
 
   const handleCopy = useCallback((agent: AgentEntry) => {
-    (async () => {
-      try {
-        const cloned = await agentAPI.clone(agent);
-        setAgents((prev) => [...prev, cloned]);
-      } catch {
-        setBatchError('复制失败，请重试');
-      }
-    })();
+    const cloned = agentAPI.clone(agent);
+    setAgents((prev) => [...prev, cloned]);
   }, []);
 
   const openHistory = useCallback((agent: AgentEntry) => { setHistoryAgent(agent); setIsHistoryOpen(true); }, []);
 
   const openBatchDelete = useCallback(() => {
+    const running = agents.filter((a) => selectedIds.has(a.id) && a.status === 'running');
+    if (running.length) { setBatchError(`${running.length} 个运行中 Agent 不可删除，请先停止`); setTimeout(() => setBatchError(''), 3000); return; }
     setIsBatchDeleteOpen(true);
-  }, []);
+  }, [agents, selectedIds]);
 
   const handleBatchDelete = useCallback(() => {
-    (async () => {
-      try {
-        await agentAPI.removeBatch(selectedIds);
-        setAgents((prev) => prev.filter((a) => !selectedIds.has(a.id)));
-        setSelectedIds(new Set()); setIsBatchDeleteOpen(false);
-      } catch {
-        setBatchError('批量删除失败，请重试');
-      }
-    })();
+    agentAPI.removeBatch(selectedIds);
+    setAgents((prev) => prev.filter((a) => !selectedIds.has(a.id)));
+    setSelectedIds(new Set()); setIsBatchDeleteOpen(false);
   }, [selectedIds]);
 
   return {
