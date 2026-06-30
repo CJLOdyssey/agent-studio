@@ -85,7 +85,7 @@ services:
     image: virtual-team/backend:latest
     container_name: virtual-team-worker
     restart: unless-stopped
-    command: celery -A virtual_team.broker.celery_app worker --loglevel=info --concurrency=2 --pool=threads
+    command: celery -A virtual_team.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
     environment:
       <<: *common-env
     depends_on:
@@ -104,9 +104,7 @@ services:
     ports:
       - "5173:80"
     environment:
-      VITE_API_BASE_URL: ""
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
     depends_on:
       backend:
         condition: service_started
