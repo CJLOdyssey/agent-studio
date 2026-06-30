@@ -1,61 +1,75 @@
 # 📋 Anchored Summary — AgentStudio
 
-> 最后更新: 2026-06-23 | Sisyphus Session
+> 最后更新: 2026-06-30 | Sisyphus Session
 
 ---
 
 ## Goal
-从企业角度全面评估项目功能，用最小代码量实现优化，进行企业级端到端测试（API + 前端 E2E），并修复 Agent 配置 tools/MCP/skills 未传递给 Agent Graph 的架构缺口。
+修复生产环境 502 错误、聊天功能不可用、CI pipeline 全链路，统一本地与生产 Docker 配置，建立运维规范。
 
 ## 总体进展
-- **总分评估**: 81.5/100（11 维度）
-- **已实现**: 32 API 测试全部通过 + 12 前端 E2E 测试全部通过 + 37/39 后端回归测试通过
-- **核心修复**: Agent Graph 工具传递架构缺口已修复（`ToolConfig` + `bind_tools` + `_raw_llm_stream` 注入）
+- **生产环境**: ✅ 5/5 容器健康（backend/celery/frontend/postgres/redis）
+- **CI**: ✅ 全部 5 job 通过（frontend-quality / backend-quality / integration x2 / docs-check / build-frontend）
+- **Build & Deploy**: ✅ build-and-push + deploy 全通过
+- **聊天功能**: ✅ 生产环境测试通过（DeepSeek API + LangGraph + AsyncCheckpointer 全链路）
 
 ---
 
 ## 已完成的修改
 
-### 后端 API 修正
-| 文件 | 修改 | 影响 |
-|------|------|------|
-| `routers/agents.py` | 新增 `GET /api/agents/{id}` 端点 + `_parse_json()` 函数 | Agent 详情查询修复 |
-| `repository/agents.py` | `delete_agent_config()` 添加 `return True` | 删除后不再返回 404 |
-| `routers/agents.py` | `get_agent` 端点中对 JSON 字符串字段调用 `_parse_json()` | tools/MCP/skills 字段正确解析为 list |
+### 生产环境修复
 
-### Agent Graph 架构修复
-| 文件 | 修改 | 影响 |
-|------|------|------|
-| `agent_graph.py` | 新增 `ToolConfig` dataclass（`name`, `description`） | 轻量级工具描述符 |
-| `agent_graph.py` | 新增 `_ToolWrapper` class（`.invoke()` 返回 JSON） | 工具执行节点可调用 |
-| `agent_graph.py` | `__init__` 新增 `_tool_definitions: list[dict]` | 存储 OpenAI 兼容的工具定义 |
-| `agent_graph.py` | `bind_tools()` 重写：接受 `list[ToolConfig]`，生成 API 工具定义 + `_tool_map` | 将外部工具注册到 graph |
-| `agent_graph.py` | `_raw_llm_stream()` 注入 `body["tools"] = self._tool_definitions` | LLM API 请求中告知可用工具 |
+| # | 修复 | 根因 | 关键文件 |
+|---|------|------|---------|
+| 1 | **502 Bad Gateway** | nginx DNS 缓存 backend IP，容器重建后 IP 变更 | 服务器 `nginx -s reload` |
+| 2 | **SqliteSaver 不兼容 async** | 同步检查点 + `astream_events()` 异步操作不匹配 | `checkpoint.py` + `requirements.txt` |
+| 3 | **Alembic 表名冲突** | `CheckpointDB.__tablename__` 与 langgraph 内部 `checkpoints` 表冲突 | `checkpoint.py` + 新增迁移 |
+| 4 | **`asyncio.run()` 嵌套崩溃** | Celery worker 已有事件循环，嵌套调用 `asyncio.run()` 报错 | `checkpoint.py`、`agent_graph.py`、`tasks.py`、`main.py` |
+| 5 | **Celery 镜像未更新** | `build-push-action` 复用缓存层导致 `celery:latest` 标签陈旧 | `compose.prod.yml`、`compose.local.yml` |
+| 6 | **CI checkpoint 3 测试失败** | 测试用 sync API 操作 async checkpointer，事件循环已关闭 | `tests/test_checkpoint_persistence.py` |
 
-### tasks.py 修改
-| 修改 | 影响 |
+### 容器配置统一
+
+| 项目 | 修改 |
 |------|------|
-| `_run_agent_pipeline()` 中解析 `ac.tools`/`ac.mcp`/`ac.skills` | 从 agent 配置提取工具/MCP/Skills 引用 |
-| 调用 `get_tools()`/`get_mcps()`/`get_skills()` 查找描述信息 | 从数据库获取注册资源的详细信息 |
-| 创建 `ToolConfig` 对象列表并调用 `graph.bind_tools()` | 将完整工具链注入 Agent Graph |
+| Celery 镜像 | 本地 + 生产统一指向 `backend:latest`（同一 Dockerfile） |
+| `VITE_API_BASE_URL` | 默认值与生产一致 |
+| Celery loglevel | 统一使用 `${LOG_LEVEL:-info}` |
+| `extra_hosts` | 移除（frontend 用 nginx → `backend:8080`，不需要 `host.docker.internal`） |
 
-### 架构设计原则
-- **高内聚**: `ToolConfig` 封装工具描述所需的所有信息；`_ToolWrapper` 封装调用逻辑
-- **低耦合**: `tasks.py` 只负责解析配置和查找注册资源，不关心 graph 内部的工具执行细节
-- **最小侵入**: 仅修改 2 个后端文件（`agent_graph.py` + `tasks.py`），无需新增 DB 查询、无需修改前端代码
-- **前缀区分**: tools → 原始 name，MCP → `mcp_{name}`，skills → `skill_{name}`，避免命名冲突
+### DevOps 规范
 
-### 测试结果
-| 测试 | 结果 | 时间 |
-|------|------|------|
-| API E2E 集成测试（32 用例） | ✅ 32 passed | 9.58s |
-| 后端回归测试 | ✅ 37 passed, 2 pre-existing failures（`test_conversation.py: StreamEmitter._pending_thinking`） | 10.35s |
-| 前端 Playwright E2E（12 用例） | ✅ 12 passed | 30s 内 |
+| 文件 | 变更 |
+|------|------|
+| `.github/workflows/deploy.yml` | SSH/SCP 步骤前添加醒目安全警告注释 |
+| `docs/project/fix-logs/fix-log-2026-06-30-*.md` | 6 份修复日志（RCA 格式） |
+
+### 架构设计决策
+
+- **Async checkpointer 工厂模式**: `create_checkpointer()`（同步包装器） + `create_checkpointer_async()`（async 版本），按调用上下文选择合适的入口
+- **构造器注入**: `SingleAgentGraph` / `TeamGraph` 接受可选 `checkpointer` 参数，由调用方决定创建方式
+- **同一镜像标签**: celery 与 backend 共用同一镜像标签，避免 ACR 多标签同步不一致
+
+### CI 状态
+
+```
+CI (main)
+  frontend-quality  ✅ tsc → lint → build → test
+  backend-quality   ✅ ruff → mypy → pytest (84 tests, 3 checkpoint tests fixed)
+  integration       ✅ legacy + rbac E2E
+  docs-check        ✅
+  build-frontend    ✅
+
+Build & Deploy
+  build-and-push    ✅ backend + celery + frontend
+  deploy            ✅ pull → up --force-recreate
+```
 
 ---
 
 ## 未解决问题
-- **`StreamEmitter._pending_thinking`** — `test_conversation.py` 中 2 个 pre-existing 失败，非本次改动导致。根因：`streaming.py` 中 `_pending_thinking` 属性缺失。
+- **`StreamEmitter._pending_thinking`** — `test_conversation.py` 中 2 个 pre-existing 测试失败，非本次改动导致
+- **`test_postgres_backend_optional`** — 本地跳过（`libpq` 未安装），CI 中同样跳过
 
 ---
 
@@ -63,10 +77,14 @@
 
 | 文件路径 | 说明 |
 |----------|------|
-| `virtual_team/tests/test_e2e_full_flow.py` | 32 个 API 端到端测试（团队/Agent/Prompt/工具/MCP/Skills/会话/Run/全流程） |
-| `scripts/test_e2e_frontend.py` | 12 个前端 Playwright E2E 测试 |
-| `virtual_team/agent_graph.py` | Agent Graph 引擎（ToolConfig + bind_tools + _raw_llm_stream 工具注入） |
-| `virtual_team/tasks.py` | Celery 任务（_run_agent_pipeline 解析 agent 配置绑定工具） |
+| `virtual_team/checkpoint.py` | Async 检查点工厂（`create_checkpointer` + `create_checkpointer_async`） |
+| `virtual_team/agent_graph.py` | Agent Graph 引擎（接受 injectable checkpointer） |
+| `virtual_team/tasks.py` | Celery 任务（使用 `await create_checkpointer_async()`） |
+| `virtual_team/tests/test_checkpoint_persistence.py` | 修复后的 async checkpoint 测试 |
+| `docker/compose.local.yml` | 本地 Docker Compose（与生产对齐） |
+| `docker/compose.prod.yml` | 生产 Docker Compose（celery 用 backend 镜像） |
+| `.github/workflows/deploy.yml` | 部署工作流（含 SSH 安全警告） |
+| `docs/project/fix-logs/` | 本次 6 份修复日志 |line 解析 agent 配置绑定工具） |
 | `virtual_team/routers/agents.py` | Agent API 路由（含 _parse_json 修复） |
 | `virtual_team/repository/agents.py` | Agent 数据访问层 |
 | `virtual_team/repository/tools.py` | 注册工具 CRUD（含 get_tools） |
