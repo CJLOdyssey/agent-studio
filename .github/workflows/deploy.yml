@@ -81,18 +81,3 @@ jobs:
             docker compose -f docker/compose.prod.yml up -d --force-recreate
             docker image prune -f
 
-      - name: Notify deploy result
-        if: always() && secrets.NOTIFICATION_WEBHOOK != ''
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const status = '${{ job.status }}';
-            const title = status === 'success'
-              ? `✅ 部署成功 — ${{ github.repository }}`
-              : `❌ 部署失败 — ${{ github.repository }}`;
-            const text = `分支: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\n状态: ${status}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-            await fetch('${{ secrets.NOTIFICATION_WEBHOOK }}', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ msgtype: 'markdown', markdown: { content: title + '\n' + text } }),
-            });

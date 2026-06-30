@@ -137,31 +137,3 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
-  notify:
-    if: always() && secrets.NOTIFICATION_WEBHOOK != ''
-    needs: [frontend-quality, backend-quality, integration, docs-check, build-frontend]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify CI result
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const outcomes = [
-              '${{ needs.frontend-quality.result }}',
-              '${{ needs.backend-quality.result }}',
-              '${{ needs.integration.result }}',
-              '${{ needs.docs-check.result }}',
-              '${{ needs.build-frontend.result }}',
-            ];
-            const failed = outcomes.filter(r => r !== 'success' && r !== 'skipped');
-            const title = failed.length > 0
-              ? `❌ CI 失败 — ${{ github.repository }}`
-              : `✅ CI 通过 — ${{ github.repository }}`;
-            const text = failed.length > 0
-              ? `分支: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\n失败: ${failed.join(', ')}\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`
-              : `分支: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\n全部通过\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-            await fetch('${{ secrets.NOTIFICATION_WEBHOOK }}', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ msgtype: 'markdown', markdown: { content: title + '\n' + text } }),
-            });
