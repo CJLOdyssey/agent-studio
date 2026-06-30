@@ -41,12 +41,15 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
             session_context = _build_context(memories)
 
     from virtual_team.agent_graph import DEFAULT_TOOLS, SingleAgentGraph
+    from virtual_team.checkpoint import create_checkpointer_async
 
+    checkpointer = await create_checkpointer_async()
     graph = SingleAgentGraph(
         model=model,
         api_key=config.api_key,
         base_url=config.api_base,
         temperature=config.temperature,
+        checkpointer=checkpointer,
     )
     graph.bind_tools(DEFAULT_TOOLS)
 

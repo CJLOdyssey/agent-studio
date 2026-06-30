@@ -26,6 +26,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
@@ -365,11 +366,12 @@ class SingleAgentGraph:
 
     def __init__(
         self,
-        model: str = "deepseek-chat",
-        api_key: str = "",
+        model: str,
+        api_key: str,
         base_url: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 65536,
+        checkpointer: BaseCheckpointSaver | None = None,
     ):
         self.model = model
         self.api_key = api_key
@@ -393,9 +395,12 @@ class SingleAgentGraph:
         self._tool_map: dict = {}
         self._tool_definitions: list[dict] = []
         # Persistent checkpointer — env-controlled (sqlite/postgres/memory)
-        from virtual_team.checkpoint import create_checkpointer
+        if checkpointer is not None:
+            self.checkpointer = checkpointer
+        else:
+            from virtual_team.checkpoint import create_checkpointer
 
-        self.checkpointer = create_checkpointer()
+            self.checkpointer = create_checkpointer()
         self._graph = self._build_graph()
 
         self._stream_cb: Callable | None = None
