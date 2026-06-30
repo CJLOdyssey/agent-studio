@@ -3,10 +3,6 @@ Conversation checkpoint system.
 
 Persists agent state after each ReAct step so conversations survive
 restarts and can be resumed from where they left off.
-
-LangGraph-level checkpointer uses MemorySaver (no async-compat issues).
-App-level persistence is handled by save_checkpoint() / load_latest_checkpoint()
-writing to the PostgreSQL ``checkpoints`` table.
 """
 
 import json
@@ -16,7 +12,7 @@ from uuid import uuid4
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, text as sa_text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from virtual_team.database import Base, get_session_factory
@@ -25,14 +21,62 @@ from virtual_team.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def create_checkpointer() -> BaseCheckpointSaver:
-    """Create a MemorySaver checkpointer (sync + async compatible).
+def create_checkpointer(
+    backend: str | None = None,
+    dsn: str | None = None,
+) -> "BaseCheckpointSaver":  # noqa: F821 — lazy import avoids circular dep
+    """Create a checkpointer based on environment configuration.
 
-    LangGraph-level checkpoint persistence is intentionally bypassed in
-    favour of app-level ``save_checkpoint()`` / ``load_latest_checkpoint()``
-    which persist to the PostgreSQL ``checkpoints`` table.
+    When called without arguments, reads ``CHECKPOINTER_BACKEND`` and
+    ``CHECKPOINTER_DSN`` from environment. Defaults to SQLite with an
+    in-process database file.
+
+    Supported backends:
+        sqlite (default) — ``SqliteSaver`` backed by a local file.
+        memory — ``MemorySaver`` (no persistence across restarts).
+        postgres — ``PostgresSaver`` (requires ``CHECKPOINTER_DSN``).
+
+    Returns a ``BaseCheckpointSaver``-compatible instance for use with
+    ``workflow.compile(checkpointer=...)``.
     """
-    logger.info("Creating MemorySaver checkpointer")
+    import os
+
+    if backend is None:
+        backend = os.environ.get("CHECKPOINTER_BACKEND", "sqlite")
+    if dsn is None:
+        dsn = os.environ.get("CHECKPOINTER_DSN")
+
+    logger.info("Creating checkpointer for backend=%s", backend)
+
+    if backend == "postgres":
+        if not dsn:
+            raise ValueError("CHECKPOINTER_DSN is required for postgres backend")
+        logger.info("Creating PostgresSaver checkpointer")
+        try:
+            from langgraph.checkpoint.postgres import PostgresSaver  # type: ignore[import-untyped]
+        except ImportError as exc:
+            raise ImportError(
+                "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
+            ) from exc
+        return PostgresSaver.from_conn_string(dsn)
+
+    if backend == "sqlite":
+        if not dsn:
+            dsn = "checkpoints.db"
+        logger.info("Creating SqliteSaver checkpointer (dsn=%s)", dsn)
+        try:
+            import sqlite3
+
+            from langgraph.checkpoint.sqlite import SqliteSaver  # type: ignore[import-untyped]
+
+            conn = sqlite3.connect(dsn, check_same_thread=False)
+            return SqliteSaver(conn)
+        except ImportError as exc:
+            raise ImportError(
+                "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra"
+            ) from exc
+
+    logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
     return MemorySaver()
 
 
@@ -110,6 +154,7 @@ async def save_checkpoint(checkpoint: AgentCheckpoint) -> str:
         )
         session.add(obj)
         await session.commit()
+        await session.refresh(obj)
         return obj.id
 
 
@@ -117,20 +162,31 @@ async def load_latest_checkpoint(session_id: str) -> AgentCheckpoint | None:
     """Load the most recent checkpoint for a session."""
     factory = get_session_factory()
     async with factory() as session:
-        result = (
-            await session.execute(
-                sa_text(
-                    "SELECT id, session_id, run_id, step_index, agent_state "
-                    "FROM checkpoints WHERE session_id = :sid "
-                    "ORDER BY created_at DESC LIMIT 1"
-                ).bindparams(sid=session_id)
-            )
-        ).first()
-        if result is None:
-            return None
-        return AgentCheckpoint(
-            session_id=result.session_id,
-            run_id=result.run_id,
-            step_index=result.step_index,
-            **json.loads(result.agent_state),
+        from sqlalchemy import desc, select
+
+        stmt = (
+            select(CheckpointDB)
+            .where(CheckpointDB.session_id == session_id)
+            .order_by(desc(CheckpointDB.created_at))
+            .limit(1)
         )
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return AgentCheckpoint.from_json(row.agent_state)
+
+
+async def list_checkpoints(session_id: str) -> list[AgentCheckpoint]:
+    """List all checkpoints for a session, oldest first."""
+    factory = get_session_factory()
+    async with factory() as session:
+        from sqlalchemy import select
+
+        stmt = (
+            select(CheckpointDB)
+            .where(CheckpointDB.session_id == session_id)
+            .order_by(CheckpointDB.created_at)
+        )
+        result = await session.execute(stmt)
+        return [AgentCheckpoint.from_json(row.agent_state) for row in result.scalars()]

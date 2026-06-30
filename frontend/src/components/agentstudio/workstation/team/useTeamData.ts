@@ -20,11 +20,10 @@ export function useTeamData() {
 
   const fetchTeams = useCallback(() => {
     setIsLoading(true); setError(null);
-    teamAPI.fetchAll().then((items) => {
-      setTeams(items); setIsLoading(false);
-    }).catch(() => {
-      setError('Failed to load teams'); setIsLoading(false);
-    });
+    setTimeout(() => {
+      try { setTeams(teamAPI.fetchAll()); setIsLoading(false); }
+      catch { setError('Failed to load teams'); setIsLoading(false); }
+    }, 400);
   }, []);
   const retry = useCallback(() => fetchTeams(), [fetchTeams]);
   const clearError = useCallback(() => setError(null), []);
@@ -40,7 +39,7 @@ export function useTeamData() {
   const processed = useMemo(() => {
     let arr = [...teams];
     const q = search.toLowerCase();
-    if (q) arr = arr.filter((t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+    if (q) arr = arr.filter((t) => t.name.toLowerCase().includes(q) || t.leader.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
     if (statusFilter !== 'all') arr = arr.filter((t) => t.status === statusFilter);
     arr.sort((a, b) => {
       const cmp = a[sortField] < b[sortField] ? -1 : 1;
@@ -62,47 +61,28 @@ export function useTeamData() {
   }, [paged]);
 
   const addTeam = useCallback((data: TeamFormData) => {
-    (async () => {
-      try {
-        const created = await teamAPI.create(data);
-        setTeams((prev) => [created, ...prev]);
-      } catch { /* toast handles error */ }
-    })();
+    const created = teamAPI.create(data);
+    setTeams((prev) => [created, ...prev]);
+    return created;
   }, []);
   const updateTeam = useCallback((id: string, data: TeamFormData) => {
-    (async () => {
-      try {
-        await teamAPI.update(id, data);
-        setTeams((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t));
-      } catch { /* toast handles error */ }
-    })();
+    teamAPI.update(id, data);
+    setTeams((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t));
   }, []);
   const deleteTeam = useCallback((id: string) => {
-    (async () => {
-      try {
-        await teamAPI.remove(id);
-        setTeams((prev) => prev.filter((t) => t.id !== id));
-        setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
-      } catch { /* toast handles error */ }
-    })();
+    teamAPI.remove(id);
+    setTeams((prev) => prev.filter((t) => t.id !== id));
+    setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
   }, []);
   const copyTeam = useCallback((item: TeamEntry) => {
-    (async () => {
-      try {
-        const cloned = await teamAPI.clone(item);
-        setTeams((prev) => [cloned, ...prev]);
-        setPage(1);
-      } catch { /* toast handles error */ }
-    })();
+    const cloned = teamAPI.clone(item);
+    setTeams((prev) => [cloned, ...prev]);
+    setPage(1);
   }, []);
   const batchDelete = useCallback((ids: Set<string>) => {
-    (async () => {
-      try {
-        await teamAPI.removeBatch(ids);
-        setTeams((prev) => prev.filter((t) => !ids.has(t.id)));
-        setSelectedIds(new Set()); setPage(1);
-      } catch { /* toast handles error */ }
-    })();
+    teamAPI.removeBatch(ids);
+    setTeams((prev) => prev.filter((t) => !ids.has(t.id)));
+    setSelectedIds(new Set()); setPage(1);
   }, []);
 
   return {
