@@ -82,7 +82,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    image: virtual-team/celery:latest
+    image: virtual-team/backend:latest
     container_name: virtual-team-worker
     restart: unless-stopped
     command: celery -A virtual_team.broker.celery_app worker --loglevel=info --concurrency=2 --pool=threads
