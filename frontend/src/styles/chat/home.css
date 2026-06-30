@@ -1,5 +1,5 @@
 /* Home page */
-.devagents-home {
+.agentstudio-home {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -8,7 +8,7 @@
   min-height: 0;
 }
 
-.devagents-home-centered {
+.agentstudio-home-centered {
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -18,7 +18,7 @@
   padding: 0 var(--sp-6);
 }
 
-.devagents-home-centered.has-messages {
+.agentstudio-home-centered.has-messages {
   justify-content: flex-start;
   flex: 1;
   overflow-y: auto;
@@ -26,19 +26,19 @@
   padding-bottom: var(--sp-6);
 }
 
-.devagents-home-group {
+.agentstudio-home-group {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
 }
 
-.devagents-home-hero {
+.agentstudio-home-hero {
   text-align: center;
   margin-bottom: var(--sp-8);
 }
 
-.devagents-home-logo {
+.agentstudio-home-logo {
   width: 72px;
   height: 72px;
   margin: 0 auto var(--sp-6);
@@ -49,11 +49,11 @@
   justify-content: center;
 }
 
-.devagents-home-logo-icon {
+.agentstudio-home-logo-icon {
   color: var(--icon-planning);
 }
 
-.devagents-home-greeting {
+.agentstudio-home-greeting {
   font-size: clamp(24px, 4vw, 32px);
   font-weight: 700;
   color: var(--da-text-primary);
@@ -64,20 +64,20 @@
   text-wrap: balance;
 }
 
-.devagents-home-subtitle {
+.agentstudio-home-subtitle {
   font-size: var(--da-font-size-base);
   color: var(--da-text-muted);
   margin: 0;
 }
 
-.devagents-home-messages {
+.agentstudio-home-messages {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
 }
 
-.devagents-home-chat-messages {
+.agentstudio-home-chat-messages {
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
@@ -107,7 +107,7 @@
   }
 }
 
-.devagents-input-features {
+.agentstudio-input-features {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,7 +116,7 @@
   flex-wrap: wrap;
 }
 
-.devagents-feature-btn {
+.agentstudio-feature-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
@@ -131,13 +131,13 @@
   white-space: nowrap;
 }
 
-.devagents-feature-btn:hover {
+.agentstudio-feature-btn:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
   border-color: var(--da-border-strong);
 }
 
-.devagents-feature-btn .lucide-icon {
+.agentstudio-feature-btn .lucide-icon {
   width: 14px;
   height: 14px;
 }

@@ -1,5 +1,5 @@
 /* ============================================
-   DevAgents OS - Layout System
+   AgentStudio - Layout System
    参考设计: Shadcn/UI Dark Theme
    ============================================ */
 
@@ -23,7 +23,7 @@
 
 /* ===== 全局布局 ===== */
 
-.devagents-app {
+.agentstudio-app {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -40,7 +40,7 @@
 
 /* ===== Header (全宽置顶) ===== */
 
-.devagents-global-header {
+.agentstudio-global-header {
   height: 3.5rem;
   background: var(--da-bg-card);
   display: flex;
@@ -51,13 +51,13 @@
   z-index: var(--z-overlay);
 }
 
-.devagents-header-left {
+.agentstudio-header-left {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
 }
 
-.devagents-header-mobile-btn {
+.agentstudio-header-mobile-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,19 +70,19 @@
   cursor: pointer;
 }
 
-.devagents-header-mobile-btn:hover {
+.agentstudio-header-mobile-btn:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
 /* 桌面端隐藏移动菜单按钮, md: */
 @media (min-width: 768px) {
-  .devagents-header-mobile-btn {
+  .agentstudio-header-mobile-btn {
     display: none;
   }
 }
 
-.devagents-header-logo {
+.agentstudio-header-logo {
   width: 32px;
   height: 32px;
   background: var(--da-bg-surface);
@@ -95,20 +95,20 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-.devagents-header-title {
+.agentstudio-header-title {
   font-weight: 600;
   font-size: 15px;
   color: var(--da-text-primary);
   letter-spacing: -0.02em;
 }
 
-.devagents-header-right {
+.agentstudio-header-right {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
 }
 
-.devagents-header-btn {
+.agentstudio-header-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,12 +123,12 @@
   transition: color 0.15s, background 0.15s;
 }
 
-.devagents-header-btn:hover {
+.agentstudio-header-btn:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
-.devagents-header-notif-dot {
+.agentstudio-header-notif-dot {
   position: absolute;
   top: 6px;
   right: 8px;
@@ -141,7 +141,7 @@
 
 /* ===== 主体容器 ===== */
 
-.devagents-body {
+.agentstudio-body {
   display: flex;
   flex: 1;
   overflow: hidden;
@@ -150,7 +150,7 @@
 
 /* ===== 右侧区域 (Header + Main) ===== */
 
-.devagents-right {
+.agentstudio-right {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -159,7 +159,7 @@
 
 /* ===== Sidebar ===== */
 
-.devagents-sidebar-logo {
+.agentstudio-sidebar-logo {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -167,7 +167,7 @@
   flex-shrink: 0;
 }
 
-.devagents-sidebar {
+.agentstudio-sidebar {
   width: var(--da-sidebar-width);
   min-width: var(--da-sidebar-min);
   max-width: var(--da-sidebar-max);
@@ -184,29 +184,29 @@
   transition: transform 0.2s ease-out;
 }
 
-.devagents-sidebar.open {
+.agentstudio-sidebar.open {
   transform: translateX(0);
 }
 
 /* 桌面端 sidebar 始终显示 */
 @media (min-width: 768px) {
-  .devagents-sidebar {
+  .agentstudio-sidebar {
     position: relative;
     transform: translateX(0);
   }
-  .devagents-sidebar.collapsed {
+  .agentstudio-sidebar.collapsed {
     position: absolute;
     transform: translateX(-100%);
   }
 }
 
 /* Sidebar Header (新建对话按钮) */
-.devagents-sidebar-new-chat {
+.agentstudio-sidebar-new-chat {
   padding: var(--sp-3);
   flex-shrink: 0;
 }
 
-.devagents-sprint-btn {
+.agentstudio-sprint-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,12 +224,12 @@
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.devagents-sprint-btn:hover {
+.agentstudio-sprint-btn:hover {
   background: var(--da-bg-hover);
 }
 
 /* Sidebar 导航区域 (可滚动) */
-.devagents-sidebar-nav {
+.agentstudio-sidebar-nav {
   flex: 1;
   overflow-y: auto;
   padding: var(--sp-2) 0;
@@ -238,21 +238,21 @@
   gap: var(--sp-6);
 }
 
-.devagents-sidebar-nav::-webkit-scrollbar {
+.agentstudio-sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
 
-.devagents-sidebar-nav::-webkit-scrollbar-thumb {
+.agentstudio-sidebar-nav::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 4px;
 }
 
-.devagents-sidebar-nav:hover::-webkit-scrollbar-thumb {
+.agentstudio-sidebar-nav:hover::-webkit-scrollbar-thumb {
   background: var(--da-border);
 }
 
 /* Section 标题 */
-.devagents-sidebar-section-label {
+.agentstudio-sidebar-section-label {
   padding: 0 var(--sp-4);
   margin-bottom: var(--sp-2);
   font-size: 11px;
@@ -266,14 +266,14 @@
 }
 
 /* 菜单项列表 */
-.devagents-sidebar-menu {
+.agentstudio-sidebar-menu {
   padding: 0 var(--sp-2);
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.devagents-sidebar-menu-item {
+.agentstudio-sidebar-menu-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -289,18 +289,18 @@
   text-align: left;
 }
 
-.devagents-sidebar-menu-item:hover {
+.agentstudio-sidebar-menu-item:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
-.devagents-sidebar-menu-item.active {
+.agentstudio-sidebar-menu-item.active {
   color: var(--da-text-primary);
   background: var(--da-bg-surface);
   font-weight: 500;
 }
 
-.devagents-sidebar-menu-item .lucide-icon {
+.agentstudio-sidebar-menu-item .lucide-icon {
   width: 16px;
   height: 16px;
   opacity: 0.7;
@@ -308,12 +308,12 @@
 }
 
 /* 团队折叠列表 */
-.devagents-team-folder {
+.agentstudio-team-folder {
   padding: 0 var(--sp-2);
   overflow: visible;
 }
 
-.devagents-team-folder-header {
+.agentstudio-team-folder-header {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -329,23 +329,23 @@
   text-align: left;
 }
 
-.devagents-team-folder-header:hover {
+.agentstudio-team-folder-header:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
-.devagents-team-folder-header .chevron-icon {
+.agentstudio-team-folder-header .chevron-icon {
   width: 14px;
   height: 14px;
   transition: transform 0.2s;
   flex-shrink: 0;
 }
 
-.devagents-team-folder-header .chevron-icon.collapsed {
+.agentstudio-team-folder-header .chevron-icon.collapsed {
   transform: rotate(-90deg);
 }
 
-.devagents-team-agents {
+.agentstudio-team-agents {
   padding-left: 24px;
   display: flex;
   flex-direction: column;
@@ -355,7 +355,7 @@
   transition: max-height 0.2s ease-out;
 }
 
-.devagents-team-agent-item {
+.agentstudio-team-agent-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -371,38 +371,38 @@
   text-align: left;
 }
 
-.devagents-team-agent-item:hover {
+.agentstudio-team-agent-item:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
-.devagents-team-agent-item .agent-dot {
+.agentstudio-team-agent-item .agent-dot {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
 }
 
-.devagents-team-agent-item-wrapper {
+.agentstudio-team-agent-item-wrapper {
   display: flex;
   align-items: center;
   position: relative;
 }
 
-.devagents-team-agent-item-wrapper .devagents-team-agent-item {
+.agentstudio-team-agent-item-wrapper .agentstudio-team-agent-item {
   flex: 1;
 }
 
-.devagents-team-agent-item-wrapper.active .devagents-team-agent-item {
+.agentstudio-team-agent-item-wrapper.active .agentstudio-team-agent-item {
   color: var(--da-text-primary);
   background: transparent;
   font-weight: 500;
 }
 
-.devagents-agent-menu-container {
+.agentstudio-agent-menu-container {
   position: relative;
 }
 
-.devagents-agent-menu-btn {
+.agentstudio-agent-menu-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -417,22 +417,22 @@
   transition: opacity 0.15s, background 0.15s;
 }
 
-.devagents-team-agent-item-wrapper:hover .devagents-agent-menu-btn {
+.agentstudio-team-agent-item-wrapper:hover .agentstudio-agent-menu-btn {
   opacity: 1;
 }
 
-.devagents-agent-menu-btn:hover {
+.agentstudio-agent-menu-btn:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-dropdown-overlay {
+.agentstudio-dropdown-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-dropdown);
 }
 
-.devagents-agent-dropdown {
+.agentstudio-agent-dropdown {
   position: fixed;
   min-width: 140px;
   background: var(--da-bg-card);
@@ -444,7 +444,7 @@
   animation: slideUp 0.12s ease-out;
 }
 
-.devagents-agent-dropdown-item {
+.agentstudio-agent-dropdown-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -460,16 +460,16 @@
   text-align: left;
 }
 
-.devagents-agent-dropdown-item:hover {
+.agentstudio-agent-dropdown-item:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-agent-dropdown-item.danger {
+.agentstudio-agent-dropdown-item.danger {
   color: var(--icon-status-error);
 }
 
-.devagents-agent-dropdown-item.danger:hover {
+.agentstudio-agent-dropdown-item.danger:hover {
   background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
 }
 
@@ -477,7 +477,7 @@
    Enterprise Modal (Ant Design Style)
    ────────────────────────────────────────────── */
 
-.devagents-modal-overlay {
+.agentstudio-modal-overlay {
   position: fixed;
   inset: 0;
   background: var(--da-overlay-bg);
@@ -506,7 +506,7 @@
   }
 }
 
-.devagents-modal {
+.agentstudio-modal {
   background: var(--da-bg-elevated);
   border: 1px solid var(--da-border);
   border-radius: 10px; /* Slightly less round for cleaner look */
@@ -520,7 +520,7 @@
   overflow: hidden;
 }
 
-.devagents-modal--workstation {
+.agentstudio-modal--workstation {
   width: var(--modal-l);
   max-width: var(--modal-l);
   height: var(--modal-height);
@@ -530,7 +530,7 @@
 }
 
 /* Header - Refined spacing */
-.devagents-modal-header {
+.agentstudio-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -539,7 +539,7 @@
   flex-shrink: 0;
 }
 
-.devagents-modal-header h3 {
+.agentstudio-modal-header h3 {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
@@ -548,7 +548,7 @@
   letter-spacing: -0.01em;
 }
 
-.devagents-modal-close {
+.agentstudio-modal-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -564,17 +564,17 @@
   transition: all 0.15s ease;
 }
 
-.devagents-modal-close:hover {
+.agentstudio-modal-close:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
 /* Content - Optimized padding */
-.devagents-modal-content {
+.agentstudio-modal-content {
   padding: 16px 20px;
 }
 
-.devagents-modal-content p {
+.agentstudio-modal-content p {
   margin: 0;
   color: var(--da-text-secondary);
   font-size: 14px;
@@ -582,14 +582,14 @@
 }
 
 /* Confirm dialog with icon layout - Fine-tuned alignment */
-.devagents-confirm-body {
+.agentstudio-confirm-body {
   display: flex;
   align-items: center; /* Perfect vertical center */
   gap: 12px;
   padding: 4px 0;
 }
 
-.devagents-confirm-icon {
+.agentstudio-confirm-icon {
   flex-shrink: 0;
   width: 22px;
   height: 22px;
@@ -598,26 +598,26 @@
   justify-content: center;
 }
 
-.devagents-confirm-icon svg {
+.agentstudio-confirm-icon svg {
   width: 20px;
   height: 20px;
   display: block;
 }
 
-.devagents-confirm-icon.warning {
+.agentstudio-confirm-icon.warning {
   color: var(--icon-status-warning);
 }
 
-.devagents-confirm-icon.danger {
+.agentstudio-confirm-icon.danger {
   color: var(--da-accent-red);
 }
 
-.devagents-confirm-text {
+.agentstudio-confirm-text {
   flex: 1;
   min-width: 0;
 }
 
-.devagents-confirm-text p {
+.agentstudio-confirm-text p {
   margin: 0;
   color: var(--da-text-secondary);
   font-size: 13.5px;
@@ -625,7 +625,7 @@
 }
 
 /* Action items (for lists) */
-.devagents-modal-action {
+.agentstudio-modal-action {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -641,22 +641,22 @@
   text-align: left;
 }
 
-.devagents-modal-action:hover {
+.agentstudio-modal-action:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-modal-action.danger {
+.agentstudio-modal-action.danger {
   color: var(--da-accent-red);
 }
 
-.devagents-modal-action.danger:hover {
+.agentstudio-modal-action.danger:hover {
   background: color-mix(in srgb, var(--da-accent-red) 8%, transparent);
   color: var(--da-accent-red);
 }
 
 /* Footer buttons - Refined spacing and alignment */
-.devagents-modal-actions {
+.agentstudio-modal-actions {
   display: flex;
   gap: 10px; /* Slightly tighter gap */
   margin-top: 20px;
@@ -666,7 +666,7 @@
 }
 
 /* Button styles - Polished appearance */
-.devagents-modal-btn {
+.agentstudio-modal-btn {
   min-width: 68px;
   height: 34px; /* Slightly shorter */
   padding: 0 15px;
@@ -684,18 +684,18 @@
   white-space: nowrap;
 }
 
-.devagents-modal-btn:hover {
+.agentstudio-modal-btn:hover {
   border-color: var(--da-accent-indigo);
   color: var(--da-accent-indigo);
   background: color-mix(in srgb, var(--da-accent-indigo) 4%, transparent);
 }
 
-.devagents-modal-btn:active {
+.agentstudio-modal-btn:active {
   transform: scale(0.97); /* Less aggressive press effect */
 }
 
 /* Primary/Danger button - Refined red tone */
-.devagents-modal-btn.danger {
+.agentstudio-modal-btn.danger {
   background: var(--da-accent-red);
   border-color: var(--da-accent-red);
   color: var(--da-text-on-accent);
@@ -703,24 +703,24 @@
   box-shadow: 0 1px 3px color-mix(in srgb, var(--da-accent-red) 15%, transparent);
 }
 
-.devagents-modal-btn.danger:hover {
+.agentstudio-modal-btn.danger:hover {
   background: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
   border-color: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
   box-shadow: 0 2px 6px color-mix(in srgb, var(--da-accent-red) 25%, transparent);
   color: var(--da-text-on-accent);
 }
 
-.devagents-modal-btn.danger:active {
+.agentstudio-modal-btn.danger:active {
   background: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
   border-color: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
 }
 
 /* 最近对话列表 */
-.devagents-sidebar-chats {
+.agentstudio-sidebar-chats {
   padding: 0 var(--sp-2);
 }
 
-.devagents-chat-group-label {
+.agentstudio-chat-group-label {
   padding: 0 var(--sp-2);
   margin-bottom: 4px;
   font-size: 11px;
@@ -731,17 +731,17 @@
   gap: 4px;
 }
 
-.devagents-chat-group {
+.agentstudio-chat-group {
   margin-bottom: var(--sp-4);
 }
 
-.devagents-chat-group-items {
+.agentstudio-chat-group-items {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.devagents-chat-item {
+.agentstudio-chat-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -760,31 +760,31 @@
   white-space: nowrap;
 }
 
-.devagents-chat-item:hover {
+.agentstudio-chat-item:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
-.devagents-chat-item.pinned {
+.agentstudio-chat-item.pinned {
   color: var(--da-text-primary);
   font-weight: 500;
   padding-left: 24px;
 }
 
-.devagents-chat-item.pinned:hover {
+.agentstudio-chat-item.pinned:hover {
   background: var(--da-bg-hover);
 }
 
 /* ===== 底部用户菜单 ===== */
 
-.devagents-sidebar-footer {
+.agentstudio-sidebar-footer {
   flex-shrink: 0;
   padding: var(--sp-3);
   background: var(--da-bg-card);
   position: relative;
 }
 
-.devagents-user-trigger {
+.agentstudio-user-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -798,18 +798,18 @@
   transition: background 0.15s;
 }
 
-.devagents-user-trigger:hover {
+.agentstudio-user-trigger:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-user-trigger-left {
+.agentstudio-user-trigger-left {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
   overflow: hidden;
 }
 
-.devagents-user-avatar {
+.agentstudio-user-avatar {
   width: 32px;
   height: 32px;
   background: var(--da-bg-primary);
@@ -822,18 +822,18 @@
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.devagents-user-avatar .lucide-icon {
+.agentstudio-user-avatar .lucide-icon {
   width: 16px;
   height: 16px;
   color: var(--da-text-muted);
 }
 
-.devagents-user-info {
+.agentstudio-user-info {
   overflow: hidden;
   text-align: left;
 }
 
-.devagents-user-name {
+.agentstudio-user-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--da-text-primary);
@@ -842,7 +842,7 @@
   text-overflow: ellipsis;
 }
 
-.devagents-user-status {
+.agentstudio-user-status {
   font-size: 11px;
   color: var(--da-text-muted);
   display: flex;
@@ -851,14 +851,14 @@
   margin-top: 2px;
 }
 
-.devagents-user-online-dot {
+.agentstudio-user-online-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--icon-status-success);
 }
 
-.devagents-user-trigger-icon {
+.agentstudio-user-trigger-icon {
   width: 16px;
   height: 16px;
   color: var(--da-text-muted);
@@ -867,7 +867,7 @@
 }
 
 /* 用户菜单 Popover */
-.devagents-user-popover {
+.agentstudio-user-popover {
   position: absolute;
   bottom: calc(100% + 8px);
   left: var(--sp-3);
@@ -889,7 +889,7 @@
   to { opacity: 1; transform: scale(1); }
 }
 
-.devagents-user-popover-header {
+.agentstudio-user-popover-header {
   padding: var(--sp-2);
   display: flex;
   align-items: center;
@@ -897,7 +897,7 @@
   margin-bottom: 2px;
 }
 
-.devagents-popover-avatar {
+.agentstudio-popover-avatar {
   width: 32px;
   height: 32px;
   background: var(--da-bg-surface);
@@ -909,36 +909,36 @@
   flex-shrink: 0;
 }
 
-.devagents-popover-avatar .lucide-icon {
+.agentstudio-popover-avatar .lucide-icon {
   width: 16px;
   height: 16px;
   color: var(--da-text-muted);
 }
 
-.devagents-popover-user-details {
+.agentstudio-popover-user-details {
   display: flex;
   flex-direction: column;
   line-height: 1.3;
 }
 
-.devagents-popover-user-name {
+.agentstudio-popover-user-name {
   font-size: 13px;
   font-weight: 600;
   color: var(--da-text-primary);
 }
 
-.devagents-popover-user-email {
+.agentstudio-popover-user-email {
   font-size: 11px;
   color: var(--da-text-muted);
 }
 
-.devagents-popover-divider {
+.agentstudio-popover-divider {
   height: 1px;
   background: var(--da-border-subtle);
   margin: 4px 0;
 }
 
-.devagents-popover-section-label {
+.agentstudio-popover-section-label {
   padding: 6px var(--sp-2) 2px;
   font-size: 10px;
   font-weight: 600;
@@ -947,7 +947,7 @@
   letter-spacing: 0.05em;
 }
 
-.devagents-popover-item {
+.agentstudio-popover-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -963,25 +963,25 @@
   text-align: left;
 }
 
-.devagents-popover-item:hover {
+.agentstudio-popover-item:hover {
   color: var(--da-text-primary);
   background: var(--da-bg-hover);
 }
 
-.devagents-popover-item .lucide-icon {
+.agentstudio-popover-item .lucide-icon {
   width: 16px;
   height: 16px;
   margin-right: 4px;
 }
 
-.devagents-popover-item.danger:hover {
+.agentstudio-popover-item.danger:hover {
   color: var(--icon-status-error);
   background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
 }
 
 /* ===== 移动端遮罩 ===== */
 
-.devagents-mobile-overlay {
+.agentstudio-mobile-overlay {
   display: none;
   position: fixed;
   inset: 0;
@@ -996,14 +996,14 @@
 }
 
 @media (max-width: 767px) {
-  .devagents-mobile-overlay.visible {
+  .agentstudio-mobile-overlay.visible {
     display: block;
   }
 }
 
 /* ===== 主内容区 ===== */
 
-.devagents-main {
+.agentstudio-main {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1013,7 +1013,7 @@
   background: var(--da-bg-primary);
 }
 
-.devagents-main-bottom {
+.agentstudio-main-bottom {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1022,7 +1022,7 @@
 
 /* ===== 响应式固定布局 ===== */
 @media (max-width: 767px) {
-  .devagents-layout {
+  .agentstudio-layout {
     grid-template-columns: 1fr;
   }
 }

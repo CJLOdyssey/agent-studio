@@ -1,4 +1,4 @@
-# 📋 Anchored Summary — 虚拟软件外包团队
+# 📋 Anchored Summary — AgentStudio
 
 > 最后更新: 2026-06-23 | Sisyphus Session
 

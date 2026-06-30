@@ -28,16 +28,16 @@ export default function AttachmentList({ files, onRemove }: Props) {
   if (files.length === 0) return null;
 
   return (
-    <div className="devagents-attached-files">
+    <div className="agentstudio-attached-files">
       {files.map((f) => {
         const Icon = getIcon(f.name);
         return (
-          <span key={f.id} className="devagents-attached-file">
+          <span key={f.id} className="agentstudio-attached-file">
             <Icon size={14} />
-            <span className="devagents-attached-file-name">{f.name}</span>
-            <span className="devagents-attached-file-size">{fmtSize(f.size)}</span>
+            <span className="agentstudio-attached-file-name">{f.name}</span>
+            <span className="agentstudio-attached-file-size">{fmtSize(f.size)}</span>
             <button
-              className="devagents-attached-file-remove"
+              className="agentstudio-attached-file-remove"
               onClick={() => onRemove(f.id)}
               type="button"
               aria-label={`Remove ${f.name}`}

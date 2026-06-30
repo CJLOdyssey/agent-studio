@@ -56,7 +56,7 @@ mkdir -p /opt/virtual-team && cd /opt/virtual-team
 git clone <你的仓库地址> .
 
 # 方式二：scp 上传（如无仓库）
-scp -r /path/to/项目\ 7：虚拟软件外包团队/* root@<ECS_IP>:/opt/virtual-team/
+scp -r /path/to/项目\ 7：AgentStudio/* root@<ECS_IP>:/opt/virtual-team/
 ```
 
 ---

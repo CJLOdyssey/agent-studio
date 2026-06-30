@@ -1,5 +1,5 @@
 /* Agent welcome */
-.devagents-agent-welcome {
+.agentstudio-agent-welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9,7 +9,7 @@
   position: relative;
 }
 
-.devagents-agent-welcome-icon {
+.agentstudio-agent-welcome-icon {
   width: 56px;
   height: 56px;
   border-radius: 14px;
@@ -20,20 +20,20 @@
   margin-bottom: var(--sp-4);
 }
 
-.devagents-agent-welcome h3 {
+.agentstudio-agent-welcome h3 {
   font-size: var(--da-font-size-xl);
   font-weight: 600;
   color: var(--da-text-primary);
   margin: 0 0 var(--sp-2);
 }
 
-.devagents-agent-welcome p {
+.agentstudio-agent-welcome p {
   font-size: var(--da-font-size-base);
   color: var(--da-text-muted);
   margin: 0;
 }
 
-.devagents-welcome-close {
+.agentstudio-welcome-close {
   position: absolute;
   top: var(--sp-2);
   right: var(--sp-2);
@@ -47,6 +47,6 @@
   transition: opacity 0.15s;
 }
 
-.devagents-agent-welcome:hover .devagents-welcome-close {
+.agentstudio-agent-welcome:hover .agentstudio-welcome-close {
   opacity: 1;
 }

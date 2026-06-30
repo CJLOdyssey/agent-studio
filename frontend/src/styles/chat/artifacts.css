@@ -1,5 +1,5 @@
 /* Action labels */
-.devagents-message-action {
+.agentstudio-message-action {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -8,7 +8,7 @@
 }
 
 /* Artifact cards */
-.devagents-artifact-card {
+.agentstudio-artifact-card {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -21,11 +21,11 @@
   margin-top: var(--sp-1);
 }
 
-.devagents-artifact-card:hover {
+.agentstudio-artifact-card:hover {
   background: var(--da-bg-hover);
 }
 
-.devagents-artifact-icon {
+.agentstudio-artifact-icon {
   background: color-mix(in srgb, var(--da-accent-cyan) 10%, transparent);
   padding: var(--sp-2);
   border-radius: 6px;
@@ -33,23 +33,23 @@
   flex-shrink: 0;
 }
 
-.devagents-artifact-info {
+.agentstudio-artifact-info {
   flex: 1;
   min-width: 0;
 }
 
-.devagents-artifact-title {
+.agentstudio-artifact-title {
   font-size: var(--da-font-size-sm);
   font-weight: 500;
   color: var(--da-text-primary);
 }
 
-.devagents-artifact-status {
+.agentstudio-artifact-status {
   font-size: 10px;
   color: var(--da-text-muted);
 }
 
-.devagents-artifact-review {
+.agentstudio-artifact-review {
   font-size: 10px;
   padding: var(--sp-1) var(--sp-2);
   background: var(--da-bg-primary);
@@ -63,7 +63,7 @@
   flex-shrink: 0;
 }
 
-.devagents-artifact-review:hover {
+.agentstudio-artifact-review:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }

@@ -1,3 +1,3 @@
-import type { Team } from '../types/devagents';
+import type { Team } from '../types/agentstudio';
 
 export const INITIAL_TEAMS: Team[] = [];

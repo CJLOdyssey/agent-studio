@@ -796,3 +796,50 @@ class SingleAgentGraph:
                     session_context=session_context,
                 )
             )
+
+
+# Default tools for CLI usage
+DEFAULT_TOOLS: list[ToolConfig] = [
+    ToolConfig(
+        name="web_search",
+        description="Search the web for current information. Use this to find recent news, facts, and data.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The search query",
+                }
+            },
+            "required": ["query"],
+        },
+    ),
+    ToolConfig(
+        name="calculator",
+        description="Evaluate mathematical expressions. Supports +, -, *, /, **, %, sqrt, sin, cos, etc.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "description": "The mathematical expression to evaluate",
+                }
+            },
+            "required": ["expression"],
+        },
+    ),
+    ToolConfig(
+        name="fetch_page",
+        description="Fetch and read the content of a web page.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The URL to fetch",
+                }
+            },
+            "required": ["url"],
+        },
+    ),
+]

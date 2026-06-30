@@ -48,7 +48,7 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
         base_url=config.api_base,
         temperature=config.temperature,
     )
-    graph.set_tools(DEFAULT_TOOLS)
+    graph.bind_tools(DEFAULT_TOOLS)
 
     result = await graph.run(
         system_prompt=system_prompt,

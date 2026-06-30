@@ -1,5 +1,5 @@
 /* File explorer */
-.devagents-file-explorer {
+.agentstudio-file-explorer {
   width: 200px;
   border-right: 1px solid var(--da-border-subtle);
   display: flex;
@@ -8,7 +8,7 @@
   flex-shrink: 0;
 }
 
-.devagents-file-header {
+.agentstudio-file-header {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -21,13 +21,13 @@
   letter-spacing: 0.5px;
 }
 
-.devagents-file-tree {
+.agentstudio-file-tree {
   flex: 1;
   overflow-y: auto;
   padding: var(--sp-2) 0;
 }
 
-.devagents-file-item {
+.agentstudio-file-item {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -40,28 +40,28 @@
     color 0.15s;
 }
 
-.devagents-file-item:hover {
+.agentstudio-file-item:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.devagents-file-item.folder {
+.agentstudio-file-item.folder {
   font-weight: 500;
 }
 
-.devagents-file-item.file {
+.agentstudio-file-item.file {
   color: var(--da-text-muted);
 }
 
 /* Code editor */
-.devagents-editor-area {
+.agentstudio-editor-area {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
-.devagents-code-editor {
+.agentstudio-code-editor {
   font-family: var(--font-mono);
   font-size: var(--da-font-size-sm);
   padding: var(--sp-4);
@@ -70,7 +70,7 @@
   overflow-x: auto;
 }
 
-.devagents-code-header {
+.agentstudio-code-header {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -79,36 +79,36 @@
   margin-bottom: var(--sp-4);
 }
 
-.devagents-code-header span.text-cyan-400 {
+.agentstudio-code-header span.text-cyan-400 {
   color: var(--da-accent-cyan);
 }
 
-.devagents-code-block {
+.agentstudio-code-block {
   font-size: var(--da-font-size-sm);
   white-space: pre-wrap;
 }
 
-.devagents-code-block .text-pink-400 {
+.agentstudio-code-block .text-pink-400 {
   color: var(--da-accent-pink);
 }
-.devagents-code-block .text-green-300 {
+.agentstudio-code-block .text-green-300 {
   color: var(--da-accent-emerald);
 }
-.devagents-code-block .text-blue-300 {
+.agentstudio-code-block .text-blue-300 {
   color: var(--syntax-blue-300);
 }
-.devagents-code-block .text-blue-400 {
+.agentstudio-code-block .text-blue-400 {
   color: var(--syntax-blue-400);
 }
-.devagents-code-block .text-cyan-200 {
+.agentstudio-code-block .text-cyan-200 {
   color: var(--syntax-cyan-200);
 }
-.devagents-code-block .text-slate-500 {
+.agentstudio-code-block .text-slate-500 {
   color: var(--da-text-muted);
 }
 
 /* UI preview */
-.devagents-ui-preview {
+.agentstudio-ui-preview {
   height: 100%;
   width: 100%;
   display: flex;
@@ -118,7 +118,7 @@
   position: relative;
 }
 
-.devagents-preview-status {
+.agentstudio-preview-status {
   position: absolute;
   top: var(--sp-4);
   right: var(--sp-4);
@@ -132,7 +132,7 @@
   border-radius: 4px;
 }
 
-.devagents-preview-card {
+.agentstudio-preview-card {
   background: var(--da-bg-elevated);
   padding: var(--sp-8);
   border-radius: 12px;
@@ -140,7 +140,7 @@
   border: 1px solid var(--da-border);
 }
 
-.devagents-preview-card h2 {
+.agentstudio-preview-card h2 {
   font-size: var(--da-font-size-xl);
   font-weight: 700;
   color: var(--da-text-primary);
@@ -148,13 +148,13 @@
   text-align: center;
 }
 
-.devagents-preview-form {
+.agentstudio-preview-form {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
 }
 
-.devagents-preview-form input {
+.agentstudio-preview-form input {
   width: 100%;
   background: var(--da-bg-primary);
   border: 1px solid var(--da-border);
@@ -165,7 +165,7 @@
   outline: none;
 }
 
-.devagents-preview-form button {
+.agentstudio-preview-form button {
   width: 100%;
   background: var(--da-accent-indigo);
   color: var(--da-text-on-accent);
@@ -178,11 +178,11 @@
 }
 
 /* Test panel */
-.devagents-test-panel {
+.agentstudio-test-panel {
   padding: var(--sp-4);
 }
 
-.devagents-test-header {
+.agentstudio-test-header {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -191,20 +191,20 @@
   border-bottom: 1px solid var(--da-border-subtle);
 }
 
-.devagents-test-header span {
+.agentstudio-test-header span {
   font-size: var(--da-font-size-base);
   font-weight: 600;
   color: var(--da-text-primary);
   flex: 1;
 }
 
-.devagents-test-results {
+.agentstudio-test-results {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
 }
 
-.devagents-test-item {
+.agentstudio-test-item {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -213,21 +213,21 @@
   border-radius: 6px;
 }
 
-.devagents-test-item.passed svg {
+.agentstudio-test-item.passed svg {
   color: var(--da-accent-emerald);
 }
 
-.devagents-test-item.failed svg {
+.agentstudio-test-item.failed svg {
   color: var(--syntax-red);
 }
 
-.devagents-test-item span {
+.agentstudio-test-item span {
   flex: 1;
   font-size: var(--da-font-size-sm);
   color: var(--da-text-primary);
 }
 
-.devagents-test-time {
+.agentstudio-test-time {
   font-family: var(--font-mono);
   font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
