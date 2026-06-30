@@ -51,29 +51,52 @@ def create_checkpointer(
     if backend == "postgres":
         if not dsn:
             raise ValueError("CHECKPOINTER_DSN is required for postgres backend")
-        logger.info("Creating PostgresSaver checkpointer")
+        logger.info("Creating AsyncPostgresSaver checkpointer")
         try:
-            from langgraph.checkpoint.postgres import PostgresSaver  # type: ignore[import-untyped]
+            import asyncio
+
+            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver  # type: ignore[import-untyped]
         except ImportError as exc:
             raise ImportError(
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
             ) from exc
-        return PostgresSaver.from_conn_string(dsn)
+
+        async def _init_pg() -> AsyncPostgresSaver:
+            from psycopg import AsyncConnection
+            from psycopg.rows import dict_row
+
+            conn = await AsyncConnection.connect(
+                dsn,
+                autocommit=True,
+                prepare_threshold=0,
+                row_factory=dict_row,  # type: ignore[arg-type]
+            )
+            saver = AsyncPostgresSaver(conn)  # type: ignore[arg-type]
+            await saver.setup()
+            return saver
+
+        return asyncio.run(_init_pg())
 
     if backend == "sqlite":
         if not dsn:
             dsn = "checkpoints.db"
-        logger.info("Creating SqliteSaver checkpointer (dsn=%s)", dsn)
+        logger.info("Creating AsyncSqliteSaver checkpointer (dsn=%s)", dsn)
         try:
-            import sqlite3
+            import asyncio
 
-            from langgraph.checkpoint.sqlite import SqliteSaver  # type: ignore[import-untyped]
+            import aiosqlite
 
-            conn = sqlite3.connect(dsn, check_same_thread=False)
-            return SqliteSaver(conn)
+            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver  # type: ignore[import-untyped]
+
+            async def _init_sqlite() -> AsyncSqliteSaver:
+                conn = await aiosqlite.connect(dsn)
+                return AsyncSqliteSaver(conn)
+
+            return asyncio.run(_init_sqlite())
         except ImportError as exc:
             raise ImportError(
-                "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra"
+                "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra "
+                "and `aiosqlite` package"
             ) from exc
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
@@ -84,7 +107,7 @@ def create_checkpointer(
 
 
 class CheckpointDB(Base):
-    __tablename__ = "checkpoints"
+    __tablename__ = "agent_checkpoints"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str] = mapped_column(
