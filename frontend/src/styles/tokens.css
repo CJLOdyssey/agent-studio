@@ -99,6 +99,7 @@
   --da-text-muted: color-mix(in srgb, #ffffff 50%, #000000);
   --da-text-on-accent: #ffffff;
   --da-blend-dark: #000000;
+  --da-accent: color-mix(in srgb, #ffffff 40%, #000000);
   --da-accent-indigo: color-mix(in srgb, #ffffff 40%, #000000);
   --da-accent-cyan: color-mix(in srgb, #ffffff 40%, #000000);
   --da-accent-pink: color-mix(in srgb, #ffffff 40%, #000000);
@@ -192,6 +193,7 @@
   --da-text-muted: color-mix(in srgb, #000000 40%, #ffffff);
   --da-text-on-accent: #ffffff;
   --da-blend-dark: #000000;
+  --da-accent: color-mix(in srgb, #000000 60%, #ffffff);
   --da-accent-indigo: color-mix(in srgb, #000000 60%, #ffffff);
   --da-accent-cyan: color-mix(in srgb, #000000 60%, #ffffff);
   --da-accent-pink: color-mix(in srgb, #000000 60%, #ffffff);

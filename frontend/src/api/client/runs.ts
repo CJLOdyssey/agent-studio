@@ -16,3 +16,16 @@ export async function submitRequirement(
   });
   return data;
 }
+
+export async function resumeRun(
+  content: string,
+  session_id?: string,
+  thinking?: string,
+): Promise<{ run_id: string; status: string; session_id?: string }> {
+  const { data } = await api.post('/runs/complete', {
+    content,
+    session_id,
+    thinking: thinking || undefined,
+  });
+  return data;
+}

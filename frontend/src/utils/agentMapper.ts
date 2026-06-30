@@ -1,7 +1,7 @@
 import { ClipboardList, Layers, Palette, Code2, Server, TestTube, Cloud, Zap, Bot } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AgentConfig } from '../types';
-import type { Agent, Team } from '../types/devagents';
+import type { Agent, Team } from '../types/agentstudio';
 
 // Map backend role_identifier to frontend icon + styling
 const ROLE_STYLE_MAP: Record<

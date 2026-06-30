@@ -85,7 +85,7 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
       const active = document.activeElement;
       // Only intercept when focus is NOT on another file/text input
       if (active instanceof HTMLInputElement && active.type === 'file') return;
-      if (active?.closest('.devagents-input-wrapper')) return; // handled by InputToolbar
+      if (active?.closest('.agentstudio-input-wrapper')) return; // handled by InputToolbar
     };
     document.addEventListener('paste', handler);
     return () => document.removeEventListener('paste', handler);
@@ -96,21 +96,21 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
       <input
         ref={inputRef}
         type="file"
-        className="devagents-file-input"
+        className="agentstudio-file-input"
         multiple
         onChange={handleChange}
         accept={[...ALLOWED_TYPES, ...ALLOWED_EXTENSIONS].join(',')}
         aria-label={t('fileAttach.attach')}
       />
       <button
-        className="devagents-tool-btn devagents-attach-btn"
+        className="agentstudio-tool-btn agentstudio-attach-btn"
         onClick={handleClick}
         title={fileCount > 0 ? `${fileCount} 个文件已选择` : t('fileAttach.attach')}
         type="button"
         aria-label={fileCount > 0 ? `${fileCount} files attached` : t('fileAttach.attach')}
       >
         <Paperclip size={16} />
-        {fileCount > 0 && <span className="devagents-attach-badge">{fileCount}</span>}
+        {fileCount > 0 && <span className="agentstudio-attach-badge">{fileCount}</span>}
       </button>
     </>
   );

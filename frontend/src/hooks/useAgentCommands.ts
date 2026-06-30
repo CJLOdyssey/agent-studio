@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Team } from '../types/devagents';
+import type { Team } from '../types/agentstudio';
 import type { CommandOption } from '../types/input';
 
 /**

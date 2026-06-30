@@ -1,5 +1,5 @@
 /* Sample buttons */
-.devagents-samples {
+.agentstudio-samples {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
@@ -9,7 +9,7 @@
   max-width: 520px;
 }
 
-.devagents-sample-btn {
+.agentstudio-sample-btn {
   font-size: var(--da-font-size-xs);
   padding: var(--sp-2) var(--sp-3);
   background: var(--da-bg-surface);
@@ -24,17 +24,17 @@
   white-space: nowrap;
 }
 
-.devagents-sample-btn:hover {
+.agentstudio-sample-btn:hover {
   background: var(--da-bg-hover);
   border-color: var(--da-text-muted);
   color: var(--da-text-primary);
 }
 
 @media (max-width: 480px) {
-  .devagents-samples {
+  .agentstudio-samples {
     max-width: 100%;
   }
-  .devagents-sample-btn {
+  .agentstudio-sample-btn {
     width: 100%;
     white-space: normal;
     text-align: left;

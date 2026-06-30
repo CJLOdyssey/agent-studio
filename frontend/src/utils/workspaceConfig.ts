@@ -1,6 +1,6 @@
 import { Code2, Play, Folder, TestTube2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { AgentType, WorkspaceTab } from '../types/devagents';
+import type { AgentType, WorkspaceTab } from '../types/agentstudio';
 
 export const getAgentType = (agentId: string): AgentType => {
   if (agentId === 'ui') return 'ui';

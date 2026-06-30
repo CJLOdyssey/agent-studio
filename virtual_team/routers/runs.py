@@ -1,5 +1,6 @@
 """Run API routes: create, list, detail, and WebSocket streaming."""
 
+import asyncio
 import contextlib
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -152,6 +153,77 @@ async def create_run(req: RunRequest, request: Request):
             raise HTTPException(status_code=500, detail=f"执行失败: {e2}") from e
 
     return RunResponse(run_id=run_id, status="pending", session_id=session_id)
+
+
+class CompleteRunRequest(BaseModel):
+    content: str = Field(default="")
+    session_id: str | None = None
+    thinking: str | None = None
+
+
+@router.post("/api/runs/complete", response_model=RunResponse)
+async def create_complete_run(req: CompleteRunRequest, request: Request):
+    """Create a continuation run — streams raw LLM output without thinking/tools.
+
+    Used by the frontend "继续生成" feature to append content to an interrupted
+    agent message without triggering the LangGraph pipeline (no thinking_stream,
+    no tool calls, no chat history).
+    """
+    from virtual_team.repository import create_run as db_create_run
+
+    config = load_config()
+    content = (req.content or "").strip()
+
+    session_id = req.session_id
+    user_id = get_user_id(request)
+    if session_id is None:
+        title = content[:64] if content else "续写"
+        sess = await create_session(title=title, user_id=user_id)
+        session_id = sess.id
+
+    # Resolve API credentials (same pattern as create_run)
+    api_key: str | None = None
+    api_base: str | None = None
+    effective_model = config.model
+
+    try:
+        default_key = await get_default_api_key(user_id)
+        if default_key:
+            api_key = default_key["api_key"]
+            api_base = default_key["base_url"]
+    except Exception:
+        logger.warning("Key vault lookup failed in complete_run — using env var fallback")
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="请先在设置中配置 API Key")
+
+    # Create the new run
+    run_id = await db_create_run(content, session_id=session_id)
+
+    # Subscribe to Redis before the task starts
+    await buffer_run_messages(run_id)
+
+    async def _run_pipeline():
+        """Run the completion pipeline in a background task so the HTTP response returns immediately.
+        The streaming output is pushed through Redis → WebSocket."""
+        try:
+            from virtual_team.tasks import _complete_pipeline
+
+            await _complete_pipeline(
+                content=content,
+                run_id=run_id,
+                api_key=api_key,
+                api_base=api_base,
+                model=effective_model,
+                thinking=req.thinking,
+            )
+        except Exception as e:
+            logger.exception("Complete pipeline failed for run=%s", run_id)
+            await update_run_status(run_id, "error")
+
+    asyncio.create_task(_run_pipeline())
+
+    return RunResponse(run_id=run_id, status="running", session_id=session_id)
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)

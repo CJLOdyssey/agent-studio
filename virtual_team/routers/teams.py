@@ -22,10 +22,14 @@ router = APIRouter(tags=["teams"])
 
 class TeamCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
+    description: str | None = None
+    status: str | None = None
 
 
 class TeamUpdateRequest(BaseModel):
     name: str | None = None
+    description: str | None = None
+    status: str | None = None
     order: int | None = None
     is_expanded: bool | None = None
 
@@ -47,6 +51,8 @@ async def list_teams():
             {
                 "id": t["id"],
                 "name": t["name"],
+                "description": t.get("description"),
+                "status": t.get("status", "active"),
                 "order": t["order"],
                 "is_expanded": t["is_expanded"],
                 "agents": t["agents"],
@@ -62,12 +68,14 @@ async def list_teams():
 @router.post("/api/teams", status_code=201)
 async def add_team(req: TeamCreateRequest):
     try:
-        team = await create_team(name=req.name)
+        team = await create_team(name=req.name, description=req.description, status=req.status)
         if team is None:
             raise HTTPException(status_code=409, detail="团队名称已存在")
         return {
             "id": team.id,
             "name": team.name,
+            "description": team.description,
+            "status": team.status,
             "order": team.order,
             "is_expanded": team.is_expanded,
             "agents": [],
@@ -93,6 +101,8 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
         team = await update_team(
             team_id=team_id,
             name=req.name,
+            description=req.description,
+            status=req.status,
             order=req.order,
             is_expanded=req.is_expanded,
         )
@@ -101,6 +111,8 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
         return {
             "id": team.id,
             "name": team.name,
+            "description": team.description,
+            "status": team.status,
             "order": team.order,
             "is_expanded": team.is_expanded,
         }

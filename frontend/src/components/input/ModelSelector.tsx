@@ -91,9 +91,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   );
 
   return (
-    <div className="devagents-model-selector" ref={ref}>
+    <div className="agentstudio-model-selector" ref={ref}>
       <button
-        className={`devagents-model-trigger ${isEmpty ? 'devagents-model-trigger-empty' : ''}`}
+        className={`agentstudio-model-trigger ${isEmpty ? 'agentstudio-model-trigger-empty' : ''}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -107,25 +107,25 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         aria-expanded={isEmpty ? undefined : open}
         aria-haspopup={isEmpty ? undefined : 'listbox'}
       >
-        <span className="devagents-model-label">
+        <span className="agentstudio-model-label">
           {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
         </span>
-        <ChevronDown size={10} className={`devagents-model-chevron ${open ? 'open' : ''}`} />
+        <ChevronDown size={10} className={`agentstudio-model-chevron ${open ? 'open' : ''}`} />
       </button>
 
       {open && !isEmpty && (
-        <div className="devagents-model-popover" ref={listRef} role="listbox">
+        <div className="agentstudio-model-popover" ref={listRef} role="listbox">
           {providers.length > 1
             ? providers.map(([provider, list]) => (
-                <div key={provider} className="devagents-model-group">
-                  <div className="devagents-model-group-label">{provider}</div>
+                <div key={provider} className="agentstudio-model-group">
+                  <div className="agentstudio-model-group-label">{provider}</div>
                   {list.map((m) => {
                     const globalIdx = allOptions.indexOf(m);
                     return (
                       <button
                         key={m.id}
                         data-model-option
-                        className={`devagents-model-option ${m.id === selectedModel ? 'selected' : ''} ${globalIdx === focusIdx ? 'focused' : ''}`}
+                        className={`agentstudio-model-option ${m.id === selectedModel ? 'selected' : ''} ${globalIdx === focusIdx ? 'focused' : ''}`}
                         onClick={() => handleSelect(m.id)}
                         role="option"
                         aria-selected={m.id === selectedModel}
@@ -133,10 +133,10 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       >
                         <span>{m.label}</span>
                         {m.status === 'deprecated' && (
-                          <span className="devagents-model-status">{t('model.statusDeprecated')}</span>
+                          <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
                         )}
                         {m.status === 'sunset' && (
-                          <span className="devagents-model-status">{t('model.statusSunset')}</span>
+                          <span className="agentstudio-model-status">{t('model.statusSunset')}</span>
                         )}
                       </button>
                     );
@@ -147,7 +147,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 <button
                   key={m.id}
                   data-model-option
-                  className={`devagents-model-option ${m.id === selectedModel ? 'selected' : ''} ${idx === focusIdx ? 'focused' : ''}`}
+                  className={`agentstudio-model-option ${m.id === selectedModel ? 'selected' : ''} ${idx === focusIdx ? 'focused' : ''}`}
                   onClick={() => handleSelect(m.id)}
                   role="option"
                   aria-selected={m.id === selectedModel}
@@ -155,9 +155,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 >
                   <span>{m.label}</span>
                   {m.status === 'deprecated' && (
-                    <span className="devagents-model-status">{t('model.statusDeprecated')}</span>
+                    <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
                   )}
-                  {m.status === 'sunset' && <span className="devagents-model-status">{t('model.statusSunset')}</span>}
+                  {m.status === 'sunset' && <span className="agentstudio-model-status">{t('model.statusSunset')}</span>}
                 </button>
               ))}
         </div>

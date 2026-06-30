@@ -30,7 +30,7 @@ def run_tests():
 
         print("\n1. App Loading")
         page.goto(BASE, wait_until="networkidle")
-        record("App loads", page.title() == "虚拟软件外包团队", f"title={page.title()}")
+        record("App loads", page.title() == "AgentStudio", f"title={page.title()}")
 
         print("\n2. Sidebar Navigation")
         sidebar = page.locator("aside, nav, [class*='sidebar']").first

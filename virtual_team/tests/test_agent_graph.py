@@ -140,24 +140,12 @@ async def test_tool_wrapper_no_builtin_no_llm():
 
 
 @pytest.mark.asyncio
-async def test_checkpointer_default_is_sqlite():
-    """create_checkpointer with default backend returns SqliteSaver."""
-    with patch.dict("os.environ", {}, clear=True):
-        cp = create_checkpointer()
-        # SqliteSaver from langgraph.checkpoint.sqlite
-        from langgraph.checkpoint.sqlite import SqliteSaver
+async def test_checkpointer_returns_memory_saver():
+    """create_checkpointer always returns MemorySaver (app-level persistence)."""
+    from langgraph.checkpoint.memory import MemorySaver
 
-        assert isinstance(cp, SqliteSaver)
-
-
-@pytest.mark.asyncio
-async def test_checkpointer_memory_backend():
-    """create_checkpointer with memory backend returns MemorySaver."""
-    with patch.dict("os.environ", {"CHECKPOINTER_BACKEND": "memory"}):
-        from langgraph.checkpoint.memory import MemorySaver
-
-        cp = create_checkpointer()
-        assert isinstance(cp, MemorySaver)
+    cp = create_checkpointer()
+    assert isinstance(cp, MemorySaver)
 
 
 # ──────────────────────────────────────────────────────────────────────────────

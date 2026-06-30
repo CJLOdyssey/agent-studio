@@ -129,9 +129,7 @@ class TeamGraph:
 
         # ── PM node ──────────────────────────────────────────────────────
         def _pm_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get(
-                "product_manager", "你是产品经理。分析用户需求并输出产品需求文档。"
-            )
+            prompt = self._agent_prompts.get("product_manager", "")
             full = [
                 SystemMessage(content=prompt),
                 HumanMessage(
@@ -151,9 +149,7 @@ class TeamGraph:
 
         # ── Frontend node ────────────────────────────────────────────────
         def _frontend_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get(
-                "frontend", "你是资深前端工程师。根据产品需求文档编写前端代码。"
-            )
+            prompt = self._agent_prompts.get("frontend", "")
             pm_doc = state.get("pm_document", "")
             tester_feedback = state.get("review", "")
             feedback_block = ""
@@ -178,9 +174,7 @@ class TeamGraph:
 
         # ── Backend node ─────────────────────────────────────────────────
         def _backend_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get(
-                "backend", "你是资深后端工程师。根据产品需求文档编写后端代码。"
-            )
+            prompt = self._agent_prompts.get("backend", "")
             pm_doc = state.get("pm_document", "")
             tester_feedback = state.get("review", "")
             feedback_block = ""
@@ -205,9 +199,7 @@ class TeamGraph:
 
         # ── Tester node ──────────────────────────────────────────────────
         def _tester_node(state: TeamState) -> dict:
-            prompt = self._agent_prompts.get(
-                "tester", "你是测试工程师。审查代码质量并在通过时输出【批准】。"
-            )
+            prompt = self._agent_prompts.get("tester", "")
             pm_doc = state.get("pm_document", "")
             code = state.get("code", "")
 

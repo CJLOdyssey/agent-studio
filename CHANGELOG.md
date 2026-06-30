@@ -15,12 +15,19 @@
 - 📋 变更日志 CHANGELOG.md
 - 🔧 文档检查脚本 (scripts/check-docs.js)
 - 🔧 文档生成脚本 (scripts/generate-docs.js)
+- 🚀 快速启动指南 QUICKSTART.md（4 种启动方式）
 
 ### 变更
 - 🏗️ 优化项目结构文档
+- 🔌 vite 代理目标端口统一：8081 → 8080（vite.config.ts, AGENTS.md）
+- 🗑️ CORS 列表清理：移除了 8081 相关源（app.py）
+- 📝 README.md 全面同步：修正启动命令、项目结构、部署方式、环境变量表、API 端口
 
 ### 修复
 - 🔍 修复 AI Agent 无法快速定位模块文件的问题
+- 🐳 docker/compose.local.yml 端口映射：5173:5173 → 5173:80
+- 🐛 agent_graph.py 缺少 DEFAULT_TOOLS 列表 → 已补充（calculator / web_search / fetch_page）
+- 🐛 main.py 调用不存在的方法 set_tools() → 改为 bind_tools()
 
 ---
 
