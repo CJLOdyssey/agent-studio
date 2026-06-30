@@ -19,6 +19,8 @@ x-common-env: &common-env
   HTTPS_PROXY: ${HTTPS_PROXY:-}
   NO_PROXY: localhost,127.0.0.1,postgres,redis,backend,.local
   BAIDU_QIANFAN_API_KEY: ${BAIDU_QIANFAN_API_KEY:-}
+  CHECKPOINTER_BACKEND: ${CHECKPOINTER_BACKEND:-postgres}
+  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://postgres:postgres@postgres:5432/virtual_team}
 
 services:
   postgres:
