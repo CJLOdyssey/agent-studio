@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, Info, AlertTriangle, AlertCircle, FileText } from 'lucide-react';
+import { Input, Select, Pagination } from 'antd';
+import { Search, FileText, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 import { PAGE_SIZE } from '../constants';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
@@ -12,14 +13,15 @@ type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' 
 
 interface LogEntry { id: string; timestamp: string; level: LogLevel; module: string; user: string; action: string; details: string; ip: string; }
 
-const LOG_LEVELS: { value: LogLevel; label: string; icon: typeof Info; color: string }[] = [
-  { value: 'info', label: 'INFO', icon: Info, color: '#3b82f6' },
-  { value: 'warn', label: 'WARN', icon: AlertTriangle, color: '#f59e0b' },
-  { value: 'error', label: 'ERROR', icon: AlertCircle, color: '#ef4444' },
+const LOG_LEVELS: { value: LogLevel; label: string; icon: typeof Info }[] = [
+  { value: 'info', label: 'INFO', icon: Info },
+  { value: 'warn', label: 'WARN', icon: AlertTriangle },
+  { value: 'error', label: 'ERROR', icon: AlertCircle },
 ];
 
 const MODULES: LogModule[] = ['all', 'agent', 'prompt', 'tool', 'mcp', 'skill', 'team', 'system'];
-const MODULE_LABEL: Record<LogModule, string> = { all: t('logs.all_modules'), agent: 'Agent', prompt: '提示词', tool: '工具', mcp: 'MCP', skill: 'Skills', team: '团队', system: '系统' };
+const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: 'Agent', prompt: '提示词', tool: '工具', mcp: 'MCP', skill: 'Skills', team: '团队', system: '系统' };
+const LEVEL_CLASS: Record<string, string> = { info: 'wsta-tag-indigo', warn: 'wsta-tag-amber', error: 'wsta-tag-red' };
 
 function LogAudit() {
   const [search, setSearch] = useState('');
@@ -67,28 +69,17 @@ function LogAudit() {
   const safePage = Math.min(page, totalPages);
   const paged = processed.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const LevelIcon = ({ level }: { level: LogLevel }) => {
-    const cfg = LOG_LEVELS.find((l) => l.value === level)!;
-    return <cfg.icon size={14} style={{ color: cfg.color }} />;
-  };
-
   return (
     <ErrorBoundary fallback={<div className="wsta-agent-mgmt wsta-error-state" role="alert"><p>{t('logs.error_render')}</p></div>}>
     <div className="wsta-agent-mgmt" role="region" aria-label={t('logs.empty')}>
       <div className="wsta-toolbar" role="toolbar" aria-label={t('logs.search_placeholder')}>
         <div className="wsta-toolbar-left">
-          <div className="wsta-search-wrap">
-            <Search size={14} className="wsta-search-icon" />
-            <input className="wsta-search-input" placeholder={t('logs.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} aria-label={t('logs.search_placeholder')} />
-            {search && <button className="wsta-search-clear" onClick={() => setSearch('')} aria-label={t('logs.search_placeholder')}><X size={14} /></button>}
-          </div>
-          <select className="wsta-filter-select" value={levelFilter} onChange={(e) => { setLevelFilter(e.target.value as LogLevel | 'all'); setPage(1); }} aria-label={t('logs.col_level')}>
-            <option value="all">{t('logs.all_levels')}</option>
-            {LOG_LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-          </select>
-          <select className="wsta-filter-select" value={moduleFilter} onChange={(e) => { setModuleFilter(e.target.value as LogModule); setPage(1); }} aria-label={t('logs.col_module')}>
-            {MODULES.map((m) => <option key={m} value={m}>{MODULE_LABEL[m]}</option>)}
-          </select>
+          <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('logs.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Select style={{ width: 120 }} value={levelFilter} onChange={(v) => { setLevelFilter(v as LogLevel | 'all'); setPage(1); }} options={[
+            { value: 'all', label: t('logs.all_levels') },
+            ...LOG_LEVELS.map((l) => ({ value: l.value, label: l.label })),
+          ]} />
+          <Select style={{ width: 130 }} value={moduleFilter} onChange={(v) => { setModuleFilter(v as LogModule); setPage(1); }} options={MODULES.map((m) => ({ value: m, label: MODULE_LABEL[m] }))} />
         </div>
       </div>
 
@@ -107,11 +98,11 @@ function LogAudit() {
           <tbody>
             {paged.map((entry: LogEntry) => (
               <tr key={entry.id}>
-                <td><code className="wsta-code">{entry.timestamp}</code></td>
-                <td><span className="wsta-log-level"><LevelIcon level={entry.level} /> {entry.level.toUpperCase()}</span></td>
-                <td><span className="wsta-tag wsta-tag-team">{MODULE_LABEL[entry.module as LogModule] || entry.module}</span></td>
+                <td><span className="wsta-mono-text">{entry.timestamp}</span></td>
+                <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
+                <td><span className="wsta-tag-pill wsta-tag-indigo">{MODULE_LABEL[entry.module] || entry.module}</span></td>
                 <td>{entry.user}</td><td>{entry.action}</td>
-                <td className="wsta-log-details">{entry.details}</td><td><code className="wsta-code">{entry.ip}</code></td>
+                <td className="wsta-secondary-text">{entry.details}</td><td><span className="wsta-mono-text">{entry.ip}</span></td>
               </tr>
             ))}
           </tbody>
@@ -119,18 +110,9 @@ function LogAudit() {
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="wsta-footer">
-          <span className="wsta-footer-text">{t('logs.pagination', String(processed.length))}</span>
-          <div className="wsta-pagination" role="navigation" aria-label={t('logs.pagination', String(processed.length))}>
-            <button className="wsta-page-btn" disabled={page <= 1} onClick={() => setPage(page - 1)} aria-label={t('logs.page_prev')}><ChevronLeft size={14} /></button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button key={p} className={`wsta-page-btn ${p === page ? 'active' : ''}`} onClick={() => setPage(p)} aria-label={t('logs.page_num', String(p))} aria-current={p === page ? 'page' : undefined}>{p}</button>
-            ))}
-            <button className="wsta-page-btn" disabled={page >= totalPages} onClick={() => setPage(page + 1)} aria-label={t('logs.page_next')}><ChevronRight size={14} /></button>
-          </div>
-        </div>
-      )}
+      <div className="wsta-footer" style={{ justifyContent: 'flex-end' }}>
+        <Pagination size="small" showSizeChanger={false} current={page} total={processed.length} pageSize={PAGE_SIZE} onChange={(p) => setPage(p)} />
+      </div>
     </div>
     </ErrorBoundary>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { PanelLeft, Sun, Moon, Bell } from 'lucide-react';
+import { Modal, ConfigProvider, theme } from 'antd';
 import type { Agent, WorkspaceTab, Message } from '../../types/agentstudio';
 import AgentStudioSidebar from './AgentStudioSidebar';
 import Workspace from './workspace/Workspace';
@@ -510,17 +511,30 @@ export default function AgentStudioWorkstation() {
         onCloseNewProject={handleCloseNewProject}
       />
 
-      {isWorkstationOpen && (
-        <div className="agentstudio-modal-overlay" onClick={() => setIsWorkstationOpen(false)}>
-          <div className="agentstudio-modal agentstudio-modal--workstation" onClick={(e) => e.stopPropagation()}>
-            <div className="agentstudio-modal-header">
-              <h3>管理工作台</h3>
-              <button className="agentstudio-modal-close" onClick={() => setIsWorkstationOpen(false)}>×</button>
-            </div>
-            <WorkstationPage />
-          </div>
-        </div>
-      )}
+      <ConfigProvider theme={{ 
+        algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        components: {
+          Input: { colorBgContainer: isDarkMode ? '#1a1a24' : '#ffffff' },
+          Select: { colorBgContainer: isDarkMode ? '#1a1a24' : '#ffffff', colorBgElevated: isDarkMode ? '#16161f' : '#ffffff' },
+          Pagination: { colorText: isDarkMode ? '#f0f0f5' : '#000000', colorTextDisabled: isDarkMode ? '#606070' : '#9e9a92' },
+        },
+      }}>
+      <Modal
+        title={null}
+        open={isWorkstationOpen}
+        onCancel={() => setIsWorkstationOpen(false)}
+        width="min(1100px, 96vw)"
+        footer={null}
+        destroyOnHidden
+        centered
+        className="workstation-modal"
+        closable={true}
+        getContainer={false}
+        styles={{ body: { padding: 0, flex: 1, overflow: 'hidden' } }}
+      >
+        <WorkstationPage />
+      </Modal>
+      </ConfigProvider>
     </div>
   );
 }
