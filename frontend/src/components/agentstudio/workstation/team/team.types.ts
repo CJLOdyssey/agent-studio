@@ -5,6 +5,7 @@ export interface TeamEntry {
   name: string;
   description: string;
   status: 'active' | 'inactive';
+  category: 'dev' | 'ops' | 'test';
   createdAt: string;
   agents: TeamMember[];
   memberCount: number;
@@ -15,3 +16,5 @@ export type TeamFormData = {
   description: string;
   status: 'active' | 'inactive';
 };
+
+export type TeamCategoryFilter = 'all' | TeamEntry['category'];

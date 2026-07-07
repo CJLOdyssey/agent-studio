@@ -17,3 +17,4 @@ frontend/dist/
 .sisyphus/
 scripts/deploy_prod.py
 scripts/ask_credentials.py
+prototypes/

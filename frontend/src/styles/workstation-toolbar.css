@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
   flex-shrink: 0;
 }
 
@@ -47,7 +47,7 @@
 
 .wsta-search-input:focus {
   border-color: var(--da-accent-indigo);
-  box-shadow: var(--da-focus-ring);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
 
 .wsta-search-clear {
@@ -100,7 +100,7 @@
 
 .wsta-filter-select:focus {
   border-color: var(--da-accent-indigo);
-  box-shadow: var(--da-focus-ring);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
 
 /* ── Batch bar ── */

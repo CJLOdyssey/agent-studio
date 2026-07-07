@@ -26,10 +26,10 @@
   --da-toolbar-height: 48px;
 
   /* Modal sizing (fixed) */
-  --modal-sm: 760px;
-  --modal-m:  760px;
-  --modal-l:  760px;
-  --modal-height: 500px;
+  --modal-sm: 560px;
+  --modal-m:  560px;
+  --modal-l:  1100px;
+  --modal-height: 700px;
 
   /* Spacing scale (4px base) */
   --sp-1: 4px;
@@ -84,32 +84,32 @@
   --danger: color-mix(in srgb, #ffffff 40%, #000000);
 
   /* ── Current design tokens (4-color) ── */
-  --da-bg-primary: #000000;
-  --da-bg-secondary: #000000;
-  --da-bg-surface: #000000;
-  --da-bg-elevated: #000000;
-  --da-bg-hover: #1a1a1a;
-  --da-bg-card: #000000;
-  --da-msg-user-bg: #1a1a1a;
-  --da-border: #1a1a1a;
-  --da-border-subtle: #1a1a1a;
-  --da-border-strong: color-mix(in srgb, #ffffff 20%, #000000);
-  --da-text-primary: #ffffff;
-  --da-text-secondary: color-mix(in srgb, #ffffff 65%, #000000);
-  --da-text-muted: color-mix(in srgb, #ffffff 50%, #000000);
+  --da-bg-primary: #0a0a0f;
+  --da-bg-secondary: #12121a;
+  --da-bg-surface: #1a1a24;
+  --da-bg-elevated: #16161f;
+  --da-bg-hover: #1e1e2a;
+  --da-bg-card: #16161f;
+  --da-msg-user-bg: #1a1a24;
+  --da-border: rgba(255,255,255,0.06);
+  --da-border-subtle: rgba(255,255,255,0.08);
+  --da-border-strong: rgba(255,255,255,0.12);
+  --da-text-primary: #f0f0f5;
+  --da-text-secondary: #a0a0b0;
+  --da-text-muted: #606070;
   --da-text-on-accent: #ffffff;
-  --da-blend-dark: #000000;
-  --da-accent: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-accent-indigo: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-accent-cyan: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-accent-pink: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-accent-amber: color-mix(in srgb, #ffffff 30%, #000000);
-  --da-accent-emerald: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-accent-purple: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-accent-red: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-status-active: color-mix(in srgb, #ffffff 60%, #000000);
-  --da-status-error: color-mix(in srgb, #ffffff 40%, #000000);
-  --da-status-warning: color-mix(in srgb, #ffffff 30%, #000000);
+  --da-blend-dark: #0a0a0f;
+  --da-accent: #6366f1;
+  --da-accent-indigo: #6366f1;
+  --da-accent-cyan: #22c55e;
+  --da-accent-pink: #6366f1;
+  --da-accent-amber: #f59e0b;
+  --da-accent-emerald: #22c55e;
+  --da-accent-purple: #6366f1;
+  --da-accent-red: #ef4444;
+  --da-status-active: #22c55e;
+  --da-status-error: #ef4444;
+  --da-status-warning: #f59e0b;
 
   /* Icon colors */
   --icon-planning: color-mix(in srgb, #ffffff 40%, #000000);

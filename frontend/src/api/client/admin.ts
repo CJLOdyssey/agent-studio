@@ -20,7 +20,7 @@ export interface LogEntry {
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  const resp = await client.get('/api/admin/stats');
+  const resp = await client.get('/admin/stats');
   return resp.data;
 }
 
