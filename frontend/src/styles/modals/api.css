@@ -1,7 +1,7 @@
 /* API Management Modal */
 .api-modal {
-  width: var(--modal-m);
-  height: var(--modal-height);
+  width: 970px;
+  height: 600px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -355,6 +355,51 @@
   font-size: var(--da-font-size-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
+}
+
+/* Error banner */
+.api-error-banner {
+  background: color-mix(in srgb, var(--da-accent-red) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--da-accent-red) 30%, transparent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-error-icon {
+  color: var(--da-accent-red);
+  flex-shrink: 0;
+}
+
+.api-error-text {
+  color: var(--da-accent-red);
+  font-size: var(--da-font-size-sm);
+}
+
+.api-error-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--da-accent-red);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: var(--da-font-size-base);
+  line-height: 1;
+}
+
+.api-error-close:hover {
+  color: var(--da-text-on-accent);
+}
+
+/* Hint row — flex container for icon + text */
+.api-hint-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .capability-llm {

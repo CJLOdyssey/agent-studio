@@ -1,4 +1,4 @@
-import { Input, Select, Button, Dropdown, Pagination } from 'antd';
+import { Input, Select, Button, Dropdown } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, UserCog, Trash2, X, Users, RefreshCw } from 'lucide-react';
 import { useTeamData } from './useTeamData';
 import { useTeamUI } from './useTeamUI';
@@ -8,6 +8,7 @@ import TeamFormModal from './TeamFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
 import VersionHistoryModal from '../shared/VersionHistoryModal';
+import WstaPagination from '../shared/WstaPagination';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
@@ -97,9 +98,12 @@ export default function TeamManagement() {
         </table>
         )}
       </div>
-      <div className="wsta-footer" style={{ justifyContent: 'flex-end' }}>
-        <Pagination size="small" showSizeChanger={false} current={data.page} total={data.processed.length} pageSize={5} onChange={(p) => data.setPage(p)} />
-      </div>
+      <WstaPagination
+        current={data.page}
+        total={data.processed.length}
+        pageSize={5}
+        onChange={(p) => data.setPage(p)}
+      />
       {ui.isFormOpen && <TeamFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSaveWrapper} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingItem?.name || ''} label={t('team.delete')} onConfirm={handleDeleteWrapper} onClose={ui.closeDelete} />}
       {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} onConfirm={handleBatchDeleteWrapper} onClose={ui.closeBatchDelete} />}

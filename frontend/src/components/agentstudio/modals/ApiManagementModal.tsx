@@ -225,36 +225,15 @@ export default function ApiManagementModal({ onClose }: Props) {
                 </button>
               </div>
               {error && (
-                <div
-                  className="api-error-banner"
-                  style={{
-                    background: 'rgba(239,68,68,0.15)',
-                    border: '1px solid rgba(239,68,68,0.3)',
-                    borderRadius: 8,
-                    padding: '8px 12px',
-                    marginBottom: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
-                  <span style={{ color: '#fca5a5', fontSize: 13 }}>{error}</span>
-                  <button
-                    onClick={() => setError(null)}
-                    style={{
-                      marginLeft: 'auto',
-                      background: 'none',
-                      border: 'none',
-                      color: '#fca5a5',
-                      cursor: 'pointer',
-                    }}
-                  >
+                <div className="api-error-banner">
+                  <AlertCircle size={16} className="api-error-icon" />
+                  <span className="api-error-text">{error}</span>
+                  <button className="api-error-close" onClick={() => setError(null)}>
                     ✕
                   </button>
                 </div>
               )}
-              <p className="api-hint" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <p className="api-hint-row">
                 <Shield size={14} /> Key 加密存储在服务端，永不出站。仅显示前后各几位以供识别。
               </p>
               {loading ? (
@@ -389,7 +368,7 @@ export default function ApiManagementModal({ onClose }: Props) {
                   添加 Key
                 </button>
               </div>
-              <p className="api-hint" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <p className="api-hint-row">
                 <Shield size={14} /> 配置 DashScope (阿里云百炼) API Key 用于文本嵌入/向量化，实现 RAG 上下文检索。
               </p>
               {loading ? (

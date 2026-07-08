@@ -182,7 +182,7 @@
 }
 
 .wsta-prompt-preview-label {
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   margin-bottom: 4px;
   text-transform: uppercase;
@@ -367,7 +367,6 @@
   padding: var(--sp-3);
   background: var(--da-bg-surface);
   border-radius: 6px;
-  border: 1px solid var(--da-border-subtle);
 }
 
 .wsta-version-header {

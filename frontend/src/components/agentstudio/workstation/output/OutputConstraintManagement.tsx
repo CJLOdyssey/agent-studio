@@ -1,4 +1,4 @@
-import { Input, Select, Button, Dropdown, Pagination } from 'antd';
+import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, FileText } from 'lucide-react';
 import { OUTPUT_CATEGORIES } from './output.constants';
@@ -8,6 +8,7 @@ import { useOutputUI } from './useOutputUI';
 import OutputFormModal from './OutputFormModal';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
+import WstaPagination from '../shared/WstaPagination';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
@@ -98,9 +99,12 @@ export default function OutputConstraintManagement() {
         )}
       </div>
 
-      <div className="wsta-footer" style={{ justifyContent: 'flex-end' }}>
-        <Pagination size="small" showSizeChanger={false} current={d.page} total={d.filtered.length} pageSize={5} onChange={(p) => d.setPage(p)} />
-      </div>
+      <WstaPagination
+        current={d.page}
+        total={d.filtered.length}
+        pageSize={5}
+        onChange={(p) => d.setPage(p)}
+      />
 
       {ui.isFormOpen && <OutputFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSave} onClose={ui.closeForm} formErrors={ui.formErrors} />}
     </div>

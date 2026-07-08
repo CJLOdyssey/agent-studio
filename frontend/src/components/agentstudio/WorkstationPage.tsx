@@ -33,7 +33,7 @@ interface NavTab {
 
 const navGroups: { label: string; tabs: NavTab[] }[] = [
   {
-    label: 'core-resources',
+    label: '核心资源',
     tabs: [
       { id: 'teams', label: '团队管理', icon: Users },
       { id: 'agents', label: 'Agent 管理', icon: Bot },
@@ -42,7 +42,7 @@ const navGroups: { label: string; tabs: NavTab[] }[] = [
     ],
   },
   {
-    label: 'integrations',
+    label: '集成',
     tabs: [
       { id: 'tools', label: '工具管理', icon: Wrench },
       { id: 'mcp', label: 'MCP 管理', icon: Server },
@@ -50,7 +50,7 @@ const navGroups: { label: string; tabs: NavTab[] }[] = [
     ],
   },
   {
-    label: 'operations',
+    label: '运维',
     tabs: [
       { id: 'monitor', label: '监控中心', icon: BarChart3 },
       { id: 'logs', label: '日志审计', icon: FileText },

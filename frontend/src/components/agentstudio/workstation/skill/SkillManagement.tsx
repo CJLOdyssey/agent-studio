@@ -1,4 +1,4 @@
-import { Input, Select, Button, Dropdown, Pagination } from 'antd';
+import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap } from 'lucide-react';
 import { useSkillData } from './useSkillData';
@@ -8,6 +8,7 @@ import { MOCK_SKILL_VERSIONS } from './mock-data';
 import SkillFormModal from './SkillFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
+import WstaPagination from '../shared/WstaPagination';
 import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
@@ -104,9 +105,12 @@ export default function SkillManagement() {
         )}
       </div>
 
-      <div className="wsta-footer" style={{ justifyContent: 'flex-end' }}>
-        <Pagination size="small" showSizeChanger={false} current={data.page} total={data.processed.length} pageSize={5} onChange={(p) => data.setPage(p)} />
-      </div>
+      <WstaPagination
+        current={data.page}
+        total={data.processed.length}
+        pageSize={5}
+        onChange={(p) => data.setPage(p)}
+      />
 
       {ui.isFormOpen && <SkillFormModal editingSkill={ui.editingSkill} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSaveWrapper} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingSkill?.name || ''} label="Skill" onConfirm={handleDeleteWrapper} onClose={ui.closeDelete} />}

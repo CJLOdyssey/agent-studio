@@ -30,7 +30,7 @@
   padding: 12px 16px;
   text-align: left;
   font-weight: 500;
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   background: var(--da-bg-card);
   border-bottom: 1px solid var(--da-border);
@@ -45,7 +45,7 @@
   color: var(--da-text-primary);
   border-bottom: 1px solid var(--da-border-subtle);
   vertical-align: middle;
-  font-size: 14px;
+  font-size: var(--da-font-size-base);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -496,7 +496,7 @@
 .wsta-sort-icon {
   display: inline-block;
   margin-left: 2px;
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
 }
 
 .wsta-sort-off {
@@ -588,7 +588,7 @@
   height: 28px;
   border-radius: 50%;
   background: var(--da-bg-surface);
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-weight: 600;
   color: var(--da-text-secondary);
 }
@@ -600,7 +600,7 @@
   gap: 6px;
   padding: 3px 10px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
 }
 
@@ -624,7 +624,7 @@
 
 /* ── Date cell ── */
 .wsta-date-cell {
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   color: var(--da-text-muted);
 }
 
@@ -633,7 +633,7 @@
   display: inline-block;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
 }
 
@@ -694,7 +694,7 @@
   gap: 6px;
   padding: 3px 10px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
 }
 .wsta-badge-dot-green { background: color-mix(in srgb, var(--da-accent-emerald) 15%, transparent); color: var(--da-accent-emerald); }
@@ -712,7 +712,7 @@
   display: inline-block;
   padding: 2px 10px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
 }
 .wsta-tag-indigo { background: color-mix(in srgb, var(--da-accent-indigo) 8%, transparent); color: var(--da-accent-indigo); }
@@ -728,12 +728,12 @@
   height: 28px;
   border-radius: 50%;
   background: var(--da-bg-surface);
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-weight: 600;
   color: var(--da-text-secondary);
 }
 
 /* ── Date / Mono text ── */
-.wsta-mono-text { font-family: var(--font-mono); font-size: 12px; color: var(--da-text-muted); }
-.wsta-secondary-text { font-size: 13px; color: var(--da-text-secondary); }
+.wsta-mono-text { font-family: var(--font-mono); font-size: var(--da-font-size-xs); color: var(--da-text-muted); }
+.wsta-secondary-text { font-size: var(--da-font-size-sm); color: var(--da-text-secondary); }
 .wsta-truncate { display: block; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
