@@ -331,7 +331,7 @@
 .ant-pagination-total-text {
   font-size: var(--da-font-size-sm) !important;
   color: var(--da-text-muted) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--font-mono) !important;
   margin-right: 12px !important;
   height: 32px !important;
   line-height: 32px !important;

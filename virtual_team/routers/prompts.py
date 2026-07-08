@@ -37,6 +37,36 @@ async def list_prompts(category: str | None = None):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
+async def _snapshot_prompt(resource_id: str, session=None):
+    """Create a version snapshot after prompt save."""
+    try:
+        if session is None:
+            from virtual_team.database import get_session_factory
+            factory = get_session_factory()
+            async with factory() as s:
+                await _do_snapshot_prompt(resource_id, s)
+                await s.commit()
+        else:
+            await _do_snapshot_prompt(resource_id, session)
+    except Exception:
+        logger.warning("Version snapshot failed for prompt %s", resource_id, exc_info=True)
+
+
+async def _do_snapshot_prompt(resource_id: str, session):
+    from virtual_team.repository.versions import create_version as _cv
+    from virtual_team.repository.prompts import get_prompt
+    item = await get_prompt(resource_id)
+    if not item:
+        return
+    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns.keys() if not k.startswith('_')}
+    if "id" in snapshot:
+        del snapshot["id"]
+    if "created_at" in snapshot:
+        snapshot["created_at"] = str(snapshot["created_at"])
+    if "updated_at" in snapshot:
+        snapshot["updated_at"] = str(snapshot["updated_at"])
+    await _cv(session, "prompt", resource_id, snapshot, "system")
+
 @router.post("/api/prompts", status_code=201)
 async def add_prompt(req: PromptCreate):
     try:

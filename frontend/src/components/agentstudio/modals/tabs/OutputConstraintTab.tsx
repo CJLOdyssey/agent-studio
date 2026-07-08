@@ -30,7 +30,7 @@ export const OutputConstraintTab = forwardRef(function OutputConstraintTab(
         rows={6}
       />
       <div className="agent-config-char-count">{value.length} {t('workstation.chars')}</div>
-      <p className="form-hint">输出约束用于控制 Agent 的回复格式、长度、语言等具体要求</p>
+      <p className="form-hint">{t('workstation.outputConstraintDesc')}</p>
     </div>
   );
 });

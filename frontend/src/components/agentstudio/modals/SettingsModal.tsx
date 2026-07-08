@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Globe, Save, Code, Keyboard } from 'lucide-react';
+import { Globe, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { changeLanguage } from '../../../i18n/index';
@@ -10,17 +10,10 @@ interface Props {
   onClose: () => void;
 }
 
-type SettingsTab = 'general' | 'editor' | 'shortcuts';
+type SettingsTab = 'general' | 'about';
 
-const shortcuts = [
-  { keys: 'Ctrl/Cmd + N', descKey: 'shortcuts.newChat' },
-  { keys: 'Ctrl/Cmd + ,', descKey: 'shortcuts.settings' },
-  { keys: 'Enter', descKey: 'shortcuts.send' },
-  { keys: 'Shift + Enter', descKey: 'shortcuts.newline' },
-  { keys: 'Escape', descKey: 'shortcuts.close' },
-  { keys: 'Ctrl/Cmd + Z', descKey: 'shortcuts.undo' },
-  { keys: 'Ctrl/Cmd + S', descKey: 'shortcuts.save' },
-];
+const VERSION = '1.0.0';
+const BUILD_TIME = '2026-05-08';
 
 export default function SettingsModal({ onClose }: Props) {
   const { t, i18n } = useTranslation();
@@ -46,7 +39,6 @@ export default function SettingsModal({ onClose }: Props) {
             {t('settings.cancel')}
           </button>
           <button className="btn btn-primary" onClick={onClose}>
-            <Save size={14} />
             {t('settings.save')}
           </button>
         </>
@@ -57,8 +49,7 @@ export default function SettingsModal({ onClose }: Props) {
           {(
             [
               ['general', Globe],
-              ['editor', Code],
-              ['shortcuts', Keyboard],
+              ['about', Info],
             ] as const
           ).map(([tab, Icon]) => (
             <button
@@ -89,21 +80,6 @@ export default function SettingsModal({ onClose }: Props) {
                 >
                   <option value="zh-CN">中文</option>
                   <option value="en-US">English</option>
-                </select>
-              </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <label>{t('settings.timezone')}</label>
-                  <span className="settings-item-desc">{t('settings.timezoneDesc')}</span>
-                </div>
-                <select
-                  className="settings-select"
-                  value={settings.timezone}
-                  onChange={(e) => updateSettings({ timezone: e.target.value })}
-                >
-                  <option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</option>
-                  <option value="America/New_York">America/New_York (UTC-5)</option>
-                  <option value="Europe/London">Europe/London (UTC+0)</option>
                 </select>
               </div>
 
@@ -169,99 +145,99 @@ export default function SettingsModal({ onClose }: Props) {
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
-                  <label>{t('settings.autoComplete')}</label>
-                  <span className="settings-item-desc">{t('settings.autoCompleteDesc')}</span>
-                </div>
-                <ToggleSwitch checked={settings.autoComplete} onChange={(v) => updateSettings({ autoComplete: v })} />
-              </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
                   <label>{t('settings.streamOutput')}</label>
                   <span className="settings-item-desc">{t('settings.streamOutputDesc')}</span>
                 </div>
                 <ToggleSwitch checked={settings.streamOutput} onChange={(v) => updateSettings({ streamOutput: v })} />
               </div>
-
-              <div className="settings-divider"></div>
-              <h4>{t('settings.notificationTitle')}</h4>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <label>{t('settings.sound')}</label>
-                  <span className="settings-item-desc">{t('settings.soundDesc')}</span>
-                </div>
-                <ToggleSwitch checked={settings.soundEnabled} onChange={(v) => updateSettings({ soundEnabled: v })} />
-              </div>
             </div>
           )}
 
-          {activeTab === 'editor' && (
+          {activeTab === 'about' && (
             <div className="settings-section">
-              <h4>{t('settings.editor')}</h4>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <label>{t('settings.editorFontSize')}</label>
-                  <span className="settings-item-desc">{t('settings.editorFontSizeDesc')}</span>
-                </div>
-                <select
-                  className="settings-select"
-                  value={settings.editorFontSize}
-                  onChange={(e) => updateSettings({ editorFontSize: Number(e.target.value) })}
-                >
-                  {[12, 13, 14, 15, 16, 18, 20].map((s) => (
-                    <option key={s} value={s}>
-                      {s}px
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <label>{t('settings.tabSize')}</label>
-                  <span className="settings-item-desc">{t('settings.tabSizeDesc')}</span>
-                </div>
-                <select
-                  className="settings-select"
-                  value={settings.tabSize}
-                  onChange={(e) => updateSettings({ tabSize: Number(e.target.value) })}
-                >
-                  {[2, 4, 8].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <label>{t('settings.wordWrap')}</label>
-                  <span className="settings-item-desc">{t('settings.wordWrapDesc')}</span>
-                </div>
-                <ToggleSwitch checked={settings.wordWrap} onChange={(v) => updateSettings({ wordWrap: v })} />
-              </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <label>{t('settings.lineNumber')}</label>
-                  <span className="settings-item-desc">{t('settings.lineNumberDesc')}</span>
-                </div>
-                <ToggleSwitch checked={settings.lineNumber} onChange={(v) => updateSettings({ lineNumber: v })} />
-              </div>
-            </div>
-          )}
+              <h4>{t('settings.about')}</h4>
+              <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0, padding: 0, border: 'none' }}>
 
-          {activeTab === 'shortcuts' && (
-            <div className="settings-section">
-              <h4>{t('settings.shortcuts')}</h4>
-              <p className="settings-item-desc" style={{ marginBottom: 16 }}>
-                {t('settings.shortcutsDesc')}
-              </p>
-              {shortcuts.map((s) => (
-                <div key={s.keys} className="settings-item">
-                  <span style={{ fontSize: 'var(--da-font-size-sm)', color: 'var(--da-text-primary)' }}>
-                    {t(s.descKey)}
-                  </span>
-                  <kbd className="shortcut-key">{s.keys}</kbd>
+                {/* App identity */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '24px 20px', width: '100%',
+                  background: 'color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 3%)',
+                  border: '1px solid var(--da-border-subtle)',
+                  borderRadius: 10, marginBottom: 16,
+                }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 14,
+                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--da-accent-indigo) 40%, transparent), color-mix(in srgb, var(--da-accent-indigo) 10%, transparent))',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--da-accent-indigo)', flexShrink: 0,
+                    boxShadow: '0 2px 8px color-mix(in srgb, var(--da-accent-indigo) 20%, transparent)',
+                  }}>
+                    <Info size={24} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 650, color: 'var(--da-text-primary)', letterSpacing: '-0.02em' }}>
+                      AgentStudio
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '2px 8px', borderRadius: 4,
+                        background: 'color-mix(in srgb, var(--da-accent-indigo) 12%, transparent)',
+                        color: 'var(--da-accent-indigo)',
+                        fontSize: 11, fontWeight: 500,
+                      }}>
+                        v {VERSION}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--da-text-muted)' }}>
+                        {BUILD_TIME}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              ))}
+
+                {/* Info grid */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1,
+                  width: '100%', background: 'var(--da-border-subtle)',
+                  border: '1px solid var(--da-border-subtle)', borderRadius: 10, overflow: 'hidden',
+                }}>
+                  {[
+                    { label: 'Version', value: VERSION },
+                    { label: 'Build', value: BUILD_TIME },
+                    { label: 'Frontend', value: 'React 18 + Vite 6' },
+                    { label: 'Backend', value: 'FastAPI + Python 3.12' },
+                    { label: 'License', value: 'MIT' },
+                    { label: 'Repository', value: 'GitHub', link: 'https://github.com/CJLOdyssey/virtual-software-team' },
+                  ].map((row) => (
+                    <div key={row.label} style={{
+                      padding: '12px 16px',
+                      background: 'var(--da-bg-surface)',
+                      fontSize: 'var(--da-font-size-sm)',
+                      display: 'flex', flexDirection: 'column', gap: 2,
+                    }}>
+                      <span style={{ color: 'var(--da-text-muted)', fontSize: 11 }}>{row.label}</span>
+                      {row.link ? (
+                        <a href={row.link} target="_blank" rel="noopener noreferrer"
+                          style={{ color: 'var(--da-accent-indigo)', textDecoration: 'none', fontWeight: 500 }}>
+                          {row.value} ↗
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--da-text-primary)', fontWeight: 450 }}>{row.value}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer note */}
+                <div style={{
+                  width: '100%', marginTop: 16,
+                  fontSize: 11, color: 'var(--da-text-muted)', textAlign: 'center',
+                  lineHeight: 1.6, opacity: 0.7,
+                }}>
+                  AI Agent 协作系统 — 基于 LangGraph 多智能体编排
+                </div>
+              </div>
             </div>
           )}
         </div>

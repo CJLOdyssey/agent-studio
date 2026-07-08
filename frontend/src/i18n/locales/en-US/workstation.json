@@ -69,7 +69,36 @@
     "noMatch": "No matches",
     "add": "Add",
     "customize": "Customize",
-    "chars": "chars"
+    "chars": "chars",
+    "agentName": "Agent Name",
+    "saveConfig": "Save Config",
+    "generateTool": "Generate Tool",
+    "params": "Parameters",
+    "codeValid": "Valid",
+    "needsOptimize": "Needs Optimization",
+    "formatCorrect": "Format Correct",
+    "capabilities": "Capabilities",
+    "purpose": "Purpose",
+    "fetchingModels": "Fetching models...",
+    "rename": "Rename",
+    "edit": "Edit",
+    "bothSupported": "Both Supported",
+    "enterApiKeyToFetch": "Enter API Key then click Refresh to fetch models",
+    "configureProviderFirst": "Configure at least one valid API Key in the Provider tab first",
+    "reset": "Reset",
+    "saveSettings": "Save Settings",
+    "capability_llm": "LLM",
+    "capability_embed": "Embedding",
+    "fetchFromApi": "Fetch available models from API",
+    "output": "Output",
+    "tools": "Tools",
+    "promptMgmt": "Prompt Management",
+    "outputMgmt": "Output Constraints",
+    "toolMgmt": "Tool Management",
+    "mcpMgmt": "MCP Management",
+    "skillMgmt": "Skills Management",
+    "nameRequired": "Name is required",
+    "selectedCount": "Selected"
   },
   "workspace": {
     "open": "Open Workspace",
@@ -121,7 +150,9 @@
       "anthropic": "Anthropic",
       "dashscope": "DashScope (Embedding)",
       "custom": "Custom"
-    }
+    },
+    "nameOptional": "optional",
+    "nameHint": "A label to identify this key. Falls back to provider name if empty."
   },
   "api": {
     "manage": "API Management",

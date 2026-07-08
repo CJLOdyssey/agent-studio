@@ -33,3 +33,15 @@ export async function updateTeam(
 export async function deleteTeam(id: string): Promise<void> {
   await api.delete(`/teams/${id}`);
 }
+
+export async function addTeamMember(
+  teamId: string,
+  payload: { name: string; role?: string; agent_config_id?: string },
+): Promise<TeamMember> {
+  const { data } = await api.post(`/teams/${teamId}/members`, payload);
+  return data;
+}
+
+export async function removeTeamMember(teamId: string, memberId: string): Promise<void> {
+  await api.delete(`/teams/${teamId}/members/${memberId}`);
+}

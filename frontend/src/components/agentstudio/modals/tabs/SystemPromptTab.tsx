@@ -30,7 +30,7 @@ export const SystemPromptTab = forwardRef(function SystemPromptTab(
         rows={6}
       />
       <div className="agent-config-char-count">{value.length} {t('workstation.chars')}</div>
-      <p className="form-hint">系统提示词定义了 Agent 的核心身份和行为准则</p>
+      <p className="form-hint">{t('workstation.systemPromptDesc')}</p>
     </div>
   );
 });

@@ -26,13 +26,12 @@ export default function OutputConstraintManagement() {
 
   const statusDotClass: Record<string, string> = { active: 'wsta-badge-dot-green', draft: 'wsta-badge-dot-gray', archived: 'wsta-badge-dot-gray' };
   const dotClass: Record<string, string> = { active: 'wsta-dot-green', draft: 'wsta-dot-gray', archived: 'wsta-dot-gray' };
-  const statusLabel: Record<string, string> = { active: '已启用', draft: '草稿', archived: '已归档' };
+  const statusLabel: Record<string, string> = { active: t('output.status_active'), draft: t('output.status_draft'), archived: t('output.status_archived') };
   const categoryTagClass: Record<string, string> = { '格式约束': 'wsta-tag-indigo', '内容约束': 'wsta-tag-green', '长度约束': 'wsta-tag-amber', '语言约束': 'wsta-tag-green' };
 
   function makeMenuItems(item: OutputEntry): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('output.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <FileText size={14} />, label: t('output.col_name') },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('output.delete'), onClick: () => handleRemove(item.id), danger: true },
     ];

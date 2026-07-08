@@ -1,7 +1,7 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, MessageSquare } from 'lucide-react';
-import { usePromptData, usePromptUI, PROMPT_CATEGORIES, MOCK_PROMPT_VERSIONS, t } from './index';
+import { usePromptData, usePromptUI, PROMPT_CATEGORIES, t } from './index';
 import type { CategoryFilter } from './index';
 import PromptFormModal from './PromptFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -31,7 +31,7 @@ export default function PromptManagement() {
   function makeMenuItems(item: typeof data.processed[0]): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('prompt.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <MessageSquare size={14} />, label: t('prompt.col_name') },
+      { key: 'view', icon: <MessageSquare size={14} />, label: t('prompt.history'), onClick: () => ui.openHistory(item) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('prompt.delete'), onClick: () => ui.openDelete(item), danger: true },
     ];
@@ -74,7 +74,7 @@ export default function PromptManagement() {
           <thead><tr>
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('prompt.select_all')} /></th>
             <th scope="col">{t('prompt.col_name')}</th>
-            <th scope="col">预览</th>
+            <th scope="col">{t('workstation.preview')}</th>
             <th scope="col">{t('prompt.col_category')}</th>
             <th scope="col">{t('prompt.col_version')}</th>
             <th className="wsta-col-actions" scope="col">{t('prompt.col_actions')}</th>
@@ -109,7 +109,7 @@ export default function PromptManagement() {
       {ui.isFormOpen && <PromptFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSaveWrapper} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingItem?.name || ''} label={t('prompt.edit')} onConfirm={handleDeleteWrapper} onClose={ui.closeDelete} />}
       {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} label="提示词" onConfirm={handleBatchDeleteWrapper} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} versions={MOCK_PROMPT_VERSIONS[ui.historyItem.id] || []} onClose={ui.closeHistory} />}
+      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} resourceType="prompt" resourceId={ui.historyItem.id} onClose={ui.closeHistory} />}
     </div>
     </ErrorBoundary>
   );

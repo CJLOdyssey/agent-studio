@@ -1,0 +1,6 @@
+- generic [active] [ref=e1]:
+  - link "跳到主内容" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - generic "Loading page" [ref=e4]: Loading...
+    - status

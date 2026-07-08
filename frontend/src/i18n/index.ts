@@ -5,14 +5,16 @@ import commonZh from './locales/zh-CN/common.json';
 import sidebarZh from './locales/zh-CN/sidebar.json';
 import chatZh from './locales/zh-CN/chat.json';
 import workstationZh from './locales/zh-CN/workstation.json';
+import apiZh from './locales/zh-CN/api.json';
 
 import commonEn from './locales/en-US/common.json';
 import sidebarEn from './locales/en-US/sidebar.json';
 import chatEn from './locales/en-US/chat.json';
 import workstationEn from './locales/en-US/workstation.json';
+import apiEn from './locales/en-US/api.json';
 
-const zh = { ...commonZh, ...sidebarZh, ...chatZh, ...workstationZh };
-const en = { ...commonEn, ...sidebarEn, ...chatEn, ...workstationEn };
+const zh = { ...commonZh, ...sidebarZh, ...chatZh, ...workstationZh, ...apiZh };
+const en = { ...commonEn, ...sidebarEn, ...chatEn, ...workstationEn, ...apiEn };
 
 const saved = typeof window !== 'undefined' ? localStorage.getItem('language') : null;
 const legacyMap: Record<string, string> = { en: 'en-US' };

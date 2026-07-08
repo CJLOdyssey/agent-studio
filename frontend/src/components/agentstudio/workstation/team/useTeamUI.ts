@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { TeamEntry, TeamFormData } from './team.types';
 import type { useTeamData } from './useTeamData';
+import { t } from './locales';
 
 type TeamData = ReturnType<typeof useTeamData>;
 
 export function useTeamUI() {
   const [isFormOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TeamEntry | null>(null);
-  const [formData, setFormDataRaw] = useState<TeamFormData>({ name: '', description: '', status: 'active' });
+  const [formData, setFormDataRaw] = useState<TeamFormData>({ name: '', description: '', status: 'active', category: 'dev' });
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState<TeamEntry | null>(null);
@@ -31,10 +32,10 @@ export function useTeamUI() {
   const closeMenu = useCallback(() => { setOpenMenuId(null); setMenuAnchorEl(null); }, []);
 
   function openCreate() {
-    setEditingItem(null); setFormDataRaw({ name: '', description: '', status: 'active' }); setFormErrors([]); setFormOpen(true);
+    setEditingItem(null); setFormDataRaw({ name: '', description: '', status: 'active', category: 'dev' }); setFormErrors([]); setFormOpen(true);
   }
   function openEdit(item: TeamEntry) {
-    setEditingItem(item); setFormDataRaw({ name: item.name, description: item.description, status: item.status }); setFormErrors([]); setFormOpen(true);
+    setEditingItem(item); setFormDataRaw({ name: item.name, description: item.description, status: item.status, category: item.category }); setFormErrors([]); setFormOpen(true);
   }
   function openDelete(item: TeamEntry) { setDeletingItem(item); setDeleteOpen(true); }
   function openBatchDelete() { setBatchDeleteOpen(true); }
@@ -43,7 +44,7 @@ export function useTeamUI() {
   function closeBatchDelete() { setBatchDeleteOpen(false); }
   function closeHistory() { setHistoryOpen(false); setHistoryItem(null); }
   function closeForm() { setFormOpen(false); setEditingItem(null); setFormErrors([]); }
-  function validate() { const errs: string[] = []; if (!formData.name.trim()) errs.push('团队名称不能为空'); else if (formData.name.length < 2 || formData.name.length > 50) errs.push('团队名称长度需在 2-50 个字符之间'); setFormErrors(errs); return errs.length === 0; }
+  function validate() { const errs: string[] = []; if (!formData.name.trim()) errs.push(t('team.name_required')); else if (formData.name.length < 2 || formData.name.length > 50) errs.push(t('team.name_length')); setFormErrors(errs); return errs.length === 0; }
   function save(data: TeamData) { if (!validate()) return; if (editingItem) data.updateTeam(editingItem.id, formData); else data.addTeam(formData); closeForm(); }
   function confirmDelete(data: TeamData) { if (!deletingItem) return; data.deleteTeam(deletingItem.id); closeDelete(); }
   function confirmBatchDelete(data: TeamData) { data.batchDelete(data.selectedIds); closeBatchDelete(); }

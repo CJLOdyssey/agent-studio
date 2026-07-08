@@ -106,9 +106,18 @@ export default function ResourcePickerModal<T>({
             })}
           </div>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('workstation.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleConfirm}>{t('workstation.confirm')}</button>
+        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>
+            {multiple && tempSelected.size > 0 ? `${t('workstation.selectedCount')}: ${tempSelected.size}` : ''}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-secondary" onClick={onClose}>{t('workstation.cancel')}</button>
+            <button className="btn btn-primary" onClick={handleConfirm}>
+              {multiple && tempSelected.size > 0
+                ? `${t('workstation.confirm')} (${tempSelected.size})`
+                : t('workstation.confirm')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
