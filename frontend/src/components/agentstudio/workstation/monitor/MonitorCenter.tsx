@@ -8,6 +8,7 @@ import {
   fetchSystemHealth,
   type DashboardStats,
   type SystemHealth,
+  type LogEntry,
 } from '../../../../api/client/admin';
 import { t } from './locales';
 
