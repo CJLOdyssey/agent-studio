@@ -33,9 +33,9 @@
     "skillPrompt": "Describe the Skill you want, e.g. Code review standards, API design best practices...",
     "systemPromptDesc": "Define the agent role, responsibilities, and behavior rules...",
     "outputConstraintDesc": "Constrain the agent output format and behavior...",
-    "toolCount": "Tool count",
+    "toolCount": "Tool Count",
     "preview": "Preview",
-    "versionHistory": "Version History - {title}",
+    "versionHistory": "Version History",
     "exitCompare": "Exit Compare",
     "compare": "Compare",
     "oldVersion": "Old Version",
@@ -46,9 +46,9 @@
     "save": "Save",
     "batchDelete": "Batch Delete",
     "confirmDelete": "Confirm Delete",
-    "renderError": "Component render error",
-    "unknownError": "Unknown error",
-    "loadFailed": "Load failed",
+    "renderError": "Render Error",
+    "unknownError": "Unknown Error",
+    "loadFailed": "Load Failed",
     "basicInfo": "Basic Info",
     "systemName": "System Name",
     "systemDesc": "System Description",
@@ -66,7 +66,10 @@
     "status": "Status",
     "createdAt": "Created",
     "actions": "Actions",
-    "noMatch": "No matches"
+    "noMatch": "No matches",
+    "add": "Add",
+    "customize": "Customize",
+    "chars": "chars"
   },
   "workspace": {
     "open": "Open Workspace",
@@ -142,7 +145,11 @@
     "usageWillShow": "Usage statistics will be displayed after connecting to the backend",
     "todayRequests": "Today Requests",
     "monthRequests": "Month Requests",
-    "monthCost": "Month Cost"
+    "monthCost": "Month Cost",
+    "lastUsed": "Last used",
+    "embedModelConfig": "Embedding Model Config",
+    "todayTokens": "Today Tokens",
+    "monthTokens": "Month Tokens"
   },
   "settings": {
     "title": "System Settings",

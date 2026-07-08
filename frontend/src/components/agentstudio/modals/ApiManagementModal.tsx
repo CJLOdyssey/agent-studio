@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Key, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Server, Globe, Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../../shared/Modal';
 import ToggleSwitch from '../../shared/ToggleSwitch';
 import ProviderEditModal from './ProviderEditModal';
@@ -14,6 +15,7 @@ interface Props {
 type ApiTab = 'providers' | 'embedding' | 'models' | 'usage';
 
 export default function ApiManagementModal({ onClose }: Props) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ApiTab>('providers');
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,7 +220,7 @@ export default function ApiManagementModal({ onClose }: Props) {
           {activeTab === 'providers' && (
             <div className="api-providers-tab">
               <div className="api-section-header">
-                <h4>API Key 管理</h4>
+                <h4>API Key {t('api.manage')}</h4>
                 <button className="btn btn-sm btn-primary" onClick={showAddForm}>
                   <Plus size={14} />
                   添加 Key
@@ -239,7 +241,7 @@ export default function ApiManagementModal({ onClose }: Props) {
               {loading ? (
                 <div className="api-empty-state">
                   <Loader2 size={32} className="animate-spin" />
-                  <p>加载中...</p>
+                  <p>{t('common.loading')}</p>
                 </div>
               ) : keys.length === 0 ? (
                 <div className="api-empty-state">
@@ -300,7 +302,7 @@ export default function ApiManagementModal({ onClose }: Props) {
                         </div>
                       </div>
                       {key.last_used_at && (
-                        <div className="api-key-meta">上次使用: {new Date(key.last_used_at).toLocaleString()}</div>
+                        <div className="api-key-meta">{t('api.lastUsed')}: {new Date(key.last_used_at).toLocaleString()}</div>
                       )}
                     </div>
                   ))}
@@ -311,9 +313,9 @@ export default function ApiManagementModal({ onClose }: Props) {
           {activeTab === 'models' && (
             <div className="api-models-tab">
               <div className="api-section-header">
-                <h4>默认模型</h4>
+                <h4>{t('api.defaultModel')}</h4>
               </div>
-              <p className="api-hint">选择用于对话的默认 AI 模型</p>
+              <p className="api-hint">{t('api.selectModel')}</p>
               <div className="api-models-list">
                 {allModels.map(({ model }) => (
                   <label key={model} className="api-model-item">
@@ -345,7 +347,7 @@ export default function ApiManagementModal({ onClose }: Props) {
           {activeTab === 'embedding' && (
             <div className="api-providers-tab">
               <div className="api-section-header">
-                <h4>嵌入模型配置</h4>
+                <h4>{t('api.embedModelConfig')}</h4>
                 <button
                   className="btn btn-sm btn-primary"
                   onClick={() => {
@@ -374,7 +376,7 @@ export default function ApiManagementModal({ onClose }: Props) {
               {loading ? (
                 <div className="api-empty-state">
                   <Loader2 size={32} className="animate-spin" />
-                  <p>加载中...</p>
+                  <p>{t('common.loading')}</p>
                 </div>
               ) : (
                 <div className="api-providers-list">
@@ -424,24 +426,24 @@ export default function ApiManagementModal({ onClose }: Props) {
           {activeTab === 'usage' && (
             <div className="api-usage-tab">
               <div className="api-section-header">
-                <h4>用量统计</h4>
+                <h4>{t('api.usageStats')}</h4>
               </div>
               <div className="api-usage-cards">
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.today_requests}</div>
-                  <div className="api-usage-label">今日请求</div>
+                  <div className="api-usage-label">{t('api.todayRequests')}</div>
                 </div>
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.today_tokens.toLocaleString()}</div>
-                  <div className="api-usage-label">今日 Token</div>
+                  <div className="api-usage-label">{t('api.todayTokens')}</div>
                 </div>
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.month_requests}</div>
-                  <div className="api-usage-label">本月请求</div>
+                  <div className="api-usage-label">{t('api.monthRequests')}</div>
                 </div>
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.month_tokens.toLocaleString()}</div>
-                  <div className="api-usage-label">本月 Token</div>
+                  <div className="api-usage-label">{t('api.monthTokens')}</div>
                 </div>
               </div>
             </div>

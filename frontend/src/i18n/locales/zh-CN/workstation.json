@@ -35,7 +35,7 @@
     "outputConstraintDesc": "约束 Agent 的输出格式和行为...",
     "toolCount": "工具数",
     "preview": "预览",
-    "versionHistory": "版本历史 - {title}",
+    "versionHistory": "版本历史",
     "exitCompare": "退出对比",
     "compare": "版本对比",
     "oldVersion": "旧版本",
@@ -66,7 +66,10 @@
     "status": "状态",
     "createdAt": "创建时间",
     "actions": "操作",
-    "noMatch": "无匹配结果"
+    "noMatch": "无匹配结果",
+    "add": "添加",
+    "customize": "自定义",
+    "chars": "字符"
   },
   "workspace": {
     "open": "打开代码工作区",
@@ -142,7 +145,11 @@
     "usageWillShow": "用量统计将在连接后端服务后显示",
     "todayRequests": "今日请求",
     "monthRequests": "本月请求",
-    "monthCost": "本月费用"
+    "monthCost": "本月费用",
+    "lastUsed": "上次使用",
+    "embedModelConfig": "嵌入模型配置",
+    "todayTokens": "今日 Token",
+    "monthTokens": "本月 Token"
   },
   "settings": {
     "title": "系统设置",
