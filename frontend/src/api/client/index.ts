@@ -21,6 +21,4 @@ export { listModels, listCommands, executeCommand } from './commands';
 export type { ModelInfo, CommandDef } from './commands';
 export { generateTool, validateTool, executeTool } from './tools';
 export type { GeneratedTool, ToolValidationResult } from './tools';
-export { generateSkill, validateSkill } from './skills';
-export type { GeneratedSkill, SkillValidationResult } from './skills';
 export { default } from './instance';

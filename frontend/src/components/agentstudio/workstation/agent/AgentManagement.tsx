@@ -1,10 +1,9 @@
-import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, X, Bot, RefreshCw, Settings2 } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, Play, Trash2, X, Bot, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAgentManagement } from './useAgentManagement';
 import { STATUS_LABEL } from './agent.constants';
-import { MOCK_VERSIONS, MOCK_AGENT_PROMPTS, MOCK_AGENT_TOOLS, MOCK_AGENT_MCPS, MOCK_AGENT_SKILLS } from './mock-data';
 import AgentFormModal from './AgentFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -23,16 +22,16 @@ export default function AgentManagement() {
   const mgmt = useAgentManagement();
   const { toast } = useToast();
 
-  const [availPrompts, setAvailPrompts] = useState<{ id: string; name: string }[]>(MOCK_AGENT_PROMPTS);
-  const [availTools, setAvailTools] = useState<{ id: string; name: string }[]>(MOCK_AGENT_TOOLS);
-  const [availMCPs, setAvailMCPs] = useState<{ id: string; name: string }[]>(MOCK_AGENT_MCPS);
-  const [availSkills, setAvailSkills] = useState<{ id: string; name: string }[]>(MOCK_AGENT_SKILLS);
+  const [availPrompts, setAvailPrompts] = useState<{ id: string; name: string }[]>([]);
+  const [availTools, setAvailTools] = useState<{ id: string; name: string }[]>([]);
+  const [availMCPs, setAvailMCPs] = useState<{ id: string; name: string }[]>([]);
+  const [availSkills, setAvailSkills] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    listPrompts().then((items) => setAvailPrompts(items.map((p) => ({ id: p.id, name: p.name })))).catch(() => {});
-    listTools().then((items) => setAvailTools(items.map((t) => ({ id: t.id, name: t.name })))).catch(() => {});
-    listMCPs().then((items) => setAvailMCPs(items.map((m) => ({ id: m.id, name: m.name })))).catch(() => {});
-    listSkills().then((items) => setAvailSkills(items.map((s) => ({ id: s.id, name: s.name })))).catch(() => {});
+    listPrompts().then((items) => { if (items.length > 0) setAvailPrompts(items.map((p) => ({ id: p.id, name: p.name }))); }).catch(() => {});
+    listTools().then((items) => { if (items.length > 0) setAvailTools(items.map((t) => ({ id: t.id, name: t.name }))); }).catch(() => {});
+    listMCPs().then((items) => { if (items.length > 0) setAvailMCPs(items.map((m) => ({ id: m.id, name: m.name }))); }).catch(() => {});
+    listSkills().then((items) => { if (items.length > 0) setAvailSkills(items.map((s) => ({ id: s.id, name: s.name }))); }).catch(() => {});
   }, []);
 
   function handleSaveWrapper() { mgmt.handleSave(); if (mgmt.formErrors.length === 0) toast(mgmt.editingAgent ? t('agent.toast_updated') : t('agent.toast_created'), 'success'); }
@@ -42,11 +41,26 @@ export default function AgentManagement() {
   const statusDotClass: Record<string, string> = { running: 'wsta-badge-dot-green', stopped: 'wsta-badge-dot-gray', error: 'wsta-badge-dot-red' };
   const dotClass: Record<string, string> = { running: 'wsta-dot-green', stopped: 'wsta-dot-gray', error: 'wsta-dot-red' };
 
+
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  async function handleTestAgent(id: string) {
+    setTestingId(id);
+    try {
+      const res = await fetch(`/api/agents/${id}/test`, { method: 'POST' });
+      const data = await res.json();
+      toast(data.success ? `✅ ${data.message} (${data.duration_ms}ms)` : `❌ ${data.message}`, data.success ? 'success' : 'error');
+    } catch (err) {
+      toast('❌ 测试请求失败', 'error');
+    } finally {
+      setTestingId(null);
+    }
+  }
   function makeMenuItems(item: typeof mgmt.processed[0]): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('agent.edit'), onClick: () => mgmt.openEdit(item) },
-      { key: 'view', icon: <Eye size={14} />, label: t('agent.col_name') },
-      { key: 'config', icon: <Settings2 size={14} />, label: '配置' },
+      { key: 'view', icon: <Eye size={14} />, label: t('agent.history'), onClick: () => mgmt.openHistory(item) },
+      { key: 'test', icon: <Play size={14} />, label: testingId === item.id ? t('agent.testing') : t('agent.test'), disabled: testingId === item.id, onClick: () => handleTestAgent(item.id) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('agent.delete'), onClick: () => mgmt.openDelete(item), danger: true },
     ];
@@ -139,7 +153,7 @@ export default function AgentManagement() {
       )}
       {mgmt.isDeleteOpen && <DeleteConfirmModal name={mgmt.deletingAgent?.name || ''} label={t('agent.edit')} onConfirm={handleDeleteWrapper} onClose={() => mgmt.setIsDeleteOpen(false)} />}
       {mgmt.isBatchDeleteOpen && <BatchDeleteModal count={mgmt.selectedIds.size} onConfirm={handleBatchDeleteWrapper} onClose={() => mgmt.setIsBatchDeleteOpen(false)} />}
-      {mgmt.isHistoryOpen && mgmt.historyAgent && <VersionHistoryModal title={mgmt.historyAgent.name} versions={MOCK_VERSIONS[mgmt.historyAgent.id] || []} onClose={() => mgmt.setIsHistoryOpen(false)} />}
+      {mgmt.isHistoryOpen && mgmt.historyAgent && <VersionHistoryModal title={mgmt.historyAgent.name} resourceType="agent" resourceId={mgmt.historyAgent.id} onClose={() => mgmt.setIsHistoryOpen(false)} />}
     </div>
     </ErrorBoundary>
   );

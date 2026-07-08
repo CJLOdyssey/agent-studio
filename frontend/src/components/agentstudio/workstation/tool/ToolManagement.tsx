@@ -1,10 +1,9 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Wrench, Play } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Wrench } from 'lucide-react';
 import { useToolData } from './useToolData';
 import { useToolUI } from './useToolUI';
 import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
-import { MOCK_TOOL_VERSIONS } from './mock-data';
 import ToolFormModal from './ToolFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -30,8 +29,7 @@ export default function ToolManagement() {
   function makeMenuItems(item: typeof data.processed[0]): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('tool.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <Eye size={14} />, label: t('tool.col_name') },
-      { key: 'test', icon: <Play size={14} />, label: t('tool.col_name') },
+      { key: 'view', icon: <Eye size={14} />, label: t('tool.history'), onClick: () => ui.openHistory(item) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('tool.delete'), onClick: () => ui.openDelete(item), danger: true },
     ];
@@ -114,7 +112,7 @@ export default function ToolManagement() {
       {ui.isFormOpen && <ToolFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSave} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingItem?.name || ''} label="工具" onConfirm={handleDelete} onClose={ui.closeDelete} />}
       {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} label="工具" onConfirm={handleBatchDelete} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} versions={MOCK_TOOL_VERSIONS[ui.historyItem.id] || []} onClose={ui.closeHistory} />}
+      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} resourceType="tool" resourceId={ui.historyItem.id} onClose={ui.closeHistory} />}
     </div>
     </ErrorBoundary>
   );

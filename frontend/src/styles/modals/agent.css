@@ -397,3 +397,95 @@
 .agent-config-modal .modal-close:active {
   transform: scale(0.92);
 }
+
+/* ───────────────────────────────────────────
+ * Agent Form Modal — Create/Edit Agent
+ * ─────────────────────────────────────────── */
+
+.agent-form-animate {
+  animation: agentFormIn 0.25s ease-out;
+}
+
+@keyframes agentFormIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.agent-form-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-accent-indigo);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ── Chip group (selected resource tags) ── */
+.wsta-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wsta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 450;
+  color: var(--da-text-secondary);
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 6%);
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 5px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wsta-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wsta-chip-remove:hover {
+  background: color-mix(in srgb, var(--da-status-error) 20%, transparent);
+  color: var(--da-status-error);
+}
+
+/* ───────────────────────────────────────────
+ * Team Form Modal — Create/Edit Team
+ * ─────────────────────────────────────────── */
+
+.team-form-animate {
+  animation: agentFormIn 0.25s ease-out;
+}
+
+.team-form-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-accent-cyan);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}

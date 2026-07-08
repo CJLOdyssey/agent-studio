@@ -15,6 +15,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Annotated, TypedDict
 
 import httpx
@@ -30,8 +31,11 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from virtual_team.broker import publish_run_message
 from virtual_team.logging_config import get_logger
+
+# Import tool plugins so they self-register with the ToolRegistry
+import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
+
 
 logger = get_logger(__name__)
 
@@ -46,6 +50,9 @@ class ToolConfig:
     instructions: str = ""
     mcp_type: str = ""
     mcp_endpoint: str = ""
+    endpoint: str = ""
+    method: str = "GET"
+    headers: str = "{}"
 
 
 class _ToolWrapper:
@@ -66,18 +73,43 @@ class _ToolWrapper:
         instructions: str = "",
         mcp_type: str = "",
         mcp_endpoint: str = "",
+        endpoint: str = "",
+        method: str = "GET",
+        headers: str = "{}",
     ):
         self.name = name
         self.description = description
         self.instructions = instructions
         self.mcp_type = mcp_type
         self.mcp_endpoint = mcp_endpoint
+        self.endpoint = endpoint
+        self.method = method
+        self.headers = headers
         self._llm = None
 
     def set_llm(self, llm) -> None:
         self._llm = llm
 
     async def invoke(self, args: dict) -> str:
+        from virtual_team.thinking_tree.registry import registry
+
+        for handler in registry.get_handlers(self.name):
+            try:
+                result = await handler(self.name, args)
+                if isinstance(result, dict) and result.get("error") and not result.get("results"):
+                    continue
+                return json.dumps(result) if not isinstance(result, str) else result
+            except Exception:
+                continue
+
+        # HTTP endpoint (user-added custom tools)
+        if self.endpoint and self.endpoint.startswith(("http://", "https://")):
+            return await self._call_http_endpoint(args)
+
+        # Builtin endpoint
+        if self.endpoint and self.endpoint.startswith("builtin://"):
+            return await self._call_builtin(args)
+
         n = self.name.lower()
 
         if n.startswith("skill_"):
@@ -128,16 +160,62 @@ class _ToolWrapper:
             except Exception as e:
                 return json.dumps({"tool": self.name, "expression": expr, "error": str(e)})
 
-        if "websearch" in n or "websearch" in n or "search" in n:
+        if "websearch" in n or "search" in n:
             query = args.get("query", "")
             if query:
                 try:
-                    result = _web_search(query)
+                    result = await _web_search(query)
                     return json.dumps({"tool": self.name, "query": query, "results": result})
                 except Exception as e:
                     return json.dumps({"tool": self.name, "query": query, "error": str(e)})
 
-        # Custom tool: use LLM to generate the actual output
+        return await self._llm_fallback(args)
+
+    async def _call_http_endpoint(self, args: dict) -> str:
+        try:
+            hdrs = json.loads(self.headers) if isinstance(self.headers, str) else {}
+            hdrs.setdefault("Content-Type", "application/json")
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                if self.method.upper() == "GET":
+                    resp = await client.get(self.endpoint, params=args, headers=hdrs)
+                else:
+                    resp = await client.post(self.endpoint, json=args, headers=hdrs)
+                resp.raise_for_status()
+                return resp.text
+        except httpx.HTTPStatusError as e:
+            return json.dumps({"tool": self.name, "error": f"HTTP {e.response.status_code}: {e.response.text[:500]}"})
+        except Exception as e:
+            return json.dumps({"tool": self.name, "error": str(e)})
+
+    async def _call_builtin(self, args: dict) -> str:
+        action = self.endpoint.replace("builtin://", "")
+        if action == "web_search":
+            query = args.get("query", "")
+            if query:
+                try:
+                    result = await _web_search(query)
+                    return json.dumps({"tool": self.name, "query": query, "results": result})
+                except Exception as e:
+                    return json.dumps({"tool": self.name, "query": query, "error": str(e)})
+        if action in ("calculator", "calc"):
+            expr = args.get("expression") or args.get("expr") or ""
+            try:
+                result = eval(expr, {"__builtins__": {}}, {})
+                return json.dumps({"tool": self.name, "expression": expr, "result": result})
+            except Exception as e:
+                return json.dumps({"tool": self.name, "expression": expr, "error": str(e)})
+        if action == "fetch_page":
+            url = args.get("url", "")
+            if url:
+                try:
+                    async with httpx.AsyncClient(timeout=30.0) as client:
+                        resp = await client.get(url)
+                        return resp.text[:2000]
+                except Exception as e:
+                    return json.dumps({"tool": self.name, "url": url, "error": str(e)})
+        return json.dumps({"tool": self.name, "error": f"Unknown builtin action: {action}"})
+
+    async def _llm_fallback(self, args: dict) -> str:
         if self._llm:
             try:
                 prompt = (
@@ -162,12 +240,23 @@ class _ToolWrapper:
         )
 
 
-def _web_search(query: str, max_results: int = 5) -> list[dict]:
+async def _web_search(query: str, max_results: int = 5) -> list[dict]:
     """Multi-backend web search with automatic fallback.
 
-    Priority: Baidu Qianfan → Bing → simulated stub.
-    Tavily is implemented but blocked in China without proxy.
+    Priority: Tavily → Baidu Qianfan → Bing → simulated stub.
     """
+
+    tavily_key = os.environ.get("TAVILY_API_KEY", "")
+    if tavily_key:
+        try:
+            from virtual_team.thinking_tree.tools.tavily_search import tavily_search
+
+            result = await tavily_search("web_search", {"query": query, "max_results": max_results})
+            refs = result.get("results", [])
+            if refs:
+                return [{"title": r["title"], "snippet": r.get("snippet", ""), "url": r["url"]} for r in refs]
+        except Exception:
+            pass
 
     baidu_key = os.environ.get("BAIDU_QIANFAN_API_KEY", "")
     if baidu_key:
@@ -191,7 +280,7 @@ def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list
     import urllib.parse
     import urllib.request
 
-    url = f"https://www.bing.com/search?q={urllib.parse.quote(query)}"
+    url = f"https://cn.bing.com/search?q={urllib.parse.quote(query)}"
     req = urllib.request.Request(
         url,
         headers={
@@ -207,7 +296,7 @@ def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list
         if len(results) >= max_results:
             break
         block = match.group(1)
-        title_m = re.search(r'<h2[^>]*><a href="([^"]*)"[^>]*>(.*?)</a>', block, re.DOTALL)
+        title_m = re.search(r'<h2[^>]*><a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', block, re.DOTALL)
         snippet_m = re.search(r"<p[^>]*>(.*?)</p>", block, re.DOTALL)
         url_found = title_m.group(1) if title_m else ""
         title = re.sub(r"<[^>]+>", "", title_m.group(2) if title_m else "").strip()
@@ -379,6 +468,7 @@ class SingleAgentGraph:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._run_id = None
+        self._last_usage: dict = {}
 
         # LLM metadata only
         llm_kwargs = {
@@ -410,6 +500,7 @@ class SingleAgentGraph:
 
         Emits on_custom_token / on_custom_thinking events to self._stream_cb in real time.
         Returns (full_content, thinking, tool_calls_list).
+        Sets self._last_usage with token usage from the response.
         """
         api_messages = []
         for msg in messages:
@@ -446,6 +537,7 @@ class SingleAgentGraph:
             "model": self.model,
             "messages": api_messages,
             "stream": True,
+            "stream_options": {"include_usage": True},
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
@@ -465,6 +557,9 @@ class SingleAgentGraph:
         tool_calls_map: dict[int, dict] = {}
         finish_reason: str | None = None
         _raw_llm_thinking_flushed = False
+        _pending_content: list[str] = []
+        _tool_calls_seen = False
+        usage_info: dict = {}
 
         cb = self._stream_cb
 
@@ -514,6 +609,7 @@ class SingleAgentGraph:
                     fr = choices[0].get("finish_reason")
                     if fr:
                         finish_reason = fr
+                        usage_info = chunk.get("usage", {}) or usage_info
 
                     rc = delta.get("reasoning_content")
                     if rc:
@@ -530,22 +626,22 @@ class SingleAgentGraph:
                     if content:
                         if thinking_chunks and not _raw_llm_thinking_flushed:
                             _raw_llm_thinking_flushed = True
-                            thinking_text = "".join(thinking_chunks).strip()
-                            if thinking_text and self._run_id:
-                                await publish_run_message(
-                                    self._run_id,
-                                    {
-                                        "type": "thinking_done",
-                                        "agent_name": "Agent",
-                                        "thinking": thinking_text,
-                                    },
-                                )
-                        content_chunks.append(content)
-                        if cb:
-                            await cb({"event": "on_custom_token", "data": {"content": content}})
+                        if _tool_calls_seen:
+                            content_chunks.append(content)
+                            if cb:
+                                await cb({"event": "on_custom_token", "data": {"content": content}})
+                        elif not self._tool_definitions:
+                            content_chunks.append(content)
+                            if cb:
+                                await cb({"event": "on_custom_token", "data": {"content": content}})
+                        else:
+                            _pending_content.append(content)
 
                     tc_delta = delta.get("tool_calls")
                     if tc_delta:
+                        if not _tool_calls_seen:
+                            _tool_calls_seen = True
+                            _pending_content.clear()
                         for tc in tc_delta:
                             idx = tc.get("index", 0)
                             if idx not in tool_calls_map:
@@ -565,6 +661,13 @@ class SingleAgentGraph:
         except httpx.HTTPError as e:
             logger.error("Raw LLM stream failed: %s", e, exc_info=True)
             raise
+
+        if _pending_content and not _tool_calls_seen and self._tool_definitions:
+            for chunk in _pending_content:
+                content_chunks.append(chunk)
+                if cb:
+                    await cb({"event": "on_custom_token", "data": {"content": chunk}})
+        _pending_content.clear()
 
         full_content = "".join(content_chunks)
         thinking = "".join(thinking_chunks).strip()
@@ -593,6 +696,7 @@ class SingleAgentGraph:
                     tc["name"],
                     json.dumps(tc.get("args", {}), ensure_ascii=False)[:200],
                 )
+        self._last_usage = usage_info
         return full_content, thinking, final_tool_calls
 
     def _build_graph(self):
@@ -604,6 +708,13 @@ class SingleAgentGraph:
             session_context = state.get("session_context", "")
 
             full_messages = []
+            now = datetime.now(timezone.utc).astimezone()
+            weekday_cn = ["一", "二", "三", "四", "五", "六", "日"][now.weekday()]
+            date_context = (
+                f"当前日期：{now.year}年{now.month}月{now.day}日 周{weekday_cn} "
+                f"{now.hour:02d}:{now.minute:02d}（北京时间 CST）"
+            )
+            full_messages.append(SystemMessage(content=date_context))
             if system_prompt:
                 full_messages.append(SystemMessage(content=system_prompt))
             if session_context:
@@ -621,6 +732,23 @@ class SingleAgentGraph:
             if thinking:
                 kwargs["additional_kwargs"] = {"thinking": thinking}
 
+            # Emit thinking nodes (summary for final answer, full for tool calls)
+            if thinking:
+                thinking_nodes: list[dict] = [{"type": "thought", "content": thinking}]
+                for tc in (raw_tool_calls or []):
+                    tc_name = tc.get("name", "")
+                    tc_args = tc.get("args", {})
+                    thinking_nodes.append({
+                        "type": "tool_call",
+                        "content": f"Calling {tc_name}",
+                        "toolName": tc_name,
+                        "toolParams": {k: str(v) for k, v in tc_args.items()} if tc_args else {},
+                    })
+                if self._stream_cb:
+                    await self._stream_cb({
+                        "event": "on_thinking_nodes",
+                        "data": {"nodes": thinking_nodes},
+                    })
             if self._stream_cb:
                 await self._stream_cb({"event": "on_node_end", "data": {}})
 
@@ -663,6 +791,19 @@ class SingleAgentGraph:
                         result = llm_result.content
                     except Exception:
                         pass
+                print(f"\n[DEBUG] _tools_node: tool={tool_name} result_len={len(str(result or ''))} has_cb={self._stream_cb is not None}")
+                if self._stream_cb:
+                    result_str = str(result) if result else ""
+                    await self._stream_cb({
+                        "event": "on_tool_complete",
+                        "data": {
+                            "toolName": tool_name,
+                            "tool_call_id": tool_id,
+                            "tool_args": tool_args,
+                            "result": result_str[:300],
+                            "status": "success" if result_str and not result_str.startswith("Error") else "error",
+                        },
+                    })
                 tool_messages.append(
                     ToolMessage(content=str(result), tool_call_id=tool_id, name=tool_name)
                 )
@@ -707,6 +848,9 @@ class SingleAgentGraph:
                 instructions=getattr(tc, "instructions", ""),
                 mcp_type=getattr(tc, "mcp_type", ""),
                 mcp_endpoint=getattr(tc, "mcp_endpoint", ""),
+                endpoint=getattr(tc, "endpoint", ""),
+                method=getattr(tc, "method", "GET"),
+                headers=getattr(tc, "headers", "{}"),
             )
             wrapper.set_llm(self.llm)
             self._tool_map[tc.name] = wrapper

@@ -203,17 +203,6 @@ export default function AgentStudioWorkstation() {
     setConversationKey((prev) => prev + 1);
   }, [apiMessages, conv, resetApi, setSelectedAgentId, setConversationKey]);
 
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault();
-        handleNewChat();
-        toast(t('toast.newChat'), 'info');
-      }
-    };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
-  }, [t, toast, handleNewChat]);
   const handleSendMessage = useCallback(
     (text: string, _files: AttachedFile[]) => {
       submitToApi(text, undefined, selectedAgentId ?? undefined).catch(() => {

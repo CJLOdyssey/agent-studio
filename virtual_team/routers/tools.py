@@ -619,6 +619,14 @@ from virtual_team.repository import delete_tool, update_tool  # noqa: E402
 from virtual_team.repository import get_tools as repo_get_tools  # noqa: E402
 
 
+class ToolTestResult(BaseModel):
+    success: bool
+    status_code: int | None = None
+    duration_ms: int
+    message: str
+    body: str | None = None
+
+
 class ToolCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     category: str = Field(..., min_length=1, max_length=32)
@@ -627,6 +635,8 @@ class ToolCreate(BaseModel):
     status: str = "active"
     version: str = "v1.0.0"
     endpoint: str = ""
+    method: str = "GET"
+    headers: str = "{}"
     parameters: str = '{"type":"object","properties":{}}'
 
 
@@ -638,13 +648,100 @@ class ToolUpdate(BaseModel):
     status: str | None = None
     version: str | None = None
     endpoint: str | None = None
+    method: str | None = None
+    headers: str | None = None
     parameters: str | None = None
+
+
+@router.get("/api/tools/plugins")
+async def list_tool_plugins():
+    from virtual_team.thinking_tree.registry import registry
+    # Trigger auto-discovery so plugins register themselves
+    import virtual_team.thinking_tree.tools  # noqa: F401
+
+    return registry.list_plugins()
 
 
 @router.get("/api/tools")
 async def list_tools():
     try:
         return await repo_get_tools()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+async def _snapshot_tool(resource_id: str, session=None):
+    """Create a version snapshot after tool save."""
+    try:
+        if session is None:
+            from virtual_team.database import get_session_factory
+            factory = get_session_factory()
+            async with factory() as s:
+                await _do_snapshot_tool(resource_id, s)
+                await s.commit()
+        else:
+            await _do_snapshot_tool(resource_id, session)
+    except Exception:
+        logger.warning("Version snapshot failed for tool %s", resource_id, exc_info=True)
+
+
+async def _do_snapshot_tool(resource_id: str, session):
+    from virtual_team.repository.versions import create_version as _cv
+    from virtual_team.repository.tools import get_tool
+    item = await get_tool(resource_id)
+    if not item:
+        return
+    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns.keys() if not k.startswith('_')}
+    if "id" in snapshot:
+        del snapshot["id"]
+    if "created_at" in snapshot:
+        snapshot["created_at"] = str(snapshot["created_at"])
+    if "updated_at" in snapshot:
+        snapshot["updated_at"] = str(snapshot["updated_at"])
+    await _cv(session, "tool", resource_id, snapshot, "system")
+
+
+@router.post("/api/tools/{tool_id}/test")
+async def test_tool_endpoint(tool_id: str):
+    import time
+    import json
+    import httpx
+    from virtual_team.database import RegisteredToolDB, get_session_factory
+
+    timeout = 10
+    try:
+        factory = get_session_factory()
+        async with factory() as session:
+            t = await session.get(RegisteredToolDB, tool_id)
+            if not t:
+                raise HTTPException(status_code=404, detail="Tool not found")
+
+        endpoint = t.endpoint or ""
+        if not endpoint:
+            return ToolTestResult(success=False, status_code=None, duration_ms=0, message="No endpoint configured")
+
+        method = (t.method or "GET").upper()
+        headers = json.loads(t.headers or "{}")
+
+        start = time.monotonic()
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.request(method, endpoint, headers=headers)
+        elapsed = int((time.monotonic() - start) * 1000)
+
+        body = resp.text[:500] if resp.text else None
+        return ToolTestResult(
+            success=resp.status_code < 500,
+            status_code=resp.status_code,
+            duration_ms=elapsed,
+            message=f"{method} {endpoint} → {resp.status_code}",
+            body=body,
+        )
+    except httpx.TimeoutException:
+        return ToolTestResult(success=False, status_code=None, duration_ms=timeout * 1000, message="Request timed out")
+    except httpx.RequestError as e:
+        return ToolTestResult(success=False, status_code=None, duration_ms=0, message=f"Connection failed: {e}")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -670,6 +767,8 @@ async def edit_tool(tool_id: str, req: ToolUpdate):
         t = await update_tool(tool_id, req.model_dump(exclude_unset=True))
         if not t:
             raise HTTPException(status_code=404, detail="Tool not found")
+        await _snapshot_tool(t.id)
+        await _snapshot_tool(tool_id)
         return {"id": t.id, "name": t.name, "category": t.category, "status": t.status}
     except HTTPException:
         raise

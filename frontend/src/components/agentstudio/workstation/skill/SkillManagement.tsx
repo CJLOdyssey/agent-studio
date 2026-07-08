@@ -4,7 +4,6 @@ import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap } from 'lucide-re
 import { useSkillData } from './useSkillData';
 import { useSkillUI } from './useSkillUI';
 import { SKILL_CATEGORIES, SKILL_STATUS_LABEL } from './skill.constants';
-import { MOCK_SKILL_VERSIONS } from './mock-data';
 import SkillFormModal from './SkillFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -30,7 +29,7 @@ export default function SkillManagement() {
   function makeMenuItems(item: typeof data.processed[0]): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('skill.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <Eye size={14} />, label: t('skill.col_name') },
+      { key: 'view', icon: <Eye size={14} />, label: t('skill.history'), onClick: () => ui.openHistory(item) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('skill.delete'), onClick: () => ui.openDelete(item), danger: true },
     ];
@@ -115,7 +114,7 @@ export default function SkillManagement() {
       {ui.isFormOpen && <SkillFormModal editingSkill={ui.editingSkill} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSaveWrapper} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingSkill?.name || ''} label="Skill" onConfirm={handleDeleteWrapper} onClose={ui.closeDelete} />}
       {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} label="Skill" onConfirm={handleBatchDeleteWrapper} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historySkill && <VersionHistoryModal title={ui.historySkill.name} versions={MOCK_SKILL_VERSIONS[ui.historySkill.id] || []} onClose={ui.closeHistory} />}
+      {ui.isHistoryOpen && ui.historySkill && <VersionHistoryModal title={ui.historySkill.name} resourceType="skill" resourceId={ui.historySkill.id} onClose={ui.closeHistory} />}
     </div>
     </ErrorBoundary>
   );

@@ -15,6 +15,7 @@ export type TeamFormData = {
   name: string;
   description: string;
   status: 'active' | 'inactive';
+  category: 'dev' | 'ops' | 'test';
 };
 
 export type TeamCategoryFilter = 'all' | TeamEntry['category'];

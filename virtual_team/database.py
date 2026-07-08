@@ -2,7 +2,7 @@ import os
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -143,6 +143,7 @@ class ChatMessage(Base):
     )
     agent_name: Mapped[str] = mapped_column(String(64), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    thinking: Mapped[str | None] = mapped_column(Text, nullable=True)
     round_number: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -393,6 +394,8 @@ class RegisteredToolDB(Base):
     status: Mapped[str] = mapped_column(String(16), default="active")
     version: Mapped[str] = mapped_column(String(16), default="v1.0.0")
     endpoint: Mapped[str] = mapped_column(String(256), default="")
+    method: Mapped[str] = mapped_column(String(8), default="GET")
+    headers: Mapped[str] = mapped_column(Text, default="{}")
     parameters: Mapped[str] = mapped_column(Text, default='{"type":"object","properties":{}}')
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
@@ -429,17 +432,38 @@ class RegisteredSkillDB(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     category: Mapped[str] = mapped_column(String(32), nullable=False)
-    description: Mapped[str] = mapped_column(Text, default="")
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    author: Mapped[str | None] = mapped_column(String(64), nullable=True)
     version: Mapped[str] = mapped_column(String(16), default="v1.0.0")
-    status: Mapped[str] = mapped_column(String(16), default="installed")
-    author: Mapped[str] = mapped_column(String(64), default="admin")
-    instructions: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(16), default="active")
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    tool_names: Mapped[dict] = mapped_column(JSON, default=list)
-    output_constraint: Mapped[str] = mapped_column(Text, default="")
-    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
+    tool_names: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    output_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+
+class VersionDB(Base):
+    __tablename__ = "versions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    resource_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    resource_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    version_num: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        Index("ix_versions_resource", "resource_type", "resource_id"),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -21,7 +21,7 @@ const LOG_LEVELS: { value: LogLevel; label: string; icon: typeof Info }[] = [
 ];
 
 const MODULES: LogModule[] = ['all', 'agent', 'prompt', 'tool', 'mcp', 'skill', 'team', 'system'];
-const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: 'Agent', prompt: '提示词', tool: '工具', mcp: 'MCP', skill: 'Skills', team: '团队', system: '系统' };
+const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: t('logs.module_agent'), prompt: t('logs.module_prompt'), tool: t('logs.module_tool'), mcp: t('logs.module_mcp'), skill: t('logs.module_skill'), team: t('logs.module_team'), system: t('logs.module_system') };
 const LEVEL_CLASS: Record<string, string> = { info: 'wsta-tag-indigo', warn: 'wsta-tag-amber', error: 'wsta-tag-red' };
 
 function LogAudit() {

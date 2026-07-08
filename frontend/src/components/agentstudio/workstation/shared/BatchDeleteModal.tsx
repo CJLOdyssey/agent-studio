@@ -13,7 +13,7 @@ export default function BatchDeleteModal({ count, label = 'Agent', onConfirm, on
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content wsta-modal wsta-modal-sm" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{t('workstation.batchDelete')}</h3>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>

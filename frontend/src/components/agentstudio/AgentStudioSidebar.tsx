@@ -313,7 +313,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       onClick={() => startEditTeam(team)}
                     >
                       <Pencil size={14} />
-                      <span>重命名</span>
+                      <span>{t('workstation.rename')}</span>
                     </button>
                     <button
                       className="agentstudio-team-dropdown-item"
@@ -333,7 +333,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       }}
                     >
                       <Trash2 size={14} />
-                      <span>删除</span>
+                      <span>{t('workstation.delete')}</span>
                     </button>
                   </div>,
                   document.body,

@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
+
 import { useState, useEffect, useRef } from 'react';
 import { X, Wrench, Server, Sparkles } from 'lucide-react';
 import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/agentstudio';
 import { useItemList } from '../../../hooks/useItemList';
+import { useAutoSave } from '../../../hooks/useAutoSave';
 import { SystemPromptTab } from './tabs/SystemPromptTab';
 import { OutputConstraintTab } from './tabs/OutputConstraintTab';
 import { ToolsTab } from './tabs/ToolsTab';
@@ -27,15 +30,16 @@ const PRESET_TOOLS: Omit<AgentTool, 'enabled'>[] = [];
 const PRESET_MCP: Omit<AgentMCP, 'enabled'>[] = [];
 const PRESET_SKILLS: Omit<AgentSkill, 'enabled'>[] = [];
 
-const TABS = [
-  { key: 'system', label: '提示词', icon: null },
-  { key: 'output', label: '约束', icon: null },
-  { key: 'tools', label: '工具', icon: Wrench },
-  { key: 'mcp', label: 'MCP', icon: Server },
-  { key: 'skills', label: 'Skills', icon: Sparkles },
-] as const;
-
 export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
+  const { t } = useTranslation();
+
+  const TABS = [
+    { key: 'system', label: t('workstation.prompt'), icon: null as React.ComponentType<{ size?: number }> | null },
+    { key: 'output', label: t('workstation.output'), icon: null },
+    { key: 'tools', label: t('workstation.tools'), icon: Wrench },
+    { key: 'mcp', label: 'MCP', icon: Server },
+    { key: 'skills', label: 'Skills', icon: Sparkles },
+  ] as const;
   const modalRef = useRef<HTMLDivElement>(null);
   const systemRef = useRef<HTMLTextAreaElement>(null);
   const outputRef = useRef<HTMLTextAreaElement>(null);
@@ -82,6 +86,8 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const [role, setRole] = useState(agent.role);
   const [systemPrompt, setSystemPrompt] = useState(agent.systemPrompt || '');
   const [outputConstraints, setOutputConstraints] = useState(agent.outputConstraints || '');
+  useAutoSave('agentstudio:agent:systemPrompt', systemPrompt);
+  useAutoSave('agentstudio:agent:outputConstraints', outputConstraints);
   const [activeTab, setActiveTab] = useState('system');
   const [pickerTab, setPickerTab] = useState<string | null>(null);
   const [pickerItems, setPickerItems] = useState<Record<string, PickerItem[]>>({});
@@ -103,19 +109,19 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   useEffect(() => {
     let cancelled = false;
     promptAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, system: items.map(p => ({ id: p.id, name: p.name, description: p.content.length > 120 ? p.content.slice(0, 120) + '…' : p.content, source: '提示词管理' } as PickerItem))}));
+      if (!cancelled) setPickerItems(prev => ({...prev, system: items.map(p => ({ id: p.id, name: p.name, description: p.content.length > 120 ? p.content.slice(0, 120) + '…' : p.content, source: t('workstation.promptMgmt') } as PickerItem))}));
     }).catch(() => {});
     outputAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, output: items.map(o => ({ id: o.id, name: o.name, description: o.content, source: '输出约束' } as PickerItem))}));
+      if (!cancelled) setPickerItems(prev => ({...prev, output: items.map(o => ({ id: o.id, name: o.name, description: o.content, source: t('workstation.outputMgmt') } as PickerItem))}));
     }).catch(() => {});
     toolAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, tools: items.map(t => ({id: t.id, name: t.name, description: t.description || '', source: '工具管理'}))}));
+      if (!cancelled) setPickerItems(prev => ({...prev, tools: items.map(tool => ({id: tool.id, name: tool.name, description: tool.description || '', source: t('workstation.toolMgmt')}))}));
     }).catch(e => console.error('AgentConfigModal: tool fetch failed', e));
     mcpAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, mcp: items.map(m => ({id: m.id, name: m.name, description: m.description || '', source: 'MCP管理'}))}));
+      if (!cancelled) setPickerItems(prev => ({...prev, mcp: items.map(m => ({id: m.id, name: m.name, description: m.description || '', source: t('workstation.mcpMgmt')}))}));
     }).catch(e => console.error('AgentConfigModal: mcp fetch failed', e));
     skillAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, skills: items.map(s => ({id: s.id, name: s.name, description: s.description || '', source: 'Skills管理'}))}));
+      if (!cancelled) setPickerItems(prev => ({...prev, skills: items.map(s => ({id: s.id, name: s.name, description: s.description || '', source: t('workstation.skillMgmt')}))}));
     }).catch(e => console.error('AgentConfigModal: skill fetch failed', e));
     return () => { cancelled = true; };
   }, []);
@@ -159,7 +165,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   function saveFormItem(kind: 'tool' | 'mcp' | 'skill') {
     const f = form.forms[kind];
     if (!('name' in f.data) || !(f.data as { name: string }).name.trim()) {
-      form.setFormErrors(kind, ['名称不能为空']);
+      form.setFormErrors(kind, [t('workstation.nameRequired')]);
       return;
     }
     const data = f.data as Record<string, string>;
@@ -347,7 +353,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
               <agent.icon size={20} className={agent.color} />
             </div>
             <div>
-              <h3 className="agent-config-title">配置 Agent</h3>
+              <h3 className="agent-config-title">{t('workstation.agentManage')}</h3>
               <p className="agent-config-subtitle">
                 设置 <strong>{agent.name}</strong> 的能力和行为
               </p>
@@ -360,14 +366,14 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
 
         <div className="agent-config-fields">
           <div className="agent-config-field">
-            <label className="form-label">Agent 名称</label>
+            <label className="form-label">{t('workstation.agentName')}</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="form-input" />
           </div>
           <div className="agent-config-field">
-            <label className="form-label">Agent 描述</label>
+            <label className="form-label">{t('workstation.agentDesc')}</label>
             <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="form-input" />
           </div>
-          <p className="form-hint">简短描述该 Agent 的职责和专业领域</p>
+          <p className="form-hint">{t('workstation.agentPlaceholder')}</p>
         </div>
 
         <div className="agent-config-tabs">
@@ -388,8 +394,8 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={onClose}>取消</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>保存配置</button>
+          <button className="btn btn-ghost" onClick={onClose}>{t('workstation.cancel')}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
         </div>
       </div>
 

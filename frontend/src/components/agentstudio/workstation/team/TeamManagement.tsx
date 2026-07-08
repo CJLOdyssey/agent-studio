@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, UserCog, Trash2, X, Users, RefreshCw } from 'lucide-react';
 import { useTeamData } from './useTeamData';
 import { useTeamUI } from './useTeamUI';
 import { TEAM_STATUS_LABEL } from './team.constants';
-import { MOCK_TEAM_VERSIONS } from './mock-data';
 import TeamFormModal from './TeamFormModal';
+import TeamMemberManager from './TeamMemberManager';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
 import VersionHistoryModal from '../shared/VersionHistoryModal';
@@ -13,14 +14,16 @@ import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
+import type { TeamEntry } from './team.types';
 
 const CATEGORY_CLASS: Record<string, string> = { dev: 'wsta-tag-indigo', ops: 'wsta-tag-green', test: 'wsta-tag-amber' };
-const CATEGORY_LABEL: Record<string, string> = { dev: '开发', ops: '运维', test: '测试' };
+const CATEGORY_LABEL: Record<string, string> = { dev: t('team.category_dev'), ops: t('team.category_ops'), test: t('team.category_test') };
 
 export default function TeamManagement() {
   const data = useTeamData();
   const ui = useTeamUI();
   const { toast } = useToast();
+  const [memberMgmtTeam, setMemberMgmtTeam] = useState<TeamEntry | null>(null);
 
   function handleSaveWrapper() { ui.save(data); if (ui.formErrors.length === 0) toast(ui.editingItem ? t('team.toast_updated') : t('team.toast_created'), 'success'); }
   function handleDeleteWrapper() { ui.confirmDelete(data); toast(t('team.toast_deleted'), 'success'); }
@@ -36,9 +39,18 @@ export default function TeamManagement() {
         <div className="wsta-toolbar-left" style={{ flexWrap: 'wrap' }}>
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('team.search_placeholder')} value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
           <Select style={{ width: 120 }} value={data.categoryFilter} onChange={(v) => data.setCategoryFilter(v)}
-            options={[{ value: 'all', label: '全部分类' }, { value: 'dev', label: '开发' }, { value: 'ops', label: '运维' }, { value: 'test', label: '测试' }]} />
+            options={[
+              { value: 'all', label: t('team.all_category') },
+              { value: 'dev', label: t('team.category_dev') },
+              { value: 'ops', label: t('team.category_ops') },
+              { value: 'test', label: t('team.category_test') },
+            ]} />
           <Select style={{ width: 120 }} value={data.statusFilter} onChange={(v) => data.setStatusFilter(v)}
-            options={[{ value: 'all', label: '全部状态' }, { value: 'active', label: '活跃' }, { value: 'inactive', label: '已停用' }]} />
+            options={[
+              { value: 'all', label: t('team.all_status') },
+              { value: 'active', label: t('team.status_active') },
+              { value: 'inactive', label: t('team.status_inactive') },
+            ]} />
         </div>
         <div className="wsta-toolbar-right">
           {data.selectedIds.size > 0 && (
@@ -60,12 +72,12 @@ export default function TeamManagement() {
         <table className="wsta-table" role="grid" aria-label={t('team.col_name')}>
           <thead><tr>
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('team.select_all')} /></th>
-            <th scope="col">名称</th>
-            <th scope="col">成员数</th>
-            <th scope="col">分类</th>
-            <th scope="col">状态</th>
-            <th scope="col">创建时间</th>
-            <th className="wsta-col-actions" scope="col">操作</th>
+            <th scope="col">{t('workstation.name')}</th>
+            <th scope="col">{t('workstation.memberCount')}</th>
+            <th scope="col">{t('workstation.category')}</th>
+            <th scope="col">{t('workstation.status')}</th>
+            <th scope="col">{t('workstation.createdAt')}</th>
+            <th className="wsta-col-actions" scope="col">{t('workstation.actions')}</th>
           </tr></thead>
           <tbody>
             {data.paged.map((item) => (
@@ -83,11 +95,11 @@ export default function TeamManagement() {
                 <td><span className="wsta-mono-text">{item.createdAt}</span></td>
                 <td className="wsta-col-actions">
                   <Dropdown menu={{ items: [
-                    { key: 'edit', icon: <Edit3 size={14} />, label: '编辑', onClick: () => ui.openEdit(item) },
-                    { key: 'view', icon: <Eye size={14} />, label: '查看详情', onClick: () => ui.openHistory(item) },
-                    { key: 'members', icon: <UserCog size={14} />, label: '管理成员', onClick: () => ui.openEdit(item) },
+                    { key: 'edit', icon: <Edit3 size={14} />, label: t('team.edit'), onClick: () => ui.openEdit(item) },
+                    { key: 'view', icon: <Eye size={14} />, label: t('team.history'), onClick: () => ui.openHistory(item) },
+                    { key: 'members', icon: <UserCog size={14} />, label: t('team.manage_members'), onClick: () => setMemberMgmtTeam(item) },
                     { type: 'divider' },
-                    { key: 'delete', icon: <Trash2 size={14} />, label: '删除', danger: true, onClick: () => ui.openDelete(item) },
+                    { key: 'delete', icon: <Trash2 size={14} />, label: t('team.delete'), danger: true, onClick: () => ui.openDelete(item) },
                   ] }} trigger={['click']}>
                     <button className="wsta-action-btn"><MoreHorizontal size={14} /></button>
                   </Dropdown>
@@ -107,7 +119,8 @@ export default function TeamManagement() {
       {ui.isFormOpen && <TeamFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSaveWrapper} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingItem?.name || ''} label={t('team.delete')} onConfirm={handleDeleteWrapper} onClose={ui.closeDelete} />}
       {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} onConfirm={handleBatchDeleteWrapper} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} versions={MOCK_TEAM_VERSIONS[ui.historyItem.id] || []} onClose={ui.closeHistory} />}
+      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} resourceType="team" resourceId={ui.historyItem.id} onClose={ui.closeHistory} />}
+      {memberMgmtTeam && <TeamMemberManager team={memberMgmtTeam} onClose={() => setMemberMgmtTeam(null)} />}
     </div>
     </ErrorBoundary>
   );

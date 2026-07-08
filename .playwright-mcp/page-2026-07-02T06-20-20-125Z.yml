@@ -1,0 +1,6 @@
+- generic [active] [ref=f3e1]:
+  - link "跳到主内容" [ref=f3e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f3e3]:
+    - generic "Loading page" [ref=f3e4]: Loading...
+    - status

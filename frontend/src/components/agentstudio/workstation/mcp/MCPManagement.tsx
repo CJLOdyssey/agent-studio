@@ -1,10 +1,10 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Server } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, Play, Trash2, Server } from 'lucide-react';
+import { useState } from 'react';
 import { useMCPData } from './useMCPData';
 import { useMCPUI } from './useMCPUI';
 import { MCP_STATUS_LABEL } from './mcp.constants';
-import { MOCK_MCP_VERSIONS } from './mock-data';
 import MCPFormModal from './MCPFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -19,6 +19,21 @@ export default function MCPManagement() {
   const data = useMCPData();
   const ui = useMCPUI();
   const { toast } = useToast();
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  async function handleTestMCP(id: string) {
+    setTestingId(id);
+    try {
+      const res = await fetch(`/api/mcps/${id}/test`, { method: 'POST' });
+      const data = await res.json();
+      toast(data.success ? `✅ ${data.message} (${data.duration_ms}ms)` : `❌ ${data.message}`, data.success ? 'success' : 'error');
+    } catch (err) {
+      toast('❌ 测试请求失败', 'error');
+    } finally {
+      setTestingId(null);
+    }
+  }
+
 
   function handleSave() { ui.save(data); if (!ui.formErrors.length) toast(ui.editingItem ? t('mcp.toast_updated') : t('mcp.toast_created'), 'success'); }
   function handleDelete() { ui.confirmDelete(data); toast(t('mcp.toast_deleted'), 'success'); }
@@ -30,7 +45,8 @@ export default function MCPManagement() {
   function makeMenuItems(item: typeof data.processed[0]): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('mcp.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <Eye size={14} />, label: t('mcp.col_name') },
+      { key: 'view', icon: <Eye size={14} />, label: t('mcp.history'), onClick: () => ui.openHistory(item) },
+      { key: 'test', icon: <Play size={14} />, label: testingId ? t('mcp.testing') : t('mcp.test'), disabled: testingId === item.id, onClick: () => handleTestMCP(item.id) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('mcp.delete'), onClick: () => ui.openDelete(item), danger: true },
     ];
@@ -69,7 +85,7 @@ export default function MCPManagement() {
             <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('mcp.select_all')} /></th>
             <th scope="col">{t('mcp.col_name')}</th>
             <th scope="col">{t('mcp.col_address')}</th>
-            <th scope="col">工具数</th>
+            <th scope="col">{t('mcp.col_tool_count')}</th>
             <th scope="col">{t('mcp.col_status')}</th>
             <th className="wsta-col-actions" scope="col">{t('mcp.col_actions')}</th>
           </tr></thead>
@@ -108,7 +124,7 @@ export default function MCPManagement() {
       {ui.isFormOpen && <MCPFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSave} onClose={ui.closeForm} errors={ui.formErrors} />}
       {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingItem?.name || ''} label="MCP" onConfirm={handleDelete} onClose={ui.closeDelete} />}
       {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} label="MCP" onConfirm={handleBatchDelete} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} versions={MOCK_MCP_VERSIONS[ui.historyItem.id] || []} onClose={ui.closeHistory} />}
+      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} resourceType="mcp" resourceId={ui.historyItem.id} onClose={ui.closeHistory} />}
     </div>
     </ErrorBoundary>
   );

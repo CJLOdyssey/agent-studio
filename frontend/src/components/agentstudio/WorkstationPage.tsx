@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText, Settings } from 'lucide-react';
+import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText } from 'lucide-react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import AgentManagement from './workstation/agent/AgentManagement';
 import { PromptManagement } from './workstation/prompt';
@@ -10,7 +10,6 @@ import SkillManagement from './workstation/skill/SkillManagement';
 import TeamManagement from './workstation/team/TeamManagement';
 import MonitorCenter from './workstation/monitor/MonitorCenter';
 import LogAudit from './workstation/logs/LogAudit';
-import SystemSettings from './workstation/settings/SystemSettings';
 import { RefreshCw } from 'lucide-react';
 
 function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -23,7 +22,7 @@ function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
   );
 }
 
-type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'monitor' | 'logs' | 'settings';
+type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'monitor' | 'logs';
 
 interface NavTab {
   id: WorkstationTab;
@@ -54,13 +53,12 @@ const navGroups: { label: string; tabs: NavTab[] }[] = [
     tabs: [
       { id: 'monitor', label: '监控中心', icon: BarChart3 },
       { id: 'logs', label: '日志审计', icon: FileText },
-      { id: 'settings', label: '系统设置', icon: Settings },
     ],
   },
 ];
 
 export default function WorkstationPage() {
-  const [activeTab, setActiveTab] = useState<WorkstationTab>('agents');
+  const [activeTab, setActiveTab] = useState<WorkstationTab>('teams');
 
   return (
     <div style={{ display: 'flex', flex: 1, flexDirection: 'row', minHeight: 0 }}>
@@ -109,7 +107,6 @@ export default function WorkstationPage() {
           {activeTab === 'teams' && <TeamManagement />}
           {activeTab === 'monitor' && <MonitorCenter />}
           {activeTab === 'logs' && <LogAudit />}
-          {activeTab === 'settings' && <SystemSettings />}
         </ErrorBoundary>
       </main>
     </div>

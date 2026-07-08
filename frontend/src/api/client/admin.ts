@@ -28,3 +28,14 @@ export async function fetchCommandLogs(limit = 50, offset = 0): Promise<LogEntry
   const resp = await client.get('/api/admin/logs', { params: { limit, offset } });
   return resp.data;
 }
+
+export interface SystemHealth {
+  status: string;
+  database: string;
+  redis: string;
+}
+
+export async function fetchSystemHealth(): Promise<SystemHealth> {
+  const resp = await client.get('/api/health');
+  return resp.data;
+}

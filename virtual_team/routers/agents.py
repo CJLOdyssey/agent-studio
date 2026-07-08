@@ -15,6 +15,7 @@ from virtual_team.repository import (
     get_agent_configs,
     update_agent_config,
 )
+from virtual_team.repository.versions import create_version
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents"])
@@ -138,10 +139,38 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
             temperature=req.temperature,
             owner_id=current_user.id,
         )
+        await _snapshot_agent(created.id, current_user)
         return {"id": created.id, "status": "created"}
     except Exception as e:
         logger.error("Error creating agent: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+async def _snapshot_agent(agent_id: str, current_user: CurrentUser):
+    """Create a version snapshot after agent save. Runs in background."""
+    try:
+        from virtual_team.database import get_session_factory
+
+        agent = await get_agent_config(agent_id)
+        if not agent:
+            return
+        snapshot = {
+            "name": agent.name,
+            "role_identifier": agent.role_identifier,
+            "system_prompt": agent.system_prompt,
+            "output_constraints": agent.output_constraints,
+            "model": agent.model,
+            "is_active": agent.is_active,
+            "order": agent.order,
+        }
+        factory = get_session_factory()
+        async with factory() as session:
+            await create_version(
+                session, "agent", agent_id, snapshot, current_user.id
+            )
+            await session.commit()
+    except Exception:
+        logger.warning("Version snapshot failed for agent %s", agent_id, exc_info=True)
 
 
 @router.put("/api/agents/{agent_id}")
@@ -169,6 +198,7 @@ async def edit_agent(
     )
     if not updated:
         raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    await _snapshot_agent(updated.id, current_user)
     return {"id": updated.id, "status": "updated"}
 
 
@@ -204,3 +234,69 @@ async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
     if not updated:
         raise HTTPException(status_code=404, detail="Agent not found")
     return {"id": updated.id, "is_active": updated.is_active}
+
+
+class AgentTestResult(BaseModel):
+    success: bool
+    message: str
+    duration_ms: int = 0
+
+
+@router.post("/api/agents/{agent_id}/test")
+async def test_agent(agent_id: str):
+    """Test an agent config by running a single LLM call with its settings."""
+    import time
+    from virtual_team.repository.agents import get_agent_config
+
+    agent = await get_agent_config(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    start = time.monotonic()
+    try:
+        import httpx
+
+        from virtual_team.config import load_config
+        from virtual_team.repository.keys import get_default_api_key
+
+        cfg = load_config()
+        effective_model = agent.model or cfg.model
+        key_cfg = await get_default_api_key("system")
+        if not key_cfg:
+            return AgentTestResult(
+                success=False, message="No API key configured", duration_ms=0
+            )
+
+        base_url = (key_cfg.get("base_url") or "https://api.deepseek.com").rstrip("/")
+        url = f"{base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {key_cfg['api_key']}",
+            "Content-Type": "application/json",
+        }
+        body = {
+            "model": effective_model,
+            "messages": [
+                {"role": "system", "content": agent.system_prompt or "You are a helpful assistant."},
+                {"role": "user", "content": "Hello, respond with 'OK' if you are working."},
+            ],
+            "max_tokens": 10,
+            "stream": False,
+        }
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            resp = await client.post(url, json=body, headers=headers)
+            dur = int((time.monotonic() - start) * 1000)
+            if resp.status_code == 200:
+                return AgentTestResult(
+                    success=True,
+                    message=f"LLM responded ({effective_model})",
+                    duration_ms=dur,
+                )
+            return AgentTestResult(
+                success=False,
+                message=f"HTTP {resp.status_code}: {resp.text[:200]}",
+                duration_ms=dur,
+            )
+    except Exception as e:
+        dur = int((time.monotonic() - start) * 1000)
+        return AgentTestResult(success=False, message=str(e), duration_ms=dur)
