@@ -1,9 +1,22 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import zh from './locales/zh-CN.json';
-import en from './locales/en-US.json';
+
+import commonZh from './locales/zh-CN/common.json';
+import sidebarZh from './locales/zh-CN/sidebar.json';
+import chatZh from './locales/zh-CN/chat.json';
+import workstationZh from './locales/zh-CN/workstation.json';
+
+import commonEn from './locales/en-US/common.json';
+import sidebarEn from './locales/en-US/sidebar.json';
+import chatEn from './locales/en-US/chat.json';
+import workstationEn from './locales/en-US/workstation.json';
+
+const zh = { ...commonZh, ...sidebarZh, ...chatZh, ...workstationZh };
+const en = { ...commonEn, ...sidebarEn, ...chatEn, ...workstationEn };
 
 const saved = typeof window !== 'undefined' ? localStorage.getItem('language') : null;
+const legacyMap: Record<string, string> = { en: 'en-US' };
+const lang = saved ? (legacyMap[saved] || saved) : 'zh-CN';
 
 const LANG_TO_HTML: Record<string, string> = {
   'zh-CN': 'zh-CN',
@@ -15,7 +28,7 @@ i18n.use(initReactI18next).init({
     'zh-CN': { translation: zh },
     'en-US': { translation: en },
   },
-  lng: saved || 'zh-CN',
+  lng: lang,
   fallbackLng: 'zh-CN',
   interpolation: {
     escapeValue: false,
@@ -24,7 +37,6 @@ i18n.use(initReactI18next).init({
   },
 });
 
-// Sync HTML lang attribute on init
 if (typeof document !== 'undefined') {
   document.documentElement.lang = LANG_TO_HTML[i18n.language] || i18n.language;
 }
@@ -32,7 +44,6 @@ if (typeof document !== 'undefined') {
 export function changeLanguage(lng: string) {
   localStorage.setItem('language', lng);
   i18n.changeLanguage(lng);
-  // Dynamically update HTML lang for SEO and screen readers
   if (typeof document !== 'undefined') {
     document.documentElement.lang = LANG_TO_HTML[lng] || lng;
   }

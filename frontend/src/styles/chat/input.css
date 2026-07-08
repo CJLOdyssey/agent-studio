@@ -35,7 +35,7 @@
   field-sizing: content;
   resize: none;
   outline: none;
-  font-size: 16px;
+  font-size: var(--da-font-size-lg);
   font-weight: 400;
   color: var(--da-text-primary);
   line-height: 1.5;

@@ -13,7 +13,7 @@
 
 .workstation-modal.ant-modal .ant-modal-title {
   color: var(--da-text-primary);
-  font-size: 15px;
+  font-size: var(--da-font-size-base);
   font-weight: 600;
 }
 
@@ -67,7 +67,7 @@
 }
 
 .workstation-modal.ant-modal .ant-pro-card .ant-pro-card-title {
-  font-size: 18px;
+  font-size: var(--da-font-size-xl);
   font-weight: 600;
   color: var(--da-text-primary);
 }
@@ -75,7 +75,7 @@
 .workstation-modal.ant-modal .ant-table {
   background: transparent;
   color: var(--da-text-primary);
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
 }
 
 .workstation-modal.ant-modal .ant-table table {
@@ -87,7 +87,7 @@
   background: var(--da-bg-card);
   color: var(--da-text-muted);
   border-bottom: 1px solid var(--da-border-subtle);
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -213,7 +213,7 @@
 
 .ant-pagination-item a {
   color: var(--da-text-secondary) !important;
-  font-size: 13px !important;
+  font-size: var(--da-font-size-sm) !important;
   font-weight: 500 !important;
 }
 
@@ -256,7 +256,7 @@
 .ant-pagination-prev button,
 .ant-pagination-next button {
   color: inherit !important;
-  font-size: 16px !important;
+  font-size: var(--da-font-size-lg) !important;
   font-weight: 600 !important;
 }
 
@@ -286,7 +286,7 @@
   border: 1px solid var(--da-border) !important;
   background: var(--da-bg-surface) !important;
   color: var(--da-text-muted) !important;
-  font-size: 14px !important;
+  font-size: var(--da-font-size-base) !important;
   letter-spacing: 2px !important;
 }
 
@@ -301,7 +301,7 @@
 }
 
 .ant-pagination-options-quick-jumper {
-  font-size: 13px !important;
+  font-size: var(--da-font-size-sm) !important;
   color: var(--da-text-muted) !important;
   margin-left: 8px !important;
 }
@@ -311,7 +311,7 @@
   border-color: var(--da-border) !important;
   border-radius: 6px !important;
   color: var(--da-text-primary) !important;
-  font-size: 13px !important;
+  font-size: var(--da-font-size-sm) !important;
   width: 48px !important;
   height: 32px !important;
   padding: 0 8px !important;
@@ -329,7 +329,7 @@
 }
 
 .ant-pagination-total-text {
-  font-size: 13px !important;
+  font-size: var(--da-font-size-sm) !important;
   color: var(--da-text-muted) !important;
   font-family: 'JetBrains Mono', monospace !important;
   margin-right: 12px !important;
@@ -377,9 +377,8 @@
 .workstation-modal.ant-modal .ant-modal-content {
   width: 100%;
   max-width: 1400px;
-  height: min(900px, 90vh);
+  height: 700px;
   background: var(--da-bg-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   display: flex;
   overflow: hidden;
@@ -421,7 +420,7 @@
   border-radius: 8px;
   color: var(--da-text-secondary);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   transition: all 0.15s ease;
   border: none;
   background: transparent;
@@ -462,7 +461,7 @@
   border: 1px solid var(--da-border);
   border-radius: 8px;
   color: var(--da-text-primary);
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   outline: none;
   transition: all 0.15s ease;
   flex: 0 1 220px;
@@ -484,7 +483,7 @@
   border: 1px solid var(--da-border);
   border-radius: 8px;
   color: var(--da-text-primary);
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   outline: none;
   cursor: pointer;
 }
@@ -493,7 +492,7 @@
   height: 36px;
   padding: 0 16px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -520,7 +519,7 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
   line-height: 1.3;
 }
@@ -554,19 +553,19 @@
   align-items: center;
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
   white-space: nowrap;
 }
 
 .workstation-modal.ant-modal .ws-category-accent {
   background: color-mix(in srgb, var(--da-accent) 12%, transparent);
-  color: color-mix(in srgb, var(--da-accent) 80%, #fff);
+  color: var(--da-text-on-accent);
 }
 
 .workstation-modal.ant-modal .ws-category-dev {
   background: color-mix(in srgb, var(--da-accent) 12%, transparent);
-  color: color-mix(in srgb, var(--da-accent) 80%, #fff);
+  color: var(--da-text-on-accent);
 }
 
 .workstation-modal.ant-modal .ws-category-ops {
@@ -575,28 +574,28 @@
 }
 
 .workstation-modal.ant-modal .ws-category-data {
-  background: color-mix(in srgb, #3b82f6 12%, transparent);
-  color: #3b82f6;
+  background: color-mix(in srgb, var(--da-accent) 12%, transparent);
+  color: var(--da-accent);
 }
 
 .workstation-modal.ant-modal .ws-category-security {
-  background: color-mix(in srgb, #ef4444 12%, transparent);
-  color: #ef4444;
+  background: color-mix(in srgb, var(--da-accent-red) 12%, transparent);
+  color: var(--da-accent-red);
 }
 
 .workstation-modal.ant-modal .ws-category-product {
-  background: color-mix(in srgb, #8b5cf6 12%, transparent);
-  color: #8b5cf6;
+  background: color-mix(in srgb, var(--da-accent-purple) 12%, transparent);
+  color: var(--da-accent-purple);
 }
 
 .workstation-modal.ant-modal .ws-category-management {
-  background: color-mix(in srgb, #f59e0b 12%, transparent);
-  color: #f59e0b;
+  background: color-mix(in srgb, var(--da-accent-amber) 12%, transparent);
+  color: var(--da-accent-amber);
 }
 
 /* ── Version tag ── */
 .workstation-modal.ant-modal .ws-version-tag {
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   font-family: var(--font-mono);
 }
@@ -650,7 +649,7 @@
   background: none;
   border: none;
   color: var(--da-text-secondary);
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   cursor: pointer;
   transition: all 0.1s ease;
   text-align: left;
@@ -694,7 +693,7 @@
   height: 36px !important;
   line-height: 36px !important;
   margin: 0 !important;
-  font-size: 13px !important;
+  font-size: var(--da-font-size-sm) !important;
   color: var(--da-text-secondary) !important;
   border-radius: 0 !important;
 }
@@ -726,7 +725,7 @@
 
 .workstation-modal.ant-modal .ant-badge-status-text {
   color: var(--da-text-primary);
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
 }
 
 /* ── Table row spacing ── */

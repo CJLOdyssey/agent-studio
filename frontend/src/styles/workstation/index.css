@@ -1,0 +1,22 @@
+/* ── Workstation Styles ──
+ *    Cohesive CSS entry point: Antd overrides → layout → UI components → modules
+ *    SRP: each @import owns one visual concern
+ *    High cohesion: related styles grouped, low coupling: single import point
+ * ────────────────────────────────────────── */
+
+/* 1. Ant Design overrides (modal, table, button, badge) */
+@import '../workstation.css';
+
+/* 2. Core layout + table + toolbar (wsta-* structural) */
+@import '../workstation-layout.css';
+@import '../workstation-table.css';
+@import '../workstation-toolbar.css';
+
+/* 3. Interactive UI components (modal forms, dropdowns) */
+@import '../workstation-modal.css';
+@import '../workstation-dropdown.css';
+
+/* 4. Module-specific styles (monitor, settings) + responsive */
+@import '../workstation-monitor.css';
+@import '../workstation-settings.css';
+@import '../workstation-responsive.css';

@@ -1,6 +1,6 @@
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, X, Bot, RefreshCw, Settings2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Input, Select, Button, Dropdown, Pagination } from 'antd';
+import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAgentManagement } from './useAgentManagement';
 import { STATUS_LABEL } from './agent.constants';
@@ -8,6 +8,7 @@ import { MOCK_VERSIONS, MOCK_AGENT_PROMPTS, MOCK_AGENT_TOOLS, MOCK_AGENT_MCPS, M
 import AgentFormModal from './AgentFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
+import WstaPagination from '../shared/WstaPagination';
 import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
@@ -123,9 +124,12 @@ export default function AgentManagement() {
         )}
       </div>
 
-      <div className="wsta-footer" style={{ justifyContent: 'flex-end' }}>
-        <Pagination size="small" showSizeChanger={false} current={mgmt.page} total={mgmt.processed.length} pageSize={5} onChange={(p) => mgmt.setPage(p)} />
-      </div>
+      <WstaPagination
+        current={mgmt.page}
+        total={mgmt.processed.length}
+        pageSize={5}
+        onChange={(p) => mgmt.setPage(p)}
+      />
 
       {mgmt.isFormOpen && mgmt.editingAgent && (
         <AgentFormModal key="edit" editingAgent={mgmt.editingAgent} formData={mgmt.formData} setFormData={mgmt.setFormData} onSave={handleSaveWrapper} onClose={() => mgmt.setIsFormOpen(false)} formErrors={mgmt.formErrors} availablePrompts={availPrompts} availableTools={availTools} availableMCPs={availMCPs} availableSkills={availSkills} />

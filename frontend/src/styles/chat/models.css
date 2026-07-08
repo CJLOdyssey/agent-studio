@@ -12,7 +12,7 @@
   border-radius: 6px;
   padding: 4px 24px 4px 8px;
   color: var(--da-text-secondary);
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-family: inherit;
   cursor: pointer;
   outline: none;
@@ -59,7 +59,7 @@
   border-radius: 6px;
   background: transparent;
   color: var(--da-text-secondary);
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-family: inherit;
   cursor: pointer;
   transition:
@@ -149,7 +149,7 @@
 }
 
 .agentstudio-command-active-name {
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   font-weight: 500;
   color: var(--da-accent-indigo);
   max-width: 100px;
@@ -279,7 +279,7 @@
   background: color-mix(in srgb, var(--da-accent-indigo) 8%, var(--da-overlay-bg));
   border: 3px dashed var(--da-accent-indigo);
   z-index: 900;
-  font-size: 20px;
+  font-size: var(--da-font-size-xl);
   font-weight: 700;
   color: var(--da-accent-indigo);
   pointer-events: none;

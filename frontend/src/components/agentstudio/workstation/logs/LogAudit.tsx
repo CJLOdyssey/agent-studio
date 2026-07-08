@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Input, Select, Pagination } from 'antd';
+import { Input, Select } from 'antd';
 import { Search, FileText, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 import { PAGE_SIZE } from '../constants';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
@@ -7,6 +7,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { MOCK_LOGS } from './mock-data';
 import { fetchCommandLogs } from '../../../../api/client/admin';
 import { t } from './locales';
+import WstaPagination from '../shared/WstaPagination';
 
 type LogLevel = 'info' | 'warn' | 'error';
 type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' | 'system';
@@ -110,9 +111,12 @@ function LogAudit() {
         )}
       </div>
 
-      <div className="wsta-footer" style={{ justifyContent: 'flex-end' }}>
-        <Pagination size="small" showSizeChanger={false} current={page} total={processed.length} pageSize={PAGE_SIZE} onChange={(p) => setPage(p)} />
-      </div>
+      <WstaPagination
+        current={page}
+        total={processed.length}
+        pageSize={PAGE_SIZE}
+        onChange={(p) => setPage(p)}
+      />
     </div>
     </ErrorBoundary>
   );
