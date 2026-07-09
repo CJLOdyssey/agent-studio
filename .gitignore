@@ -15,7 +15,5 @@ frontend/dist/
 .checkpoints.db
 .test_checkpoints_integration.db
 .sisyphus/
-.obsidian/
 scripts/deploy_prod.py
 scripts/ask_credentials.py
-prototypes/

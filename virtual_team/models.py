@@ -150,7 +150,6 @@ class MessageItem(BaseModel):
     role: str
     agent_name: str
     content: str
-    thinking: str | None = None
     round_number: int = 1
     created_at: str | None = None
 

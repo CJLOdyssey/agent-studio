@@ -1,10 +1,8 @@
-import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { X } from 'lucide-react';
 import type { ToolEntry, ToolFormData } from './tool.types';
 import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
 import { useModelOptions } from '../constants';
 import { t } from './locales';
-import { testTool, type ToolTestResult } from '../../../../api/client/tools';
 
 interface Props {
   editingItem: ToolEntry | null;
@@ -17,26 +15,6 @@ interface Props {
 
 export default function ToolFormModal({ editingItem, formData, setFormData, onSave, onClose, errors }: Props) {
   const modelOptions = useModelOptions();
-  const [testLoading, setTestLoading] = useState(false);
-  const [testResult, setTestResult] = useState<ToolTestResult | null>(null);
-
-  const handleTest = async () => {
-    if (!editingItem) {
-      setTestResult({ success: false, status_code: null, duration_ms: 0, message: t('tool.test_no_endpoint'), body: null });
-      return;
-    }
-    setTestLoading(true);
-    setTestResult(null);
-    try {
-      const result = await testTool(editingItem.id);
-      setTestResult(result);
-    } catch {
-      setTestResult({ success: false, status_code: null, duration_ms: 0, message: 'Request failed', body: null });
-    } finally {
-      setTestLoading(false);
-    }
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content wsta-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
@@ -86,23 +64,7 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
           </div>
           <div className="wsta-form-group">
             <label className="wsta-label">{t('tool.form_endpoint')}</label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input className="wsta-input" style={{ flex: 1 }} value={formData.endpoint} onChange={(e) => setFormData((f) => ({ ...f, endpoint: e.target.value }))} placeholder={t('tool.form_endpoint_placeholder')} />
-              <button
-                className="btn btn-secondary"
-                style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, height: 36, padding: '0 12px', flexShrink: 0 }}
-                onClick={handleTest}
-                disabled={testLoading || !formData.endpoint}
-              >
-                {testLoading ? <Loader2 size={14} className="spin" /> : testResult?.success ? <CheckCircle size={14} /> : testResult ? <XCircle size={14} /> : null}
-                {testLoading ? t('tool.testing') : testResult ? `${testResult.status_code ?? 'ERR'}` : t('tool.test')}
-              </button>
-            </div>
-            {testResult && (
-              <div style={{ fontSize: 12, marginTop: 4, color: testResult.success ? 'var(--color-success, #22c55e)' : 'var(--color-danger, #ef4444)' }}>
-                {testResult.message}{testResult.duration_ms > 0 ? ` — ${testResult.duration_ms}ms` : ''}
-              </div>
-            )}
+            <input className="wsta-input" value={formData.endpoint} onChange={(e) => setFormData((f) => ({ ...f, endpoint: e.target.value }))} placeholder={t('tool.form_endpoint_placeholder')} />
           </div>
           <div className="wsta-form-group">
             <label className="wsta-label">{t('tool.form_parameters')}</label>

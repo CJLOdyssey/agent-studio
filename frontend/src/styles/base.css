@@ -12,7 +12,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: var(--da-font-size-base);
+  font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -96,7 +96,7 @@ a:hover {
   background: var(--accent);
   color: var(--da-text-on-accent);
   border-radius: 0 0 6px 6px;
-  font-size: var(--da-font-size-base);
+  font-size: 14px;
   text-decoration: none;
 }
 .skip-link:focus {
@@ -131,7 +131,4 @@ a:hover {
   to {
     transform: rotate(360deg);
   }
-}
-.spin {
-  animation: spin 1s linear infinite;
 }

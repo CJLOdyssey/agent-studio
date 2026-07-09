@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Globe, Info } from 'lucide-react';
+import { User, Globe, Bell, Save, Code, Keyboard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { changeLanguage } from '../../../i18n/index';
@@ -10,10 +10,17 @@ interface Props {
   onClose: () => void;
 }
 
-type SettingsTab = 'general' | 'about';
+type SettingsTab = 'general' | 'editor' | 'shortcuts' | 'account' | 'notifications';
 
-const VERSION = '1.0.0';
-const BUILD_TIME = '2026-05-08';
+const shortcuts = [
+  { keys: 'Ctrl/Cmd + N', descKey: 'shortcuts.newChat' },
+  { keys: 'Ctrl/Cmd + ,', descKey: 'shortcuts.settings' },
+  { keys: 'Enter', descKey: 'shortcuts.send' },
+  { keys: 'Shift + Enter', descKey: 'shortcuts.newline' },
+  { keys: 'Escape', descKey: 'shortcuts.close' },
+  { keys: 'Ctrl/Cmd + Z', descKey: 'shortcuts.undo' },
+  { keys: 'Ctrl/Cmd + S', descKey: 'shortcuts.save' },
+];
 
 export default function SettingsModal({ onClose }: Props) {
   const { t, i18n } = useTranslation();
@@ -28,6 +35,12 @@ export default function SettingsModal({ onClose }: Props) {
     }
   }, [settings.fontSize]);
 
+  const [username, setUsername] = useState('User 1001');
+  const [email, setEmail] = useState('user@example.com');
+  const [messageNotif, setMessageNotif] = useState(true);
+  const [taskNotif, setTaskNotif] = useState(true);
+  const [emailNotif, setEmailNotif] = useState(false);
+
   return (
     <Modal
       title={t('settings.title')}
@@ -39,6 +52,7 @@ export default function SettingsModal({ onClose }: Props) {
             {t('settings.cancel')}
           </button>
           <button className="btn btn-primary" onClick={onClose}>
+            <Save size={14} />
             {t('settings.save')}
           </button>
         </>
@@ -49,7 +63,10 @@ export default function SettingsModal({ onClose }: Props) {
           {(
             [
               ['general', Globe],
-              ['about', Info],
+              ['editor', Code],
+              ['shortcuts', Keyboard],
+              ['account', User],
+              ['notifications', Bell],
             ] as const
           ).map(([tab, Icon]) => (
             <button
@@ -67,33 +84,45 @@ export default function SettingsModal({ onClose }: Props) {
           {activeTab === 'general' && (
             <div className="settings-section">
               <h4>{t('settings.general')}</h4>
-
               <div className="settings-item">
                 <div className="settings-item-info">
                   <label>{t('settings.language')}</label>
                   <span className="settings-item-desc">{t('settings.languageDesc')}</span>
                 </div>
                 <select
-                  className="settings-select"
                   value={i18n.language}
                   onChange={(e) => changeLanguage(e.target.value)}
+                  className="settings-select"
                 >
-                  <option value="zh-CN">中文</option>
+                  <option value="zh-CN">简体中文</option>
                   <option value="en-US">English</option>
                 </select>
               </div>
-
-              <div className="settings-divider"></div>
-              <h4>{t('settings.appearance')}</h4>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.timezone', '时区')}</label>
+                  <span className="settings-item-desc">{t('settings.timezoneDesc', '选择系统时区')}</span>
+                </div>
+                <select
+                  value={settings.timezone}
+                  onChange={(e) => updateSettings({ timezone: e.target.value })}
+                  className="settings-select"
+                >
+                  <option value="Asia/Shanghai">北京时间 (UTC+8)</option>
+                  <option value="Asia/Tokyo">东京 (UTC+9)</option>
+                  <option value="Europe/London">伦敦 (UTC+0)</option>
+                  <option value="America/New_York">纽约 (UTC-5)</option>
+                </select>
+              </div>
               <div className="settings-item">
                 <div className="settings-item-info">
                   <label>{t('settings.theme')}</label>
                   <span className="settings-item-desc">{t('settings.themeDesc')}</span>
                 </div>
                 <select
-                  className="settings-select"
                   value={settings.theme}
-                  onChange={(e) => updateSettings({ theme: e.target.value as any })}
+                  onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
+                  className="settings-select"
                 >
                   <option value="dark">{t('settings.dark')}</option>
                   <option value="light">{t('settings.light')}</option>
@@ -106,42 +135,53 @@ export default function SettingsModal({ onClose }: Props) {
                   <span className="settings-item-desc">{t('settings.fontSizeDesc')}</span>
                 </div>
                 <div className="settings-range-wrapper">
+                  <span className="settings-range-label">12</span>
                   <input
                     ref={rangeRef}
                     type="range"
-                    min="12"
-                    max="16"
-                    step="1"
+                    min={12}
+                    max={16}
+                    step={1}
                     value={settings.fontSize}
                     onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
+                    onInput={(e) => {
+                      e.currentTarget.style.setProperty('--pct', ((+e.currentTarget.value - 12) / 4) * 100 + '%');
+                    }}
                     className="settings-range"
                   />
+                  <span className="settings-range-label">16</span>
                   <span className="settings-range-value">{settings.fontSize}px</span>
                 </div>
               </div>
-
-              <div className="settings-divider"></div>
-              <h4>AI Chat</h4>
               <div className="settings-item">
                 <div className="settings-item-info">
                   <label>{t('settings.sendMode')}</label>
                   <span className="settings-item-desc">{t('settings.sendModeDesc')}</span>
                 </div>
                 <select
-                  className="settings-select"
                   value={settings.sendMode}
-                  onChange={(e) => updateSettings({ sendMode: e.target.value as any })}
+                  onChange={(e) => updateSettings({ sendMode: e.target.value as 'enter' | 'ctrl-enter' })}
+                  className="settings-select"
                 >
-                  <option value="enter">{t('settings.enterSend')}</option>
-                  <option value="ctrlEnter">Ctrl + Enter</option>
+                  <option value="enter">{t('settings.enter')}</option>
+                  <option value="ctrl-enter">{t('settings.ctrlEnter')}</option>
                 </select>
               </div>
+              <div className="settings-divider"></div>
+              <h4>{t('settings.aiChat')}</h4>
               <div className="settings-item">
                 <div className="settings-item-info">
                   <label>{t('settings.autoSave')}</label>
                   <span className="settings-item-desc">{t('settings.autoSaveDesc')}</span>
                 </div>
                 <ToggleSwitch checked={settings.autoSave} onChange={(v) => updateSettings({ autoSave: v })} />
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.autoComplete')}</label>
+                  <span className="settings-item-desc">{t('settings.autoCompleteDesc')}</span>
+                </div>
+                <ToggleSwitch checked={settings.autoComplete} onChange={(v) => updateSettings({ autoComplete: v })} />
               </div>
               <div className="settings-item">
                 <div className="settings-item-info">
@@ -153,90 +193,176 @@ export default function SettingsModal({ onClose }: Props) {
             </div>
           )}
 
-          {activeTab === 'about' && (
+          {activeTab === 'editor' && (
             <div className="settings-section">
-              <h4>{t('settings.about')}</h4>
-              <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0, padding: 0, border: 'none' }}>
-
-                {/* App identity */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '24px 20px', width: '100%',
-                  background: 'color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 3%)',
-                  border: '1px solid var(--da-border-subtle)',
-                  borderRadius: 10, marginBottom: 16,
-                }}>
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 14,
-                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--da-accent-indigo) 40%, transparent), color-mix(in srgb, var(--da-accent-indigo) 10%, transparent))',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--da-accent-indigo)', flexShrink: 0,
-                    boxShadow: '0 2px 8px color-mix(in srgb, var(--da-accent-indigo) 20%, transparent)',
-                  }}>
-                    <Info size={24} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 18, fontWeight: 650, color: 'var(--da-text-primary)', letterSpacing: '-0.02em' }}>
-                      AgentStudio
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        padding: '2px 8px', borderRadius: 4,
-                        background: 'color-mix(in srgb, var(--da-accent-indigo) 12%, transparent)',
-                        color: 'var(--da-accent-indigo)',
-                        fontSize: 11, fontWeight: 500,
-                      }}>
-                        v {VERSION}
-                      </span>
-                      <span style={{ fontSize: 11, color: 'var(--da-text-muted)' }}>
-                        {BUILD_TIME}
-                      </span>
-                    </div>
-                  </div>
+              <h4>{t('settings.editor')}</h4>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.editorFontSize')}</label>
+                  <span className="settings-item-desc">{t('settings.editorFontSizeDesc')}</span>
                 </div>
-
-                {/* Info grid */}
-                <div style={{
-                  display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1,
-                  width: '100%', background: 'var(--da-border-subtle)',
-                  border: '1px solid var(--da-border-subtle)', borderRadius: 10, overflow: 'hidden',
-                }}>
-                  {[
-                    { label: 'Version', value: VERSION },
-                    { label: 'Build', value: BUILD_TIME },
-                    { label: 'Frontend', value: 'React 18 + Vite 6' },
-                    { label: 'Backend', value: 'FastAPI + Python 3.12' },
-                    { label: 'License', value: 'MIT' },
-                    { label: 'Repository', value: 'GitHub', link: 'https://github.com/CJLOdyssey/virtual-software-team' },
-                  ].map((row) => (
-                    <div key={row.label} style={{
-                      padding: '12px 16px',
-                      background: 'var(--da-bg-surface)',
-                      fontSize: 'var(--da-font-size-sm)',
-                      display: 'flex', flexDirection: 'column', gap: 2,
-                    }}>
-                      <span style={{ color: 'var(--da-text-muted)', fontSize: 11 }}>{row.label}</span>
-                      {row.link ? (
-                        <a href={row.link} target="_blank" rel="noopener noreferrer"
-                          style={{ color: 'var(--da-accent-indigo)', textDecoration: 'none', fontWeight: 500 }}>
-                          {row.value} ↗
-                        </a>
-                      ) : (
-                        <span style={{ color: 'var(--da-text-primary)', fontWeight: 450 }}>{row.value}</span>
-                      )}
-                    </div>
+                <select
+                  value={settings.editorFontSize}
+                  onChange={(e) => updateSettings({ editorFontSize: Number(e.target.value) })}
+                  className="settings-select"
+                >
+                  {[11, 12, 13, 14, 15, 16, 18, 20].map((v) => (
+                    <option key={v} value={v}>
+                      {v}px
+                    </option>
                   ))}
+                </select>
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.tabSize')}</label>
+                  <span className="settings-item-desc">{t('settings.tabSizeDesc')}</span>
                 </div>
+                <select
+                  value={settings.tabSize}
+                  onChange={(e) => updateSettings({ tabSize: Number(e.target.value) })}
+                  className="settings-select"
+                >
+                  <option value="2">{t('settings.tab2')}</option>
+                  <option value="4">{t('settings.tab4')}</option>
+                </select>
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.wordWrap')}</label>
+                  <span className="settings-item-desc">{t('settings.wordWrapDesc')}</span>
+                </div>
+                <ToggleSwitch checked={settings.wordWrap} onChange={(v) => updateSettings({ wordWrap: v })} />
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.lineNumber')}</label>
+                  <span className="settings-item-desc">{t('settings.lineNumberDesc')}</span>
+                </div>
+                <ToggleSwitch checked={settings.lineNumber} onChange={(v) => updateSettings({ lineNumber: v })} />
+              </div>
+            </div>
+          )}
 
-                {/* Footer note */}
-                <div style={{
-                  width: '100%', marginTop: 16,
-                  fontSize: 11, color: 'var(--da-text-muted)', textAlign: 'center',
-                  lineHeight: 1.6, opacity: 0.7,
-                }}>
-                  AI Agent 协作系统 — 基于 LangGraph 多智能体编排
+          {activeTab === 'shortcuts' && (
+            <div className="settings-section">
+              <h4>{t('settings.shortcuts')}</h4>
+              <p className="settings-item-desc" style={{ marginBottom: 16 }}>
+                {t('settings.shortcutsDesc')}
+              </p>
+              {shortcuts.map((s) => (
+                <div key={s.keys} className="settings-item">
+                  <span style={{ fontSize: 'var(--da-font-size-sm)', color: 'var(--da-text-primary)' }}>
+                    {t(s.descKey)}
+                  </span>
+                  <kbd className="shortcut-key">{s.keys}</kbd>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'account' && (
+            <div className="settings-section">
+              <h4>{t('settings.profile')}</h4>
+              <div className="settings-profile">
+                <div className="settings-avatar">
+                  <User size={32} />
+                </div>
+                <div className="settings-profile-info">
+                  <span className="settings-profile-name">{username}</span>
+                  <span className="settings-profile-role">{t('settings.userRole')}</span>
+                </div>
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.username')}</label>
+                  <span className="settings-item-desc">{t('settings.usernameDesc')}</span>
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="settings-input"
+                />
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.email')}</label>
+                  <span className="settings-item-desc">{t('settings.emailDesc')}</span>
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="settings-input"
+                />
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.changePassword')}</label>
+                  <span className="settings-item-desc">{t('settings.changePasswordDesc')}</span>
+                </div>
+                <button className="btn btn-sm btn-secondary" onClick={() => {}}>
+                  {t('settings.changePassword')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <div className="settings-section">
+              <h4>{t('settings.notificationTitle')}</h4>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.sound')}</label>
+                  <span className="settings-item-desc">{t('settings.soundDesc')}</span>
+                </div>
+                <ToggleSwitch checked={settings.soundEnabled} onChange={(v) => updateSettings({ soundEnabled: v })} />
+              </div>
+              <div className="settings-divider"></div>
+              <h4>{t('settings.messageNotif')}</h4>
+              {[
+                {
+                  label: t('settings.newMessage'),
+                  desc: t('settings.newMessageDesc'),
+                  val: messageNotif,
+                  set: setMessageNotif,
+                },
+                {
+                  label: t('settings.taskReminder'),
+                  desc: t('settings.taskReminderDesc'),
+                  val: taskNotif,
+                  set: setTaskNotif,
+                },
+                { label: t('settings.mention'), desc: t('settings.mentionDesc'), val: true, set: () => {} },
+              ].map(({ label, desc, val, set }) => (
+                <div className="settings-item" key={label}>
+                  <div className="settings-item-info">
+                    <label>{label}</label>
+                    <span className="settings-item-desc">{desc}</span>
+                  </div>
+                  <ToggleSwitch checked={val} onChange={set} />
+                </div>
+              ))}
+              <div className="settings-divider"></div>
+              <h4>{t('settings.emailNotif')}</h4>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.emailNotif')}</label>
+                  <span className="settings-item-desc">{t('settings.emailNotifDesc')}</span>
+                </div>
+                <ToggleSwitch checked={emailNotif} onChange={setEmailNotif} />
+              </div>
+              <div className="settings-item">
+                <div className="settings-item-info">
+                  <label>{t('settings.digestFreq')}</label>
+                  <span className="settings-item-desc">{t('settings.digestFreqDesc')}</span>
+                </div>
+                <select value={'daily'} onChange={() => {}} className="settings-select">
+                  <option value="never">{t('settings.never')}</option>
+                  <option value="daily">{t('settings.daily')}</option>
+                  <option value="weekly">{t('settings.weekly')}</option>
+                </select>
               </div>
             </div>
           )}

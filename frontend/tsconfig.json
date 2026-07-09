@@ -17,11 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "esModuleInterop": true
   },
   "include": ["src"],
   "exclude": ["src/**/__tests__", "src/**/*.test.ts", "src/**/*.test.tsx"]

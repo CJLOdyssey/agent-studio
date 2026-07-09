@@ -5,7 +5,7 @@ import contextlib
 import json
 import logging
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from virtual_team.broker import celery_app, publish_run_message
 from virtual_team.config import load_config
@@ -78,7 +78,6 @@ async def _run_agent_pipeline(
     api_key: str | None = None,
     api_base: str | None = None,
     model: str | None = None,
-    user_id: str = 'system',
 ) -> dict:
     await update_run_status(run_id, "running")
     cfg = load_config()
@@ -88,12 +87,6 @@ async def _run_agent_pipeline(
 
     system_prompt = ""
     ac = None
-    if not agent_id:
-        from virtual_team.repository.agents import get_agent_configs
-        configs = await get_agent_configs()
-        active = [c for c in configs if c.is_active]
-        if active:
-            agent_id = active[0].id
     if agent_id:
         try:
             ac = await get_agent_config(agent_id)
@@ -121,7 +114,7 @@ async def _run_agent_pipeline(
             pass
 
     # ── Short-term memory: collect previous conversation messages ──
-    chat_history: list[BaseMessage] = []
+    chat_history: list[HumanMessage | AIMessage] = []
     if session_id:
         try:
             prev_msgs = await get_session_messages(session_id, exclude_run_id=run_id)
@@ -133,35 +126,9 @@ async def _run_agent_pipeline(
         except Exception:
             logger.warning("Failed to load chat history for session %s", session_id)
 
-    from virtual_team.agent_graph import DEFAULT_TOOLS, SingleAgentGraph, ToolConfig
+    from virtual_team.agent_graph import SingleAgentGraph, ToolConfig
     from virtual_team.checkpoint import create_checkpointer_async
     from virtual_team.repository import get_mcps, get_prompts, get_skills, get_tools
-
-    if not system_prompt:
-        [t.name for t in DEFAULT_TOOLS]
-        system_prompt = (
-            "你是一个 AI 助手。可以调用以下工具:\n"
-            + "\n".join(f"- {t.name}: {t.description}" for t in DEFAULT_TOOLS)
-            + "\n\n当用户请求搜索或获取最新信息时，必须使用 web_search 工具。\n"
-            "当需要计算时，使用 calculator 工具。\n\n"
-            "【重要】你的思考过程会以思考树形式展示给用户。\n"
-            "你的思考内容和你最终给出的回答有严格区分，请遵循以下规则：\n"
-            "\n"
-            "## 思考区规则（只出现在思考树中）\n"
-            "1. 思考内容保持简洁和抽象。只描述你要做什么以及为什么。\n"
-            "2. **不要在思考中复述搜索结果的全部内容、完整列表或详细数据。**\n"
-            "   简要提及「发现了X条相关结果」即可，具体内容留给最终回答。\n"
-            "3. 分析结果时，只说你打算怎么做，不需要在思考里构建回答的完整结构。\n"
-            "4. 每次调用工具前，简要说明目的。每次工具返回后，简要评估结果。\n"
-            "\n"
-            "## 最终回答区规则（只出现在对话中）\n"
-            "5. 所有详细内容、完整列表、具体数据只放在最终回答中。\n"
-            "6. **在给出最终回答之前，务必先以一段简短的总结性思考结束推理过程。**\n"
-            "   最后一段思考只需一句话总结（如「根据搜索结果，可以整理出以下要点」），\n"
-            "   不要列出具体内容。不要以工具调用作为最后一步。\n"
-            "7. 如果已经收集到足够的信息来回答用户，就不需要再调用更多工具。\n"
-            "   只有在真正需要时才调用工具。"
-        )
 
     checkpointer = await create_checkpointer_async()
     emitter = StreamEmitter(run_id)
@@ -172,11 +139,9 @@ async def _run_agent_pipeline(
         checkpointer=checkpointer,
     )
 
-    # Start with default tools, merge agent-specific tools on top
-    tool_configs: list[ToolConfig] = list(DEFAULT_TOOLS)
-
     # ── Bind agent tools / MCP / skills to the graph ──
     if agent_id and ac:
+        tool_configs: list[ToolConfig] = []
         for item in json.loads(ac.tools) if isinstance(ac.tools, str) else (ac.tools or []):
             if not item.get("enabled", True):
                 continue
@@ -197,9 +162,6 @@ async def _run_agent_pipeline(
                         if match
                         else (item.get("description") or name),
                         parameters=raw_params,
-                        endpoint=match.get("endpoint", "") if match else "",
-                        method=match.get("method", "GET") if match else "GET",
-                        headers=match.get("headers", "{}") if match else "{}",
                     )
                 )
         for item in json.loads(ac.mcp) if isinstance(ac.mcp, str) else (ac.mcp or []):
@@ -259,91 +221,66 @@ async def _run_agent_pipeline(
                         instructions=composed,
                     )
                 )
-    if tool_configs:
-        graph.bind_tools(tool_configs)
-    try:
-        result = await graph.run(
-            system_prompt=system_prompt,
-            user_input=requirement,
-            thread_id=run_id,
-            session_context=session_context,
-            chat_history=chat_history if chat_history else None,
-            stream_callback=emitter,
-        )
+        if tool_configs:
+            graph.bind_tools(tool_configs)
+    result = await graph.run(
+        system_prompt=system_prompt,
+        user_input=requirement,
+        thread_id=run_id,
+        session_context=session_context,
+        chat_history=chat_history if chat_history else None,
+        stream_callback=emitter,
+    )
 
-        # ── Log usage immediately after graph.run() ──
+    response = result.get("response", "")
+    tool_calls = result.get("tool_calls", [])
+    review_summary = (
+        f"Agent completed successfully with {result.get('message_count', 0)} messages "
+        f"and {len(tool_calls)} tool call(s)."
+    )
+
+    await update_run_result(
+        run_id=run_id,
+        pm_document="",
+        code=response,
+        review=review_summary,
+        approved=True,
+        status="converged",
+    )
+    await publish_run_message(
+        run_id,
+        {
+            "type": "result",
+            "status": "completed",
+            "approved": True,
+            "pm_document": "",
+            "code": response,
+            "review": review_summary,
+        },
+    )
+
+    if session_id:
         try:
-            usage = getattr(graph, '_last_usage', {}) or {}
-            print(f"[USAGE] run={run_id} model={effective_model} usage={usage}", flush=True)
-            from virtual_team.repository.keys import log_key_usage as _log_usage
-            await _log_usage(
-                key_id=None,
-                user_id=user_id,
-                run_id=run_id,
-                provider=effective_model.split('/')[0] if '/' in effective_model else effective_model,
-                model=effective_model,
-                tokens_prompt=usage.get('prompt_tokens', 0) or 0,
-                tokens_completion=usage.get('completion_tokens', 0) or 0,
-                duration_ms=0,
-            )
-        except Exception as e:
-            logger.warning("[USAGE] logging failed for run %s: %s", run_id, e)
+            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
+            from virtual_team.rag import ingest_session_messages
 
-        response = result.get("response", "")
-        tool_calls = result.get("tool_calls", [])
-        review_summary = (
-            f"Agent completed successfully with {result.get('message_count', 0)} messages "
-            f"and {len(tool_calls)} tool call(s)."
-        )
+            messages = await get_run_messages(run_id)
+            if messages:
+                msg_dicts = [
+                    {"content": m.content, "role": m.role, "agent_name": m.agent_name}
+                    for m in messages
+                ]
+                await ingest_session_messages(session_id, run_id, msg_dicts)
+        except Exception:
+            logger.exception("RAG/memory save failed for run %s", run_id)
 
-        await update_run_result(
-            run_id=run_id,
-            pm_document="",
-            code=response,
-            review=review_summary,
-            approved=True,
-            status="converged",
-        )
-        await publish_run_message(
-            run_id,
-            {
-                "type": "result",
-                "status": "completed",
-                "approved": True,
-                "pm_document": "",
-                "code": response,
-                "review": review_summary,
-            },
-        )
-
-        if session_id:
-            try:
-                await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
-                from virtual_team.rag import ingest_session_messages
-
-                messages = await get_run_messages(run_id)
-                if messages:
-                    msg_dicts = [
-                        {"content": m.content, "role": m.role, "agent_name": m.agent_name}
-                        for m in messages
-                    ]
-                    await ingest_session_messages(session_id, run_id, msg_dicts)
-            except Exception:
-                logger.exception("RAG/memory save failed for run %s", run_id)
-
-        logger.info(
-            "Agent completed | run=%s | msgs=%d | tools=%d",
-            run_id,
-            result.get("message_count", 0),
-            len(tool_calls),
-        )
-        return {"run_id": run_id, "status": "completed"}
-    finally:
-        import gc
-        del graph
-        del checkpointer
-        del emitter
-        gc.collect()
+    logger.info(
+        "Agent completed | run=%s | msgs=%d | tools=%d",
+        run_id,
+        result.get("message_count", 0),
+        len(tool_calls),
+    )
+    return {"run_id": run_id, "status": "completed"}
 
 
 @celery_app.task(bind=True, max_retries=2, default_retry_delay=5)

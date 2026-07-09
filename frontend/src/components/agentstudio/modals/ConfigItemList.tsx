@@ -1,7 +1,6 @@
 import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-
-import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface ListItem {
@@ -29,7 +28,6 @@ interface Props<T extends ListItem> {
 }
 
 function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRename: () => void; onDelete: () => void }) {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -52,14 +50,14 @@ function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRenam
         <div className="agentstudio-team-dropdown agentstudio-portal-dropdown" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
           {onEdit && (
             <button className="agentstudio-team-dropdown-item" onClick={() => { onEdit(); setOpen(false); }}>
-              <Pencil size={14} /><span>{t('workstation.edit')}</span>
+              <Pencil size={14} /><span>编辑</span>
             </button>
           )}
           <button className="agentstudio-team-dropdown-item" onClick={() => { onRename(); setOpen(false); }}>
-            <Pencil size={14} /><span>{t('workstation.rename')}</span>
+            <Pencil size={14} /><span>重命名</span>
           </button>
           <button className="agentstudio-team-dropdown-item danger" onClick={() => { onDelete(); setOpen(false); }}>
-            <Trash2 size={14} /><span>{t('workstation.delete')}</span>
+            <Trash2 size={14} /><span>删除</span>
           </button>
         </div>,
         document.body,

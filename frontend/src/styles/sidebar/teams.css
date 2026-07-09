@@ -1,59 +1,31 @@
-.agentstudio-sidebar-section-header {
+.agentstudio-teams-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px 6px 0;
-  min-height: 28px;
+  flex-direction: column;
+  gap: var(--sp-1);
 }
 
-.agentstudio-sidebar-section-label {
+.agentstudio-team {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--da-font-size-xs);
-  font-weight: 600;
-  color: var(--da-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  flex-direction: column;
 }
 
-.agentstudio-sidebar-section-action {
-  background: transparent;
-  border: none;
-  padding: 4px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--da-text-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.5;
-}
-
-.agentstudio-sidebar-section-action:hover {
-  background: var(--da-bg-hover);
-  color: var(--da-accent-indigo);
-  opacity: 1;
-}
-
+/* Team Folder Styles */
 .agentstudio-team-folder {
-  margin-bottom: 1px;
-  border-radius: 6px;
-  overflow: visible;
+  margin-bottom: 2px; /* 更紧凑的垂直间距 */
+  border-radius: 8px;
+  overflow: visible !important;
 }
 
 .agentstudio-team-folder-header {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 32px 6px 6px;
+  align-items: center; /* 垂直居中对齐 */
+  gap: var(--sp-2);
+  padding: 10px 12px; /* 统一高度 */
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
   background: transparent;
   position: relative;
-  min-height: 32px;
-  border-radius: 6px;
+  min-height: 40px; /* 固定最小高度确保对齐 */
 }
 
 .agentstudio-team-folder-header:hover {
@@ -63,24 +35,22 @@
 .agentstudio-team-toggle {
   background: transparent;
   border: none;
-  padding: 2px;
+  padding: 4px; /* 调整点击区域 */
   border-radius: 4px;
   cursor: pointer;
   color: var(--da-text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  opacity: 0.6;
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
 }
 
 .agentstudio-team-toggle:hover {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
-  opacity: 1;
 }
 
 .agentstudio-team-toggle svg {
@@ -88,14 +58,6 @@
 }
 
 .agentstudio-team-toggle svg.collapsed {
-  transform: rotate(-90deg);
-}
-
-.chevron-icon {
-  transition: transform 0.2s ease;
-}
-
-.chevron-icon.collapsed {
   transform: rotate(-90deg);
 }
 
@@ -108,49 +70,79 @@
   white-space: nowrap;
   flex: 1;
   min-width: 0;
-  line-height: 1;
-  letter-spacing: -0.01em;
+  line-height: 24px; /* 与按钮高度对齐 */
 }
 
 .agentstudio-team-count {
-  font-size: 10px;
+  font-size: 11px; /* 稍大一点更清晰 */
+  background: var(--da-bg-secondary);
   color: var(--da-text-muted);
+  padding: 2px 8px;
+  border-radius: 10px;
   flex-shrink: 0;
-  font-weight: 400;
-  opacity: 0.5;
-  min-width: 12px;
-  text-align: right;
+  font-weight: 500;
+  min-height: 20px; /* 固定高度确保对齐 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.agentstudio-team-pin {
-  color: var(--da-accent-amber);
+.agentstudio-team-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  opacity: 0;
+  transition: opacity 0.15s ease;
   flex-shrink: 0;
-  margin-right: -2px;
 }
 
-.agentstudio-team-menu-btn {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+.agentstudio-team-folder-header:hover .agentstudio-team-actions {
+  opacity: 1;
+}
+
+.agentstudio-team-action-btn {
   background: transparent;
   border: none;
-  padding: 3px;
+  padding: var(--sp-1);
   border-radius: 4px;
   cursor: pointer;
   color: var(--da-text-muted);
-  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
+}
+
+.agentstudio-team-action-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.agentstudio-team-action-btn:hover svg path {
+  stroke: var(--da-text-primary);
+}
+
+/* Team Menu Button */
+.agentstudio-team-menu-btn {
+  background: transparent;
+  border: none;
+  padding: 4px; /* 统一内边距 */
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  opacity: 0.8;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
 }
 
 .agentstudio-team-folder-header:hover .agentstudio-team-menu-btn {
-  opacity: 0.6;
+  opacity: 1;
 }
 
 .agentstudio-team-menu-btn:hover {
@@ -159,204 +151,393 @@
   opacity: 1;
 }
 
+/* Agent Menu Button */
+.agentstudio-agent-menu-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  opacity: 0.8;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agentstudio-team-agent-item-wrapper:hover .agentstudio-agent-menu-btn {
+  opacity: 1;
+}
+
+.agentstudio-agent-menu-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Team Pin Icon */
+.agentstudio-team-pin {
+  color: var(--da-accent-amber);
+  flex-shrink: 0;
+  margin-left: -4px;
+}
+
+/* Team Dropdown Menu */
+.agentstudio-team-folder > .agentstudio-team-folder-header {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important; /* 确保垂直居中 */
+  gap: var(--sp-2) !important;
+  padding: 10px 12px !important; /* 统一内边距 */
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  background: transparent !important;
+  width: auto !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: var(--da-text-primary) !important;
+  font-size: 14px !important;
+  text-align: left !important;
+  min-height: 40px !important; /* 固定最小高度 */
+}
+
+.agentstudio-team-folder > .agentstudio-team-folder-header:hover {
+  background: var(--da-bg-hover) !important;
+}
+
+.agentstudio-team-dropdown {
+  background: var(--da-bg-secondary);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  padding: var(--sp-1);
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+}
+
+.agentstudio-team-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+}
+
+.agentstudio-team-dropdown-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-team-dropdown-item.danger {
+  color: var(--da-accent-red);
+}
+
+.agentstudio-team-dropdown-item.danger:hover {
+  background: color-mix(in srgb, var(--da-accent-red) 10%, transparent);
+}
+
 .agentstudio-team-edit {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
   min-width: 0;
 }
 
 .agentstudio-team-edit-input {
-  width: 100%;
-  padding: 3px 6px;
-  border: 1px solid var(--da-accent-indigo);
-  border-radius: 4px;
+  background: var(--da-bg-secondary);
   font-size: var(--da-font-size-sm);
   font-weight: 500;
   color: var(--da-text-primary);
-  background: transparent;
+  border: 1px solid var(--da-accent-indigo);
+  border-radius: 6px;
+  padding: var(--sp-1) var(--sp-2);
   outline: none;
-  font-family: inherit;
+  flex: 1;
+  min-width: 0;
 }
 
+.agentstudio-team-edit-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
+}
+
+.agentstudio-team-edit-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.agentstudio-team-edit-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Agent Edit */
+.agentstudio-agent-edit {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.agentstudio-agent-edit-input {
+  background: var(--da-bg-secondary);
+  font-size: var(--da-font-size-sm);
+  font-weight: 400;
+  color: var(--da-text-primary);
+  border: 1px solid var(--da-accent-indigo);
+  border-radius: 6px;
+  padding: var(--sp-1) var(--sp-2);
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.agentstudio-agent-edit-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
+}
+
+.agentstudio-agent-edit-btn {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.agentstudio-agent-edit-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Team Agents */
 .agentstudio-team-agents {
-  padding: 1px 0;
-  margin-left: 28px;
+  padding: var(--sp-1) 0;
+  margin-left: 20px; /* 统一缩进距离 */
 }
 
 .agentstudio-team-agent-item-wrapper {
   position: relative;
-  padding: 0 4px;
-  display: flex;
-  align-items: center;
+  padding: 0 8px; /* 统一内边距 */
 }
 
 .agentstudio-team-agent-item {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
+  align-items: center; /* 垂直居中对齐 */
+  gap: var(--sp-3);
+  padding: 8px 10px; /* 统一内边距和高度 */
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
   border: none;
   background: transparent;
   width: 100%;
-  min-height: 30px;
-  color: var(--da-text-secondary);
-  font-size: var(--da-font-size-sm);
-  text-align: left;
+  min-height: 36px; /* 固定最小高度确保对齐 */
 }
 
 .agentstudio-team-agent-item:hover {
   background: var(--da-bg-hover);
-  color: var(--da-text-primary);
 }
 
 .agentstudio-team-agent-item.active {
-  background: color-mix(in srgb, var(--da-accent-indigo) 10%, transparent);
+  background: color-mix(in srgb, var(--da-accent-indigo) 12%, transparent);
+}
+
+.agentstudio-team-agent-item.active .agent-dot {
   color: var(--da-accent-indigo);
-}
-
-.agentstudio-team-agent-item.agentstudio-add-agent {
-  color: var(--da-text-muted);
-  font-weight: 400;
-}
-
-.agentstudio-team-agent-item.agentstudio-add-agent:hover {
-  color: var(--da-text-primary);
-}
-
-.agentstudio-team-agent-item span {
-  font-size: var(--da-font-size-sm);
-  font-weight: 400;
-  color: inherit;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-  line-height: 1;
-  letter-spacing: -0.01em;
 }
 
 .agentstudio-team-agent-item.active span {
   color: var(--da-accent-indigo);
 }
 
+.agentstudio-team-agent-item.agentstudio-add-agent {
+  color: var(--da-text-primary);
+}
+
+.agentstudio-team-agent-item.agentstudio-add-agent:hover {
+  color: var(--da-text-primary);
+}
+
+.agent-dot {
+  width: 24px; /* 固定宽度 */
+  height: 24px; /* 固定高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.agentstudio-team-agent-item span {
+  font-size: var(--da-font-size-sm);
+  font-weight: 400;
+  color: var(--da-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  line-height: 24px; /* 与图标高度对齐 */
+}
+
 .agentstudio-agent-menu-btn {
   position: absolute;
-  right: 4px;
+  right: var(--sp-2);
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
   border: none;
-  padding: 3px;
+  padding: var(--sp-1);
   border-radius: 4px;
   cursor: pointer;
   color: var(--da-text-muted);
   opacity: 0;
   transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
 }
 
 .agentstudio-team-agent-item-wrapper:hover .agentstudio-agent-menu-btn {
-  opacity: 0.5;
-}
-
-.agentstudio-team-agent-item-wrapper:hover .agentstudio-agent-menu-btn:hover {
-  background: var(--da-bg-hover);
-  color: var(--da-text-primary);
   opacity: 1;
 }
 
-.agentstudio-agent-edit {
-  flex: 1;
-  min-width: 0;
-}
-
-.agentstudio-agent-edit-input {
-  width: 100%;
-  padding: 3px 6px;
-  border: 1px solid var(--da-accent-indigo);
-  border-radius: 4px;
-  font-size: var(--da-font-size-sm);
+.agentstudio-agent-menu-btn:hover {
+  background: var(--da-bg-hover);
   color: var(--da-text-primary);
-  background: transparent;
-  outline: none;
-  font-family: inherit;
 }
 
-.agentstudio-team-dropdown,
 .agentstudio-agent-dropdown {
-  background: var(--da-bg-card);
+  background: var(--da-bg-secondary);
   border: 1px solid var(--da-border);
   border-radius: 8px;
-  padding: 4px;
+  padding: var(--sp-1);
   min-width: 140px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  animation: slideUp 0.12s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.agentstudio-team-dropdown-item,
 .agentstudio-agent-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background 0.15s ease;
   border: none;
   background: transparent;
   width: 100%;
   font-size: var(--da-font-size-sm);
-  color: var(--da-text-secondary);
-  text-align: left;
-}
-
-.agentstudio-team-dropdown-item:hover,
-.agentstudio-agent-dropdown-item:hover {
-  background: var(--da-bg-hover);
   color: var(--da-text-primary);
 }
 
-.agentstudio-team-dropdown-item.danger,
+.agentstudio-agent-dropdown-item:hover {
+  background: var(--da-bg-hover);
+}
+
 .agentstudio-agent-dropdown-item.danger {
   color: var(--da-accent-red);
 }
 
-.agentstudio-team-dropdown-item.danger:hover,
 .agentstudio-agent-dropdown-item.danger:hover {
   background: color-mix(in srgb, var(--da-accent-red) 10%, transparent);
 }
 
-.agentstudio-portal-dropdown {
-  z-index: 99999;
+/* Sidebar Section Header */
+.agentstudio-sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) 0;
+  margin-bottom: var(--sp-1);
 }
 
+.agentstudio-sidebar-section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.agentstudio-sidebar-section-action {
+  background: transparent;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.agentstudio-sidebar-section-action:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-accent-indigo);
+}
+
+/* Chevron icon animation */
+.chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.chevron-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .agentstudio-team-folder-header {
+    padding: var(--sp-2);
+  }
+
+  .agentstudio-team-agents {
+    margin-left: var(--sp-3);
+  }
+}
+
+/* Portal Dropdown (rendered at body level) */
+.agentstudio-portal-dropdown {
+  z-index: 99999 !important;
+}
+
+/* Error Messages for Validation */
 .agentstudio-edit-error {
   color: var(--da-accent-red);
   font-size: var(--da-font-size-xs);
   margin-top: 4px;
-  padding-left: 8px;
+  padding-left: var(--sp-2);
   line-height: 1.4;
 }
 
-@media (max-width: 768px) {
-  .agentstudio-team-folder-header {
-    padding: 6px 8px;
-  }
-
-  .agentstudio-team-agents {
-    margin-left: 24px;
-  }
+.agentstudio-team-edit-input.has-error,
+.agentstudio-agent-edit-input.has-error {
+  border-color: var(--da-accent-red) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent-red) 20%, transparent) !important;
 }
