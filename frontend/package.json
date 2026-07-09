@@ -87,6 +87,7 @@
   "overrides": {
     "refractor": {
       "prismjs": "1.30.0"
-    }
+    },
+    "undici": "8.7.0"
   }
 }
