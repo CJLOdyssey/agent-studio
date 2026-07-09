@@ -316,7 +316,7 @@ docker compose -f docker/compose.prod.yml up -d
 
 ### 生产环境
 
-生产环境通过 GitHub Actions 自动部署到阿里云 ECS（`39.108.61.123`）：
+生产环境通过 GitHub Actions 自动部署到阿里云 ECS：
 
 ```bash
 # 触发部署：合并 PR 到 main 后自动触发
