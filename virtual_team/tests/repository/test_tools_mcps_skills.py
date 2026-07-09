@@ -198,7 +198,7 @@ async def test_create_skill(db_engine):
     assert skill.id is not None
     assert skill.name.startswith("skill-")
     assert skill.category == "coding"
-    assert skill.status == "installed"
+    assert skill.status == "active"
 
 
 @pytest.mark.asyncio
