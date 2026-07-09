@@ -1,33 +1,18 @@
 # AGENTS.md — AgentStudio
 
 Multi-repo: `frontend/` (React 18 + Vite 6 + Tailwind 3) + `virtual_team/` (FastAPI + SQLAlchemy async).  
-Four startup methods, each uses different ports (see [QUICKSTART.md](./QUICKSTART.md) for details).  
-Frontend Vite proxy defaults to `http://localhost:8080`; override via `VITE_API_BASE_URL` for other methods.
+Frontend proxies `/api` → `localhost:8080` and `/ws` → backend WebSocket.
 
 ## Quick start
 
-| # | 方式 | 后端 | 前端 | 命令 |
-|---|------|------|------|------|
-| 2 | 🐳 本地 Docker | **8080** | **5173** | `docker compose -f docker/compose.local.yml up -d` |
-| 3 | 🔀 混合模式 | **8081** | **5174** | Docker PG/Redis + `DATABASE_URL=... uvicorn --port 8081` + `npm run dev -- --port 5174` |
-| 1 | 🖥️ 本地代码 | **8082** | **5175** | `DATABASE_URL=... uvicorn --port 8082` + `npm run dev -- --port 5175` |
-| 4 | ☁️ 云 Docker | 远程 | 远程 | `docker compose -f docker/compose.prod.yml up -d` |
-
 ```bash
-# 🐳 Method 2 — Docker (everything, no manual setup needed)
+# Docker (everything, no manual setup needed)
 docker compose -f docker/compose.local.yml up -d
 
-# 🔀 Method 3 — 混合模式 (Docker PG/Redis, local hot-reload)
-# ① infra: docker compose -f docker/compose.local.yml up -d postgres redis
-# ② backend (explicit DATABASE_URL overrides shell env if already set):
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. uvicorn virtual_team.app:app --reload --port 8081  # → :8081
-# ③ frontend:
-cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 5174  # → :5174
-
-# 🖥️ Method 1 — 本地代码 (needs PostgreSQL + Redis running on host)
+# Local dev (needs PostgreSQL + Redis running)
 cp .env.example .env && pip install -r requirements.txt
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. uvicorn virtual_team.app:app --reload --port 8082  # → :8082
-cd frontend && VITE_API_BASE_URL=http://localhost:8082 npm run dev -- --port 5175  # → :5175
+PYTHONPATH=. uvicorn virtual_team.app:app --reload          # → :8080
+cd frontend && npm install && npm run dev                   # → :5173
 
 # CLI single run (needs DB + Redis)
 PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
@@ -47,7 +32,7 @@ PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
 | E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short` |
 | Coverage | `npm run test:coverage` | — |
 | DB migrate | — | `PYTHONPATH=. alembic upgrade head` |
-
+| Celery worker | — | `celery -A virtual_team.broker.celery_app worker --loglevel=info --concurrency=2 --pool=threads` |
 
 **CI order** (match locally): Frontend `typecheck → lint → build → test`, Backend `ruff → mypy → pytest`.
 
@@ -56,10 +41,10 @@ PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
 ### Frontend
 
 ```
-AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
-  └─ WorkstationPage.tsx (9-tab → ErrorBoundary per module)
+DevAgentsWorkstation.tsx (chat + sidebar + workstation layout)
+  └─ WorkstationPage.tsx (10-tab → ErrorBoundary per module)
        ├─ agent/, prompt/, output/, tool/, mcp/, skill/, team/  ← CRUD
-       ├─ monitor/, logs/                                       ← display-only
+       ├─ monitor/, logs/, settings/                            ← display-only
        └─ shared/ (ErrorBoundary, LoadingSkeleton, modals, ...)
   └─ modals/ (AgentConfigModal + tabs)
 ```
@@ -88,10 +73,10 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 ```
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS)
-  └─ routers/ (16 modules: admin, agents, attachments, commands, keys, mcps, models,
-  │            prompts, providers, runs, sessions, skills, system_team, teams, tools, versions)
-  │    └─ repository/ (9 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions)
-  │         └─ database.py (20 ORM models, 20 tables incl. checkpoint)
+  └─ routers/ (14 modules: admin, agents, attachments, commands, keys, mcps, models,
+  │            prompts, runs, sessions, skills, system_team, teams, tools)
+  │    └─ repository/ (8 modules: core, agents, keys, teams, prompts, tools, mcps, skills)
+  │         └─ database.py (18 ORM models, 19 tables incl. checkpoint)
   └─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   └─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
 ```
@@ -145,9 +130,9 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
 ## Docker
 
-- **Backend** (`docker/Dockerfile`): Python 3.12-slim, pip install, entrypoint runs migrations.
+- **Backend** (`docker/Dockerfile`): Python 3.12-slim, pip install, entrypoint runs migrations. Same image for API + Celery (cmd differs).
 - **Frontend** (`frontend/Dockerfile`): Multi-stage — Node 22-alpine build → nginx 1.27-alpine serve.
-- **Local** (`docker/compose.local.yml`): postgres (pgvector/pg16), redis (7-alpine), backend.
+- **Local** (`docker/compose.local.yml`): postgres (pgvector/pg16), redis (7-alpine), backend, celery.
 - **Prod** (`docker/compose.prod.yml`): Pulls from Alibaba Cloud ACR.
 
 ## CI/CD (GitHub Actions)
@@ -159,7 +144,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 4. `docs-check` — verifies `.env.example` covers all env vars; checks module count matches CLAUDE.md
 5. `build-frontend` — npm ci → build → uploads `frontend/dist/`
 
-**Deploy** (`.github/workflows/deploy.yml`): Build images (backend, frontend) → push to Alibaba ACR → SSH deploy to `39.108.61.123` with `docker compose -f docker/compose.prod.yml up -d --force-recreate`.
+**Deploy** (`.github/workflows/deploy.yml`): Build 3 images (backend, celery, frontend) → push to Alibaba ACR → SSH deploy to `39.108.61.123` with `docker compose -f docker/compose.prod.yml up -d --force-recreate`.
 
 **Release** (`.github/workflows/release.yml`): Triggered by `v*` tags. Tags with `-beta`/`-alpha`/`-rc` → prerelease. Auto-generated release notes.
 

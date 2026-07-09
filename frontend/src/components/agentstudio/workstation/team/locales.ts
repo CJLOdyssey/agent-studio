@@ -42,20 +42,6 @@ const langs: Record<string, [zh: string, en: string]> = {
   'team.form_cancel': ['取消', 'Cancel'],
   'team.form_save_edit': ['保存修改', 'Save Changes'],
   'team.form_save_create': ['创建团队', 'Create Team'],
-  'team.form_category': ['分类', 'Category'],
-  'team.all_category': ['全部分类', 'All Categories'],
-  'team.category_dev': ['开发', 'Development'],
-  'team.category_ops': ['运维', 'Operations'],
-  'team.category_test': ['测试', 'Testing'],
-  'team.manage_members': ['管理成员', 'Manage Members'],
-  'team.name_required': ['团队名称不能为空', 'Team name is required'],
-  'team.name_length': ['团队名称长度需在 2-50 个字符之间', 'Name must be 2-50 characters'],
-  'workstation.name': ['名称', 'Name'],
-  'workstation.memberCount': ['成员数', 'Members'],
-  'workstation.category': ['分类', 'Category'],
-  'workstation.status': ['状态', 'Status'],
-  'workstation.createdAt': ['创建时间', 'Created'],
-  'workstation.actions': ['操作', 'Actions'],
 };
 
 let lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';

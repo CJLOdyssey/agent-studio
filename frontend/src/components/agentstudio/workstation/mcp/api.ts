@@ -10,23 +10,14 @@ export interface MCPAPIService {
   removeBatch(ids: Set<string>): Promise<void>;
 }
 
-function parseConfig(raw: string | Record<string, unknown> | null): Record<string, unknown> {
-  if (!raw) return {};
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw); } catch { return {}; }
-  }
-  return raw;
-}
-
-function toEntry(item: { id: string; name: string; type: string; endpoint: string; config: string | Record<string, unknown> | null; status: string; created_at: string }): MCPEntry {
-  const cfg = parseConfig(item.config);
+function toEntry(item: { id: string; name: string; type: string; endpoint: string; config: Record<string, unknown> | null; status: string; created_at: string }): MCPEntry {
   return {
     id: item.id,
     name: item.name,
-    description: typeof cfg.description === 'string' ? cfg.description : item.name,
+    description: (item.config && typeof item.config.description === 'string') ? item.config.description : item.name,
     type: (item.type === 'stdio' || item.type === 'sse') ? item.type : 'stdio',
     status: item.status === 'active' ? 'connected' : 'disconnected',
-    version: typeof cfg.version === 'string' ? cfg.version : 'v1.0.0',
+    version: (item.config && typeof item.config.version === 'string') ? item.config.version : 'v1.0.0',
     command: item.type === 'stdio' ? item.endpoint : '',
     url: item.type === 'sse' ? item.endpoint : '',
     createdAt: item.created_at.slice(0, 10),
@@ -44,7 +35,7 @@ const realImpl: MCPAPIService = {
       name: data.name,
       type: data.type,
       endpoint: data.type === 'stdio' ? data.command : data.url,
-      config: JSON.stringify({ description: data.description, version: data.version }),
+      config: { description: data.description, version: data.version },
     });
     return toEntry(item);
   },
@@ -55,7 +46,7 @@ const realImpl: MCPAPIService = {
     if (data.command !== undefined) patch.endpoint = data.command;
     if (data.url !== undefined) patch.endpoint = data.url;
     if (data.description !== undefined || data.version !== undefined) {
-      patch.config = JSON.stringify({ description: data.description, version: data.version });
+      patch.config = { description: data.description, version: data.version };
     }
     await updateMCP(id, patch);
   },
@@ -65,7 +56,7 @@ const realImpl: MCPAPIService = {
       name: `${item.name.slice(0, 48)} (副本)`,
       type: item.type,
       endpoint: item.type === 'stdio' ? item.command : item.url,
-      config: JSON.stringify({ description: item.description, version: item.version }),
+      config: { description: item.description, version: item.version },
     });
     return toEntry(created);
   },

@@ -7,10 +7,8 @@
 .wsta-settings {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
+  padding: var(--sp-3) var(--sp-4);
+  max-width: min(50rem, 100%);
 }
 
 /* ── Header ── */

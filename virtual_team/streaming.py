@@ -15,7 +15,6 @@ class StreamEmitter:
         self._stream_buffer: list[str] = []
         self._thinking_buffer: list[str] = []
         self._pending_thinking: str | None = None
-        self._pending_thinking_nodes: list[dict] | None = None
 
     async def __call__(self, event: dict):
         kind = event.get("event", "")
@@ -69,22 +68,6 @@ class StreamEmitter:
             if name == "LangGraph":
                 await self._flush_buffers()
 
-        elif kind == "on_thinking_nodes":
-            nodes = data.get("nodes", [])
-            if nodes:
-                await self.emit_thinking_nodes(nodes)
-
-        elif kind == "on_tool_complete":
-            print(f"\n[DEBUG] streaming: on_tool_complete received tool={data.get('toolName')}")
-            await self.emit_tool_complete(data)
-
-        elif kind == "on_tool_results":
-            tool_name = data.get("tool_name", "")
-            tool_call_id = data.get("tool_call_id", "")
-            refs = data.get("references", [])
-            if tool_name and refs:
-                await self.emit_tool_results(tool_name, tool_call_id, refs)
-
         elif kind == "on_tool_start":
             tool_name = event.get("name", "tool")
             tool_input = data.get("input", "")
@@ -97,47 +80,6 @@ class StreamEmitter:
             tool_name = event.get("name", "tool")
             output = str(data.get("output", ""))[:500]
             await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
-
-    async def emit_thinking_nodes(self, nodes: list[dict]):
-        if self._pending_thinking_nodes:
-            self._pending_thinking_nodes.extend(nodes)
-        else:
-            self._pending_thinking_nodes = nodes
-
-    async def emit_tool_results(self, tool_name: str, tool_call_id: str, references: list[dict]):
-        await publish_run_message(
-            self._run_id,
-            {
-                "type": "tool_results",
-                "agent_name": "Agent",
-                "toolName": tool_name,
-                "tool_call_id": tool_call_id,
-                "references": references,
-            },
-        )
-
-    async def emit_tool_complete(self, data: dict):
-        try:
-            node = {
-                "type": "tool_result",
-                "content": f"{data.get('toolName', '')} {'✅ 成功' if data.get('status') == 'success' else '❌ 失败'}",
-                "toolName": data.get("toolName", ""),
-                "status": data.get("status", "success"),
-            }
-            print(f"\n[DEBUG] emit_tool_complete: publishing node type={node['type']} tool={node['toolName']}")
-            await publish_run_message(
-                self._run_id,
-                {
-                    "type": "tool_complete",
-                    "agent_name": "Agent",
-                    "node": node,
-                },
-            )
-            print("\n[DEBUG] emit_tool_complete: published successfully")
-        except Exception as e:
-            print(f"\n[DEBUG] emit_tool_complete ERROR: {e}")
-            import traceback
-            traceback.print_exc()
 
     async def _flush_buffers(self):
         thinking_text = ""
@@ -165,7 +107,6 @@ class StreamEmitter:
                     role="Agent",
                     agent_name="Agent",
                     content=full_content,
-                    thinking=thinking_text,
                     round_number=self._message_index,
                 )
             except Exception:
@@ -173,15 +114,14 @@ class StreamEmitter:
 
         if thinking_text:
             try:
-                payload: dict = {
-                    "type": "thinking_done",
-                    "agent_name": "Agent",
-                    "thinking": thinking_text,
-                }
-                if self._pending_thinking_nodes:
-                    payload["nodes"] = self._pending_thinking_nodes
-                    self._pending_thinking_nodes = None
-                await publish_run_message(self._run_id, payload)
+                await publish_run_message(
+                    self._run_id,
+                    {
+                        "type": "thinking_done",
+                        "agent_name": "Agent",
+                        "thinking": thinking_text,
+                    },
+                )
             except Exception:
                 logger.exception("Thinking publish failed for run %s", self._run_id)
 
@@ -209,7 +149,6 @@ class StreamEmitter:
                     role=agent_name,
                     agent_name=agent_name,
                     content=content,
-                    thinking=thinking,
                     round_number=self._message_index,
                 )
         except Exception:

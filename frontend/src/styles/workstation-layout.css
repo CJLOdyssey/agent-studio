@@ -23,27 +23,16 @@
 
 /* ── Sidebar ── */
 .agentstudio-workstation-sidebar {
-  width: 180px;
+  width: 140px;
   flex-shrink: 0;
-  padding: var(--sp-4) var(--sp-3);
+  padding: var(--sp-2) var(--sp-2);
   border-right: 1px solid var(--da-border-subtle);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   gap: 2px;
   overflow-y: auto;
-  background: var(--da-bg-surface);
-}
-
-.agentstudio-workstation-sidebar::before {
-  content: '';
-  display: block;
-  padding-bottom: var(--sp-4);
-  margin: 0 var(--sp-1) var(--sp-3);
-  border-bottom: 1px solid var(--da-border);
-  font-size: var(--da-font-size-sm);
-  font-weight: 600;
-  color: var(--da-text-primary);
+  background: var(--da-bg-card);
 }
 
 .agentstudio-workstation-sidebar:empty {
@@ -61,10 +50,9 @@
   color: var(--da-text-secondary);
   font-size: var(--da-font-size-sm);
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: all 0.15s;
   text-align: left;
   white-space: nowrap;
-  font-weight: 400;
 }
 
 .agentstudio-workstation-tab:hover {
@@ -74,17 +62,8 @@
 
 .agentstudio-workstation-tab.active {
   background: var(--da-bg-hover);
-  color: var(--da-accent);
-  font-weight: 500;
-}
-
-.agentstudio-workstation-tab .tab-icon {
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-
-.agentstudio-workstation-tab.active .tab-icon {
-  opacity: 1;
+  color: var(--da-text-primary);
+  font-weight: 600;
 }
 
 /* ── Content ── */
@@ -95,7 +74,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 0;
+  padding: var(--sp-2) var(--sp-3);
 }
 
 /* ── Module panel ── */

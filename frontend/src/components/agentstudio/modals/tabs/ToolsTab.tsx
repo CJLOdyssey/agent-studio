@@ -1,5 +1,4 @@
 import { Plus, Sparkles } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import ToolFormModal from '../../workstation/tool/ToolFormModal';
 import type { ToolFormData, ToolEntry } from '../../workstation/tool/tool.types';
 import ConfigItemList from '../ConfigItemList';
@@ -31,8 +30,6 @@ export function ToolsTab({
   onPickerOpen, onCustomize, onFormSave, onFormClose, setFormData,
   onEditFull,
 }: ToolsTabProps) {
-  const { t } = useTranslation();
-
   if (showForm) {
     return (
       <ToolFormModal
@@ -51,20 +48,20 @@ export function ToolsTab({
       <div className="agent-config-list-bar">
         <button className="agent-config-list-bar-btn" onClick={onPickerOpen}>
           <Plus size={14} />
-          {t('workstation.add')}
+          添加
         </button>
-        <span className="agent-config-list-bar-title">{t('workstation.tool')} ({items.length})</span>
+        <span className="agent-config-list-bar-title">工具 ({items.length})</span>
         <button className="agent-config-list-bar-btn" onClick={onCustomize}>
           <Sparkles size={14} />
-          {t('workstation.customize')}
+          自定义
         </button>
       </div>
       <ConfigItemList
-        title={t('workstation.tool')}
+        title="工具"
         items={items}
         presets={[]}
         editingId={editingId}
-        emptyLabel={t('workstation.noTool')}
+        emptyLabel="暂无工具"
         hideHeader
         onToggle={onToggle}
         onAdd={onAdd}
