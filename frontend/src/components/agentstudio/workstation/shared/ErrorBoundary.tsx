@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import i18n from '../../../../i18n';
 
 interface Props { children: React.ReactNode; fallback?: React.ReactNode; onError?: (error: Error) => void; }
 interface State { hasError: boolean; error: Error | null; }
@@ -21,13 +22,14 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
+      const t = i18n.t.bind(i18n);
       return (
         <div className="wsta-error-state" role="alert">
           <AlertTriangle size={40} className="wsta-error-state-icon" />
-          <div className="wsta-error-state-title">组件渲染出错</div>
-          <div className="wsta-error-state-desc">{this.state.error?.message || '发生未知错误'}</div>
+          <div className="wsta-error-state-title">{t('workstation.renderError')}</div>
+          <div className="wsta-error-state-desc">{this.state.error?.message || t('workstation.unknownError')}</div>
           <button className="btn btn-outline" onClick={this.handleRetry}>
-            <RefreshCw size={14} /> 重试
+            <RefreshCw size={14} /> {t('common.retry')}
           </button>
         </div>
       );
