@@ -1,21 +1,63 @@
-.coverage
+# ── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.egg-info/
+dist/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
-.venv/
-*.egg-info/
-dist/
-*.db
+*.whl
+
+# ── Node / Frontend ───────────────────────────────────────────────────────
 frontend/node_modules/
 frontend/dist/
-.env
-.checkpoints.db
-.test_checkpoints_integration.db
-.sisyphus/
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 .obsidian/
+
+# ── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Secrets / Env ──────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Databases ──────────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+.sqlite3
+
+# ── Runtime / Logs ─────────────────────────────────────────────────────────
+*.log
+*.log.*
+
+# ── Coverage ───────────────────────────────────────────────────────────────
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ── Virtual Env ────────────────────────────────────────────────────────────
+.venv/
+.venv-*/
+
+# ── Docker ──────────────────────────────────────────────────────────────────
+.docker/
+
+# ── Testing Tools ──────────────────────────────────────────────────────────
+.playwright-mcp/
+
+# ── Project-specific ───────────────────────────────────────────────────────
+.sisyphus/
+prototypes/
 scripts/deploy_prod.py
 scripts/ask_credentials.py
-prototypes/
