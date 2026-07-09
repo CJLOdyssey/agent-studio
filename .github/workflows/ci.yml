@@ -24,6 +24,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
@@ -122,6 +123,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: Check bundle size
+        run: |
+          total=$(du -sb dist/ | cut -f1)
+          max=$((10 * 1024 * 1024))  # 10 MB limit
+          echo "Bundle size: $(numfmt --to=iec $total)"
+          if [ "$total" -gt "$max" ]; then
+            echo "❌ Bundle size exceeds 10 MB"
+            exit 1
+          fi
+          echo "✅ Bundle size OK"
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
