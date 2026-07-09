@@ -4,8 +4,6 @@ const langs: Record<string, [zh: string, en: string]> = {
   'mcp.copy': ['复制', 'Copy'],
   'mcp.delete': ['删除', 'Delete'],
   'mcp.history': ['版本历史', 'History'],
-  'mcp.test': ['测试', 'Test'],
-  'mcp.testing': ['测试中...', 'Testing...'],
   'mcp.batch_delete': ['批量删除 ({n})', 'Batch Delete ({n})'],
   'mcp.search_placeholder': ['搜索 MCP 名称、描述、类型...', 'Search name, type...'],
   'mcp.all_types': ['全部类型', 'All Types'],
@@ -57,7 +55,6 @@ const langs: Record<string, [zh: string, en: string]> = {
   'mcp.confirm_delete_desc': ['确定要删除「{name}」吗？此操作不可撤销。', 'Delete "{name}"? This cannot be undone.'],
   'mcp.confirm_batch_delete_title': ['确认批量删除', 'Confirm Batch Delete'],
   'mcp.confirm_batch_delete_desc': ['确定要删除选中的 {n} 个 MCP 吗？', 'Delete {n} selected MCPs?'],
-  'mcp.col_tool_count': ['工具数', 'Tool Count'],
 };
 
 const lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';

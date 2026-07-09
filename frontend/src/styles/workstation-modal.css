@@ -6,7 +6,7 @@
 /* ── Modal form ── */
 .wsta-modal {
   max-width: var(--modal-m);
-  max-height: calc(100vh / 1.618);
+  height: var(--modal-height);
   overflow: hidden;
 }
 
@@ -182,7 +182,7 @@
 }
 
 .wsta-prompt-preview-label {
-  font-size: var(--da-font-size-xs);
+  font-size: 11px;
   color: var(--da-text-muted);
   margin-bottom: 4px;
   text-transform: uppercase;
@@ -352,32 +352,29 @@
 
 /* ── Version history ── */
 .wsta-modal-md {
-  max-width: 420px;
+  max-width: var(--modal-m);
 }
 
 .wsta-version-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  max-height: 280px;
+  gap: var(--sp-3);
+  max-height: 400px;
   overflow-y: auto;
-  margin: 0 -4px;
-  padding: 4px;
 }
 
 .wsta-version-item {
-  padding: 8px;
+  padding: var(--sp-3);
   background: var(--da-bg-surface);
-  border: 1px solid var(--da-border-subtle);
   border-radius: 6px;
-  transition: border-color 0.15s;
+  border: 1px solid var(--da-border-subtle);
 }
 
 .wsta-version-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
 }
 
 .wsta-version-tag {
@@ -401,9 +398,8 @@
 
 .wsta-version-changes {
   margin: 0;
-  font-size: var(--da-font-size-xs);
+  font-size: var(--da-font-size-sm);
   color: var(--da-text-secondary);
-  line-height: 1.4;
 }
 
 /* ── Version compare toolbar ── */
@@ -423,8 +419,8 @@
 
 /* ── Compare hint ── */
 .wsta-version-compare-hint {
-  margin: 0 0 8px;
-  font-size: var(--da-font-size-xs);
+  margin: 0 0 var(--sp-3);
+  font-size: var(--da-font-size-sm);
   color: var(--da-text-muted);
 }
 
@@ -457,15 +453,13 @@
 
 /* ── Version content preview ── */
 .wsta-version-content {
-  margin: 4px 0 0;
+  margin: var(--sp-2) 0 0;
   font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   font-family: var(--font-mono);
-  line-height: 1.4;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 100px;
-  overflow-y: auto;
 }
 
 /* ── Diff container ── */
@@ -473,7 +467,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
-  margin-top: var(--sp-3);
+  margin-top: var(--sp-4);
   border: 1px solid var(--da-border-subtle);
   border-radius: 6px;
   overflow: hidden;
@@ -491,8 +485,8 @@
 .wsta-version-diff-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
   background: var(--da-bg-surface);
   border-bottom: 1px solid var(--da-border-subtle);
   font-size: var(--da-font-size-xs);
@@ -519,18 +513,18 @@
 
 /* ── Diff content ── */
 .wsta-version-diff-content {
-  max-height: 240px;
+  max-height: 360px;
   overflow: auto;
   font-family: var(--font-mono);
   font-size: var(--da-font-size-xs);
-  line-height: 1.5;
+  line-height: 1.6;
   background: var(--da-bg-surface);
 }
 
 .wsta-version-diff-line {
   display: flex;
-  padding: 2px 10px;
-  min-height: 1.4em;
+  padding: var(--sp-1) var(--sp-3);
+  min-height: 1.6em;
 }
 
 .wsta-version-diff-prefix {
@@ -564,16 +558,4 @@
 .wsta-version-diff-removed .wsta-version-diff-prefix {
   color: var(--da-accent-red);
   font-weight: 700;
-}
-
-/* ── Member card (TeamMemberManager) ── */
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.wsta-member-card {
-  transition: all 0.15s;
-}
-.wsta-member-card:hover {
-  border-color: var(--da-border) !important;
 }

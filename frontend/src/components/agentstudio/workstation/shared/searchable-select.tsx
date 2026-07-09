@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, X, ChevronDown } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export interface SearchableSelectProps<T> {
   options: T[];
@@ -27,7 +26,6 @@ export default function SearchableSelect<T>({
   multiple = false,
   maxDisplay = 10,
 }: SearchableSelectProps<T>) {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -141,7 +139,7 @@ export default function SearchableSelect<T>({
           </div>
           <div className="wsta-searchable-select-options">
             {filtered.length === 0 ? (
-              <div className="wsta-searchable-select-no-results">      {t('workstation.noMatch')}</div>
+              <div className="wsta-searchable-select-no-results">无匹配结果</div>
             ) : (
               filtered.map((opt) => {
                 const id = getOptionId(opt);

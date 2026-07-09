@@ -7,7 +7,14 @@ interface Settings {
   fontSize: number;
   sendMode: 'enter' | 'ctrl-enter';
   autoSave: boolean;
+  autoComplete: boolean;
+  soundEnabled: boolean;
   streamOutput: boolean;
+  editorFontSize: number;
+  tabSize: number;
+  wordWrap: boolean;
+  lineNumber: boolean;
+  timezone: string;
 }
 
 interface SettingsContextType {
@@ -20,7 +27,14 @@ const defaultSettings: Settings = {
   fontSize: 14,
   sendMode: 'enter',
   autoSave: true,
+  autoComplete: true,
+  soundEnabled: true,
   streamOutput: true,
+  editorFontSize: 13,
+  tabSize: 2,
+  wordWrap: true,
+  lineNumber: true,
+  timezone: 'Asia/Shanghai',
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -102,7 +116,8 @@ export function useSettings() {
 }
 
 export function useNotificationSound() {
+  const { settings } = useSettings();
   return useCallback(() => {
-    playBeep();
-  }, []);
+    if (settings.soundEnabled) playBeep();
+  }, [settings.soundEnabled]);
 }

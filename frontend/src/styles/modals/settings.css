@@ -1,7 +1,7 @@
 /* Settings Modal */
 .settings-modal {
-  width: 970px;
-  height: 600px;
+  width: var(--modal-m);
+  height: var(--modal-height);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -17,6 +17,7 @@
 .settings-sidebar {
   width: 160px;
   padding: var(--sp-5) var(--sp-4);
+  border-right: 1px solid var(--da-border-subtle);
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
@@ -77,8 +78,12 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--da-border-subtle);
 }
 
+.settings-item:last-child {
+  border-bottom: none;
+}
 
 .settings-item-info {
   flex: 1;

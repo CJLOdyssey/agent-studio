@@ -125,7 +125,7 @@
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius);
   color: var(--da-text-muted);
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
   cursor: pointer;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
   white-space: nowrap;

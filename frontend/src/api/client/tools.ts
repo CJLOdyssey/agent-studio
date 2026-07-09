@@ -76,16 +76,3 @@ export async function executeTool(
   const { data } = await api.post('/tools/execute', { code, language });
   return data;
 }
-
-export interface ToolTestResult {
-  success: boolean;
-  status_code: number | null;
-  duration_ms: number;
-  message: string;
-  body: string | null;
-}
-
-export async function testTool(id: string): Promise<ToolTestResult> {
-  const { data } = await api.post(`/tools/${id}/test`);
-  return data;
-}

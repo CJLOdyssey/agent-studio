@@ -110,14 +110,34 @@ async def create_run(req: RunRequest, request: Request):
     except Exception:
         pass
 
-    # Subscribe to Redis *before* starting the task — eliminates the timing gap
+    # Subscribe to Redis *before* Celery task starts — eliminates the timing gap
     # where early thinking_stream / stream messages would be lost.
     await buffer_run_messages(run_id)
     try:
-        from virtual_team.tasks import _run_agent_pipeline
+        from virtual_team.tasks import run_agent
 
-        asyncio.create_task(
-            _run_agent_pipeline(
+        run_agent.delay(
+            requirement=requirement,
+            run_id=run_id,
+            session_id=session_id,
+            agent_id=req.agent_id,
+            api_key=api_key,
+            api_base=api_base,
+            model=effective_model,
+        )
+        logger.info(
+            "Task enqueued | run_id=%s | session_id=%s | model=%s",
+            run_id,
+            session_id,
+            effective_model,
+        )
+    except Exception as e:
+        logger.error("Celery enqueue failed, running synchronously: %s", e)
+        # Fallback: run eagerly (no Celery worker needed)
+        try:
+            from virtual_team.tasks import _run_agent_pipeline
+
+            await _run_agent_pipeline(
                 requirement=requirement,
                 run_id=run_id,
                 session_id=session_id,
@@ -125,19 +145,12 @@ async def create_run(req: RunRequest, request: Request):
                 api_key=api_key,
                 api_base=api_base,
                 model=effective_model,
-                user_id=user_id,
             )
-        )
-        logger.info(
-            "Task started | run_id=%s | session_id=%s | model=%s",
-            run_id,
-            session_id,
-            effective_model,
-        )
-    except Exception as e:
-        logger.exception("Failed to start agent task for run=%s", run_id)
-        await update_run_status(run_id, "error")
-        raise HTTPException(status_code=500, detail=f"执行失败: {e}") from e
+            logger.info("Eager run completed | run_id=%s", run_id)
+        except Exception as e2:
+            logger.exception("Eager run also failed for run=%s", run_id)
+            await update_run_status(run_id, "error")
+            raise HTTPException(status_code=500, detail=f"执行失败: {e2}") from e
 
     return RunResponse(run_id=run_id, status="pending", session_id=session_id)
 
@@ -237,7 +250,6 @@ async def get_run_detail(run_id: str):
                     "role": m.role,
                     "agent_name": m.agent_name,
                     "content": m.content,
-                    "thinking": m.thinking,
                     "round_number": m.round_number,
                     "created_at": m.created_at.isoformat() if m.created_at else None,
                 }

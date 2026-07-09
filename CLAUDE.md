@@ -17,7 +17,7 @@
 | 团队管理 | 团队管理 | `workstation/team/` | `routers/teams.py` | `repository/teams.py` | `teams` |
 | 监控中心 | 监控中心 | `workstation/monitor/` | — (纯前端) | — | — |
 | 日志审计 | 日志审计 | `workstation/logs/` | — (纯前端) | — | `command_logs` (后端审计) |
-| 密钥管理 | 系统设置 | — | `routers/keys.py` | `repository/keys.py` | `user_api_keys` |
+| 系统设置 | 系统设置 | `workstation/settings/` | `routers/keys.py` | `repository/keys.py` | `user_api_keys` |
 | 用户管理 | 用户管理 | — | — | — | `users` / `roles` / `user_roles` |
 | Checkpoint | Checkpoint | — | — | — | `checkpoints` |
 
@@ -30,10 +30,10 @@
 ├── CLAUDE.md                    ← 你在这里
 ├── frontend/                    # React + Vite + TanStack Query + Zustand
 │   └── src/
-│       ├── components/agentstudio/
-│       │   ├── AgentStudioWorkstation.tsx   # 🎯 主入口（聊天+侧栏+工作台）
-│       │   ├── WorkstationPage.tsx          # 工作台菜单入口（9 Tab）
-│       │   ├── workstation/                 # 工作台 9 模块
+│       ├── components/devagents/
+│       │   ├── DevAgentsWorkstation.tsx    # 🎯 主入口（聊天+侧栏+工作台）
+│       │   ├── WorkstationPage.tsx         # 工作台菜单入口（10 Tab）
+│       │   ├── workstation/                # 工作台 10 模块
 │       │   │   ├── agent/                  #  1. Agent 管理
 │       │   │   ├── prompt/                 #  2. 提示词管理
 │       │   │   ├── output/                 #  3. 输出约束
@@ -43,6 +43,7 @@
 │       │   │   ├── team/                   #  7. 团队管理
 │       │   │   ├── monitor/                #  8. 监控中心
 │       │   │   ├── logs/                   #  9. 日志审计
+│       │   │   ├── settings/               # 10. 系统设置
 │       │   │   └── shared/                 # 共享组件
 │       │   ├── modals/                     # AgentConfigModal + tabs/
 │       │   │   └── tabs/                   # SystemPromptTab, OutputConstraintTab, ToolsTab, MCPTab, SkillsTab
@@ -284,13 +285,6 @@ PYTHONPATH=. python3 -m pytest virtual_team/                   # 运行测试（
 7. **后端遵循三层架构** — `database.py → repository/ → routers/`
 8. **自定义工具执行** — `agent_graph.py` `_tools_node` 对无 handler 工具用 `self.llm.ainvoke()` 执行；`tasks.py` `bind_tools` 优先从 agent config JSON 取 description/parameters
 9. **团队名唯一性** — DB `teams.name` UNIQUE + repository `create_team` 查重 → router 409
-10. **文档同步规则** — 修改以下内容时，必须在**同一 commit** 同步更新 `AGENTS.md` 和 `CLAUDE.md`：
-    - 新增/删除 router → 更新 routers 计数和列表
-    - 新增/删除 repository → 更新 repository 列表
-    - 新增/删除 DB model → 更新模型计数
-    - 新增/删除 workstation 模块 → 更新模块列表和编号
-    - 变更组件路径 → 更新文件树
-    - 不遵循此规则的 PR 会被 CI `docs-check` job 拒绝
 
 ---
 
@@ -319,15 +313,3 @@ Agent Config tools → tasks.py bind_tools → ToolConfig
 | 2026-06-24 | **Enterprise Hardening 88→95+** — CI/CD + 后端测试 109 用例 + 持久化 checkpointer + RBAC（UserDB/RoleDB/Alembic）+ 工程化脚手架 |
 | 2026-06-24 | **Enterprise Improvement** — Playwright infra + Prometheus /metrics + Husky hooks + ErrorCode 体系 + ErrorBoundary 解耦 |
 | 2026-06-24 | **E2E 验证** — Chrome Playwright 全链路截图 + DeepSeek 工具调用修复（tool_calls=1 ✅）|
-
----
-
-## 📝 会话记录
-
-每次会话结束时，自动调用 `neat-freak` skill 生成结构化总结，写入 `.sisyphus/sessions/YYYY-MM-DD-topic.md`。
-
-总结模板：Accomplished / Decisions / Patterns / Tech Debt / Next Steps。
-
-### 跨会话引用
-- 新会话需要上下文时，先从 `.sisyphus/sessions/` 查找相关记录
-- 或在 `AGENTS.md` 中维护跨会话持久化知识

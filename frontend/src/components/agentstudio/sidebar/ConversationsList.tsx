@@ -136,13 +136,13 @@ const ConversationsList = memo(function ConversationsList({
 
   return (
     <div className="agentstudio-conversations-list">
-      {renderGroup(t('sidebar.pinned'), groupedConversations.pinned)}
-      {renderGroup(t('sidebar.today'), groupedConversations.today)}
-      {renderGroup(t('sidebar.yesterday'), groupedConversations.yesterday)}
-      {renderGroup(t('sidebar.threeDays'), groupedConversations.threeDays)}
-      {renderGroup(t('sidebar.sevenDays'), groupedConversations.sevenDays)}
-      {renderGroup(t('sidebar.month'), groupedConversations.month)}
-      {renderGroup(t('sidebar.older'), groupedConversations.older)}
+      {renderGroup(t('sidebar.pinned', '📌 置顶'), groupedConversations.pinned)}
+      {renderGroup(t('sidebar.today', '今天'), groupedConversations.today)}
+      {renderGroup(t('sidebar.yesterday', '昨天'), groupedConversations.yesterday)}
+      {renderGroup(t('sidebar.threeDays', '三天以内'), groupedConversations.threeDays)}
+      {renderGroup(t('sidebar.sevenDays', '七天以内'), groupedConversations.sevenDays)}
+      {renderGroup(t('sidebar.month', '一个月以内'), groupedConversations.month)}
+      {renderGroup(t('sidebar.older', '更早'), groupedConversations.older)}
     </div>
   );
 });

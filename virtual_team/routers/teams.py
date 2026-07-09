@@ -37,7 +37,6 @@ class TeamUpdateRequest(BaseModel):
 class MemberAddRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     role: str = "待配置角色"
-    agent_config_id: str | None = None
 
 
 class ReorderRequest(BaseModel):
@@ -65,36 +64,6 @@ async def list_teams():
         logger.error("Error listing teams: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
 
-
-async def _snapshot_team(resource_id: str, session=None):
-    """Create a version snapshot after team save."""
-    try:
-        if session is None:
-            from virtual_team.database import get_session_factory
-            factory = get_session_factory()
-            async with factory() as s:
-                await _do_snapshot_team(resource_id, s)
-                await s.commit()
-        else:
-            await _do_snapshot_team(resource_id, session)
-    except Exception:
-        logger.warning("Version snapshot failed for team %s", resource_id, exc_info=True)
-
-
-async def _do_snapshot_team(resource_id: str, session):
-    from virtual_team.repository.teams import get_team
-    from virtual_team.repository.versions import create_version as _cv
-    item = await get_team(resource_id)
-    if not item:
-        return
-    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns if not k.startswith('_')}
-    if "id" in snapshot:
-        del snapshot["id"]
-    if "created_at" in snapshot:
-        snapshot["created_at"] = str(snapshot["created_at"])
-    if "updated_at" in snapshot:
-        snapshot["updated_at"] = str(snapshot["updated_at"])
-    await _cv(session, "team", resource_id, snapshot, "system")
 
 @router.post("/api/teams", status_code=201)
 async def add_team(req: TeamCreateRequest):
@@ -175,7 +144,6 @@ async def add_member(team_id: str, req: MemberAddRequest):
             team_id=team_id,
             name=req.name,
             role=req.role,
-            agent_config_id=req.agent_config_id,
         )
         if not member:
             raise HTTPException(status_code=404, detail="团队不存在")

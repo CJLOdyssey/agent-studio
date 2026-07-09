@@ -6,8 +6,6 @@ interface UseMessageComposerOptions {
   onSend: (text: string) => void;
   /** Max characters allowed */
   maxLength?: number;
-  /** Send mode: 'enter' = Enter sends, 'ctrl-enter' = Ctrl+Enter sends */
-  sendMode?: 'enter' | 'ctrl-enter';
 }
 
 interface UseMessageComposerReturn {
@@ -28,7 +26,7 @@ interface UseMessageComposerReturn {
  * All input state lives here — no parent re-render on every keystroke.
  * Uses a ref to always read the latest value in callbacks without stale closures.
  */
-export function useMessageComposer({ onSend, maxLength = 10000, sendMode = 'enter' }: UseMessageComposerOptions): UseMessageComposerReturn {
+export function useMessageComposer({ onSend, maxLength = 10000 }: UseMessageComposerOptions): UseMessageComposerReturn {
   const [value, setValue] = useState('');
   const valueRef = useRef(value);
   // Keep ref in sync during render — intentional, avoids stale closures in callbacks
@@ -56,21 +54,13 @@ export function useMessageComposer({ onSend, maxLength = 10000, sendMode = 'ente
       // candidate character (Chinese/Japanese/Korean) must not send.
       if (e.nativeEvent.isComposing) return;
 
-      if (sendMode === 'enter') {
-        // Enter sends, Shift+Enter inserts newline
-        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-          e.preventDefault();
-          submit();
-        }
-      } else {
-        // Ctrl+Enter sends, Enter inserts newline
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
-          e.preventDefault();
-          submit();
-        }
+      // Enter sends, Shift+Enter inserts newline
+      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        submit();
       }
     },
-    [submit, sendMode],
+    [submit],
   );
 
   return { value, setValue, submit, handleKeyDown, hasContent, charCount, maxLength };

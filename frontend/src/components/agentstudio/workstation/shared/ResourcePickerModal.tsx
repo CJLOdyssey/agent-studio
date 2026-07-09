@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { X, Search, Check } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export interface ResourcePickerModalProps<T> {
   title: string;
@@ -27,7 +26,6 @@ export default function ResourcePickerModal<T>({
   searchPlaceholder = '搜索...',
   multiple = false,
 }: ResourcePickerModalProps<T>) {
-  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [tempSelected, setTempSelected] = useState<Set<string>>(() => {
     if (multiple) return new Set(selectedIds as string[]);
@@ -83,7 +81,7 @@ export default function ResourcePickerModal<T>({
           </div>
           <div className="wsta-picker-list">
             {filtered.length === 0 && (
-              <div className="wsta-picker-empty">{t('workstation.noMatch')}</div>
+              <div className="wsta-picker-empty">无匹配结果</div>
             )}
             {filtered.map((opt) => {
               const id = getOptionId(opt);
@@ -106,18 +104,9 @@ export default function ResourcePickerModal<T>({
             })}
           </div>
         </div>
-        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>
-            {multiple && tempSelected.size > 0 ? `${t('workstation.selectedCount')}: ${tempSelected.size}` : ''}
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary" onClick={onClose}>{t('workstation.cancel')}</button>
-            <button className="btn btn-primary" onClick={handleConfirm}>
-              {multiple && tempSelected.size > 0
-                ? `${t('workstation.confirm')} (${tempSelected.size})`
-                : t('workstation.confirm')}
-            </button>
-          </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>取消</button>
+          <button className="btn btn-primary" onClick={handleConfirm}>确认</button>
         </div>
       </div>
     </div>
