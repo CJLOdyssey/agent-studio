@@ -152,7 +152,7 @@ filterwarnings = [
     "ignore::DeprecationWarning:langevals_*",
     "ignore::UserWarning:langchain.*",
     "ignore::ImportWarning:langgraph.*",
-    "ignore::pytest.PytestUnraisableEntityWarning",
+
 ]
 
 [tool.coverage.run]
