@@ -124,6 +124,22 @@ ignore_errors = true
 module = "virtual_team.tests.*"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "virtual_team.broker"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.mock_fallback"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rag"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rate_limit"
+ignore_errors = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 markers = [

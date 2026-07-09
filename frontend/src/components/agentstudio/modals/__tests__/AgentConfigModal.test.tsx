@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { LucideIcon } from 'lucide-react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { TestProviders } from '../../../../test/setup';
 import AgentConfigModal from '../AgentConfigModal';
 import type { Agent } from '../../../types/agentstudio';
+
+function renderWithProviders(ui: React.ReactElement) {
+  return render(<TestProviders>{ui}</TestProviders>);
+}
 
 vi.mock('../../../../api/client', () => ({
   promptAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
@@ -41,7 +46,7 @@ function renderModal(overrides?: Record<string, unknown>) {
     onClose: vi.fn(),
     ...overrides,
   };
-  return { ...render(<AgentConfigModal {...props} />), props };
+  return { ...renderWithProviders(<AgentConfigModal {...props} />), props };
 }
 
 describe('AgentConfigModal', () => {
