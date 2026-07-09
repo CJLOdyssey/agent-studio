@@ -96,27 +96,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt
-      - name: Verify .env.example covers all env vars
-        run: |
-          vars_in_code=$(grep -ohRE 'os\.environ\.get\(["'"'"']?[A-Z_]+' virtual_team/*.py | grep -oP '[A-Z_]+' | sort -u)
-          missing=""
-          for var in $vars_in_code; do
-            grep -q "^$var=" .env.example || missing="$missing $var"
-          done
-          if [ -n "$missing" ]; then
-            echo "❌ Variables missing from .env.example:$missing"
-            exit 1
-          fi
-          echo "✅ All env vars covered in .env.example"
-      - name: Verify table count matches CLAUDE.md
-        run: |
-          actual=$(grep -c "__tablename__" virtual_team/database.py)
-          echo "Actual tables: $actual"
-          echo "Update CLAUDE.md if table count has changed"
+      - name: Run module consistency check
+        run: node scripts/check-docs.js
+      - name: Verify .env.example + AGENTS.md/CLAUDE.md counts
+        run: python3 scripts/check-ci-docs.py
 
   build-frontend:
     runs-on: ubuntu-latest

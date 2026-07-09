@@ -103,12 +103,6 @@ async def get_api_keys(user_id: str) -> list[dict]:
 
 
 async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
-    """Retrieve and decrypt an API key for LLM invocation.
-
-    Returns full config dict with decrypted key. Updates last_used_at.
-    This is the ONLY function that returns a decrypted key — it is
-    never called from API routes, only from Celery tasks.
-    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(UserApiKey).where(
@@ -118,6 +112,16 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
         )
         result = await session.execute(stmt)
         row = result.scalar_one_or_none()
+
+        if row is None and user_id != "anonymous":
+            stmt = select(UserApiKey).where(
+                UserApiKey.id == key_id,
+                UserApiKey.user_id == "anonymous",
+                UserApiKey.is_active,
+            )
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+
         if not row:
             return None
 
@@ -134,30 +138,36 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
         }
 
 
-async def get_default_api_key(user_id: str) -> dict | None:
-    """Get the user's default active API key for LLM calls."""
-    factory = get_session_factory()
-    async with factory() as session:
-        stmt = select(UserApiKey).where(
+async def _resolve_key_row(session, user_id: str):
+    stmt = select(UserApiKey).where(
+        UserApiKey.user_id == user_id,
+        UserApiKey.is_active,
+        UserApiKey.is_default,
+    )
+    result = await session.execute(stmt)
+    row = result.scalar_one_or_none()
+    if row:
+        return row
+
+    stmt = (
+        select(UserApiKey)
+        .where(
             UserApiKey.user_id == user_id,
             UserApiKey.is_active,
-            UserApiKey.is_default,
         )
-        result = await session.execute(stmt)
-        row = result.scalar_one_or_none()
-        if not row:
-            # No default set — use the first active key
-            stmt = (
-                select(UserApiKey)
-                .where(
-                    UserApiKey.user_id == user_id,
-                    UserApiKey.is_active,
-                )
-                .order_by(UserApiKey.created_at)
-                .limit(1)
-            )
-            result = await session.execute(stmt)
-            row = result.scalar_one_or_none()
+        .order_by(UserApiKey.created_at)
+        .limit(1)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_default_api_key(user_id: str) -> dict | None:
+    factory = get_session_factory()
+    async with factory() as session:
+        row = await _resolve_key_row(session, user_id)
+        if row is None and user_id != "anonymous":
+            row = await _resolve_key_row(session, "anonymous")
 
         if not row:
             return None
@@ -189,7 +199,11 @@ async def update_api_key(
     factory = get_session_factory()
     async with factory() as session:
         row = await session.get(UserApiKey, key_id)
-        if not row or row.user_id != user_id:
+        if row is None:
+            return None
+        owner_match = row.user_id == user_id
+        anonymous_fallback = user_id != "anonymous" and row.user_id == "anonymous"
+        if not owner_match and not anonymous_fallback:
             return None
 
         if label is not None:
@@ -233,11 +247,14 @@ async def update_api_key(
 
 
 async def delete_api_key(key_id: str, user_id: str) -> bool:
-    """Delete an API key. Returns True if deleted, False if not found."""
     factory = get_session_factory()
     async with factory() as session:
         row = await session.get(UserApiKey, key_id)
-        if not row or row.user_id != user_id:
+        if row is None:
+            return False
+        owner_match = row.user_id == user_id
+        anonymous_fallback = user_id != "anonymous" and row.user_id == "anonymous"
+        if not owner_match and not anonymous_fallback:
             return False
         await session.delete(row)
         await session.commit()
@@ -366,8 +383,11 @@ async def log_key_usage(
         await session.commit()
 
 
-async def get_key_usage_stats(user_id: str) -> dict:
-    """Get usage statistics for a user's keys."""
+async def get_key_usage_stats(user_id: str | None = None) -> dict:
+    """Get usage statistics for API keys usage.
+
+    If user_id is None or 'anonymous', returns stats across all users.
+    """
     factory = get_session_factory()
     async with factory() as session:
         from sqlalchemy import func
@@ -378,10 +398,31 @@ async def get_key_usage_stats(user_id: str) -> dict:
             func.count(KeyUsageLog.id).label("requests"),
             func.sum(KeyUsageLog.tokens_total).label("tokens"),
         ).where(
-            KeyUsageLog.user_id == user_id,
             KeyUsageLog.created_at >= today_start,
             KeyUsageLog.status == "success",
         )
+        if user_id and user_id != 'anonymous':
+            stmt_today = stmt_today.where(KeyUsageLog.user_id == user_id)
         result_today = await session.execute(stmt_today)
         today = result_today.one()
-        return {"requests": today.requests or 0, "tokens": today.tokens or 0}
+
+        # Month's stats
+        month_start = today_start.replace(day=1)
+        stmt_month = select(
+            func.count(KeyUsageLog.id).label("requests"),
+            func.sum(KeyUsageLog.tokens_total).label("tokens"),
+        ).where(
+            KeyUsageLog.created_at >= month_start,
+            KeyUsageLog.status == "success",
+        )
+        if user_id and user_id != 'anonymous':
+            stmt_month = stmt_month.where(KeyUsageLog.user_id == user_id)
+        result_month = await session.execute(stmt_month)
+        month = result_month.one()
+
+        return {
+            "today_requests": today.requests or 0,
+            "today_tokens": today.tokens or 0,
+            "month_requests": month.requests or 0,
+            "month_tokens": month.tokens or 0,
+        }

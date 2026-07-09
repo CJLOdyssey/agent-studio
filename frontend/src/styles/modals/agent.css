@@ -83,7 +83,7 @@
 
 .agent-config-field .form-label {
   display: block;
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 500;
   color: var(--da-text-secondary);
   margin-bottom: 6px;
@@ -96,7 +96,7 @@
   border: 1px solid var(--da-border);
   border-radius: 8px;
   color: var(--da-text-primary);
-  font-size: 14px;
+  font-size: var(--da-font-size-base);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -110,11 +110,11 @@
 
 .agent-config-field .form-input:focus {
   border-color: var(--da-accent-indigo);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
 }
 
 .agent-config-fields .form-hint {
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   margin-top: 6px;
 }
@@ -143,7 +143,7 @@
   border-radius: 8px;
   background: transparent;
   color: var(--da-text-muted);
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 450;
   cursor: pointer;
   transition:
@@ -210,7 +210,7 @@
 
 .agent-config-content .form-label {
   display: block;
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 500;
   color: var(--da-text-secondary);
   margin-bottom: 8px;
@@ -223,7 +223,7 @@
   border: 1px solid var(--da-border);
   border-radius: 8px;
   color: var(--da-text-primary);
-  font-size: 14px;
+  font-size: var(--da-font-size-base);
   line-height: 1.6;
   resize: vertical;
   font-family: inherit;
@@ -244,13 +244,13 @@
 }
 
 .agent-config-content .form-hint {
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   margin-top: 8px;
 }
 
 .agent-config-char-count {
-  font-size: 11px;
+  font-size: var(--da-font-size-xs);
   color: var(--da-text-muted);
   text-align: right;
   margin-top: 4px;
@@ -268,7 +268,7 @@
 }
 
 .agent-config-list-bar-title {
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 500;
   color: var(--da-text-secondary);
 }
@@ -282,7 +282,7 @@
   border-radius: 6px;
   background: var(--da-bg-surface);
   color: var(--da-text-muted);
-  font-size: 12px;
+  font-size: var(--da-font-size-xs);
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -343,7 +343,7 @@
   color: var(--da-text-on-accent);
   border: none;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 500;
   cursor: pointer;
   transition:
@@ -374,7 +374,7 @@
   color: var(--da-text-muted);
   border: none;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: var(--da-font-size-sm);
   font-weight: 450;
   cursor: pointer;
   transition:
@@ -396,4 +396,96 @@
 
 .agent-config-modal .modal-close:active {
   transform: scale(0.92);
+}
+
+/* ───────────────────────────────────────────
+ * Agent Form Modal — Create/Edit Agent
+ * ─────────────────────────────────────────── */
+
+.agent-form-animate {
+  animation: agentFormIn 0.25s ease-out;
+}
+
+@keyframes agentFormIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.agent-form-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-accent-indigo);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ── Chip group (selected resource tags) ── */
+.wsta-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wsta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 450;
+  color: var(--da-text-secondary);
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 6%);
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 5px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wsta-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wsta-chip-remove:hover {
+  background: color-mix(in srgb, var(--da-status-error) 20%, transparent);
+  color: var(--da-status-error);
+}
+
+/* ───────────────────────────────────────────
+ * Team Form Modal — Create/Edit Team
+ * ─────────────────────────────────────────── */
+
+.team-form-animate {
+  animation: agentFormIn 0.25s ease-out;
+}
+
+.team-form-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-accent-cyan);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
