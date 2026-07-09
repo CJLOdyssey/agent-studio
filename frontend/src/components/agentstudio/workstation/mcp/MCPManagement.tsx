@@ -27,7 +27,7 @@ export default function MCPManagement() {
       const res = await fetch(`/api/mcps/${id}/test`, { method: 'POST' });
       const data = await res.json();
       toast(data.success ? `✅ ${data.message} (${data.duration_ms}ms)` : `❌ ${data.message}`, data.success ? 'success' : 'error');
-    } catch (err) {
+    } catch {
       toast('❌ 测试请求失败', 'error');
     } finally {
       setTestingId(null);

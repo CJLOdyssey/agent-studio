@@ -1,6 +1,5 @@
 """Streaming emitter — bridges raw httpx streaming events to Redis pub/sub + DB."""
 
-import json
 import logging
 
 from virtual_team.broker import publish_run_message
@@ -134,7 +133,7 @@ class StreamEmitter:
                     "node": node,
                 },
             )
-            print(f"\n[DEBUG] emit_tool_complete: published successfully")
+            print("\n[DEBUG] emit_tool_complete: published successfully")
         except Exception as e:
             print(f"\n[DEBUG] emit_tool_complete ERROR: {e}")
             import traceback

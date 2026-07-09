@@ -1,6 +1,6 @@
 """Thinking Tree types — structured nodes for reasoning visualization."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 ThinkingNodeType = Literal["thought", "tool_call"]

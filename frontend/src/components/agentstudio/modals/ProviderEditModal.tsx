@@ -63,11 +63,17 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     const info = providers[providerType];
     if (!info || !info.base_url) return;
     const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
-    if (!baseUrl || knownDefaults.includes(baseUrl)) {
-      setBaseUrl(info.base_url);
-    }
-    if (usageType === 'both' && !info.capabilities.includes('embedding')) setUsageType('llm');
-    if (usageType === 'embedding' && !info.capabilities.includes('embedding')) setUsageType('llm');
+    const nextBaseUrl = (!baseUrl || knownDefaults.includes(baseUrl)) ? info.base_url : baseUrl;
+    let nextUsage = usageType;
+    if (usageType === 'both' && !info.capabilities.includes('embedding')) nextUsage = 'llm';
+    if (usageType === 'embedding' && !info.capabilities.includes('embedding')) nextUsage = 'llm';
+    const patch: Record<string, string> = {};
+    if (nextBaseUrl !== baseUrl) patch.baseUrl = nextBaseUrl;
+    if (nextUsage !== usageType) patch.usageType = nextUsage;
+    if (Object.keys(patch).length) requestAnimationFrame(() => {
+      if (patch.baseUrl) setBaseUrl(patch.baseUrl);
+      if (patch.usageType) setUsageType(patch.usageType as 'llm' | 'embedding' | 'both');
+    });
   }, [providerType]);
 
   const caps = providers[providerType]?.capabilities ?? ['llm'];
