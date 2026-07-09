@@ -6,14 +6,20 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { installGlobalErrorHandlers } from './utils/errorHandler';
 import './i18n/index';
 import './styles/tokens.css';
-import './styles/tailwind-entry.css';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/sidebar/index.css';
 import './styles/chat/index.css';
 import './styles/components/index.css';
 import './styles/modals/index.css';
-import './styles/workstation/index.css';
+import './styles/workstation-layout.css';
+import './styles/workstation-table.css';
+import './styles/workstation-toolbar.css';
+import './styles/workstation-modal.css';
+import './styles/workstation-dropdown.css';
+import './styles/workstation-responsive.css';
+import './styles/workstation-monitor.css';
+import './styles/workstation-settings.css';
 
 installGlobalErrorHandlers();
 

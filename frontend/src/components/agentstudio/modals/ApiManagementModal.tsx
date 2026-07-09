@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Key, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Server, Globe } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Key, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Server, Globe, Shield } from 'lucide-react';
 import Modal from '../../shared/Modal';
 import ToggleSwitch from '../../shared/ToggleSwitch';
 import ProviderEditModal from './ProviderEditModal';
@@ -12,10 +11,9 @@ interface Props {
   onClose: () => void;
 }
 
-type ApiTab = 'providers' | 'models' | 'usage';
+type ApiTab = 'providers' | 'embedding' | 'models' | 'usage';
 
 export default function ApiManagementModal({ onClose }: Props) {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ApiTab>('providers');
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +28,6 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   });
   const [usage, setUsage] = useState({ today_requests: 0, today_tokens: 0, month_requests: 0, month_tokens: 0 });
-  const [usageTypeFilter, setUsageTypeFilter] = useState<'all' | 'llm' | 'embedding' | 'both'>('all');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -101,7 +98,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       await loadKeys();
       setEditingKey(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('api.saveFailed');
+      const msg = err instanceof Error ? err.message : '保存失败，请检查网络连接';
       setError(msg);
       Logger.error('Failed to save API key', err);
     } finally {
@@ -133,7 +130,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       });
       await loadKeys();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('api.updateFailed');
+      const msg = err instanceof Error ? err.message : '更新失败';
       setError(msg);
       Logger.error('Failed to update API key', err);
     }
@@ -146,7 +143,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       await api.deleteKey(id);
       await loadKeys();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('api.deleteFailed');
+      const msg = err instanceof Error ? err.message : '删除失败';
       setError(msg);
       Logger.error('Failed to delete API key', err);
     }
@@ -157,12 +154,12 @@ export default function ApiManagementModal({ onClose }: Props) {
     try {
       const result = await api.testKeyConnection(key.id);
       if (result.success) {
-        alert(t('api.testSuccess'));
+        alert('✅ 连接成功');
       } else {
-        alert(t('api.testFail') + ': ' + result.message);
+        alert('❌ 连接失败: ' + result.message);
       }
     } catch {
-      alert(t('api.testError'));
+      alert('❌ 测试请求失败');
     }
     setTestingId(null);
   };
@@ -194,8 +191,8 @@ export default function ApiManagementModal({ onClose }: Props) {
     <Modal title="API 管理" onClose={onClose} className="api-modal">
       <div className="settings-body">
         <div className="settings-sidebar">
-          {(['providers', 'models', 'usage'] as const).map((tab) => {
-            const icons = { providers: Server, models: Globe, usage: Key };
+          {(['providers', 'embedding', 'models', 'usage'] as const).map((tab) => {
+            const icons = { providers: Server, embedding: Shield, models: Globe, usage: Key };
             const Icon = icons[tab];
             return (
               <button
@@ -205,12 +202,14 @@ export default function ApiManagementModal({ onClose }: Props) {
               >
                 <Icon size={16} />
                 <span>
-                    {tab === 'providers'
-                      ? t('api.tab_provider')
+                  {tab === 'providers'
+                    ? '提供商'
+                    : tab === 'embedding'
+                      ? '嵌入模型'
                       : tab === 'models'
-                        ? t('api.tab_model')
-                        : t('api.tab_usage')}
-                  </span>
+                        ? '模型'
+                        : '用量'}
+                </span>
               </button>
             );
           })}
@@ -219,61 +218,67 @@ export default function ApiManagementModal({ onClose }: Props) {
           {activeTab === 'providers' && (
             <div className="api-providers-tab">
               <div className="api-section-header">
-                <h4>API Key {t('api.manage')}</h4>
+                <h4>API Key 管理</h4>
                 <button className="btn btn-sm btn-primary" onClick={showAddForm}>
                   <Plus size={14} />
                   添加 Key
                 </button>
               </div>
               {error && (
-                <div className="api-error-banner">
-                  <AlertCircle size={16} className="api-error-icon" />
-                  <span className="api-error-text">{error}</span>
-                  <button className="api-error-close" onClick={() => setError(null)}>
+                <div
+                  className="api-error-banner"
+                  style={{
+                    background: 'rgba(239,68,68,0.15)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    marginBottom: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
+                  <span style={{ color: '#fca5a5', fontSize: 13 }}>{error}</span>
+                  <button
+                    onClick={() => setError(null)}
+                    style={{
+                      marginLeft: 'auto',
+                      background: 'none',
+                      border: 'none',
+                      color: '#fca5a5',
+                      cursor: 'pointer',
+                    }}
+                  >
                     ✕
                   </button>
                 </div>
               )}
-              <p className="api-hint-row">
-                {t('api.encryptHint')}
+              <p className="api-hint" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                <Shield size={14} /> Key 加密存储在服务端，永不出站。仅显示前后各几位以供识别。
               </p>
-              {/* Usage type filter */}
-              <div className="api-filter-bar">
-                {(['all', 'llm', 'embedding', 'both'] as const).map((type) => (
-                  <button
-                    key={type}
-                    className={`api-filter-btn ${usageTypeFilter === type ? 'active' : ''}`}
-                    onClick={() => setUsageTypeFilter(type)}
-                  >
-                    {type === 'all' ? '全部' : type === 'llm' ? 'LLM' : type === 'embedding' ? t('api.type_embed') : t('api.type_both')}
-                  </button>
-                ))}
-              </div>
               {loading ? (
                 <div className="api-empty-state">
                   <Loader2 size={32} className="animate-spin" />
-                  <p>{t('common.loading')}</p>
+                  <p>加载中...</p>
                 </div>
               ) : keys.length === 0 ? (
                 <div className="api-empty-state">
                   <Key size={32} />
                   <p>
-                    {t('api.noKeys')}
+                    尚未配置 API Key
                     <br />
-                    {t('api.addKeyHint')}
+                    点击"添加 Key"开始
                   </p>
                 </div>
               ) : (
                 <div className="api-providers-list">
-                  {keys.filter((k) => usageTypeFilter === 'all' || k.usage_type === usageTypeFilter).map((key) => (
+                  {keys.map((key) => (
                     <div key={key.id} className={`api-provider-card ${key.is_active ? 'active' : ''}`}>
                       <div className="api-provider-header">
                         <div className="api-provider-info">
                           <div className="api-provider-name">
                             {key.label || key.provider}
-                            <span className={`api-type-badge api-type-${key.usage_type || 'llm'}`}>
-                              {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
-                            </span>
                             {key.is_active && <CheckCircle2 size={14} className="text-green-500" />}
                             {!key.is_active && <AlertCircle size={14} className="text-red-500" />}
                           </div>
@@ -295,7 +300,7 @@ export default function ApiManagementModal({ onClose }: Props) {
                             onClick={() => handleTestConnection(key)}
                             disabled={testingId === key.id}
                           >
-                            {testingId === key.id ? <Loader2 size={14} className="animate-spin" /> : t('api.test')}
+                            {testingId === key.id ? <Loader2 size={14} className="animate-spin" /> : '测试'}
                           </button>
                           <button className="btn btn-sm btn-ghost" onClick={() => handleDeleteKey(key.id)}>
                             <Trash2 size={14} />
@@ -316,7 +321,7 @@ export default function ApiManagementModal({ onClose }: Props) {
                         </div>
                       </div>
                       {key.last_used_at && (
-                        <div className="api-key-meta">{t('api.lastUsed')}: {new Date(key.last_used_at).toLocaleString()}</div>
+                        <div className="api-key-meta">上次使用: {new Date(key.last_used_at).toLocaleString()}</div>
                       )}
                     </div>
                   ))}
@@ -327,9 +332,9 @@ export default function ApiManagementModal({ onClose }: Props) {
           {activeTab === 'models' && (
             <div className="api-models-tab">
               <div className="api-section-header">
-                <h4>{t('api.defaultModel')}</h4>
+                <h4>默认模型</h4>
               </div>
-              <p className="api-hint">{t('api.selectModel')}</p>
+              <p className="api-hint">选择用于对话的默认 AI 模型</p>
               <div className="api-models-list">
                 {allModels.map(({ model }) => (
                   <label key={model} className="api-model-item">
@@ -358,27 +363,106 @@ export default function ApiManagementModal({ onClose }: Props) {
               </div>
             </div>
           )}
+          {activeTab === 'embedding' && (
+            <div className="api-providers-tab">
+              <div className="api-section-header">
+                <h4>嵌入模型配置</h4>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={() => {
+                    setEditingKey({
+                      id: '',
+                      provider: 'dashscope',
+                      usage_type: 'embedding',
+                      label: 'DashScope Embedding',
+                      key_masked: '',
+                      base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+                      models: [],
+                      is_active: true,
+                      is_default: false,
+                      last_used_at: null,
+                      created_at: null,
+                    });
+                  }}
+                >
+                  <Plus size={14} />
+                  添加 Key
+                </button>
+              </div>
+              <p className="api-hint" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                <Shield size={14} /> 配置 DashScope (阿里云百炼) API Key 用于文本嵌入/向量化，实现 RAG 上下文检索。
+              </p>
+              {loading ? (
+                <div className="api-empty-state">
+                  <Loader2 size={32} className="animate-spin" />
+                  <p>加载中...</p>
+                </div>
+              ) : (
+                <div className="api-providers-list">
+                  {keys.filter((k) => k.usage_type === 'embedding' || k.usage_type === 'both').length === 0 ? (
+                    <div className="api-empty-state">
+                      <Key size={32} />
+                      <p>
+                        尚未配置嵌入模型
+                        <br />
+                        点击"添加 Key"配置 DashScope
+                      </p>
+                    </div>
+                  ) : (
+                    keys
+                      .filter((k) => k.usage_type === 'embedding' || k.usage_type === 'both')
+                      .map((key) => (
+                        <div key={key.id} className={`api-provider-card ${key.is_active ? 'active' : ''}`}>
+                          <div className="api-provider-header">
+                            <div className="api-provider-info">
+                              <div className="api-provider-name">
+                                DashScope {key.is_active && <CheckCircle2 size={14} className="text-green-500" />}
+                              </div>
+                              <div className="api-provider-url">{key.base_url || 'https://dashscope.aliyuncs.com'}</div>
+                            </div>
+                            <div className="api-provider-actions">
+                              <button className="btn btn-sm btn-ghost" onClick={() => setEditingKey(key)}>
+                                编辑
+                              </button>
+                              <button className="btn btn-sm btn-ghost" onClick={() => handleDeleteKey(key.id)}>
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="api-key-row">
+                            <label>Key</label>
+                            <div className="api-key-display">
+                              <code>{key.key_masked}</code>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {activeTab === 'usage' && (
             <div className="api-usage-tab">
               <div className="api-section-header">
-                <h4>{t('api.usageStats')}</h4>
+                <h4>用量统计</h4>
               </div>
               <div className="api-usage-cards">
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.today_requests}</div>
-                  <div className="api-usage-label">{t('api.todayRequests')}</div>
+                  <div className="api-usage-label">今日请求</div>
                 </div>
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.today_tokens.toLocaleString()}</div>
-                  <div className="api-usage-label">{t('api.todayTokens')}</div>
+                  <div className="api-usage-label">今日 Token</div>
                 </div>
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.month_requests}</div>
-                  <div className="api-usage-label">{t('api.monthRequests')}</div>
+                  <div className="api-usage-label">本月请求</div>
                 </div>
                 <div className="api-usage-card">
                   <div className="api-usage-value">{usage.month_tokens.toLocaleString()}</div>
-                  <div className="api-usage-label">{t('api.monthTokens')}</div>
+                  <div className="api-usage-label">本月 Token</div>
                 </div>
               </div>
             </div>

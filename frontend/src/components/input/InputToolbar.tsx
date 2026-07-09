@@ -8,7 +8,6 @@ import CommandDropdown from './CommandDropdown';
 import { useMessageComposer } from '../../hooks/useMessageComposer';
 import { useCommandPalette } from '../../hooks/useCommandPalette';
 import { useToast } from '../../utils/useToast';
-import { useSettings } from '../../contexts/SettingsContext';
 
 export interface InputToolbarHandle {
   addFiles: (files: File[]) => void;
@@ -51,7 +50,6 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   const { t } = useTranslation();
   const { toast } = useToast();
   const [files, setFiles] = useState<AttachedFile[]>([]);
-  const { settings } = useSettings();
 
   const composer = useMessageComposer({
     onSend: (text) => {
@@ -59,7 +57,6 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
       setFiles([]);
     },
     maxLength,
-    sendMode: settings.sendMode,
   });
 
   // ── Slash-command palette ──

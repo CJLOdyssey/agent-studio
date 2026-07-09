@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-6);
+  padding: var(--sp-3) var(--sp-4);
   flex-shrink: 0;
 }
 
@@ -47,7 +47,7 @@
 
 .wsta-search-input:focus {
   border-color: var(--da-accent-indigo);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: var(--da-focus-ring);
 }
 
 .wsta-search-clear {
@@ -100,7 +100,7 @@
 
 .wsta-filter-select:focus {
   border-color: var(--da-accent-indigo);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: var(--da-focus-ring);
 }
 
 /* ── Batch bar ── */
@@ -149,136 +149,48 @@
   color: var(--da-text-muted);
 }
 
-/* ── Pagination Container ── */
 .wsta-pagination {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-top: 1px solid var(--da-border-subtle);
-  gap: 16px;
+  gap: var(--sp-1);
 }
 
-/* ── Pagination Info ── */
-.wsta-pagination-info {
-  font-size: var(--da-font-size-sm);
-  color: var(--da-text-muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* ── Ant Design Pagination Overrides ── */
-.wsta-pagination .ant-pagination {
+.wsta-page-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-}
-
-.wsta-pagination .ant-pagination-item {
+  justify-content: center;
   min-width: 32px;
   height: 32px;
-  line-height: 30px;
+  padding: 0 var(--sp-2);
   background: transparent;
   border: 1px solid var(--da-border);
   border-radius: 6px;
   color: var(--da-text-secondary);
   font-size: var(--da-font-size-sm);
-  font-weight: 500;
-  transition: all 0.15s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.wsta-pagination .ant-pagination-item:hover:not(.ant-pagination-item-active) {
+.wsta-page-btn:hover:not(:disabled) {
   background: var(--da-bg-hover);
   color: var(--da-text-primary);
   border-color: var(--da-border-strong);
 }
 
-.wsta-pagination .ant-pagination-item-active {
-  background: var(--da-accent) !important;
-  border-color: var(--da-accent) !important;
-  color: white !important;
+.wsta-page-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wsta-page-btn.active {
+  background: var(--da-accent-indigo);
+  color: white;
+  border-color: var(--da-accent-indigo);
   font-weight: 600;
 }
 
-.wsta-pagination .ant-pagination-prev,
-.wsta-pagination .ant-pagination-next {
-  min-width: 32px;
-  height: 32px;
-  line-height: 30px;
-  background: transparent;
-  border: 1px solid var(--da-border);
-  border-radius: 6px;
-  color: var(--da-text-secondary);
-  transition: all 0.15s ease;
-}
-
-.wsta-pagination .ant-pagination-prev:hover:not(.ant-pagination-disabled),
-.wsta-pagination .ant-pagination-next:hover:not(.ant-pagination-disabled) {
-  background: var(--da-bg-hover);
-  color: var(--da-text-primary);
-  border-color: var(--da-border-strong);
-}
-
-.wsta-pagination .ant-pagination-disabled {
+.wsta-page-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* ── Quick Jumper ── */
-.wsta-pagination .ant-pagination-options-quick-jumper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--da-font-size-sm);
-  color: var(--da-text-muted);
-  margin-left: 8px;
-}
-
-.wsta-pagination .ant-pagination-options-quick-jumper input {
-  width: 48px;
-  height: 32px;
-  padding: 0 8px;
-  background: var(--da-bg-surface);
-  border: 1px solid var(--da-border);
-  border-radius: 6px;
-  color: var(--da-text-primary);
-  font-size: var(--da-font-size-sm);
-  text-align: center;
-  transition: all 0.15s ease;
-}
-
-.wsta-pagination .ant-pagination-options-quick-jumper input:hover {
-  border-color: var(--da-border-strong);
-}
-
-.wsta-pagination .ant-pagination-options-quick-jumper input:focus {
-  outline: none;
-  border-color: var(--da-accent);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
-}
-
-/* ── Page Size Selector ── */
-.wsta-pagination .ant-pagination-options-size-changer {
-  margin-left: 8px;
-}
-
-.wsta-pagination .ant-select-selector {
-  height: 32px !important;
-  padding: 0 8px !important;
-  background: var(--da-bg-surface) !important;
-  border: 1px solid var(--da-border) !important;
-  border-radius: 6px !important;
-  color: var(--da-text-secondary) !important;
-  font-size: var(--da-font-size-sm) !important;
-}
-
-.wsta-pagination .ant-select-selector:hover {
-  border-color: var(--da-border-strong) !important;
-}
-
-.wsta-pagination .ant-select-focused .ant-select-selector {
-  border-color: var(--da-accent) !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
 }
 
 /* ── Toast ── */

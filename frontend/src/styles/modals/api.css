@@ -1,7 +1,7 @@
 /* API Management Modal */
 .api-modal {
-  width: 970px;
-  height: 600px;
+  width: var(--modal-m);
+  height: var(--modal-height);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -357,51 +357,6 @@
   letter-spacing: 0.3px;
 }
 
-/* Error banner */
-.api-error-banner {
-  background: color-mix(in srgb, var(--da-accent-red) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--da-accent-red) 30%, transparent);
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.api-error-icon {
-  color: var(--da-accent-red);
-  flex-shrink: 0;
-}
-
-.api-error-text {
-  color: var(--da-accent-red);
-  font-size: var(--da-font-size-sm);
-}
-
-.api-error-close {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: var(--da-accent-red);
-  cursor: pointer;
-  padding: 2px 4px;
-  font-size: var(--da-font-size-base);
-  line-height: 1;
-}
-
-.api-error-close:hover {
-  color: var(--da-text-on-accent);
-}
-
-/* Hint row — flex container for icon + text */
-.api-hint-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
 .capability-llm {
   background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
   color: var(--da-accent-indigo);
@@ -440,105 +395,4 @@
 
 .usage-type-option input[type='radio'] {
   accent-color: var(--da-accent-indigo);
-}
-
-/* ── Usage type badge ── */
-.api-type-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  margin-left: 8px;
-}
-
-.api-type-llm {
-  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
-  color: var(--da-accent-indigo);
-}
-
-.api-type-embedding {
-  background: color-mix(in srgb, var(--da-accent-cyan) 15%, transparent);
-  color: var(--da-accent-cyan);
-}
-
-.api-type-both {
-  background: color-mix(in srgb, var(--da-accent-amber) 15%, transparent);
-  color: var(--da-accent-amber);
-}
-
-/* ── Usage type filter bar ── */
-.api-filter-bar {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-
-.api-filter-btn {
-  padding: 5px 14px;
-  border: 1px solid var(--da-border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--da-text-muted);
-  font-size: var(--da-font-size-xs);
-  font-weight: 450;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.api-filter-btn:hover {
-  border-color: var(--da-accent-indigo);
-  color: var(--da-text-primary);
-}
-
-.api-filter-btn.active {
-  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
-  border-color: var(--da-accent-indigo);
-  color: var(--da-accent-indigo);
-  font-weight: 500;
-}
-
-/* ── Provider Edit Modal ── */
-.provider-edit-modal {
-  max-width: 560px;
-}
-
-.provider-edit-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--da-accent-indigo);
-  flex-shrink: 0;
-}
-
-.api-edit-row {
-  display: flex;
-  gap: 16px;
-}
-
-.api-edit-row .form-group {
-  flex: 1;
-}
-
-.usage-type-static {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.form-hint {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--da-font-size-xs);
-  color: var(--da-text-muted);
 }

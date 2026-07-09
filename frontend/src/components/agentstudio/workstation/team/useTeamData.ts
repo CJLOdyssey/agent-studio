@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { SortDir } from '../types';
-import type { TeamEntry, TeamFormData, TeamCategoryFilter } from './team.types';
+import type { TeamEntry, TeamFormData } from './team.types';
 import { teamAPI } from './api';
 import { PAGE_SIZE } from '../constants';
 
@@ -13,7 +13,6 @@ export function useTeamData() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TeamStatusFilter>('all');
-  const [categoryFilter, setCategoryFilter] = useState<TeamCategoryFilter>('all');
   const [sortField, setSortField] = useState<TeamSortField>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
@@ -45,13 +44,12 @@ export function useTeamData() {
     const q = search.toLowerCase();
     if (q) arr = arr.filter((t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
     if (statusFilter !== 'all') arr = arr.filter((t) => t.status === statusFilter);
-    if (categoryFilter !== 'all') arr = arr.filter((t) => t.category === categoryFilter);
     arr.sort((a, b) => {
       const cmp = a[sortField] < b[sortField] ? -1 : 1;
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return arr;
-  }, [teams, search, statusFilter, categoryFilter, sortField, sortDir]);
+  }, [teams, search, statusFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -91,9 +89,7 @@ export function useTeamData() {
   }, []);
 
   return {
-    isLoading, error, search, setSearch, statusFilter, setStatusFilter,
-    categoryFilter, setCategoryFilter,
-    sortField, sortDir,
+    isLoading, error, search, setSearch, statusFilter, setStatusFilter, sortField, sortDir,
     page, setPage, selectedIds, setSelectedIds,
     processed, totalPages: Math.max(1, Math.ceil(processed.length / PAGE_SIZE)), paged,
     allOnPageSelected, toggleSelect, toggleSelectAll,

@@ -1,5 +1,4 @@
 import { X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 interface Props {
   count: number;
@@ -9,13 +8,11 @@ interface Props {
 }
 
 export default function BatchDeleteModal({ count, label = 'Agent', onConfirm, onClose }: Props) {
-  const { t } = useTranslation();
-
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content wsta-modal wsta-modal-sm" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>{t('workstation.batchDelete')}</h3>
+          <h3>批量删除</h3>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="modal-body">
@@ -24,8 +21,8 @@ export default function BatchDeleteModal({ count, label = 'Agent', onConfirm, on
           </p>
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('workstation.cancel')}</button>
-          <button className="btn btn-danger" onClick={onConfirm}>{t('workstation.confirmDelete')}</button>
+          <button className="btn btn-secondary" onClick={onClose}>取消</button>
+          <button className="btn btn-danger" onClick={onConfirm}>确认删除</button>
         </div>
       </div>
     </div>

@@ -1,27 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { LucideIcon } from 'lucide-react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TestProviders } from '../../../../test/setup';
 import AgentConfigModal from '../AgentConfigModal';
 import type { Agent } from '../../../types/agentstudio';
 
-function renderWithProviders(ui: React.ReactElement) {
-  return render(<TestProviders>{ui}</TestProviders>);
-}
-
-vi.mock('../../workstation/prompt/api', () => ({
+vi.mock('../../../../api/client', () => ({
   promptAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
-}));
-vi.mock('../../workstation/output/api', () => ({
   outputAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
-}));
-vi.mock('../../workstation/tool/api', () => ({
   toolAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
-}));
-vi.mock('../../workstation/mcp/api', () => ({
   mcpAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
-}));
-vi.mock('../../workstation/skill/api', () => ({
   skillAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
 }));
 
@@ -54,7 +41,7 @@ function renderModal(overrides?: Record<string, unknown>) {
     onClose: vi.fn(),
     ...overrides,
   };
-  return { ...renderWithProviders(<AgentConfigModal {...props} />), props };
+  return { ...render(<AgentConfigModal {...props} />), props };
 }
 
 describe('AgentConfigModal', () => {
@@ -70,22 +57,22 @@ describe('AgentConfigModal', () => {
 
   it('shows all 5 tabs', () => {
     renderModal();
-    expect(screen.getByText('workstation.prompt')).toBeInTheDocument();
-    expect(screen.getByText('workstation.output')).toBeInTheDocument();
-    expect(screen.getByText('workstation.tools')).toBeInTheDocument();
+    expect(screen.getByText('提示词')).toBeInTheDocument();
+    expect(screen.getByText('约束')).toBeInTheDocument();
+    expect(screen.getByText('工具')).toBeInTheDocument();
     expect(screen.getByText('MCP')).toBeInTheDocument();
     expect(screen.getByText('Skills')).toBeInTheDocument();
   });
 
   it('renders SystemPromptTab by default', () => {
     renderModal();
-    expect(screen.getByPlaceholderText('workstation.systemPromptDesc')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('定义该 Agent 的角色、职责和行为规则...')).toBeInTheDocument();
   });
 
   it('switches to tools tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('workstation.tools'));
-    expect(screen.getByText((content) => content.startsWith('workstation.tools'))).toBeInTheDocument();
+    fireEvent.click(screen.getByText('工具'));
+    expect(screen.getByText('工具 (1)')).toBeInTheDocument();
   });
 
   it('switches to MCP tab on click', () => {
@@ -102,8 +89,8 @@ describe('AgentConfigModal', () => {
 
   it('switches to output tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('workstation.output'));
-    expect(screen.getByPlaceholderText('workstation.outputConstraintDesc')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('约束'));
+    expect(screen.getByPlaceholderText('约束 Agent 的输出格式和行为...')).toBeInTheDocument();
   });
 
   it('calls onClose when Escape pressed', () => {
@@ -114,31 +101,31 @@ describe('AgentConfigModal', () => {
 
   it('calls onSave when save button clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('workstation.saveConfig'));
+    fireEvent.click(screen.getByText('保存配置'));
     expect(props.onSave).toHaveBeenCalled();
   });
 
   it('save button disabled when name is empty', () => {
-    renderModal();
-    fireEvent.change(screen.getByDisplayValue('Test Agent'), { target: { value: '' } });
-    expect(screen.getByText('workstation.saveConfig')).toBeDisabled();
+    renderModal({ agent: { ...mockAgent, name: '' } });
+    const saveBtn = screen.getByText('保存配置');
+    expect(saveBtn).toBeDisabled();
   });
 
   it('calls onClose when cancel clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('workstation.cancel'));
+    fireEvent.click(screen.getByText('取消'));
     expect(props.onClose).toHaveBeenCalled();
   });
 
   it('renders modal title with agent name', () => {
     renderModal();
-    expect(screen.getByText('workstation.agentManage')).toBeInTheDocument();
+    expect(screen.getByText('配置 Agent')).toBeInTheDocument();
+    expect(screen.getByText(/Test Agent/)).toBeInTheDocument();
   });
 
   it('shows tool list items', () => {
     renderModal();
-    const btn = screen.getByText('workstation.tools');
-    fireEvent.click(btn);
+    fireEvent.click(screen.getByText('工具'));
     expect(screen.getByText('tool1')).toBeInTheDocument();
   });
 
@@ -156,7 +143,8 @@ describe('AgentConfigModal', () => {
 
   it('calls onClose when overlay clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('workstation.agentManage').closest('.modal-overlay')!);
+    const overlay = document.querySelector('.modal-overlay');
+    if (overlay) fireEvent.click(overlay);
     expect(props.onClose).toHaveBeenCalled();
   });
 });

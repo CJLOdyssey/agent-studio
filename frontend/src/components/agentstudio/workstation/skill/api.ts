@@ -41,25 +41,11 @@ const realImpl: SkillAPIService = {
       status: data.status,
       author: data.author,
       instructions: data.instructions || '',
-      prompt_id: data.prompt_id || undefined,
-      tool_names: data.tool_names,
-      output_constraint: data.output_constraint || '',
     });
     return toEntry(item);
   },
   update: async (id, data) => {
-    await updateSkill(id, {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.category !== undefined && { category: data.category }),
-      ...(data.version !== undefined && { version: data.version }),
-      ...(data.status !== undefined && { status: data.status }),
-      ...(data.author !== undefined && { author: data.author }),
-      ...(data.instructions !== undefined && { instructions: data.instructions }),
-      ...(data.prompt_id !== undefined && { prompt_id: data.prompt_id }),
-      ...(data.tool_names !== undefined && { tool_names: data.tool_names }),
-      ...(data.output_constraint !== undefined && { output_constraint: data.output_constraint }),
-    });
+    await updateSkill(id, { ...data });
   },
   remove: async (id) => { await deleteSkill(id); },
   clone: async (item) => {
