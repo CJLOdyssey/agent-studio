@@ -1,0 +1,802 @@
+@keyframes ws-fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* ── Antd component overrides for workstation modal ── */
+/* Modal header: dark bg, bottom border */
+.workstation-modal.ant-modal .ant-modal-header {
+  background: var(--da-bg-card);
+  border-bottom: 1px solid var(--da-border);
+  padding: 14px 20px;
+}
+
+.workstation-modal.ant-modal .ant-modal-title {
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-base);
+  font-weight: 600;
+}
+
+.workstation-modal.ant-modal .ant-modal-close {
+  color: var(--da-text-muted);
+}
+
+.workstation-modal.ant-modal .ant-modal-close:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+/* Modal body: fixed height, flex column, no body-level overflow */
+.workstation-modal.ant-modal .ant-modal-body {
+  height: 700px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Modal content: dark bg + no padding (handled by WorkstationPage) */
+.workstation-modal.ant-modal .ant-modal-content {
+  background: var(--da-bg-card);
+  overflow: hidden;
+  padding: 0;
+}
+
+.workstation-modal.ant-modal .ant-modal-container {
+  background: var(--da-bg-card);
+  padding: 0;
+}
+
+/* ProCard: flat structural wrapper (not a visual card) */
+.workstation-modal.ant-modal .ant-pro-card {
+  background: transparent !important;
+  color: var(--da-text-primary);
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.workstation-modal.ant-modal .ant-pro-card .ant-pro-card-body {
+  padding: 24px 20px !important;
+}
+
+.workstation-modal.ant-modal .ant-pro-card .ant-pro-card-header {
+  border-bottom: 1px solid var(--da-border);
+  padding: 24px 20px;
+  background: transparent;
+}
+
+.workstation-modal.ant-modal .ant-pro-card .ant-pro-card-title {
+  font-size: var(--da-font-size-xl);
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+.workstation-modal.ant-modal .ant-table {
+  background: transparent;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+}
+
+.workstation-modal.ant-modal .ant-table table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.workstation-modal.ant-modal .ant-table-thead > tr > th {
+  background: var(--da-bg-card);
+  color: var(--da-text-muted);
+  border-bottom: 1px solid var(--da-border-subtle);
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  vertical-align: middle;
+  line-height: 1.3;
+}
+
+.workstation-modal.ant-modal .ant-table-thead > tr > th::before {
+  display: none !important;
+}
+
+.workstation-modal.ant-modal .ant-table-column-sorters {
+  align-items: center;
+}
+
+.workstation-modal.ant-modal .ant-table-tbody > tr > td {
+  background: transparent;
+  color: var(--da-text-primary);
+  border-bottom: 1px solid var(--da-border-subtle);
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  vertical-align: middle;
+  line-height: 1.3;
+}
+
+.workstation-modal.ant-modal .ant-table-tbody > tr > td::before {
+  display: none !important;
+}
+
+.workstation-modal.ant-modal .ant-table-tbody > tr:hover > td,
+.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td,
+.workstation-modal.ant-modal .ant-table-tbody > tr > td.ant-table-cell-row-hover {
+  @apply bg-[var(--da-bg-hover)] text-[var(--da-text-primary)];
+}
+
+.workstation-modal.ant-modal .ant-table-tbody > tr:hover > td a,
+.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td a,
+.workstation-modal.ant-modal .ant-table-tbody > tr:hover > td span,
+.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td span {
+  @apply text-inherit;
+}
+
+/* Prevent header text turning white on hover */
+.workstation-modal.ant-modal .ant-table-thead > tr > th:hover,
+.workstation-modal.ant-modal .ant-table-thead > tr.ant-table-row:hover > th {
+  @apply text-[var(--da-text-muted)];
+}
+
+.workstation-modal.ant-modal .ant-table-column-sorters:hover {
+  @apply text-[var(--da-text-muted)];
+}
+
+.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: color-mix(in srgb, var(--da-accent) 6%, transparent);
+}
+
+.workstation-modal.ant-modal .ant-btn-default {
+  background: var(--da-bg-surface);
+  color: var(--da-text-primary);
+  border-color: var(--da-border);
+}
+
+.workstation-modal.ant-modal .ant-btn-default:hover {
+  background: var(--da-bg-hover);
+  border-color: var(--da-accent);
+  color: var(--da-text-primary);
+}
+
+.workstation-modal.ant-modal .ant-btn-primary {
+  background: var(--da-accent);
+  color: var(--da-text-on-accent);
+  border-color: var(--da-accent);
+}
+
+.workstation-modal.ant-modal .ant-btn-primary:hover {
+  background: var(--da-bg-elevated);
+  border-color: var(--da-bg-elevated);
+}
+
+.workstation-modal.ant-modal .ant-btn-text {
+  color: var(--da-text-secondary);
+}
+
+.workstation-modal.ant-modal .ant-btn-text:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.workstation-modal.ant-modal .ant-checkbox-inner {
+  background-color: var(--da-bg-surface);
+  border-color: var(--da-border);
+}
+
+.workstation-modal.ant-modal .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--da-accent);
+  border-color: var(--da-accent);
+}
+
+.workstation-modal.ant-modal .ant-checkbox-wrapper {
+  color: var(--da-text-primary);
+}
+
+.workstation-modal.ant-pagination,
+.workstation-modal .ant-pagination {
+  margin: 0;
+}
+
+.ant-pagination-item {
+  background: var(--da-bg-surface) !important;
+  border-color: var(--da-border) !important;
+  border-radius: 6px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  line-height: 30px !important;
+  transition: all 0.15s ease !important;
+}
+
+.ant-pagination-item a {
+  color: var(--da-text-secondary) !important;
+  font-size: var(--da-font-size-sm) !important;
+  font-weight: 500 !important;
+}
+
+.ant-pagination-item:hover {
+  border-color: var(--da-accent) !important;
+}
+
+.ant-pagination-item:hover a {
+  color: var(--da-accent) !important;
+}
+
+.ant-pagination-item-active {
+  background: var(--da-accent) !important;
+  border-color: var(--da-accent) !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--da-text-on-accent) !important;
+  font-weight: 600 !important;
+}
+
+.ant-pagination-prev,
+.ant-pagination-next {
+  min-width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--da-border) !important;
+  background: var(--da-bg-surface) !important;
+  color: var(--da-text-secondary) !important;
+  transition: all 0.15s ease !important;
+}
+
+.ant-pagination-prev:hover,
+.ant-pagination-next:hover {
+  border-color: var(--da-accent) !important;
+  color: var(--da-accent) !important;
+}
+
+.ant-pagination-prev button,
+.ant-pagination-next button {
+  color: inherit !important;
+  font-size: var(--da-font-size-lg) !important;
+  font-weight: 600 !important;
+}
+
+.ant-pagination-disabled,
+.ant-pagination-disabled:hover {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+.ant-pagination-disabled .ant-pagination-item,
+.ant-pagination-disabled:hover .ant-pagination-item {
+  border-color: var(--da-border) !important;
+  background: var(--da-bg-surface) !important;
+}
+
+.ant-pagination-disabled .ant-pagination-item a,
+.ant-pagination-disabled:hover .ant-pagination-item a {
+  color: var(--da-text-muted) !important;
+}
+
+.ant-pagination-jump-prev,
+.ant-pagination-jump-next {
+  min-width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--da-border) !important;
+  background: var(--da-bg-surface) !important;
+  color: var(--da-text-muted) !important;
+  font-size: var(--da-font-size-base) !important;
+  letter-spacing: 2px !important;
+}
+
+.ant-pagination-jump-prev:hover,
+.ant-pagination-jump-next:hover {
+  border-color: var(--da-accent) !important;
+  color: var(--da-accent) !important;
+}
+
+.ant-pagination-options {
+  margin-left: 12px !important;
+}
+
+.ant-pagination-options-quick-jumper {
+  font-size: var(--da-font-size-sm) !important;
+  color: var(--da-text-muted) !important;
+  margin-left: 8px !important;
+}
+
+.ant-pagination-options-quick-jumper input {
+  background: var(--da-bg-surface) !important;
+  border-color: var(--da-border) !important;
+  border-radius: 6px !important;
+  color: var(--da-text-primary) !important;
+  font-size: var(--da-font-size-sm) !important;
+  width: 48px !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  transition: all 0.15s ease !important;
+}
+
+.ant-pagination-options-quick-jumper input:hover {
+  border-color: var(--da-accent) !important;
+}
+
+.ant-pagination-options-quick-jumper input:focus {
+  border-color: var(--da-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent) 15%, transparent) !important;
+  outline: none !important;
+}
+
+.ant-pagination-total-text {
+  font-size: var(--da-font-size-sm) !important;
+  color: var(--da-text-muted) !important;
+  font-family: var(--font-mono) !important;
+  margin-right: 12px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+}
+
+.ant-pagination-total-text::after {
+  content: none !important;
+}
+
+.workstation-modal.ant-modal .ant-empty-description {
+  color: var(--da-text-muted);
+}
+
+.workstation-modal.ant-modal .ant-input,
+.workstation-modal.ant-modal .ant-input-affix-wrapper {
+  background: var(--da-bg-surface);
+  border-color: var(--da-border);
+  color: var(--da-text-primary);
+}
+
+.workstation-modal.ant-modal .ant-input::placeholder,
+.workstation-modal.ant-modal .ant-input-affix-wrapper input::placeholder {
+  color: var(--da-text-muted);
+}
+
+.workstation-modal.ant-modal .ant-input-affix-wrapper:focus,
+.workstation-modal.ant-modal .ant-input-affix-wrapper-focused {
+  border-color: var(--da-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent) 15%, transparent);
+}
+
+.workstation-modal.ant-modal .ant-select-selector {
+  background: var(--da-bg-surface) !important;
+  border-color: var(--da-border) !important;
+  color: var(--da-text-primary) !important;
+}
+
+.workstation-modal.ant-modal .ant-select-selection-item {
+  color: var(--da-text-primary);
+}
+
+/* ── Optimized modal container ── */
+.workstation-modal.ant-modal .ant-modal-content {
+  width: 100%;
+  max-width: 1400px;
+  height: 700px;
+  background: var(--da-bg-secondary);
+  border-radius: 12px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  margin: 0 auto;
+}
+
+/* ── Sidebar navigation ── */
+.workstation-modal.ant-modal .workstation-sidebar {
+  width: 180px;
+  background: var(--da-bg-tertiary);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.workstation-modal.ant-modal .workstation-sidebar .nav-group {
+  margin-bottom: 16px;
+}
+
+.workstation-modal.ant-modal .workstation-sidebar .nav-group-title {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--da-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 8px;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.workstation-modal.ant-modal .workstation-sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--da-text-secondary);
+  cursor: pointer;
+  font-size: var(--da-font-size-sm);
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.workstation-modal.ant-modal .workstation-sidebar .nav-item:hover {
+  background: var(--da-bg-card);
+  color: var(--da-text-primary);
+}
+
+.workstation-modal.ant-modal .workstation-sidebar .nav-item.active {
+  background: color-mix(in srgb, var(--da-accent) 8%, transparent);
+  color: var(--da-accent);
+}
+
+/* ── Content area ── */
+.workstation-modal.ant-modal .workstation-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Table toolbar ── */
+.workstation-modal.ant-modal .ws-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 16px 0;
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-search-input {
+  height: 36px;
+  padding: 0 12px;
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+  outline: none;
+  transition: all 0.15s ease;
+  flex: 0 1 220px;
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-search-input::placeholder {
+  color: var(--da-text-muted);
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-search-input:focus {
+  border-color: var(--da-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-accent) 12%, transparent);
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-filter-select {
+  height: 36px;
+  padding: 0 12px;
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  line-height: 1;
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-btn-primary {
+  background: var(--da-accent);
+  color: var(--da-text-on-accent);
+}
+
+.workstation-modal.ant-modal .ws-table-toolbar .ws-btn-primary:hover {
+  opacity: 0.85;
+}
+
+/* ── Status badges ── */
+.workstation-modal.ant-modal .ws-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.workstation-modal.ant-modal .ws-status-badge .ws-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.workstation-modal.ant-modal .ws-status-active {
+  background: color-mix(in srgb, var(--da-status-active) 15%, transparent);
+  color: var(--da-status-active);
+}
+
+.workstation-modal.ant-modal .ws-status-inactive {
+  background: color-mix(in srgb, var(--da-text-muted) 15%, transparent);
+  color: var(--da-text-muted);
+}
+
+.workstation-modal.ant-modal .ws-status-error {
+  background: color-mix(in srgb, var(--da-status-error) 15%, transparent);
+  color: var(--da-status-error);
+}
+
+/* ── Category badges ── */
+.workstation-modal.ant-modal .ws-category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.workstation-modal.ant-modal .ws-category-accent {
+  background: color-mix(in srgb, var(--da-accent) 12%, transparent);
+  color: var(--da-text-on-accent);
+}
+
+.workstation-modal.ant-modal .ws-category-dev {
+  background: color-mix(in srgb, var(--da-accent) 12%, transparent);
+  color: var(--da-text-on-accent);
+}
+
+.workstation-modal.ant-modal .ws-category-ops {
+  background: color-mix(in srgb, var(--da-status-success) 12%, transparent);
+  color: var(--da-status-success);
+}
+
+.workstation-modal.ant-modal .ws-category-data {
+  background: color-mix(in srgb, var(--da-accent) 12%, transparent);
+  color: var(--da-accent);
+}
+
+.workstation-modal.ant-modal .ws-category-security {
+  background: color-mix(in srgb, var(--da-accent-red) 12%, transparent);
+  color: var(--da-accent-red);
+}
+
+.workstation-modal.ant-modal .ws-category-product {
+  background: color-mix(in srgb, var(--da-accent-purple) 12%, transparent);
+  color: var(--da-accent-purple);
+}
+
+.workstation-modal.ant-modal .ws-category-management {
+  background: color-mix(in srgb, var(--da-accent-amber) 12%, transparent);
+  color: var(--da-accent-amber);
+}
+
+/* ── Version tag ── */
+.workstation-modal.ant-modal .ws-version-tag {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ── Action button (⋯) ── */
+.workstation-modal.ant-modal .ws-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.workstation-modal.ant-modal .ws-action-btn:hover {
+  background: var(--da-bg-card);
+  color: var(--da-text-primary);
+}
+
+/* ── Action dropdown menu (⋯ popup) ── */
+.workstation-modal.ant-modal .ws-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.workstation-modal.ant-modal .ws-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--da-bg-elevated);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  min-width: 150px;
+  z-index: 1050;
+  padding: 4px 0;
+}
+
+.workstation-modal.ant-modal .ws-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.workstation-modal.ant-modal .ws-dropdown-item:hover {
+  background: color-mix(in srgb, var(--da-accent) 8%, transparent);
+  color: var(--da-accent);
+}
+
+.workstation-modal.ant-modal .ws-dropdown-item.ws-danger {
+  color: var(--da-status-error);
+}
+
+.workstation-modal.ant-modal .ws-dropdown-item.ws-danger:hover {
+  background: color-mix(in srgb, var(--da-status-error) 12%, transparent);
+}
+
+.workstation-modal.ant-modal .ws-dropdown-divider {
+  height: 1px;
+  background: var(--da-border-subtle);
+  margin: 4px 0;
+}
+
+/* ── Native element focus effects (used by tab components) ── */
+.workstation-modal.ant-modal input[type="text"]:focus,
+.workstation-modal.ant-modal input[type="search"]:focus,
+.workstation-modal.ant-modal select:focus {
+  outline: none;
+  border-color: var(--da-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-accent) 12%, transparent) !important;
+}
+
+/* ── WstaDropdownPortal (Ant Menu inside fixed container) ── */
+.workstation-modal.ant-modal .ant-menu-vertical {
+  border-inline-end: none !important;
+}
+
+.workstation-modal.ant-modal .ant-menu-item {
+  height: 36px !important;
+  line-height: 36px !important;
+  margin: 0 !important;
+  font-size: var(--da-font-size-sm) !important;
+  color: var(--da-text-secondary) !important;
+  border-radius: 0 !important;
+}
+
+.workstation-modal.ant-modal .ant-menu-item:hover {
+  background: color-mix(in srgb, var(--da-accent) 8%, transparent) !important;
+  color: var(--da-accent) !important;
+}
+
+.workstation-modal.ant-modal .ant-menu-item-danger {
+  color: var(--da-status-error) !important;
+}
+
+.workstation-modal.ant-modal .ant-menu-item-danger:hover {
+  background: color-mix(in srgb, var(--da-status-error) 12%, transparent) !important;
+  color: var(--da-status-error) !important;
+}
+
+.workstation-modal.ant-modal .ant-menu-item-divider {
+  margin: 4px 0 !important;
+  border-color: var(--da-border-subtle) !important;
+}
+
+/* ── Status Badge (Ant Design) ── */
+.workstation-modal.ant-modal .ant-badge-status-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.workstation-modal.ant-modal .ant-badge-status-text {
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+}
+
+/* ── Table row spacing ── */
+.workstation-modal.ant-modal .ant-table-tbody > tr > td:first-child,
+.workstation-modal.ant-modal .ant-table-tbody .ant-table-cell:first-child {
+  padding-left: 24px !important;
+}
+
+.workstation-modal.ant-modal .ant-table-tbody > tr > td:last-child,
+.workstation-modal.ant-modal .ant-table-tbody .ant-table-cell:last-child {
+  padding-right: 24px !important;
+}
+
+.workstation-modal.ant-modal .ant-table-thead > tr > th:first-child,
+.workstation-modal.ant-modal .ant-table-thead .ant-table-cell:first-child {
+  padding-left: 24px !important;
+}
+
+.workstation-modal.ant-modal .ant-table-thead > tr > th:last-child,
+.workstation-modal.ant-modal .ant-table-thead .ant-table-cell:last-child {
+  padding-right: 24px !important;
+}
+
+/* Override antd default cell padding */
+.workstation-modal.ant-modal .ant-table-cell,
+.workstation-modal.ant-modal td.ant-table-cell,
+.workstation-modal.ant-modal th.ant-table-cell,
+.workstation-modal.ant-modal .ant-table-tbody td.ant-table-cell,
+.workstation-modal.ant-modal .ant-table-thead th.ant-table-cell {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  padding-block: 12px !important;
+  padding-inline: 24px !important;
+}
+
+/* ── Fixed-bottom pagination ── */
+.workstation-modal.ant-modal .workstation-tab-card .ant-pro-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Responsive design ── */
+@media (max-width: 1200px) {
+  .workstation-modal.ant-modal .ant-modal-content {
+    width: 100%;
+    height: min(700px, 90vh);
+  }
+}
+
+@media (max-width: 768px) {
+  .workstation-modal.ant-modal .ant-modal-content {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .workstation-modal.ant-modal .ant-modal-body {
+    height: 100vh;
+  }
+  
+  /* Hide sidebar on mobile */
+  .workstation-modal.ant-modal .workstation-sidebar {
+    display: none;
+  }
+  
+  /* Full width content on mobile */
+  .workstation-modal.ant-modal .workstation-content {
+    width: 100%;
+  }
+}

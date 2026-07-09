@@ -18,7 +18,7 @@ async def get_skills() -> list[dict]:
                 "id": s.id,
                 "name": s.name,
                 "category": s.category,
-                "description": s.description,
+                "description": s.content,
                 "version": s.version,
                 "status": s.status,
                 "author": s.author,

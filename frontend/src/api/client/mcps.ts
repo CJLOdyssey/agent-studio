@@ -15,12 +15,12 @@ export async function listMCPs(): Promise<MCPItem[]> {
   return data;
 }
 
-export async function createMCP(payload: { name: string; type: string; endpoint?: string; config?: Record<string, unknown> }): Promise<MCPItem> {
+export async function createMCP(payload: { name: string; type: string; endpoint?: string; config?: Record<string, unknown> | string }): Promise<MCPItem> {
   const { data } = await api.post('/mcps', payload);
   return data;
 }
 
-export async function updateMCP(id: string, payload: Partial<{ name: string; type: string; endpoint: string; config: Record<string, unknown>; status: string }>): Promise<MCPItem> {
+export async function updateMCP(id: string, payload: Partial<{ name: string; type: string; endpoint: string; config: string; status: string }>): Promise<MCPItem> {
   const { data } = await api.put(`/mcps/${id}`, payload);
   return data;
 }

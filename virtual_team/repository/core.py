@@ -216,13 +216,14 @@ async def update_run_status(run_id: str, status: str):
             await session.commit()
 
 
-async def save_message(run_id: str, role: str, agent_name: str, content: str, round_number: int):
+async def save_message(run_id: str, role: str, agent_name: str, content: str, round_number: int, thinking: str | None = None):  # noqa: E501
     msg = ChatMessage(
         id=str(uuid4()),
         run_id=run_id,
         role=role,
         agent_name=agent_name,
         content=content,
+        thinking=thinking,
         round_number=round_number,
         created_at=datetime.now(UTC),
     )

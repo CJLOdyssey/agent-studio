@@ -52,6 +52,12 @@ const langs: Record<string, [zh: string, en: string]> = {
   'tool.loading': ['加载中...', 'Loading...'],
   'tool.status_active': ['已启用', 'Active'],
   'tool.status_disabled': ['已禁用', 'Disabled'],
+  'tool.test': ['测试', 'Test'],
+  'tool.testing': ['测试中...', 'Testing...'],
+  'tool.test_success': ['测试通过', 'Test Passed'],
+  'tool.test_fail': ['测试失败', 'Test Failed'],
+  'tool.test_result': ['{status} — {duration}ms', '{status} — {duration}ms'],
+  'tool.test_no_endpoint': ['请先填写接口地址', 'Please enter an endpoint first'],
 };
 
 const lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
