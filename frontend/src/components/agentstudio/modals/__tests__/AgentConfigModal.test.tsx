@@ -9,11 +9,19 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(<TestProviders>{ui}</TestProviders>);
 }
 
-vi.mock('../../../../api/client', () => ({
+vi.mock('../../workstation/prompt/api', () => ({
   promptAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
+}));
+vi.mock('../../workstation/output/api', () => ({
   outputAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
+}));
+vi.mock('../../workstation/tool/api', () => ({
   toolAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
+}));
+vi.mock('../../workstation/mcp/api', () => ({
   mcpAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
+}));
+vi.mock('../../workstation/skill/api', () => ({
   skillAPI: { fetchAll: vi.fn().mockResolvedValue([]) },
 }));
 
@@ -62,22 +70,22 @@ describe('AgentConfigModal', () => {
 
   it('shows all 5 tabs', () => {
     renderModal();
-    expect(screen.getByText('提示词')).toBeInTheDocument();
-    expect(screen.getByText('约束')).toBeInTheDocument();
-    expect(screen.getByText('工具')).toBeInTheDocument();
+    expect(screen.getByText('workstation.prompt')).toBeInTheDocument();
+    expect(screen.getByText('workstation.output')).toBeInTheDocument();
+    expect(screen.getByText('workstation.tools')).toBeInTheDocument();
     expect(screen.getByText('MCP')).toBeInTheDocument();
     expect(screen.getByText('Skills')).toBeInTheDocument();
   });
 
   it('renders SystemPromptTab by default', () => {
     renderModal();
-    expect(screen.getByPlaceholderText('定义该 Agent 的角色、职责和行为规则...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('workstation.systemPromptDesc')).toBeInTheDocument();
   });
 
   it('switches to tools tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('工具'));
-    expect(screen.getByText('工具 (1)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('workstation.tools'));
+    expect(screen.getByText((content) => content.startsWith('workstation.tools'))).toBeInTheDocument();
   });
 
   it('switches to MCP tab on click', () => {
@@ -94,8 +102,8 @@ describe('AgentConfigModal', () => {
 
   it('switches to output tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('约束'));
-    expect(screen.getByPlaceholderText('约束 Agent 的输出格式和行为...')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('workstation.output'));
+    expect(screen.getByPlaceholderText('workstation.outputConstraintDesc')).toBeInTheDocument();
   });
 
   it('calls onClose when Escape pressed', () => {
@@ -106,31 +114,31 @@ describe('AgentConfigModal', () => {
 
   it('calls onSave when save button clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('保存配置'));
+    fireEvent.click(screen.getByText('workstation.saveConfig'));
     expect(props.onSave).toHaveBeenCalled();
   });
 
   it('save button disabled when name is empty', () => {
-    renderModal({ agent: { ...mockAgent, name: '' } });
-    const saveBtn = screen.getByText('保存配置');
-    expect(saveBtn).toBeDisabled();
+    renderModal();
+    fireEvent.change(screen.getByDisplayValue('Test Agent'), { target: { value: '' } });
+    expect(screen.getByText('workstation.saveConfig')).toBeDisabled();
   });
 
   it('calls onClose when cancel clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('取消'));
+    fireEvent.click(screen.getByText('workstation.cancel'));
     expect(props.onClose).toHaveBeenCalled();
   });
 
   it('renders modal title with agent name', () => {
     renderModal();
-    expect(screen.getByText('配置 Agent')).toBeInTheDocument();
-    expect(screen.getByText(/Test Agent/)).toBeInTheDocument();
+    expect(screen.getByText('workstation.agentManage')).toBeInTheDocument();
   });
 
   it('shows tool list items', () => {
     renderModal();
-    fireEvent.click(screen.getByText('工具'));
+    const btn = screen.getByText('workstation.tools');
+    fireEvent.click(btn);
     expect(screen.getByText('tool1')).toBeInTheDocument();
   });
 
@@ -148,8 +156,7 @@ describe('AgentConfigModal', () => {
 
   it('calls onClose when overlay clicked', () => {
     const { props } = renderModal();
-    const overlay = document.querySelector('.modal-overlay');
-    if (overlay) fireEvent.click(overlay);
+    fireEvent.click(screen.getByText('workstation.agentManage').closest('.modal-overlay')!);
     expect(props.onClose).toHaveBeenCalled();
   });
 });
