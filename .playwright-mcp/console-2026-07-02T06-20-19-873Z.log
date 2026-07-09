@@ -1,3 +1,0 @@
-[     143ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/chunk-SXRIVT2P.js?v=5bafdde9:21608
-[  379474ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:5174/api/runs:0
-[  379475ms] [WARNING] [WARN] Unhandled API error 400 {message: 请先在设置中配置 API Key, status: 400} @ http://localhost:5174/src/utils/logger.ts:20

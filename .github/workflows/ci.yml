@@ -96,10 +96,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt
+      - name: Run module consistency check
+        run: node scripts/check-docs.js
       - name: Verify .env.example covers all env vars
         run: |
           vars_in_code=$(grep -ohRE 'os\.environ\.get\(["'"'"']?[A-Z_]+' virtual_team/*.py | grep -oP '[A-Z_]+' | sort -u)
@@ -112,11 +117,41 @@ jobs:
             exit 1
           fi
           echo "✅ All env vars covered in .env.example"
-      - name: Verify table count matches CLAUDE.md
+      - name: Verify AGENTS.md counts match codebase
         run: |
-          actual=$(grep -c "__tablename__" virtual_team/database.py)
-          echo "Actual tables: $actual"
-          echo "Update CLAUDE.md if table count has changed"
+          errors=0
+          # Routers
+          actual_routers=$(ls virtual_team/routers/*.py | grep -v __init__ | wc -l)
+          expected_routers=$(grep -oP 'routers/ \(\K[0-9]+' AGENTS.md)
+          if [ "$actual_routers" != "$expected_routers" ]; then
+            echo "❌ Routers: AGENTS.md says $expected_routers, actual $actual_routers"
+            errors=$((errors+1))
+          else
+            echo "✅ Routers: $actual_routers"
+          fi
+          # Repository
+          actual_repos=$(ls virtual_team/repository/*.py | grep -v __init__ | wc -l)
+          expected_repos=$(grep -oP 'repository/ \(\K[0-9]+' AGENTS.md)
+          if [ "$actual_repos" != "$expected_repos" ]; then
+            echo "❌ Repository: AGENTS.md says $expected_repos, actual $actual_repos"
+            errors=$((errors+1))
+          else
+            echo "✅ Repository: $actual_repos"
+          fi
+          # Workstation modules
+          actual_modules=$(ls -d frontend/src/components/agentstudio/workstation/*/ 2>/dev/null | grep -v '/shared/' | wc -l)
+          claude_modules=$(grep -oP '工作台 \K[0-9]+' CLAUDE.md)
+          if [ "$actual_modules" != "$claude_modules" ]; then
+            echo "❌ Workstation: CLAUDE.md says $claude_modules, actual $actual_modules"
+            errors=$((errors+1))
+          else
+            echo "✅ Workstation modules: $actual_modules"
+          fi
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors doc inconsistency(s) found — update AGENTS.md / CLAUDE.md"
+            exit 1
+          fi
+          echo "✅ All docs consistent with codebase"
 
   build-frontend:
     runs-on: ubuntu-latest
