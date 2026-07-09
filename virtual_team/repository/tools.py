@@ -23,6 +23,8 @@ async def get_tools() -> list[dict]:
                 "status": t.status,
                 "version": t.version,
                 "endpoint": t.endpoint,
+                "method": t.method,
+                "headers": t.headers,
                 "parameters": t.parameters,
                 "created_at": t.created_at.isoformat() if t.created_at else None,
             }

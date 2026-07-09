@@ -1,4 +1,5 @@
 import { Plus, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import SkillFormModal from '../../workstation/skill/SkillFormModal';
 import type { SkillFormData } from '../../workstation/skill/skill.types';
 import ConfigItemList from '../ConfigItemList';
@@ -29,6 +30,8 @@ export function SkillsTab({
   onToggle, onAdd, onUpdate, onRemove, onStartEdit, onFinishEdit,
   onPickerOpen, onCustomize, onFormSave, onFormClose, setFormData, onEditFull,
 }: SkillsTabProps) {
+  const { t } = useTranslation();
+
   if (showForm) {
     return (
       <SkillFormModal
@@ -47,12 +50,12 @@ export function SkillsTab({
       <div className="agent-config-list-bar">
         <button className="agent-config-list-bar-btn" onClick={onPickerOpen}>
           <Plus size={14} />
-          添加
+          {t('workstation.add')}
         </button>
         <span className="agent-config-list-bar-title">Skills ({items.length})</span>
         <button className="agent-config-list-bar-btn" onClick={onCustomize}>
           <Sparkles size={14} />
-          自定义
+          {t('workstation.customize')}
         </button>
       </div>
       <ConfigItemList
@@ -60,7 +63,7 @@ export function SkillsTab({
         items={items}
         presets={[]}
         editingId={editingId}
-        emptyLabel="暂无 Skills"
+        emptyLabel={t('workstation.noSkills')}
         hideHeader
         onToggle={onToggle}
         onAdd={onAdd}

@@ -67,7 +67,7 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
             onClick={() => handleItemClick(onOpenWorkstation)}
           >
             <LayoutDashboard size={16} className="lucide-icon" />
-            <span>管理工作台</span>
+            <span>{t('sidebar.workstation')}</span>
           </button>
           <button className="agentstudio-popover-item" onClick={() => closeMenu()}>
             <HelpCircle size={16} className="lucide-icon" />
@@ -97,7 +97,7 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
             <div className="agentstudio-user-name">User 1001</div>
             <div className="agentstudio-user-status">
               <span className="agentstudio-user-online-dot" />
-              在线状态
+              {t('user.onlineStatus')}
             </div>
           </div>
         </div>
