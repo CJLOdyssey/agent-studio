@@ -6,15 +6,17 @@ import { PAGE_SIZE } from '../constants';
 
 export type ToolSortField = 'name' | 'category' | 'status';
 export type CategoryFilter = 'all' | string;
+export type ToolStatusFilter = 'all' | ToolEntry['status'];
 
 export interface ToolData {
   isLoading: boolean; error: string | null;
   paged: ToolEntry[]; processed: ToolEntry[];
   page: number; totalPages: number;
-  search: string; categoryFilter: CategoryFilter;
+  search: string; categoryFilter: CategoryFilter; statusFilter: ToolStatusFilter;
   sortField: ToolSortField | null; sortDir: SortDir;
   selectedIds: Set<string>; allOnPageSelected: boolean;
-  setSearch: (v: string) => void; setCategoryFilter: (v: CategoryFilter) => void; setPage: (v: number) => void;
+  setSearch: (v: string) => void; setCategoryFilter: (v: CategoryFilter) => void; setStatusFilter: (v: ToolStatusFilter) => void;
+  setPage: (v: number) => void;
   setSelectedIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   handleSort: (field: ToolSortField) => void;
   toggleSelectAll: () => void; toggleSelect: (id: string) => void;
@@ -30,6 +32,7 @@ export function useToolData(): ToolData {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<ToolStatusFilter>('all');
   const [sortField, setSortField] = useState<ToolSortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
@@ -49,14 +52,13 @@ export function useToolData(): ToolData {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { const c = load(); return c; }, [load]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, categoryFilter, sortField, sortDir]);
+  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, categoryFilter, sortField, sortDir, statusFilter]);
 
   const processed = useMemo(() => {
-    let r = categoryFilter === 'all' ? items : items.filter((s) => s.category === categoryFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      r = r.filter((s) => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q) || s.description.toLowerCase().includes(q));
-    }
+    let r = items;
+    if (search) { const q = search.toLowerCase(); r = r.filter((i) => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q)); }
+    if (categoryFilter !== 'all') r = r.filter((i) => i.category === categoryFilter);
+    if (statusFilter !== 'all') r = r.filter((i) => i.status === statusFilter);
     if (sortField) {
       r = [...r].sort((a, b) => {
         const va = String(a[sortField]).toLowerCase();
@@ -65,39 +67,34 @@ export function useToolData(): ToolData {
       });
     }
     return r;
-  }, [items, search, categoryFilter, sortField, sortDir]);
+  }, [items, search, categoryFilter, statusFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paged = useMemo(() => processed.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE), [processed, safePage]);
-  const allOnPageSelected = paged.length > 0 && paged.every((p) => selectedIds.has(p.id));
+  const allOnPageSelected = paged.length > 0 && paged.every((i) => selectedIds.has(i.id));
 
-  const toggleSelectAll = useCallback(() => { setSelectedIds(allOnPageSelected ? new Set() : new Set(paged.map((p) => p.id))); }, [allOnPageSelected, paged]);
-  const toggleSelect = useCallback((id: string) => { setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }); }, []);
-  const handleSort = useCallback((field: ToolSortField) => { setSortField((prev) => { if (prev === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); else setSortDir('asc'); return field; }); }, []);
+  const handleSort = useCallback((field: ToolSortField) => { setSortField((prev) => { if (prev === field) { setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); return prev; } setSortDir('asc'); return field; }); setPage(1); }, []);
+  const toggleSelect = useCallback((id: string) => setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
+  const toggleSelectAll = useCallback(() => setSelectedIds((prev) => paged.every((i) => prev.has(i.id)) ? new Set() : new Set(paged.map((i) => i.id))), [paged]);
 
-  const addTool = useCallback(async (data: Omit<ToolEntry, 'id' | 'createdAt'>) => {
-    try { const item = await toolAPI.create(data); setItems((prev) => [...prev, item]); setError(null); }
-    catch (e) { setError(`创建失败：${(e as Error).message}`); }
+  const addTool = useCallback((data: Omit<ToolEntry, 'id' | 'createdAt'>) => {
+    const item = { ...data, id: `tool-${Date.now()}`, createdAt: new Date().toISOString().slice(0, 10) };
+    setItems((prev) => [item as ToolEntry, ...prev]);
+    toolAPI.create(data).catch(() => {});
   }, []);
-  const updateTool = useCallback(async (id: string, data: Partial<ToolEntry>) => {
-    try { await toolAPI.update(id, data); setItems((prev) => prev.map((s) => s.id === id ? { ...s, ...data } : s)); setError(null); }
-    catch (e) { setError(`更新失败：${(e as Error).message}`); }
-  }, []);
-  const removeTool = useCallback(async (id: string) => {
-    try { await toolAPI.remove(id); setItems((prev) => prev.filter((s) => s.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); setError(null); }
-    catch (e) { setError(`删除失败：${(e as Error).message}`); }
-  }, []);
-  const copyTool = useCallback(async (item: ToolEntry) => {
-    try { const cloned = await toolAPI.clone(item); setItems((prev) => [...prev, cloned]); setError(null); }
-    catch (e) { setError(`复制失败：${(e as Error).message}`); }
-  }, []);
-  const removeMultiple = useCallback(async (ids: Set<string>) => {
-    try { await toolAPI.removeBatch(ids); setItems((prev) => prev.filter((s) => !ids.has(s.id))); setSelectedIds(new Set()); setError(null); }
-    catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
-  }, []);
-
+  const updateTool = useCallback((id: string, data: Partial<ToolEntry>) => { setItems((prev) => prev.map((i) => i.id === id ? { ...i, ...data } : i)); toolAPI.update(id, data).catch(() => {}); }, []);
+  const removeTool = useCallback((id: string) => { setItems((prev) => prev.filter((i) => i.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); toolAPI.remove(id).catch(() => {}); }, []);
+  const copyTool = useCallback((item: ToolEntry) => { const copy = { ...item, id: `tool-${Date.now()}`, name: `${item.name.slice(0, 60)} (副本)`, createdAt: new Date().toISOString().slice(0, 10) }; setItems((prev) => [copy, ...prev]); toolAPI.clone(item).catch(() => {}); }, []);
+  const removeMultiple = useCallback((ids: Set<string>) => { setItems((prev) => prev.filter((i) => !ids.has(i.id))); setSelectedIds(new Set()); setPage(1); toolAPI.removeBatch(ids).catch(() => {}); }, []);
   const clearError = useCallback(() => setError(null), []);
+  const retry = useCallback(() => { load(); }, [load]);
 
-  return { isLoading, error, paged, processed, page: safePage, totalPages, search, categoryFilter, sortField, sortDir, selectedIds, allOnPageSelected, setSearch, setCategoryFilter, setPage, setSelectedIds, handleSort, toggleSelectAll, toggleSelect, addTool, updateTool, removeTool, copyTool, removeMultiple, clearError, retry: load };
+  return {
+    isLoading, error, search, setSearch, categoryFilter, setCategoryFilter, statusFilter, setStatusFilter,
+    sortField, sortDir, page, setPage, selectedIds, setSelectedIds,
+    processed, totalPages, paged, allOnPageSelected, toggleSelect, toggleSelectAll,
+    handleSort, addTool, updateTool, removeTool, copyTool, removeMultiple,
+    clearError, retry,
+  };
 }

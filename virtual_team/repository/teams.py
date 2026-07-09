@@ -156,7 +156,12 @@ async def delete_team(team_id: str) -> bool:
         return True
 
 
-async def add_team_member(team_id: str, name: str, role: str = "待配置角色") -> dict | None:
+async def add_team_member(
+    team_id: str,
+    name: str,
+    role: str = "待配置角色",
+    agent_config_id: str | None = None,
+) -> dict | None:
     factory = get_session_factory()
     async with factory() as session:
         team = await session.get(TeamDB, team_id)
@@ -172,6 +177,7 @@ async def add_team_member(team_id: str, name: str, role: str = "待配置角色"
         member = TeamAgentDB(
             id=str(uuid4()),
             team_id=team_id,
+            agent_config_id=agent_config_id,
             name=name,
             role=role,
             order=(last.order + 1) if last else 0,

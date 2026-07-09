@@ -1,6 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import zh from '../locales/zh-CN.json';
-import en from '../locales/en-US.json';
 
 function flattenKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   return Object.entries(obj).flatMap(([k, v]) => {
@@ -9,32 +7,47 @@ function flattenKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   });
 }
 
-describe('i18n', () => {
-  const zhKeys = flattenKeys(zh);
-  const enKeys = flattenKeys(en);
+async function loadLocale(lang: string): Promise<Record<string, unknown>> {
+  const ns = ['common', 'sidebar', 'chat', 'workstation'];
+  const result: Record<string, unknown> = {};
+  for (const n of ns) {
+    const mod = await import(`../locales/${lang}/${n}.json`);
+    Object.assign(result, mod.default);
+  }
+  return result;
+}
 
-  it('zh-CN 和 en-US 的 key 数量一致', () => {
+describe('i18n', () => {
+  it('zh-CN 和 en-US 的 key 集合一致', async () => {
+    const zh = await loadLocale('zh-CN');
+    const en = await loadLocale('en-US');
+
+    const zhKeys = flattenKeys(zh).sort();
+    const enKeys = flattenKeys(en).sort();
+
+    const missing = zhKeys.filter((k) => !enKeys.includes(k));
+    const extra = enKeys.filter((k) => !zhKeys.includes(k));
+
+    expect(missing, `zh-CN missing: ${missing.join(', ')}`).toEqual([]);
+    expect(extra, `en-US extra: ${extra.join(', ')}`).toEqual([]);
     expect(zhKeys.length).toBe(enKeys.length);
   });
 
-  it('zh-CN 和 en-US 的 key 集合相同', () => {
-    const missing = zhKeys.filter((k) => !enKeys.includes(k));
-    const extra = enKeys.filter((k) => !zhKeys.includes(k));
-    expect(missing).toEqual([]);
-    expect(extra).toEqual([]);
-  });
+  it('所有翻译值不为空', async () => {
+    const zh = await loadLocale('zh-CN');
+    const en = await loadLocale('en-US');
 
-  it('所有翻译值不为空', () => {
-    const check = (obj: Record<string, unknown>) => {
-      Object.values(obj).forEach((v) => {
+    const check = (obj: Record<string, unknown>, path = '') => {
+      Object.entries(obj).forEach(([k, v]) => {
+        const fullPath = path ? `${path}.${k}` : k;
         if (typeof v === 'string') {
-          expect(v.trim()).not.toBe('');
+          expect(v.trim(), `empty value at ${fullPath}`).not.toBe('');
         } else if (typeof v === 'object' && v !== null) {
-          check(v as Record<string, unknown>);
+          check(v as Record<string, unknown>, fullPath);
         }
       });
     };
-    check(zh);
-    check(en);
+    check(zh, 'zh-CN');
+    check(en, 'en-US');
   });
 });

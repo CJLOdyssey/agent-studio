@@ -53,15 +53,19 @@ function getModules() {
 
 function checkModuleIndex(moduleName) {
   const modulePath = join(WORKSTATION_DIR, moduleName);
-  const indexFile = join(modulePath, 'index.ts');
+  const indexTs = join(modulePath, 'index.ts');
+  const indexTsx = join(modulePath, 'index.tsx');
   
-  if (!existsSync(indexFile)) {
-    log('yellow', `⚠️  模块 ${moduleName} 缺少 index.ts`);
-    return false;
+  if (existsSync(indexTs)) {
+    log('green', `✅ 模块 ${moduleName} 有 index.ts`);
+    return true;
   }
-  
-  log('green', `✅ 模块 ${moduleName} 有 index.ts`);
-  return true;
+  if (existsSync(indexTsx)) {
+    log('green', `✅ 模块 ${moduleName} 有 index.tsx`);
+    return true;
+  }
+  log('yellow', `⚠️  模块 ${moduleName} 缺少 index.ts/.tsx`);
+  return false;
 }
 
 function checkClaudeMd() {
