@@ -1,4 +1,5 @@
 import { Plus, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ConfigItemList from '../ConfigItemList';
 import MCPFormModal from '../../workstation/mcp/MCPFormModal';
 import type { MCPFormData } from '../../workstation/mcp/mcp.types';
@@ -29,6 +30,8 @@ export function MCPTab({
   onToggle, onAdd, onUpdate, onRemove, onStartEdit, onFinishEdit,
   onPickerOpen, onCustomize, onFormSave, onFormClose, setFormData, onEditFull,
 }: MCPTabProps) {
+  const { t } = useTranslation();
+
   if (showForm) {
     return (
       <MCPFormModal
@@ -47,12 +50,12 @@ export function MCPTab({
       <div className="agent-config-list-bar">
         <button className="agent-config-list-bar-btn" onClick={onPickerOpen}>
           <Plus size={14} />
-          添加
+          {t('workstation.add')}
         </button>
         <span className="agent-config-list-bar-title">MCP ({items.length})</span>
         <button className="agent-config-list-bar-btn" onClick={onCustomize}>
           <Sparkles size={14} />
-          自定义
+          {t('workstation.customize')}
         </button>
       </div>
       <ConfigItemList
@@ -60,7 +63,7 @@ export function MCPTab({
         items={items}
         presets={[]}
         editingId={editingId}
-        emptyLabel="暂无 MCP"
+        emptyLabel={t('workstation.noMcp')}
         hideHeader
         onToggle={onToggle}
         onAdd={onAdd}

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { useState, useEffect } from 'react';
 import { Wand2, CheckCircle, AlertCircle, Copy, Check } from 'lucide-react';
 import {
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export default function ToolGenerator({ onAdd, onClose }: Props) {
+  const { t } = useTranslation();
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<'python' | 'javascript'>('python');
   const [generatedTool, setGeneratedTool] = useState<GeneratedTool | null>(null);
@@ -84,7 +87,7 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
     <div className="tool-generator">
       <div className="tool-generator-header">
         <Wand2 size={16} />
-        <span>生成工具</span>
+        <span>{t('workstation.generateTool')}</span>
         <span className={`tool-generator-llm-status ${llmAvailable ? 'active' : ''}`}>
           {llmAvailable ? 'LLM 已连接' : 'LLM 未配置'}
         </span>
@@ -148,7 +151,7 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
           </div>
 
           <div className="tool-generator-params">
-            <span>参数：</span>
+            <span>{t('workstation.params')}</span>
             {Object.entries(generatedTool.parameters).map(([key, param]) => (
               <span key={key} className="tool-generator-param">
                 {key} ({param.type}
@@ -170,11 +173,11 @@ export default function ToolGenerator({ onAdd, onClose }: Props) {
             <div className={`tool-generator-validation ${validationResult.is_valid ? 'valid' : 'invalid'}`}>
               {validationResult.is_valid ? (
                 <>
-                  <CheckCircle size={14} /> <span>代码验证通过</span>
+                  <CheckCircle size={14} /> <span>{t('workstation.codeValid')}</span>
                 </>
               ) : (
                 <>
-                  <AlertCircle size={14} /> <span>需要优化</span>
+                  <AlertCircle size={14} /> <span>{t('workstation.needsOptimize')}</span>
                 </>
               )}
               {validationResult.suggestions.length > 0 && (

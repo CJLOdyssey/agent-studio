@@ -9,7 +9,7 @@
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);
   border-radius: 8px;
-  background: var(--da-bg-surface);
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 6%);
   border: none;
   color: var(--da-text-secondary);
   font-size: var(--da-font-size-sm);
@@ -27,7 +27,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--da-bg-hover);
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
   display: flex;
   align-items: center;
   justify-content: center;

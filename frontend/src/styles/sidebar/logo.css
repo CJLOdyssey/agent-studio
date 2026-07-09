@@ -1,14 +1,14 @@
 .agentstudio-logo {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: 10px;
 }
 
 .agentstudio-logo-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--da-bg-hover);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,11 +17,12 @@
 }
 
 .agentstudio-logo h1 {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--da-font-size-base);
+  font-weight: 600;
   color: var(--da-text-primary);
   margin: 0;
-  line-height: 1.2;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 
 .agentstudio-logo p {
@@ -35,18 +36,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
-  background: var(--da-bg-surface);
-  border: 1px solid var(--da-border);
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
   border-radius: 8px;
   color: var(--da-text-primary);
   font-size: var(--da-font-size-sm);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .agentstudio-sprint-btn:hover {

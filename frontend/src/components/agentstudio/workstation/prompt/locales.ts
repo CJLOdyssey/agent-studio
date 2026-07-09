@@ -62,6 +62,7 @@ const strings: Record<Lang, Record<string, string>> = {
     'status.active': '已启用',
     'status.draft': '草稿',
     'status.archived': '已归档',
+    'workstation.preview': '预览',
   },
   en: {
     'prompt.import': 'Import',
@@ -124,6 +125,7 @@ const strings: Record<Lang, Record<string, string>> = {
     'status.active': 'Active',
     'status.draft': 'Draft',
     'status.archived': 'Archived',
+    'workstation.preview': 'Preview',
   },
 };
 

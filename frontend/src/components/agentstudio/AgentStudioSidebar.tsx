@@ -115,7 +115,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   const saveTeamName = (teamId: string) => {
     const name = editName.trim();
     if (!name) {
-      setValidationWarning({ message: '名称不能为空' });
+      setValidationWarning({ message: t('sidebar.nameNotEmpty') });
       return;
     }
     // 实时验证
@@ -152,7 +152,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   const saveAgentName = () => {
     const name = editAgentName.trim();
     if (!name) {
-      setValidationWarning({ message: '名称不能为空' });
+      setValidationWarning({ message: t('sidebar.nameNotEmpty') });
       return;
     }
     if (!editingAgent) return;
@@ -243,7 +243,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
             <button 
               className="agentstudio-sidebar-section-action" 
               onClick={handleAddTeam}
-              title="创建团队"
+              title={t('sidebar.createTeam')}
             >
               <Plus size={14} />
             </button>
@@ -285,7 +285,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       <button
                         className="agentstudio-team-menu-btn"
                         onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
-                        title="更多选项"
+                        title={t('sidebar.moreOptions')}
                       >
                         <MoreVertical size={14} />
                       </button>
@@ -313,7 +313,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       onClick={() => startEditTeam(team)}
                     >
                       <Pencil size={14} />
-                      <span>重命名</span>
+                      <span>{t('workstation.rename')}</span>
                     </button>
                     <button
                       className="agentstudio-team-dropdown-item"
@@ -323,7 +323,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       }}
                     >
                       {team.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-                      <span>{team.isPinned ? '取消置顶' : '置顶'}</span>
+                      <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                     </button>
                     <button
                       className="agentstudio-team-dropdown-item danger"
@@ -333,7 +333,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       }}
                     >
                       <Trash2 size={14} />
-                      <span>删除</span>
+                      <span>{t('workstation.delete')}</span>
                     </button>
                   </div>,
                   document.body,
@@ -396,14 +396,14 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                                   }}
                                 >
                                   <Settings size={14} />
-                                  <span>编辑</span>
+                                  <span>{t('sidebar.edit')}</span>
                                 </button>
                                 <button
                                   className="agentstudio-agent-dropdown-item"
                                   onClick={() => startEditAgent(agent)}
                                 >
                                   <Pencil size={14} />
-                                  <span>重命名</span>
+                      <span>{t('sidebar.rename')}</span>
                                 </button>
                                 <button
                                   className="agentstudio-agent-dropdown-item danger"
@@ -413,7 +413,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                                   }}
                                 >
                               <Trash2 size={14} />
-                              <span>删除</span>
+                  <span>{t('sidebar.delete')}</span>
                             </button>
                           </div>,
                           document.body,
@@ -431,7 +431,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
 
         <div>
           <div className="agentstudio-sidebar-section-label">
-            <MessageSquare size={14} /> 最近对话
+            <MessageSquare size={14} /> {t('sidebar.recentConversations')}
           </div>
           <div className="agentstudio-sidebar-chats">
             <ConversationsList
@@ -458,11 +458,11 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
         <div className="agentstudio-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="agentstudio-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
             <div className="agentstudio-modal-header">
-              <h3 id="confirm-delete-title">确认删除</h3>
+              <h3 id="confirm-delete-title">{t('confirm.title')}</h3>
               <button
                 className="agentstudio-modal-close"
                 onClick={() => setConfirmDelete(null)}
-                aria-label="关闭"
+                aria-label={t('common.close')}
               >
                 ×
               </button>
@@ -479,8 +479,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                 <div className="agentstudio-confirm-text">
                   <p>
                     {confirmDelete.type === 'team'
-                      ? '确定要删除该团队吗？团队内的所有 Agent 也将被删除，此操作不可撤销。'
-                      : `确定要删除该 Agent 吗？此操作不可撤销。`}
+                      ? t('confirm.deleteTeamConfirm')
+                      : t('confirm.deleteAgentConfirm')}
                   </p>
                 </div>
               </div>
@@ -491,13 +491,13 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                 onClick={() => setConfirmDelete(null)}
                 autoFocus
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 className="agentstudio-modal-btn danger"
                 onClick={confirmDeleteAction}
               >
-                删除
+                {t('sidebar.delete')}
               </button>
             </div>
           </div>
@@ -510,11 +510,11 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
         <div className="agentstudio-modal-overlay" onClick={() => setValidationWarning(null)}>
           <div className="agentstudio-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="agentstudio-modal-header">
-              <h3>提示</h3>
+              <h3>{t('confirm.tip')}</h3>
               <button
                 className="agentstudio-modal-close"
                 onClick={() => setValidationWarning(null)}
-                aria-label="关闭"
+                aria-label={t('common.close')}
               >
                 ×
               </button>
@@ -539,7 +539,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                 onClick={() => setValidationWarning(null)}
                 autoFocus
               >
-                确定
+                {t('confirm.confirm')}
               </button>
             </div>
           </div>

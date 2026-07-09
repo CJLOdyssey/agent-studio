@@ -1,15 +1,15 @@
-import { Search, Plus, MoreHorizontal, Edit3, Copy, History, Trash2, X, ArrowUpDown, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Bot, RefreshCw } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, Play, Trash2, X, Bot, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { Input, Select, Button, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
 import { useAgentManagement } from './useAgentManagement';
-import type { SortField } from './agent.types';
 import { STATUS_LABEL } from './agent.constants';
-import { MOCK_VERSIONS, MOCK_AGENT_PROMPTS, MOCK_AGENT_TOOLS, MOCK_AGENT_MCPS, MOCK_AGENT_SKILLS } from './mock-data';
 import AgentFormModal from './AgentFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
+import WstaPagination from '../shared/WstaPagination';
 import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
-import WstaDropdownPortal from '../shared/WstaDropdownPortal';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
@@ -18,42 +18,53 @@ import { listTools } from '../../../../api/client/tools';
 import { listMCPs } from '../../../../api/client/mcps';
 import { listSkills } from '../../../../api/client/skills';
 
-function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string | null; sortDir: string }) {
-  if (sortField !== field) return <ArrowUpDown size={12} className="wsta-sort-icon-inactive" />;
-  return sortDir === 'asc' ? <ChevronUp size={12} className="wsta-sort-icon-active" /> : <ChevronDown size={12} className="wsta-sort-icon-active" />;
-}
-
-function SortHeader({ field, label, sortField, sortDir, onSort }: { field: SortField; label: string; sortField: SortField | null; sortDir: string; onSort: (field: SortField) => void }) {
-  return (
-    <th className="wsta-th wsta-sortable" scope="col" onClick={() => onSort(field)} aria-sort={sortField === field ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}>{label} <SortIcon field={field} sortField={sortField} sortDir={sortDir} /></th>
-  );
-}
-
 export default function AgentManagement() {
   const mgmt = useAgentManagement();
   const { toast } = useToast();
 
-  // Self-contained reference data — fetched via API, falls back to own mock data
-  const [refPrompts, setRefPrompts] = useState<{ id: string; name: string }[]>(MOCK_AGENT_PROMPTS);
-  const [refTools, setRefTools] = useState<{ id: string; name: string }[]>(MOCK_AGENT_TOOLS);
-  const [refMCPs, setRefMCPs] = useState<{ id: string; name: string }[]>(MOCK_AGENT_MCPS);
-  const [refSkills, setRefSkills] = useState<{ id: string; name: string }[]>(MOCK_AGENT_SKILLS);
+  const [availPrompts, setAvailPrompts] = useState<{ id: string; name: string }[]>([]);
+  const [availTools, setAvailTools] = useState<{ id: string; name: string }[]>([]);
+  const [availMCPs, setAvailMCPs] = useState<{ id: string; name: string }[]>([]);
+  const [availSkills, setAvailSkills] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    listPrompts().then((items) => setRefPrompts(items.map((p) => ({ id: p.id, name: p.name })))).catch(() => {});
-    listTools().then((items) => setRefTools(items.map((t) => ({ id: t.id, name: t.name })))).catch(() => {});
-    listMCPs().then((items) => setRefMCPs(items.map((m) => ({ id: m.id, name: m.name })))).catch(() => {});
-    listSkills().then((items) => setRefSkills(items.map((s) => ({ id: s.id, name: s.name })))).catch(() => {});
+    listPrompts().then((items) => { if (items.length > 0) setAvailPrompts(items.map((p) => ({ id: p.id, name: p.name }))); }).catch(() => {});
+    listTools().then((items) => { if (items.length > 0) setAvailTools(items.map((t) => ({ id: t.id, name: t.name }))); }).catch(() => {});
+    listMCPs().then((items) => { if (items.length > 0) setAvailMCPs(items.map((m) => ({ id: m.id, name: m.name }))); }).catch(() => {});
+    listSkills().then((items) => { if (items.length > 0) setAvailSkills(items.map((s) => ({ id: s.id, name: s.name }))); }).catch(() => {});
   }, []);
-
-  function getPromptName(id: string): string { const p = refPrompts.find((p) => p.id === id); return p ? p.name : '-'; }
 
   function handleSaveWrapper() { mgmt.handleSave(); if (mgmt.formErrors.length === 0) toast(mgmt.editingAgent ? t('agent.toast_updated') : t('agent.toast_created'), 'success'); }
   function handleDeleteWrapper() { mgmt.handleDelete(); toast(t('agent.toast_deleted'), 'success'); }
   function handleBatchDeleteWrapper() { mgmt.handleBatchDelete(); toast(t('agent.toast_batch_deleted', String(mgmt.selectedIds.size)), 'success'); }
-  function handleCopyWrapper(item: typeof mgmt.processed[0]) { mgmt.handleCopy(item); toast(t('agent.toast_copied'), 'success'); }
 
-  const statusColors: Record<string, string> = { running: 'wsta-badge-green', stopped: 'wsta-badge-gray', error: 'wsta-badge-red' };
+  const statusDotClass: Record<string, string> = { running: 'wsta-badge-dot-green', stopped: 'wsta-badge-dot-gray', error: 'wsta-badge-dot-red' };
+  const dotClass: Record<string, string> = { running: 'wsta-dot-green', stopped: 'wsta-dot-gray', error: 'wsta-dot-red' };
+
+
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  async function handleTestAgent(id: string) {
+    setTestingId(id);
+    try {
+      const res = await fetch(`/api/agents/${id}/test`, { method: 'POST' });
+      const data = await res.json();
+      toast(data.success ? `✅ ${data.message} (${data.duration_ms}ms)` : `❌ ${data.message}`, data.success ? 'success' : 'error');
+    } catch {
+      toast('❌ 测试请求失败', 'error');
+    } finally {
+      setTestingId(null);
+    }
+  }
+  function makeMenuItems(item: typeof mgmt.processed[0]): MenuProps['items'] {
+    return [
+      { key: 'edit', icon: <Edit3 size={14} />, label: t('agent.edit'), onClick: () => mgmt.openEdit(item) },
+      { key: 'view', icon: <Eye size={14} />, label: t('agent.history'), onClick: () => mgmt.openHistory(item) },
+      { key: 'test', icon: <Play size={14} />, label: testingId === item.id ? t('agent.testing') : t('agent.test'), disabled: testingId === item.id, onClick: () => handleTestAgent(item.id) },
+      { type: 'divider' },
+      { key: 'delete', icon: <Trash2 size={14} />, label: t('agent.delete'), onClick: () => mgmt.openDelete(item), danger: true },
+    ];
+  }
 
   if (mgmt.isLoading) return <div className="wsta-panel" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
@@ -65,25 +76,21 @@ export default function AgentManagement() {
 
       <div className="wsta-toolbar" role="toolbar" aria-label={t('agent.col_name')}>
         <div className="wsta-toolbar-left">
-          <div className="wsta-search-wrap">
-            <Search size={14} className="wsta-search-icon" />
-            <input className="wsta-search-input" placeholder={t('agent.search_placeholder')} value={mgmt.search} onChange={(e) => mgmt.setSearch(e.target.value)} aria-label={t('agent.search_placeholder')} />
-            {mgmt.search && <button className="wsta-search-clear" onClick={() => mgmt.setSearch('')} aria-label={t('agent.search_placeholder')}><X size={14} /></button>}
-          </div>
-          <select className="wsta-filter-select" value={mgmt.statusFilter} onChange={(e) => mgmt.setStatusFilter(e.target.value as 'all' | 'running' | 'stopped' | 'error')} aria-label={t('agent.col_status')}>
-            <option value="all">全部状态</option>
-            <option value="running">运行中</option>
-            <option value="stopped">已停止</option>
-            <option value="error">异常</option>
-          </select>
+          <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('agent.search_placeholder')} value={mgmt.search} onChange={(e) => mgmt.setSearch(e.target.value)} />
+          <Select style={{ width: 130 }} value={mgmt.statusFilter} onChange={(v) => mgmt.setStatusFilter(v)} options={[
+            { value: 'all', label: '全部状态' },
+            ...Object.entries(STATUS_LABEL).map(([k, v]) => ({ value: k, label: v })),
+          ]} />
         </div>
         <div className="wsta-toolbar-right">
           {mgmt.selectedIds.size > 0 && (
-            <button className="btn btn-danger" onClick={mgmt.openBatchDelete} aria-label={t('agent.batch_delete', String(mgmt.selectedIds.size))}>
-              <Trash2 size={16} /> {t('agent.batch_delete', String(mgmt.selectedIds.size))}
-            </button>
+            <Button danger icon={<Trash2 size={16} />} onClick={() => mgmt.openBatchDelete()}>
+              {t('agent.batch_delete', String(mgmt.selectedIds.size))}
+            </Button>
           )}
-          <button className="btn btn-primary" onClick={mgmt.openCreate} aria-label={t('agent.new')}><Plus size={16} /> {t('agent.new')}</button>
+          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={mgmt.openCreate}>
+            {t('agent.new')}
+          </Button>
         </div>
       </div>
 
@@ -97,36 +104,32 @@ export default function AgentManagement() {
         ) : (
         <table className="wsta-table" role="grid" aria-label={t('agent.col_name')}>
           <thead><tr>
-            <th className="wsta-th wsta-th-check" scope="col"><input type="checkbox" checked={mgmt.allOnPageSelected} onChange={mgmt.toggleSelectAll} aria-label={t('agent.select_all')} /></th>
-            <SortHeader field="name" label={t('agent.col_name')} sortField={mgmt.sortField} sortDir={mgmt.sortDir} onSort={mgmt.handleSort} />
-            <SortHeader field="team" label={t('agent.col_team')} sortField={mgmt.sortField} sortDir={mgmt.sortDir} onSort={mgmt.handleSort} />
-            <th className="wsta-th" scope="col">{t('agent.col_model')}</th>
-            <th className="wsta-th" scope="col">提示词</th>
-            <SortHeader field="status" label={t('agent.col_status')} sortField={mgmt.sortField} sortDir={mgmt.sortDir} onSort={mgmt.handleSort} />
-            <th className="wsta-th" scope="col">{t('agent.col.version')}</th>
-            <th className="wsta-th wsta-th-actions" scope="col">{t('agent.col_actions')}</th>
+            <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={mgmt.allOnPageSelected} onChange={mgmt.toggleSelectAll} aria-label={t('agent.select_all')} /></th>
+            <th scope="col">{t('agent.col_name')}</th>
+            <th scope="col">{t('agent.col_team')}</th>
+            <th scope="col">{t('agent.col_model')}</th>
+            <th scope="col">{t('agent.col_status')}</th>
+            <th scope="col">{t('agent.col.version')}</th>
+            <th className="wsta-col-actions" scope="col">{t('agent.col_actions')}</th>
           </tr></thead>
           <tbody>
-            {mgmt.paged.map((agent) => (
-              <tr key={agent.id} className={mgmt.selectedIds.has(agent.id) ? 'wsta-row-selected' : ''}>
-                <td className="wsta-td wsta-td-check"><input type="checkbox" checked={mgmt.selectedIds.has(agent.id)} onChange={() => mgmt.toggleSelect(agent.id)} aria-label={t('agent.select_item', agent.name)} /></td>
-                <td className="wsta-td"><span className="wsta-name-link">{agent.name}</span></td>
-                <td className="wsta-td">{agent.teams.length > 0 ? agent.teams.join(', ') : <span className="wsta-text-muted">未关联</span>}</td>
-                <td className="wsta-td"><code className="wsta-code">{agent.model}</code></td>
-                <td className="wsta-td"><span className="wsta-prompt-name">{getPromptName(agent.systemPromptId)}</span></td>
-                <td className="wsta-td"><span className={`wsta-badge ${statusColors[agent.status]}`}>{STATUS_LABEL[agent.status]}</span></td>
-                <td className="wsta-td"><code className="wsta-code">{agent.version}</code></td>
-                <td className="wsta-td wsta-td-actions">
-                  <div className="wsta-action-group">
-                    <button className="wsta-action-btn" onClick={(e) => { mgmt.setOpenMenuId(mgmt.openMenuId === agent.id ? null : agent.id); mgmt.setMenuAnchorEl(e.currentTarget); }} aria-label={t('agent.more_actions')} aria-expanded={mgmt.openMenuId === agent.id}><MoreHorizontal size={14} /></button>
-                    <WstaDropdownPortal open={mgmt.openMenuId === agent.id} anchorEl={mgmt.menuAnchorEl} onClose={mgmt.closeMenu} items={[
-                      { icon: <Edit3 size={14} />, label: t('agent.edit'), onClick: () => mgmt.openEdit(agent) },
-                      { icon: <Copy size={14} />, label: t('agent.copy'), onClick: () => handleCopyWrapper(agent) },
-                      { icon: <History size={14} />, label: t('agent.history'), onClick: () => mgmt.openHistory(agent) },
-                      { divider: true },
-                      { icon: <Trash2 size={14} />, label: t('agent.delete'), onClick: () => mgmt.openDelete(agent), danger: true },
-                    ]} />
-                  </div>
+            {mgmt.paged.map((item) => (
+              <tr key={item.id} className={mgmt.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
+                <td className="wsta-col-checkbox"><input type="checkbox" checked={mgmt.selectedIds.has(item.id)} onChange={() => mgmt.toggleSelect(item.id)} aria-label={t('agent.select_item', item.name)} /></td>
+                <td><span className="wsta-agent-name">{item.name}</span></td>
+                <td><span className="wsta-secondary-text">{item.team}</span></td>
+                <td><span className="wsta-tag-pill wsta-tag-indigo">{item.model}</span></td>
+                <td>
+                  <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
+                    <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />
+                    {STATUS_LABEL[item.status]}
+                  </span>
+                </td>
+                <td><span className="wsta-mono-text">{item.version}</span></td>
+                <td className="wsta-col-actions">
+                  <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
+                    <button className="wsta-action-btn"><MoreHorizontal size={14} /></button>
+                  </Dropdown>
                 </td>
               </tr>
             ))}
@@ -135,23 +138,22 @@ export default function AgentManagement() {
         )}
       </div>
 
-      {mgmt.totalPages > 1 && (
-        <div className="wsta-footer">
-          <span className="wsta-footer-text">{t('agent.pagination', String(mgmt.processed.length))}</span>
-          <div className="wsta-pagination" role="navigation" aria-label={t('agent.pagination', String(mgmt.processed.length))}>
-            <button className="wsta-page-btn" disabled={mgmt.page <= 1} onClick={() => mgmt.setPage(mgmt.page - 1)} aria-label={t('agent.page_prev')}><ChevronLeft size={14} /></button>
-            {Array.from({ length: mgmt.totalPages }, (_, i) => i + 1).map((p) => (
-              <button key={p} className={`wsta-page-btn ${p === mgmt.page ? 'active' : ''}`} onClick={() => mgmt.setPage(p)} aria-label={t('agent.page_num', String(p))} aria-current={p === mgmt.page ? 'page' : undefined}>{p}</button>
-            ))}
-            <button className="wsta-page-btn" disabled={mgmt.page >= mgmt.totalPages} onClick={() => mgmt.setPage(mgmt.page + 1)} aria-label={t('agent.page_next')}><ChevronRight size={14} /></button>
-          </div>
-        </div>
-      )}
+      <WstaPagination
+        current={mgmt.page}
+        total={mgmt.processed.length}
+        pageSize={5}
+        onChange={(p) => mgmt.setPage(p)}
+      />
 
-      {mgmt.isFormOpen && <AgentFormModal editingAgent={mgmt.editingAgent} formData={mgmt.formData} setFormData={mgmt.setFormData} formErrors={mgmt.formErrors} onSave={handleSaveWrapper} onClose={() => mgmt.setIsFormOpen(false)} availablePrompts={refPrompts} availableTools={refTools} availableMCPs={refMCPs} availableSkills={refSkills} />}
-      {mgmt.isDeleteOpen && mgmt.deletingAgent && <DeleteConfirmModal name={mgmt.deletingAgent.name} label="Agent" onConfirm={handleDeleteWrapper} onClose={() => mgmt.setIsDeleteOpen(false)} />}
-      {mgmt.isBatchDeleteOpen && <BatchDeleteModal count={mgmt.selectedIds.size} label="Agent" onConfirm={handleBatchDeleteWrapper} onClose={() => mgmt.setIsBatchDeleteOpen(false)} />}
-      {mgmt.isHistoryOpen && mgmt.historyAgent && <VersionHistoryModal title={mgmt.historyAgent.name} versions={MOCK_VERSIONS[mgmt.historyAgent.id] || [{ version: mgmt.historyAgent.version, date: mgmt.historyAgent.createdAt, author: 'admin', changes: '- 初始创建' }]} onClose={() => mgmt.setIsHistoryOpen(false)} />}
+      {mgmt.isFormOpen && mgmt.editingAgent && (
+        <AgentFormModal key="edit" editingAgent={mgmt.editingAgent} formData={mgmt.formData} setFormData={mgmt.setFormData} onSave={handleSaveWrapper} onClose={() => mgmt.setIsFormOpen(false)} formErrors={mgmt.formErrors} availablePrompts={availPrompts} availableTools={availTools} availableMCPs={availMCPs} availableSkills={availSkills} />
+      )}
+      {mgmt.isFormOpen && !mgmt.editingAgent && (
+        <AgentFormModal key="create" editingAgent={null} formData={mgmt.formData} setFormData={mgmt.setFormData} onSave={handleSaveWrapper} onClose={() => mgmt.setIsFormOpen(false)} formErrors={mgmt.formErrors} availablePrompts={availPrompts} availableTools={availTools} availableMCPs={availMCPs} availableSkills={availSkills} />
+      )}
+      {mgmt.isDeleteOpen && <DeleteConfirmModal name={mgmt.deletingAgent?.name || ''} label={t('agent.edit')} onConfirm={handleDeleteWrapper} onClose={() => mgmt.setIsDeleteOpen(false)} />}
+      {mgmt.isBatchDeleteOpen && <BatchDeleteModal count={mgmt.selectedIds.size} onConfirm={handleBatchDeleteWrapper} onClose={() => mgmt.setIsBatchDeleteOpen(false)} />}
+      {mgmt.isHistoryOpen && mgmt.historyAgent && <VersionHistoryModal title={mgmt.historyAgent.name} resourceType="agent" resourceId={mgmt.historyAgent.id} onClose={() => mgmt.setIsHistoryOpen(false)} />}
     </div>
     </ErrorBoundary>
   );

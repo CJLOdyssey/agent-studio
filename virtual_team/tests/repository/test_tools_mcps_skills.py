@@ -189,7 +189,7 @@ async def test_create_skill(db_engine):
         {
             "name": f"skill-{uuid.uuid4().hex[:6]}",
             "category": "coding",
-            "description": "A test skill",
+            "content": "A test skill",
             "instructions": "Write clean code.",
             "author": "test",
         }
@@ -198,7 +198,7 @@ async def test_create_skill(db_engine):
     assert skill.id is not None
     assert skill.name.startswith("skill-")
     assert skill.category == "coding"
-    assert skill.status == "installed"
+    assert skill.status == "active"
 
 
 @pytest.mark.asyncio
@@ -208,7 +208,7 @@ async def test_list_skills(db_engine):
         {
             "name": f"list-skill-{uuid.uuid4().hex[:6]}",
             "category": "debugging",
-            "description": "Test listing",
+            "content": "Test listing",
             "instructions": "Debug carefully.",
             "author": "test",
         }
@@ -234,7 +234,7 @@ async def test_update_skill_instructions(db_engine):
         {
             "name": f"update-skill-{uuid.uuid4().hex[:6]}",
             "category": "testing",
-            "description": "Original",
+            "content": "Original",
             "instructions": "Original instructions.",
             "author": "test",
         }
@@ -251,7 +251,7 @@ async def test_delete_skill(db_engine):
         {
             "name": f"del-skill-{uuid.uuid4().hex[:6]}",
             "category": "docs",
-            "description": "Delete me",
+            "content": "Delete me",
             "instructions": "To be removed.",
             "author": "test",
         }
