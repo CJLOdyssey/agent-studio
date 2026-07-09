@@ -138,7 +138,7 @@ async def _run_agent_pipeline(
     from virtual_team.repository import get_mcps, get_prompts, get_skills, get_tools
 
     if not system_prompt:
-        tool_names = [t.name for t in DEFAULT_TOOLS]
+        [t.name for t in DEFAULT_TOOLS]
         system_prompt = (
             "你是一个 AI 助手。可以调用以下工具:\n"
             + "\n".join(f"- {t.name}: {t.description}" for t in DEFAULT_TOOLS)

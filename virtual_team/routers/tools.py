@@ -655,9 +655,9 @@ class ToolUpdate(BaseModel):
 
 @router.get("/api/tools/plugins")
 async def list_tool_plugins():
-    from virtual_team.thinking_tree.registry import registry
     # Trigger auto-discovery so plugins register themselves
     import virtual_team.thinking_tree.tools  # noqa: F401
+    from virtual_team.thinking_tree.registry import registry
 
     return registry.list_plugins()
 
@@ -686,12 +686,12 @@ async def _snapshot_tool(resource_id: str, session=None):
 
 
 async def _do_snapshot_tool(resource_id: str, session):
-    from virtual_team.repository.versions import create_version as _cv
     from virtual_team.repository.tools import get_tool
+    from virtual_team.repository.versions import create_version as _cv
     item = await get_tool(resource_id)
     if not item:
         return
-    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns.keys() if not k.startswith('_')}
+    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns if not k.startswith('_')}
     if "id" in snapshot:
         del snapshot["id"]
     if "created_at" in snapshot:
@@ -703,9 +703,11 @@ async def _do_snapshot_tool(resource_id: str, session):
 
 @router.post("/api/tools/{tool_id}/test")
 async def test_tool_endpoint(tool_id: str):
-    import time
     import json
+    import time
+
     import httpx
+
     from virtual_team.database import RegisteredToolDB, get_session_factory
 
     timeout = 10

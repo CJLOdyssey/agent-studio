@@ -1,6 +1,5 @@
 """Tavily Web Search tool — hybrid keyword + semantic search with AI reranking."""
 
-import json
 import os
 
 from virtual_team.logging_config import get_logger
@@ -67,7 +66,7 @@ async def tavily_search(tool_name: str, args: dict) -> dict:
 
 
 # Self-register on import as the web_search plugin
-from virtual_team.thinking_tree.registry import registry
+from virtual_team.thinking_tree.registry import registry  # noqa: E402
 
 registry.register_plugin(
     tool_name="web_search",

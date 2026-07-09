@@ -50,13 +50,13 @@ async def _snapshot_mcp(resource_id: str, session=None):
 
 
 async def _do_snapshot_mcp(resource_id: str, session):
-    from virtual_team.repository.versions import create_version as _cv
     from virtual_team.repository import get_mcps as _gmcps
+    from virtual_team.repository.versions import create_version as _cv
     all_items = await _gmcps()
     item = next((m for m in all_items if m["id"] == resource_id), None)
     if not item:
         return
-    snapshot = {k: v for k, v in item.items() if k in ("name", "description", "type", "command", "url", "status", "version")}
+    snapshot = {k: v for k, v in item.items() if k in ("name", "description", "type", "command", "url", "status", "version")}  # noqa: E501
     await _cv(session, "mcp", resource_id, snapshot, "system")
 
 @router.post("/api/mcps", status_code=201)
@@ -114,6 +114,7 @@ class MCPTestResult(BaseModel):
 async def test_mcp(mcp_id: str):
     """Test an MCP server connection."""
     import time
+
     from virtual_team.repository import get_mcps as _get_mcps
 
     all_mcps = await _get_mcps()
@@ -152,7 +153,7 @@ async def test_mcp(mcp_id: str):
                     message=f"Command exited with code {proc.returncode}",
                     duration_ms=dur,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 dur = int((time.monotonic() - start) * 1000)
                 return MCPTestResult(

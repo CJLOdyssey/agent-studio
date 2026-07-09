@@ -59,9 +59,13 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listAgents()
-      .then((items) => setAvailAgents(items.map((a) => ({ id: a.id, name: a.name }))))
-      .catch(() => setError('加载 Agent 列表失败'));
+    let cancelled = false;
+    listAgents().then((items) => {
+      if (!cancelled) setAvailAgents(items.map((a) => ({ id: a.id, name: a.name })));
+    }).catch(() => {
+      if (!cancelled) setError('加载 Agent 列表失败');
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const memberAgentIds = useMemo(

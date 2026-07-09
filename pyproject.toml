@@ -1,10 +1,13 @@
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"virtual_team/routers/*.py" = ["B008"]
 
 [tool.mypy]
 strict = true
@@ -19,14 +22,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "virtual_team.app"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.auth"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.broker"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
@@ -46,127 +41,47 @@ module = "virtual_team.metrics"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.mock_fallback"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "virtual_team.models"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.rag"
+module = "virtual_team.config"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.rate_limit"
+module = "virtual_team.thinking_tree"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.core"
+module = "virtual_team.thinking_tree.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.keys"
+module = "virtual_team.thinking_tree.tools"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.mcps"
+module = "virtual_team.thinking_tree.tools.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.prompts"
+module = "virtual_team.routers"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.skills"
+module = "virtual_team.routers.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.teams"
+module = "virtual_team.repository"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.repository.tools"
+module = "virtual_team.repository.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.routers.admin"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.agents"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.attachments"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.commands"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.keys"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.mcps"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.models"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.prompts"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.runs"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.sessions"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.skills"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.system_team"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.teams"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.routers.tools"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.streaming"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.system_team.main"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.system_team.shared.llm"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.system_team.shared.tools.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.system_team.skill_agent.generator"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "virtual_team.system_team.tools_agent.generator"
+module = "virtual_team.team_graph"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
@@ -174,10 +89,68 @@ module = "virtual_team.tasks"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.team_graph"
+module = "virtual_team.streaming"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.system_team"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.system_team.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.agent_graph"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.logging_config"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.auth"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.error_codes"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.tests"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.tests.*"
 ignore_errors = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["virtual_team/tests"]
-python_files = ["test_*.py"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "env: marks tests that need specific environment variables",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:langchain.*",
+    "ignore::DeprecationWarning:langgraph.*",
+    "ignore::DeprecationWarning:langevals_*",
+    "ignore::UserWarning:langchain.*",
+    "ignore::ImportWarning:langgraph.*",
+    "ignore::pytest.PytestUnraisableEntityWarning",
+]
+
+[tool.coverage.run]
+source = ["virtual_team"]
+omit = [
+    "virtual_team/tests/*",
+    "virtual_team/thinking_tree/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]

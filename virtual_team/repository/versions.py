@@ -4,7 +4,6 @@ Follows Functional Cohesion: all methods serve the single purpose of
 managing version snapshots. No knowledge of business entity types.
 """
 
-from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import select

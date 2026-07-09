@@ -246,6 +246,7 @@ class AgentTestResult(BaseModel):
 async def test_agent(agent_id: str):
     """Test an agent config by running a single LLM call with its settings."""
     import time
+
     from virtual_team.repository.agents import get_agent_config
 
     agent = await get_agent_config(agent_id)

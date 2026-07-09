@@ -78,6 +78,7 @@ async def lifespan(app: FastAPI):
 
 async def seed_default_tools():
     from sqlalchemy import select
+
     from virtual_team.database import RegisteredToolDB, get_session_factory
 
     factory = get_session_factory()
@@ -87,9 +88,9 @@ async def seed_default_tools():
             return  # already seeded
 
         seed_data = [
-            {"name": "web_search", "category": "builtin", "description": "Search the web for current information.", "endpoint": "builtin://web_search"},
-            {"name": "calculator", "category": "builtin", "description": "Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.", "endpoint": "builtin://calculator"},
-            {"name": "fetch_page", "category": "builtin", "description": "Fetch and read the content of a web page.", "endpoint": "builtin://fetch_page"},
+            {"name": "web_search", "category": "builtin", "description": "Search the web for current information.", "endpoint": "builtin://web_search"},  # noqa: E501
+            {"name": "calculator", "category": "builtin", "description": "Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.", "endpoint": "builtin://calculator"},  # noqa: E501
+            {"name": "fetch_page", "category": "builtin", "description": "Fetch and read the content of a web page.", "endpoint": "builtin://fetch_page"},  # noqa: E501
         ]
         for data in seed_data:
             session.add(RegisteredToolDB(**data))

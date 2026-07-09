@@ -72,13 +72,13 @@ async def _snapshot_skill(resource_id: str, session=None):
 
 
 async def _do_snapshot_skill(resource_id: str, session):
-    from virtual_team.repository.versions import create_version as _cv
     from virtual_team.repository.skills import get_skill
+    from virtual_team.repository.versions import create_version as _cv
 
     item = await get_skill(resource_id)
     if not item:
         return
-    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns.keys() if not k.startswith("_")}
+    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns if not k.startswith("_")}
     if "id" in snapshot:
         del snapshot["id"]
     if "created_at" in snapshot:

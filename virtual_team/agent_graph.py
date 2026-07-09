@@ -15,7 +15,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, TypedDict
 
 import httpx
@@ -31,11 +31,9 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 
-from virtual_team.logging_config import get_logger
-
 # Import tool plugins so they self-register with the ToolRegistry
 import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
-
+from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -626,11 +624,7 @@ class SingleAgentGraph:
                     if content:
                         if thinking_chunks and not _raw_llm_thinking_flushed:
                             _raw_llm_thinking_flushed = True
-                        if _tool_calls_seen:
-                            content_chunks.append(content)
-                            if cb:
-                                await cb({"event": "on_custom_token", "data": {"content": content}})
-                        elif not self._tool_definitions:
+                        if _tool_calls_seen or not self._tool_definitions:
                             content_chunks.append(content)
                             if cb:
                                 await cb({"event": "on_custom_token", "data": {"content": content}})
@@ -708,7 +702,7 @@ class SingleAgentGraph:
             session_context = state.get("session_context", "")
 
             full_messages = []
-            now = datetime.now(timezone.utc).astimezone()
+            now = datetime.now(UTC).astimezone()
             weekday_cn = ["一", "二", "三", "四", "五", "六", "日"][now.weekday()]
             date_context = (
                 f"当前日期：{now.year}年{now.month}月{now.day}日 周{weekday_cn} "
@@ -791,7 +785,7 @@ class SingleAgentGraph:
                         result = llm_result.content
                     except Exception:
                         pass
-                print(f"\n[DEBUG] _tools_node: tool={tool_name} result_len={len(str(result or ''))} has_cb={self._stream_cb is not None}")
+                print(f"\n[DEBUG] _tools_node: tool={tool_name} result_len={len(str(result or ''))} has_cb={self._stream_cb is not None}")  # noqa: E501
                 if self._stream_cb:
                     result_str = str(result) if result else ""
                     await self._stream_cb({
