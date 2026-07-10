@@ -86,7 +86,14 @@ async def _discover_mcp_tools(endpoint: str) -> list[dict]:
                 async with ClientSession(read, write) as session:
                     await session.initialize()
                     result = await session.list_tools()
-                    return [{"name": t.name, "description": t.description or "", "inputSchema": t.inputSchema or {"type": "object"}} for t in (result.tools or [])]
+                    return [
+                        {
+                            "name": t.name,
+                            "description": t.description or "",
+                            "inputSchema": t.inputSchema or {"type": "object"},
+                        }
+                        for t in (result.tools or [])
+                    ]
     except TimeoutError:
         logger.warning("MCP discovery timed out for endpoint: %s", endpoint)
         return []
