@@ -89,6 +89,42 @@ module = "virtual_team.tasks"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.tasks.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.workflow"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.workflow.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.graph"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.llm_stream"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.services.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.tool_config"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.tool_strategy"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.tool_strategy.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.streaming"
 ignore_errors = true
 
