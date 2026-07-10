@@ -28,7 +28,11 @@ def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict]:
             entry: dict = {"role": "assistant", "content": msg.content}
             if msg.tool_calls:
                 entry["tool_calls"] = [
-                    {"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": json.dumps(tc["args"])}}  # noqa: E501
+                    {
+                        "id": tc["id"],
+                        "type": "function",
+                        "function": {"name": tc["name"], "arguments": json.dumps(tc["args"])},
+                    }
                     for tc in msg.tool_calls
                 ]
             api_messages.append(entry)

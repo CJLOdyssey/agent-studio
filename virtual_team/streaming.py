@@ -111,13 +111,13 @@ class StreamEmitter:
             await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
 
     async def emit_thinking_nodes(self, nodes: list[dict]):
-        MAX_PENDING = 20  # noqa: N806
+        max_pending = 20
         if self._pending_thinking_nodes:
             self._pending_thinking_nodes.extend(nodes)
-            if len(self._pending_thinking_nodes) > MAX_PENDING:
-                self._pending_thinking_nodes = self._pending_thinking_nodes[-MAX_PENDING:]
+            if len(self._pending_thinking_nodes) > max_pending:
+                self._pending_thinking_nodes = self._pending_thinking_nodes[-max_pending:]
         else:
-            self._pending_thinking_nodes = nodes[:MAX_PENDING]
+            self._pending_thinking_nodes = nodes[:max_pending]
 
     async def emit_tool_results(self, tool_name: str, tool_call_id: str, references: list[dict]):
         await publish_run_message(
