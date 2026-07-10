@@ -31,7 +31,8 @@ interface AgentStudioSidebarProps {
   handleRenameAgent: (agentId: string, name: string) => void;
   handleTogglePinTeam: (teamId: string) => void;
   handleAgentClick: (agent: Agent) => void;
-  onEditAgent?: (agent: Agent) => void; // 新增：编辑Agent配置
+  onEditAgent?: (agent: Agent) => void;
+  onTeamChat?: (teamId: string) => void;
   isSidebarOpen: boolean;
   onOpenWorkstation: () => void;
 }
@@ -60,6 +61,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   handleTogglePinTeam,
   handleAgentClick,
   onEditAgent,
+  onTeamChat,
   isSidebarOpen,
   onOpenWorkstation,
 }: AgentStudioSidebarProps) {
@@ -90,6 +92,10 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
       setSelectedAgentId(null);
       setActiveConvId(conv.id);
       setInputValue(conv.title);
+      // Restore team context if this is a team conversation
+      if (conv.teamId) {
+        useChatStore.getState().setActiveTeam(conv.teamId);
+      }
     },
     [setSelectedAgentId, setActiveConvId, setInputValue],
   );
@@ -289,6 +295,15 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                       >
                         <MoreVertical size={14} />
                       </button>
+                      {onTeamChat && (
+                        <button
+                          className="agentstudio-team-chat-btn"
+                          onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
+                          title="团队对话"
+                        >
+                          <Users size={14} />
+                        </button>
+                      )}
                     </>
                   )}
                 </div>

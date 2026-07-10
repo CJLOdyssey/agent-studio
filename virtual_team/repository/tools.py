@@ -32,6 +32,12 @@ async def get_tools() -> list[dict]:
         ]
 
 
+async def get_tool(tool_id: str) -> RegisteredToolDB | None:
+    factory = get_session_factory()
+    async with factory() as session:
+        return await session.get(RegisteredToolDB, tool_id)
+
+
 async def create_tool(data: dict) -> RegisteredToolDB:
     factory = get_session_factory()
     async with factory() as session:

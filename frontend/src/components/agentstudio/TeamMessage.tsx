@@ -244,7 +244,7 @@ const TeamMessage = memo(function TeamMessage({
 
             <div className="agentstudio-message-bubble-row">
               <div className="agentstudio-message-bubble agent ds-markdown">
-              {msg.thinking !== undefined && (
+              {msg.thinking && msg.thinking.length > 0 && (
                 <div className="ds-thinking-block">
                   {msg.thinkingDone ? (
                     <>

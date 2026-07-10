@@ -78,6 +78,18 @@ class StreamEmitter:
             print(f"\n[DEBUG] streaming: on_tool_complete received tool={data.get('toolName')}")
             await self.emit_tool_complete(data)
 
+        elif kind == "on_client_action":
+            action = data.get("action", {})
+            print(f"\n[DEBUG] streaming: on_client_action received action={action}")
+            await publish_run_message(
+                self._run_id,
+                {
+                    "type": "client_action",
+                    "agent_name": "Agent",
+                    "action": action,
+                },
+            )
+
         elif kind == "on_tool_results":
             tool_name = data.get("tool_name", "")
             tool_call_id = data.get("tool_call_id", "")
@@ -99,10 +111,13 @@ class StreamEmitter:
             await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
 
     async def emit_thinking_nodes(self, nodes: list[dict]):
+        MAX_PENDING = 20
         if self._pending_thinking_nodes:
             self._pending_thinking_nodes.extend(nodes)
+            if len(self._pending_thinking_nodes) > MAX_PENDING:
+                self._pending_thinking_nodes = self._pending_thinking_nodes[-MAX_PENDING:]
         else:
-            self._pending_thinking_nodes = nodes
+            self._pending_thinking_nodes = nodes[:MAX_PENDING]
 
     async def emit_tool_results(self, tool_name: str, tool_call_id: str, references: list[dict]):
         await publish_run_message(

@@ -20,10 +20,10 @@ export interface MCPData {
   setSelectedIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   handleSort: (field: MCPSortField) => void;
   toggleSelectAll: () => void; toggleSelect: (id: string) => void;
-  addMCP: (data: MCPFormData) => void;
-  updateMCP: (id: string, data: Partial<MCPEntry>) => void;
-  removeMCP: (id: string) => void; copyMCP: (item: MCPEntry) => void;
-  removeMultiple: (ids: Set<string>) => void; clearError: () => void; retry: () => void;
+  addMCP: (data: MCPFormData) => Promise<void>;
+  updateMCP: (id: string, data: Partial<MCPEntry>) => Promise<void>;
+  removeMCP: (id: string) => Promise<void>; copyMCP: (item: MCPEntry) => Promise<void>;
+  removeMultiple: (ids: Set<string>) => Promise<void>; clearError: () => void; retry: () => void;
 }
 
 export function useMCPData(): MCPData {
@@ -84,11 +84,39 @@ export function useMCPData(): MCPData {
   const toggleSelect = useCallback((id: string) => setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
   const toggleSelectAll = useCallback(() => setSelectedIds((prev) => paged.every((i) => prev.has(i.id)) ? new Set() : new Set(paged.map((i) => i.id))), [paged]);
 
-  const addMCP = useCallback((data: MCPFormData) => { const item = { ...data, id: `mcp-${Date.now()}`, createdAt: new Date().toISOString().slice(0, 10) }; setItems((prev) => [item as MCPEntry, ...prev]); mcpAPI.create(data).catch(() => {}); }, []);
-  const updateMCP = useCallback((id: string, data: Partial<MCPEntry>) => { setItems((prev) => prev.map((i) => i.id === id ? { ...i, ...data } : i)); mcpAPI.update(id, data).catch(() => {}); }, []);
-  const removeMCP = useCallback((id: string) => { setItems((prev) => prev.filter((i) => i.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); mcpAPI.remove(id).catch(() => {}); }, []);
-  const copyMCP = useCallback((item: MCPEntry) => { const copy = { ...item, id: `mcp-${Date.now()}`, name: `${item.name.slice(0, 60)} (副本)`, createdAt: new Date().toISOString().slice(0, 10) }; setItems((prev) => [copy, ...prev]); mcpAPI.clone(item).catch(() => {}); }, []);
-  const removeMultiple = useCallback((ids: Set<string>) => { setItems((prev) => prev.filter((i) => !ids.has(i.id))); setSelectedIds(new Set()); setPage(1); mcpAPI.removeBatch(ids).catch(() => {}); }, []);
+  const addMCP = useCallback(async (data: MCPFormData) => {
+    try {
+      const created = await mcpAPI.create(data);
+      setItems((prev) => [created, ...prev]);
+    } catch (e) { setError(`创建失败：${(e as Error).message}`); }
+  }, []);
+  const updateMCP = useCallback(async (id: string, data: Partial<MCPEntry>) => {
+    try {
+      await mcpAPI.update(id, data);
+      setItems((prev) => prev.map((i) => i.id === id ? { ...i, ...data } : i));
+    } catch (e) { setError(`更新失败：${(e as Error).message}`); }
+  }, []);
+  const removeMCP = useCallback(async (id: string) => {
+    try {
+      await mcpAPI.remove(id);
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    } catch (e) { setError(`删除失败：${(e as Error).message}`); }
+  }, []);
+  const copyMCP = useCallback(async (item: MCPEntry) => {
+    try {
+      const cloned = await mcpAPI.clone(item);
+      setItems((prev) => [cloned, ...prev]);
+    } catch (e) { setError(`复制失败：${(e as Error).message}`); }
+  }, []);
+  const removeMultiple = useCallback(async (ids: Set<string>) => {
+    try {
+      await mcpAPI.removeBatch(ids);
+      setItems((prev) => prev.filter((i) => !ids.has(i.id)));
+      setSelectedIds(new Set());
+      setPage(1);
+    } catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
+  }, []);
 
   const clearError = useCallback(() => setError(null), []);
   const retry = useCallback(() => { load(); }, [load]);

@@ -1,5 +1,6 @@
 export { ApiError, NetworkError, TimeoutError, normalizeError } from './errors';
 export { submitRequirement, resumeRun } from './runs';
+export { fetchWorkflow, saveWorkflow, deleteWorkflow, listWorkflows } from './workflows';
 export { listKeys, createKey, updateKey, deleteKey, testKeyConnection, getKeyUsage } from './keys';
 export type { KeyItem } from './keys';
 export { generatePrompt, validatePrompt } from './prompts';

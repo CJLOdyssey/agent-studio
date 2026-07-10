@@ -28,7 +28,7 @@ export default function AgentManagement() {
   const [availSkills, setAvailSkills] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    listPrompts().then((items) => { if (items.length > 0) setAvailPrompts(items.map((p) => ({ id: p.id, name: p.name }))); }).catch(() => {});
+    listPrompts().then((items) => { const filtered = items.filter((p) => p.category !== 'output_constraint'); if (filtered.length > 0) setAvailPrompts(filtered.map((p) => ({ id: p.id, name: p.name }))); }).catch(() => {});
     listTools().then((items) => { if (items.length > 0) setAvailTools(items.map((t) => ({ id: t.id, name: t.name }))); }).catch(() => {});
     listMCPs().then((items) => { if (items.length > 0) setAvailMCPs(items.map((m) => ({ id: m.id, name: m.name }))); }).catch(() => {});
     listSkills().then((items) => { if (items.length > 0) setAvailSkills(items.map((s) => ({ id: s.id, name: s.name }))); }).catch(() => {});

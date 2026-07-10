@@ -52,8 +52,15 @@ const realImpl: MCPAPIService = {
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.type !== undefined) patch.type = data.type;
-    if (data.command !== undefined) patch.endpoint = data.command;
-    if (data.url !== undefined) patch.endpoint = data.url;
+    if (data.type === 'stdio' && data.command !== undefined) {
+      patch.endpoint = data.command;
+    } else if (data.type === 'sse' && data.url !== undefined) {
+      patch.endpoint = data.url;
+    } else if (data.type === undefined) {
+      // type unchanged — pick endpoint based on existing command/url
+      if (data.command !== undefined) patch.endpoint = data.command;
+      if (data.url !== undefined) patch.endpoint = data.url;
+    }
     if (data.description !== undefined || data.version !== undefined) {
       patch.config = JSON.stringify({ description: data.description, version: data.version });
     }

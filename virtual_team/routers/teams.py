@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from virtual_team.database import log_audit
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     add_team_member,
@@ -102,6 +103,7 @@ async def add_team(req: TeamCreateRequest):
         team = await create_team(name=req.name, description=req.description, status=req.status)
         if team is None:
             raise HTTPException(status_code=409, detail="团队名称已存在")
+        await log_audit("create", "team", req.name, "创建成功")
         return {
             "id": team.id,
             "name": team.name,
@@ -139,6 +141,7 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
         )
         if not team:
             raise HTTPException(status_code=404, detail="团队不存在")
+        await log_audit("update", "team", team.name, "更新成功")
         return {
             "id": team.id,
             "name": team.name,
@@ -157,9 +160,13 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest):
 @router.delete("/api/teams/{team_id}")
 async def delete_team_endpoint(team_id: str):
     try:
+        from virtual_team.repository import get_team
+        team = await get_team(team_id)
+        team_name = team["name"] if team else team_id
         deleted = await delete_team(team_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="团队不存在")
+        await log_audit("delete", "team", team_name, "删除成功")
         return {"ok": True}
     except HTTPException:
         raise
