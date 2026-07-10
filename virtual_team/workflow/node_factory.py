@@ -1,11 +1,13 @@
+import contextlib
 from collections.abc import Awaitable, Callable
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from virtual_team.broker import publish_run_message
 from virtual_team.llm_stream import convert_messages_to_api, stream_llm_response
+
 from .models import WorkflowNode, WorkflowState
 from .strategies import get_strategy
 
@@ -29,12 +31,19 @@ class NodeFactory:
         base = (getattr(self.llm, "openai_api_base", None) or "https://api.deepseek.com").rstrip("/")
         url = f"{base}/chat/completions"
         headers = {"Authorization": f"Bearer {actual_key}", "Content-Type": "application/json"}
-        body: dict = {"model": getattr(self.llm, "model_name", "deepseek-chat"), "messages": api_messages, "stream": True, "stream_options": {"include_usage": True}, "temperature": getattr(self.llm, "temperature", 0.7), "max_tokens": getattr(self.llm, "max_tokens", 65536)}
+        body: dict = {
+            "model": getattr(self.llm, "model_name", "deepseek-chat"),
+            "messages": api_messages,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+            "temperature": getattr(self.llm, "temperature", 0.7),
+            "max_tokens": getattr(self.llm, "max_tokens", 65536),
+        }
         if "deepseek" in (base.lower() + body["model"].lower()):
             body["thinking"] = {"type": "enabled"}
         return url, headers, body
 
-    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], Union[dict, Awaitable[dict]]]:
+    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict | Awaitable[dict]]:
         strategy = get_strategy(node)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")
         run_id = self.run_id
@@ -46,14 +55,17 @@ class NodeFactory:
             url, headers, body = self._build_request(api_msgs)
 
             async def cb(ev: dict):
-                if not run_id: return
+                if not run_id:
+                    return
                 chunk = ev.get("data", {}).get("content", "")
-                if not chunk: return
+                if not chunk:
+                    return
                 mt = "thinking_stream" if ev.get("event") == "on_custom_thinking" else "stream"
-                try:
-                    await publish_run_message(run_id, {"type": mt, "agent_name": node.role_identifier, "content": chunk})
-                except Exception:
-                    pass
+                with contextlib.suppress(Exception):
+                    await publish_run_message(
+                        run_id,
+                        {"type": mt, "agent_name": node.role_identifier, "content": chunk},
+                    )
 
             content_chunks, _, _, _, _ = await stream_llm_response(url, headers, body, cb)
             full_content = "".join(content_chunks)

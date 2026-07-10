@@ -7,7 +7,6 @@ import json
 import shlex
 import subprocess
 import urllib.request
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -192,8 +191,8 @@ class _ToolWrapper:
     async def _call_mcp_sdk(self, args: dict) -> str:
         """Call MCP stdio tool, caching sessions."""
         from mcp import StdioServerParameters
-        from mcp.client.stdio import stdio_client
         from mcp.client.session import ClientSession
+        from mcp.client.stdio import stdio_client
 
         async def _call(session, name: str, arguments: dict | None, timeout: int = 45) -> Any:
             if name:
@@ -204,10 +203,9 @@ class _ToolWrapper:
         cmd = shlex.split(self.mcp_endpoint)
         params = StdioServerParameters(command=cmd[0], args=cmd[1:])
         try:
-            async with stdio_client(params) as (read, write):
-                async with ClientSession(read, write) as session:
-                    await session.initialize()
-                    result = await _call(session, self.mcp_tool_name, args)
+            async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+                await session.initialize()
+                result = await _call(session, self.mcp_tool_name, args)
         except Exception as e:
             return json.dumps({"error": str(e)})
 

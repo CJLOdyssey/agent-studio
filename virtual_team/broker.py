@@ -162,7 +162,7 @@ async def buffer_run_messages(run_id: str) -> None:
                         pubsub.get_message(ignore_subscribe_messages=True),
                         timeout=60.0,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.info("Buffer idle timeout for run %s — auto-cleanup", run_id)
                     break
                 if msg and msg["type"] == "message":

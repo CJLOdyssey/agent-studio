@@ -34,7 +34,7 @@ vi.mock('lucide-react', () => ({
   FileCheck: () => <span data-testid="icon-filecheck" />,
   FileCode: () => <span data-testid="icon-filecode" />,
   FileText: () => <span data-testid="icon-filetext" />,
-  Folder: () => <span data-testid="icon-folder" />,
+  GitBranch: () => <span data-testid="icon-gitbranch" />,
   FolderKanban: () => <span data-testid="icon-folderkanban" />,
   GitCompare: () => <span data-testid="icon-gitcompare" />,
   Globe: () => <span data-testid="icon-globe" />,
