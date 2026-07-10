@@ -235,7 +235,7 @@ class SingleAgentGraph:
                     result = llm_result.content
                 except Exception:
                     pass
-            print(f"\n[DEBUG] _tools_node: tool={tool_name} result_len={len(str(result or ''))} has_cb={self._stream_cb is not None}")  # noqa: T201
+            print(f"\n[DEBUG] _tools_node: tool={tool_name} result_len={len(str(result or ''))} has_cb={self._stream_cb is not None}")  # noqa: E501, T201
 
             tool_messages.append(
                 ToolMessage(content=str(result or ""), tool_call_id=tool_id, name=tool_name)
@@ -317,7 +317,7 @@ class SingleAgentGraph:
         """Convenience: run one turn synchronously."""
         config = cast("RunnableConfig", {"configurable": {"thread_id": str(id(self))}, "recursion_limit": 25})
         result = await self._graph.ainvoke(
-            {"messages": [HumanMessage(content=message)], "system_prompt": system_prompt, "session_context": session_context},
+            {"messages": [HumanMessage(content=message)], "system_prompt": system_prompt, "session_context": session_context},  # noqa: E501
             config,
         )
         return result["messages"][-1].content if result.get("messages") else ""
