@@ -28,7 +28,8 @@ async def _complete_pipeline(
     _complete_counter += 1
     try:
         pid = os.getpid()
-        rss_kb = int(open(f"/proc/{pid}/status").read().split("VmRSS:")[1].split()[0])
+        with open(f"/proc/{pid}/status") as f:
+            rss_kb = int(f.read().split("VmRSS:")[1].split()[0])
         logger.info("[MEM] complete run=#%s pid=%s rss=%dKB", _complete_counter, pid, rss_kb)
     except Exception:
         pass

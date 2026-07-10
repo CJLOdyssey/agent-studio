@@ -306,7 +306,7 @@ async def _run_agent_pipeline(
                         instructions=composed,
                     )
                 )
-                all_skills  # ensure bound (defined above via get_skills())
+                all_skills  # noqa: B018  ensure bound
                 match["_has_mcp_refs"] = any(
                     n in [m["name"] for m in all_mcps]
                     for n in (match.get("tool_names") or [])
@@ -330,7 +330,11 @@ async def _run_agent_pipeline(
         open_tc = ToolConfig(
             name="open_user_browser",
             description="在用户的浏览器中打开指定的 URL。当用户要求打开网页或访问网址时使用此工具。",
-            parameters={"type": "object", "properties": {"url": {"type": "string", "description": "要打开的完整 URL"}}, "required": ["url"]},
+            parameters={
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "要打开的完整 URL"}},
+                "required": ["url"],
+            },
         )
         graph.bind_tools([open_tc])
         if "open_user_browser" in graph._tool_map:
@@ -340,7 +344,7 @@ async def _run_agent_pipeline(
     # To ensure MCP tools are actually invoked, we call them here and
     # inject the results into session_context before the LLM sees the prompt.
     _mcp_precall_results: list[str] = []
-    logger.info("[PRECALL] checking agent_id=%s ac=%s skills=%s", agent_id, ac, _parse_json_field(ac.skills) if ac else [])
+    logger.info("[PRECALL] checking agent_id=%s ac=%s skills=%s", agent_id, ac, _parse_json_field(ac.skills) if ac else [])  # noqa: E501
     if agent_id and ac:
         for s_item in _parse_json_field(ac.skills):
             s_name = s_item.get("name", "")
@@ -366,8 +370,7 @@ async def _run_agent_pipeline(
                             parts = ep.split()
                             if len(parts) >= 2:
                                 params = StdioServerParameters(command=parts[0], args=parts[1:])
-                        async with stdio_client(params) as (read, write):
-                            async with ClientSession(read, write) as session:
+                        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
                                 await session.initialize()
                                 # Step 1: resolve library ID
                                 lib_result = await session.call_tool("resolve-library-id", {
@@ -375,7 +378,7 @@ async def _run_agent_pipeline(
                                     "libraryName": requirement[:100],
                                 })
                                 lib_content = str(lib_result.content or "")
-                                _mcp_precall_results.append(f"## MCP {ref_name} resolve-library-id 结果\n\n{lib_content[:1000]}")
+                                _mcp_precall_results.append(f"## MCP {ref_name} resolve-library-id 结果\n\n{lib_content[:1000]}")  # noqa: E501
                                 # Step 2: query docs with first library ID
                                 try:
                                     lib_data = json.loads(lib_content)
@@ -386,9 +389,11 @@ async def _run_agent_pipeline(
                                     elif isinstance(lib_data, dict):
                                         first_id = lib_data.get("libraryId") or lib_data.get("id")
                                     if first_id:
-                                        docs_result = await session.call_tool("query-docs", {"libraryId": first_id, "query": requirement[:200]})
+                                        docs_result = await session.call_tool(
+                        "query-docs", {"libraryId": first_id, "query": requirement[:200]}
+                    )
                                         docs_content = str(docs_result.content or "")
-                                        _mcp_precall_results.append(f"## MCP {ref_name} query-docs 结果\n\n{docs_content[:2000]}")
+                                        _mcp_precall_results.append(f"## MCP {ref_name} query-docs 结果\n\n{docs_content[:2000]}")  # noqa: E501
                                 except Exception:
                                     pass
                     except Exception as e:
@@ -399,7 +404,7 @@ async def _run_agent_pipeline(
     graph.set_stream_callback(emitter)
     try:
         result = await graph._graph.ainvoke(
-            {"messages": chat_history + [HumanMessage(content=_forced_requirement)], "system_prompt": system_prompt, "session_context": session_context},
+            {"messages": chat_history + [HumanMessage(content=_forced_requirement)], "system_prompt": system_prompt, "session_context": session_context},  # noqa: E501
             {"configurable": {"thread_id": run_id}, "recursion_limit": 25},
         )
 
