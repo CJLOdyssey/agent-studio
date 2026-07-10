@@ -85,7 +85,12 @@ async def migrate_teams() -> int:
             rid = nd["role_identifier"]
             cfg_id = agent_ids.get(rid)
             if cfg_id:
-                nodes.append(WorkflowNode(agent_config_id=cfg_id, role_identifier=rid, strategy=NodeStrategy(nd["strategy"]), order=nd["order"]))
+                nodes.append(WorkflowNode(
+                    agent_config_id=cfg_id,
+                    role_identifier=rid,
+                    strategy=NodeStrategy(nd["strategy"]),
+                    order=nd["order"],
+                ))
 
         if not nodes:
             logger.info("Team %s has no matching agent configs for default workflow", team.name)

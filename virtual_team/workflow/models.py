@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import BaseMessage, HumanMessage
@@ -12,7 +12,7 @@ def _merge_dicts(left: dict, right: dict) -> dict:
     return merged
 
 
-class NodeStrategy(str, Enum):
+class NodeStrategy(StrEnum):
     GENERATOR = "generator"
     REVIEWER = "reviewer"
     REPORTER = "reporter"

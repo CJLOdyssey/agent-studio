@@ -1,3 +1,4 @@
+from .complete_pipeline import _complete_pipeline
 from .helpers import (
     _build_session_context,
     _discover_mcp_tools,
@@ -9,7 +10,6 @@ from .helpers import (
     _try_mock_fallback,
 )
 from .pipeline import _run_agent_pipeline, _run_team_pipeline
-from .complete_pipeline import _complete_pipeline
 from .registry import complete_agent, run_agent
 
 __all__ = [

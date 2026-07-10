@@ -17,9 +17,8 @@ class Router:
         matching.sort(key=lambda e: -e.priority)
 
         for edge in matching:
-            if edge.condition_key:
-                if self._matches(state, edge):
-                    return edge.to_node_id
+            if edge.condition_key and self._matches(state, edge):
+                return edge.to_node_id
 
         default = next((e for e in matching if e.is_default), None)
         return default.to_node_id if default else END
@@ -29,7 +28,4 @@ class Router:
             return False
         keywords = [kw.strip().lower() for kw in edge.condition_key.split("|") if kw.strip()]
         all_outputs = " ".join(state.get("artifacts", {}).values()).lower()
-        for kw in keywords:
-            if kw in all_outputs:
-                return True
-        return False
+        return any(kw in all_outputs for kw in keywords)

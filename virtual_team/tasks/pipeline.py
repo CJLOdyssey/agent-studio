@@ -49,11 +49,11 @@ from virtual_team.repository import (
     update_run_result,
     update_run_status,
 )
-from virtual_team.repository.agents import get_agent_configs
 from virtual_team.repository.keys import log_key_usage
 from virtual_team.repository.workflows import get_workflow_config_by_team
 from virtual_team.streaming import StreamEmitter
 from virtual_team.workflow.dynamic_team_graph import DynamicTeamGraph
+
 from .helpers import (
     _build_session_context,
     _discover_mcp_tools,
@@ -356,8 +356,8 @@ async def _run_agent_pipeline(
                     ep = mm["endpoint"]
                     try:
                         from mcp import StdioServerParameters
-                        from mcp.client.stdio import stdio_client
                         from mcp.client.session import ClientSession
+                        from mcp.client.stdio import stdio_client
 
                         params = StdioServerParameters(command="npx", args=["-y", "@upstash/context7-mcp"])
                         if "npx" in ep:

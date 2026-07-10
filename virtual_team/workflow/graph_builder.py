@@ -43,7 +43,11 @@ class GraphBuilder:
                 if end_edge.condition_key:
                     end_map = {kw.strip(): END for kw in end_edge.condition_key.split("|") if kw.strip()}
                     end_map["*"] = END
-                    workflow.add_conditional_edges(node.role_identifier, lambda s, nid=node.role_identifier: END, end_map)
+                    workflow.add_conditional_edges(
+                        node.role_identifier,
+                        lambda s, nid=node.role_identifier: END,
+                        end_map,
+                    )
                 else:
                     workflow.add_edge(node.role_identifier, END)
 
@@ -62,7 +66,7 @@ class GraphBuilder:
                 targets = [e.to_node_id for e in unconditional]
                 workflow.add_conditional_edges(
                     node.role_identifier,
-                    lambda state: targets,
+                    lambda state, tgt=targets: tgt,
                     {t: t for t in targets},
                 )
 

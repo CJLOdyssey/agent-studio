@@ -10,21 +10,20 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Annotated, Any, cast, TypedDict
+from typing import Annotated, Any, TypedDict, cast
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
-from langchain_core.runnables.config import RunnableConfig
-
-from virtual_team.llm_stream import convert_messages_to_api, build_tool_calls_list, stream_llm_response
-from virtual_team.logging_config import get_logger
-from virtual_team.tool_config import ToolConfig, _ToolWrapper
 
 import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
+from virtual_team.llm_stream import build_tool_calls_list, convert_messages_to_api, stream_llm_response
+from virtual_team.logging_config import get_logger
+from virtual_team.tool_config import ToolConfig, _ToolWrapper
 
 logger = get_logger(__name__)
 
@@ -299,10 +298,7 @@ class SingleAgentGraph:
             if tc.parameters:
                 if isinstance(tc.parameters, dict):
                     props = tc.parameters.get("properties", {}) or {}
-                    if props:
-                        schema = tc.parameters
-                    else:
-                        schema = {"type": tc.parameters.get("type", "object")}
+                    schema = tc.parameters if props else {"type": tc.parameters.get("type", "object")}
                 else:
                     schema = tc.parameters
             self._tool_definitions.append({
@@ -314,7 +310,7 @@ class SingleAgentGraph:
     def graph(self) -> CompiledStateGraph:
         return self._graph
 
-    def with_config(self, **kwargs: Any) -> "SingleAgentGraph":
+    def with_config(self, **kwargs: Any) -> SingleAgentGraph:
         return self
 
     async def arun(self, message: str, system_prompt: str = "", session_context: str = "") -> str:
@@ -328,6 +324,4 @@ class SingleAgentGraph:
 
 
 # Re-export ToolConfig for backward compatibility
-from virtual_team.tool_config import ToolConfig as ToolConfig  # noqa: F401, E402, I100
 # Re-export _ToolWrapper for backward compatibility
-from virtual_team.tool_config import _ToolWrapper as _ToolWrapper  # noqa: F401, E402, I100

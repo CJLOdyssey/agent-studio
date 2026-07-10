@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from typing import Any
 
@@ -9,8 +10,8 @@ import httpx
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-    SystemMessage,
     HumanMessage,
+    SystemMessage,
     ToolMessage,
 )
 
@@ -104,10 +105,8 @@ async def stream_llm_response(
                 if rc:
                     thinking_chunks.append(rc)
                     if stream_cb:
-                        try:
+                        with contextlib.suppress(Exception):
                             await stream_cb({"event": "on_custom_thinking", "data": {"content": rc}})
-                        except Exception:
-                            pass
 
                 content = delta.get("content")
                 if content:

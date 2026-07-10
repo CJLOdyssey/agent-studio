@@ -17,6 +17,7 @@
 | 团队管理 | 团队管理 | `workstation/team/` | `routers/teams.py` | `repository/teams.py` | `teams` |
 | 监控中心 | 监控中心 | `workstation/monitor/` | — (纯前端) | — | — |
 | 日志审计 | 日志审计 | `workstation/logs/` | — (纯前端) | — | `command_logs` (后端审计) |
+| 工作流引擎 | 工作流 | `workstation/workflow/` | `routers/workflows.py` | `repository/workflows.py` | `workflow_configs` / `workflow_nodes` / `workflow_edges` |
 | 密钥管理 | 系统设置 | — | `routers/keys.py` | `repository/keys.py` | `user_api_keys` |
 | 用户管理 | 用户管理 | — | — | — | `users` / `roles` / `user_roles` |
 | Checkpoint | Checkpoint | — | — | — | `checkpoints` |
@@ -32,8 +33,8 @@
 │   └── src/
 │       ├── components/agentstudio/
 │       │   ├── AgentStudioWorkstation.tsx   # 🎯 主入口（聊天+侧栏+工作台）
-│       │   ├── WorkstationPage.tsx          # 工作台菜单入口（9 Tab）
-│       │   ├── workstation/                 # 工作台 9 模块
+│       │   ├── WorkstationPage.tsx          # 工作台菜单入口（10 Tab）
+│       │   ├── workstation/                 # 工作台 10 模块
 │       │   │   ├── agent/                  #  1. Agent 管理
 │       │   │   ├── prompt/                 #  2. 提示词管理
 │       │   │   ├── output/                 #  3. 输出约束
@@ -43,12 +44,13 @@
 │       │   │   ├── team/                   #  7. 团队管理
 │       │   │   ├── monitor/                #  8. 监控中心
 │       │   │   ├── logs/                   #  9. 日志审计
+│       │   │   ├── workflow/               # 10. 工作流引擎（DAG 编辑器）
 │       │   │   └── shared/                 # 共享组件
 │       │   ├── modals/                     # AgentConfigModal + tabs/
 │       │   │   └── tabs/                   # SystemPromptTab, OutputConstraintTab, ToolsTab, MCPTab, SkillsTab
 │       │   └── ...
 │       ├── api/client/                     # API 客户端层（axios DI 模式）
-│       │   ├── agents.ts, prompts.ts, tools.ts, skills.ts, sessions.ts, ...
+│       │   ├── agents.ts, prompts.ts, tools.ts, skills.ts, sessions.ts, workflows.ts, ...
 │       │   └── index.ts
 │       ├── api/hooks.ts                    # TanStack Query hooks
 │       ├── stores/chatStore.ts             # Zustand 状态管理
@@ -63,7 +65,7 @@
 │   ├── auth.py                  # JWT 认证 + RBAC (get_current_user / require_role)
 │   ├── error_codes.py           # 结构化错误码体系 (23 codes)
 │   ├── metrics.py               # Prometheus RED 指标端点
-│   ├── routers/                 # API 路由（14 模块）
+│   ├── routers/                 # API 路由（15 模块）
 │   │   ├── agents.py            # Agent CRUD + toggle
 │   │   ├── prompts.py           # 提示词 CRUD
 │   │   ├── tools.py             # 工具生成/验证 + CRUD（含 parameters）
@@ -77,10 +79,11 @@
 │   │   ├── attachments.py       # 附件管理
 │   │   ├── models.py            # 可用模型列表
 │   │   ├── admin.py             # 管理面板统计
-│   │   └── system_team.py       # AI 代理生成器端点
-│   ├── repository/              # 数据访问层（9 模块）
+│   │   ├── system_team.py       # AI 代理生成器端点
+│   │   └── workflows.py         # 工作流 CRUD（DAG 配置）
+│   ├── repository/              # 数据访问层（10 模块）
 │   │   ├── agents.py, prompts.py, tools.py, mcps.py
-│   │   ├── skills.py, teams.py, keys.py, core.py
+│   │   ├── skills.py, teams.py, keys.py, core.py, workflows.py
 │   │   └── __init__.py          # 统一导出
 │   ├── agent_graph.py           # ⭐ LangGraph Agent 引擎（工具绑定+执行）
 │   ├── team_graph.py            # ⭐ 多 Agent 团队协作 LangGraph
