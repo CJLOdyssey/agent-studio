@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from virtual_team.database import log_audit
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_prompt, delete_prompt, get_prompts, update_prompt
 
@@ -71,6 +72,7 @@ async def _do_snapshot_prompt(resource_id: str, session):
 async def add_prompt(req: PromptCreate):
     try:
         p = await create_prompt(req.model_dump())
+        await log_audit("create", "prompt", p.name, "创建成功")
         return {
             "id": p.id,
             "name": p.name,
@@ -92,6 +94,7 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate):
         p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
         if not p:
             raise HTTPException(status_code=404, detail="Prompt not found")
+        await log_audit("update", "prompt", p.name, "更新成功")
         return {
             "id": p.id,
             "name": p.name,
@@ -109,9 +112,14 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate):
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
 async def remove_prompt(prompt_id: str):
     try:
+        from virtual_team.repository import get_prompts
+        prompts = await get_prompts()
+        target = next((p for p in prompts if p["id"] == prompt_id), None)
+        prompt_name = target["name"] if target else prompt_id
         ok = await delete_prompt(prompt_id)
         if not ok:
             raise HTTPException(status_code=404, detail="Prompt not found")
+        await log_audit("delete", "prompt", prompt_name, "删除成功")
     except HTTPException:
         raise
     except Exception as e:

@@ -5,6 +5,7 @@ import contextlib
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
+from pydantic.alias_generators import to_camel
 
 from virtual_team.auth import get_user_id
 from virtual_team.broker import buffer_run_messages, drain_buffer, stop_buffer, subscribe_run
@@ -30,6 +31,7 @@ _MAX_REQUIREMENT_LENGTH = 2000
 
 
 class RunRequest(BaseModel):
+    model_config = {"alias_generator": to_camel, "populate_by_name": True}
     requirement: str = Field(..., min_length=1, max_length=_MAX_REQUIREMENT_LENGTH)
     session_id: str | None = None
     key_id: str | None = Field(
@@ -37,6 +39,7 @@ class RunRequest(BaseModel):
     )
     model: str | None = None
     agent_id: str | None = None
+    team_id: str | None = None
 
 
 class RunResponse(BaseModel):
@@ -113,9 +116,29 @@ async def create_run(req: RunRequest, request: Request):
     # Subscribe to Redis *before* starting the task — eliminates the timing gap
     # where early thinking_stream / stream messages would be lost.
     await buffer_run_messages(run_id)
+    logger.info("[create_run] team_id=%s | agent_id=%s | session_id=%s", req.team_id, req.agent_id, session_id)
     try:
-        from virtual_team.tasks import _run_agent_pipeline
+        if req.team_id:
+            from virtual_team.repository.workflows import get_workflow_config_by_team
+            workflow = await get_workflow_config_by_team(req.team_id)
+            if workflow:
+                from virtual_team.tasks import _run_team_pipeline
+                asyncio.create_task(
+                    _run_team_pipeline(
+                        requirement=requirement,
+                        run_id=run_id,
+                        session_id=session_id,
+                        team_id=req.team_id,
+                        key_id=req.key_id,
+                        model=effective_model,
+                        api_key=api_key,
+                        api_base=api_base,
+                    )
+                )
+                logger.info("Team task started | run=%s | team=%s | nodes=%d", run_id, req.team_id, len(workflow.nodes))
+                return RunResponse(run_id=run_id, status="pending", session_id=session_id)
 
+        from virtual_team.tasks import _run_agent_pipeline
         asyncio.create_task(
             _run_agent_pipeline(
                 requirement=requirement,
@@ -286,6 +309,8 @@ async def run_websocket(websocket: WebSocket, run_id: str):
         try:
             run = await get_run(run_id)
             if run and run.status in ("converged", "error"):
+                # Clean up pre-subscription buffer — don't leak it
+                await stop_buffer(run_id)
                 messages = await get_messages(run_id)
                 for m in messages:
                     await websocket.send_json(

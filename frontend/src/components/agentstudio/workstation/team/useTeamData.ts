@@ -70,24 +70,17 @@ export function useTeamData() {
     setTeams((prev) => [created, ...prev]);
     return created;
   }, []);
-  const updateTeam = useCallback((id: string, data: TeamFormData) => {
-    teamAPI.update(id, data);
-    setTeams((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t));
+  const updateTeam = useCallback(async (id: string, data: TeamFormData) => {
+    try { await teamAPI.update(id, data); setTeams((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t)); } catch (e) { setError(`更新失败：${(e as Error).message}`); }
   }, []);
-  const deleteTeam = useCallback((id: string) => {
-    teamAPI.remove(id);
-    setTeams((prev) => prev.filter((t) => t.id !== id));
-    setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+  const deleteTeam = useCallback(async (id: string) => {
+    try { await teamAPI.remove(id); setTeams((prev) => prev.filter((t) => t.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); } catch (e) { setError(`删除失败：${(e as Error).message}`); }
   }, []);
   const copyTeam = useCallback(async (item: TeamEntry) => {
-    const cloned = await teamAPI.clone(item);
-    setTeams((prev) => [cloned, ...prev]);
-    setPage(1);
+    try { const cloned = await teamAPI.clone(item); setTeams((prev) => [cloned, ...prev]); setPage(1); } catch (e) { setError(`复制失败：${(e as Error).message}`); }
   }, []);
-  const batchDelete = useCallback((ids: Set<string>) => {
-    teamAPI.removeBatch(ids);
-    setTeams((prev) => prev.filter((t) => !ids.has(t.id)));
-    setSelectedIds(new Set()); setPage(1);
+  const batchDelete = useCallback(async (ids: Set<string>) => {
+    try { await teamAPI.removeBatch(ids); setTeams((prev) => prev.filter((t) => !ids.has(t.id))); setSelectedIds(new Set()); setPage(1); } catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
   }, []);
 
   return {

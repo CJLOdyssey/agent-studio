@@ -56,6 +56,33 @@ export interface Team {
   isExpanded: boolean;
   isPinned: boolean;
   agents: Agent[];
+  workflowConfigId?: string;
+}
+
+export interface WorkflowNode {
+  id: string;
+  agentConfigId: string;
+  roleIdentifier: string;
+  strategy: string;
+  order: number;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  conditionKey?: string;
+  isDefault: boolean;
+  priority: number;
+}
+
+export interface WorkflowConfig {
+  id: string;
+  teamId: string;
+  name: string;
+  maxRounds: number;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
 }
 
 // 对话历史记录
@@ -67,6 +94,8 @@ export interface Conversation {
   updatedAt: string;
   agentId?: string;
   sessionId?: string;
+  teamId?: string;
+  teamName?: string;
 }
 
 // 消息类型

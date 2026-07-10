@@ -69,7 +69,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
   }, []);
 
   const memberAgentIds = useMemo(
-    () => new Set(members.map((m) => (m as any).agent_config_id).filter(Boolean)),
+    () => new Set(members.map((m) => m.agentConfigId).filter(Boolean)),
     [members],
   );
 

@@ -167,12 +167,14 @@ export function useAgentManagement(): AgentManagementReturn {
   const openCreate = useCallback(() => { setEditingAgent(null); setFormData(EMPTY_FORM); setFormErrors([]); setIsFormOpen(true); }, []);
   const openEdit = useCallback((agent: AgentEntry) => { setEditingAgent(agent); setFormData({ name: agent.name, description: agent.description, team: agent.team, model: agent.model, status: agent.status, version: agent.version, systemPromptId: agent.systemPromptId, toolIds: agent.toolIds, mcpIds: agent.mcpIds, skillIds: agent.skillIds }); setFormErrors([]); setIsFormOpen(true); }, []);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     const errs = validateForm(formData, agents, editingAgent?.id);
     if (errs.length) { setFormErrors(errs); return; }
-    if (editingAgent) { agentAPI.update(editingAgent.id, formData); setAgents((p) => p.map((a) => (a.id === editingAgent.id ? { ...a, ...formData } : a))); }
-    else { agentAPI.create(formData).then((created) => setAgents((p) => [...p, created])); }
-    setIsFormOpen(false);
+    try {
+      if (editingAgent) { await agentAPI.update(editingAgent.id, formData); setAgents((p) => p.map((a) => (a.id === editingAgent.id ? { ...a, ...formData } : a))); }
+      else { const created = await agentAPI.create(formData); setAgents((p) => [...p, created]); }
+      setIsFormOpen(false);
+    } catch (e) { setFormErrors([`操作失败：${(e as Error).message}`]); }
   }, [formData, editingAgent, agents]);
 
   const openDelete = useCallback((agent: AgentEntry) => {
@@ -180,11 +182,13 @@ export function useAgentManagement(): AgentManagementReturn {
     setDeletingAgent(agent); setIsDeleteOpen(true);
   }, []);
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     if (!deletingAgent) return;
-    agentAPI.remove(deletingAgent.id);
-    setAgents((prev) => prev.filter((a) => a.id !== deletingAgent.id));
-    setIsDeleteOpen(false); setDeletingAgent(null);
+    try {
+      await agentAPI.remove(deletingAgent.id);
+      setAgents((prev) => prev.filter((a) => a.id !== deletingAgent.id));
+      setIsDeleteOpen(false); setDeletingAgent(null);
+    } catch (e) { setBatchError(`删除失败：${(e as Error).message}`); }
   }, [deletingAgent]);
 
   const handleCopy = useCallback((agent: AgentEntry) => {
@@ -199,10 +203,12 @@ export function useAgentManagement(): AgentManagementReturn {
     setIsBatchDeleteOpen(true);
   }, [agents, selectedIds]);
 
-  const handleBatchDelete = useCallback(() => {
-    agentAPI.removeBatch(selectedIds);
-    setAgents((prev) => prev.filter((a) => !selectedIds.has(a.id)));
-    setSelectedIds(new Set()); setIsBatchDeleteOpen(false);
+  const handleBatchDelete = useCallback(async () => {
+    try {
+      await agentAPI.removeBatch(selectedIds);
+      setAgents((prev) => prev.filter((a) => !selectedIds.has(a.id)));
+      setSelectedIds(new Set()); setIsBatchDeleteOpen(false);
+    } catch (e) { setBatchError(`批量删除失败：${(e as Error).message}`); }
   }, [selectedIds]);
 
   return {

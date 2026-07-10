@@ -82,17 +82,19 @@ export default function AgentStudioWorkstation() {
     }
     return true;
   });
-  const showAgentChat = selectedAgentId !== null;
+  const activeTeamId = useChatStore((s) => s.activeTeamId);
+  const activeTeamName = useMemo(() => {
+    if (!activeTeamId) return undefined;
+    return teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
+  }, [activeTeamId, teamMgmt.teams]);
+  const showAgentChat = selectedAgentId !== null || activeTeamId !== null;
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
     localStorage.setItem('agentstudio-dark-mode', String(isDarkMode));
   }, [isDarkMode]);
 
-  const filteredConversations = useMemo(() => {
-    if (!selectedAgentId) return conv.conversations;
-    return conv.conversations.filter((c) => !c.agentId || c.agentId === selectedAgentId);
-  }, [conv.conversations, selectedAgentId]);
+  const filteredConversations = useMemo(() => conv.conversations, [conv.conversations]);
 
   const effectiveSelectedModel = useMemo(
     () => selectedModel || (models.length > 0 ? models[0].id : ''),
@@ -128,7 +130,7 @@ export default function AgentStudioWorkstation() {
       const state = useChatStore.getState();
       if (state.messages.length > 0) {
         Logger.debug(`[chat] sync effect: saving ${state.messages.length} msgs to conv ${activeId} (status=${apiStatus})`);
-        convRef.current.updateConversationMessages(activeId, state.messages, false);
+        convRef.current.updateConversationMessages(activeId, state.messages, false, activeTeamId ?? undefined, activeTeamName);
       }
       if (state.currentSessionId) {
         convRef.current.updateConversationSessionId(activeId, state.currentSessionId, false);
@@ -205,12 +207,17 @@ export default function AgentStudioWorkstation() {
 
   const handleSendMessage = useCallback(
     (text: string, _files: AttachedFile[]) => {
+      Logger.info('[workstation] handleSendMessage — activeTeamId=%s | selectedAgentId=%s | activeConvId=%s', activeTeamId, selectedAgentId, conv.activeConvId);
+      if (!conv.activeConvId) {
+        const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
+        conv.saveConversation(text, [], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName);
+      }
       submitToApi(text, undefined, selectedAgentId ?? undefined).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
     },
-    [submitToApi, selectedAgentId, notify],
+    [submitToApi, selectedAgentId, notify, conv, activeTeamId],
   );
   const handleHomeSend = useCallback(
     (text: string, _files: AttachedFile[]) => {
@@ -369,8 +376,16 @@ export default function AgentStudioWorkstation() {
         handleRenameTeam={teamMgmt.handleRename}
         handleRenameAgent={teamMgmt.handleRenameAgent}
         handleTogglePinTeam={teamMgmt.handleTogglePinTeam}
-        handleAgentClick={(agent) => { useChatStore.getState().selectAgent(agent.id); setSelectedAgentId(agent.id); }}
+        handleAgentClick={(_agent) => { setSelectedAgentId(_agent.id); }}
         onEditAgent={(agent) => { setConfiguringAgent(agent); }}
+        onTeamChat={(teamId) => { 
+          Logger.info('[workstation] onTeamChat — teamId=%s', teamId);
+          if (apiMessages.length > 0 && conv.activeConvId) { conv.updateConversationMessages(conv.activeConvId, apiMessages); }
+          resetApi(); 
+          useChatStore.getState().setActiveTeam(teamId); 
+          conv.setActiveConvId(null);
+          setSelectedAgentId(null);
+        }}
         isSidebarOpen={isSidebarOpen}
         onOpenWorkstation={() => {
           setIsWorkstationOpen(true);
@@ -434,6 +449,7 @@ export default function AgentStudioWorkstation() {
               showAgentChat={showAgentChat}
               hasMessages={hasMessages}
               selectedAgentId={selectedAgentId}
+              activeTeamId={activeTeamId}
               welcomeDismissed={welcomeDismissed}
               allAgents={teamMgmt.allAgents}
               displayMessages={displayMessages}

@@ -20,10 +20,10 @@ export interface ToolData {
   setSelectedIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   handleSort: (field: ToolSortField) => void;
   toggleSelectAll: () => void; toggleSelect: (id: string) => void;
-  addTool: (data: Omit<ToolEntry, 'id' | 'createdAt'>) => void;
-  updateTool: (id: string, data: Partial<ToolEntry>) => void;
-  removeTool: (id: string) => void; copyTool: (item: ToolEntry) => void;
-  removeMultiple: (ids: Set<string>) => void; clearError: () => void; retry: () => void;
+  addTool: (data: Omit<ToolEntry, 'id' | 'createdAt'>) => Promise<void>;
+  updateTool: (id: string, data: Partial<ToolEntry>) => Promise<void>;
+  removeTool: (id: string) => Promise<void>; copyTool: (item: ToolEntry) => Promise<void>;
+  removeMultiple: (ids: Set<string>) => Promise<void>; clearError: () => void; retry: () => void;
 }
 
 export function useToolData(): ToolData {
@@ -78,15 +78,39 @@ export function useToolData(): ToolData {
   const toggleSelect = useCallback((id: string) => setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
   const toggleSelectAll = useCallback(() => setSelectedIds((prev) => paged.every((i) => prev.has(i.id)) ? new Set() : new Set(paged.map((i) => i.id))), [paged]);
 
-  const addTool = useCallback((data: Omit<ToolEntry, 'id' | 'createdAt'>) => {
-    const item = { ...data, id: `tool-${Date.now()}`, createdAt: new Date().toISOString().slice(0, 10) };
-    setItems((prev) => [item as ToolEntry, ...prev]);
-    toolAPI.create(data).catch(() => {});
+  const addTool = useCallback(async (data: Omit<ToolEntry, 'id' | 'createdAt'>) => {
+    try {
+      const created = await toolAPI.create(data);
+      setItems((prev) => [created, ...prev]);
+    } catch (e) { setError(`创建失败：${(e as Error).message}`); }
   }, []);
-  const updateTool = useCallback((id: string, data: Partial<ToolEntry>) => { setItems((prev) => prev.map((i) => i.id === id ? { ...i, ...data } : i)); toolAPI.update(id, data).catch(() => {}); }, []);
-  const removeTool = useCallback((id: string) => { setItems((prev) => prev.filter((i) => i.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); toolAPI.remove(id).catch(() => {}); }, []);
-  const copyTool = useCallback((item: ToolEntry) => { const copy = { ...item, id: `tool-${Date.now()}`, name: `${item.name.slice(0, 60)} (副本)`, createdAt: new Date().toISOString().slice(0, 10) }; setItems((prev) => [copy, ...prev]); toolAPI.clone(item).catch(() => {}); }, []);
-  const removeMultiple = useCallback((ids: Set<string>) => { setItems((prev) => prev.filter((i) => !ids.has(i.id))); setSelectedIds(new Set()); setPage(1); toolAPI.removeBatch(ids).catch(() => {}); }, []);
+  const updateTool = useCallback(async (id: string, data: Partial<ToolEntry>) => {
+    try {
+      await toolAPI.update(id, data);
+      setItems((prev) => prev.map((i) => i.id === id ? { ...i, ...data } : i));
+    } catch (e) { setError(`更新失败：${(e as Error).message}`); }
+  }, []);
+  const removeTool = useCallback(async (id: string) => {
+    try {
+      await toolAPI.remove(id);
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    } catch (e) { setError(`删除失败：${(e as Error).message}`); }
+  }, []);
+  const copyTool = useCallback(async (item: ToolEntry) => {
+    try {
+      const cloned = await toolAPI.clone(item);
+      setItems((prev) => [cloned, ...prev]);
+    } catch (e) { setError(`复制失败：${(e as Error).message}`); }
+  }, []);
+  const removeMultiple = useCallback(async (ids: Set<string>) => {
+    try {
+      await toolAPI.removeBatch(ids);
+      setItems((prev) => prev.filter((i) => !ids.has(i.id)));
+      setSelectedIds(new Set());
+      setPage(1);
+    } catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
+  }, []);
   const clearError = useCallback(() => setError(null), []);
   const retry = useCallback(() => { load(); }, [load]);
 

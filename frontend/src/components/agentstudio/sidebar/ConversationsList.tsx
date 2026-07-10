@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Conversation, Agent } from '../../../types/agentstudio';
 
@@ -76,6 +76,7 @@ const ConversationsList = memo(function ConversationsList({
         {items.map((conv) => {
           const agent = conv.agentId ? agentMap.get(conv.agentId) : undefined;
           const AgentIcon = agent?.icon;
+          const isTeam = !!conv.teamId;
           const isActive = activeConvId === conv.id && !selectedAgentId;
           return (
             <div
@@ -94,7 +95,12 @@ const ConversationsList = memo(function ConversationsList({
             >
               <div className="agentstudio-conv-item-content">
                 <div className="agentstudio-conv-item-title">
-                  {agent && AgentIcon && (
+                  {isTeam && (
+                    <span className="agentstudio-conv-item-agent-icon" style={{ color: 'var(--da-accent)' }}>
+                      <Users size={12} />
+                    </span>
+                  )}
+                  {agent && AgentIcon && !isTeam && (
                     <span className="agentstudio-conv-item-agent-icon" style={{ color: agent.color }}>
                       <AgentIcon size={12} />
                     </span>
@@ -104,7 +110,10 @@ const ConversationsList = memo(function ConversationsList({
                     : conv.title}
                 </div>
                 <div className="agentstudio-conv-item-meta">
-                  {agent && (
+                  {isTeam && (
+                    <span className="agentstudio-conv-item-agent-name" style={{ color: 'var(--da-accent)' }}>{conv.teamName || '团队'}</span>
+                  )}
+                  {agent && !isTeam && (
                     <span className="agentstudio-conv-item-agent-name">{agent.name}</span>
                   )}
                   {conv.messages.filter((m) => m.role === 'agent').length > 0

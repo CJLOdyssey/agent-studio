@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from virtual_team.auth import get_user_id
+from virtual_team.database import log_audit
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     create_api_key,
@@ -198,6 +199,7 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
                 await update_api_key(key_id=key_id, user_id=user_id, models=fetched_models)
                 result["models"] = fetched_models
 
+    await log_audit("create", "api_key", result["label"], "创建成功")
     return KeyResponse(
         id=result["id"],
         provider=result["provider"],
@@ -217,9 +219,14 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
 async def remove_key(key_id: str, request: Request):
     """Delete an API key. Irreversible — the encrypted key is permanently removed."""
     user_id = get_user_id(request)
+    # Get label before deletion
+    keys = await get_api_keys(user_id)
+    target = next((k for k in keys if k["id"] == key_id), None)
+    key_label = target["label"] if target else key_id
     deleted = await delete_api_key(key_id, user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Key not found or access denied")
+    await log_audit("delete", "api_key", key_label, "删除成功")
     logger.info("Key deleted | user=%s | key_id=%s", user_id, key_id)
     return {"status": "deleted", "id": key_id}
 

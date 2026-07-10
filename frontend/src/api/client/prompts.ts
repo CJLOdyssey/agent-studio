@@ -31,7 +31,7 @@ export async function listPrompts(): Promise<PromptItem[]> {
   return data;
 }
 
-export async function createPrompt(payload: { name: string; category: string; content: string }): Promise<PromptItem> {
+export async function createPrompt(payload: { name: string; category: string; content: string; model?: string }): Promise<PromptItem> {
   const { data } = await api.post('/prompts', payload);
   return data;
 }
