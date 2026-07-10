@@ -1,4 +1,5 @@
 """LangGraph-powered single-agent execution pipelines."""
+# ruff: noqa: E402 — imports after tracemalloc setup are intentional
 import gc
 import json
 import os
@@ -15,7 +16,8 @@ def _log_memory_diff() -> None:
     global _baseline_snapshot
     try:
         pid = os.getpid()
-        rss_kb = int(open(f"/proc/{pid}/status").read().split("VmRSS:")[1].split()[0])
+        with open(f"/proc/{pid}/status") as f:
+            rss_kb = int(f.read().split("VmRSS:")[1].split()[0])
         logger.info("[MEM] run=#%s pid=%s rss=%dKB", _run_counter, pid, rss_kb)
     except Exception:
         pass
