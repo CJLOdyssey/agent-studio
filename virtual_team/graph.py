@@ -317,7 +317,11 @@ class SingleAgentGraph:
         """Convenience: run one turn synchronously."""
         config = cast("RunnableConfig", {"configurable": {"thread_id": str(id(self))}, "recursion_limit": 25})
         result = await self._graph.ainvoke(
-            {"messages": [HumanMessage(content=message)], "system_prompt": system_prompt, "session_context": session_context},  # noqa: E501
+            {
+                "messages": [HumanMessage(content=message)],
+                "system_prompt": system_prompt,
+                "session_context": session_context,
+            },
             config,
         )
         return result["messages"][-1].content if result.get("messages") else ""

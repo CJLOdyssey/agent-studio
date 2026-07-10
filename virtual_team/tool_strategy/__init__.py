@@ -6,11 +6,8 @@ via a name pattern that _ToolWrapper matches against.
 
 from __future__ import annotations
 
-import json  # noqa: F401
 from abc import ABC, abstractmethod
-from collections.abc import Callable  # noqa: F401
 from dataclasses import dataclass
-from typing import Any  # noqa: F401
 
 
 @dataclass
