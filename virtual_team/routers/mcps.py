@@ -1,8 +1,11 @@
 """MCP server CRUD API routes."""
 
+import json
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from virtual_team.database import log_audit
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_mcp, delete_mcp, get_mcps, update_mcp
 
@@ -56,18 +59,32 @@ async def _do_snapshot_mcp(resource_id: str, session):
     item = next((m for m in all_items if m["id"] == resource_id), None)
     if not item:
         return
-    snapshot = {k: v for k, v in item.items() if k in ("name", "description", "type", "command", "url", "status", "version")}  # noqa: E501
+    config_raw = item.get("config", "{}")
+    try:
+        cfg = json.loads(config_raw) if isinstance(config_raw, str) else (config_raw or {})
+    except (json.JSONDecodeError, TypeError):
+        cfg = {}
+    snapshot = {
+        "name": item.get("name"),
+        "type": item.get("type"),
+        "endpoint": item.get("endpoint"),
+        "status": item.get("status"),
+        "description": cfg.get("description"),
+        "version": cfg.get("version"),
+    }
     await _cv(session, "mcp", resource_id, snapshot, "system")
 
 @router.post("/api/mcps", status_code=201)
 async def add_mcp(req: MCPCreate):
     try:
         m = await create_mcp(req.model_dump())
+        await log_audit("create", "mcp", m.name, "创建成功")
         return {
             "id": m.id,
             "name": m.name,
             "type": m.type,
             "endpoint": m.endpoint,
+            "config": m.config,
             "status": m.status,
             "created_at": m.created_at.isoformat() if m.created_at else None,
         }
@@ -83,7 +100,16 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate):
         if not m:
             raise HTTPException(status_code=404, detail="MCP not found")
         await _snapshot_mcp(m.id)
-        return {"id": m.id, "name": m.name, "type": m.type, "status": m.status}
+        await log_audit("update", "mcp", m.name, "更新成功")
+        return {
+            "id": m.id,
+            "name": m.name,
+            "type": m.type,
+            "endpoint": m.endpoint,
+            "config": m.config,
+            "status": m.status,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -94,9 +120,13 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate):
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
 async def remove_mcp(mcp_id: str):
     try:
+        mcps = await get_mcps()
+        target = next((m for m in mcps if m["id"] == mcp_id), None)
+        mcp_name = target["name"] if target else mcp_id
         ok = await delete_mcp(mcp_id)
         if not ok:
             raise HTTPException(status_code=404, detail="MCP not found")
+        await log_audit("delete", "mcp", mcp_name, "删除成功")
     except HTTPException:
         raise
     except Exception as e:

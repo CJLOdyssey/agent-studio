@@ -30,11 +30,12 @@ function teamMemberToAgent(a: TeamMember): Agent {
     return [];
   };
   return {
-    id: a.agentConfigId || a.id,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    id: (a as any).agent_config_id || a.agentConfigId || a.id,
     name: a.name,
     role: a.role,
-    systemPrompt: a.systemPrompt || undefined,
-    outputConstraints: a.outputConstraints || undefined,
+    systemPrompt: (a as any).system_prompt || a.systemPrompt || undefined,
+    outputConstraints: (a as any).output_constraints || a.outputConstraints || undefined,
     tools: parseJsonArray(a.tools).map((t: { name: string; enabled?: boolean }) => ({ id: t.name, name: t.name, description: '', enabled: t.enabled ?? true })),
     mcp: parseJsonArray(a.mcp).map((m: { name: string; enabled?: boolean }) => ({ id: m.name, name: m.name, description: '', serverUrl: '', enabled: m.enabled ?? true })),
     skills: parseJsonArray(a.skills).map((s: { name: string; enabled?: boolean }) => ({ id: s.name, name: s.name, description: '', enabled: s.enabled ?? true })),
@@ -201,10 +202,14 @@ export function useTeamManagement(toast?: ToastFn) {
     if (!trimmed) return;
     // 查找 Agent 所在团队，验证同团队内不重名
     let existingNames: string[] = [];
+    let agentConfigId: string | undefined;
     teams.forEach((team) => {
-      if (team.agents.some((a) => a.id === agentId)) {
-        existingNames = team.agents.filter((a) => a.id !== agentId).map((a) => a.name);
-      }
+      team.agents.forEach((a) => {
+        if (a.id === agentId) {
+          existingNames = team.agents.filter((x) => x.id !== agentId).map((x) => x.name);
+          agentConfigId = a.agentConfigId;
+        }
+      });
     });
     const validation = validateName(trimmed, existingNames);
     if (!validation.valid) {
@@ -217,7 +222,8 @@ export function useTeamManagement(toast?: ToastFn) {
         agents: t.agents.map((a) => (a.id === agentId ? { ...a, name: trimmed } : a)),
       })),
     );
-    updateAgent(agentId, { name: trimmed }).catch(() => {});
+    const apiId = agentConfigId || agentId;
+    updateAgent(apiId, { name: trimmed }).catch(() => {});
   }, [teams, toast]);
 
   const handleDeleteTeam = useCallback(

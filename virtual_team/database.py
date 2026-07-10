@@ -174,6 +174,9 @@ class TeamDB(Base):
     order: Mapped[int] = mapped_column(Integer, default=0)
     is_expanded: Mapped[bool] = mapped_column(Boolean, default=False)
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
+    workflow_config_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("workflow_configs.id", ondelete="SET NULL"), nullable=True, default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
@@ -188,6 +191,96 @@ class TeamDB(Base):
         back_populates="team",
         cascade="all, delete-orphan",
         order_by="TeamAgentDB.order",
+    )
+    workflow_config: Mapped["WorkflowConfigDB | None"] = relationship(
+        foreign_keys=[workflow_config_id],
+    )
+
+
+class WorkflowConfigDB(Base):
+    __tablename__ = "workflow_configs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    team_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    max_rounds: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    nodes: Mapped[list["WorkflowNodeDB"]] = relationship(
+        back_populates="workflow_config",
+        cascade="all, delete-orphan",
+        order_by="WorkflowNodeDB.order",
+    )
+    edges: Mapped[list["WorkflowEdgeDB"]] = relationship(
+        back_populates="workflow_config",
+        cascade="all, delete-orphan",
+    )
+
+
+class WorkflowNodeDB(Base):
+    __tablename__ = "workflow_nodes"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    workflow_config_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workflow_configs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    agent_config_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_configs.id", ondelete="RESTRICT"), nullable=False
+    )
+    role_identifier: Mapped[str] = mapped_column(String(32), nullable=False)
+    strategy: Mapped[str] = mapped_column(String(16), default="generator", nullable=False)
+    order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    workflow_config: Mapped["WorkflowConfigDB"] = relationship(back_populates="nodes")
+    agent_config: Mapped["AgentConfigDB"] = relationship()
+    outgoing_edges: Mapped[list["WorkflowEdgeDB"]] = relationship(
+        back_populates="from_node",
+        foreign_keys="WorkflowEdgeDB.from_node_id",
+        cascade="all, delete-orphan",
+    )
+    incoming_edges: Mapped[list["WorkflowEdgeDB"]] = relationship(
+        back_populates="to_node",
+        foreign_keys="WorkflowEdgeDB.to_node_id",
+        cascade="all, delete-orphan",
+    )
+
+
+class WorkflowEdgeDB(Base):
+    __tablename__ = "workflow_edges"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    workflow_config_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workflow_configs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    from_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workflow_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    to_node_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workflow_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    condition_key: Mapped[str | None] = mapped_column(String(128), nullable=True, default=None)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    workflow_config: Mapped["WorkflowConfigDB"] = relationship(back_populates="edges")
+    from_node: Mapped["WorkflowNodeDB"] = relationship(
+        back_populates="outgoing_edges", foreign_keys=[from_node_id]
+    )
+    to_node: Mapped["WorkflowNodeDB"] = relationship(
+        back_populates="incoming_edges", foreign_keys=[to_node_id]
     )
 
 
@@ -287,6 +380,22 @@ class CommandLogDB(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
+    )
+
+
+class AuditLogDB(Base):
+    """Admin audit log — records management CRUD operations (no session FK)."""
+    __tablename__ = "audit_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    entity_name: Mapped[str] = mapped_column(String(255), default="")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        index=True,
     )
 
 
@@ -563,6 +672,26 @@ async def init_db():
         await conn.execute(
             text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);")
         )
+
+
+async def log_audit(
+    action: str,
+    entity_type: str,
+    entity_name: str = "",
+    detail: str = "",
+) -> None:
+    """Write an audit log entry for a management CRUD operation."""
+    from virtual_team.database import AuditLogDB, get_session_factory
+    entry = AuditLogDB(
+        action=action,
+        entity_type=entity_type,
+        entity_name=entity_name,
+        detail=detail,
+    )
+    factory = get_session_factory()
+    async with factory() as session:
+        session.add(entry)
+        await session.commit()
 
 
 async def get_session():

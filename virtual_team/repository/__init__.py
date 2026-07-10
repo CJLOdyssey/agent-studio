@@ -6,3 +6,4 @@ from virtual_team.repository.prompts import *  # noqa: F403
 from virtual_team.repository.skills import *  # noqa: F403
 from virtual_team.repository.teams import *  # noqa: F403
 from virtual_team.repository.tools import *  # noqa: F403
+from virtual_team.repository.workflows import *  # noqa: F403

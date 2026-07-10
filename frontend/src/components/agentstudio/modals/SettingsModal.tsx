@@ -93,7 +93,7 @@ export default function SettingsModal({ onClose }: Props) {
                 <select
                   className="settings-select"
                   value={settings.theme}
-                  onChange={(e) => updateSettings({ theme: e.target.value as any })}
+                  onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
                 >
                   <option value="dark">{t('settings.dark')}</option>
                   <option value="light">{t('settings.light')}</option>
@@ -130,10 +130,10 @@ export default function SettingsModal({ onClose }: Props) {
                 <select
                   className="settings-select"
                   value={settings.sendMode}
-                  onChange={(e) => updateSettings({ sendMode: e.target.value as any })}
+                  onChange={(e) => updateSettings({ sendMode: e.target.value as 'enter' | 'ctrl-enter' })}
                 >
                   <option value="enter">{t('settings.enterSend')}</option>
-                  <option value="ctrlEnter">Ctrl + Enter</option>
+                  <option value="ctrl-enter">Ctrl + Enter</option>
                 </select>
               </div>
               <div className="settings-item">

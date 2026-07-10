@@ -9,6 +9,7 @@ interface Props {
   showAgentChat: boolean;
   hasMessages: boolean;
   selectedAgentId: string | null;
+  activeTeamId?: string | null;
   welcomeDismissed: boolean;
   allAgents: Agent[];
   displayMessages: Message[];
@@ -20,6 +21,7 @@ export default function MessagesPanel({
   showAgentChat,
   hasMessages,
   selectedAgentId,
+  activeTeamId,
   welcomeDismissed,
   allAgents,
   displayMessages,
@@ -39,6 +41,14 @@ export default function MessagesPanel({
     const idx = displayMessages.findIndex((m) => m.id === msgId);
     if (idx >= 0) {
       editMessage(idx, newContent);
+      // 编辑用户消息后自动重新生成 AI 回复
+      const msg = displayMessages[idx];
+      if (msg.role === 'user' && idx + 1 < displayMessages.length) {
+        const aiMsg = displayMessages[idx + 1];
+        if (aiMsg.role === 'agent') {
+          regenerateMessage(idx + 1);
+        }
+      }
     }
   };
 
@@ -60,7 +70,7 @@ export default function MessagesPanel({
   if (showAgentChat) {
     return (
       <div className="agentstudio-messages-inner" aria-live="polite">
-        {!welcomeDismissed && (
+        {!welcomeDismissed && !activeTeamId && (
           <div className="agentstudio-agent-welcome">
             <button className="agentstudio-welcome-close" onClick={onDismissWelcome} aria-label={t('common.close')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

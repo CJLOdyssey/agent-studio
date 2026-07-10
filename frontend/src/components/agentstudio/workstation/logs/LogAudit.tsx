@@ -4,7 +4,6 @@ import { Search, FileText, Info, AlertTriangle, AlertCircle } from 'lucide-react
 import { PAGE_SIZE } from '../constants';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
-import { MOCK_LOGS } from './mock-data';
 import { fetchCommandLogs } from '../../../../api/client/admin';
 import { t } from './locales';
 import WstaPagination from '../shared/WstaPagination';
@@ -37,22 +36,20 @@ function LogAudit() {
     fetchCommandLogs(200, 0)
       .then((items) => {
         if (cancelled) return;
-        if (items.length > 0) {
-          setLogs(items.map((item) => ({
-            id: item.id,
-            timestamp: item.timestamp.replace('T', ' ').substring(0, 19),
-            level: 'info' as LogLevel,
-            module: 'system',
-            user: 'system',
-            action: item.command,
-            details: item.result || item.payload,
-            ip: '',
-          })));
-        } else {
-          setLogs(MOCK_LOGS);
-        }
+        setLogs(items.length > 0
+          ? items.map((item) => ({
+              id: item.id,
+              timestamp: item.timestamp.replace('T', ' ').substring(0, 19),
+              level: 'info' as LogLevel,
+              module: 'system',
+              user: 'system',
+              action: item.command,
+              details: item.result || item.payload,
+              ip: '',
+            }))
+          : []);
       })
-      .catch(() => { if (!cancelled) setLogs(MOCK_LOGS); })
+      .catch(() => { if (!cancelled) setLogs([]); })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }, []);

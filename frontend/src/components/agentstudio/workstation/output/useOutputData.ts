@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { OutputEntry, OutputFormData } from './output.types';
 import { outputAPI } from './api';
 import { PAGE_SIZE } from '../constants';
-import { nextId, today } from '../utils';
 
 export interface OutputData {
   isLoading: boolean; error: string | null;
@@ -10,7 +9,7 @@ export interface OutputData {
   search: string; categoryFilter: string; selectedIds: Set<string>; allOnPageSelected: boolean;
   setSearch: (v: string) => void; setCategoryFilter: (v: string) => void; setPage: (v: number) => void;
   toggleSelect: (id: string) => void; toggleSelectAll: () => void;
-  addItem: (data: OutputFormData) => void; updateItem: (id: string, data: Partial<OutputEntry>) => void;
+  addItem: (data: OutputFormData) => Promise<void>; updateItem: (id: string, data: Partial<OutputEntry>) => Promise<void>;
   removeItem: (id: string) => void; copyItem: (item: OutputEntry) => void;
   removeMultiple: (ids: Set<string>) => void; getAllItems: () => OutputEntry[];
   addItems: (items: OutputEntry[]) => void; clearError: () => void;
@@ -56,20 +55,42 @@ export function useOutputData(): OutputData {
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   }, []);
-  const addItem = useCallback((data: OutputFormData) => {
-    try { setItems((prev) => [...prev, { id: nextId(itemsRef.current), ...data, createdAt: today() }]); setError(null); } catch (e) { setError(`创建失败：${(e as Error).message}`); }
+  const addItem = useCallback(async (data: OutputFormData) => {
+    try {
+      const created = await outputAPI.create(data);
+      setItems((prev) => [...prev, created]);
+      setError(null);
+    } catch (e) { setError(`创建失败：${(e as Error).message}`); }
   }, []);
-  const updateItem = useCallback((id: string, data: Partial<OutputEntry>) => {
-    try { setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...data } : i))); setError(null); } catch (e) { setError(`更新失败：${(e as Error).message}`); }
+  const updateItem = useCallback(async (id: string, data: Partial<OutputEntry>) => {
+    try {
+      await outputAPI.update(id, data);
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...data } : i)));
+      setError(null);
+    } catch (e) { setError(`更新失败：${(e as Error).message}`); }
   }, []);
-  const removeItem = useCallback((id: string) => {
-    try { setItems((prev) => prev.filter((i) => i.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); setError(null); } catch (e) { setError(`删除失败：${(e as Error).message}`); }
+  const removeItem = useCallback(async (id: string) => {
+    try {
+      await outputAPI.remove(id);
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setError(null);
+    } catch (e) { setError(`删除失败：${(e as Error).message}`); }
   }, []);
-  const copyItem = useCallback((item: OutputEntry) => {
-    try { setItems((prev) => [...prev, { ...item, id: nextId(itemsRef.current), name: `${item.name} (副本)`, createdAt: today() }]); setError(null); } catch (e) { setError(`复制失败：${(e as Error).message}`); }
+  const copyItem = useCallback(async (item: OutputEntry) => {
+    try {
+      const cloned = await outputAPI.clone(item);
+      setItems((prev) => [...prev, cloned]);
+      setError(null);
+    } catch (e) { setError(`复制失败：${(e as Error).message}`); }
   }, []);
-  const removeMultiple = useCallback((ids: Set<string>) => {
-    try { setItems((prev) => prev.filter((i) => !ids.has(i.id))); setSelectedIds(new Set()); setError(null); } catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
+  const removeMultiple = useCallback(async (ids: Set<string>) => {
+    try {
+      await outputAPI.removeBatch(ids);
+      setItems((prev) => prev.filter((i) => !ids.has(i.id)));
+      setSelectedIds(new Set());
+      setError(null);
+    } catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
   }, []);
   const getAllItems = useCallback(() => itemsRef.current, []);
   const addItems = useCallback((newItems: OutputEntry[]) => { try { setItems((prev) => [...prev, ...newItems]); setError(null); } catch (e) { setError(`导入失败：${(e as Error).message}`); } }, []);

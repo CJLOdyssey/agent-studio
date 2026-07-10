@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText } from 'lucide-react';
+import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText, GitBranch } from 'lucide-react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import AgentManagement from './workstation/agent/AgentManagement';
 import { PromptManagement } from './workstation/prompt';
@@ -10,6 +10,7 @@ import SkillManagement from './workstation/skill/SkillManagement';
 import TeamManagement from './workstation/team/TeamManagement';
 import MonitorCenter from './workstation/monitor/MonitorCenter';
 import LogAudit from './workstation/logs/LogAudit';
+import { WorkflowManagement } from './workstation/workflow';
 import { RefreshCw } from 'lucide-react';
 
 function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -22,7 +23,7 @@ function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
   );
 }
 
-type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'monitor' | 'logs';
+type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'workflow' | 'monitor' | 'logs';
 
 interface NavTab {
   id: WorkstationTab;
@@ -35,6 +36,7 @@ const navGroups: { label: string; tabs: NavTab[] }[] = [
     label: '核心资源',
     tabs: [
       { id: 'teams', label: '团队管理', icon: Users },
+      { id: 'workflow', label: '工作流', icon: GitBranch },
       { id: 'agents', label: 'Agent 管理', icon: Bot },
       { id: 'prompts', label: '提示词管理', icon: MessageSquare },
       { id: 'outputs', label: '输出约束', icon: FileCheck },
@@ -105,7 +107,8 @@ export default function WorkstationPage() {
           {activeTab === 'mcp' && <MCPManagement />}
           {activeTab === 'skills' && <SkillManagement />}
           {activeTab === 'teams' && <TeamManagement />}
-          {activeTab === 'monitor' && <MonitorCenter />}
+          {activeTab === 'workflow' && <WorkflowManagement />}
+          {activeTab === 'monitor' && <MonitorCenter onNavigate={(tab) => setActiveTab(tab as WorkstationTab)} />}
           {activeTab === 'logs' && <LogAudit />}
         </ErrorBoundary>
       </main>

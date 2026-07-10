@@ -31,9 +31,9 @@ async def test_bind_tools_initializes_correctly():
     )
     tool_configs = [
         ToolConfig(
-            name="weather",
-            description="Get weather for a city",
-            parameters={"type": "object", "properties": {"city": {"type": "string"}}},
+            name="web_search",
+            description="Search the web",
+            parameters={"type": "object", "properties": {"query": {"type": "string"}}},
         ),
         ToolConfig(
             name="calculator",
@@ -44,17 +44,17 @@ async def test_bind_tools_initializes_correctly():
     graph.bind_tools(tool_configs)
 
     assert len(graph._tool_map) == 2
-    assert "weather" in graph._tool_map
+    assert "web_search" in graph._tool_map
     assert "calculator" in graph._tool_map
     assert len(graph._tool_definitions) == 2
-    assert graph._tool_definitions[0]["function"]["name"] == "weather"
+    assert graph._tool_definitions[0]["function"]["name"] == "web_search"
     assert graph._tool_definitions[1]["function"]["name"] == "calculator"
 
     # Verify wrapper is a _ToolWrapper instance
-    weather_wrapper = graph._tool_map["weather"]
-    assert isinstance(weather_wrapper, _ToolWrapper)
-    assert weather_wrapper.name == "weather"
-    assert weather_wrapper.description == "Get weather for a city"
+    wrapper = graph._tool_map["web_search"]
+    assert isinstance(wrapper, _ToolWrapper)
+    assert wrapper.name == "web_search"
+    assert wrapper.description == "Search the web"
 
 
 @pytest.mark.asyncio
@@ -86,24 +86,10 @@ async def test_bind_tools_strips_empty_properties():
 
 
 @pytest.mark.asyncio
-async def test_tool_wrapper_builtin_handler():
-    """_ToolWrapper.invoke calls the correct builtin handler for known tools."""
-    # weather tool
-    weather_tool = _ToolWrapper(name="weather", description="Get weather")
-    result = await weather_tool.invoke({"city": "Shanghai"})
-    assert "Shanghai" in result
-    assert "Shanghai" in result
-    assert "weather" in result
-    assert "humidity" in result
-
-    # calculator tool
-    calc_tool = _ToolWrapper(name="calculator", description="Math")
-    result = await calc_tool.invoke({"expression": "2+3"})
-    assert "5" in result
-
-    # skill_* tool
+async def test_tool_wrapper_skill_handler():
+    """_ToolWrapper.invoke returns instructions for tools with instructions field."""
     skill_tool = _ToolWrapper(
-        name="skill_code_review",
+        name="code_review",
         description="Review code",
         instructions="Look for bugs, check for security issues, suggest improvements.",
     )

@@ -149,8 +149,23 @@ async def buffer_run_messages(run_id: str) -> None:
 
     async def _worker():
         try:
-            async for msg in pubsub.listen():
-                if msg["type"] == "message":
+            # Wait for subscribe confirmation before entering message loop
+            while True:
+                init_msg = await pubsub.get_message()
+                if init_msg and init_msg["type"] == "subscribe":
+                    break
+            # Listen with idle timeout — auto-cleanup prevents buffer leaks when
+            # the run finishes without a WebSocket connection to drain it.
+            while True:
+                try:
+                    msg = await asyncio.wait_for(
+                        pubsub.get_message(ignore_subscribe_messages=True),
+                        timeout=60.0,
+                    )
+                except asyncio.TimeoutError:
+                    logger.info("Buffer idle timeout for run %s — auto-cleanup", run_id)
+                    break
+                if msg and msg["type"] == "message":
                     data = msg["data"]
                     if isinstance(data, str):
                         parsed = json.loads(data)
@@ -161,6 +176,9 @@ async def buffer_run_messages(run_id: str) -> None:
                             len(parsed.get("thinking", "")),
                         )
                         buf.append(parsed)
+            # Timeout or normal exit — clean up top-level references
+            _buffers.pop(run_id, None)
+            _buffer_tasks.pop(run_id, None)
         except asyncio.CancelledError:
             pass
 

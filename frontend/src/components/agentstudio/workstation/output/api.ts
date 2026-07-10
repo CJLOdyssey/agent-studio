@@ -10,12 +10,18 @@ export interface OutputAPIService {
   removeBatch(ids: Set<string>): Promise<void>;
 }
 
-function toEntry(item: { id: string; name: string; content: string; category: string; version: string; created_at: string }): OutputEntry {
+interface PromptRow {
+  id: string; name: string; content: string; category: string;
+  model: string | null; version: string; created_at: string;
+}
+
+function toEntry(item: PromptRow): OutputEntry {
   return {
     id: item.id,
     name: item.name,
     content: item.content,
-    category: item.category as OutputCategory,
+    // visual category stored in model field; fallback to category for backward compat
+    category: (item.model || item.category) as OutputCategory,
     model: '',
     status: 'active',
     version: item.version,
@@ -23,7 +29,7 @@ function toEntry(item: { id: string; name: string; content: string; category: st
   };
 }
 
-async function fetchConstraints(): Promise<{ id: string; name: string; content: string; category: string; version: string; created_at: string }[]> {
+async function fetchConstraints(): Promise<PromptRow[]> {
   const all = await listPrompts();
   return all.filter(p => p.category === 'output_constraint');
 }
@@ -31,14 +37,30 @@ async function fetchConstraints(): Promise<{ id: string; name: string; content: 
 const realImpl: OutputAPIService = {
   fetchAll: async () => { const items = await fetchConstraints(); return items.map(toEntry); },
   create: async (data) => {
-    const item = await createPrompt({ name: data.name, category: 'output_constraint', content: data.content });
-    return toEntry(item as { id: string; name: string; content: string; category: string; version: string; created_at: string });
+    const item = await createPrompt({
+      name: data.name,
+      category: 'output_constraint',
+      content: data.content,
+      model: data.category,
+    });
+    return toEntry(item as unknown as PromptRow);
   },
-  update: async (id, data) => { await updatePrompt(id, { ...data }); },
+  update: async (id, data) => {
+    await updatePrompt(id, {
+      ...(data.name ? { name: data.name } : {}),
+      ...(data.content ? { content: data.content } : {}),
+      ...(data.category ? { model: data.category } : {}),
+    });
+  },
   remove: async (id) => { await deletePrompt(id); },
   clone: async (item) => {
-    const c = await createPrompt({ name: `${item.name.slice(0, 48)} (副本)`, category: 'output_constraint', content: item.content });
-    return toEntry(c as { id: string; name: string; content: string; category: string; version: string; created_at: string });
+    const c = await createPrompt({
+      name: `${item.name.slice(0, 48)} (副本)`,
+      category: 'output_constraint',
+      content: item.content,
+      model: item.category,
+    });
+    return toEntry(c as unknown as PromptRow);
   },
   removeBatch: async (ids) => { await Promise.all(Array.from(ids).map(deletePrompt)); },
 };

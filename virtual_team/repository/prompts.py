@@ -29,6 +29,12 @@ async def get_prompts() -> list[dict]:
         ]
 
 
+async def get_prompt(prompt_id: str) -> PromptDB | None:
+    factory = get_session_factory()
+    async with factory() as session:
+        return await session.get(PromptDB, prompt_id)
+
+
 async def create_prompt(data: dict) -> PromptDB:
     factory = get_session_factory()
     async with factory() as session:

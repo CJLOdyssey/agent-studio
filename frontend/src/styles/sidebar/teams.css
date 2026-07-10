@@ -159,6 +159,36 @@
   opacity: 1;
 }
 
+.agentstudio-team-chat-btn {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--da-text-muted);
+  opacity: 0;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.agentstudio-team-folder-header:hover .agentstudio-team-chat-btn {
+  opacity: 0.6;
+}
+
+.agentstudio-team-chat-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-accent);
+  opacity: 1;
+}
+
 .agentstudio-team-edit {
   flex: 1;
   min-width: 0;

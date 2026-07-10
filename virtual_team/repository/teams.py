@@ -30,7 +30,7 @@ async def get_teams() -> list[dict]:
                 "agents": [
                     {
                         "id": m.id,
-                        "name": m.name,
+                        "name": m.agent_config.name if m.agent_config else m.name,
                         "role": m.role,
                         "order": m.order,
                         "agent_config_id": m.agent_config_id,
@@ -74,7 +74,7 @@ async def get_team(team_id: str) -> dict | None:
             "agents": [
                 {
                     "id": m.id,
-                    "name": m.name,
+                    "name": m.agent_config.name if m.agent_config else m.name,
                     "role": m.role,
                     "order": m.order,
                     "agent_config_id": m.agent_config_id,

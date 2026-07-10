@@ -40,7 +40,7 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
         if memories:
             session_context = _build_context(memories)
 
-    from virtual_team.agent_graph import DEFAULT_TOOLS, SingleAgentGraph
+    from virtual_team.agent_graph import SingleAgentGraph
     from virtual_team.checkpoint import create_checkpointer_async
 
     checkpointer = await create_checkpointer_async()
@@ -51,7 +51,7 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
         temperature=config.temperature,
         checkpointer=checkpointer,
     )
-    graph.bind_tools(DEFAULT_TOOLS)
+    # No DEFAULT_TOOLS — tools are created via frontend API
 
     result = await graph.run(
         system_prompt=system_prompt,
