@@ -111,7 +111,7 @@ class StreamEmitter:
             await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
 
     async def emit_thinking_nodes(self, nodes: list[dict]):
-        MAX_PENDING = 20
+        MAX_PENDING = 20  # noqa: N806
         if self._pending_thinking_nodes:
             self._pending_thinking_nodes.extend(nodes)
             if len(self._pending_thinking_nodes) > MAX_PENDING:

@@ -181,7 +181,7 @@ class _ToolWrapper:
                 try:
                     cmd = [self.mcp_endpoint] + [str(v) for v in args.values()]
                     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                    return json.dumps({"stdout": result.stdout[:3000], "stderr": result.stderr[:500], "rc": result.returncode})
+                    return json.dumps({"stdout": result.stdout[:3000], "stderr": result.stderr[:500], "rc": result.returncode})  # noqa: E501
                 except subprocess.TimeoutExpired:
                     return json.dumps({"error": "timeout (30s)"})
                 except Exception as e:
@@ -261,4 +261,4 @@ class _ToolWrapper:
                 return resp.content
             except Exception as e:
                 return json.dumps({"tool": self.name, "status": "error", "error": str(e)})
-        return json.dumps({"tool": self.name, "status": "executed", "note": "no LLM available, falling back", "args": args})
+        return json.dumps({"tool": self.name, "status": "executed", "note": "no LLM available, falling back", "args": args})  # noqa: E501
