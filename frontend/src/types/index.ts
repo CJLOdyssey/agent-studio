@@ -19,7 +19,7 @@ export interface AgentConfig {
 }
 
 export interface WsMessage {
-  type: 'message' | 'stream' | 'thinking_stream' | 'thinking_done' | 'status' | 'result' | 'error';
+  type: 'message' | 'stream' | 'thinking_stream' | 'thinking_done' | 'status' | 'result' | 'error' | 'client_action';
   role?: AgentRole;
   agent_name?: string;
   content?: string;
@@ -31,6 +31,7 @@ export interface WsMessage {
   pm_document?: string;
   code?: string;
   review?: string;
+  action?: { type: string; url?: string; [key: string]: unknown };
 }
 
 export interface RunResult {

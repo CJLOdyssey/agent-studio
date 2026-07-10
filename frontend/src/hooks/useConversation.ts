@@ -101,7 +101,7 @@ export function useConversation() {
   }, []);
 
   /** Save or update a conversation. If convId exists, updates it; otherwise creates new. */
-  const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string) => {
+  const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string, teamId?: string, teamName?: string) => {
     const now = new Date().toISOString();
     const id = crypto.randomUUID?.() || uid();
     const conv: Conversation = {
@@ -111,6 +111,8 @@ export function useConversation() {
       createdAt: now,
       updatedAt: now,
       agentId,
+      teamId,
+      teamName,
     };
     setConversations((prev) => [conv, ...prev]);
     setActiveConvId(id);
@@ -118,11 +120,11 @@ export function useConversation() {
   }, []);
 
   /** Update messages for an existing conversation. */
-  const updateConversationMessages = useCallback((convId: string, messages: unknown[], updateTimestamps = true) => {
+  const updateConversationMessages = useCallback((convId: string, messages: unknown[], updateTimestamps = true, teamId?: string, teamName?: string) => {
     setConversations((prev) =>
       prev.map((c) =>
         c.id === convId
-          ? { ...c, messages: messages as Conversation['messages'], ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}) }
+          ? { ...c, messages: messages as Conversation['messages'], ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}), ...(teamId !== undefined ? { teamId } : {}), ...(teamName !== undefined ? { teamName } : {}) }
           : c,
       ),
     );

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from virtual_team.auth import CurrentUser, get_current_user
+from virtual_team.database import log_audit
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     create_agent_config,
@@ -140,6 +141,7 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
             owner_id=current_user.id,
         )
         await _snapshot_agent(created.id, current_user)
+        await log_audit("create", "agent", req.name, "创建成功")
         return {"id": created.id, "status": "created"}
     except Exception as e:
         logger.error("Error creating agent: %s", e, exc_info=True)
@@ -199,6 +201,7 @@ async def edit_agent(
     if not updated:
         raise HTTPException(status_code=404, detail="未找到该 agent 配置")
     await _snapshot_agent(updated.id, current_user)
+    await log_audit("update", "agent", req.name or updated.name, "更新成功")
     return {"id": updated.id, "status": "updated"}
 
 
@@ -212,9 +215,11 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
         approvers = [c for c in configs if c.is_approver and c.id != agent_id]
         if not approvers:
             raise HTTPException(status_code=400, detail="不能删除唯一的审批者，请先设置其他审批者")
+    agent_name = target.name
     deleted = await delete_agent_config(agent_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+    await log_audit("delete", "agent", agent_name, "删除成功")
     return {"status": "deleted"}
 
 

@@ -33,6 +33,7 @@ from virtual_team.routers import (  # noqa: E402
     teams,
     tools,
     versions,
+    workflows,
 )
 
 logger = get_logger(__name__)
@@ -194,6 +195,7 @@ app.include_router(admin.router)
 app.include_router(providers.router)
 app.include_router(versions.router)
 app.include_router(system_team.router)
+app.include_router(workflows.router)
 
 
 if __name__ == "__main__":

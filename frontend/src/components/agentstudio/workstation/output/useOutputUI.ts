@@ -23,7 +23,7 @@ export interface OutputUI {
   setMenuAnchorEl: (el: HTMLElement | null) => void;
   openCreate: () => void; openEdit: (item: OutputEntry) => void;
   closeForm: () => void;
-  handleSave: (d: { addItem: (data: OutputFormData) => void; updateItem: (id: string, data: Partial<OutputEntry>) => void; editingId: string | null }) => boolean;
+  handleSave: (d: { addItem: (data: OutputFormData) => Promise<void>; updateItem: (id: string, data: Partial<OutputEntry>) => Promise<void>; editingId: string | null }) => boolean;
 }
 
 export function useOutputUI(): OutputUI {
@@ -49,7 +49,7 @@ export function useOutputUI(): OutputUI {
   const openEdit = useCallback((item: OutputEntry) => { setEditingItem(item); setFormData_({ name: item.name, content: item.content, category: item.category, model: item.model, status: item.status, version: item.version }); setFormErrors([]); setIsFormOpen(true); }, []);
   const closeForm = useCallback(() => { setIsFormOpen(false); setFormErrors([]); }, []);
 
-  const handleSave = useCallback((d: { addItem: (data: OutputFormData) => void; updateItem: (id: string, data: Partial<OutputEntry>) => void; editingId: string | null }): boolean => {
+  const handleSave = useCallback((d: { addItem: (data: OutputFormData) => Promise<void>; updateItem: (id: string, data: Partial<OutputEntry>) => Promise<void>; editingId: string | null }): boolean => {
     const errs = validateForm(formData);
     if (errs.length) { setFormErrors(errs); return false; }
     if (d.editingId) d.updateItem(d.editingId, formData);

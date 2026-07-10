@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from virtual_team.database import (
     AgentConfigDB,
+    AuditLogDB,
     CommandLogDB,
     MCPServerDB,
     PromptDB,
@@ -68,14 +69,15 @@ async def get_dashboard_stats():
 async def get_command_logs(limit: int = 50, offset: int = 0):
     factory = get_session_factory()
     async with factory() as session:
-        stmt = (
-            select(CommandLogDB)
-            .order_by(CommandLogDB.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
-        result = await session.execute(stmt)
-        rows = result.scalars().all()
+        rows = (
+            await session.execute(
+                select(CommandLogDB)
+                .order_by(CommandLogDB.created_at.desc())
+                .offset(offset)
+                .limit(limit)
+            )
+        ).scalars().all()
+
         return [
             {
                 "id": r.id,
@@ -83,6 +85,31 @@ async def get_command_logs(limit: int = 50, offset: int = 0):
                 "command": r.command_name,
                 "payload": r.payload,
                 "result": r.result,
+            }
+            for r in rows
+        ]
+
+
+@router.get("/api/admin/activity")
+async def get_recent_activity(limit: int = 10):
+    factory = get_session_factory()
+    async with factory() as session:
+        rows = (
+            await session.execute(
+                select(AuditLogDB)
+                .order_by(AuditLogDB.created_at.desc())
+                .limit(limit)
+            )
+        ).scalars().all()
+
+        return [
+            {
+                "id": r.id,
+                "action": r.action,
+                "entity_type": r.entity_type,
+                "entity_name": r.entity_name,
+                "detail": r.detail,
+                "timestamp": r.created_at.isoformat() if r.created_at else "",
             }
             for r in rows
         ]
