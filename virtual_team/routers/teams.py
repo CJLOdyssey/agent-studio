@@ -1,8 +1,9 @@
 """Team API routes: CRUD and member management."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from virtual_team.auth import get_user_id
 from virtual_team.database import log_audit
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
@@ -46,9 +47,10 @@ class ReorderRequest(BaseModel):
 
 
 @router.get("/api/teams")
-async def list_teams():
+async def list_teams(request: Request):
     try:
-        teams = await get_teams()
+        user_id = get_user_id(request)
+        teams = await get_teams(user_id=user_id)
         return [
             {
                 "id": t["id"],
