@@ -4,7 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /build
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --registry=https://registry.npmmirror.com
 
 COPY index.html tsconfig.json vite.config.ts ./
 COPY public/ public/
