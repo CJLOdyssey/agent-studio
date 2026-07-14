@@ -1,33 +1,27 @@
 # AGENTS.md — AgentStudio
 
 Multi-repo: `frontend/` (React 18 + Vite 6 + Tailwind 3) + `virtual_team/` (FastAPI + SQLAlchemy async).  
-Four startup methods, each uses different ports (see [QUICKSTART.md](./QUICKSTART.md) for details).  
+Three startup methods, each uses different ports (see [QUICKSTART.md](./QUICKSTART.md) for details).  
 Frontend Vite proxy defaults to `http://localhost:8080`; override via `VITE_API_BASE_URL` for other methods.
 
 ## Quick start
 
 | # | 方式 | 后端 | 前端 | 命令 |
 |---|------|------|------|------|
-| 2 | 🐳 本地 Docker | **8080** | **5173** | `docker compose -f docker/compose.local.yml up -d` |
-| 3 | 🔀 混合模式 | **8081** | **5174** | Docker PG/Redis + `DATABASE_URL=... uvicorn --port 8081` + `npm run dev -- --port 5174` |
-| 1 | 🖥️ 本地代码 | **8082** | **5175** | `DATABASE_URL=... uvicorn --port 8082` + `npm run dev -- --port 5175` |
-| 4 | ☁️ 云 Docker | 远程 | 远程 | `docker compose -f docker/compose.prod.yml up -d` |
+| 1 | 🐳 本地 Docker | **8080** | **5173** | `docker compose -f docker/compose.local.yml up -d` |
+| 2 | 🔀 混合模式 | **8081** | **5174** | Docker PG/Redis + `DATABASE_URL=... uvicorn --port 8081` + `npm run dev -- --port 5174` |
+| 3 | ☁️ 云 Docker | 远程 | 远程 | `docker compose -f docker/compose.prod.yml up -d` |
 
 ```bash
-# 🐳 Method 2 — Docker (everything, no manual setup needed)
+# 🐳 Method 1 — Docker (everything, no manual setup needed)
 docker compose -f docker/compose.local.yml up -d
 
-# 🔀 Method 3 — 混合模式 (Docker PG/Redis, local hot-reload)
+# 🔀 Method 2 — 混合模式 (Docker PG/Redis, local hot-reload)
 # ① infra: docker compose -f docker/compose.local.yml up -d postgres redis
 # ② backend (explicit DATABASE_URL overrides shell env if already set):
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. uvicorn virtual_team.app:app --reload --port 8081  # → :8081
 # ③ frontend:
 cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 5174  # → :5174
-
-# 🖥️ Method 1 — 本地代码 (needs PostgreSQL + Redis running on host)
-cp .env.example .env && pip install -r requirements.txt
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. uvicorn virtual_team.app:app --reload --port 8082  # → :8082
-cd frontend && VITE_API_BASE_URL=http://localhost:8082 npm run dev -- --port 5175  # → :5175
 
 # CLI single run (needs DB + Redis)
 PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
@@ -88,7 +82,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 ```
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS)
-  └─ routers/ (17 modules: admin, agents, attachments, commands, keys, mcps, models,
+  └─ routers/ (18 modules: admin, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, runs, sessions, skills, system_team, teams, tools, versions, workflows)
    │    └─ repository/ (10 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions, workflows)
   │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
