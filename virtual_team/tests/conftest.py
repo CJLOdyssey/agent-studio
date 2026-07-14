@@ -1,7 +1,9 @@
 """Shared fixtures and helpers for E2E tests."""
 
 import contextlib
+import os
 import string
+import subprocess
 import uuid
 
 import httpx
@@ -11,6 +13,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from virtual_team.database import Base
 
 BASE = "http://localhost:8080"
+
+# Test user credentials for rbac mode
+TEST_EMAIL = "e2e@test.com"
+TEST_PASSWORD = "Test@1234"
 
 
 def _rid(prefix: str = "test") -> str:
@@ -23,7 +29,6 @@ def _rid(prefix: str = "test") -> str:
 
 def _clear_rate_limits():
     try:
-        import subprocess
         keys = subprocess.run(
             ["docker", "exec", "virtual-team-redis", "redis-cli", "KEYS", "ratelimit:*"],
             capture_output=True, text=True, timeout=5,
@@ -40,10 +45,67 @@ def _clear_rate_limits():
 
 def _cleanup(*ids_and_endpoints: tuple[str, str]):
     c = httpx.Client(base_url=BASE, timeout=10)
+    _attach_auth(c)
     for eid, ep in ids_and_endpoints:
         with contextlib.suppress(Exception):
             c.delete(f"{ep}/{eid}")
     c.close()
+
+
+def _attach_auth(client: httpx.Client) -> None:
+    """If rbac mode, register/login and attach Bearer token to client."""
+    try:
+        cfg = client.get("/api/auth/config").json()
+        if cfg.get("enabled") and cfg.get("mode") == "rbac":
+            _delete_redis("auth:verify:e2e@test.com")
+            client.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
+            codes = _read_redis("auth:verify:e2e@test.com")
+            code = codes[0] if codes else None
+            if code:
+                resp = client.post("/api/auth/register", json={"email": TEST_EMAIL, "code": code, "password": TEST_PASSWORD})
+                if resp.status_code == 201:
+                    client.headers.update({"Authorization": f"Bearer {resp.json()['access_token']}"})
+                    return
+            # Login if user already exists or register failed
+            resp = client.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
+            if resp.status_code == 200:
+                client.headers.update({"Authorization": f"Bearer {resp.json()['access_token']}"})
+    except Exception:
+        pass
+
+
+def _read_redis(pattern: str) -> list[str]:
+    """Read values from Redis matching a key pattern."""
+    try:
+        keys = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "KEYS", pattern],
+            capture_output=True, text=True, timeout=5,
+        )
+        if not keys.stdout.strip():
+            return []
+        vals = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "MGET"] + keys.stdout.strip().split("\n"),
+            capture_output=True, text=True, timeout=5,
+        )
+        return [v for v in vals.stdout.strip().split("\n") if v]
+    except Exception:
+        return []
+
+
+def _delete_redis(pattern: str):
+    """Delete Redis keys matching a pattern."""
+    try:
+        keys = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "KEYS", pattern],
+            capture_output=True, text=True, timeout=5,
+        )
+        if keys.stdout.strip():
+            subprocess.run(
+                ["docker", "exec", "virtual-team-redis", "redis-cli", "DEL"] + keys.stdout.strip().split("\n"),
+                capture_output=True, timeout=5,
+            )
+    except Exception:
+        pass
 
 
 class Api:
@@ -69,6 +131,7 @@ class Api:
 @pytest.fixture
 def api():
     a = Api()
+    _attach_auth(a.client)
     yield a
     a.close()
 
