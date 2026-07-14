@@ -22,6 +22,13 @@ function clearLocalConversations() {
   } catch {}
 }
 
+async function mergeGuest() {
+  try {
+    const guestId = localStorage.getItem('agentstudio_user_id');
+    if (guestId) await apiMergeGuestData(guestId);
+  } catch { /* merge is best-effort */ }
+}
+
 export type AuthModalView = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 
 export interface AuthUser {
@@ -93,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             authenticated = true;
             setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
             window.dispatchEvent(new CustomEvent('auth:login'));
-            await _mergeGuest();
+            await mergeGuest();
           }
         } catch {
           // Token may be expired — try refreshing before giving up
@@ -115,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 authenticated = true;
                 setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
                 window.dispatchEvent(new CustomEvent('auth:login'));
-                await _mergeGuest();
+                await mergeGuest();
               }
             } catch {
               // Refresh succeeded but /me still failed — token invalid
@@ -153,36 +160,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = !legacyMode && user !== null;
 
-  const _mergeGuest = useCallback(async () => {
-    try {
-      const guestId = localStorage.getItem('agentstudio_user_id');
-      if (guestId) await apiMergeGuestData(guestId);
-    } catch { /* merge is best-effort */ }
-  }, []);
-
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await apiLogin(email, password, rememberMe);
     setTokens(res.access_token, res.refresh_token);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     window.dispatchEvent(new CustomEvent('auth:login'));
-    void _mergeGuest();
-  }, [_mergeGuest]);
+    void mergeGuest();
+  }, []);
 
   const register = useCallback(async (email: string, code: string, password: string) => {
     const res = await apiRegister(email, code, password);
     setTokens(res.access_token, res.refresh_token);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     window.dispatchEvent(new CustomEvent('auth:login'));
-    void _mergeGuest();
-  }, [_mergeGuest]);
+    void mergeGuest();
+  }, []);
 
   const verify = useCallback(async (email: string, code: string) => {
     const res = await apiVerify(email, code);
     setTokens(res.access_token, res.refresh_token);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     window.dispatchEvent(new CustomEvent('auth:login'));
-    void _mergeGuest();
-  }, [_mergeGuest]);
+    void mergeGuest();
+  }, []);
 
   const forgotPassword = useCallback(async (email: string) => {
     await apiForgotPassword(email);
