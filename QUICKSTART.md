@@ -66,8 +66,8 @@ docker compose -f docker/compose.prod.yml up -d --force-recreate
 
 | 服务 | 地址 |
 |------|------|
-| 前端 | http://39.108.61.123/ |
-| 后端 API | http://39.108.61.123:8080 |
+| 前端 | https://your-domain.com/ |
+| 后端 API | https://your-domain.com:8080 |
 
 ---
 
