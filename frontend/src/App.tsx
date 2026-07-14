@@ -1,13 +1,13 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ToastProvider } from './utils/useToast';
+import { AuthProvider, useAuth, LoginModal } from './components/auth';
+import AgentStudioWorkstation from './components/agentstudio/AgentStudioWorkstation';
 import { useChatStore } from './stores/chatStore';
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';
-
-const AgentStudioWorkstation = lazy(() => import('./components/agentstudio/AgentStudioWorkstation'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,24 +15,8 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppInit() {
-  const queryClient = useQueryClient();
-  const loadAgents = useChatStore((s) => s.loadAgents);
-  const agentsLoaded = useChatStore((s) => s.agentsLoaded);
-
-  useEffect(() => {
-    if (!agentsLoaded) {
-      loadAgents();
-      // Also populate React Query cache so useAgents() returns data immediately
-      prefetchAgents(queryClient);
-    }
-  }, [agentsLoaded, loadAgents, queryClient]);
-  return null;
-}
-
 function Fallback({ error, resetErrorBoundary }: FallbackProps) {
   const message = (error as Error)?.message || '未知错误';
-  // Report to Sentry automatically via logger
   Logger.error('React render error caught by ErrorBoundary', { error: error as Error });
 
   return (
@@ -50,32 +34,67 @@ function logError(error: unknown) {
   Logger.error('App Error Boundary triggered', { error: error as Error });
 }
 
+const loadingScreenStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100vh',
+  background: 'var(--da-bg-primary, #0f1117)',
+  color: 'var(--da-text-secondary, #888)',
+  fontSize: 14,
+};
+
+function AppInit() {
+  const queryClient = useQueryClient();
+  const loadAgents = useChatStore((s) => s.loadAgents);
+  const agentsLoaded = useChatStore((s) => s.agentsLoaded);
+
+  useEffect(() => {
+    if (!agentsLoaded) {
+      loadAgents();
+      prefetchAgents(queryClient);
+    }
+  }, [agentsLoaded, loadAgents, queryClient]);
+  return null;
+}
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { loading, loginModalOpen, closeLoginModal } = useAuth();
+
+  if (loading) {
+    return <div style={loadingScreenStyle}>✦ AgentStudio</div>;
+  }
+
+  return (
+    <>
+      {children}
+      {loginModalOpen && <LoginModal onClose={closeLoginModal} />}
+    </>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AppInit />
-        <ToastProvider>
-          <Suspense
-            fallback={
-              <div className="route-loading" aria-label="Loading page">
-                Loading...
-              </div>
-            }
-          >
-            <Routes>
-              <Route
-                path="*"
-                element={
-                  <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
-                    <AgentStudioWorkstation />
-                  </ErrorBoundary>
-                }
-              />
-            </Routes>
-          </Suspense>
-        </ToastProvider>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ToastProvider>
+            <AuthGate>
+              <AppInit />
+              <Routes>
+                <Route
+                  path="*"
+                  element={
+                    <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                      <AgentStudioWorkstation />
+                    </ErrorBoundary>
+                  }
+                />
+              </Routes>
+            </AuthGate>
+          </ToastProvider>
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
