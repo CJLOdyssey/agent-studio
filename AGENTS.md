@@ -153,7 +153,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 4. `docs-check` — verifies `.env.example` covers all env vars; checks module count matches CLAUDE.md
 5. `build-frontend` — npm ci → build → uploads `frontend/dist/`
 
-**Deploy** (`.github/workflows/deploy.yml`): Build images (backend, frontend) → push to Alibaba ACR → SSH deploy to `39.108.61.123` with `docker compose -f docker/compose.prod.yml up -d --force-recreate`.
+**Deploy** (`.github/workflows/deploy.yml`): Build images (backend, frontend) → push to Alibaba ACR → SSH deploy to `<server-ip>` (set via `REMOTE_HOST` secret in GitHub Actions) with `docker compose -f docker/compose.prod.yml up -d --force-recreate`.
 
 **Release** (`.github/workflows/release.yml`): Triggered by `v*` tags. Tags with `-beta`/`-alpha`/`-rc` → prerelease. Auto-generated release notes.
 
