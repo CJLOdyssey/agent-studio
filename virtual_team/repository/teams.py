@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
 
 
-async def get_teams() -> list[dict]:
+async def get_teams(user_id: str | None = None) -> list[dict]:
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -17,6 +17,8 @@ async def get_teams() -> list[dict]:
                 selectinload(TeamDB.members).selectinload(TeamAgentDB.agent_config),
             )
         )
+        if user_id:
+            stmt = stmt.where(TeamDB.owner_id == user_id)
         result = await session.execute(stmt)
         teams = result.scalars().all()
         return [

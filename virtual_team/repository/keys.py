@@ -169,6 +169,21 @@ async def get_default_api_key(user_id: str) -> dict | None:
         if row is None and user_id != "anonymous":
             row = await _resolve_key_row(session, "anonymous")
 
+        # Guest fallback: if the guest has no key and anonymous has none,
+        # look for any active default key in the system.
+        # This covers the case where a merge moved all guest keys to a real user.
+        if row is None and user_id.startswith("u_"):
+            stmt = (
+                select(UserApiKey)
+                .where(
+                    UserApiKey.is_active,
+                    UserApiKey.is_default,
+                )
+                .limit(1)
+            )
+            result = await session.execute(stmt)
+            row = result.scalar_one_or_none()
+
         if not row:
             return None
 

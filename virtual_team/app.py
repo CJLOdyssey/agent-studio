@@ -20,6 +20,7 @@ from virtual_team.routers import (  # noqa: E402
     admin,
     agents,
     attachments,
+    auth,
     commands,
     keys,
     mcps,
@@ -179,6 +180,7 @@ async def health():
     return status
 
 
+app.include_router(auth.router)
 app.include_router(runs.router)
 app.include_router(sessions.router)
 app.include_router(agents.router)
