@@ -67,7 +67,6 @@ export function useTeamManagement(toast?: ToastFn) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    setTeams([]);
     fetchTeams().then(setTeams);
   }, [refreshKey]);
 
