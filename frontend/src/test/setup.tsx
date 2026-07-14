@@ -6,6 +6,31 @@ import { SettingsProvider } from '../contexts/SettingsContext';
 import { ToastProvider } from '../utils/useToast';
 import '../i18n/index';
 
+vi.mock('../components/auth', () => ({
+  AuthProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useAuth: () => ({
+    user: null,
+    loading: false,
+    legacyMode: false,
+    isAuthenticated: false,
+    loginModalOpen: false,
+    loginModalView: 'login' as const,
+    loginModalEmail: '',
+    login: vi.fn(),
+    register: vi.fn(),
+    verify: vi.fn(),
+    forgotPassword: vi.fn(),
+    resetPassword: vi.fn(),
+    logout: vi.fn(),
+    resendVerification: vi.fn(),
+    sendRegisterCode: vi.fn(),
+    openLoginModal: vi.fn(),
+    closeLoginModal: vi.fn(),
+    setLoginModalEmail: vi.fn(),
+    refetchUser: vi.fn(),
+  }),
+}));
+
 Element.prototype.scrollIntoView = vi.fn();
 Element.prototype.scrollTo = vi.fn();
 Object.defineProperty(window, 'matchMedia', { writable: true, value: vi.fn().mockImplementation((query: string) => ({ matches: false, media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() })) });
