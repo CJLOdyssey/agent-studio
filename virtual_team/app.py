@@ -175,9 +175,24 @@ async def seed_default_tools():
             return
 
         seed_data = [
-            {"name": "web_search", "category": "builtin", "description": "Search the web for current information.", "endpoint": "builtin://web_search"},
-            {"name": "calculator", "category": "builtin", "description": "Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.", "endpoint": "builtin://calculator"},
-            {"name": "fetch_page", "category": "builtin", "description": "Fetch and read the content of a web page.", "endpoint": "builtin://fetch_page"},
+            {
+                "name": "web_search",
+                "category": "builtin",
+                "description": "Search the web for current information.",
+                "endpoint": "builtin://web_search",
+            },
+            {
+                "name": "calculator",
+                "category": "builtin",
+                "description": "Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.",
+                "endpoint": "builtin://calculator",
+            },
+            {
+                "name": "fetch_page",
+                "category": "builtin",
+                "description": "Fetch and read the content of a web page.",
+                "endpoint": "builtin://fetch_page",
+            },
         ]
         for data in seed_data:
             session.add(RegisteredToolDB(**data))
