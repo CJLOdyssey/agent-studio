@@ -145,6 +145,14 @@ module = "virtual_team.logging_config"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.observability"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.observability.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.auth"
 ignore_errors = true
 

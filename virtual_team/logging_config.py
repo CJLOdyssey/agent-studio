@@ -5,6 +5,12 @@ import sys
 
 
 def get_logger(name: str, level: int | None = None) -> logging.Logger:
+    logger = _get_logger(name, level)
+    _maybe_attach_obs_handler(logger)
+    return logger
+
+
+def _get_logger(name: str, level: int | None = None) -> logging.Logger:
     """Get a logger with consistent formatting for the virtual_team package.
 
     Usage:
@@ -31,6 +37,7 @@ def get_logger(name: str, level: int | None = None) -> logging.Logger:
 
     logger.addHandler(handler)
     logger.propagate = False
+    _maybe_attach_obs_handler(logger)
     return logger
 
 
@@ -72,3 +79,23 @@ def _json_handler() -> logging.Handler:
 
 def _is_debug() -> bool:
     return os.environ.get("LOG_LEVEL", "").upper() == "DEBUG"
+
+
+_OBS_ATTACHED = False
+
+
+_OBS_HANDLER: logging.Handler | None = None
+
+
+def _maybe_attach_obs_handler(logger: logging.Logger) -> None:
+    global _OBS_HANDLER
+    if os.environ.get("OBSERVABILITY_ENABLED", "1") == "0":
+        return
+    try:
+        from virtual_team.observability.handler import ObservabilityHandler
+        if _OBS_HANDLER is None:
+            _OBS_HANDLER = ObservabilityHandler()
+        if _OBS_HANDLER not in logger.handlers:
+            logger.addHandler(_OBS_HANDLER)
+    except Exception:
+        pass

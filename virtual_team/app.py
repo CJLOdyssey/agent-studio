@@ -204,6 +204,10 @@ app = FastAPI(title="AgentStudio", lifespan=lifespan)
 
 
 # ── Rate limiting ───────────────────────────────────────────────────────────
+from virtual_team.observability import router as debug_router  # noqa: E402
+
+app.include_router(debug_router)
+
 from virtual_team.rate_limit import RateLimitMiddleware  # noqa: E402
 
 app.add_middleware(
