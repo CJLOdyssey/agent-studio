@@ -133,6 +133,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   regenerateMessage: async (msgIndex: number) => {
     const s = get();
+    Logger.info('[chat] regenerateMessage — from index %d', msgIndex);
     if (msgIndex < 1) return;
     const userMsg = s.messages[msgIndex - 1];
     if (!userMsg) return;
@@ -143,6 +144,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   retry: async () => {
     const s = get();
+    Logger.info('[chat] retry — re-submitting last user message');
     set({ status: 'loading', error: null, result: null });
     if (s.currentRunId) {
       disconnectRun(s.currentRunId);
