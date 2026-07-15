@@ -70,10 +70,6 @@ async def get_current_user(request: Request) -> CurrentUser:
             if payload:
                 user_id = payload.get("sub", "")
     if not user_id:
-        logger.warning(
-            "Auth missing token | client=%s",
-            request.client.host if request.client else "?",
-        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未提供认证令牌")
 
     try:
@@ -94,20 +90,12 @@ async def get_current_user(request: Request) -> CurrentUser:
                 )
                 role_result = await session.execute(role_stmt)
                 roles = [row[0] for row in role_result.all()]
-                logger.info(
-                    "Auth login success | user=%s | roles=%s | client=%s",
-                    user.username, roles,
-                    request.client.host if request.client else "?",
-                )
                 return CurrentUser(
                     id=user.id,
                     username=user.username,
                     email=user.email,
                     roles=roles or ["member"],
                 )
-        logger.warning(
-            "Auth user not found | user_id=%s", user_id,
-        )
     except Exception:
         logger.warning("RBAC user lookup failed", exc_info=True)
 
@@ -131,10 +119,6 @@ async def require_role(*names: str):
         if AUTH_MODE == "legacy":
             return current_user
         if not any(r in current_user.roles for r in names):
-            logger.warning(
-                "Auth role denied | user=%s | roles=%s | required=%s",
-                current_user.username, current_user.roles, list(names),
-            )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
         return current_user
 
@@ -282,8 +266,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
             token = parse_qs(str(request.url.query)).get("token", [""])[0]
 
-        client_ip = request.client.host if request.client else "?"
-
         # ── Guest mode: no token → pass through as unauthenticated ────
         if not token:
             request.state.is_authenticated = False
@@ -291,16 +273,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         payload = decode_jwt(token, AUTH_SECRET)
         if payload is None:
-            logger.warning(
-                "Auth token rejected | client=%s | path=%s",
-                client_ip, path,
-            )
             request.state.is_authenticated = False
             return await call_next(request)
 
-        user_id = payload.get("sub", "unknown")
         # Attach user info to request state
-        request.state.user_id = user_id
+        request.state.user_id = payload.get("sub", "unknown")
         request.state.is_authenticated = True
 
         return await call_next(request)

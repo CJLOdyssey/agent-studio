@@ -1,6 +1,5 @@
 """Celery task registry."""
 
-import time
 
 from virtual_team.broker import celery_app
 from virtual_team.logging_config import get_logger
@@ -24,15 +23,11 @@ def run_agent(
     api_base: str | None = None,
     model: str | None = None,
 ):
-    t0 = time.time()
-    logger.info(
-        "Celery task START | run=%s | session=%s | agent=%s | model=%s | retry=%d",
-        run_id, session_id, agent_id, model, self.request.retries,
-    )
+    logger.info("Agent task | run=%s | session=%s | agent=%s", run_id, session_id, agent_id)
     assert run_id is not None, "run_id must be provided"
 
     try:
-        result = _run_async(
+        return _run_async(
             _run_agent_pipeline(
                 requirement,
                 run_id,
@@ -43,26 +38,12 @@ def run_agent(
                 model=model,
             )
         )
-        elapsed = time.time() - t0
-        logger.info(
-            "Celery task SUCCESS | run=%s | elapsed=%.2fs | retry=%d",
-            run_id, elapsed, self.request.retries,
-        )
-        return result
     except Exception as exc:
-        elapsed = time.time() - t0
-        logger.exception(
-            "Celery task FAIL | run=%s | elapsed=%.2fs | retry=%d",
-            run_id, elapsed, self.request.retries,
-        )
+        logger.exception("Agent failed | run=%s", run_id)
 
         if ENABLE_MOCK_FALLBACK:
             result = _try_mock_fallback(requirement, run_id, session_id, exc)
             if result:
-                logger.info(
-                    "Celery task MOCK_FALLBACK | run=%s | elapsed=%.2fs",
-                    run_id, time.time() - t0,
-                )
                 return result
 
         _report_run_error(run_id, exc)
@@ -84,23 +65,4 @@ def complete_agent(
     model: str | None = None,
     thinking: str | None = None,
 ):
-    t0 = time.time()
-    logger.info(
-        "Celery complete START | run=%s | model=%s | thinking=%s | retry=%d",
-        run_id, model, bool(thinking), self.request.retries,
-    )
-    try:
-        result = _run_async(_complete_pipeline(content, run_id, api_key, api_base, model, thinking))
-        elapsed = time.time() - t0
-        logger.info(
-            "Celery complete SUCCESS | run=%s | elapsed=%.2fs | retry=%d",
-            run_id, elapsed, self.request.retries,
-        )
-        return result
-    except Exception:
-        elapsed = time.time() - t0
-        logger.exception(
-            "Celery complete FAIL | run=%s | elapsed=%.2fs | retry=%d",
-            run_id, elapsed, self.request.retries,
-        )
-        raise
+    return _run_async(_complete_pipeline(content, run_id, api_key, api_base, model, thinking))

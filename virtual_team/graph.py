@@ -231,20 +231,11 @@ class SingleAgentGraph:
                         f"Args: {json.dumps(tool_args, ensure_ascii=False)}\n"
                         "Execute and return ONLY the result (no markdown):"
                     )
-                    t0 = datetime.now(UTC)
                     llm_result = await self.llm.ainvoke([HumanMessage(content=prompt)])
-                    elapsed = (datetime.now(UTC) - t0).total_seconds()
                     result = llm_result.content
-                    logger.info(
-                        "LLM tool-fallback | model=%s | tool=%s | elapsed=%.2fs | result_len=%d",
-                        self.model, tool_name, elapsed, len(result or ""),
-                    )
-                except Exception as exc:
-                    logger.warning("LLM tool-fallback failed | tool=%s | error=%s", tool_name, exc)
-            logger.info(
-                "Tool result | tool=%s | result_len=%d | has_cb=%s",
-                tool_name, len(str(result or "")), self._stream_cb is not None,
-            )
+                except Exception:
+                    pass
+            print(f"\n[DEBUG] _tools_node: tool={tool_name} result_len={len(str(result or ''))} has_cb={self._stream_cb is not None}")  # noqa: E501, T201
 
             tool_messages.append(
                 ToolMessage(content=str(result or ""), tool_call_id=tool_id, name=tool_name)
