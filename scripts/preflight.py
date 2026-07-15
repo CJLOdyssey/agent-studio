@@ -66,8 +66,8 @@ def check_db() -> bool:
         if result.returncode == 0:
             _check("Database migration", True)
         else:
-            stderr = result.stderr.strip()[:300]
-            _check("Database migration", False, f"alembic upgrade failed: {stderr}")
+            details = (result.stdout.strip() + "\n" + result.stderr.strip()).strip()[:500]
+            _check("Database migration", False, f"alembic upgrade failed:\n{details}")
             return False
     except Exception as e:
         _check("Database migration", False, str(e)[:300])
