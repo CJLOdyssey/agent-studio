@@ -92,6 +92,9 @@ jobs:
             sleep 2
           done
       - run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short
+      - name: Dump backend log
+        if: always()
+        run: cat /tmp/backend.log || true
 
   docs-check:
     runs-on: ubuntu-latest

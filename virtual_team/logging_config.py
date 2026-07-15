@@ -36,12 +36,16 @@ def get_logger(name: str, level: int | None = None) -> logging.Logger:
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
+        try:
+            message = record.getMessage()
+        except (TypeError, ValueError):
+            message = record.msg
         return json.dumps(
             {
                 "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
                 "level": record.levelname,
                 "logger": record.name,
-                "message": record.getMessage(),
+                "message": message,
                 "module": record.module,
                 "line": record.lineno,
             },
