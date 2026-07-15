@@ -116,6 +116,11 @@ from virtual_team.auth import AuthMiddleware  # noqa: E402
 
 app.add_middleware(AuthMiddleware)
 
+# ── Request logging (outermost — catches everything including rejected requests)
+from virtual_team.request_logger import RequestLogMiddleware  # noqa: E402
+
+app.add_middleware(RequestLogMiddleware)
+
 _cors_origins = [
     "http://localhost:5173",
     "http://localhost:8080",
