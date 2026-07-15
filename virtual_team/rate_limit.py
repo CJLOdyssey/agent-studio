@@ -77,10 +77,6 @@ class RateLimitMiddleware:
 
         allowed = await self.limiter.is_allowed(client_ip)
         if not allowed:
-            logger.warning(
-                "Rate limit hit | client=%s | rate=%d/%ds | path=%s",
-                client_ip, self.limiter.rate, self.limiter.window, path,
-            )
             response = await self._rate_limited_response(scope, receive, send)
             await response(scope, receive, send)
             return

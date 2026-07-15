@@ -1,7 +1,6 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { normalizeError } from './errors';
 import { refreshTokens } from './auth';
-import Logger from '../../utils/logger';
 
 const api = axios.create({
   baseURL: '/api',
@@ -72,27 +71,17 @@ if (api.interceptors?.request) {
       localStorage.setItem('agentstudio_user_id', uid);
     }
     config.headers['X-User-ID'] = uid;
-    Logger.debug('[API] %s %s', config.method?.toUpperCase(), config.url);
     return config;
   });
 }
 
 if (api.interceptors?.response) {
   api.interceptors.response.use(
-    (response: AxiosResponse) => {
-      Logger.debug('[API] %s %s -> %s', response.config.method?.toUpperCase(), response.config.url, response.status);
-      return response;
-    },
+    (response) => response,
     async (error: unknown) => {
       const axiosError = error as AxiosError;
       const retryConfig = axiosError.config as RetryConfig | undefined;
-      const status = axiosError.response?.status ?? 0;
-      const method = retryConfig?.method?.toUpperCase() ?? '?';
-      const url = retryConfig?.url ?? '?';
-      if (status !== 401) {
-        Logger.error('[API] %s %s -> %s %s', method, url, status, axiosError.message);
-      }
-      if (!retryConfig || retryConfig._retry || status !== 401) {
+      if (!retryConfig || retryConfig._retry || axiosError.response?.status !== 401) {
         return Promise.reject(normalizeError(error));
       }
 
