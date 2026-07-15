@@ -6,6 +6,7 @@ import asyncio
 import json
 import shlex
 import subprocess
+import time
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
@@ -259,7 +260,13 @@ class _ToolWrapper:
                     f"Arguments: {json.dumps(args, ensure_ascii=False)}\n"
                     "Output:"
                 )
+                t0 = time.time()
                 resp = await self._llm.ainvoke([HumanMessage(content=prompt)])
+                elapsed = time.time() - t0
+                logger.info(
+                    "LLM tool-fallback | tool=%s | model=%s | elapsed=%.2fs | out=%d chars",
+                    self.name, getattr(self._llm, 'model', '?'), elapsed, len(resp.content or ""),
+                )
                 return resp.content
             except Exception as e:
                 return json.dumps({"tool": self.name, "status": "error", "error": str(e)})
