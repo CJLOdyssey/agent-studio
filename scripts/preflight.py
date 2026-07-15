@@ -60,13 +60,19 @@ def check_db() -> bool:
     try:
         result = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=120,
             env={**os.environ, "PYTHONPATH": "."},
         )
         if result.returncode == 0:
             _check("Database migration", True)
         else:
-            details = (result.stdout.strip() + "\n" + result.stderr.strip()).strip()[:2000]
+            all_output = result.stdout + "\n" + result.stderr
+            errors = "\n".join(
+                line for line in all_output.split("\n")
+                if "Traceback" in line or "Error" in line or "error" in line
+                or "psycopg" in line or "sqlalchemy" in line or "alembic" in line
+            )
+            details = errors.strip()[:2000] or all_output.strip()[:2000]
             _check("Database migration", False, f"alembic upgrade failed:\n{details}")
             return False
     except Exception as e:
