@@ -46,9 +46,12 @@ _TOKEN_CACHE: str | None = None
 
 
 def _obtain_token() -> str | None:
-    """Obtain a Bearer token for rbac mode (tries login first, then register).
+    """Obtain a Bearer token for rbac mode.
 
-    Caches the token globally — called at most once per session.
+    Tries POST /api/auth/login first. If that fails (user not yet
+    registered), runs the full register flow using docker exec to
+    read the verification code from Redis. Caches the token globally
+    so the flow executes at most once per session.
     """
     global _TOKEN_CACHE
     if _TOKEN_CACHE is not None:
@@ -64,39 +67,33 @@ def _obtain_token() -> str | None:
         resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
         if resp.status_code == 200:
             _TOKEN_CACHE = resp.json()["access_token"]
-            print(f"[_obtain_token] login ok, token={_TOKEN_CACHE[:20]}...")
             return _TOKEN_CACHE
-        print(f"[_obtain_token] login failed: {resp.status_code} {resp.text[:80]}")
 
         # Login failed → register new user
         _clear_rate_limits()
         _delete_redis("auth:verify:e2e@test.com")
-        r1 = c.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
-        print(f"[_obtain_token] send-code: {r1.status_code} {r1.text[:80]}")
+        c.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
         codes = _read_redis("auth:verify:e2e@test.com")
-        print(f"[_obtain_token] redis codes: {codes}")
         code = codes[0] if codes else None
         if code:
             resp = c.post(
                 "/api/auth/register",
                 json={"email": TEST_EMAIL, "code": code, "password": TEST_PASSWORD},
             )
-            print(f"[_obtain_token] register: {resp.status_code} {resp.text[:80]}")
             if resp.status_code == 201:
                 _TOKEN_CACHE = resp.json()["access_token"]
                 return _TOKEN_CACHE
-            # User was created but register failed → try login again
             resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
-            print(f"[_obtain_token] retry login: {resp.status_code} {resp.text[:80]}")
             if resp.status_code == 200:
                 _TOKEN_CACHE = resp.json()["access_token"]
                 return _TOKEN_CACHE
-        else:
-            print("[_obtain_token] no code from redis, login also failed")
-    except Exception as exc:
-        print(f"[_obtain_token] exception: {exc}")
+    except Exception:
+        pass
     finally:
         c.close()
+
+    # Mark failure so we don't retry on every test
+    _TOKEN_CACHE = ""
     return None
 
 
@@ -122,15 +119,22 @@ def _read_redis(pattern: str) -> list[str]:
             ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "KEYS", pattern],
             capture_output=True, text=True, timeout=5,
         )
+        if out.returncode != 0:
+            print(f"[_read_redis] KEYS rc={out.returncode} stderr={out.stderr.strip()[:100]}", flush=True)
         if not out.stdout.strip():
+            print(f"[_read_redis] no keys found (rc={out.returncode}, stderr={out.stderr.strip()[:100]})", flush=True)
             return []
         keys = out.stdout.strip().split("\n")
+        print(f"[_read_redis] found keys: {keys}", flush=True)
         vals = subprocess.run(
             ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "MGET"] + keys,
             capture_output=True, text=True, timeout=5,
         )
-        return [v for v in vals.stdout.strip().split("\n") if v]
-    except Exception:
+        result = [v for v in vals.stdout.strip().split("\n") if v]
+        print(f"[_read_redis] values: {result}", flush=True)
+        return result
+    except Exception as exc:
+        print(f"[_read_redis] exception: {exc}", flush=True)
         return []
 
 
