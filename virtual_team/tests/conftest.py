@@ -83,12 +83,17 @@ def _obtain_token() -> str | None:
             if resp.status_code == 201:
                 _TOKEN_CACHE = resp.json()["access_token"]
                 return _TOKEN_CACHE
+            # register returned non-201, try login (user might already exist)
+            print(f"[auth] register: {resp.status_code} {resp.text[:120]}", flush=True)
             resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
             if resp.status_code == 200:
                 _TOKEN_CACHE = resp.json()["access_token"]
                 return _TOKEN_CACHE
-    except Exception:
-        pass
+            print(f"[auth] retry login: {resp.status_code} {resp.text[:120]}", flush=True)
+        else:
+            print("[auth] no verification code from redis", flush=True)
+    except Exception as exc:
+        print(f"[auth] exception: {exc}", flush=True)
     finally:
         c.close()
 
