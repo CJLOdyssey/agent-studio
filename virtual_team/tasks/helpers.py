@@ -25,8 +25,31 @@ def _run_async(coro):
     return asyncio.run(coro)
 
 
+BALANCE_ERROR_KEYWORDS = [
+    "insufficient_quota", "insufficient_balance", "insufficient balance", "余额不足",
+    "billing limit", "quota exceeded", "payment required",
+    "account balance", "402",
+]
+
+
+def _is_balance_error(exc: Exception) -> bool:
+    """Check if the exception is caused by insufficient model balance/quota."""
+    msg = str(exc).lower()
+    return any(kw in msg for kw in BALANCE_ERROR_KEYWORDS)
+
+
 def _report_run_error(run_id: str, exc: Exception) -> None:
     try:
+        if _is_balance_error(exc):
+            _run_async(
+                publish_run_message(
+                    run_id,
+                    {
+                        "type": "balance_warning",
+                        "content": "模型余额不足，请检查 API Key 配置并确保账户有足够额度",
+                    },
+                )
+            )
         _run_async(update_run_status(run_id, "error"))
         _run_async(
             publish_run_message(
