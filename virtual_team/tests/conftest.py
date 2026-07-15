@@ -19,10 +19,11 @@ TEST_PASSWORD = "Test@1234"
 
 _REDIS_HOST = "localhost"
 _REDIS_PORT = 6379
+_REDIS_DB = 1  # matches REDIS_URL from .env / backend config
 
 
 def _redis():
-    return redis_module.Redis(host=_REDIS_HOST, port=_REDIS_PORT, decode_responses=True)
+    return redis_module.Redis(host=_REDIS_HOST, port=_REDIS_PORT, db=_REDIS_DB, decode_responses=True)
 
 
 def _rid(prefix: str = "test") -> str:
