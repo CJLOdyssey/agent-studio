@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import time
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
@@ -300,8 +301,13 @@ async def list_runs(limit: int = 20):
 
 @router.websocket("/ws/runs/{run_id}")
 async def run_websocket(websocket: WebSocket, run_id: str):
+    client_host = websocket.client.host if websocket.client else "?"
     await websocket.accept()
-    logger.info("WebSocket connected | run_id=%s", run_id)
+    logger.info(
+        "WebSocket connected | run_id=%s | client=%s",
+        run_id, client_host,
+    )
+    _ws_t0 = time.monotonic()
     try:
         await websocket.send_json({"type": "status", "status": "connected"})
 
@@ -349,10 +355,17 @@ async def run_websocket(websocket: WebSocket, run_id: str):
                 try:
                     await websocket.send_json(message)
                 except WebSocketDisconnect:
-                    logger.info("WebSocket disconnected | run_id=%s", run_id)
+                    elapsed = time.monotonic() - _ws_t0
+                    logger.info(
+                        "WebSocket disconnected | run_id=%s | client=%s | elapsed=%.1fs",
+                        run_id, client_host, elapsed,
+                    )
                     return
                 except Exception as e:
-                    logger.warning("WebSocket send error: %s", e)
+                    logger.warning(
+                        "WebSocket send error | run_id=%s | client=%s | error=%s",
+                        run_id, client_host, e,
+                    )
                     return
         except Exception as e:
             logger.error("Redis subscribe error: %s", e, exc_info=True)
@@ -361,6 +374,14 @@ async def run_websocket(websocket: WebSocket, run_id: str):
         finally:
             await stop_buffer(run_id)
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected gracefully | run_id=%s", run_id)
+        elapsed = time.monotonic() - _ws_t0
+        logger.info(
+            "WebSocket disconnected gracefully | run_id=%s | client=%s | elapsed=%.1fs",
+            run_id, client_host, elapsed,
+        )
     except Exception as e:
-        logger.error("WebSocket error | run_id=%s | error=%s", run_id, e, exc_info=True)
+        elapsed = time.monotonic() - _ws_t0
+        logger.error(
+            "WebSocket error | run_id=%s | client=%s | elapsed=%.1fs | error=%s",
+            run_id, client_host, elapsed, e, exc_info=True,
+        )

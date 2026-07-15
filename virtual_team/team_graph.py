@@ -15,6 +15,7 @@ Architecture:
 """
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import (
@@ -144,8 +145,14 @@ class TeamGraph:
                     )
                 ),
             ]
+            t0 = datetime.now()
             response = self.llm.invoke(full)
+            elapsed = (datetime.now() - t0).total_seconds()
             content = response.content if hasattr(response, "content") else str(response)
+            logger.info(
+                "TeamGraph PM | model=%s | msgs=%d | elapsed=%.2fs | out=%d chars",
+                self.model, len(full), elapsed, len(content),
+            )
             return {
                 "messages": [response],
                 "pm_document": content,
@@ -166,8 +173,14 @@ class TeamGraph:
                     content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写前端代码实现。"
                 ),
             ]
+            t0 = datetime.now()
             response = self.llm.invoke(full)
+            elapsed = (datetime.now() - t0).total_seconds()
             content = str(response.content) if hasattr(response, "content") else str(response)
+            logger.info(
+                "TeamGraph Frontend | model=%s | msgs=%d | elapsed=%.2fs | out=%d chars",
+                self.model, len(full), elapsed, len(content),
+            )
             # Replace code for this round — old versions are preserved in message history
             existing_code = state.get("code", "")
             new_code = _replace_section(existing_code, "## 前端代码", content)
@@ -191,8 +204,14 @@ class TeamGraph:
                     content=f"产品需求文档：\n{pm_doc}{feedback_block}\n\n请编写后端代码实现。"
                 ),
             ]
+            t0 = datetime.now()
             response = self.llm.invoke(full)
+            elapsed = (datetime.now() - t0).total_seconds()
             content = str(response.content) if hasattr(response, "content") else str(response)
+            logger.info(
+                "TeamGraph Backend | model=%s | msgs=%d | elapsed=%.2fs | out=%d chars",
+                self.model, len(full), elapsed, len(content),
+            )
             # Replace code for this round — old versions are preserved in message history
             existing_code = state.get("code", "")
             new_code = _replace_section(existing_code, "## 后端代码", content)
@@ -219,8 +238,14 @@ class TeamGraph:
                     )
                 ),
             ]
+            t0 = datetime.now()
             response = self.llm.invoke(full)
+            elapsed = (datetime.now() - t0).total_seconds()
             content = response.content if hasattr(response, "content") else str(response)
+            logger.info(
+                "TeamGraph Tester | model=%s | msgs=%d | elapsed=%.2fs | out=%d chars | approved=%s",
+                self.model, len(full), elapsed, len(content), APPROVAL_KEYWORD in content,
+            )
             approved = APPROVAL_KEYWORD in content
             new_round = state.get("round_number", 1)
             return {
