@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
 
     # ── Database ─────────────────────────────────────────────────────────────
     try:
-        _init_database()
+        await _init_database()
         await _check_redis()
         mark_started()
     except Exception as exc:
@@ -138,12 +138,10 @@ def _add(lines: list[str], fmt: str, *args: object) -> None:
     lines.append("[LIFECYCLE] " + (fmt % args))
 
 
-def _init_database():
+async def _init_database():
     logger.info("[LIFECYCLE] initializing database...")
-    import asyncio
-
     try:
-        asyncio.run(_do_init_db())
+        await _do_init_db()
     except Exception as e:
         logger.warning("[LIFECYCLE] database init skipped: %s", e)
 
