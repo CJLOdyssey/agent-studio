@@ -21,10 +21,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Rename the table to free the "checkpoints" name for LangGraph's
-    # PostgresSaver checkpointer tables.
-    op.rename_table("checkpoints", "agent_checkpoints")
+    conn = op.get_bind()
+    inspector = __import__("sqlalchemy").inspect(conn)
+    if "checkpoints" in inspector.get_table_names():
+        op.rename_table("checkpoints", "agent_checkpoints")
 
 
 def downgrade() -> None:
-    op.rename_table("agent_checkpoints", "checkpoints")
+    conn = op.get_bind()
+    inspector = __import__("sqlalchemy").inspect(conn)
+    if "agent_checkpoints" in inspector.get_table_names():
+        op.rename_table("agent_checkpoints", "checkpoints")
