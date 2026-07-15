@@ -57,13 +57,16 @@ def _obtain_token() -> str | None:
     if _TOKEN_CACHE is not None:
         return _TOKEN_CACHE
 
+    print("[auth] obtaining token...", flush=True)
     c = httpx.Client(base_url=BASE, timeout=15)
     try:
         cfg = c.get("/api/auth/config").json()
+        print(f"[auth] config: enabled={cfg.get('enabled')} mode={cfg.get('mode')}", flush=True)
         if cfg.get("mode") != "rbac":
             return None
 
         # Try login first (common case: user already exists)
+        print("[auth] trying login...", flush=True)
         resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
         if resp.status_code == 200:
             _TOKEN_CACHE = resp.json()["access_token"]
