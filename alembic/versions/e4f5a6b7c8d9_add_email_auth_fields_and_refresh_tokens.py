@@ -23,7 +23,7 @@ def upgrade() -> None:
     # ── users: add email auth fields ───────────────────────────────────
     with op.batch_alter_table("users") as batch_op:
         batch_op.add_column(sa.Column("email", sa.String(255), nullable=True))
-        batch_op.add_column(sa.Column("is_verified", sa.Boolean(), server_default=sa.text("0"), nullable=False))
+        batch_op.add_column(sa.Column("is_verified", sa.Boolean(), server_default=sa.text("false"), nullable=False))
         batch_op.add_column(sa.Column("auth_provider", sa.String(16), server_default="email", nullable=False))
         batch_op.add_column(sa.Column("auth_provider_id", sa.String(255), nullable=True))
         batch_op.add_column(sa.Column("failed_login_attempts", sa.Integer(), server_default=sa.text("0"), nullable=False))
@@ -31,7 +31,7 @@ def upgrade() -> None:
 
     # Migrate existing rows: copy username -> email as legacy fallback
     op.execute("UPDATE users SET email = username || '@legacy.local' WHERE email IS NULL")
-    op.execute("UPDATE users SET is_verified = 1 WHERE is_verified = 0")
+    op.execute("UPDATE users SET is_verified = true WHERE is_verified IS NULL")
 
     # Make email NOT NULL + unique after populating
     with op.batch_alter_table("users") as batch_op:

@@ -13,11 +13,16 @@ from fastapi.responses import JSONResponse
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# ── Startup guard (must be first — catches pre-init crashes) ──────────────
+from virtual_team.observability.startup_guard import mark_started, mark_starting, mark_stopped, record_crash
+
+mark_starting()
+
 from virtual_team.broker import get_redis  # noqa: E402
 from virtual_team.config import load_config  # noqa: E402
 from virtual_team.database import init_db  # noqa: E402
 from virtual_team.logging_config import get_logger  # noqa: E402
-from virtual_team.routers import (  # noqa: E402, F401
+from virtual_team.routers import (  # noqa: E402
     admin,
     agents,
     attachments,
@@ -84,13 +89,19 @@ async def lifespan(app: FastAPI):
     gc_task = asyncio.create_task(_periodic_gc())
 
     # ── Database ─────────────────────────────────────────────────────────────
-    _init_database()
-    await _check_redis()
+    try:
+        await _init_database()
+        await _check_redis()
+        mark_started()
+    except Exception as exc:
+        record_crash(exc)
+        raise
 
     yield
     gc_task.cancel()
     with contextlib.suppress(asyncio.CancelledError):
         await gc_task
+    mark_stopped()
     logger.info("[LIFECYCLE] shutting down — app=%s | pid=%d", __name__, os.getpid())
 
 
@@ -127,12 +138,10 @@ def _add(lines: list[str], fmt: str, *args: object) -> None:
     lines.append("[LIFECYCLE] " + (fmt % args))
 
 
-def _init_database():
+async def _init_database():
     logger.info("[LIFECYCLE] initializing database...")
-    import asyncio
-
     try:
-        asyncio.run(_do_init_db())
+        await _do_init_db()
     except Exception as e:
         logger.warning("[LIFECYCLE] database init skipped: %s", e)
 
@@ -204,6 +213,10 @@ app = FastAPI(title="AgentStudio", lifespan=lifespan)
 
 
 # ── Rate limiting ───────────────────────────────────────────────────────────
+from virtual_team.observability import router as debug_router  # noqa: E402
+
+app.include_router(debug_router)
+
 from virtual_team.rate_limit import RateLimitMiddleware  # noqa: E402
 
 app.add_middleware(
@@ -242,6 +255,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Routers ─────────────────────────────────────────────────────────────────
+app.include_router(auth.router)
+app.include_router(runs.router)
+app.include_router(sessions.router)
+app.include_router(agents.router)
+app.include_router(attachments.router)
+app.include_router(commands.router)
+app.include_router(models.router)
+app.include_router(keys.router)
+app.include_router(teams.router)
+app.include_router(tools.router)
+app.include_router(skills.router)
+app.include_router(prompts.router)
+app.include_router(mcps.router)
+app.include_router(admin.router)
+app.include_router(providers.router)
+app.include_router(versions.router)
+app.include_router(system_team.router)
+app.include_router(workflows.router)
 
 
 @app.exception_handler(Exception)
