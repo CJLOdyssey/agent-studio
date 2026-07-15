@@ -2,6 +2,7 @@
 
 import contextlib
 import string
+import subprocess
 import uuid
 
 import httpx
@@ -36,10 +37,16 @@ def _rid(prefix: str = "test") -> str:
 
 def _clear_rate_limits():
     try:
-        r = _redis()
-        for key in r.scan_iter("ratelimit:*"):
-            r.delete(key)
-        r.close()
+        out = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "KEYS", "ratelimit:*"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.stdout.strip():
+            keys = out.stdout.strip().split("\n")
+            subprocess.run(
+                ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "DEL"] + keys,
+                capture_output=True, timeout=5,
+            )
     except Exception:
         pass
 
