@@ -1,12 +1,13 @@
 import { memo, useCallback, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Bot, Users, Plus, ChevronDown, Sparkles, MessageSquare, MoreVertical, Pencil, Trash2, Pin, PinOff, Settings } from 'lucide-react';
+import { Bot, Users, Plus, ChevronDown, Sparkles, MessageSquare, MoreVertical, Pencil, Trash2, Pin, PinOff, Settings, Lock } from 'lucide-react';
 import type { Team, Agent, Conversation } from '../../types/agentstudio';
 import { useTranslation } from 'react-i18next';
 import UserMenu from './sidebar/UserMenu';
 import ConversationsList from './sidebar/ConversationsList';
 import { validateName } from '../../utils/validation';
 import { useChatStore } from '../../stores/chatStore';
+import { useAuth } from '../auth';
 
 interface AgentStudioSidebarProps {
   teams: Team[];
@@ -66,6 +67,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   onOpenWorkstation,
 }: AgentStudioSidebarProps) {
   const { t } = useTranslation();
+  const { isAuthenticated, openLoginModal } = useAuth();
   const [openTeamMenu, setOpenTeamMenu] = useState<string | null>(null);
   const [openAgentMenu, setOpenAgentMenu] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -247,11 +249,11 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
               <Users size={14} /> {t('sidebar.myTeams')}
             </div>
             <button 
-              className="agentstudio-sidebar-section-action" 
-              onClick={handleAddTeam}
-              title={t('sidebar.createTeam')}
+              className={`agentstudio-sidebar-section-action${!isAuthenticated ? ' action-locked' : ''}`}
+              onClick={isAuthenticated ? handleAddTeam : () => openLoginModal()}
+              title={isAuthenticated ? t('sidebar.createTeam') : '登录后解锁功能'}
             >
-              <Plus size={14} />
+              {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
             </button>
           </div>
           <div className="agentstudio-sidebar-menu">
@@ -316,38 +318,48 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                     <button
                       className="agentstudio-team-dropdown-item"
                       onClick={() => {
+                        if (!isAuthenticated) { openLoginModal(); return; }
                         handleAddAgent(team.id);
                         setOpenTeamMenu(null);
                       }}
+                      title={!isAuthenticated ? '登录后解锁功能' : undefined}
                     >
-                      <Plus size={14} />
+                      {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
                       <span>{t('sidebar.addAgent')}</span>
                     </button>
                     <button
                       className="agentstudio-team-dropdown-item"
-                      onClick={() => startEditTeam(team)}
+                      onClick={() => {
+                        if (!isAuthenticated) { openLoginModal(); return; }
+                        startEditTeam(team);
+                      }}
+                      title={!isAuthenticated ? '登录后解锁功能' : undefined}
                     >
-                      <Pencil size={14} />
+                      {isAuthenticated ? <Pencil size={14} /> : <Lock size={14} />}
                       <span>{t('workstation.rename')}</span>
                     </button>
                     <button
                       className="agentstudio-team-dropdown-item"
                       onClick={() => {
+                        if (!isAuthenticated) { openLoginModal(); return; }
                         handleTogglePinTeam(team.id);
                         setOpenTeamMenu(null);
                       }}
+                      title={!isAuthenticated ? '登录后解锁功能' : undefined}
                     >
-                      {team.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+                      {isAuthenticated ? (team.isPinned ? <PinOff size={14} /> : <Pin size={14} />) : <Lock size={14} />}
                       <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                     </button>
                     <button
                       className="agentstudio-team-dropdown-item danger"
                       onClick={() => {
+                        if (!isAuthenticated) { openLoginModal(); return; }
                         setConfirmDelete({ type: 'team', teamId: team.id });
                         setOpenTeamMenu(null);
                       }}
+                      title={!isAuthenticated ? '登录后解锁功能' : undefined}
                     >
-                      <Trash2 size={14} />
+                      {isAuthenticated ? <Trash2 size={14} /> : <Lock size={14} />}
                       <span>{t('workstation.delete')}</span>
                     </button>
                   </div>,
@@ -404,30 +416,38 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
                                 <button
                                   className="agentstudio-agent-dropdown-item"
                                   onClick={() => {
+                                    if (!isAuthenticated) { openLoginModal(); return; }
                                     if (onEditAgent) {
                                       onEditAgent(agent);
                                     }
                                     setOpenAgentMenu(null);
                                   }}
+                                  title={!isAuthenticated ? '登录后解锁功能' : undefined}
                                 >
-                                  <Settings size={14} />
+                                  {isAuthenticated ? <Settings size={14} /> : <Lock size={14} />}
                                   <span>{t('sidebar.edit')}</span>
                                 </button>
                                 <button
                                   className="agentstudio-agent-dropdown-item"
-                                  onClick={() => startEditAgent(agent)}
+                                  onClick={() => {
+                                    if (!isAuthenticated) { openLoginModal(); return; }
+                                    startEditAgent(agent);
+                                  }}
+                                  title={!isAuthenticated ? '登录后解锁功能' : undefined}
                                 >
-                                  <Pencil size={14} />
+                                  {isAuthenticated ? <Pencil size={14} /> : <Lock size={14} />}
                       <span>{t('sidebar.rename')}</span>
                                 </button>
                                 <button
                                   className="agentstudio-agent-dropdown-item danger"
                                   onClick={() => {
+                                    if (!isAuthenticated) { openLoginModal(); return; }
                                     setConfirmDelete({ type: 'agent', teamId: team.id, agentId: agent.id });
                                     setOpenAgentMenu(null);
                                   }}
+                                  title={!isAuthenticated ? '登录后解锁功能' : undefined}
                                 >
-                              <Trash2 size={14} />
+                              {isAuthenticated ? <Trash2 size={14} /> : <Lock size={14} />}
                   <span>{t('sidebar.delete')}</span>
                             </button>
                           </div>,

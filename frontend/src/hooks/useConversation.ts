@@ -93,7 +93,7 @@ export function useConversation() {
     const handler = () => {
       try {
         const saved = localStorage.getItem('agentstudio-conversations');
-        if (saved) setConversations(JSON.parse(saved));
+        setConversations(saved ? JSON.parse(saved) : []);
       } catch { /* non-fatal */ }
     };
     window.addEventListener('agentstudio-conversations-updated', handler);

@@ -852,6 +852,27 @@
   background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
 }
 
+.agentstudio-popover-item-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.agentstudio-popover-item-disabled:hover {
+  color: var(--da-text-secondary);
+  background: transparent;
+}
+
+.agentstudio-popover-item-highlight {
+  color: var(--da-accent);
+  font-weight: 600;
+  border-bottom: 1px solid var(--da-border);
+  margin-bottom: 4px;
+  border-radius: 0;
+}
+.agentstudio-popover-item-highlight:hover {
+  color: var(--da-accent-hover);
+  background: var(--da-bg-hover);
+}
+
 /* ===== 移动端遮罩 ===== */
 
 .agentstudio-mobile-overlay {

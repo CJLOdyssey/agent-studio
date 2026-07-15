@@ -1,4 +1,5 @@
 from virtual_team.repository.agents import *  # noqa: F403
+from virtual_team.repository.auth import *  # noqa: F403
 from virtual_team.repository.core import *  # noqa: F403
 from virtual_team.repository.keys import *  # noqa: F403
 from virtual_team.repository.mcps import *  # noqa: F403

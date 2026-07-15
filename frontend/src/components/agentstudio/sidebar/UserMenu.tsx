@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { Settings, Key, HelpCircle, LogOut, ChevronsUpDown, User, LayoutDashboard } from 'lucide-react';
+import { Settings, Key, HelpCircle, LogOut, User, LayoutDashboard, LogIn, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../auth';
 
 interface Props {
   isUserMenuOpen: boolean;
@@ -10,8 +11,33 @@ interface Props {
   onOpenWorkstation: () => void;
 }
 
+function PopoverItem({
+  icon,
+  label,
+  disabled = false,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={`agentstudio-popover-item${disabled ? ' agentstudio-popover-item-disabled' : ''}`}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      title={disabled ? '登录后可管理' : undefined}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSettingsOpen, setIsApiOpen, onOpenWorkstation }: Props) {
   const { t } = useTranslation();
+  const { user, isAuthenticated, logout, openLoginModal } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const closeMenu = useCallback(() => setIsUserMenuOpen(false), [setIsUserMenuOpen]);
@@ -45,63 +71,75 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
 
   return (
     <div className="agentstudio-sidebar-footer" ref={menuRef}>
-      {/* 用户菜单 Popover */}
       {isUserMenuOpen && (
         <div className="agentstudio-user-popover">
-          <button
-            className="agentstudio-popover-item"
-            onClick={() => handleItemClick(() => setIsSettingsOpen(true))}
-          >
-            <Settings size={16} className="lucide-icon" />
-            <span>{t('sidebar.settings')}</span>
-          </button>
-          <button
-            className="agentstudio-popover-item"
+          <PopoverItem
+            icon={<Key size={16} className="lucide-icon" />}
+            label="API Key"
             onClick={() => handleItemClick(() => setIsApiOpen(true))}
-          >
-            <Key size={16} className="lucide-icon" />
-            <span>API Key</span>
-          </button>
-          <button
-            className="agentstudio-popover-item"
+          />
+          <PopoverItem
+            icon={<Settings size={16} className="lucide-icon" />}
+            label={t('sidebar.settings')}
+            onClick={() => handleItemClick(() => setIsSettingsOpen(true))}
+          />
+          <PopoverItem
+            icon={isAuthenticated ? <LayoutDashboard size={16} className="lucide-icon" /> : <Lock size={16} className="lucide-icon" />}
+            label={t('sidebar.workstation')}
+            disabled={!isAuthenticated}
             onClick={() => handleItemClick(onOpenWorkstation)}
-          >
-            <LayoutDashboard size={16} className="lucide-icon" />
-            <span>{t('sidebar.workstation')}</span>
-          </button>
-          <button className="agentstudio-popover-item" onClick={() => closeMenu()}>
-            <HelpCircle size={16} className="lucide-icon" />
-            <span>{t('sidebar.help')}</span>
-          </button>
+          />
+          <PopoverItem
+            icon={<HelpCircle size={16} className="lucide-icon" />}
+            label={t('sidebar.help')}
+            onClick={() => closeMenu()}
+          />
 
           <div className="agentstudio-popover-divider" />
-          <button className="agentstudio-popover-item danger" onClick={() => closeMenu()}>
-            <LogOut size={16} className="lucide-icon" />
-            <span>{t('sidebar.logout')}</span>
-          </button>
+          {isAuthenticated ? (
+            <PopoverItem
+              icon={<LogOut size={16} className="lucide-icon" />}
+              label={t('sidebar.logout')}
+              onClick={() => handleItemClick(logout)}
+            />
+          ) : (
+            <button
+              className="agentstudio-popover-item agentstudio-popover-item-highlight"
+              onClick={() => handleItemClick(() => openLoginModal())}
+            >
+              <LogIn size={16} className="lucide-icon" />
+              <span>登录 / 注册</span>
+            </button>
+          )}
         </div>
       )}
 
-      {/* 用户触发器按钮 */}
       <button
         className="agentstudio-user-trigger"
-        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+        onClick={() => {
+          if (isUserMenuOpen) {
+            closeMenu();
+          } else {
+            setIsUserMenuOpen(true);
+          }
+        }}
         aria-expanded={isUserMenuOpen}
         aria-haspopup="menu"
       >
-        <div className="agentstudio-user-trigger-left">
-          <div className="agentstudio-user-avatar">
-            <User size={16} className="lucide-icon" />
-          </div>
-          <div className="agentstudio-user-info">
-            <div className="agentstudio-user-name">User 1001</div>
-            <div className="agentstudio-user-status">
-              <span className="agentstudio-user-online-dot" />
-              {t('user.onlineStatus')}
+          <div className="agentstudio-user-trigger-left">
+            <div className="agentstudio-user-avatar">
+              <User size={16} className="lucide-icon" />
+            </div>
+            <div className="agentstudio-user-info">
+              <div className="agentstudio-user-name">
+                {isAuthenticated ? (user?.username || user?.email) : '游客'}
+              </div>
+              <div className="agentstudio-user-status">
+                <span className="agentstudio-user-online-dot" />
+                {isAuthenticated ? t('user.onlineStatus') : '未登录'}
+              </div>
             </div>
           </div>
-        </div>
-        <ChevronsUpDown size={16} className="agentstudio-user-trigger-icon" />
       </button>
     </div>
   );

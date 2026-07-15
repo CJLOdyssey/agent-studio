@@ -1,10 +1,13 @@
 # ── Build stage ──
+# Build arg for npm registry (default: npmmirror for China users)
+# Override for overseas: --build-arg NPM_REGISTRY=https://registry.npmjs.org
+ARG NPM_REGISTRY=https://registry.npmmirror.com
 FROM node:22-alpine AS builder
 
 WORKDIR /build
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --registry=${NPM_REGISTRY}
 
 COPY index.html tsconfig.json vite.config.ts ./
 COPY public/ public/

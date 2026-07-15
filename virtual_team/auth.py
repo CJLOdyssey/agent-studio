@@ -26,7 +26,6 @@ from dataclasses import dataclass, field
 
 from fastapi import Depends, HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
 
 from virtual_team.logging_config import get_logger
 
@@ -44,6 +43,7 @@ AUTH_MODE = os.environ.get("AUTH_MODE", "legacy")
 class CurrentUser:
     id: str = "admin"
     username: str = "admin"
+    email: str = "admin@legacy.local"
     roles: list[str] = field(default_factory=lambda: ["admin"])
 
 
@@ -54,38 +54,52 @@ async def get_current_user(request: Request) -> CurrentUser:
     """FastAPI dependency — resolves the current user.
 
     In ``legacy`` mode returns a fixed admin user without any DB query.
-    In ``rbac`` mode decodes the JWT and looks up the user from ``UserDB``.
-    Falls back to ``anonymous`` when no valid token is present.
+    In ``rbac`` mode uses the JWT-decoded user_id (from middleware or self-decoded).
+    Raises 401 when no valid JWT token is present.
     """
-    user_id = getattr(request.state, "user_id", None) or request.headers.get("X-User-ID", "")
+    if AUTH_MODE == "legacy":
+        return CurrentUser()
 
-    if AUTH_MODE == "rbac" and user_id:
-        try:
-            from sqlalchemy import select
+    # Try middleware-decoded user_id first (set by AuthMiddleware for non-auth routes)
+    user_id = getattr(request.state, "user_id", None)
+    if not user_id:
+        # AuthMiddleware skips /api/auth/* routes, so decode the JWT here
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            payload = decode_jwt(auth_header[7:], AUTH_SECRET)
+            if payload:
+                user_id = payload.get("sub", "")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未提供认证令牌")
 
-            from virtual_team.database import RoleDB, UserDB, UserRoleDB, get_session_factory
+    try:
+        from sqlalchemy import select
 
-            factory = get_session_factory()
-            async with factory() as session:
-                stmt = select(UserDB).where(UserDB.id == user_id)
-                result = await session.execute(stmt)
-                user = result.scalar_one_or_none()
-                if user is not None:
-                    # Fetch roles
-                    role_stmt = (
-                        select(RoleDB.name)
-                        .join(UserRoleDB, RoleDB.id == UserRoleDB.role_id)
-                        .where(UserRoleDB.user_id == user.id)
-                    )
-                    role_result = await session.execute(role_stmt)
-                    roles = [row[0] for row in role_result.all()]
-                    return CurrentUser(
-                        id=user.id, username=user.username, roles=roles or ["member"]
-                    )
-        except Exception:
-            logger.warning("RBAC user lookup failed, falling back to admin", exc_info=True)
+        from virtual_team.database import RoleDB, UserDB, UserRoleDB, get_session_factory
 
-    return CurrentUser()
+        factory = get_session_factory()
+        async with factory() as session:
+            stmt = select(UserDB).where(UserDB.id == user_id)
+            result = await session.execute(stmt)
+            user = result.scalar_one_or_none()
+            if user is not None:
+                role_stmt = (
+                    select(RoleDB.name)
+                    .join(UserRoleDB, RoleDB.id == UserRoleDB.role_id)
+                    .where(UserRoleDB.user_id == user.id)
+                )
+                role_result = await session.execute(role_stmt)
+                roles = [row[0] for row in role_result.all()]
+                return CurrentUser(
+                    id=user.id,
+                    username=user.username,
+                    email=user.email,
+                    roles=roles or ["member"],
+                )
+    except Exception:
+        logger.warning("RBAC user lookup failed", exc_info=True)
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或令牌无效")
 
 
 async def require_role(*names: str):
@@ -119,7 +133,7 @@ PUBLIC_PATHS = {
     "/openapi.json",
     "/redoc",
 }
-PUBLIC_PREFIXES = ("/ws/",)
+PUBLIC_PREFIXES = ("/ws/", "/api/auth/")
 
 
 def _base64url_decode(data: str) -> bytes:
@@ -252,18 +266,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
             token = parse_qs(str(request.url.query)).get("token", [""])[0]
 
+        # ── Guest mode: no token → pass through as unauthenticated ────
         if not token:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "未提供认证令牌"},
-            )
+            request.state.is_authenticated = False
+            return await call_next(request)
 
         payload = decode_jwt(token, AUTH_SECRET)
         if payload is None:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "令牌无效或已过期"},
-            )
+            request.state.is_authenticated = False
+            return await call_next(request)
 
         # Attach user info to request state
         request.state.user_id = payload.get("sub", "unknown")
