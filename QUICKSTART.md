@@ -43,6 +43,7 @@ docker compose -f docker/compose.local.yml up -d postgres redis
 cp .env.example .env
 # 编辑 .env，确保 DEEPSEEK_API_KEY 已配置
 # DATABASE_URL 和 REDIS_URL 指向 localhost 默认端口即可
+# 可观测性系统默认开启（OBSERVABILITY_ENABLED=1），磁盘低于 100MB 自动停止写入
 
 # ③ 后端 API（端口 8081，热更新）
 PYTHONPATH=. uvicorn virtual_team.app:app --reload --port 8081

@@ -65,7 +65,8 @@
 │   ├── auth.py                  # JWT 认证 + RBAC (get_current_user / require_role)
 │   ├── error_codes.py           # 结构化错误码体系 (23 codes)
 │   ├── metrics.py               # Prometheus RED 指标端点
-│   ├── routers/                 # API 路由（15 模块）
+│   ├── routers/                 # API 路由（18 模块）
+│   ├── observability/            # 可观测性（7 模块：EventStore + Trace + 自诊断）
 │   │   ├── agents.py            # Agent CRUD + toggle
 │   │   ├── prompts.py           # 提示词 CRUD
 │   │   ├── tools.py             # 工具生成/验证 + CRUD（含 parameters）
