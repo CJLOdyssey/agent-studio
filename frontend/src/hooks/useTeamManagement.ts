@@ -7,7 +7,6 @@ import { validateName, checkTeamLimit, checkAgentLimit } from '../utils/validati
 import { listTeams, createTeam, updateTeam, deleteTeam } from '../api/client/teams';
 import { updateAgent } from '../api/client/agents';
 import api from '../api/client';
-
 const STORAGE_KEY = 'agentstudio-conversations';
 
 function removeConversationsByAgentIds(agentIds: string[]) {
@@ -65,9 +64,20 @@ export function useTeamManagement(toast?: ToastFn) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editTeamName, setEditTeamName] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchTeams().then(setTeams);
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const handler = () => setRefreshKey((k) => k + 1);
+    window.addEventListener('auth:login', handler);
+    window.addEventListener('auth:logout', handler);
+    return () => {
+      window.removeEventListener('auth:login', handler);
+      window.removeEventListener('auth:logout', handler);
+    };
   }, []);
 
   const toggleTeam = useCallback(

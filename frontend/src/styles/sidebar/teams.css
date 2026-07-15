@@ -37,6 +37,10 @@
   opacity: 1;
 }
 
+.agentstudio-sidebar-section-action.action-locked {
+  opacity: 0.35;
+}
+
 .agentstudio-team-folder {
   margin-bottom: 1px;
   border-radius: 6px;

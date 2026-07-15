@@ -12,7 +12,7 @@ env:
   REGISTRY: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
   NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
   REMOTE_DIR: /opt/virtual-team
-  REMOTE_HOST: 39.108.61.123
+  REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
 
 jobs:
   build-and-push:

@@ -7,7 +7,7 @@ import Workspace from './workspace/Workspace';
 import { useToast } from '../../utils/useToast';
 import { useTeamManagement } from '../../hooks/useTeamManagement';
 import { useConversation } from '../../hooks/useConversation';
-import { useNotificationSound } from '../../contexts/SettingsContext';
+import { useNotificationSound, useSettings } from '../../contexts/SettingsContext';
 import { useTranslation } from 'react-i18next';
 import { InputToolbar, type InputToolbarHandle, type AttachedFile } from '../input';
 import { useAgents, useAvailableModels, useCommands } from '../../api/hooks';
@@ -74,25 +74,14 @@ export default function AgentStudioWorkstation() {
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('code');
   const [selectedModel, setSelectedModel] = useState('');
   const [isWorkstationOpen, setIsWorkstationOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('agentstudio-dark-mode');
-      if (saved !== null) return saved === 'true';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return true;
-  });
+  const { settings, updateSettings } = useSettings();
+  const isDarkMode = settings.theme === 'dark';
   const activeTeamId = useChatStore((s) => s.activeTeamId);
   const activeTeamName = useMemo(() => {
     if (!activeTeamId) return undefined;
     return teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
   }, [activeTeamId, teamMgmt.teams]);
   const showAgentChat = selectedAgentId !== null || activeTeamId !== null;
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
-    localStorage.setItem('agentstudio-dark-mode', String(isDarkMode));
-  }, [isDarkMode]);
 
   const filteredConversations = useMemo(() => conv.conversations, [conv.conversations]);
 
@@ -229,7 +218,7 @@ export default function AgentStudioWorkstation() {
       };
       const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined);
       if (convId) conv.setActiveConvId(convId);
-      submitToApi(text, undefined, undefined, true).catch(() => {
+      submitToApi(text, undefined, undefined, false).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
@@ -405,7 +394,7 @@ export default function AgentStudioWorkstation() {
           <div className="agentstudio-header-right">
             <button
               className="agentstudio-header-btn"
-              onClick={() => setIsDarkMode(prev => !prev)}
+              onClick={() => updateSettings({ theme: isDarkMode ? 'light' : 'dark' })}
               aria-label="Toggle dark mode"
             >
               {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
