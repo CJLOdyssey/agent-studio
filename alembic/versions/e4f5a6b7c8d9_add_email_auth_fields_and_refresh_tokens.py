@@ -23,7 +23,7 @@ def upgrade() -> None:
     # ── users: add email auth fields ───────────────────────────────────
     with op.batch_alter_table("users") as batch_op:
         batch_op.add_column(sa.Column("email", sa.String(255), nullable=True))
-        batch_op.add_column(sa.Column("is_verified", sa.Boolean(), server_default=sa.text("0"), nullable=False))
+        batch_op.add_column(sa.Column("is_verified", sa.Boolean(), server_default=sa.text("false"), nullable=False))
         batch_op.add_column(sa.Column("auth_provider", sa.String(16), server_default="email", nullable=False))
         batch_op.add_column(sa.Column("auth_provider_id", sa.String(255), nullable=True))
         batch_op.add_column(sa.Column("failed_login_attempts", sa.Integer(), server_default=sa.text("0"), nullable=False))
