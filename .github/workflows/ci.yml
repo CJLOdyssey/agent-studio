@@ -82,6 +82,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt -r requirements-test.txt
+      - name: Run database migrations
+        run: unset DATABASE_URL && PYTHONPATH=. alembic upgrade head
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret nohup python3 -m uvicorn virtual_team.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
