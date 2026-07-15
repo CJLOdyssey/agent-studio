@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -13,7 +12,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    event,
     text,
 )
 from sqlalchemy.ext.asyncio import (
@@ -24,13 +22,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.pool import NullPool
-
-from virtual_team.logging_config import get_logger
-
-logger = get_logger(__name__)
-
-# Queries exceeding this threshold (seconds) are logged as warnings
-SLOW_QUERY_THRESHOLD = 0.5
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
@@ -354,24 +345,6 @@ _async_engine: AsyncEngine | None = None
 _async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
-def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
-    @event.listens_for(engine.sync_engine, "before_cursor_execute")
-    def _before_execute(conn, cursor, statement, parameters, context, executemany):  # noqa: PLR0913
-        conn.info.setdefault("_query_start", []).append(time.time())
-
-    @event.listens_for(engine.sync_engine, "after_cursor_execute")
-    def _after_execute(conn, cursor, statement, parameters, context, executemany):  # noqa: PLR0913
-        start = conn.info["_query_start"].pop()
-        elapsed = time.time() - start
-        if elapsed > SLOW_QUERY_THRESHOLD:
-            # Truncate long statements to avoid log flooding
-            stmt = statement[:300] if isinstance(statement, str) else str(statement)[:300]
-            logger.warning(
-                "Slow query (%.2fs): %s",
-                elapsed, stmt,
-            )
-
-
 def get_async_engine() -> AsyncEngine:
     global _async_engine
     if _async_engine is None:
@@ -380,7 +353,6 @@ def get_async_engine() -> AsyncEngine:
             echo=False,
             poolclass=NullPool,
         )
-        _attach_slow_query_listeners(_async_engine)
     return _async_engine
 
 
