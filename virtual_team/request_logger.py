@@ -2,10 +2,16 @@
 
 import time
 import uuid
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+ASGIReceive = Callable[[], Awaitable[dict[str, Any]]]
+ASGISend = Callable[[dict[str, Any]], Awaitable[None]]
+Scope = dict[str, Any]
 
 _EXEMPT_PREFIXES = ("/api/health", "/ws/", "/metrics")
 _SENSITIVE_HEADERS = {b"authorization", b"cookie", b"x-api-key", b"proxy-authorization"}
@@ -27,10 +33,10 @@ def _format_duration(seconds: float) -> str:
 class RequestLogMiddleware:
     """ASGI middleware that logs every non-exempt HTTP request/response cycle."""
 
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         self.app = app
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Scope, receive: ASGIReceive, send: ASGISend) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -51,7 +57,7 @@ class RequestLogMiddleware:
         body_chunks: list[bytes] = []
         more_body = True
 
-        async def _receive():
+        async def _receive() -> dict[str, Any]:
             nonlocal more_body
             msg = await receive()
             if msg["type"] == "http.request":
@@ -88,7 +94,7 @@ class RequestLogMiddleware:
         start = time.monotonic()
         status_code = 0
 
-        async def _send(msg):
+        async def _send(msg: dict[str, Any]) -> None:
             nonlocal status_code
             if msg["type"] == "http.response.start":
                 status_code = msg.get("status", 0)
@@ -142,12 +148,11 @@ class RequestLogMiddleware:
             )
 
 
-def _client_ip(scope: dict) -> str:
-    """Extract client IP from headers or direct peer address."""
+def _client_ip(scope: dict[str, Any]) -> str:
     for header_name, header_value in scope.get("headers", []):
         if header_name == b"x-forwarded-for":
-            return header_value.decode("utf-8").split(",")[0].strip()
+            return str(header_value.decode("utf-8").split(",")[0].strip())
         if header_name == b"x-real-ip":
-            return header_value.decode("utf-8")
+            return str(header_value.decode("utf-8"))
     addr = scope.get("client")
-    return addr[0] if addr else "unknown"
+    return str(addr[0]) if addr else "unknown"
