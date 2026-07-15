@@ -110,6 +110,16 @@ class StreamEmitter:
             output = str(data.get("output", ""))[:500]
             await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
 
+    async def emit_balance_warning(self, message: str = ""):
+        await publish_run_message(
+            self._run_id,
+            {
+                "type": "balance_warning",
+                "agent_name": "System",
+                "content": message or "模型余额不足，请检查 API Key 配置",
+            },
+        )
+
     async def emit_thinking_nodes(self, nodes: list[dict]):
         max_pending = 20
         if self._pending_thinking_nodes:

@@ -146,7 +146,13 @@ export function createStreamHandler(set: SetFn, get: GetFn) {
       return;
     }
 
-if (msg.type === 'open_url') {
+    if (msg.type === 'balance_warning') {
+      Logger.error('[chat] balance warning:', msg.content);
+      set((_s) => ({ status: 'error' as any as ChatState['status'], error: msg.content || '模型余额不足', wsStatus: 'connected' as ChatState['wsStatus'] }));
+      return;
+    }
+
+    if (msg.type === 'open_url') {
       const targetUrl: string = msg.url || '';
       if (targetUrl) {
         Logger.info('[chat] open_url: %s', targetUrl);

@@ -36,7 +36,6 @@ export default function MessagesPanel({
   const switchVersion = useChatStore((s) => s.switchVersion);
   const continuingId = useChatStore((s) => s.continuingId);
   const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);
-
   const handleEditMessage = (msgId: string, newContent: string) => {
     const idx = displayMessages.findIndex((m) => m.id === msgId);
     if (idx >= 0) {
