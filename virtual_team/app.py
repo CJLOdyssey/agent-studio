@@ -13,6 +13,11 @@ from fastapi.responses import JSONResponse
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# ── Startup guard (must be first — catches pre-init crashes) ──────────────
+from virtual_team.observability.startup_guard import mark_started, mark_starting, mark_stopped, record_crash
+
+mark_starting()
+
 from virtual_team.broker import get_redis  # noqa: E402
 from virtual_team.config import load_config  # noqa: E402
 from virtual_team.database import init_db  # noqa: E402
@@ -84,13 +89,19 @@ async def lifespan(app: FastAPI):
     gc_task = asyncio.create_task(_periodic_gc())
 
     # ── Database ─────────────────────────────────────────────────────────────
-    _init_database()
-    await _check_redis()
+    try:
+        _init_database()
+        await _check_redis()
+        mark_started()
+    except Exception as exc:
+        record_crash(exc)
+        raise
 
     yield
     gc_task.cancel()
     with contextlib.suppress(asyncio.CancelledError):
         await gc_task
+    mark_stopped()
     logger.info("[LIFECYCLE] shutting down — app=%s | pid=%d", __name__, os.getpid())
 
 

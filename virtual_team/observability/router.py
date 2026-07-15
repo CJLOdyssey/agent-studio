@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
 from virtual_team.observability.analyzer import analyze_trace, recent_errors_report
+from virtual_team.observability.startup_guard import health as guard_health
 from virtual_team.observability.store import get_store
 
 router = APIRouter(prefix="/api/debug", tags=["debug"])
@@ -55,10 +56,18 @@ async def observability_health():
     try:
         count = store._query("SELECT COUNT(*) as cnt FROM events")[0]["cnt"]
         self_check = store.self_check()
-        status = "degraded" if self_check["write_errors"] > 0 or self_check["queue_size"] > 100 else "ok"
+        guard = guard_health()
+        degraded = (
+            self_check["write_errors"] > 0
+            or self_check["disk_errors"] > 0
+            or self_check["queue_size"] > 100
+            or guard.get("crashed")
+        )
+        status = "degraded" if degraded else "ok"
         return {
             "status": status,
             "events_stored": count,
+            "startup": guard,
             **self_check,
         }
     except Exception as e:

@@ -6,6 +6,7 @@ Low coupling: callers pass Event objects, never touch SQL.
 
 import os
 import queue
+import shutil
 import sqlite3
 import threading
 import time
@@ -14,6 +15,9 @@ from pathlib import Path
 from virtual_team.observability.schema import SCHEMA_SQL, Event
 
 _DB_PATH = os.environ.get("OBSERVABILITY_DB", str(Path(__file__).parent / "events.db"))
+
+# Minimum free disk space in bytes before writes are rejected.
+_DISK_MIN_FREE = int(os.environ.get("OBSERVABILITY_MIN_DISK_MB", "100")) * 1024 * 1024
 
 
 class EventStore:
@@ -28,6 +32,7 @@ class EventStore:
         self._queue: queue.SimpleQueue[dict] = queue.SimpleQueue()
         self._closed = False
         self._write_errors: int = 0
+        self._disk_errors: int = 0
         self._last_heartbeat: float = 0.0
 
         conn = sqlite3.connect(db_path, timeout=5)
@@ -37,9 +42,20 @@ class EventStore:
         self._writer = threading.Thread(target=_writer_loop, args=(db_path, self._queue), daemon=True)
         self._writer.start()
 
+    def _disk_free(self) -> float:
+        try:
+            usage = shutil.disk_usage(self._db_path)
+            return usage.free
+        except OSError:
+            return -1.0
+
     def write(self, event: Event) -> None:
         if self._closed:
             self._write_errors += 1
+            return
+        free = self._disk_free()
+        if 0 < free < _DISK_MIN_FREE:
+            self._disk_errors += 1
             return
         try:
             self._queue.put(event.to_row(), block=False)
@@ -48,9 +64,13 @@ class EventStore:
             self._write_errors += 1
 
     def self_check(self) -> dict:
+        free = self._disk_free()
         return {
             "queue_size": _writer_size(self._queue),
             "write_errors": self._write_errors,
+            "disk_errors": self._disk_errors,
+            "disk_free_mb": round(free / (1024 * 1024), 1) if free > 0 else free,
+            "disk_min_free_mb": _DISK_MIN_FREE // (1024 * 1024),
             "writer_alive": self._writer.is_alive(),
             "closed": self._closed,
             "last_heartbeat": self._last_heartbeat,
