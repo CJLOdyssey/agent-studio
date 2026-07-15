@@ -43,6 +43,7 @@ class EventStore:
             return
         try:
             self._queue.put(event.to_row(), block=False)
+            self._last_heartbeat = time.time()
         except queue.Full:
             self._write_errors += 1
 
