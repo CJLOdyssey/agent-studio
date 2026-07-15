@@ -81,13 +81,16 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 ### Backend
 
 ```
-app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS)
+app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
   └─ routers/ (18 modules: admin, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, runs, sessions, skills, system_team, teams, tools, versions, workflows)
-   │    └─ repository/ (11 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions, workflows, auth)
+  │    └─ repository/ (11 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions, workflows, auth)
   │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
-  └─ checkpoint.py (CheckpointDB + create_checkpointer factory)
-  └─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
+  ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
+  ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
+  └─ observability/ (7 modules: store, trace, handler, schema, analyzer, router, startup_guard)
+       └─ EventStore (SQLite + background writer)
+       └─ Debug API: GET /api/debug/{events,trace,errors,stats,health}
 ```
 
 **Three-layer strict**: `database.py` (models) → `repository/` (async queries) → `routers/` (HTTP). Routers never touch database.py.
