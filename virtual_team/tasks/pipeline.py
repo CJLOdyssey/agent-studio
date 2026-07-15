@@ -60,6 +60,7 @@ from .helpers import (
     _build_session_context,
     _discover_mcp_tools,
     _get_rag_context,
+    _is_balance_error,
     _parse_json_field,
     _save_output_memories,
 )
@@ -407,85 +408,100 @@ async def _run_agent_pipeline(
             {"messages": chat_history + [HumanMessage(content=_forced_requirement)], "system_prompt": system_prompt, "session_context": session_context},  # noqa: E501
             {"configurable": {"thread_id": run_id}, "recursion_limit": 25},
         )
-
-        # ── Log usage immediately after graph.run() ──
-        try:
-            usage = getattr(graph, '_last_usage', {}) or {}
-            logger.info("[USAGE] run=%s model=%s usage=%s", run_id, effective_model, usage)
-            await log_key_usage(
-                key_id=None,
-                user_id=user_id,
-                run_id=run_id,
-                provider=effective_model.split('/')[0] if '/' in effective_model else effective_model,
-                model=effective_model,
-                tokens_prompt=usage.get('prompt_tokens', 0) or 0,
-                tokens_completion=usage.get('completion_tokens', 0) or 0,
-                duration_ms=0,
+    except Exception as exc:
+        logger.exception("Pipeline failed | run=%s", run_id)
+        await update_run_status(run_id, "error")
+        if _is_balance_error(exc):
+            await publish_run_message(
+                run_id,
+                {
+                    "type": "balance_warning",
+                    "content": "模型余额不足，请检查 API Key 配置并确保账户有足够额度",
+                },
             )
-        except Exception as e:
-            logger.warning("[USAGE] logging failed for run %s: %s", run_id, e)
-
-        all_msgs: list = result.get("messages", [])
-        last_ai = next((m for m in reversed(all_msgs) if isinstance(m, AIMessage)), None)
-        response = str(last_ai.content) if last_ai else ""
-        # Count tool calls across ALL AI messages, not just the last one
-        all_tool_calls: list[dict] = []
-        for m in all_msgs:
-            if isinstance(m, AIMessage):
-                for tc in (getattr(m, "tool_calls", []) or []):
-                    all_tool_calls.append({"name": tc.get("name", ""), "args": tc.get("args", {})})
-        tool_calls = all_tool_calls
-        message_count = len([m for m in all_msgs if getattr(m, "type", "") != "system"])
-        review_summary = (
-            f"Agent completed successfully with {message_count} messages "
-            f"and {len(tool_calls)} tool call(s)."
-        )
-
-        await update_run_result(
-            run_id=run_id,
-            pm_document="",
-            code=response,
-            review=review_summary,
-            approved=True,
-            status="converged",
-        )
         await publish_run_message(
             run_id,
             {
-                "type": "result",
-                "status": "completed",
-                "approved": True,
-                "pm_document": "",
-                "code": response,
-                "review": review_summary,
+                "type": "status",
+                "status": "error",
+                "error": str(exc),
             },
         )
+        return {"run_id": run_id, "status": "error"}
 
-        if session_id:
-            try:
-                await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
-                from virtual_team.rag import ingest_session_messages
-
-                messages = await get_run_messages(run_id)
-                if messages:
-                    msg_dicts = [
-                        {"content": m.content, "role": m.role, "agent_name": m.agent_name}
-                        for m in messages
-                    ]
-                    await ingest_session_messages(session_id, run_id, msg_dicts)
-            except Exception:
-                logger.exception("RAG/memory save failed for run %s", run_id)
-
-        logger.info(
-            "Agent completed | run=%s | msgs=%d | tools=%d",
-            run_id,
-            message_count,
-            len(tool_calls),
+    try:
+        usage = getattr(graph, '_last_usage', {}) or {}
+        logger.info("[USAGE] run=%s model=%s usage=%s", run_id, effective_model, usage)
+        await log_key_usage(
+            key_id=None,
+            user_id=user_id,
+            run_id=run_id,
+            provider=effective_model.split('/')[0] if '/' in effective_model else effective_model,
+            model=effective_model,
+            tokens_prompt=usage.get('prompt_tokens', 0) or 0,
+            tokens_completion=usage.get('completion_tokens', 0) or 0,
+            duration_ms=0,
         )
-        return {"run_id": run_id, "status": "completed"}
-    finally:
-        gc.collect()
-        _log_memory_diff()
+    except Exception as e:
+        logger.warning("[USAGE] logging failed for run %s: %s", run_id, e)
+
+    all_msgs: list = result.get("messages", [])
+    last_ai = next((m for m in reversed(all_msgs) if isinstance(m, AIMessage)), None)
+    response = str(last_ai.content) if last_ai else ""
+    all_tool_calls: list[dict] = []
+    for m in all_msgs:
+        if isinstance(m, AIMessage):
+            for tc in (getattr(m, "tool_calls", []) or []):
+                all_tool_calls.append({"name": tc.get("name", ""), "args": tc.get("args", {})})
+    tool_calls = all_tool_calls
+    message_count = len([m for m in all_msgs if getattr(m, "type", "") != "system"])
+    review_summary = (
+        f"Agent completed successfully with {message_count} messages "
+        f"and {len(tool_calls)} tool call(s)."
+    )
+
+    await update_run_result(
+        run_id=run_id,
+        pm_document="",
+        code=response,
+        review=review_summary,
+        approved=True,
+        status="converged",
+    )
+    await publish_run_message(
+        run_id,
+        {
+            "type": "result",
+            "status": "completed",
+            "approved": True,
+            "pm_document": "",
+            "code": response,
+            "review": review_summary,
+        },
+    )
+
+    if session_id:
+        try:
+            await _save_output_memories(session_id, run_id, response, {"tool_calls": tool_calls})
+            from virtual_team.rag import ingest_session_messages
+
+            messages = await get_run_messages(run_id)
+            if messages:
+                msg_dicts = [
+                    {"content": m.content, "role": m.role, "agent_name": m.agent_name}
+                    for m in messages
+                ]
+                await ingest_session_messages(session_id, run_id, msg_dicts)
+        except Exception:
+            logger.exception("RAG/memory save failed for run %s", run_id)
+
+    logger.info(
+        "Agent completed | run=%s | msgs=%d | tools=%d",
+        run_id,
+        message_count,
+        len(tool_calls),
+    )
+    return {"run_id": run_id, "status": "completed"}
 
 
 async def _run_team_pipeline(
