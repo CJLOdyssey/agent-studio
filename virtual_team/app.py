@@ -17,7 +17,7 @@ from virtual_team.broker import get_redis  # noqa: E402
 from virtual_team.config import load_config  # noqa: E402
 from virtual_team.database import init_db  # noqa: E402
 from virtual_team.logging_config import get_logger  # noqa: E402
-from virtual_team.routers import (  # noqa: E402
+from virtual_team.routers import (  # noqa: E402, F401
     admin,
     agents,
     attachments,
@@ -227,27 +227,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# ── Routers ─────────────────────────────────────────────────────────────────
-app.include_router(auth.router)
-app.include_router(runs.router)
-app.include_router(sessions.router)
-app.include_router(agents.router)
-app.include_router(attachments.router)
-app.include_router(commands.router)
-app.include_router(models.router)
-app.include_router(keys.router)
-app.include_router(teams.router)
-app.include_router(tools.router)
-app.include_router(skills.router)
-app.include_router(prompts.router)
-app.include_router(mcps.router)
-app.include_router(admin.router)
-app.include_router(providers.router)
-app.include_router(versions.router)
-app.include_router(system_team.router)
-app.include_router(workflows.router)
 
 
 @app.exception_handler(Exception)
