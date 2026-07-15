@@ -44,6 +44,62 @@ def _clear_rate_limits():
         pass
 
 
+_TOKEN_CACHE: str | None = None
+
+
+def _obtain_token() -> str | None:
+    """Obtain a Bearer token for rbac mode (tries login first, then register).
+
+    Caches the token globally — called at most once per session.
+    """
+    global _TOKEN_CACHE
+    if _TOKEN_CACHE is not None:
+        return _TOKEN_CACHE
+
+    c = httpx.Client(base_url=BASE, timeout=15)
+    try:
+        cfg = c.get("/api/auth/config").json()
+        if cfg.get("mode") != "rbac":
+            return None
+
+        # Try login first (common case: user already exists)
+        resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
+        if resp.status_code == 200:
+            _TOKEN_CACHE = resp.json()["access_token"]
+            return _TOKEN_CACHE
+
+        # Login failed → register new user
+        _clear_rate_limits()
+        _delete_redis("auth:verify:e2e@test.com")
+        c.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
+        codes = _read_redis("auth:verify:e2e@test.com")
+        code = codes[0] if codes else None
+        if code:
+            resp = c.post(
+                "/api/auth/register",
+                json={"email": TEST_EMAIL, "code": code, "password": TEST_PASSWORD},
+            )
+            if resp.status_code == 201:
+                _TOKEN_CACHE = resp.json()["access_token"]
+                return _TOKEN_CACHE
+            # User was created but register failed → try login again
+            resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
+            if resp.status_code == 200:
+                _TOKEN_CACHE = resp.json()["access_token"]
+                return _TOKEN_CACHE
+    except Exception:
+        pass
+    finally:
+        c.close()
+    return None
+
+
+def _attach_auth(client: httpx.Client) -> None:
+    token = _obtain_token()
+    if token:
+        client.headers.update({"Authorization": f"Bearer {token}"})
+
+
 def _cleanup(*ids_and_endpoints: tuple[str, str]):
     c = httpx.Client(base_url=BASE, timeout=10)
     _attach_auth(c)
@@ -51,31 +107,6 @@ def _cleanup(*ids_and_endpoints: tuple[str, str]):
         with contextlib.suppress(Exception):
             c.delete(f"{ep}/{eid}")
     c.close()
-
-
-def _attach_auth(client: httpx.Client) -> None:
-    """If rbac mode, register/login and attach Bearer token to client."""
-    try:
-        cfg = client.get("/api/auth/config").json()
-        if cfg.get("mode") == "rbac":
-            _delete_redis("auth:verify:e2e@test.com")
-            client.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
-            codes = _read_redis("auth:verify:e2e@test.com")
-            code = codes[0] if codes else None
-            if code:
-                resp = client.post(
-                    "/api/auth/register",
-                    json={"email": TEST_EMAIL, "code": code, "password": TEST_PASSWORD},
-                )
-                if resp.status_code == 201:
-                    client.headers.update({"Authorization": f"Bearer {resp.json()['access_token']}"})
-                    return
-            # Login if user already exists or register failed
-            resp = client.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
-            if resp.status_code == 200:
-                client.headers.update({"Authorization": f"Bearer {resp.json()['access_token']}"})
-    except Exception:
-        pass
 
 
 def _read_redis(pattern: str) -> list[str]:
