@@ -54,9 +54,15 @@ async def observability_health():
     store = get_store()
     try:
         count = store._query("SELECT COUNT(*) as cnt FROM events")[0]["cnt"]
-        return {"status": "ok", "events_stored": count, "store": store._db_path}
+        self_check = store.self_check()
+        status = "degraded" if self_check["write_errors"] > 0 or self_check["queue_size"] > 100 else "ok"
+        return {
+            "status": status,
+            "events_stored": count,
+            **self_check,
+        }
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"status": "error", "detail": str(e)},
+            content={"status": "error", "detail": str(e), "write_errors": -1},
         )

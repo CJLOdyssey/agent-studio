@@ -27,6 +27,8 @@ class EventStore:
         self._db_path = db_path
         self._queue: queue.SimpleQueue[dict] = queue.SimpleQueue()
         self._closed = False
+        self._write_errors: int = 0
+        self._last_heartbeat: float = 0.0
 
         conn = sqlite3.connect(db_path, timeout=5)
         conn.executescript(SCHEMA_SQL)
@@ -37,8 +39,22 @@ class EventStore:
 
     def write(self, event: Event) -> None:
         if self._closed:
+            self._write_errors += 1
             return
-        self._queue.put(event.to_row())
+        try:
+            self._queue.put(event.to_row(), block=False)
+        except queue.Full:
+            self._write_errors += 1
+
+    def self_check(self) -> dict:
+        return {
+            "queue_size": _writer_size(self._queue),
+            "write_errors": self._write_errors,
+            "writer_alive": self._writer.is_alive(),
+            "closed": self._closed,
+            "last_heartbeat": self._last_heartbeat,
+            "db_path": self._db_path,
+        }
 
     def _query(self, sql: str, params: tuple = ()) -> list[dict]:
         conn = sqlite3.connect(f"file:{self._db_path}?mode=ro", uri=True)
@@ -136,6 +152,10 @@ def _writer_loop(db_path: str, q: "queue.SimpleQueue[dict]") -> None:
         pass
     finally:
         conn.close()
+
+
+def _writer_size(q: "queue.SimpleQueue[dict]") -> int:
+    return q.qsize()
 
 
 # Module-level singleton — created on first use.
