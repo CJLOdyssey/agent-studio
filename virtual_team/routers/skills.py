@@ -22,7 +22,7 @@ class SkillCreate(BaseModel):
     tool_names: list[str] = []
     output_constraint: str = ""
     version: str = "v1.0.0"
-    author: str | None = None
+    author: str = ""
     status: str = "active"
 
 

@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from virtual_team.logging_config import get_logger
+from virtual_team.observability import set_trace_id
 
 logger = get_logger(__name__)
 
@@ -48,44 +49,34 @@ class RequestLogMiddleware:
 
         request_id = uuid.uuid4().hex[:12]
         scope.setdefault("state", {})["request_id"] = request_id
+        set_trace_id(request_id)
 
         method = scope.get("method", "UNKNOWN")
         query_string = scope.get("query_string", b"").decode("utf-8", errors="replace")
         client_ip = _client_ip(scope)
 
-        # ── Read & reconstruct body (for logging & re-send) ──────────────
+        # ── Wrap receive to capture body for logging ─────────────────────
         body_chunks: list[bytes] = []
-        more_body = True
 
         async def _receive() -> dict[str, Any]:
-            nonlocal more_body
             msg = await receive()
             if msg["type"] == "http.request":
                 body_chunks.append(msg.get("body", b""))
-                more_body = msg.get("more_body", False)
             return msg
-
-        # Consume the request body so we can log it
-        while more_body:
-            await _receive()
-
-        body_bytes = b"".join(body_chunks)
-        body_for_log = body_bytes[:_MAX_BODY_BYTES].decode("utf-8", errors="replace")
-        if len(body_bytes) > _MAX_BODY_BYTES:
-            body_for_log += "... (truncated)"
 
         headers = {k: v for k, v in scope.get("headers", [])}
         content_length = headers.get(b"content-length", b"").decode()
         ua = headers.get(b"user-agent", b"").decode("utf-8", errors="replace")[:120]
 
-        # ── Log incoming ─────────────────────────────────────────────────
+        # ── Log incoming (without body — it hasn't been read yet) ─────────
+        qs = f"?{query_string}" if query_string else ""
         logger.info(
-            "[REQ] %s | %s %s%s | client=%s | len=%s | ua=%s | rid=%s",
+            "[REQ] %s | %s%s | client=%s | len=%s | ua=%s | rid=%s",
             method,
             path,
-            f"?{query_string}" if query_string else "",
-            content_length or "-",
+            qs,
             client_ip,
+            content_length or "-",
             ua or "-",
             request_id,
         )
@@ -104,6 +95,22 @@ class RequestLogMiddleware:
             await self.app(scope, _receive, _send)
         except Exception:
             duration = time.monotonic() - start
+            logger.exception(
+                "[REQ] %s %s | UNHANDLED | duration=%s | rid=%s",
+                method,
+                path,
+                _format_duration(duration),
+                request_id,
+            )
+            raise
+
+        duration = time.monotonic() - start
+
+        # ── Build body for error logging ──────────────────────────────────
+        body_bytes = b"".join(body_chunks)
+        body_for_log = body_bytes[:_MAX_BODY_BYTES].decode("utf-8", errors="replace")
+        if len(body_bytes) > _MAX_BODY_BYTES:
+            body_for_log += "... (truncated)"
             logger.exception(
                 "[REQ] %s %s | UNHANDLED | duration=%s | rid=%s",
                 method,
