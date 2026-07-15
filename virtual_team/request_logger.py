@@ -79,13 +79,14 @@ class RequestLogMiddleware:
         ua = headers.get(b"user-agent", b"").decode("utf-8", errors="replace")[:120]
 
         # ── Log incoming ─────────────────────────────────────────────────
+        qs = f"?{query_string}" if query_string else ""
         logger.info(
-            "[REQ] %s | %s %s%s | client=%s | len=%s | ua=%s | rid=%s",
+            "[REQ] %s | %s%s | client=%s | len=%s | ua=%s | rid=%s",
             method,
             path,
-            f"?{query_string}" if query_string else "",
-            content_length or "-",
+            qs,
             client_ip,
+            content_length or "-",
             ua or "-",
             request_id,
         )
