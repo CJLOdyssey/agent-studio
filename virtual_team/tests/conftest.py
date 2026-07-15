@@ -7,7 +7,6 @@ import uuid
 
 import httpx
 import pytest
-import redis as redis_module
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from virtual_team.database import Base
@@ -17,14 +16,6 @@ BASE = "http://localhost:8080"
 # Test user credentials for rbac mode
 TEST_EMAIL = "e2e@test.com"
 TEST_PASSWORD = "Test@1234"
-
-_REDIS_HOST = "localhost"
-_REDIS_PORT = 6379
-_REDIS_DB = 1  # matches REDIS_URL from .env / backend config
-
-
-def _redis():
-    return redis_module.Redis(host=_REDIS_HOST, port=_REDIS_PORT, db=_REDIS_DB, decode_responses=True)
 
 
 def _rid(prefix: str = "test") -> str:
@@ -73,29 +64,37 @@ def _obtain_token() -> str | None:
         resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
         if resp.status_code == 200:
             _TOKEN_CACHE = resp.json()["access_token"]
+            print(f"[_obtain_token] login ok, token={_TOKEN_CACHE[:20]}...")
             return _TOKEN_CACHE
+        print(f"[_obtain_token] login failed: {resp.status_code} {resp.text[:80]}")
 
         # Login failed → register new user
         _clear_rate_limits()
         _delete_redis("auth:verify:e2e@test.com")
-        c.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
+        r1 = c.post("/api/auth/send-register-code", json={"email": TEST_EMAIL})
+        print(f"[_obtain_token] send-code: {r1.status_code} {r1.text[:80]}")
         codes = _read_redis("auth:verify:e2e@test.com")
+        print(f"[_obtain_token] redis codes: {codes}")
         code = codes[0] if codes else None
         if code:
             resp = c.post(
                 "/api/auth/register",
                 json={"email": TEST_EMAIL, "code": code, "password": TEST_PASSWORD},
             )
+            print(f"[_obtain_token] register: {resp.status_code} {resp.text[:80]}")
             if resp.status_code == 201:
                 _TOKEN_CACHE = resp.json()["access_token"]
                 return _TOKEN_CACHE
             # User was created but register failed → try login again
             resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
+            print(f"[_obtain_token] retry login: {resp.status_code} {resp.text[:80]}")
             if resp.status_code == 200:
                 _TOKEN_CACHE = resp.json()["access_token"]
                 return _TOKEN_CACHE
-    except Exception:
-        pass
+        else:
+            print("[_obtain_token] no code from redis, login also failed")
+    except Exception as exc:
+        print(f"[_obtain_token] exception: {exc}")
     finally:
         c.close()
     return None
