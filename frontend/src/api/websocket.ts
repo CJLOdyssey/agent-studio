@@ -53,6 +53,7 @@ function connect(runId: string, options: ConnectOptions): ConnState {
 
   ws.onopen = () => {
     notifyStatus(state, 'connected');
+    Logger.info('[ws] run %s connected', runId);
   };
 
   ws.onmessage = (event) => {
