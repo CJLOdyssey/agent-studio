@@ -31,7 +31,7 @@ def upgrade() -> None:
 
     # Migrate existing rows: copy username -> email as legacy fallback
     op.execute("UPDATE users SET email = username || '@legacy.local' WHERE email IS NULL")
-    op.execute("UPDATE users SET is_verified = 1 WHERE is_verified = 0")
+    op.execute("UPDATE users SET is_verified = true WHERE is_verified IS NULL")
 
     # Make email NOT NULL + unique after populating
     with op.batch_alter_table("users") as batch_op:
