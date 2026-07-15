@@ -117,27 +117,37 @@ def _cleanup(*ids_and_endpoints: tuple[str, str]):
 
 
 def _read_redis(pattern: str) -> list[str]:
-    """Read values from Redis matching a key pattern."""
+    """Read values from Redis matching a key pattern (via docker exec)."""
     try:
-        r = _redis()
-        keys = list(r.keys(pattern))
-        if not keys:
-            r.close()
+        out = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "KEYS", pattern],
+            capture_output=True, text=True, timeout=5,
+        )
+        if not out.stdout.strip():
             return []
-        vals = r.mget(*keys)
-        r.close()
-        return [v for v in vals if v]
+        keys = out.stdout.strip().split("\n")
+        vals = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "MGET"] + keys,
+            capture_output=True, text=True, timeout=5,
+        )
+        return [v for v in vals.stdout.strip().split("\n") if v]
     except Exception:
         return []
 
 
 def _delete_redis(pattern: str):
-    """Delete Redis keys matching a pattern."""
+    """Delete Redis keys matching a pattern (via docker exec)."""
     try:
-        r = _redis()
-        for key in r.scan_iter(pattern):
-            r.delete(key)
-        r.close()
+        out = subprocess.run(
+            ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "KEYS", pattern],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.stdout.strip():
+            subprocess.run(
+                ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "DEL"]
+                + out.stdout.strip().split("\n"),
+                capture_output=True, timeout=5,
+            )
     except Exception:
         pass
 
