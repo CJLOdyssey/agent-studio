@@ -112,7 +112,7 @@ export function useWorkstationState(
         convRef.current.updateConversationSessionId(activeId, state.currentSessionId, false);
       }
     }
-  }, [apiMessages, apiStatus]);
+  }, [apiMessages, apiStatus, activeTeamId, activeTeamName]);
 
   useEffect(() => {
     const activeId = conv.activeConvId;
@@ -164,7 +164,7 @@ export function useWorkstationState(
       }
     }
     loadConversation(chatMessages, found.id, found.sessionId);
-  }, [conv.activeConvId]);
+  }, [conv.activeConvId, filteredConversations, loadConversation, resetApi]);
 
   const handleNewChat = useCallback(() => {
     if (apiMessages.length > 0 && conv.activeConvId) {
