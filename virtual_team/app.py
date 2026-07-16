@@ -21,6 +21,7 @@ from virtual_team.logging_config import get_logger  # noqa: E402
 from virtual_team.routers import (  # noqa: E402
     admin,
     agents,
+    agents_test,
     attachments,
     auth,
     commands,
@@ -95,7 +96,7 @@ app.add_middleware(
 
 
 # ── Routers ─────────────────────────────────────────────────────────────────
-routers = [auth, runs, run_continue, sessions, agents, attachments, commands, models, keys,
+routers = [auth, runs, run_continue, sessions, agents, agents_test, attachments, commands, models, keys,
            teams, tools, skills, prompts, mcps, admin, providers, versions,
            system_team, workflows]
 for r in routers:
