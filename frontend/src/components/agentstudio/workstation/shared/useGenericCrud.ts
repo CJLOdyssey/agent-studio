@@ -104,6 +104,8 @@ export interface GenericCrudReturn<T, F> {
   closeMenu(): void;
   clearError(): void;
   retry(): void;
+  /** Directly append items to local state (no API call). Used by import flows. */
+  batchAdd(newItems: T[]): void;
 }
 
 // ── Implementation ───────────────────────────────────────────────
@@ -449,6 +451,11 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
     });
   }, [selectedIds, removeMultipleItems]);
 
+  // ── Batch add (import flow) ───────────────────────────────────
+  const batchAdd = useCallback((newItems: T[]) => {
+    setItems((prev) => [...prev, ...newItems]);
+  }, []);
+
   // ── Return ────────────────────────────────────────────────────
   return {
     items,
@@ -509,5 +516,6 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
     closeMenu,
     clearError,
     retry,
+    batchAdd,
   };
 }
