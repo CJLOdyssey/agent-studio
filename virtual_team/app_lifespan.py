@@ -102,7 +102,7 @@ async def _check_redis() -> None:
     logger.info("[LIFECYCLE] verifying Redis connection...")
     try:
         r = get_redis()
-        pong = await r.ping()  # type: ignore[misc]
+        pong = await r.ping()
         logger.info("[LIFECYCLE] redis ping=%s", pong)
     except Exception as e:
         logger.warning("[LIFECYCLE] redis unavailable (pub/sub will fail): %s", e)
