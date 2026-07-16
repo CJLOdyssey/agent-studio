@@ -1,7 +1,7 @@
 export { default as OutputConstraintManagement } from './OutputConstraintManagement';
 export type { OutputEntry, OutputFormData, OutputCategory, OutputSortField } from './output.types';
 export { OUTPUT_CATEGORIES, OUTPUT_STATUS_LABEL } from './output.constants';
-export { MOCK_OUTPUTS } from './mock-data';
+export { MOCK_OUTPUTS } from '../../../../mocks/output';
 export { outputAPI } from './api';
 export type { OutputAPIService } from './api';
 export { useOutputData } from './useOutputData';

@@ -1,5 +1,5 @@
-import type { VersionEntry } from '../types';
-import type { PromptEntry } from './types';
+import type { VersionEntry } from '../components/agentstudio/workstation/types';
+import type { PromptEntry } from '../components/agentstudio/workstation/prompt/types';
 
 export const MOCK_PROMPTS: PromptEntry[] = [
   { id: 'p1', name: '代码审查助手', content: '你是一个资深代码审查专家，负责检查代码质量、安全性和性能问题。请从以下几个方面进行审查：代码规范、潜在缺陷、安全漏洞、性能优化建议。', category: '系统提示词', model: 'Claude Sonnet 4', status: 'active', version: 'v3.2.0', createdAt: '2026-05-10' },
