@@ -8,7 +8,7 @@ Architecture:
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from typing import Any, cast
 
@@ -254,7 +254,7 @@ class SingleAgentGraph:
     def set_stream_callback(self, cb: Callable) -> None:
         self._stream_cb = cb
 
-    def bind_tools(self, tools: list[ToolDescriptor | ToolConfig]) -> None:
+    def bind_tools(self, tools: Sequence[ToolDescriptor | ToolConfig]) -> None:
         """Bind tools to the graph — translates ToolConfig into tool definitions."""
         for tc in tools:
             api_name, wrapper, definition = build_tool_definition(tc, llm=self.llm)
@@ -267,6 +267,40 @@ class SingleAgentGraph:
 
     def with_config(self, **kwargs: Any) -> SingleAgentGraph:
         return self
+
+    async def run(
+        self,
+        requirement: str,
+        system_prompt: str = "",
+        session_context: str = "",
+        chat_history: list | None = None,
+        thread_id: str = "",
+        run_id: str = "",
+    ) -> dict:
+        config = cast(
+            "RunnableConfig",
+            {
+                "configurable": {"thread_id": thread_id or run_id or str(id(self))},
+                "recursion_limit": 100,
+            },
+        )
+        initial_messages = list(chat_history) if chat_history else []
+        initial_messages.append(HumanMessage(content=requirement))
+        result = await self._graph.ainvoke(
+            {
+                "messages": initial_messages,
+                "system_prompt": system_prompt,
+                "session_context": session_context,
+            },
+            config,
+        )
+        usage = self._last_usage or {}
+        return {
+            "messages": result.get("messages", []),
+            "input_tokens": usage.get("input_tokens", 0),
+            "output_tokens": usage.get("output_tokens", 0),
+            "model": self.model,
+        }
 
     async def arun(self, message: str, system_prompt: str = "", session_context: str = "") -> str:
         """Convenience: run one turn synchronously."""
