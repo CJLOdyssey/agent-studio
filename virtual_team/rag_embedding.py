@@ -34,7 +34,7 @@ class EmbeddingProvider:
         return _fallback_embed(texts)
 
     def _embed_sync(self, texts: list[str]) -> list[list[float]]:
-        """Synchronous HTTP call to DashScope — runs in thread pool via asyncio.to_thread."""
+        """Embed texts synchronously via DashScope HTTP API in a thread pool."""
         import json
 
         body = json.dumps(

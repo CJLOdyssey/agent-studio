@@ -14,6 +14,11 @@ from starlette.responses import JSONResponse
 
 
 class ErrorCode(StrEnum):
+    """Structured error codes used across the application.
+
+    Format: ``{MODULE}_{3_DIGIT_NUMBER}`` (e.g. ``TEAM_001``).
+    """
+
     # ── Agent ────────────────────────────────────────────────────────
     AGENT_001 = "AGENT_001"  # Agent config not found
     AGENT_002 = "AGENT_002"  # Duplicate role identifier

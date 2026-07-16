@@ -28,6 +28,7 @@ class EventBus:
     """Simple pub/sub event bus for decoupling application modules."""
 
     def __init__(self) -> None:
+        """Initialize the event bus."""
         self._handlers: dict[str, list[EventHandler]] = defaultdict(list)
 
     def on(self, event: str, handler: EventHandler) -> EventHandler:

@@ -11,6 +11,8 @@ from virtual_team.base import Base
 
 
 class UserDB(Base):
+    """ORM model for users."""
+
     __tablename__ = "users"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     email: Mapped[str] = mapped_column(
@@ -34,6 +36,8 @@ class UserDB(Base):
     )
 
 class RefreshTokenDB(Base):
+    """ORM model for JWT refresh tokens."""
+
     __tablename__ = "refresh_tokens"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -50,6 +54,8 @@ class RefreshTokenDB(Base):
     replaced_by_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 class RoleDB(Base):
+    """ORM model for RBAC roles."""
+
     __tablename__ = "roles"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)

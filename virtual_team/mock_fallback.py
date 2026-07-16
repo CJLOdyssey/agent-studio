@@ -1,3 +1,5 @@
+"""Mock fallback for agent runs — returns canned responses when LLM is unavailable."""
+
 import asyncio
 import logging
 import os
@@ -10,6 +12,7 @@ ENABLE = os.environ.get("ENABLE_MOCK_FALLBACK", "0") == "1"
 
 
 async def run_mock(requirement: str, run_id: str, session_id: str | None):
+    """Run a mock agent pipeline with canned response messages."""
     emitter = StreamEmitter(run_id)
     messages = [
         f"收到需求：{requirement[:100]}",

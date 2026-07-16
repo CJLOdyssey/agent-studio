@@ -30,6 +30,7 @@ class LogMailer:
     """Development mailer — prints emails to log and stdout."""
 
     async def send(self, to: str, subject: str, html: str) -> None:
+        """Log email details to the console (dev fallback)."""
         code_match = re.search(r"(\d{6})", html)
         code = code_match.group(1) if code_match else "??????"
         logger.info("[EMAIL] To=%s | Subject=%s | Code=%s", to, subject, code)
@@ -46,10 +47,12 @@ class SmtpMailer:
     """Production SMTP mailer — sends real emails."""
 
     async def send(self, to: str, subject: str, html: str) -> None:
+        """Send an email via SMTP (runs blocking call in thread pool)."""
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._send_sync, to, subject, html)
 
     def _send_sync(self, to: str, subject: str, html: str) -> None:
+        """Send email synchronously via SMTP in a thread pool executor."""
         msg = MIMEMultipart("alternative")
         msg["From"] = EMAIL_FROM or SMTP_USER
         msg["To"] = to
@@ -77,10 +80,12 @@ class ResendApiMailer:
     """Resend HTTP API mailer — works with onboarding@resend.dev without a domain."""
 
     async def send(self, to: str, subject: str, html: str) -> None:
+        """Send an email via the Resend HTTP API (runs blocking call in thread pool)."""
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._send_sync, to, subject, html)
 
     def _send_sync(self, to: str, subject: str, html: str) -> None:
+        """Send email synchronously via Resend API in a thread pool."""
         payload = json.dumps({"from": EMAIL_FROM, "to": to, "subject": subject, "html": html}).encode()
         req = Request(
             "https://api.resend.com/emails",
@@ -114,6 +119,7 @@ async def send_email(to: str, subject: str, html: str) -> None:
 
 
 def build_verification_email(code: str, ttl_minutes: int = 5) -> tuple[str, str]:
+    """Build a verification email with a numeric code."""
     subject = f"【AgentStudio】您的验证码是 {code}"
     html = f"""<p>您好，</p>
 <p>您的邮箱验证码为：</p>
@@ -124,6 +130,7 @@ def build_verification_email(code: str, ttl_minutes: int = 5) -> tuple[str, str]
 
 
 def build_reset_email(code: str, ttl_minutes: int = 15) -> tuple[str, str]:
+    """Build a password reset verification email."""
     subject = "【AgentStudio】密码重置验证码"
     html = f"""<p>您好，</p>
 <p>您的密码重置验证码为：</p>
@@ -134,6 +141,7 @@ def build_reset_email(code: str, ttl_minutes: int = 15) -> tuple[str, str]:
 
 
 def build_password_changed_email() -> tuple[str, str]:
+    """Build a password changed confirmation email."""
     subject = "【AgentStudio】您的密码已被修改"
     html = """<p>您好，</p>
 <p>您的账户密码已被修改。</p>

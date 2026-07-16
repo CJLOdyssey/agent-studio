@@ -1,3 +1,5 @@
+"""Team configuration via environment variables and .env file."""
+
 import os
 from pathlib import Path
 
@@ -20,6 +22,8 @@ if _env_file.exists():
 
 
 class TeamConfig(BaseModel):
+    """LLM team configuration with validation via Pydantic."""
+
     model_config = {"extra": "forbid"}
 
     api_key: str = Field(default="", repr=False)
@@ -32,6 +36,7 @@ class TeamConfig(BaseModel):
     max_requirement_length: int = Field(default=2000, ge=1, le=10000)
 
     def __repr__(self) -> str:
+        """Return a safe string representation with masked API key."""
         safe = self.model_dump()
         safe["api_key"] = "***" if self.api_key else "(unset)"
         return f"TeamConfig({safe})"

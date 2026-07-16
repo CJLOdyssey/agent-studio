@@ -1,5 +1,4 @@
-"""
-Enterprise API Key Vault — Fernet-encrypted at-rest key storage.
+"""Enterprise API Key Vault — Fernet-encrypted at-rest key storage.
 
 Keys are encrypted with AES-128-CBC + HMAC-SHA256 (Fernet) before
 touching the database. The master encryption secret is set via the

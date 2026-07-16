@@ -1,3 +1,5 @@
+"""Centralized logging configuration with JSON formatting support."""
+
 import json
 import logging
 import os
@@ -5,6 +7,7 @@ import sys
 
 
 def get_logger(name: str, level: int | None = None) -> logging.Logger:
+    """Get or create a configured logger with optional observability handler."""
     logger = _get_logger(name, level)
     _maybe_attach_obs_handler(logger)
     return logger
@@ -42,7 +45,10 @@ def _get_logger(name: str, level: int | None = None) -> logging.Logger:
 
 
 class JsonFormatter(logging.Formatter):
+    """JSON log formatter for integration with log aggregators (Loki/ELK)."""
+
     def format(self, record: logging.LogRecord) -> str:
+        """Format a log record as a JSON string."""
         try:
             message = record.getMessage()
         except (TypeError, ValueError):
@@ -61,6 +67,7 @@ class JsonFormatter(logging.Formatter):
 
 
 def _text_handler() -> logging.Handler:
+    """Create a human-readable text log handler writing to stdout."""
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(
         logging.Formatter(
