@@ -189,6 +189,18 @@ module = "virtual_team.rag"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.rag_chunking"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rag_store"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rag_pipeline"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.rate_limit"
 ignore_errors = true
 
