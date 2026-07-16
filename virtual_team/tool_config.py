@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from virtual_team._interfaces import ToolDescriptor
 
 from virtual_team.logging_config import get_logger
 
@@ -118,3 +121,50 @@ class _ToolWrapper:
         # 4) LLM fallback
         from virtual_team.tool_handlers import llm_fallback
         return await llm_fallback(self, args)
+
+
+# ── Utilities ──────────────────────────────────────────────────
+
+
+def sanitize_tool_name(name: str) -> str:
+    """DeepSeek requires tool names matching ``^[a-zA-Z0-9_-]+$``."""
+    sanitized = "".join(c for c in name if c.isascii() and (c.isalnum() or c in "_-"))
+    return sanitized or f"tool_{hash(name) & 0xFFFFFFFF}"
+
+
+def build_tool_definition(
+    tc: ToolConfig | ToolDescriptor,
+    llm: Any = None,
+) -> tuple[str, _ToolWrapper, dict]:
+    """Create a ``_ToolWrapper`` and an OpenAI tool-call definition from a ``ToolConfig``.
+
+    Returns ``(api_name, wrapper, definition_dict)``.
+    """
+    api_name = sanitize_tool_name(tc.name)
+    wrapper = _ToolWrapper(
+        name=tc.name,
+        description=tc.description,
+        instructions=tc.instructions,
+        mcp_type=tc.mcp_type,
+        mcp_endpoint=tc.mcp_endpoint,
+        mcp_tool_name=tc.mcp_tool_name,
+        endpoint=tc.endpoint,
+        method=tc.method,
+        headers=tc.headers,
+    )
+    if llm is not None:
+        wrapper.set_llm(llm)
+
+    schema: dict = {"type": "object"}
+    if tc.parameters:
+        if isinstance(tc.parameters, dict):
+            props = tc.parameters.get("properties", {}) or {}
+            schema = tc.parameters if props else {"type": tc.parameters.get("type", "object")}
+        else:
+            schema = tc.parameters
+
+    definition = {
+        "type": "function",
+        "function": {"name": api_name, "description": tc.description, "parameters": schema},
+    }
+    return api_name, wrapper, definition
