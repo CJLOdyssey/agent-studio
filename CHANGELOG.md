@@ -1,33 +1,34 @@
-# 📋 变更日志
+# 变更日志
 
-本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)，并使用 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 格式。
+本项目遵循 [语义化版本](https://semver.org/) 和 [Keep a Changelog](https://keepachangelog.com/) 格式。
 
 ---
 
 ## [未发布]
 
 ### 新增
-- 📋 项目导航系统 (CLAUDE.md)
-- 📊 模块关联图 (docs/module-map.md)
-- 📦 模块索引文件 (index.ts)
-- 📖 项目 README.md
-- 📝 贡献指南 CONTRIBUTING.md
-- 📋 变更日志 CHANGELOG.md
-- 🔧 文档检查脚本 (scripts/check-docs.js)
-- 🔧 文档生成脚本 (scripts/generate-docs.js)
-- 🚀 快速启动指南 QUICKSTART.md（4 种启动方式）
+
+- **可观测性系统**：EventStore (SQLite + 后台批量写入)、全链路 TraceContext (contextvars)、自诊断 health 端点
+- **启动守卫**：进程启动前写 marker，异常崩溃可追溯
+- **预检查脚本**：`scripts/preflight.py` — 启动前验证环境变量/数据库/Redis/磁盘/迁移状态
+- **日志格式安全**：JsonFormatter 捕获 `%` 格式化异常，日志永不导致业务 500
+- **请求体日志修复**：RequestLogMiddleware 不再提前消费请求体，POST/PUT/PATCH 正常解析
 
 ### 变更
-- 🏗️ 优化项目结构文档
-- 🔌 vite 代理目标端口统一：8081 → 8080（vite.config.ts, AGENTS.md）
-- 🗑️ CORS 列表清理：移除了 8081 相关源（app.py）
-- 📝 README.md 全面同步：修正启动命令、项目结构、部署方式、环境变量表、API 端口
+
+- 恢复 18 个 `app.include_router()` 调用，修复全量 API 404
+- `_init_database()` 改为 async，避免 `asyncio.run()` 在 lifespan 中抛异常
+- 3 个 Alembic 迁移兼容 PostgreSQL 严格类型（boolean 字面量、条件 drop）
+- 前端日志：axios 请求/响应拦截器、WebSocket 连接、Store 操作
+- 后端日志：LLM 调用、Celery 任务、WebSocket、认证事件、限流事件
 
 ### 修复
-- 🔍 修复 AI Agent 无法快速定位模块文件的问题
-- 🐳 docker/compose.local.yml 端口映射：5173:5173 → 5173:80
-- 🐛 agent_graph.py 缺少 DEFAULT_TOOLS 列表 → 已补充（calculator / web_search / fetch_page）
-- 🐛 main.py 调用不存在的方法 set_tools() → 改为 bind_tools()
+
+- `request_logger.py` 格式字符串 8 个 `%s` 配 7 个参数 → 500 错误
+- `skills.py` `author` 字段默认值 `None` → `""`，修复 NOT NULL 冲突
+- CI 集成测试：添加 migration 步骤、显式 DATABASE_URL、preflight 检查
+- 迁移 `d3e1f2a3b4c5`：checkpoints 表重命名改为条件执行
+- 迁移 `e4f5a6b7c8d9`：PG boolean 字面量 `false` 替代整数 `0`
 
 ---
 
@@ -35,98 +36,45 @@
 
 ### 新增
 
-#### 🤖 Agent 管理
-- 创建和配置 AI Agent
-- 自定义提示词和输出约束
+#### Agent 管理
+- 创建和配置 AI Agent，自定义提示词和输出约束
 - 绑定工具、MCP、Skills
 - 版本管理和历史对比
 
-#### 📝 提示词管理
-- 创建和编辑提示词
-- 分类和标签管理
-- 导入导出功能
-- 版本历史追踪
+#### 提示词管理
+- 创建和编辑提示词，分类和标签管理
+- 导入导出，版本历史追踪
 
-#### 📋 输出约束
-- 定义输出格式约束
-- 分类管理
-- 复用和模板
+#### 工具链
+- 工具、MCP、Skills 的完整 CRUD
+- 自定义安装和管理
 
-#### 🔧 工具管理
-- 绑定和管理工具
-- 配置工具参数
+#### 工作流引擎
+- 可视化 DAG 编辑器（React Flow）
+- 动态图执行（LangGraph），fan-out/fan-in 并行
+- 实时思考链流式输出
 
-#### 🌐 MCP 管理
-- 配置 MCP 服务器
-- 连接状态监控
+#### 团队协作
+- 团队分组管理
+- 多 Agent 协同工作流
 
-#### ⚡ Skills 管理
-- 安装和管理 Skills
-- 绑定到 Agent
+#### 用户认证
+- JWT Token 鉴权 + RBAC 角色控制
+- 注册/登录/密码重置完整流程
 
-#### 👥 团队管理
-- 创建团队分组
-- 管理团队成员
-
-#### 📊 监控中心
-- 实时监控 Agent 运行
-- 性能指标展示
-
-#### 📜 日志审计
-- 操作日志记录
-- 审计追踪
-
-#### ⚙️ 系统设置
-- 全局配置管理
-- API 密钥管理
-
-#### 🎨 前端
-- React 18.3 + TypeScript 5.6
-- Vite 6.0 构建
-- Tailwind CSS 样式
-- Zustand 状态管理
-- React Query 数据获取
+#### 前端
+- React 18.3 + TypeScript 5.6 + Vite 6
+- Tailwind CSS + Zustand + React Query
 - i18next 国际化
-- Lucide React 图标
 
-#### 🐍 后端
-- FastAPI Web 框架
-- LangGraph AI Agent 编排
-- SQLAlchemy ORM
-- PostgreSQL 数据库
-- Redis 缓存
-
-#### 🛠️ 开发工具
-- ESLint 代码检查
-- Prettier 代码格式化
-- Husky Git hooks
-- Vitest 单元测试
-- Playwright E2E 测试
+#### 后端
+- FastAPI + LangGraph + SQLAlchemy async
+- PostgreSQL + Redis + Celery
 
 ---
 
 ## 版本说明
 
-### 语义化版本
-
-- **主版本号 (MAJOR)**：不兼容的 API 变更
-- **次版本号 (MINOR)**：向下兼容的功能性新增
-- **修订号 (PATCH)**：向下兼容的问题修正
-
-### 版本号规则
-
-- 1.0.0 之前的所有版本均为开发版本
-- 1.0.0 为首个稳定版本
-- 每个版本都会在此文件中记录变更
-
----
-
-## 维护者
-
-- 项目维护团队
-
----
-
-## 贡献
-
-欢迎贡献！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+- **MAJOR**：不兼容的 API 变更
+- **MINOR**：向下兼容的功能新增
+- **PATCH**：向下兼容的问题修正
