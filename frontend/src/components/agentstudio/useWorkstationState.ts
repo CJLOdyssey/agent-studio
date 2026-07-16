@@ -38,10 +38,6 @@ export function useWorkstationState(
   const resetApi = useChatStore((s) => s.reset);
   const cancelRun = useChatStore((s) => s.cancelRun);
   const retryApi = retry;
-  const submitToApi = useChatStore((s) => s.submitRequirement);
-  const resetApi = useChatStore((s) => s.reset);
-  const cancelRun = useChatStore((s) => s.cancelRun);
-  const retryApi = useChatStore((s) => s.retry);
   const loadConversation = useChatStore((s) => s.loadConversation);
   const abandonedRunId = useChatStore((s) => s.lastAbandonedRunId);
 

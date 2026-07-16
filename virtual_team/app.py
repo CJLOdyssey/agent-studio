@@ -97,7 +97,6 @@ app.add_middleware(
 
 # ── Routers ─────────────────────────────────────────────────────────────────
 routers = [auth, runs, run_continue, sessions, agents, agents_test, attachments, commands, models, keys,
-routers = [auth, runs, run_continue, sessions, agents, attachments, commands, models, keys,
            teams, tools, skills, prompts, mcps, admin, providers, versions,
            system_team, workflows]
 for r in routers:
