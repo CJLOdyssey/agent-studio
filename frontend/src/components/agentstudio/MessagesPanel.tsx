@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Agent, Message } from '../../types/agentstudio';
 import TeamMessage from './TeamMessage';
 import { useChatStore } from '../../stores/chatStore';
+import { editMessage, regenerateMessage, continueGeneration } from '../../stores/chatActions';
 
 interface Props {
   showAgentChat: boolean;
@@ -29,10 +30,7 @@ export default function MessagesPanel({
   onDismissWelcome,
 }: Props) {
   const { t } = useTranslation();
-  const editMessage = useChatStore((s) => s.editMessage);
-  const regenerateMessage = useChatStore((s) => s.regenerateMessage);
   const interruptedMessageId = useChatStore((s) => s.interruptedMessageId);
-  const continueGeneration = useChatStore((s) => s.continueGeneration);
   const switchVersion = useChatStore((s) => s.switchVersion);
   const continuingId = useChatStore((s) => s.continuingId);
   const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);

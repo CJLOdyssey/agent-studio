@@ -10,6 +10,7 @@ import { useAgents, useAvailableModels, useCommands } from '../../api/hooks';
 import { executeCommand } from '../../api/client';
 import { useAgentCommands } from '../../hooks/useAgentCommands';
 import { useChatStore } from '../../stores/chatStore';
+import { submitRequirement, retry } from '../../stores/chatActions';
 import { useDragAndDrop } from './useDragAndDrop';
 import Logger from '../../utils/logger';
 
@@ -33,10 +34,10 @@ export function useWorkstationState(
   const apiStatus = useChatStore((s) => s.status);
   const apiError = useChatStore((s) => s.error);
   const wsStatus = useChatStore((s) => s.wsStatus);
-  const submitToApi = useChatStore((s) => s.submitRequirement);
+  const submitToApi = submitRequirement;
   const resetApi = useChatStore((s) => s.reset);
   const cancelRun = useChatStore((s) => s.cancelRun);
-  const retryApi = useChatStore((s) => s.retry);
+  const retryApi = retry;
   const loadConversation = useChatStore((s) => s.loadConversation);
   const abandonedRunId = useChatStore((s) => s.lastAbandonedRunId);
 

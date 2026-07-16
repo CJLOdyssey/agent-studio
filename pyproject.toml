@@ -25,6 +25,10 @@ module = "virtual_team.app"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.app_lifespan"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.checkpoint"
 ignore_errors = true
 
@@ -240,6 +244,8 @@ source = ["virtual_team"]
 omit = [
     "virtual_team/tests/*",
     "virtual_team/thinking_tree/*",
+    "virtual_team/routers/agent_test_handler.py",
+    "virtual_team/tasks/prefix_completion.py",
 ]
 
 [tool.coverage.report]

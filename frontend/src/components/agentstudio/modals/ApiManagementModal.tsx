@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Key, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Server, Globe } from 'lucide-react';
+import { Key, Server, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../../shared/Modal';
-import ToggleSwitch from '../../shared/ToggleSwitch';
 import ProviderEditModal from './ProviderEditModal';
+import ApiProviderTab from './ApiProviderTab';
+import ApiUsageTab from './ApiUsageTab';
+import ModelSelector from './ModelSelector';
 import * as api from '../../../api/client';
 import type { KeyItem } from '../../../api/client';
 import Logger from '../../../utils/logger';
@@ -34,7 +36,6 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // ── Load keys from server vault ──────────────────────────────────────────
   const loadKeys = async () => {
     try {
       setLoading(true);
@@ -76,7 +77,6 @@ export default function ApiManagementModal({ onClose }: Props) {
     };
   }, [keys]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleSaveKey = async (keyData: {
     provider: string;
     usage_type?: string;
@@ -171,7 +171,6 @@ export default function ApiManagementModal({ onClose }: Props) {
     setShowApiKey((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Collect models from all active keys
   const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id })));
 
   const showAddForm = () => {
@@ -190,13 +189,22 @@ export default function ApiManagementModal({ onClose }: Props) {
     });
   };
 
+  const handleModelSelect = (model: string) => {
+    setSelectedModel(model);
+    localStorage.setItem('agentstudio-selected-model', model);
+    window.dispatchEvent(new Event('agentstudio-model-changed'));
+  };
+
+  const TABS = ['providers', 'models', 'usage'] as const;
+  const TAB_ICONS: Record<ApiTab, typeof Server> = { providers: Server, models: Globe, usage: Key };
+
   return (
     <Modal title="API 管理" onClose={onClose} className="api-modal">
       <div className="settings-body">
         <div className="settings-sidebar">
-          {(['providers', 'models', 'usage'] as const).map((tab) => {
-            const icons = { providers: Server, models: Globe, usage: Key };
-            const Icon = icons[tab];
+          {TABS.map((tab) => {
+            const Icon = TAB_ICONS[tab];
+            const label = tab === 'providers' ? t('api.tab_provider') : tab === 'models' ? t('api.tab_model') : t('api.tab_usage');
             return (
               <button
                 key={tab}
@@ -204,184 +212,40 @@ export default function ApiManagementModal({ onClose }: Props) {
                 onClick={() => setActiveTab(tab)}
               >
                 <Icon size={16} />
-                <span>
-                    {tab === 'providers'
-                      ? t('api.tab_provider')
-                      : tab === 'models'
-                        ? t('api.tab_model')
-                        : t('api.tab_usage')}
-                  </span>
+                <span>{label}</span>
               </button>
             );
           })}
         </div>
         <div className="settings-content">
           {activeTab === 'providers' && (
-            <div className="api-providers-tab">
-              <div className="api-section-header">
-                <h4>API Key {t('api.manage')}</h4>
-                <button className="btn btn-sm btn-primary" onClick={showAddForm}>
-                  <Plus size={14} />
-                  添加 Key
-                </button>
-              </div>
-              {error && (
-                <div className="api-error-banner">
-                  <AlertCircle size={16} className="api-error-icon" />
-                  <span className="api-error-text">{error}</span>
-                  <button className="api-error-close" onClick={() => setError(null)}>
-                    ✕
-                  </button>
-                </div>
-              )}
-              <p className="api-hint-row">
-                {t('api.encryptHint')}
-              </p>
-              {/* Usage type filter */}
-              <div className="api-filter-bar">
-                {(['all', 'llm', 'embedding', 'both'] as const).map((type) => (
-                  <button
-                    key={type}
-                    className={`api-filter-btn ${usageTypeFilter === type ? 'active' : ''}`}
-                    onClick={() => setUsageTypeFilter(type)}
-                  >
-                    {type === 'all' ? '全部' : type === 'llm' ? 'LLM' : type === 'embedding' ? t('api.type_embed') : t('api.type_both')}
-                  </button>
-                ))}
-              </div>
-              {loading ? (
-                <div className="api-empty-state">
-                  <Loader2 size={32} className="animate-spin" />
-                  <p>{t('common.loading')}</p>
-                </div>
-              ) : keys.length === 0 ? (
-                <div className="api-empty-state">
-                  <Key size={32} />
-                  <p>
-                    {t('api.noKeys')}
-                    <br />
-                    {t('api.addKeyHint')}
-                  </p>
-                </div>
-              ) : (
-                <div className="api-providers-list">
-                  {keys.filter((k) => usageTypeFilter === 'all' || k.usage_type === usageTypeFilter).map((key) => (
-                    <div key={key.id} className={`api-provider-card ${key.is_active ? 'active' : ''}`}>
-                      <div className="api-provider-header">
-                        <div className="api-provider-info">
-                          <div className="api-provider-name">
-                            {key.label || key.provider}
-                            <span className={`api-type-badge api-type-${key.usage_type || 'llm'}`}>
-                              {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
-                            </span>
-                            {key.is_active && <CheckCircle2 size={14} className="text-green-500" />}
-                            {!key.is_active && <AlertCircle size={14} className="text-red-500" />}
-                          </div>
-                          <div className="api-provider-url">
-                            {key.provider} {key.base_url ? `· ${key.base_url}` : ''}
-                          </div>
-                        </div>
-                        <div className="api-provider-actions">
-                          <ToggleSwitch
-                            checked={key.is_active}
-                            size="sm"
-                            onChange={(v) => handleUpdateKey(key.id, { isActive: v })}
-                          />
-                          <button className="btn btn-sm btn-ghost" onClick={() => setEditingKey(key)}>
-                            编辑
-                          </button>
-                          <button
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => handleTestConnection(key)}
-                            disabled={testingId === key.id}
-                          >
-                            {testingId === key.id ? <Loader2 size={14} className="animate-spin" /> : t('api.test')}
-                          </button>
-                          <button className="btn btn-sm btn-ghost" onClick={() => handleDeleteKey(key.id)}>
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="api-key-row">
-                        <label>Key</label>
-                        <div className="api-key-display">
-                          <code>{key.key_masked}</code>
-                          <button
-                            className="api-key-toggle"
-                            onClick={() => toggleApiKeyVisibility(key.id)}
-                            aria-label="Show full key hint"
-                          >
-                            {showApiKey[key.id] ? '🔒' : '👁'}
-                          </button>
-                        </div>
-                      </div>
-                      {key.last_used_at && (
-                        <div className="api-key-meta">{t('api.lastUsed')}: {new Date(key.last_used_at).toLocaleString()}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ApiProviderTab
+              keys={keys}
+              loading={loading}
+              error={error}
+              usageTypeFilter={usageTypeFilter}
+              testingId={testingId}
+              showApiKey={showApiKey}
+              saving={saving}
+              onFilterChange={setUsageTypeFilter}
+              onAdd={showAddForm}
+              onEdit={setEditingKey}
+              onToggleActive={(id, active) => handleUpdateKey(id, { isActive: active })}
+              onTest={handleTestConnection}
+              onDelete={handleDeleteKey}
+              onToggleVisibility={toggleApiKeyVisibility}
+              onDismissError={() => setError(null)}
+            />
           )}
           {activeTab === 'models' && (
-            <div className="api-models-tab">
-              <div className="api-section-header">
-                <h4>{t('api.defaultModel')}</h4>
-              </div>
-              <p className="api-hint">{t('api.selectModel')}</p>
-              <div className="api-models-list">
-                {allModels.map(({ model }) => (
-                  <label key={model} className="api-model-item">
-                    <input
-                      type="radio"
-                      name="defaultModel"
-                      value={model}
-                      checked={selectedModel === model}
-                      onChange={(e) => {
-                        setSelectedModel(e.target.value);
-                        localStorage.setItem('agentstudio-selected-model', e.target.value);
-                        window.dispatchEvent(new Event('agentstudio-model-changed'));
-                      }}
-                    />
-                    <div className="api-model-info">
-                      <span className="api-model-name">{model}</span>
-                    </div>
-                  </label>
-                ))}
-                {allModels.length === 0 && (
-                  <div className="api-empty-state">
-                    <AlertCircle size={32} />
-                    <p>请先在"提供商"标签页配置至少一个有效的 API Key</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ModelSelector
+              models={allModels}
+              selectedModel={selectedModel}
+              onSelect={handleModelSelect}
+            />
           )}
           {activeTab === 'usage' && (
-            <div className="api-usage-tab">
-              <div className="api-section-header">
-                <h4>{t('api.usageStats')}</h4>
-              </div>
-              <div className="api-usage-cards">
-                <div className="api-usage-card">
-                  <div className="api-usage-value">{usage.today_requests}</div>
-                  <div className="api-usage-label">{t('api.todayRequests')}</div>
-                </div>
-                <div className="api-usage-card">
-                  <div className="api-usage-value">{usage.today_tokens.toLocaleString()}</div>
-                  <div className="api-usage-label">{t('api.todayTokens')}</div>
-                </div>
-                <div className="api-usage-card">
-                  <div className="api-usage-value">{usage.month_requests}</div>
-                  <div className="api-usage-label">{t('api.monthRequests')}</div>
-                </div>
-                <div className="api-usage-card">
-                  <div className="api-usage-value">{usage.month_tokens.toLocaleString()}</div>
-                  <div className="api-usage-label">{t('api.monthTokens')}</div>
-                </div>
-              </div>
-            </div>
+            <ApiUsageTab usage={usage} />
           )}
         </div>
       </div>
