@@ -31,15 +31,13 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
             raise ValueError("CHECKPOINTER_DSN is required for postgres backend")
         logger.info("Creating AsyncPostgresSaver checkpointer")
         try:
-            from langgraph.checkpoint.postgres.aio import (  # type: ignore[import-untyped]
-                AsyncPostgresSaver,
-            )
+            from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
         except ImportError as exc:
             raise ImportError(
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
             ) from exc
 
-        from psycopg import AsyncConnection
+        from psycopg import AsyncConnection  # type: ignore[import-untyped]
         from psycopg.rows import dict_row
 
         conn = await AsyncConnection.connect(
@@ -58,9 +56,7 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
         logger.info("Creating AsyncSqliteSaver checkpointer (dsn=%s)", dsn)
         try:
             import aiosqlite
-            from langgraph.checkpoint.sqlite.aio import (  # type: ignore[import-untyped]
-                AsyncSqliteSaver,
-            )
+            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
         except ImportError as exc:
             raise ImportError(
                 "SQLite checkpointer requires `langgraph-checkpoint-sqlite` extra "

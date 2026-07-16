@@ -43,8 +43,8 @@ class AgentCheckpoint:
     step_index: int
     system_prompt: str = ""
     user_input: str = ""
-    messages: list[dict] = field(default_factory=list)
-    react_steps: list[dict] = field(default_factory=list)
+    messages: list[dict[str, object]] = field(default_factory=list)
+    react_steps: list[dict[str, object]] = field(default_factory=list)
 
     def to_json(self) -> str:
         return json.dumps(
