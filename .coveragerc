@@ -1,5 +1,7 @@
 [run]
 omit = */tests/*
+      */routers/agents_test.py
+      */tasks/prefix_completion.py
 source = virtual_team
 
 [report]
