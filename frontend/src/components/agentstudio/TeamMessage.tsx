@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   Bot,
   Terminal,
@@ -10,8 +8,6 @@ import {
   ChevronUp,
   CheckCircle2,
   Loader2,
-  Copy,
-  Check,
   RotateCcw,
   Sparkles,
   Pencil,
@@ -20,33 +16,9 @@ import {
   ThumbsDown,
 } from 'lucide-react';
 import type { Message, Agent } from '../../types/agentstudio';
-import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
-
-function CopyBtn({ text, label, className }: { text: string; label?: string; className?: string }) {
-  const { copy, isCopied } = useCopyToClipboard();
-  const { t } = useTranslation();
-  const key = text.slice(0, 32);
-  const copied = isCopied(key);
-  return (
-    <button
-      className={`${className || 'agentstudio-msg-copy'}${copied ? ' copied' : ''}`}
-      onClick={() => copy(text, key)}
-      title={copied ? t('teamMessage.copied') : label}
-      aria-label={copied ? t('teamMessage.copied') : label}
-    >
-      {copied ? (
-        <>
-          <Check size={12} />
-          <span className="agentstudio-msg-copy-text">{t('teamMessage.copied')}</span>
-        </>
-      ) : (
-        <Copy size={12} />
-      )}
-    </button>
-  );
-}
+import { CopyBtn, CodeBlock } from './messages';
 
 const TeamMessage = memo(function TeamMessage({
   msg,
@@ -345,32 +317,8 @@ const TeamMessage = memo(function TeamMessage({
                   p({ children, ...props }) {
                     return <p className="ds-markdown-paragraph" {...props}>{children}</p>;
                   },
-                  code({ className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || '');
-                    const codeString = String(children).replace(/\n$/, '');
-                    if (match) {
-                      return (
-                        <div className="ds-code-block">
-                          <div className="ds-code-header">
-                            <span className="ds-code-lang">{match[1]}</span>
-                            <CopyBtn text={codeString} label={t('teamMessage.copy')} className="ds-code-copy" />
-                          </div>
-                          <SyntaxHighlighter
-                            style={oneDark}
-                            language={match[1]}
-                            PreTag="div"
-                            customStyle={{ margin: 0, borderRadius: '0 0 6px 6px' }}
-                          >
-                            {codeString}
-                          </SyntaxHighlighter>
-                        </div>
-                      );
-                    }
-                    return (
-                      <code className="ds-inline-code" {...props}>
-                        {children}
-                      </code>
-                    );
+                  code({ className, children }) {
+                    return <CodeBlock className={className} children={children} t={t} />;
                   },
                 }}
               >
