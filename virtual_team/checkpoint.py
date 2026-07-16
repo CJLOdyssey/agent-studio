@@ -15,7 +15,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from virtual_team.database import Base, get_session_factory
+from virtual_team.base import Base
+from virtual_team.database import get_session_factory
 from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
