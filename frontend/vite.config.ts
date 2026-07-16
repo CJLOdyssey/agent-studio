@@ -79,7 +79,9 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom',
       setupFiles: './src/test/setup.tsx',
-      css: true,
+      css: false,
+      pool: 'forks',
+      poolOptions: { forks: { singleFork: true } },
       testTimeout: 15000,
       hookTimeout: 15000,
       coverage: {
@@ -99,6 +101,7 @@ export default defineConfig(({ mode }) => {
           'src/types/**',
           'src/data/**',
           'src/constants/**',
+          'src/mocks/**',
         ],
       },
     },
