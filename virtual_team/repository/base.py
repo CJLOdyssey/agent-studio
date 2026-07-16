@@ -53,12 +53,15 @@ class BaseRepository:
     # Subclasses can override this to provide a default ORDER BY clause.
     default_order: ClassVar = None
 
+    # Dependency injection: set a different session factory per subclass/tests.
+    session_factory = staticmethod(get_session_factory)
+
     # ── session helpers ────────────────────────────────────────────────────
 
     @classmethod
     def _session_cm(cls):
         """Return an async context manager for a fresh session."""
-        return get_session_factory()()
+        return cls.session_factory()()
 
     # ── CRUD operations (all classmethods) ─────────────────────────────────
 

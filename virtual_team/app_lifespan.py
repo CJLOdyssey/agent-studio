@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from virtual_team.broker import BROKER_URL, REDIS_URL, get_redis
 from virtual_team.config import load_config
 from virtual_team.database import DATABASE_URL, get_session_factory, init_db
+from virtual_team.events import Events, bus
 from virtual_team.logging_config import get_logger
 from virtual_team.observability.startup_guard import mark_started, mark_stopped, record_crash
 
@@ -155,6 +156,13 @@ async def startup(app: FastAPI) -> None:
     startup_log = _startup_report()
     for line in startup_log:
         logger.info("%s", line)
+
+    # Event bus observability — log every event at DEBUG level
+    async def _log_event(event: str, **kw: object) -> None:
+        logger.debug("[EVENT] %s %s", event, kw)
+
+    for ev in (Events.RUN_CREATED, Events.AGENT_CONFIG_CHANGED, Events.KEY_CREATED, Events.KEY_DELETED):
+        bus.on(ev, _log_event)
 
     # Periodic GC
     gc.set_threshold(1000, 10, 10)
