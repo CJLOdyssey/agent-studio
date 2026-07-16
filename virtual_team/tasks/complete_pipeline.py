@@ -1,14 +1,17 @@
 """Raw LLM streaming completion pipeline — used by "继续生成" flow."""
 
 import gc
-import json
 import os
 import tracemalloc
+
+import httpx
 
 from virtual_team.broker import publish_run_message
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import update_run_result, update_run_status
+
+from .prefix_completion import stream_prefix_completion
 
 logger = get_logger(__name__)
 
@@ -35,8 +38,6 @@ async def _complete_pipeline(
         pass
     if not tracemalloc.is_tracing():
         tracemalloc.start(25)
-
-    import httpx
 
     cfg = load_config()
     effective_model = model or cfg.model
@@ -82,56 +83,10 @@ async def _complete_pipeline(
             "max_tokens": 65536,
         }
 
-    full_content = ""
-    thinking_chunks: list[str] = []
     logger.info("[complete] Starting completion for run %s | model=%s", run_id, effective_model)
 
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(300.0, connect=15.0)) as client, \
-                client.stream("POST", url, headers=headers, json=body) as resp:
-                if resp.status_code != 200:
-                    body_text = await resp.aread()
-                    logger.error(
-                        "[complete] LLM %s -> %s: %s",
-                        url,
-                        resp.status_code,
-                        body_text.decode(errors="replace")[:300],
-                    )
-                resp.raise_for_status()
-
-                async for line in resp.aiter_lines():
-                    if not line or not line.startswith("data: "):
-                        continue
-                    data_str = line[6:]
-                    if data_str.strip() == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data_str)
-                    except json.JSONDecodeError:
-                        continue
-
-                    choices = chunk.get("choices", [])
-                    if not choices:
-                        continue
-                    delta = choices[0].get("delta", {})
-
-                    reasoning = delta.get("reasoning_content")
-                    if reasoning:
-                        thinking_chunks.append(reasoning)
-                        await publish_run_message(run_id, {
-                            "type": "thinking_stream",
-                            "agent_name": "Agent",
-                            "content": reasoning,
-                        })
-
-                    token = delta.get("content", "")
-                    if token:
-                        full_content += token
-                        await publish_run_message(run_id, {
-                            "type": "stream",
-                            "agent_name": "Agent",
-                            "content": token,
-                        })
+        full_content, thinking_chunks = await stream_prefix_completion(url, headers, body, run_id)
     except httpx.HTTPStatusError as e:
         logger.error("[complete] HTTP error for run %s: %s", run_id, e, exc_info=True)
         await update_run_status(run_id, "error")
