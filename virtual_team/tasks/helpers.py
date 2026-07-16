@@ -2,7 +2,9 @@
 import asyncio
 import contextlib
 import json
+import os
 import shlex
+import tracemalloc
 from typing import Any
 
 from mcp import StdioServerParameters
@@ -19,6 +21,33 @@ from virtual_team.repository import (
 )
 
 logger = get_logger(__name__)
+
+# ── Shared memory diagnostics ─────────────────────────────────────────────
+_run_counter = 0
+_baseline_snapshot: tracemalloc.Snapshot | None = None
+
+
+def log_memory_diff() -> None:
+    """Log current RSS and optional tracemalloc diff for leak detection."""
+    global _baseline_snapshot
+    try:
+        pid = os.getpid()
+        with open(f"/proc/{pid}/status") as f:
+            rss_kb = int(f.read().split("VmRSS:")[1].split()[0])
+        logger.info("[MEM] run=#%s pid=%s rss=%dKB", _run_counter, pid, rss_kb)
+    except Exception:
+        pass
+    if not tracemalloc.is_tracing():
+        return
+    current = tracemalloc.take_snapshot()
+    if _baseline_snapshot is None:
+        _baseline_snapshot = current
+        return
+    diff = current.compare_to(_baseline_snapshot, "lineno")
+    top = [str(d) for d in diff[:10] if d.size_diff > 0]
+    if top:
+        logger.info("[MEM] top growth:\n%s", "\n".join(top))
+    _baseline_snapshot = current
 
 
 def _run_async(coro):

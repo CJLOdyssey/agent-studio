@@ -1,3 +1,4 @@
+from .agent_pipeline import _run_agent_pipeline
 from .complete_pipeline import _complete_pipeline
 from .helpers import (
     _build_session_context,
@@ -9,8 +10,8 @@ from .helpers import (
     _save_output_memories,
     _try_mock_fallback,
 )
-from .pipeline import _run_agent_pipeline, _run_team_pipeline
 from .registry import complete_agent, run_agent
+from .team_pipeline import _run_team_pipeline
 
 __all__ = [
     "_run_async",

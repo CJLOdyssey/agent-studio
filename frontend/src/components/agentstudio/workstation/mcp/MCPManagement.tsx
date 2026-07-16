@@ -3,7 +3,6 @@ import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Play, Trash2, Server } from 'lucide-react';
 import { useState } from 'react';
 import { useMCPData } from './useMCPData';
-import { useMCPUI } from './useMCPUI';
 import { MCP_STATUS_LABEL } from './mcp.constants';
 import MCPFormModal from './MCPFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -16,8 +15,7 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
 export default function MCPManagement() {
-  const data = useMCPData();
-  const ui = useMCPUI();
+  const d = useMCPData();
   const { toast } = useToast();
   const [testingId, setTestingId] = useState<string | null>(null);
 
@@ -39,33 +37,32 @@ export default function MCPManagement() {
     }
   }
 
-
-  function handleSave() { ui.save(data); if (!ui.formErrors.length) toast(ui.editingItem ? t('mcp.toast_updated') : t('mcp.toast_created'), 'success'); }
-  function handleDelete() { ui.confirmDelete(data); toast(t('mcp.toast_deleted'), 'success'); }
-  function handleBatchDelete() { ui.confirmBatchDelete(data); toast(t('mcp.toast_batch_deleted', String(data.selectedIds.size)), 'success'); }
+  function handleSave() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('mcp.toast_updated') : t('mcp.toast_created'), 'success'); }
+  function handleDelete() { d.handleDelete(); toast(t('mcp.toast_deleted'), 'success'); }
+  function handleBatchDelete() { d.handleBatchDelete(); toast(t('mcp.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
 
   const statusDotClass: Record<string, string> = { connected: 'wsta-badge-dot-green', disconnected: 'wsta-badge-dot-gray', error: 'wsta-badge-dot-red' };
   const dotClass: Record<string, string> = { connected: 'wsta-dot-green', disconnected: 'wsta-dot-gray', error: 'wsta-dot-red' };
 
-  function makeMenuItems(item: typeof data.processed[0]): MenuProps['items'] {
+  function makeMenuItems(item: typeof d.processed[0]): MenuProps['items'] {
     return [
-      { key: 'edit', icon: <Edit3 size={14} />, label: t('mcp.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <Eye size={14} />, label: t('mcp.history'), onClick: () => ui.openHistory(item) },
+      { key: 'edit', icon: <Edit3 size={14} />, label: t('mcp.edit'), onClick: () => d.openEdit(item) },
+      { key: 'view', icon: <Eye size={14} />, label: t('mcp.history'), onClick: () => d.openHistory(item) },
       { key: 'test', icon: <Play size={14} />, label: testingId ? t('mcp.testing') : t('mcp.test'), disabled: testingId === item.id, onClick: () => handleTestMCP(item.id) },
       { type: 'divider' },
-      { key: 'delete', icon: <Trash2 size={14} />, label: t('mcp.delete'), onClick: () => ui.openDelete(item), danger: true },
+      { key: 'delete', icon: <Trash2 size={14} />, label: t('mcp.delete'), onClick: () => d.openDelete(item), danger: true },
     ];
   }
 
-  if (data.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={6} /></div>;
+  if (d.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="wsta-agent-mgmt wsta-error-state" role="alert"><p>{t('mcp.error_render')}</p></div>}>
     <div className="wsta-agent-mgmt" role="region" aria-label={t('mcp.col_name')}>
       <div className="wsta-toolbar" role="toolbar">
         <div className="wsta-toolbar-left">
-          <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('mcp.search_placeholder')} value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
-          <Select style={{ width: 130 }} value={data.statusFilter} onChange={(v) => data.setStatusFilter(v)} options={[
+          <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('mcp.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
+          <Select style={{ width: 130 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             { value: 'connected', label: MCP_STATUS_LABEL.connected },
             { value: 'disconnected', label: MCP_STATUS_LABEL.disconnected },
@@ -73,40 +70,42 @@ export default function MCPManagement() {
           ]} />
         </div>
         <div className="wsta-toolbar-right">
-          {data.selectedIds.size > 0 && <Button danger icon={<Trash2 size={16} />} onClick={ui.openBatchDelete}>{t('mcp.batch_delete', String(data.selectedIds.size))}</Button>}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={ui.openCreate}>{t('mcp.new')}</Button>
+          {d.selectedIds.size > 0 && <Button danger icon={<Trash2 size={16} />} onClick={d.openBatchDelete}>{t('mcp.batch_delete', String(d.selectedIds.size))}</Button>}
+          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>{t('mcp.new')}</Button>
         </div>
       </div>
       <div className="wsta-table-wrap">
-        {data.processed.length === 0 ? (
+        {d.processed.length === 0 ? (
           <div className="wsta-empty-state">
             <Server size={40} className="wsta-empty-state-icon" />
-            <div className="wsta-empty-state-title">{t('mcp.empty_title', data.search ? '' : '')}</div>
-            <div className="wsta-empty-state-desc">{data.search ? t('mcp.empty_desc_search') : t('mcp.empty_desc_general')}</div>
+            <div className="wsta-empty-state-title">{t('mcp.empty_title', d.search ? '' : '')}</div>
+            <div className="wsta-empty-state-desc">{d.search ? t('mcp.empty_desc_search') : t('mcp.empty_desc_general')}</div>
           </div>
         ) : (
         <table className="wsta-table" role="grid" aria-label={t('mcp.col_name')}>
           <thead><tr>
-            <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('mcp.select_all')} /></th>
+            <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={d.allOnPageSelected} onChange={d.toggleSelectAll} aria-label={t('mcp.select_all')} /></th>
             <th scope="col">{t('mcp.col_name')}</th>
-            <th scope="col">{t('mcp.col_address')}</th>
-            <th scope="col">{t('mcp.col_tool_count')}</th>
+            <th scope="col">{t('mcp.col_desc')}</th>
+            <th scope="col">{t('mcp.col_type')}</th>
             <th scope="col">{t('mcp.col_status')}</th>
+            <th scope="col">{t('mcp.col_version')}</th>
             <th className="wsta-col-actions" scope="col">{t('mcp.col_actions')}</th>
           </tr></thead>
           <tbody>
-            {data.paged.map((item) => (
-              <tr key={item.id} className={data.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
-                <td className="wsta-col-checkbox"><input type="checkbox" checked={data.selectedIds.has(item.id)} onChange={() => data.toggleSelect(item.id)} aria-label={t('mcp.select_item', item.name)} /></td>
+            {d.paged.map((item) => (
+              <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
+                <td className="wsta-col-checkbox"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('mcp.select_item', item.name)} /></td>
                 <td><span className="wsta-agent-name">{item.name}</span></td>
-                <td><span className="wsta-mono-text">{item.url || item.command}</span></td>
-                <td><span className="wsta-tag-pill wsta-tag-indigo">{(item.id.charCodeAt(1) % 10) + 1}</span></td>
+                <td><span className="wsta-secondary-text wsta-truncate" title={item.description}>{item.description}</span></td>
+                <td><span className="wsta-tag-pill wsta-tag-cyan">{item.type.toUpperCase()}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />
                     {MCP_STATUS_LABEL[item.status]}
                   </span>
                 </td>
+                <td><span className="wsta-mono-text">{item.version}</span></td>
                 <td className="wsta-col-actions">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="wsta-action-btn"><MoreHorizontal size={14} /></button>
@@ -118,18 +117,16 @@ export default function MCPManagement() {
         </table>
         )}
       </div>
-
       <WstaPagination
-        current={data.page}
-        total={data.processed.length}
+        current={d.page}
+        total={d.processed.length}
         pageSize={5}
-        onChange={(p) => data.setPage(p)}
+        onChange={(p) => d.setPage(p)}
       />
-
-      {ui.isFormOpen && <MCPFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSave} onClose={ui.closeForm} errors={ui.formErrors} />}
-      {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingItem?.name || ''} label="MCP" onConfirm={handleDelete} onClose={ui.closeDelete} />}
-      {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} label="MCP" onConfirm={handleBatchDelete} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historyItem && <VersionHistoryModal title={ui.historyItem.name} resourceType="mcp" resourceId={ui.historyItem.id} onClose={ui.closeHistory} />}
+      {d.isFormOpen && <MCPFormModal editingItem={d.editingItem} formData={d.formData} setFormData={d.setFormData} onSave={handleSave} onClose={d.closeForm} errors={d.formErrors} />}
+      {d.isDeleteOpen && <DeleteConfirmModal name={d.deletingItem?.name || ''} label="MCP" onConfirm={handleDelete} onClose={d.closeDelete} />}
+      {d.isBatchDeleteOpen && <BatchDeleteModal count={d.selectedIds.size} label="MCP" onConfirm={handleBatchDelete} onClose={d.closeBatchDelete} />}
+      {d.isHistoryOpen && d.historyItem && <VersionHistoryModal title={d.historyItem.name} resourceType="mcp" resourceId={d.historyItem.id} onClose={d.closeHistory} />}
     </div>
     </ErrorBoundary>
   );

@@ -2,7 +2,6 @@ import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap } from 'lucide-react';
 import { useSkillData } from './useSkillData';
-import { useSkillUI } from './useSkillUI';
 import { SKILL_CATEGORIES, SKILL_STATUS_LABEL } from './skill.constants';
 import SkillFormModal from './SkillFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -15,62 +14,70 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
 export default function SkillManagement() {
-  const data = useSkillData();
-  const ui = useSkillUI();
+  const d = useSkillData();
   const { toast } = useToast();
 
-  function handleSaveWrapper() { ui.save(data); if (!ui.formErrors.length) toast(ui.editingSkill ? t('skill.toast_updated') : t('skill.toast_created'), 'success'); }
-  function handleDeleteWrapper() { ui.confirmDelete(data); toast(t('skill.toast_deleted'), 'success'); }
-  function handleBatchDeleteWrapper() { ui.confirmBatchDelete(data); toast(t('skill.toast_batch_deleted', String(data.selectedIds.size)), 'success'); }
+  function handleSaveWrapper() {
+    d.handleSave();
+    if (!d.formErrors.length) toast(d.editingItem ? t('skill.toast_updated') : t('skill.toast_created'), 'success');
+  }
+  function handleDeleteWrapper() {
+    d.handleDelete();
+    toast(t('skill.toast_deleted'), 'success');
+  }
+  function handleBatchDeleteWrapper() {
+    d.handleBatchDelete();
+    toast(t('skill.toast_batch_deleted', String(d.selectedIds.size)), 'success');
+  }
 
   const statusDotClass: Record<string, string> = { installed: 'wsta-badge-dot-green', available: 'wsta-badge-dot-gray' };
   const dotClass: Record<string, string> = { installed: 'wsta-dot-green', available: 'wsta-dot-gray' };
 
-  function makeMenuItems(item: typeof data.processed[0]): MenuProps['items'] {
+  function makeMenuItems(item: typeof d.processed[0]): MenuProps['items'] {
     return [
-      { key: 'edit', icon: <Edit3 size={14} />, label: t('skill.edit'), onClick: () => ui.openEdit(item) },
-      { key: 'view', icon: <Eye size={14} />, label: t('skill.history'), onClick: () => ui.openHistory(item) },
+      { key: 'edit', icon: <Edit3 size={14} />, label: t('skill.edit'), onClick: () => d.openEdit(item) },
+      { key: 'view', icon: <Eye size={14} />, label: t('skill.history'), onClick: () => d.openHistory(item) },
       { type: 'divider' },
-      { key: 'delete', icon: <Trash2 size={14} />, label: t('skill.delete'), onClick: () => ui.openDelete(item), danger: true },
+      { key: 'delete', icon: <Trash2 size={14} />, label: t('skill.delete'), onClick: () => d.openDelete(item), danger: true },
     ];
   }
 
-  if (data.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('skill.loading')}><TableSkeleton rows={5} cols={6} /></div>;
+  if (d.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('skill.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="wsta-agent-mgmt wsta-error-state" role="alert"><p>{t('skill.error_render')}</p></div>}>
     <div className="wsta-agent-mgmt" role="region" aria-label={t('skill.col_name')}>
       <div className="wsta-toolbar" role="toolbar" aria-label={t('skill.col_name')}>
         <div className="wsta-toolbar-left">
-          <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('skill.search_placeholder')} value={data.search} onChange={(e) => data.setSearch(e.target.value)} />
-          <Select style={{ width: 140 }} value={data.categoryFilter} onChange={(v) => data.setCategoryFilter(v)} options={[
+          <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('skill.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
+          <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
             { value: 'all', label: t('skill.all_categories') },
             ...SKILL_CATEGORIES.map((c) => ({ value: c, label: c })),
           ]} />
         </div>
         <div className="wsta-toolbar-right">
-          {data.selectedIds.size > 0 && (
-            <Button danger icon={<Trash2 size={16} />} onClick={() => ui.openBatchDelete()}>
-              {t('skill.batch_delete', String(data.selectedIds.size))}
+          {d.selectedIds.size > 0 && (
+            <Button danger icon={<Trash2 size={16} />} onClick={() => d.openBatchDelete()}>
+              {t('skill.batch_delete', String(d.selectedIds.size))}
             </Button>
           )}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={ui.openCreate}>
+          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>
             {t('skill.new')}
           </Button>
         </div>
       </div>
 
       <div className="wsta-table-wrap">
-        {data.processed.length === 0 ? (
+        {d.processed.length === 0 ? (
           <div className="wsta-empty-state">
             <Zap size={40} className="wsta-empty-state-icon" />
-            <div className="wsta-empty-state-title">{t('skill.empty_title', data.search ? '' : '')}</div>
-            <div className="wsta-empty-state-desc">{data.search ? t('skill.empty_desc_search') : t('skill.empty_desc_general')}</div>
+            <div className="wsta-empty-state-title">{t('skill.empty_title', d.search ? '' : '')}</div>
+            <div className="wsta-empty-state-desc">{d.search ? t('skill.empty_desc_search') : t('skill.empty_desc_general')}</div>
           </div>
         ) : (
         <table className="wsta-table" role="grid" aria-label={t('skill.col_name')}>
           <thead><tr>
-            <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={data.allOnPageSelected} onChange={data.toggleSelectAll} aria-label={t('skill.select_all')} /></th>
+            <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={d.allOnPageSelected} onChange={d.toggleSelectAll} aria-label={t('skill.select_all')} /></th>
             <th scope="col">{t('skill.col_name')}</th>
             <th scope="col">{t('skill.col_desc')}</th>
             <th scope="col">{t('skill.col_category')}</th>
@@ -79,9 +86,9 @@ export default function SkillManagement() {
             <th className="wsta-col-actions" scope="col">{t('skill.col_actions')}</th>
           </tr></thead>
           <tbody>
-            {data.paged.map((item) => (
-              <tr key={item.id} className={data.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
-                <td className="wsta-col-checkbox"><input type="checkbox" checked={data.selectedIds.has(item.id)} onChange={() => data.toggleSelect(item.id)} aria-label={t('skill.select_item', item.name)} /></td>
+            {d.paged.map((item) => (
+              <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
+                <td className="wsta-col-checkbox"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('skill.select_item', item.name)} /></td>
                 <td><span className="wsta-agent-name">{item.name}</span></td>
                 <td><span className="wsta-secondary-text wsta-truncate" title={item.description}>{item.description}</span></td>
                 <td><span className="wsta-tag-pill wsta-tag-indigo">{item.category}</span></td>
@@ -105,16 +112,16 @@ export default function SkillManagement() {
       </div>
 
       <WstaPagination
-        current={data.page}
-        total={data.processed.length}
+        current={d.page}
+        total={d.processed.length}
         pageSize={5}
-        onChange={(p) => data.setPage(p)}
+        onChange={(p) => d.setPage(p)}
       />
 
-      {ui.isFormOpen && <SkillFormModal editingSkill={ui.editingSkill} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSaveWrapper} onClose={ui.closeForm} errors={ui.formErrors} />}
-      {ui.isDeleteOpen && <DeleteConfirmModal name={ui.deletingSkill?.name || ''} label="Skill" onConfirm={handleDeleteWrapper} onClose={ui.closeDelete} />}
-      {ui.isBatchDeleteOpen && <BatchDeleteModal count={data.selectedIds.size} label="Skill" onConfirm={handleBatchDeleteWrapper} onClose={ui.closeBatchDelete} />}
-      {ui.isHistoryOpen && ui.historySkill && <VersionHistoryModal title={ui.historySkill.name} resourceType="skill" resourceId={ui.historySkill.id} onClose={ui.closeHistory} />}
+      {d.isFormOpen && <SkillFormModal editingSkill={d.editingItem} formData={d.formData} setFormData={d.setFormData} onSave={handleSaveWrapper} onClose={d.closeForm} errors={d.formErrors} />}
+      {d.isDeleteOpen && <DeleteConfirmModal name={d.deletingItem?.name || ''} label="Skill" onConfirm={handleDeleteWrapper} onClose={d.closeDelete} />}
+      {d.isBatchDeleteOpen && <BatchDeleteModal count={d.selectedIds.size} label="Skill" onConfirm={handleBatchDeleteWrapper} onClose={d.closeBatchDelete} />}
+      {d.isHistoryOpen && d.historyItem && <VersionHistoryModal title={d.historyItem.name} resourceType="skill" resourceId={d.historyItem.id} onClose={d.closeHistory} />}
     </div>
     </ErrorBoundary>
   );

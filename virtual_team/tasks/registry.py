@@ -6,9 +6,9 @@ from virtual_team.broker import celery_app
 from virtual_team.logging_config import get_logger
 from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
 
+from .agent_pipeline import _run_agent_pipeline
 from .complete_pipeline import _complete_pipeline
 from .helpers import _report_run_error, _run_async, _try_mock_fallback
-from .pipeline import _run_agent_pipeline
 
 logger = get_logger(__name__)
 

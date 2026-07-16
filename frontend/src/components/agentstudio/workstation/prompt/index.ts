@@ -2,8 +2,6 @@
 
 export type { PromptEntry, PromptFormData, PromptSortField, CategoryFilter, PromptCategory, PromptData } from './types';
 export { usePromptData } from './usePromptData';
-export { usePromptUI } from './usePromptUI';
-export type { PromptUI } from './usePromptUI';
 export { usePromptImportExport } from './usePromptImportExport';
 export { PROMPT_CATEGORIES, PROMPT_STATUS_LABEL } from './constants';
 export { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from '../../../../mocks/prompt';
