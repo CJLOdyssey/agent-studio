@@ -83,7 +83,7 @@ export default defineConfig(({ mode }) => {
       testTimeout: 15000,
       hookTimeout: 15000,
       coverage: {
-        provider: 'v8',
+        provider: 'istanbul',
         reporter: ['text', 'lcov', 'html'],
         reportsDirectory: './coverage',
         thresholds: {
