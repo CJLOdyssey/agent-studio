@@ -1,5 +1,5 @@
-import type { VersionEntry } from '../types';
-import type { MCPEntry } from './mcp.types';
+import type { VersionEntry } from '../components/agentstudio/workstation/types';
+import type { MCPEntry } from '../components/agentstudio/workstation/mcp/mcp.types';
 
 export const MOCK_MCPS: MCPEntry[] = [
   { id: 'm1', name: '文件系统 MCP', description: '提供本地文件系统读写能力', type: 'stdio', status: 'connected', version: 'v2.1.0', command: 'npx @modelcontextprotocol/server-filesystem', url: '', createdAt: '2026-04-15' },

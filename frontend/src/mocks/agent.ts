@@ -1,5 +1,5 @@
-import type { VersionEntry } from '../types';
-import type { AgentEntry } from './agent.types';
+import type { VersionEntry } from '../components/agentstudio/workstation/types';
+import type { AgentEntry } from '../components/agentstudio/workstation/agent/agent.types';
 
 export const MOCK_AGENTS: AgentEntry[] = [
   { id: '1', name: '前端开发 Agent', description: '负责前端项目的开发与维护', team: '前端团队', teams: ['前端开发团队'], model: 'Claude Sonnet 4', status: 'running', version: 'v2.1.0', systemPromptId: 'agent-prompt-1', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-10' },
