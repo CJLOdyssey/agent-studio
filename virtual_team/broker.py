@@ -85,6 +85,7 @@ def get_redis() -> AsyncRedis:
 
 
 async def close_redis():
+    """Close the Redis connection pool for the current event loop."""
     import asyncio
 
     loop = asyncio.get_running_loop()
@@ -95,6 +96,7 @@ async def close_redis():
 
 
 async def publish_run_message(run_id: str, message: dict):
+    """Publish a message to a run's Redis pub/sub channel."""
     r = get_redis()
     await r.publish(_channel(run_id), json.dumps(message, ensure_ascii=False))
 

@@ -13,7 +13,10 @@ SYSTEM_TEAM_DIR = Path(__file__).parent
 
 
 class AgentManager:
+    """Manages agent lifecycle, config loading, tool/skill discovery."""
+
     def __init__(self, team_config_path: str | None = None):
+        """Initialize agent manager and load team configuration."""
         self.config_path = (
             Path(team_config_path) if team_config_path else SYSTEM_TEAM_DIR / "config.yaml"
         )
@@ -22,6 +25,7 @@ class AgentManager:
         self._load_config()
 
     def _load_config(self):
+        """Load team configuration from YAML file."""
         if self.config_path.exists():
             with open(self.config_path, encoding="utf-8") as f:
                 self.config = yaml.safe_load(f) or {}
@@ -31,12 +35,15 @@ class AgentManager:
             self.config = {"team": {"name": "系统团队"}, "agents": []}
 
     def get_team_info(self) -> dict[str, Any]:
+        """Return team metadata from config."""
         return self.config.get("team", {})
 
     def list_agents(self) -> list[dict[str, Any]]:
+        """List all agent definitions from config."""
         return self.config.get("agents", [])
 
     def get_agent_config(self, agent_id: str) -> dict[str, Any] | None:
+        """Load full configuration for a specific agent."""
         agent_def = next((a for a in self.list_agents() if a.get("id") == agent_id), None)
         if not agent_def:
             return None
@@ -48,6 +55,7 @@ class AgentManager:
         return {}
 
     def get_agent_tools(self, agent_id: str) -> list[dict[str, Any]]:
+        """Discover tool modules for an agent from its tools directory."""
         tools_dir = SYSTEM_TEAM_DIR / agent_id / "tools"
         if not tools_dir.exists():
             return []
@@ -66,6 +74,7 @@ class AgentManager:
         return tools
 
     def get_agent_skills(self, agent_id: str) -> list[dict[str, Any]]:
+        """Discover skill modules for an agent from its skills directory."""
         skills_dir = SYSTEM_TEAM_DIR / agent_id / "skills"
         if not skills_dir.exists():
             return []
@@ -84,6 +93,7 @@ class AgentManager:
         return skills
 
     def get_shared_resources(self) -> dict[str, list[str]]:
+        """List shared resources across tools, skills, and prompts dirs."""
         shared_dir = SYSTEM_TEAM_DIR / "shared"
         if not shared_dir.exists():
             return {}
@@ -98,6 +108,7 @@ class AgentManager:
         return result
 
     def reload(self):
+        """Reload the team configuration from disk."""
         self._load_config()
         logger.info("System team config reloaded")
 
@@ -106,6 +117,7 @@ _manager: AgentManager | None = None
 
 
 def get_system_team_manager() -> AgentManager:
+    """Return the module-level AgentManager singleton."""
     global _manager
     if _manager is None:
         _manager = AgentManager()

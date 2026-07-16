@@ -1,13 +1,13 @@
-"""
-E2E Test: Agent CRUD operations + full config.
-"""
+"""E2E Test: Agent CRUD operations + full config."""
 
 from virtual_team.tests.conftest import Api, _cleanup, _rid
 
 
 class TestAgentCRUD:
-    def test_create_agent_full_config(self, api: Api):
+    """E2E tests for agent create, read, update, and delete operations."""
 
+    def test_create_agent_full_config(self, api: Api):
+        """Create an agent with all optional config fields populated."""
         r = api.post(
             "/api/agents",
             json={
@@ -41,7 +41,7 @@ class TestAgentCRUD:
         _cleanup((aid, "/api/agents"))
 
     def test_create_agent_minimal(self, api: Api):
-
+        """Create an agent with only required fields."""
         r = api.post(
             "/api/agents",
             json={
@@ -56,7 +56,7 @@ class TestAgentCRUD:
         _cleanup((body["id"], "/api/agents"))
 
     def test_update_agent(self, api: Api):
-
+        """Update an agent's name and system prompt."""
         r = api.post(
             "/api/agents",
             json={
@@ -82,7 +82,7 @@ class TestAgentCRUD:
         _cleanup((aid, "/api/agents"))
 
     def test_delete_agent(self, api: Api):
-
+        """Delete an agent and verify status response."""
         r = api.post(
             "/api/agents",
             json={
@@ -98,6 +98,7 @@ class TestAgentCRUD:
         assert r2.json()["status"] == "deleted"
 
     def test_toggle_agent(self, api: Api):
+        """Toggle an agent's active state."""
         r = api.post(
             "/api/agents",
             json={
@@ -115,6 +116,7 @@ class TestAgentCRUD:
         _cleanup((aid, "/api/agents"))
 
     def test_list_agents_full_fields(self, api: Api):
+        """List agents and verify all expected fields are present."""
         r = api.get("/api/agents")
         assert r.status_code == 200
         data = r.json()

@@ -1,11 +1,12 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
+import type { WsStreamEvent, WsThinkingStreamEvent } from './wsEvents';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
-export function handleStreamStart(s: ChatState, msg: any, chunk: string): Partial<ChatState> {
+export function handleStreamStart(s: ChatState, msg: WsStreamEvent, chunk: string): Partial<ChatState> {
   const newId = crypto.randomUUID?.() || uid();
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
@@ -38,7 +39,7 @@ export function handleStreamStart(s: ChatState, msg: any, chunk: string): Partia
   };
 }
 
-export function handleThinkingStreamNew(s: ChatState, msg: any, chunk: string): Partial<ChatState> {
+export function handleThinkingStreamNew(s: ChatState, msg: WsThinkingStreamEvent, chunk: string): Partial<ChatState> {
   const newId = crypto.randomUUID?.() || uid();
   const continuingId = s.continuingId;
   const pending = s.pendingVersions;
@@ -111,7 +112,7 @@ export function handleStreamEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  msg: any,
+  msg: WsStreamEvent,
 ): void {
   const chunk = msg.content || '';
   if (!chunk) return;
@@ -141,7 +142,7 @@ export function handleThinkingStreamEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  msg: any,
+  msg: WsThinkingStreamEvent,
 ): void {
   const chunk = msg.content || '';
   if (!chunk) return;

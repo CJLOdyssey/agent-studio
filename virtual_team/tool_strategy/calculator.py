@@ -1,3 +1,5 @@
+"""Calculator tool strategy — evaluate mathematical expressions."""
+
 from __future__ import annotations
 
 import json

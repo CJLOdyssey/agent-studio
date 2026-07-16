@@ -1,3 +1,5 @@
+"""Agent configuration repository — CRUD for AgentConfigDB."""
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -10,6 +12,7 @@ from virtual_team.database import (
 
 
 async def get_agent_configs() -> list[AgentConfigDB]:
+    """Return all agent configs ordered by display order and creation time."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(AgentConfigDB).order_by(AgentConfigDB.order, AgentConfigDB.created_at)
@@ -18,6 +21,7 @@ async def get_agent_configs() -> list[AgentConfigDB]:
 
 
 async def get_active_agent_configs() -> list[AgentConfigDB]:
+    """Return only active agent configs, sorted by display order and creation time."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -30,6 +34,15 @@ async def get_active_agent_configs() -> list[AgentConfigDB]:
 
 
 async def get_agent_config_by_role(role_identifier: str) -> AgentConfigDB | None:
+    """Look up an agent config by its unique role identifier.
+
+    Args:
+        role_identifier: The role identifier string (e.g., "pm", "frontend").
+
+    Returns:
+        The matching AgentConfigDB or None if not found.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(AgentConfigDB).where(AgentConfigDB.role_identifier == role_identifier)
@@ -38,6 +51,15 @@ async def get_agent_config_by_role(role_identifier: str) -> AgentConfigDB | None
 
 
 async def get_agent_config(agent_id: str) -> AgentConfigDB | None:
+    """Fetch a single agent config by its primary key ID.
+
+    Args:
+        agent_id: The UUID of the agent config.
+
+    Returns:
+        The matching AgentConfigDB or None if not found.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(AgentConfigDB).where(AgentConfigDB.id == agent_id)
@@ -46,6 +68,7 @@ async def get_agent_config(agent_id: str) -> AgentConfigDB | None:
 
 
 async def get_agent_config_count() -> int:
+    """Return the total number of agent configs in the database."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(AgentConfigDB))
@@ -68,6 +91,28 @@ async def create_agent_config(
     temperature: float | None = None,
     owner_id: str | None = None,
 ) -> AgentConfigDB:
+    """Create a new agent configuration record.
+
+    Args:
+        name: Display name for the agent.
+        role_identifier: Unique role key (e.g., "pm", "frontend-engineer").
+        system_prompt: System-level prompt text.
+        output_constraints: Optional constraints on agent output format.
+        tools: Optional JSON-serialized tool configuration.
+        mcp: Optional JSON-serialized MCP server configuration.
+        skills: Optional JSON-serialized skill configuration.
+        order: Display sort order.
+        is_active: Whether the agent is currently active.
+        is_approver: Whether this agent has approval authority.
+        icon: Emoji or icon identifier.
+        model: Override model name for this agent.
+        temperature: Override sampling temperature.
+        owner_id: RBAC owner UUID.
+
+    Returns:
+        The newly created AgentConfigDB instance.
+
+    """
     config = AgentConfigDB(
         id=str(uuid4()),
         name=name,
@@ -110,6 +155,27 @@ async def update_agent_config(
     model: str | None = None,
     temperature: float | None = None,
 ) -> AgentConfigDB | None:
+    """Partial-update an agent config. Only non-None fields are applied.
+
+    Args:
+        id: The UUID of the agent config to update.
+        name: New display name.
+        system_prompt: New system prompt.
+        output_constraints: New output constraints.
+        tools: New tool configuration.
+        mcp: New MCP configuration.
+        skills: New skill configuration.
+        order: New display sort order.
+        is_active: New active state.
+        is_approver: New approver state.
+        icon: New icon.
+        model: New model override.
+        temperature: New temperature override.
+
+    Returns:
+        The updated AgentConfigDB or None if the ID was not found.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         config = await session.get(AgentConfigDB, id)
@@ -146,6 +212,7 @@ async def update_agent_config(
 
 
 async def delete_agent_config(id: str) -> bool:
+    """Delete an agent config by ID. Returns False if not found."""
     factory = get_session_factory()
     async with factory() as session:
         config = await session.get(AgentConfigDB, id)

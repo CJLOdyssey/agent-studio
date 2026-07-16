@@ -1,3 +1,5 @@
+"""Observability subsystem — event storage, tracing, and diagnostics."""
+
 from virtual_team.observability.handler import ObservabilityHandler as ObservabilityHandler
 from virtual_team.observability.router import router as router  # noqa: F401
 from virtual_team.observability.store import EventStore as EventStore

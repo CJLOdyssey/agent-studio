@@ -1,3 +1,5 @@
+"""Node factory — creates callable LangGraph nodes from workflow definitions."""
+
 import contextlib
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -13,6 +15,8 @@ from .strategies import get_strategy
 
 
 class NodeFactory:
+    """Factory that creates callable LangGraph nodes from workflow definitions."""
+
     def __init__(
         self,
         llm: ChatOpenAI,
@@ -20,12 +24,14 @@ class NodeFactory:
         tools: list[Any] | None = None,
         run_id: str = "",
     ):
+        """Initialize the node factory with LLM, prompts, and optional tools."""
         self.llm = llm
         self.agent_prompts = agent_prompts
         self.tools = tools or []
         self.run_id = run_id
 
     def _build_request(self, api_messages: list[dict]) -> tuple[str, dict, dict]:
+        """Build the HTTP request for the LLM streaming API."""
         raw_key = getattr(self.llm, "openai_api_key", "")
         actual_key = raw_key.get_secret_value() if hasattr(raw_key, "get_secret_value") else str(raw_key)
         base = (getattr(self.llm, "openai_api_base", None) or "https://api.deepseek.com").rstrip("/")
@@ -44,6 +50,7 @@ class NodeFactory:
         return url, headers, body
 
     def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict | Awaitable[dict]]:
+        """Create a callable node function for a workflow node."""
         strategy = get_strategy(node)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")
         run_id = self.run_id

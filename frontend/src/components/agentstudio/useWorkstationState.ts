@@ -98,7 +98,7 @@ export function useWorkstationState(
     const el = messagesContainerRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
-  }, [lastMsgLen, lastMsgStream]);
+  }, [lastMsgLen, lastMsgStream, messagesContainerRef]);
 
   useEffect(() => {
     if (apiStatus === 'loading' || apiStatus === 'running') return;
@@ -216,7 +216,7 @@ export function useWorkstationState(
       if (!document.fullscreenElement) await workspaceRef.current.requestFullscreen();
       else await document.exitFullscreen();
     } catch { /* ignore */ }
-  }, []);
+  }, [workspaceRef]);
 
   const handleSaveAgent = useCallback(
     async (agent: Agent) => {

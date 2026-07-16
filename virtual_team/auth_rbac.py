@@ -1,5 +1,4 @@
-"""
-RBAC user types, dependencies, and public-route configuration.
+"""RBAC user types, dependencies, and public-route configuration.
 
 Provides ``CurrentUser``, ``get_current_user``, ``require_role``, ``get_user_id``,
 and constants ``PUBLIC_PATHS`` / ``PUBLIC_PREFIXES``.
@@ -24,6 +23,8 @@ AUTH_MODE = os.environ.get("AUTH_MODE", "legacy")
 
 @dataclass
 class CurrentUser:
+    """Authenticated user context passed through FastAPI dependencies."""
+
     id: str = "admin"
     username: str = "admin"
     email: str = "admin@legacy.local"
@@ -98,8 +99,9 @@ async def get_current_user(request: Request) -> CurrentUser:
 
 
 async def require_role(*names: str):
-    """Dependency factory — requires the current user to have at least one
-    of the named roles. Returns a 403 if none match.
+    """Require the current user to have at least one of the named roles.
+
+    Dependency factory — returns a 403 if none match.
 
     Usage::
 

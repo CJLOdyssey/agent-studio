@@ -1,3 +1,5 @@
+"""API key CRUD repository — encrypt, store, list, and manage user API keys."""
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -101,6 +103,17 @@ async def get_api_keys(user_id: str) -> list[dict]:
 
 
 async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
+    """Fetch a decrypted API key for actual use (not masked).
+
+    Args:
+        key_id: The UUID of the key to retrieve.
+        user_id: The owning user ID.
+
+    Returns:
+        A dict with provider, api_key (plaintext), base_url, and models,
+        or None if the key is not found or inactive.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(UserApiKey).where(
@@ -161,6 +174,10 @@ async def _resolve_key_row(session, user_id: str):
 
 
 async def get_default_api_key(user_id: str) -> dict | None:
+    """Fetch the user's default API key, with anonymous and system-wide fallbacks.
+
+    Falls back chain: user default → anonymous → any active default in system.
+    """
     factory = get_session_factory()
     async with factory() as session:
         row = await _resolve_key_row(session, user_id)
@@ -260,6 +277,7 @@ async def update_api_key(
 
 
 async def delete_api_key(key_id: str, user_id: str) -> bool:
+    """Delete an API key. Returns False if not found or not owned by user."""
     factory = get_session_factory()
     async with factory() as session:
         row = await session.get(UserApiKey, key_id)

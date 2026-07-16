@@ -1,3 +1,5 @@
+"""Web search tool strategy — perform web searches via DuckDuckGo."""
+
 from __future__ import annotations
 
 import json

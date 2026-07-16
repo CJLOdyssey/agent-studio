@@ -25,13 +25,13 @@ export function teamMemberToAgent(a: TeamMember): Agent {
     if (typeof val === 'string') { try { return JSON.parse(val); } catch { return []; } }
     return [];
   };
+  const aUnknown = a as unknown as Record<string, unknown>;
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    id: (a as any).agent_config_id || a.agentConfigId || a.id,
+    id: (aUnknown.agent_config_id as string) || a.agentConfigId || a.id,
     name: a.name,
     role: a.role,
-    systemPrompt: (a as any).system_prompt || a.systemPrompt || undefined,
-    outputConstraints: (a as any).output_constraints || a.outputConstraints || undefined,
+    systemPrompt: (aUnknown.system_prompt as string) || a.systemPrompt || undefined,
+    outputConstraints: (aUnknown.output_constraints as string) || a.outputConstraints || undefined,
     tools: parseJsonArray(a.tools).map((t: { name: string; enabled?: boolean }) => ({ id: t.name, name: t.name, description: '', enabled: t.enabled ?? true })),
     mcp: parseJsonArray(a.mcp).map((m: { name: string; enabled?: boolean }) => ({ id: m.name, name: m.name, description: '', serverUrl: '', enabled: m.enabled ?? true })),
     skills: parseJsonArray(a.skills).map((s: { name: string; enabled?: boolean }) => ({ id: s.name, name: s.name, description: '', enabled: s.enabled ?? true })),

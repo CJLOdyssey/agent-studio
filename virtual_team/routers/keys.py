@@ -1,5 +1,4 @@
-"""
-Enterprise API Key management routes.
+"""Enterprise API Key management routes.
 
 Security invariants:
   - Keys are NEVER returned in plaintext — all responses show masked versions

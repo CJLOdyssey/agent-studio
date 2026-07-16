@@ -1,4 +1,5 @@
 import type { ChatState } from './chatTypes';
+import type { WsEvent } from './wsEvents';
 import { handleStreamEvent, handleThinkingStreamEvent } from './streamHandler';
 import { handleMessageEvent, handleInfoEvent, handleErrorEvent, handleBalanceWarningEvent, handleOpenUrlEvent } from './messageHandler';
 import { handleThinkingDoneEvent, handleResultEvent, handleTeamResultEvent, handleThumbsEvent } from './resultHandler';
@@ -10,7 +11,7 @@ const _activeStreamMsgIds = new Set<string>();
 
 export function createStreamHandler(set: SetFn, get: GetFn) {
   return (data: unknown) => {
-    const msg = data as any;
+    const msg = data as WsEvent;
 
     if (msg.type === 'stream') {
       handleStreamEvent(set, get, _activeStreamMsgIds, msg);

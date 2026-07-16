@@ -12,6 +12,7 @@ class PromptRepository(BaseRepository):
 
     @staticmethod
     def to_dict(obj) -> dict:
+        """Serialize a PromptDB row to a JSON-safe dict."""
         return {
             "id": obj.id,
             "name": obj.name,

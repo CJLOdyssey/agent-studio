@@ -1,3 +1,5 @@
+"""Debug API router for observability events, traces, errors, and health checks."""
+
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
@@ -17,6 +19,7 @@ async def list_events(
     seconds: int = Query(300),
     limit: int = Query(50),
 ):
+    """List observability events with optional filters."""
     store = get_store()
     if trace_id:
         data = store.by_trace(trace_id, limit)
@@ -37,21 +40,25 @@ async def list_events(
 
 @router.get("/trace/{trace_id}")
 async def trace_detail(trace_id: str):
+    """Analyze a single trace by ID."""
     return analyze_trace(trace_id)
 
 
 @router.get("/errors")
 async def errors(seconds: int = Query(300)):
+    """List recent error reports."""
     return {"reports": recent_errors_report(seconds)}
 
 
 @router.get("/stats")
 async def stats(seconds: int = Query(300)):
+    """Return event counts grouped by level."""
     return get_store().stats(seconds)
 
 
 @router.get("/health")
 async def observability_health():
+    """Health check including self-check and startup guard status."""
     store = get_store()
     try:
         count = store._query("SELECT COUNT(*) as cnt FROM events")[0]["cnt"]

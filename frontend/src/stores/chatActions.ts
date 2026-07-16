@@ -67,9 +67,10 @@ export async function submitRequirement(
     const returnedSessionId = resp.session_id || effectiveSessionId || null;
     useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
     connectRun(run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
-  } catch (err: any) {
+  } catch (err: unknown) {
     Logger.error('[chat] submitRequirement failed:', err);
-    useChatStore.setState({ status: 'error', error: err?.message || String(err) });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    useChatStore.setState({ status: 'error', error: errMsg });
   }
 }
 
@@ -110,9 +111,10 @@ export async function retry() {
     const resp = await submitRequirementExternal(lastUserMsg.content, s.currentSessionId ?? undefined);
     useChatStore.setState({ currentRunId: resp.run_id, currentSessionId: resp.session_id || s.currentSessionId || null, status: 'running', wsStatus: 'connecting' });
     connectRun(resp.run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
-  } catch (err: any) {
+  } catch (err: unknown) {
     Logger.error('[chat] retry failed:', err);
-    useChatStore.setState({ status: 'error', error: err?.message || String(err) });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    useChatStore.setState({ status: 'error', error: errMsg });
   }
 }
 
@@ -143,8 +145,9 @@ export async function continueGeneration() {
     const returnedSessionId = resp.session_id || s.currentSessionId || null;
     useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
     connectRun(run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
-  } catch (err: any) {
+  } catch (err: unknown) {
     Logger.error('[chat] continueGeneration failed:', err);
-    useChatStore.setState({ status: 'error', error: err?.message || String(err) });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    useChatStore.setState({ status: 'error', error: errMsg });
   }
 }

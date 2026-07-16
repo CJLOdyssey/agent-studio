@@ -1,3 +1,5 @@
+"""Single-agent pipeline — tool discovery, RAG context, and graph execution."""
+
 # ruff: noqa: E402 — imports after tracemalloc setup are intentional
 import contextlib
 import gc

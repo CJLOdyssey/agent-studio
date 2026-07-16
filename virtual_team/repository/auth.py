@@ -1,3 +1,5 @@
+"""Authentication repository — user lookup, credential management, and token rotation."""
+
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -15,6 +17,7 @@ from virtual_team.database import (
 
 
 async def get_user_by_email(email: str) -> UserDB | None:
+    """Look up a user by their email address."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(UserDB).where(UserDB.email == email))
@@ -22,12 +25,14 @@ async def get_user_by_email(email: str) -> UserDB | None:
 
 
 async def get_user_by_id(user_id: str) -> UserDB | None:
+    """Look up a user by their primary key ID."""
     factory = get_session_factory()
     async with factory() as session:
         return await session.get(UserDB, user_id)
 
 
 async def get_user_by_username(username: str) -> UserDB | None:
+    """Look up a user by their username."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(UserDB).where(UserDB.username == username))
@@ -40,6 +45,18 @@ async def create_user(
     username: str | None = None,
     is_verified: bool = False,
 ) -> UserDB:
+    """Create a new user with an optional "member" role assignment.
+
+    Args:
+        email: User's email address.
+        password_hash: Pre-hashed password string.
+        username: Display name (defaults to email prefix).
+        is_verified: Whether the email has been verified.
+
+    Returns:
+        The newly created UserDB instance.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         user = UserDB(
@@ -65,6 +82,7 @@ async def create_user(
 
 
 async def mark_user_verified(user_id: str) -> None:
+    """Set a user's verified flag to True."""
     factory = get_session_factory()
     async with factory() as session:
         user = await session.get(UserDB, user_id)
@@ -74,6 +92,7 @@ async def mark_user_verified(user_id: str) -> None:
 
 
 async def update_password(user_id: str, new_hash: str) -> None:
+    """Update a user's password hash and reset login counters."""
     factory = get_session_factory()
     async with factory() as session:
         user = await session.get(UserDB, user_id)
@@ -85,6 +104,12 @@ async def update_password(user_id: str, new_hash: str) -> None:
 
 
 async def increment_failed_logins(email: str) -> int:
+    """Increment failed login counter for an email; lock after 5 failures.
+
+    Returns:
+        The new failed-attempt count.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(UserDB).where(UserDB.email == email))
@@ -100,6 +125,7 @@ async def increment_failed_logins(email: str) -> int:
 
 
 async def reset_failed_logins(email: str) -> None:
+    """Reset failed login counter and unlock a user account."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(UserDB).where(UserDB.email == email))
@@ -111,6 +137,7 @@ async def reset_failed_logins(email: str) -> None:
 
 
 async def get_user_roles(user_id: str) -> list[str]:
+    """Return the list of role names assigned to a user."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -134,6 +161,17 @@ def _generate_refresh_token() -> str:
 
 
 async def create_refresh_token(user_id: str, family_id: str | None = None, ttl_days: int = 7) -> tuple[str, str]:
+    """Generate and store a new refresh token for a user.
+
+    Args:
+        user_id: The user to associate the token with.
+        family_id: Token family for rotation (auto-generated if None).
+        ttl_days: Number of days until the token expires.
+
+    Returns:
+        A tuple of (plain_token, token_hash).
+
+    """
     token = _generate_refresh_token()
     token_hash = _hash_token(token)
     family_id = family_id or str(uuid4())
@@ -198,6 +236,7 @@ async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
 
 
 async def revoke_all_user_tokens(user_id: str) -> None:
+    """Revoke all active refresh tokens for a user."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(
@@ -213,6 +252,7 @@ async def revoke_all_user_tokens(user_id: str) -> None:
 
 
 async def revoke_token_family(family_id: str) -> None:
+    """Revoke every token belonging to a token family (rotating refresh)."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(

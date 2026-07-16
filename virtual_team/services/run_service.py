@@ -2,7 +2,8 @@
 
 Decouples HTTP routing (routers/runs.py) from run orchestration logic
 (tasks/*, repository/*, broker.py).  Routers become thin HTTP adapters;
-RunService holds the business process."""
+RunService holds the business process.
+"""
 # ▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲
 from __future__ import annotations
 

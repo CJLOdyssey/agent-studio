@@ -1,5 +1,4 @@
-"""
-JWT authentication middleware for FastAPI.
+"""JWT authentication middleware for FastAPI.
 
 Re-export hub — imports and re-exports everything from:
   - auth_jwt.py (JWT primitives)

@@ -1,3 +1,5 @@
+"""Pydantic data models shared across the application."""
+
 from datetime import UTC, datetime
 from enum import StrEnum
 from uuid import uuid4
@@ -6,12 +8,15 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class Role(StrEnum):
+    """Agent roles for team-based conversations."""
+
     PM = "pm"
     PROGRAMMER = "programmer"
     TESTER = "tester"
 
     @property
     def display_name(self) -> str:
+        """Chinese display name for the role."""
         mapping = {
             Role.PM: "产品经理",
             Role.PROGRAMMER: "资深程序员",
@@ -21,6 +26,8 @@ class Role(StrEnum):
 
 
 class AgentConfig(BaseModel):
+    """Agent configuration — name, model, temperature, prompts."""
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = Field(..., min_length=1, max_length=64)
     role_identifier: str = Field(..., min_length=1, max_length=32, pattern=r"^[a-z_]+$")
@@ -35,6 +42,8 @@ class AgentConfig(BaseModel):
 
 
 class Message(BaseModel):
+    """A chat message with role, content, and optional thinking."""
+
     role: str  # Now a string (role_identifier), not enum
     content: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -43,6 +52,7 @@ class Message(BaseModel):
     @field_validator("content")
     @classmethod
     def content_not_empty(cls, v: str) -> str:
+        """Validate that content is not empty."""
         stripped = v.strip()
         if not stripped:
             raise ValueError("content must not be empty")
@@ -50,6 +60,8 @@ class Message(BaseModel):
 
 
 class ConversationStatus(StrEnum):
+    """Possible states for a team conversation."""
+
     IN_PROGRESS = "in_progress"
     CONVERGED = "converged"
     MAX_ROUNDS_REACHED = "max_rounds_reached"
@@ -57,11 +69,15 @@ class ConversationStatus(StrEnum):
 
 
 class ConversationRound(BaseModel):
+    """A single round in a team conversation with its messages."""
+
     round_number: int = Field(ge=1)
     messages: list[Message] = Field(min_length=1)
 
 
 class MemoryEntryItem(BaseModel):
+    """A memory entry stored for session context retrieval."""
+
     id: str
     agent_role: str
     content_type: str = Field(..., pattern=r"^(pm_document|code|review|decision)$")
@@ -71,6 +87,8 @@ class MemoryEntryItem(BaseModel):
 
 
 class SessionItem(BaseModel):
+    """Summary view of a session (list view)."""
+
     id: str
     title: str
     created_at: datetime
@@ -78,10 +96,14 @@ class SessionItem(BaseModel):
 
 
 class SessionDetail(SessionItem):
+    """Detailed session view including runs."""
+
     runs: list = Field(default_factory=list)
 
 
 class AttachmentResponse(BaseModel):
+    """Attachment metadata returned from the API."""
+
     id: str
     session_id: str
     run_id: str | None = None
@@ -93,6 +115,8 @@ class AttachmentResponse(BaseModel):
 
 
 class CommandResponse(BaseModel):
+    """Registered command definition returned to the frontend."""
+
     id: str
     name: str
     description: str
@@ -103,18 +127,24 @@ class CommandResponse(BaseModel):
 
 
 class CommandExecuteRequest(BaseModel):
+    """Request to execute a registered command."""
+
     command_id: str
     session_id: str
     payload: dict = Field(default_factory=dict)
 
 
 class CommandExecuteResponse(BaseModel):
+    """Response from executing a command."""
+
     success: bool
     message: str = ""
     data: dict = Field(default_factory=dict)
 
 
 class TeamOutput(BaseModel):
+    """Output from a team agent run — documents, code, review, and status."""
+
     requirement: str = Field(min_length=1)
     pm_document: str
     code: str
@@ -125,6 +155,8 @@ class TeamOutput(BaseModel):
 
 
 class SessionSummary(BaseModel):
+    """Lightweight session summary for list views."""
+
     id: str
     title: str
     run_count: int = 0
@@ -133,6 +165,8 @@ class SessionSummary(BaseModel):
 
 
 class RunSummary(BaseModel):
+    """Lightweight run summary for session detail views."""
+
     id: str
     session_id: str | None = None
     requirement: str
@@ -146,6 +180,8 @@ class RunSummary(BaseModel):
 
 
 class MessageItem(BaseModel):
+    """A chat message item returned from the API."""
+
     id: str
     role: str
     agent_name: str
@@ -156,10 +192,14 @@ class MessageItem(BaseModel):
 
 
 class RunDetail(RunSummary):
+    """Detailed run view including messages."""
+
     messages: list[MessageItem] = Field(default_factory=list)
 
 
 class MemoryItem(BaseModel):
+    """A memory entry returned from the API."""
+
     id: str
     agent_role: str
     content_type: str
@@ -169,6 +209,8 @@ class MemoryItem(BaseModel):
 
 
 class SessionDetailResponse(BaseModel):
+    """Full session detail response including runs and memories."""
+
     id: str
     title: str
     created_at: str | None = None

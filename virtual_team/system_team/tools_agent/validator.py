@@ -1,3 +1,5 @@
+"""Tool code validator — checks generated code for quality and completeness."""
+
 from typing import Any
 
 from virtual_team.logging_config import get_logger
@@ -6,7 +8,10 @@ logger = get_logger(__name__)
 
 
 class ToolValidator:
+    """Validates generated tool code for structural issues."""
+
     def validate(self, code: str, language: str = "python") -> dict[str, Any]:
+        """Validate generated code and return suggestions for improvement."""
         suggestions = []
 
         if language == "python":
@@ -22,6 +27,7 @@ class ToolValidator:
         }
 
     def _validate_python(self, code: str) -> list[str]:
+        """Check Python code for missing definitions, imports, and error handling."""
         suggestions = []
 
         if "def " not in code:
@@ -39,6 +45,7 @@ class ToolValidator:
         return suggestions
 
     def _validate_javascript(self, code: str) -> list[str]:
+        """Check JavaScript code for missing definitions and error handling."""
         suggestions = []
 
         if "function " not in code and "=>" not in code:

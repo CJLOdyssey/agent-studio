@@ -44,7 +44,7 @@ export function useConversation() {
           needsPersist = true;
         }
         const msgTimes = conv.messages
-          .map((m: any) => (m.created_at ? new Date(m.created_at).getTime() : null))
+          .map((m: { created_at?: string }) => (m.created_at ? new Date(m.created_at).getTime() : null))
           .filter((t: number | null): t is number => t !== null);
         if (msgTimes.length > 0) {
           const lastMsgTime = Math.max(...msgTimes);

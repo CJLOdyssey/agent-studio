@@ -1,5 +1,4 @@
-"""
-Checkpoint persistence recovery tests.
+"""Checkpoint persistence recovery tests.
 
 Validates that LangGraph checkpoints survive process restarts,
 cross-process access, error rollback, and optional PostgreSQL backend.
@@ -86,7 +85,7 @@ async def checkpointer_sqlite(checkpoint_db_path):
 
 @pytest.fixture
 async def checkpointer_sqlite_fresh(checkpoint_db_path):
-    """A second AsyncSqliteSaver instance against the *same* DB file."""
+    """Create a fresh AsyncSqliteSaver instance against the same DB file."""
     from virtual_team.checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()

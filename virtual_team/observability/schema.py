@@ -8,6 +8,7 @@ from typing import Any
 @dataclass
 class Event:
     """A single observability event — log, span, or error."""
+
     trace_id: str
     level: str
     message: str
@@ -22,6 +23,7 @@ class Event:
     event_type: str = "log"  # log | span | error
 
     def to_row(self) -> dict:
+        """Serialize this event into a dict for SQLite insertion."""
         return {
             "timestamp": self.timestamp,
             "trace_id": self.trace_id,

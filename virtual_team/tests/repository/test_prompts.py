@@ -1,6 +1,4 @@
-"""
-Repository tests for Prompt CRUD operations.
-"""
+"""Repository tests for Prompt CRUD operations."""
 
 import uuid
 

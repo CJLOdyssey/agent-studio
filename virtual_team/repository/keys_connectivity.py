@@ -1,3 +1,5 @@
+"""API key connectivity testing — verifying live keys against provider endpoints."""
+
 import asyncio
 import json
 
@@ -17,7 +19,7 @@ async def test_api_key_connection(key_id: str, user_id: str) -> dict:
 
 
 def _test_connection_sync(key_cfg: dict) -> dict:
-    """Synchronous HTTP connectivity test — runs in thread pool executor."""
+    """Test API key connectivity synchronously via HTTP in a thread pool."""
     import urllib.request
 
     try:

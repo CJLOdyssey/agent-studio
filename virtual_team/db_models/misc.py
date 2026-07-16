@@ -31,6 +31,7 @@ class CommandLogDB(Base):
 
 class AuditLogDB(Base):
     """Admin audit log — records management CRUD operations (no session FK)."""
+
     __tablename__ = "audit_logs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))

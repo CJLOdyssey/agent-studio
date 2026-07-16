@@ -46,6 +46,7 @@ class SingleAgentGraph:
         max_tokens: int = 65536,
         checkpointer: BaseCheckpointSaver | None = None,
     ):
+        """Initialize the ReAct agent graph with LLM and checkpointer."""
         self.model = model
         self.api_key = api_key
         self.base_url = base_url
@@ -252,10 +253,11 @@ class SingleAgentGraph:
     # ── Public API ─────────────────────────────────────────────
 
     def set_stream_callback(self, cb: Callable) -> None:
+        """Set the callback for streaming events."""
         self._stream_cb = cb
 
     def bind_tools(self, tools: Sequence[ToolDescriptor | ToolConfig]) -> None:
-        """Bind tools to the graph — translates ToolConfig into tool definitions."""
+        """Register tool definitions and executors with the graph."""
         for tc in tools:
             api_name, wrapper, definition = build_tool_definition(tc, llm=self.llm)
             self._tool_map[api_name] = wrapper
@@ -263,9 +265,11 @@ class SingleAgentGraph:
 
     @property
     def graph(self) -> CompiledStateGraph:
+        """Return the compiled LangGraph state graph."""
         return self._graph
 
     def with_config(self, **kwargs: Any) -> SingleAgentGraph:
+        """Return self (config passthrough for interface compatibility)."""
         return self
 
     async def run(
@@ -277,6 +281,7 @@ class SingleAgentGraph:
         thread_id: str = "",
         run_id: str = "",
     ) -> dict:
+        """Run the agent graph with the given requirement and return results."""
         config = cast(
             "RunnableConfig",
             {
@@ -303,7 +308,7 @@ class SingleAgentGraph:
         }
 
     async def arun(self, message: str, system_prompt: str = "", session_context: str = "") -> str:
-        """Convenience: run one turn synchronously."""
+        """Run one turn synchronously and return the response text."""
         config = cast("RunnableConfig", {"configurable": {"thread_id": str(id(self))}, "recursion_limit": 25})
         result = await self._graph.ainvoke(
             {

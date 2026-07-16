@@ -1,3 +1,5 @@
+"""Workflow configuration repository — CRUD for DAG workflow configs, nodes, and edges."""
+
 from uuid import uuid4
 
 from sqlalchemy import delete, select
@@ -39,6 +41,12 @@ def _edge_to_domain(db_edge: WorkflowEdgeDB) -> WorkflowEdge:
 
 
 async def get_workflow_config_by_team(team_id: str) -> WorkflowConfig | None:
+    """Fetch the workflow config for a team with its nodes and edges eagerly loaded.
+
+    Returns:
+        The domain-level WorkflowConfig, or None if no config exists for the team.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -72,6 +80,12 @@ async def get_workflow_config_by_team(team_id: str) -> WorkflowConfig | None:
 
 
 async def save_workflow_config(config: WorkflowConfig) -> WorkflowConfig:
+    """Upsert a workflow config: replaces existing nodes/edges or creates a new config.
+
+    Returns:
+        The saved WorkflowConfig with its ID populated.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         async with session.begin():
@@ -135,6 +149,7 @@ async def save_workflow_config(config: WorkflowConfig) -> WorkflowConfig:
 
 
 async def delete_workflow_config(config_id: str) -> bool:
+    """Delete a workflow config by ID. Returns False if not found."""
     factory = get_session_factory()
     async with factory() as session:
         async with session.begin():
@@ -146,6 +161,7 @@ async def delete_workflow_config(config_id: str) -> bool:
 
 
 async def list_workflow_configs() -> list[WorkflowConfig]:
+    """Return all workflow configs with their nodes and edges eagerly loaded."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (

@@ -1,5 +1,4 @@
-"""
-Generic CRUD base for simple entity repositories.
+"""Generic CRUD base for simple entity repositories.
 
 Usage
 -----

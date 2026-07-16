@@ -1,3 +1,5 @@
+"""Celery task pipelines — single-agent, team, and continuation runs."""
+
 from .agent_pipeline import _run_agent_pipeline
 from .complete_pipeline import _complete_pipeline
 from .helpers import (

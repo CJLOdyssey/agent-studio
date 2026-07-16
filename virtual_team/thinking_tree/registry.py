@@ -66,6 +66,7 @@ class ToolRegistry:
             description: What this plugin does
             config_schema: JSON Schema for frontend config form
             priority: Higher = tried first in fallback chain
+
         """
         self.register(tool_name, handler, priority=priority)
         existing = self._plugin_infos.get(tool_name)

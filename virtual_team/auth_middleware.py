@@ -1,6 +1,4 @@
-"""
-FastAPI middleware that validates JWT tokens on protected routes.
-"""
+"""FastAPI middleware that validates JWT tokens on protected routes."""
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -16,6 +14,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware that validates JWT tokens on protected routes."""
 
     async def dispatch(self, request: Request, call_next):
+        """Validate JWT tokens on incoming requests."""
         # Skip auth for public paths
         path = request.url.path
         if path in PUBLIC_PATHS or path.startswith(PUBLIC_PREFIXES):

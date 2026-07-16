@@ -1,3 +1,5 @@
+"""Weather tool strategy — fetch weather forecasts for a city."""
+
 from __future__ import annotations
 
 import json

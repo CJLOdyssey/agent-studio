@@ -1,3 +1,5 @@
+"""Workflow router — resolves next nodes based on edge conditions."""
+
 from langgraph.graph import END
 
 from .models import WorkflowEdge, WorkflowState
