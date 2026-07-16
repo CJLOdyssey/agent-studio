@@ -11,132 +11,45 @@
  * Returns unified data + UI state + action handlers.
  */
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { SortDir } from '../types';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { PAGE_SIZE } from '../constants';
+import type { CrudAPI, GenericCrudConfig, GenericCrudReturn } from './useGenericCrud.types';
 
-// ── Generic types ────────────────────────────────────────────────
+export type { CrudAPI, GenericCrudConfig, GenericCrudReturn };
 
-/** Minimal CRUD service interface — must be adapted per module. */
-export interface CrudAPI<T, F> {
-  fetchAll(): Promise<T[]>;
-  create(data: F): Promise<T>;
-  update(id: string, data: Partial<T>): Promise<void>;
-  remove(id: string): Promise<void>;
-  clone?(item: T): Promise<T>;
-  removeBatch?(ids: Set<string>): Promise<void>;
-}
+// ── Hook ─────────────────────────────────────────────────────────
 
-export interface GenericCrudConfig<T, F> {
-  api: CrudAPI<T, F>;
-  emptyForm: F;
-  itemName: string;
-  validate?: (data: F, items: T[], editingId?: string) => string[];
-  /** Sort field keys relevant for this entity (clickable column headers). */
-  sortFields?: (keyof T)[];
-  /** Extra filter keys that reset page on change. E.g. { categoryFilter: 'all', statusFilter: 'all' } */
-  extraFilters?: Record<string, string>;
-}
-
-// ── Return type ──────────────────────────────────────────────────
-
-export interface GenericCrudReturn<T, F> {
-  /* Data */
-  items: T[];
-  isLoading: boolean;
-  error: string | null;
-  processed: T[];
-  paged: T[];
-  page: number;
-  totalPages: number;
-  search: string;
-  sortField: keyof T | null;
-  sortDir: SortDir;
-  selectedIds: Set<string>;
-  allOnPageSelected: boolean;
-  extraFilterValues: Record<string, string>;
-
-  /* UI */
-  editingItem: T | null;
-  deletingItem: T | null;
-  historyItem: T | null;
-  formData: F;
-  formErrors: string[];
-  isFormOpen: boolean;
-  isDeleteOpen: boolean;
-  isBatchDeleteOpen: boolean;
-  isHistoryOpen: boolean;
-  openMenuId: string | null;
-  menuAnchorEl: HTMLElement | null;
-
-  /* Setters */
-  setSearch(v: string): void;
-  setPage(v: number): void;
-  setSelectedIds(v: Set<string> | ((prev: Set<string>) => Set<string>)): void;
-  setOpenMenuId(v: string | null): void;
-  setMenuAnchorEl(v: HTMLElement | null): void;
-  setFormData(v: F | ((prev: F) => F)): void;
-  setExtraFilter(key: string, value: string): void;
-  handleSort(field: keyof T): void;
-  toggleSelectAll(): void;
-  toggleSelect(id: string): void;
-
-  /* CRUD handlers */
-  createItem(data: F): Promise<void>;
-  updateItem(id: string, data: Partial<T>): Promise<void>;
-  removeItem(id: string): Promise<void>;
-  cloneItem(item: T): Promise<void>;
-  removeMultipleItems(ids: Set<string>): Promise<void>;
-
-  /* UI handlers */
-  openCreate(): void;
-  openEdit(item: T): void;
-  openDelete(item: T): void;
-  openHistory(item: T): void;
-  openBatchDelete(): void;
-  handleSave(): void;
-  handleDelete(): void;
-  handleBatchDelete(): void;
-  closeForm(): void;
-  closeDelete(): void;
-  closeBatchDelete(): void;
-  closeHistory(): void;
-  closeMenu(): void;
-  clearError(): void;
-  retry(): void;
-  /** Directly append items to local state (no API call). Used by import flows. */
-  batchAdd(newItems: T[]): void;
-}
-
-// ── Implementation ───────────────────────────────────────────────
-
-export function useGenericCrud<T extends { id: string }, F extends Record<string, unknown>>(
+export function useGenericCrud<T extends { id: string }, F>(
   config: GenericCrudConfig<T, F>,
 ): GenericCrudReturn<T, F> {
-  const { api, emptyForm, itemName, validate, sortFields, extraFilters: extraFilterDefaults } = config;
+  const { api, emptyForm, validate, sortFields, extraFilters } = config;
+  const itemName = config.itemName;
 
-  // ── Data state ────────────────────────────────────────────────
+  // ── Data state ─────────────────────────────────────────────────
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<keyof T | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const [extraFilterValues, setExtraFilterValues] = useState<Record<string, string>>(
-    () => extraFilterDefaults ?? {},
+  // ── Search / sort / filter state ───────────────────────────────
+  const [search, setSearch_] = useState('');
+  const [sortField, setSortField] = useState<keyof T | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [extraFilterValues, setExtraFilterValues_] = useState<Record<string, string>>(
+    () => ({ ...extraFilters }),
   );
 
-  const cancelledRef = useRef(false);
+  // ── Pagination state ───────────────────────────────────────────
+  const [page, setPage_] = useState(1);
 
-  // ── UI state ──────────────────────────────────────────────────
-  const [formData, setFormData_] = useState<F>(emptyForm);
-  const [formErrors, setFormErrors] = useState<string[]>([]);
+  // ── Selection state ────────────────────────────────────────────
+  const [selectedIds, setSelectedIds_] = useState<Set<string>>(new Set());
+
+  // ── Form / modal state ─────────────────────────────────────────
   const [editingItem, setEditingItem] = useState<T | null>(null);
   const [deletingItem, setDeletingItem] = useState<T | null>(null);
   const [historyItem, setHistoryItem] = useState<T | null>(null);
+  const [formData_, setFormData_] = useState<F>(emptyForm);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false);
@@ -144,59 +57,47 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
-  // ── Fetch ─────────────────────────────────────────────────────
+  // ── Data fetching ──────────────────────────────────────────────
   const fetchItems = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    cancelledRef.current = false;
-    api
-      .fetchAll()
-      .then((data) => {
-        if (!cancelledRef.current) setItems(data);
-      })
-      .catch((e: Error) => {
-        if (!cancelledRef.current) setError(`加载${itemName}失败：${e.message}`);
-      })
-      .finally(() => {
-        if (!cancelledRef.current) setIsLoading(false);
-      });
-    return () => {
-      cancelledRef.current = true;
-    };
+    api.fetchAll().then(setItems).catch((e: Error) => {
+      setError(e.message || `Failed to load ${itemName}s`);
+    }).finally(() => setIsLoading(false));
   }, [api, itemName]);
 
-  const retry = useCallback(() => fetchItems(), [fetchItems]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+
   const clearError = useCallback(() => setError(null), []);
+  const retry = useCallback(() => fetchItems(), [fetchItems]);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    const c = fetchItems();
-    return c;
-  }, [fetchItems]);
+  // Wrappers that also reset page / selection when filter changes
+  const resetPagination = useCallback(() => { setPage_(1); setSelectedIds_(new Set()); }, []);
 
-  // Reset page when filters change
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPage(1);
-    setSelectedIds(new Set());
-  }, [search, sortField, sortDir, extraFilterValues]);
+  const setSearch = useCallback((v: string) => { setSearch_(v); resetPagination(); }, [resetPagination]);
+  const setPage = useCallback((v: number) => { setPage_(v); }, []);
+  const setSelectedIds = useCallback((v: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    setSelectedIds_(v);
+  }, []);
 
-  // ── Processing + Pagination ───────────────────────────────────
+  // ── Data processing (memoized) ─────────────────────────────────
   const processed = useMemo(() => {
-    let result = [...items];
+    let result = items;
 
-    // Apply extra filters
-    for (const [key, value] of Object.entries(extraFilterValues)) {
-      if (value === 'all') continue;
-      // Try to match by key name convention: e.g. categoryFilter -> item.category
-      const field = key.replace(/Filter$/i, '').toLowerCase();
-      result = result.filter((item) => {
-        const itemVal = (item as unknown as Record<string, unknown>)[field];
-        return String(itemVal) === value;
-      });
+    // Extra filters
+    if (extraFilterValues && extraFilters) {
+      for (const key of Object.keys(extraFilters)) {
+        const val = extraFilterValues[key];
+        if (val && val !== 'all') {
+          result = result.filter((item) =>
+            String((item as unknown as Record<string, unknown>)[key] ?? '') === val,
+          );
+        }
+      }
     }
 
-    // Search (fuzzy on name + description)
+    // Search
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -219,7 +120,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
     }
 
     return result;
-  }, [items, search, sortField, sortDir, extraFilterValues]);
+  }, [items, search, sortField, sortDir, extraFilterValues, extraFilters]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -236,13 +137,13 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   // ── Selection handlers ────────────────────────────────────────
   const toggleSelectAll = useCallback(() => {
     if (allOnPageSelected) {
-      setSelectedIds((prev) => {
+      setSelectedIds_((prev) => {
         const next = new Set(prev);
         paged.forEach((item) => next.delete(item.id));
         return next;
       });
     } else {
-      setSelectedIds((prev) => {
+      setSelectedIds_((prev) => {
         const next = new Set(prev);
         paged.forEach((item) => next.add(item.id));
         return next;
@@ -251,7 +152,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   }, [allOnPageSelected, paged]);
 
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
+    setSelectedIds_((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -259,7 +160,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
     });
   }, []);
 
-  // ── Sort handler ──────────────────────────────────────────────
+  // ── Sort handler (resets pagination) ──────────────────────────
   const handleSort = useCallback(
     (field: keyof T) => {
       if (sortFields && !sortFields.includes(field)) return;
@@ -270,20 +171,23 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
         }
         return field;
       });
+      resetPagination();
     },
-    [sortFields],
+    [sortFields, resetPagination],
   );
 
-  // ── Extra filter handler ──────────────────────────────────────
+  // ── Extra filter handler (resets pagination) ──────────────────
   const setExtraFilter = useCallback((key: string, value: string) => {
-    setExtraFilterValues((prev) => ({ ...prev, [key]: value }));
-  }, []);
+    setExtraFilterValues_((prev) => ({ ...prev, [key]: value }));
+    resetPagination();
+  }, [resetPagination]);
 
-  // ── CRUD handlers ─────────────────────────────────────────────
+  // ── Mutations ─────────────────────────────────────────────────
   const createItem = useCallback(
     async (data: F) => {
-      await api.create(data);
+      const created = await api.create(data);
       await fetchItems();
+      return created;
     },
     [api, fetchItems],
   );
@@ -309,7 +213,6 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
       if (api.clone) {
         await api.clone(item);
       } else {
-        // Default: create with same data (minus id + createdAt)
         const { id: _id, createdAt: _createdAt, ...rest } = item as unknown as Record<string, unknown>;
         await api.create(rest as unknown as F);
       }
@@ -344,7 +247,6 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
 
   const openEdit = useCallback((item: T) => {
     setEditingItem(item);
-    // Populate form with current item values
     const { id: _id, createdAt: _createdAt, ...itemData } = item as unknown as Record<string, unknown>;
     setFormData_(itemData as unknown as F);
     setFormErrors([]);
@@ -391,11 +293,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
 
   // Click-outside for dropdown menu
   useEffect(() => {
-    if (!openMenuId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMenuAnchorEl(null);
-      return;
-    }
+    if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) {
         setOpenMenuId(null);
@@ -408,16 +306,16 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
 
   // ── Save / Delete / Batch Delete orchestration ────────────────
   const handleSave = useCallback(() => {
-    const errors = validate ? validate(formData, items, editingItem?.id) : [];
+    const errors = validate ? validate(formData_, items, editingItem?.id) : [];
     setFormErrors(errors);
     if (errors.length > 0) return;
     const action = editingItem
-      ? updateItem(editingItem.id, formData as unknown as Partial<T>)
-      : createItem(formData);
+      ? updateItem(editingItem.id, formData_ as unknown as Partial<T>)
+      : createItem(formData_);
     action.then(() => {
       setIsFormOpen(false);
     });
-  }, [validate, formData, items, editingItem, updateItem, createItem]);
+  }, [validate, formData_, items, editingItem, updateItem, createItem]);
 
   const handleDelete = useCallback(() => {
     if (!deletingItem) return;
@@ -430,7 +328,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   const handleBatchDelete = useCallback(() => {
     removeMultipleItems(selectedIds).then(() => {
       setIsBatchDeleteOpen(false);
-      setSelectedIds(new Set());
+      setSelectedIds_(new Set());
     });
   }, [selectedIds, removeMultipleItems]);
 
@@ -458,7 +356,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
     editingItem,
     deletingItem,
     historyItem,
-    formData,
+    formData: formData_,
     formErrors,
     isFormOpen,
     isDeleteOpen,

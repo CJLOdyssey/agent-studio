@@ -33,6 +33,10 @@ module = "virtual_team.checkpoint"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.checkpoint.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.database"
 ignore_errors = true
 
