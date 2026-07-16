@@ -125,6 +125,10 @@ module = "virtual_team.tool_config"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.tool_handlers"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.tool_strategy"
 ignore_errors = true
 
@@ -162,6 +166,18 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "virtual_team.auth"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.auth_jwt"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.auth_rbac"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.auth_middleware"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
