@@ -1,5 +1,4 @@
 # ruff: noqa: E402 — imports after tracemalloc setup are intentional
-import asyncio
 import contextlib
 import gc
 import json
@@ -33,6 +32,7 @@ from .helpers import (
     _save_output_memories,
     log_memory_diff,
 )
+from .mcp_executor import exec_stdio_mcp
 
 logger = get_logger(__name__)
 
@@ -206,30 +206,9 @@ async def _run_agent_pipeline(
                         )
                     )
 
-    # Dynamically import MCP session modules only when needed
-    if any(t.method == "MCP" for t in tool_configs):
-        from mcp import StdioServerParameters
-        from mcp.client.session import ClientSession
-        from mcp.client.stdio import stdio_client
-
-        async def _exec_stdio_mcp(tc: ToolConfig, args: str) -> str:
-            params = StdioServerParameters(command=tc.endpoint)
-            try:
-                async with asyncio.timeout(60):
-                    async with stdio_client(params) as (read, write):
-                        async with ClientSession(read, write) as session:
-                            await session.initialize()
-                            result = await session.call_tool(tc.name, {"args": args})
-                            if result.isError:
-                                return f"[MCP Error] {result.content[0].text if result.content else 'unknown'}"
-                            return result.content[0].text if result.content else ""
-            except TimeoutError:
-                return f"[MCP Timeout] {tc.name}"
-
-        for tc in tool_configs:
-            if tc.method == "MCP":
-                # Replace the endpoint with the dynamic executor
-                tc.endpoint = _exec_stdio_mcp.__name__
+    for tc in tool_configs:
+        if tc.method == "MCP":
+            tc.endpoint = exec_stdio_mcp.__name__
 
     graph.bind_tools(tool_configs)
 
@@ -280,7 +259,7 @@ async def _run_agent_pipeline(
             try:
                 from virtual_team.rag import ingest_session_messages
 
-                await ingest_session_messages(session_id, requirement)
+                await ingest_session_messages(session_id, run_id, [{"content": requirement}])
             except Exception:
                 logger.warning("RAG ingest failed for session %s", session_id)
 
@@ -289,13 +268,15 @@ async def _run_agent_pipeline(
     output_tokens = result.get("output_tokens", 0) or 0
     model_used = result.get("model", effective_model)
     try:
+        provider = model_used.split("/")[0] if "/" in model_used else "deepseek"
         await log_key_usage(
-            api_key=effective_api_key or "",
-            model=model_used,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            run_id=run_id,
+            key_id=effective_api_key,
             user_id=user_id,
+            run_id=run_id,
+            provider=provider,
+            model=model_used,
+            tokens_prompt=input_tokens,
+            tokens_completion=output_tokens,
         )
     except Exception:
         logger.warning("Failed to log key usage for run %s", run_id)
