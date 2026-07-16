@@ -1,3 +1,5 @@
+"""Skill generator — creates skill definitions from natural language descriptions."""
+
 import hashlib
 from pathlib import Path
 from typing import Any
@@ -11,13 +13,17 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
 class SkillGenerator:
+    """Generates skill definitions from descriptions and categories."""
+
     def __init__(self):
+        """Set up skills and templates directories."""
         self.skills_dir = SKILLS_DIR
         self.templates_dir = TEMPLATES_DIR
         self.skills_dir.mkdir(exist_ok=True)
         self.templates_dir.mkdir(exist_ok=True)
 
     def generate(self, description: str, category: str = "general") -> dict[str, Any]:
+        """Generate a skill definition matching the given description and category."""
         skill_id = f"skill_{hashlib.md5(description.encode()).hexdigest()[:8]}"
 
         if any(kw in description.lower() for kw in ["代码审查", "code review"]):
@@ -34,6 +40,7 @@ class SkillGenerator:
         return self._create_custom_skill(skill_id, description, category)
 
     def _create_code_review_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+        """Create a code-review skill definition."""
         content = """---
 name: code-review-standard
 description: 专业代码审查能力，检查安全漏洞、性能问题、命名规范
@@ -71,6 +78,7 @@ metadata:
         }
 
     def _create_security_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+        """Create a security-audit skill definition."""
         content = """---
 name: security-audit
 description: 安全审计能力，检查代码中的安全漏洞和风险
@@ -106,6 +114,7 @@ metadata:
         }
 
     def _create_api_design_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+        """Create an API design guidelines skill definition."""
         content = """---
 name: api-design-guidelines
 description: API 设计规范，遵循 RESTful 最佳实践
@@ -141,6 +150,7 @@ metadata:
         }
 
     def _create_testing_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+        """Create a testing-standards skill definition."""
         content = """---
 name: testing-standards
 description: 测试规范，覆盖单元测试、集成测试、E2E 测试
@@ -174,6 +184,7 @@ metadata:
         }
 
     def _create_performance_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+        """Create a performance-optimization skill definition."""
         content = """---
 name: performance-optimization
 description: 性能优化规范，识别和解决性能瓶颈
@@ -210,6 +221,7 @@ metadata:
     def _create_custom_skill(
         self, skill_id: str, description: str, category: str
     ) -> dict[str, Any]:
+        """Create a generic skill from description and category."""
         skill_name = description.replace(" ", "-").lower()[:30]
         content = f"""---
 name: {skill_name}
@@ -246,12 +258,14 @@ metadata:
         }
 
     def save_skill(self, skill_data: dict[str, Any]) -> Path:
+        """Write skill content to a markdown file and return its path."""
         skill_file = self.skills_dir / f"{skill_data['name']}.md"
         skill_file.write_text(skill_data["content"], encoding="utf-8")
         logger.info("Saved skill to %s", skill_file)
         return skill_file
 
     def list_skills(self) -> list[dict[str, str]]:
+        """List all skills in the skills directory."""
         skills = []
         for md_file in self.skills_dir.glob("*.md"):
             if md_file.name.startswith("_"):
