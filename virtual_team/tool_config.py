@@ -78,8 +78,9 @@ class _ToolWrapper:
     # ── Dispatch ────────────────────────────────────────────────
 
     def _resolve_handler(self) -> str | None:
-        """Resolve handler by tool config fields (no hardcoded tool names).
-        Returns a discriminator string: 'mcp', 'http', or 'skill'.  None = no match.
+        """Resolve handler discriminator from tool config fields.
+
+        Returns 'mcp', 'http', 'skill', or None if no match.
         """
         if self.mcp_type or self.mcp_endpoint:
             return "mcp"

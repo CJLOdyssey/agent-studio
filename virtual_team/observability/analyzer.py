@@ -1,3 +1,5 @@
+"""Observability trace and error analysis utilities."""
+
 from typing import Any
 
 from virtual_team.observability.store import get_store
@@ -16,6 +18,7 @@ _KNOWN_ERRORS: dict[str, str] = {
 
 
 def analyze_error(error_type: str) -> str | None:
+    """Return a suggestion string for known error types, or None."""
     for key, suggestion in _KNOWN_ERRORS.items():
         if key in error_type:
             return suggestion
@@ -23,6 +26,7 @@ def analyze_error(error_type: str) -> str | None:
 
 
 def analyze_trace(trace_id: str) -> dict[str, Any]:
+    """Analyze a trace by its ID, returning errors, slow spans, and suggestions."""
     store = get_store()
     events = store.by_trace(trace_id)
     if not events:
@@ -66,6 +70,7 @@ def analyze_trace(trace_id: str) -> dict[str, Any]:
 
 
 def recent_errors_report(seconds: int = 300) -> list[dict]:
+    """Generate an error report for recent traces within the time window."""
     store = get_store()
     traces = store.error_trace_ids(seconds=seconds)
     results = []

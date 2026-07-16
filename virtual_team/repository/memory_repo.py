@@ -1,3 +1,5 @@
+"""Memory entry repository — CRUD for session-scoped agent memory entries."""
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -7,6 +9,7 @@ from virtual_team.database import MemoryEntry, get_session_factory
 
 
 async def get_session_memories(session_id: str) -> list[MemoryEntry]:
+    """Return all memory entries for a session, ordered by creation time."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -26,6 +29,20 @@ async def create_memory_entry(
     summary: str,
     details: str = "",
 ) -> MemoryEntry:
+    """Persist a new agent memory entry.
+
+    Args:
+        session_id: The parent session UUID.
+        run_id: The parent run UUID.
+        agent_role: The agent role that produced this memory.
+        content_type: Category label (e.g., "decision", "context").
+        summary: Short summary of the memory.
+        details: Optional detailed content.
+
+    Returns:
+        The newly created MemoryEntry instance.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         obj = MemoryEntry(
@@ -45,6 +62,7 @@ async def create_memory_entry(
 
 
 async def clear_session_memories(session_id: str):
+    """Delete all memory entries belonging to a session."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(MemoryEntry).where(MemoryEntry.session_id == session_id)
@@ -55,6 +73,7 @@ async def clear_session_memories(session_id: str):
 
 
 async def delete_memory_entry(memory_id: str) -> bool:
+    """Delete a single memory entry by ID. Returns False if not found."""
     factory = get_session_factory()
     async with factory() as session:
         obj = await session.get(MemoryEntry, memory_id)

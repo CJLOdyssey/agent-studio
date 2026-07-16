@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
 
 class TeamDB(Base):
+    """ORM model for agent teams."""
+
     __tablename__ = "teams"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -47,6 +49,8 @@ class TeamDB(Base):
     )
 
 class TeamAgentDB(Base):
+    """ORM model linking agents to teams."""
+
     __tablename__ = "team_agents"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -70,6 +74,8 @@ class TeamAgentDB(Base):
     agent_config: Mapped["AgentConfigDB | None"] = relationship()
 
 class AgentConfigDB(Base):
+    """ORM model for agent configurations."""
+
     __tablename__ = "agent_configs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)

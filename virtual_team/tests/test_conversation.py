@@ -1,3 +1,5 @@
+"""Tests for agent pipeline and stream emitter."""
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -5,6 +7,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_run_agent_pipeline_importable():
+    """Verify agent pipeline and run_agent are importable."""
     from virtual_team.tasks import _run_agent_pipeline, run_agent
 
     assert _run_agent_pipeline is not None
@@ -13,6 +16,7 @@ async def test_run_agent_pipeline_importable():
 
 @pytest.mark.asyncio
 async def test_stream_emitter_buffers_chunks():
+    """Verify StreamEmitter buffers streaming chunks before publishing."""
     from virtual_team.streaming import StreamEmitter
 
     with (
@@ -34,6 +38,7 @@ async def test_stream_emitter_buffers_chunks():
 
 @pytest.mark.asyncio
 async def test_stream_emitter_tool_events():
+    """Verify StreamEmitter saves tool start events."""
     from virtual_team.streaming import StreamEmitter
 
     with (
@@ -47,6 +52,7 @@ async def test_stream_emitter_tool_events():
 
 
 def test_run_status_valid_states():
+    """Verify run status valid/invalid states."""
     valid_states = {"pending", "running", "converged", "error", "max_rounds_reached"}
     assert "converged" in valid_states
     assert "invalid" not in valid_states

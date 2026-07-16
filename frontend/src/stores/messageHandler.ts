@@ -1,10 +1,11 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
+import type { WsMessageEvent, WsInfoEvent, WsErrorEvent, WsBalanceWarningEvent, WsOpenUrlEvent } from './wsEvents';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
 
-export function handleMessageEvent(set: SetFn, msg: any): void {
+export function handleMessageEvent(set: SetFn, msg: WsMessageEvent): void {
   set((s) => {
     if (s.streamingId) {
       return {
@@ -41,7 +42,7 @@ export function handleMessageEvent(set: SetFn, msg: any): void {
   });
 }
 
-export function handleInfoEvent(set: SetFn, msg: any): void {
+export function handleInfoEvent(set: SetFn, msg: WsInfoEvent): void {
   set((s) => {
     const infoContent = msg.content || typeof msg.data === 'string' ? msg.data : '';
     if (s.streamingId) {
@@ -57,17 +58,17 @@ export function handleInfoEvent(set: SetFn, msg: any): void {
   });
 }
 
-export function handleErrorEvent(set: SetFn, msg: any): void {
+export function handleErrorEvent(set: SetFn, msg: WsErrorEvent): void {
   Logger.error('[chat] error event:', msg.content);
-  set((_s) => ({ status: 'error' as any as ChatState['status'], error: msg.content || 'Unknown error', wsStatus: 'connected' as ChatState['wsStatus'] }));
+  set((_s) => ({ status: 'error' as ChatState['status'], error: msg.content || 'Unknown error', wsStatus: 'connected' as ChatState['wsStatus'] }));
 }
 
-export function handleBalanceWarningEvent(set: SetFn, msg: any): void {
+export function handleBalanceWarningEvent(set: SetFn, msg: WsBalanceWarningEvent): void {
   Logger.error('[chat] balance warning:', msg.content);
-  set((_s) => ({ status: 'error' as any as ChatState['status'], error: msg.content || '模型余额不足', wsStatus: 'connected' as ChatState['wsStatus'] }));
+  set((_s) => ({ status: 'error' as ChatState['status'], error: msg.content || '模型余额不足', wsStatus: 'connected' as ChatState['wsStatus'] }));
 }
 
-export function handleOpenUrlEvent(msg: any): void {
+export function handleOpenUrlEvent(msg: WsOpenUrlEvent): void {
   const targetUrl: string = msg.url || '';
   if (targetUrl) {
     Logger.info('[chat] open_url: %s', targetUrl);

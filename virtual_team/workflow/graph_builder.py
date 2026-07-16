@@ -1,3 +1,5 @@
+"""Workflow graph builder — constructs LangGraph StateGraph from config."""
+
 from typing import Any
 
 from langgraph.graph import END, StateGraph

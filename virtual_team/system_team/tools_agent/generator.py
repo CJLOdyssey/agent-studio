@@ -1,3 +1,5 @@
+"""Tool generator — creates tool code from natural language descriptions."""
+
 import hashlib
 from pathlib import Path
 from typing import Any
@@ -11,11 +13,15 @@ TOOLS_DIR = Path(__file__).parent / "tools"
 
 
 class ToolGenerator:
+    """Generates tool code from descriptions, with optional LLM enhancement."""
+
     def __init__(self):
+        """Set up tools output directory."""
         self.tools_dir = TOOLS_DIR
         self.tools_dir.mkdir(exist_ok=True)
 
     def generate(self, description: str, language: str = "python") -> dict[str, Any]:
+        """Generate a tool from description. Uses templates by default."""
         tool_id = f"tool_{hashlib.md5(description.encode()).hexdigest()[:8]}"
 
         if language == "python":
@@ -23,6 +29,7 @@ class ToolGenerator:
         return self._generate_javascript(tool_id, description)
 
     async def generate_with_llm(self, description: str, language: str = "python") -> dict[str, Any]:
+        """Generate a tool using LLM if available, falling back to templates."""
         tool_id = f"tool_{hashlib.md5(description.encode()).hexdigest()[:8]}"
 
         if llm_client.is_available():
@@ -45,12 +52,14 @@ class ToolGenerator:
         return self.generate(description, language)
 
     def _extract_function_name(self, code: str) -> str | None:
+        """Extract the first function name from generated code."""
         import re
 
         match = re.search(r"def\s+(\w+)\s*\(", code)
         return match.group(1) if match else None
 
     def _generate_python(self, tool_id: str, description: str) -> dict[str, Any]:
+        """Dispatch to a specific Python tool template based on description keywords."""
         desc_lower = description.lower()
 
         if any(kw in desc_lower for kw in ["天气", "weather"]):
@@ -63,9 +72,11 @@ class ToolGenerator:
         return self._create_custom_tool(tool_id, description)
 
     def _generate_javascript(self, tool_id: str, description: str) -> dict[str, Any]:
+        """Generate a JavaScript tool from description."""
         return self._create_custom_tool(tool_id, description, language="javascript")
 
     def _create_weather_tool(self, tool_id: str, description: str) -> dict[str, Any]:
+        """Create a weather-query tool definition."""
         code = """import requests
 from typing import Dict, Any
 
@@ -94,6 +105,7 @@ def get_weather(city: str) -> Dict[str, Any]:
         }
 
     def _create_file_tool(self, tool_id: str, description: str) -> dict[str, Any]:
+        """Create a file-reader tool definition."""
         code = """import os
 
 def read_file(file_path: str, encoding: str = "utf-8") -> str:
@@ -116,6 +128,7 @@ def read_file(file_path: str, encoding: str = "utf-8") -> str:
         }
 
     def _create_http_tool(self, tool_id: str, description: str) -> dict[str, Any]:
+        """Create an HTTP-request tool definition."""
         code = """import requests
 from typing import Dict, Any
 
@@ -143,6 +156,7 @@ def http_request(url: str, method: str = "GET", headers: Dict = None) -> Dict[st
     def _create_custom_tool(
         self, tool_id: str, description: str, language: str = "python"
     ) -> dict[str, Any]:
+        """Create a generic custom tool from description."""
         name = description.replace(" ", "_").lower()[:30]
         code = f'''from typing import Any
 
@@ -164,12 +178,14 @@ def {name}(input_data: Any = None) -> Any:
         }
 
     def save_tool(self, tool_data: dict[str, Any]) -> Path:
+        """Write generated tool code to a file and return its path."""
         tool_file = self.tools_dir / f"{tool_data['name']}.py"
         tool_file.write_text(tool_data["code"], encoding="utf-8")
         logger.info("Saved tool to %s", tool_file)
         return tool_file
 
     def list_tools(self) -> list[dict[str, str]]:
+        """List all generated tools in the tools directory."""
         tools = []
         for py_file in self.tools_dir.glob("*.py"):
             if py_file.name.startswith("_"):

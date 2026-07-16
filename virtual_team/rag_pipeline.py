@@ -1,5 +1,4 @@
-"""
-RAG pipeline: analysis → chunking → embedding → vector store → retrieval.
+"""RAG pipeline: analysis → chunking → embedding → vector store → retrieval.
 
 Steps 8-15 of the single-agent template:
   8.  Analyze & preprocess session content
@@ -42,8 +41,7 @@ async def ingest_session_messages(
     run_id: str,
     messages: list[dict],
 ):
-    """
-    Steps 8-11: Ingest conversation messages into pgvector.
+    """Steps 8-11: Ingest conversation messages into pgvector.
 
     1. Concatenate messages → text
     2. Chunk semantically
@@ -76,8 +74,7 @@ async def retrieve_context(
     tags: list[str] | None = None,
     top_k: int = 5,
 ) -> str:
-    """
-    Steps 13-14: Retrieve relevant context for a user query.
+    """Steps 13-14: Retrieve relevant context for a user query.
 
     1. Embed query with DashScope
     2. Hybrid search via pgvector (cosine + tag filter)

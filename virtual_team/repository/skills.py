@@ -12,6 +12,7 @@ class SkillRepository(BaseRepository):
 
     @staticmethod
     def to_dict(obj) -> dict:
+        """Serialize a RegisteredSkillDB row to a JSON-safe dict."""
         return {
             "id": obj.id,
             "name": obj.name,

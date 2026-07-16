@@ -1,6 +1,4 @@
-"""
-E2E Test: Full end-to-end business flow.
-"""
+"""E2E Test: Full end-to-end business flow."""
 
 import contextlib
 
@@ -9,7 +7,7 @@ from virtual_team.tests.conftest import Api, _clear_rate_limits, _rid
 
 class TestFullE2EFlow:
     def test_complete_business_flow(self, api: Api):
-        """Team → Prompt → Tool → MCP → Skill → Agent → Session → Run → Verify"""
+        """Team → Prompt → Tool → MCP → Skill → Agent → Session → Run → Verify."""
         cleanup = []
         _clear_rate_limits()
 

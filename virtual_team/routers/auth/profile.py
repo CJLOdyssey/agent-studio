@@ -55,7 +55,6 @@ async def merge_guest_data(
       4. Any value starting with ``u_`` — the client-generated anonymous prefix
          (catches stale guest_ids from other browsers / localStorage resets)
     """
-
     x_user_id = request.headers.get("X-User-ID", "")
     explicit_ids = {body.guest_id, x_user_id, "anonymous"}
     explicit_ids.discard(current_user.id)

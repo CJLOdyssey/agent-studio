@@ -1,3 +1,5 @@
+"""Lightweight LLM client for code generation."""
+
 import httpx
 
 from virtual_team.config import load_config
@@ -7,19 +9,25 @@ logger = get_logger(__name__)
 
 
 class LLMClient:
+    """Async client for LLM-powered code generation."""
+
     def __init__(self):
+        """Initialize with lazy config loading."""
         self._config = None
 
     def _get_config(self):
+        """Lazy-load and cache the application config."""
         if self._config is None:
             self._config = load_config()
         return self._config
 
     def is_available(self) -> bool:
+        """Check whether an API key is configured."""
         config = self._get_config()
         return bool(config.api_key)
 
     async def generate_code(self, description: str, language: str = "python") -> str | None:
+        """Generate source code from a natural language description."""
         config = self._get_config()
         if not config.api_key:
             return None
@@ -76,6 +84,7 @@ class LLMClient:
             return None
 
     def _extract_code(self, content: str) -> str:
+        """Extract code block from LLM response, stripping markdown fences."""
         if "```python" in content:
             start = content.index("```python") + 9
             end = content.index("```", start)

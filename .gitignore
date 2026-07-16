@@ -44,8 +44,8 @@ desktop.ini
 # ── Coverage ───────────────────────────────────────────────────────────────
 .coverage
 .coverage.*
-htmlcov/
 coverage.xml
+coverage/
 
 # ── Virtual Env ────────────────────────────────────────────────────────────
 .venv/

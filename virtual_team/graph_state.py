@@ -9,6 +9,8 @@ from langgraph.graph.message import add_messages
 
 
 class AgentState(TypedDict):
+    """TypedDict defining the LangGraph agent state schema."""
+
     messages: Annotated[list[BaseMessage], add_messages]
     system_prompt: str
     session_context: str

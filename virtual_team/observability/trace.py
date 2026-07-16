@@ -1,3 +1,5 @@
+"""Distributed tracing primitives using contextvars for async-safe span tracking."""
+
 import contextvars
 import time
 import uuid
@@ -13,14 +15,17 @@ _depth: contextvars.ContextVar[int] = contextvars.ContextVar("depth", default=0)
 
 
 def current_trace_id() -> str:
+    """Get the current trace ID from context."""
     return _trace_id.get()
 
 
 def current_span_id() -> str:
+    """Get the current span ID from context."""
     return _span_id.get()
 
 
 def set_trace_id(tid: str) -> None:
+    """Set the trace ID for the current context."""
     _trace_id.set(tid)
 
 
@@ -34,6 +39,7 @@ def span(
     logger_name: str = "",
     tags: dict[str, Any] | None = None,
 ) -> Any:
+    """Create a traced span context that records timing and errors."""
     tid = _trace_id.get()
     if not tid:
         tid = _make_id()

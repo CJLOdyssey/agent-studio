@@ -46,6 +46,7 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Application lifespan manager — runs startup and shutdown hooks."""
     await startup(app)
     yield
     await shutdown(app)
@@ -106,6 +107,7 @@ for r in routers:
 # ── Exception handler ──────────────────────────────────────────────────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    """Handle uncaught exceptions — log and return 500 JSON response."""
     logger.error(
         "Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True
     )
@@ -120,17 +122,20 @@ async def global_exception_handler(request: Request, exc: Exception):
 # ── Health / Metrics / Version ─────────────────────────────────────────────
 @app.get("/api/metrics")
 def metrics():
+    """Prometheus metrics endpoint."""
     from virtual_team.metrics import metrics_endpoint
     return metrics_endpoint()
 
 
 @app.get("/api/health")
 async def health():
+    """Health check endpoint."""
     return {"status": "ok"}
 
 
 @app.get("/api/version")
 async def version():
+    """Application version endpoint."""
     return {"version": "0.1.0"}
 
 

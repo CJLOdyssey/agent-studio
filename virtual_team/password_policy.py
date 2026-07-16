@@ -13,6 +13,8 @@ COMMON_PASSWORDS = {
 
 @dataclass
 class PasswordPolicy:
+    """Password strength requirements for registration and password changes."""
+
     min_length: int = 8
     max_length: int = 128
     min_digits: int = 1

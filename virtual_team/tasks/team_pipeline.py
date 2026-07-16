@@ -1,3 +1,5 @@
+"""Team pipeline — orchestrates multi-agent workflow execution."""
+
 import gc
 
 from virtual_team.broker import publish_run_message

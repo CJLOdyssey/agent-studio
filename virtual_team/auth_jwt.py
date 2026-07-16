@@ -1,5 +1,4 @@
-"""
-JWT token creation and verification.
+"""JWT token creation and verification.
 
 Handles HS256-signed JWTs and a simplified HMAC token format.
 """

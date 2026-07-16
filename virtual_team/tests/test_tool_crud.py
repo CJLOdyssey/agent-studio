@@ -1,6 +1,4 @@
-"""
-E2E Test: Tool CRUD + generate + validate operations.
-"""
+"""E2E Test: Tool CRUD + generate + validate operations."""
 
 from virtual_team.tests.conftest import Api, _cleanup
 

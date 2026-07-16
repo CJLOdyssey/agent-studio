@@ -60,11 +60,12 @@ function connect(runId: string, options: ConnectOptions): ConnState {
     try {
       const data = JSON.parse(event.data);
       if (data.type === 'thinking_stream' || data.type === 'thinking_done' || data.type === 'stream') {
-        console.log('[WS]', data.type, 
-          'content:', (data.content || '').substring(0, 40),
-          'thinking:', (data.thinking || '').substring(0, 40),
-          '| len:', (data.content || '').length, 
-          'thinking_len:', (data.thinking || '').length);
+        Logger.info('[WS] %s content: %s thinking: %s | len: %d thinking_len: %d',
+          data.type,
+          (data.content || '').substring(0, 40),
+          (data.thinking || '').substring(0, 40),
+          (data.content || '').length,
+          (data.thinking || '').length);
       }
       state.listeners.forEach((cb) => cb(data));
     } catch {

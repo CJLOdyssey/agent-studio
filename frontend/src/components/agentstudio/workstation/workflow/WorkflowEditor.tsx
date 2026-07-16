@@ -16,6 +16,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import type { WorkflowConfig, WorkflowNode, WorkflowEdge } from '../../../../types/agentstudio';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { saveWorkflow, deleteWorkflow } from '../../../../api/client';
 
 interface Props {
@@ -173,17 +174,17 @@ function CustomNode({ id, data, selected }: NodeProps) {
 const nodeTypes = { custom: CustomNode };
 
 export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved, onDeleted }: Props) {
-  const initNodes: Node[] = (existingConfig?.nodes || []).map((n: any, i) => ({
-    id: n.roleIdentifier || n.role_identifier || n.id,
+  const initNodes: Node[] = (existingConfig?.nodes || []).map((n: WorkflowNode, i) => ({
+    id: n.roleIdentifier,
     type: 'custom',
     position: { x: 100 + i * 250, y: 200 + (i % 2) * 150 },
-    data: { label: n.roleIdentifier || n.role_identifier, strategy: n.strategy },
+    data: { label: n.roleIdentifier, strategy: n.strategy },
   }));
-  const initEdges: Edge[] = (existingConfig?.edges || []).map((e: any, i) => ({
+  const initEdges: Edge[] = (existingConfig?.edges || []).map((e: WorkflowEdge, i) => ({
     id: e.id || `e-${i}`,
-    source: e.fromNodeId || e.from_node_id || '',
-    target: e.toNodeId || e.to_node_id || '',
-    label: e.conditionKey || e.condition_key || '',
+    source: e.fromNodeId,
+    target: e.toNodeId,
+    label: e.conditionKey || '',
     markerEnd: { type: MarkerType.ArrowClosed },
     style: e.conditionKey ? { stroke: '#f59e0b', strokeDasharray: '5,5' } : {},
   }));
@@ -196,6 +197,7 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
   const [maxRounds, setMaxRounds] = useState(existingConfig?.maxRounds ?? 3);
   const [saving, setSaving] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setNodes(initNodes); setEdges(initEdges); }, [existingConfig]);
 
   useEffect(() => {
@@ -219,12 +221,12 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
     setEdges((eds) => addEdge({ ...params, markerEnd: { type: MarkerType.ArrowClosed } }, eds));
   }, [setEdges]);
 
-  const onNodeClick = useCallback((_: any, node: Node) => {
+  const onNodeClick = useCallback((_event: ReactMouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
     setSelectedEdgeId(null);
   }, []);
 
-  const onEdgeClick = useCallback((_: any, edge: Edge) => {
+  const onEdgeClick = useCallback((_event: ReactMouseEvent, edge: Edge) => {
     setSelectedEdgeId(edge.id);
     setSelectedNodeId(null);
   }, []);
@@ -263,7 +265,7 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
     setSaving(true);
     const workflowNodes: WorkflowNode[] = nodes.map((n, i) => ({
       id: existingConfig?.nodes?.find((en) => en.roleIdentifier === n.id)?.id || '',
-      agentConfigId: (agents.find((a) => a.name === n.id) as any)?.agentConfigId || (agents.find((a) => a.name === n.id) as any)?.agent_config_id || '',
+      agentConfigId: (agents.find((a) => a.name === n.id) as Record<string, unknown>)?.agentConfigId as string || (agents.find((a) => a.name === n.id) as Record<string, unknown>)?.agent_config_id as string || '',
       roleIdentifier: n.id,
       strategy: (n.data as { strategy?: string }).strategy || 'generator',
       order: i,

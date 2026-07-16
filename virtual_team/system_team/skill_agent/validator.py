@@ -1,3 +1,5 @@
+"""Skill content validator — checks frontmatter and structure."""
+
 from typing import Any
 
 from virtual_team.logging_config import get_logger
@@ -6,7 +8,10 @@ logger = get_logger(__name__)
 
 
 class SkillValidator:
+    """Validates skill markdown content for structural completeness."""
+
     def validate(self, content: str) -> dict[str, Any]:
+        """Validate skill markdown and return suggestions for improvement."""
         suggestions = []
 
         if "---" not in content:

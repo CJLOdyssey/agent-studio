@@ -12,6 +12,8 @@ from virtual_team.base import Base
 
 
 class CheckpointDB(Base):
+    """ORM model for persisting agent checkpoint state."""
+
     __tablename__ = "agent_checkpoints"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -47,6 +49,7 @@ class AgentCheckpoint:
     react_steps: list[dict[str, object]] = field(default_factory=list)
 
     def to_json(self) -> str:
+        """Serialize the checkpoint to a JSON string."""
         return json.dumps(
             {
                 "session_id": self.session_id,
@@ -62,5 +65,6 @@ class AgentCheckpoint:
 
     @classmethod
     def from_json(cls, data: str) -> "AgentCheckpoint":
+        """Deserialize a JSON string back into an AgentCheckpoint."""
         obj = json.loads(data)
         return cls(**obj)

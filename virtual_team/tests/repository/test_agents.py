@@ -1,5 +1,4 @@
-"""
-Repository tests for Agent Config CRUD operations.
+"""Repository tests for Agent Config CRUD operations.
 
 Uses conftest fixtures (db_engine, async_session) against in-memory SQLite.
 """

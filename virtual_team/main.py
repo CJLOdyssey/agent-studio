@@ -64,6 +64,10 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
 
 
 def main() -> int:
+    """CLI entry point — run an agent from the command line.
+
+    Usage: python -m virtual_team.main "<requirement>"
+    """
     if len(sys.argv) < 2:
         print("Usage: python -m virtual_team.main <requirement>", file=sys.stderr)
         return 1

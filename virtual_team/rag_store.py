@@ -10,8 +10,7 @@ logger = get_logger(__name__)
 
 
 class PgVectorStore:
-    """
-    PostgreSQL + pgvector vector store.
+    """PostgreSQL + pgvector vector store.
 
     Requires:
       CREATE EXTENSION IF NOT EXISTS vector;
@@ -119,8 +118,8 @@ class PgVectorStore:
         tag_filter: list[str] | None = None,
         top_k: int = 5,
     ) -> list[dict]:
-        """
-        Hybrid search: vector similarity + optional tag filter.
+        """Search with hybrid vector similarity and optional tag filter.
+
         Returns list of {text, score, tags, session_id, run_id}.
         """
         await self._ensure_table()

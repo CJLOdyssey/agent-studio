@@ -25,7 +25,10 @@ def _resolve_backend(backend: str | None, dsn: str | None) -> tuple[str, str | N
 
 
 async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheckpointSaver:
-    """Internal — shared async logic for both entry-points."""
+    """Create the checkpointer based on backend configuration.
+
+    Internal — shared async logic for both entry-points.
+    """
     if backend == "postgres":
         if not dsn:
             raise ValueError("CHECKPOINTER_DSN is required for postgres backend")

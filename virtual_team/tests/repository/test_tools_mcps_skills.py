@@ -1,6 +1,4 @@
-"""
-Repository tests for Tools, MCPs, and Skills CRUD operations.
-"""
+"""Repository tests for Tools, MCPs, and Skills CRUD operations."""
 
 import uuid
 

@@ -1,3 +1,5 @@
+"""Database engine and session factory with slow-query detection."""
+
 import os
 import time
 
@@ -47,6 +49,7 @@ def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
             )
 
 def get_async_engine() -> AsyncEngine:
+    """Return or create the singleton async SQLAlchemy engine."""
     global _async_engine
     if _async_engine is None:
         _async_engine = create_async_engine(
@@ -58,6 +61,7 @@ def get_async_engine() -> AsyncEngine:
     return _async_engine
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Return or create the singleton async session factory."""
     global _async_session_factory
     if _async_session_factory is None:
         _async_session_factory = async_sessionmaker(get_async_engine(), expire_on_commit=False)

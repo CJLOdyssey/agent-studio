@@ -1,3 +1,5 @@
+"""API keys repository — re-exports from keys_crud and keys_connectivity submodules."""
+
 # Re-export all functions from split modules
 from virtual_team.repository.keys_connectivity import (  # noqa: F401
     _test_connection_sync,

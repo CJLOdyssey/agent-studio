@@ -1,6 +1,4 @@
-"""
-E2E Test: Prompt CRUD operations.
-"""
+"""E2E Test: Prompt CRUD operations."""
 
 from virtual_team.tests.conftest import Api, _cleanup
 

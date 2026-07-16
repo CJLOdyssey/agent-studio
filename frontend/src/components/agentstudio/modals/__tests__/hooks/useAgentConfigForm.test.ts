@@ -31,7 +31,7 @@ describe('useAgentConfigForm', () => {
   it('updateFormData updates data for specified kind', () => {
     const { result } = renderHook(() => useAgentConfigForm());
     act(() => result.current.openForm('skill'));
-    act(() => result.current.updateFormData('skill', (d: any) => ({ ...d, name: 'Test Skill' })));
+    act(() => result.current.updateFormData('skill', (d: Record<string, unknown>) => ({ ...d, name: 'Test Skill' })));
     expect(result.current.forms.skill.data.name).toBe('Test Skill');
   });
 
@@ -44,7 +44,7 @@ describe('useAgentConfigForm', () => {
   it('independent forms do not interfere', () => {
     const { result } = renderHook(() => useAgentConfigForm());
     act(() => result.current.openForm('tool'));
-    act(() => result.current.updateFormData('tool', (d: any) => ({ ...d, name: 'MyTool' })));
+    act(() => result.current.updateFormData('tool', (d: Record<string, unknown>) => ({ ...d, name: 'MyTool' })));
     expect(result.current.forms.mcp.data.name).toBe('');
     expect(result.current.forms.tool.data.name).toBe('MyTool');
   });
