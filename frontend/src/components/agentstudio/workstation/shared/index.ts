@@ -11,3 +11,9 @@ export { default as ResourcePickerModal } from './ResourcePickerModal';
 export { default as VersionHistoryModal } from './VersionHistoryModal';
 export { default as WstaDropdownPortal } from './WstaDropdownPortal';
 export { default as WstaPagination } from './WstaPagination';
+export { useGenericCrud } from './useGenericCrud';
+export type {
+  CrudAPI,
+  GenericCrudConfig,
+  GenericCrudReturn,
+} from './useGenericCrud';
