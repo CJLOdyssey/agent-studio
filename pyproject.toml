@@ -81,10 +81,6 @@ module = "virtual_team.repository.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "virtual_team.team_graph"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "virtual_team.tasks"
 ignore_errors = true
 
