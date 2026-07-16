@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from virtual_team.base import Base
 
+
 class SessionDB(Base):
     __tablename__ = "sessions"
 

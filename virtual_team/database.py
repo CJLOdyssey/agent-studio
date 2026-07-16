@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
-from virtual_team.logging_config import get_logger
 from virtual_team.base import Base
+from virtual_team.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -149,8 +149,8 @@ async def log_audit(
     detail: str = "",
 ) -> None:
     """Write an audit log entry for a management CRUD operation."""
-    from virtual_team.database import AuditLogDB, get_session_factory
-    entry = AuditLogDB(
+    from virtual_team.database import get_session_factory
+    entry = AuditLogDB(  # noqa: F811 — module-level re-export exists
         action=action,
         entity_type=entity_type,
         entity_name=entity_name,

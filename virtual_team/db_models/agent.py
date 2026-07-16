@@ -2,12 +2,17 @@
 
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from virtual_team.base import Base
+
+if TYPE_CHECKING:
+    from virtual_team.db_models.workflow import WorkflowConfigDB
+
 
 class TeamDB(Base):
     __tablename__ = "teams"

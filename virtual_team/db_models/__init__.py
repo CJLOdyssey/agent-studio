@@ -7,15 +7,13 @@ Backward-compatible: `from virtual_team.database import X` also works.
 from virtual_team.base import Base
 
 # Import from domain files
-
-from virtual_team.db_models.agent import TeamDB, TeamAgentDB, AgentConfigDB
-from virtual_team.db_models.auth import UserDB, RefreshTokenDB, RoleDB, UserRoleDB
-from virtual_team.db_models.content import PromptDB, RegisteredToolDB, MCPServerDB, RegisteredSkillDB, VersionDB
-from virtual_team.db_models.key import UserApiKey, KeyUsageLog
-from virtual_team.db_models.misc import CommandLogDB, AuditLogDB, AttachmentDB
-from virtual_team.db_models.session import SessionDB, ProjectRun, MemoryEntry, ChatMessage
-from virtual_team.db_models.workflow import WorkflowConfigDB, WorkflowNodeDB, WorkflowEdgeDB
-
+from virtual_team.db_models.agent import AgentConfigDB, TeamAgentDB, TeamDB
+from virtual_team.db_models.auth import RefreshTokenDB, RoleDB, UserDB, UserRoleDB
+from virtual_team.db_models.content import MCPServerDB, PromptDB, RegisteredSkillDB, RegisteredToolDB, VersionDB
+from virtual_team.db_models.key import KeyUsageLog, UserApiKey
+from virtual_team.db_models.misc import AttachmentDB, AuditLogDB, CommandLogDB
+from virtual_team.db_models.session import ChatMessage, MemoryEntry, ProjectRun, SessionDB
+from virtual_team.db_models.workflow import WorkflowConfigDB, WorkflowEdgeDB, WorkflowNodeDB
 
 __all__ = [
     "Base",

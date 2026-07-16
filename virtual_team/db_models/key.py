@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from virtual_team.base import Base
 
+
 class UserApiKey(Base):
     """Enterprise API key vault — encrypted at rest, never returned to client."""
 

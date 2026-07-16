@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from virtual_team.base import Base
 
+
 class CommandLogDB(Base):
     __tablename__ = "command_logs"
 

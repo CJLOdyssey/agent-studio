@@ -4,10 +4,11 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, JSON
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from virtual_team.base import Base
+
 
 class PromptDB(Base):
     __tablename__ = "prompts"
