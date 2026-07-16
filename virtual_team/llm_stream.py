@@ -1,4 +1,4 @@
-"""LLM streaming helpers: message conversion + SSE parsing."""
+"""LLM streaming helpers: message conversion + SSE parsing + request building."""
 
 from __future__ import annotations
 
@@ -14,6 +14,10 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+
+from virtual_team.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict]:
@@ -39,6 +43,54 @@ def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict]:
         elif isinstance(msg, ToolMessage):
             api_messages.append({"role": "tool", "tool_call_id": msg.tool_call_id, "content": msg.content})
     return api_messages
+
+
+def build_llm_request_body(
+    api_messages: list[dict],
+    *,
+    model: str,
+    api_key: str,
+    base_url: str | None = None,
+    temperature: float = 0.7,
+    max_tokens: int = 65536,
+    tool_definitions: list[dict] | None = None,
+) -> tuple[str, dict[str, str], dict]:
+    """Build the HTTP request URL, headers, and JSON body for LLM chat completion.
+
+    Returns ``(url, headers, body)``.
+    """
+    url = f"{(base_url or 'https://api.deepseek.com').rstrip('/')}/chat/completions"
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    body: dict = {
+        "model": model,
+        "messages": api_messages,
+        "stream": True,
+        "stream_options": {"include_usage": True},
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+
+    if tool_definitions:
+        body["tools"] = tool_definitions
+        body["tool_choice"] = "auto"
+
+    is_deepseek = "deepseek" in (base_url or "").lower() or "deepseek" in model.lower()
+    if is_deepseek and not tool_definitions:
+        body["thinking"] = {"type": "enabled"}
+
+    logger.info(
+        "LLM request | model=%s | msgs=%d | tools=%d | thinking=%s",
+        model, len(api_messages), len(tool_definitions or []),
+        "thinking" in body,
+    )
+    if tool_definitions:
+        logger.info(
+            "Tools sent: %s",
+            json.dumps([t["function"]["name"] for t in tool_definitions]),
+        )
+
+    return url, headers, body
 
 
 def build_tool_calls_list(tool_calls_map: dict[int, dict]) -> list[dict]:
