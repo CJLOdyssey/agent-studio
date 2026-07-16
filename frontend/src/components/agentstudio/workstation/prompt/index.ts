@@ -4,7 +4,7 @@ export type { PromptEntry, PromptFormData, PromptSortField, CategoryFilter, Prom
 export { usePromptData } from './usePromptData';
 export { usePromptImportExport } from './usePromptImportExport';
 export { PROMPT_CATEGORIES, PROMPT_STATUS_LABEL } from './constants';
-export { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from './mock-data';
+export { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from '../../../../mocks/prompt';
 export { promptAPI } from './api';
 export type { PromptAPIService } from './api';
 export { t, setLang, getLang } from './locales';

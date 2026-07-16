@@ -7,6 +7,14 @@ import sys
 root = pathlib.Path(__file__).resolve().parent.parent
 errors = 0
 
+
+def _extract_int(pattern: str, text: str, label: str) -> int:
+    m = re.search(pattern, text)
+    if m is None:
+        print(f"❌ Could not find pattern '{pattern}' for {label}")
+        sys.exit(1)
+    return int(m.group(1))
+
 # ── 1. .env.example coverage ──────────────────────────────────────────────
 code_vars = set()
 for py in sorted(root.rglob("virtual_team/*.py")):
@@ -29,9 +37,11 @@ else:
 # ── 2. AGENTS.md counts ──────────────────────────────────────────────────
 agents = root.joinpath("AGENTS.md").read_text()
 
-# Routers
-actual = len([f for f in sorted(root.joinpath("virtual_team/routers").glob("*.py")) if f.name != "__init__.py"])
-expected = int(re.search(r"routers/ \((\d+)", agents).group(1))
+# Routers (files + packages)
+router_dir = root.joinpath("virtual_team/routers")
+actual = len([f for f in sorted(router_dir.glob("*.py")) if f.name != "__init__.py" and f.is_file()]) + \
+         len([d for d in sorted(router_dir.iterdir()) if d.is_dir() and d.joinpath("__init__.py").exists()])
+expected = _extract_int(r"routers/ \((\d+)", agents, "routers count")
 if actual != expected:
     print(f"❌ Routers: AGENTS.md says {expected}, actual {actual}")
     errors += 1
@@ -40,7 +50,7 @@ else:
 
 # Repository
 actual = len([f for f in sorted(root.joinpath("virtual_team/repository").glob("*.py")) if f.name != "__init__.py"])
-expected = int(re.search(r"repository/ \((\d+)", agents).group(1))
+expected = _extract_int(r"repository/ \((\d+)", agents, "repository count")
 if actual != expected:
     print(f"❌ Repository: AGENTS.md says {expected}, actual {actual}")
     errors += 1
@@ -54,7 +64,7 @@ modules = [
     if d.is_dir() and d.name != "shared"
 ]
 actual = len(modules)
-expected = int(re.search(r"工作台 (\d+)", claude).group(1))
+expected = _extract_int(r"工作台 (\d+)", claude, "workstation count")
 if actual != expected:
     print(f"❌ Workstation: CLAUDE.md says {expected}, actual {actual}")
     errors += 1
