@@ -1,3 +1,5 @@
+"""Repository layer — async data-access functions and CRUD helpers."""
+
 from virtual_team.repository.agents import *  # noqa: F403
 from virtual_team.repository.auth import *  # noqa: F403
 from virtual_team.repository.core import *  # noqa: F403

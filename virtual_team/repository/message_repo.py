@@ -1,3 +1,5 @@
+"""Chat message repository — persistence for conversation messages."""
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -7,6 +9,7 @@ from virtual_team.database import ChatMessage, ProjectRun, get_session_factory
 
 
 async def save_message(run_id: str, role: str, agent_name: str, content: str, round_number: int, thinking: str | None = None):  # noqa: E501
+    """Persist a chat message to the database."""
     msg = ChatMessage(
         id=str(uuid4()),
         run_id=run_id,
@@ -24,6 +27,7 @@ async def save_message(run_id: str, role: str, agent_name: str, content: str, ro
 
 
 async def get_messages(run_id: str) -> list[ChatMessage]:
+    """Return all chat messages for a run, ordered chronologically."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -34,6 +38,7 @@ async def get_messages(run_id: str) -> list[ChatMessage]:
 
 
 async def get_run_messages(run_id: str) -> list[ChatMessage]:
+    """Return all chat messages for a run, ordered chronologically (alias)."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -46,7 +51,16 @@ async def get_run_messages(run_id: str) -> list[ChatMessage]:
 async def get_session_messages(
     session_id: str, exclude_run_id: str | None = None
 ) -> list[ChatMessage]:
-    """Get all chat messages across all runs in a session, ordered chronologically."""
+    """Return all chat messages across all runs in a session, ordered chronologically.
+
+    Args:
+        session_id: The parent session UUID.
+        exclude_run_id: If provided, skip messages from this run.
+
+    Returns:
+        A list of ChatMessage rows sorted by creation time.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         # Get all run IDs for this session

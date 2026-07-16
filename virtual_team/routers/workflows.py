@@ -1,3 +1,5 @@
+"""Workflow CRUD API endpoints."""
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel

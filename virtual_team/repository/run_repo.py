@@ -1,3 +1,5 @@
+"""Project run repository — CRUD for run lifecycle management."""
+
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -7,6 +9,7 @@ from virtual_team.database import ProjectRun, SessionDB, get_session_factory
 
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:
+    """Return all project runs belonging to a session, ordered by creation time."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -38,6 +41,10 @@ async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[Proj
 
 
 async def create_run(requirement: str, session_id: str | None = None) -> str:
+    """Create a new project run and return its ID.
+
+    Also touches the parent session's updated_at timestamp.
+    """
     run_id = str(uuid4())
     run = ProjectRun(
         id=run_id,
@@ -60,6 +67,7 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
 
 
 async def update_run_status(run_id: str, status: str):
+    """Update the status field of a project run."""
     factory = get_session_factory()
     async with factory() as session:
         run = await session.get(ProjectRun, run_id)
@@ -77,6 +85,7 @@ async def update_run_result(
     approved: bool,
     status: str,
 ):
+    """Persist the full result payload of a completed run."""
     factory = get_session_factory()
     async with factory() as session:
         run = await session.get(ProjectRun, run_id)
@@ -91,6 +100,7 @@ async def update_run_result(
 
 
 async def get_run(run_id: str) -> ProjectRun | None:
+    """Fetch a single project run by its primary key ID."""
     factory = get_session_factory()
     async with factory() as session:
         run = await session.get(ProjectRun, run_id)
@@ -98,6 +108,7 @@ async def get_run(run_id: str) -> ProjectRun | None:
 
 
 async def get_runs(limit: int = 20) -> list[ProjectRun]:
+    """Return the most recent project runs, up to the given limit."""
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(ProjectRun).order_by(desc(ProjectRun.created_at)).limit(limit)

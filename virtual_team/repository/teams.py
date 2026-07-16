@@ -1,3 +1,5 @@
+"""Team repository — CRUD for teams and their member agents."""
+
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -8,6 +10,15 @@ from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
 
 
 async def get_teams(user_id: str | None = None) -> list[dict]:
+    """Return all teams with their member agents eagerly loaded.
+
+    Args:
+        user_id: If provided, filter to teams owned by this user.
+
+    Returns:
+        A list of team dicts, each containing an "agents" list with config details.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -53,6 +64,12 @@ async def get_teams(user_id: str | None = None) -> list[dict]:
 
 
 async def get_team(team_id: str) -> dict | None:
+    """Fetch a single team by ID with its member agents eagerly loaded.
+
+    Returns:
+        A team dict with "agents" list, or None if not found.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = (
@@ -97,6 +114,12 @@ async def get_team(team_id: str) -> dict | None:
 async def create_team(
     name: str, description: str | None = None, status: str | None = None
 ) -> TeamDB | None:
+    """Create a new team if the name is not already taken.
+
+    Returns:
+        The new TeamDB row, or None if the name already exists.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         existing = await session.execute(select(TeamDB).where(TeamDB.name == name))
@@ -125,6 +148,12 @@ async def update_team(
     order: int | None = None,
     is_expanded: bool | None = None,
 ) -> TeamDB | None:
+    """Partial-update a team. Only non-None fields are applied.
+
+    Returns:
+        The updated TeamDB row, or None if the ID was not found.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(TeamDB).where(TeamDB.id == team_id))
@@ -147,6 +176,7 @@ async def update_team(
 
 
 async def delete_team(team_id: str) -> bool:
+    """Delete a team by ID. Returns False if not found."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(TeamDB).where(TeamDB.id == team_id))
@@ -164,6 +194,12 @@ async def add_team_member(
     role: str = "待配置角色",
     agent_config_id: str | None = None,
 ) -> dict | None:
+    """Add a new member agent to a team.
+
+    Returns:
+        A dict with member details, or None if the team was not found.
+
+    """
     factory = get_session_factory()
     async with factory() as session:
         team = await session.get(TeamDB, team_id)
@@ -197,6 +233,7 @@ async def add_team_member(
 
 
 async def remove_team_member(team_id: str, member_id: str) -> bool:
+    """Remove a member from a team. Returns False if not found."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(
@@ -211,6 +248,7 @@ async def remove_team_member(team_id: str, member_id: str) -> bool:
 
 
 async def reorder_team_members(team_id: str, member_ids: list[str]) -> None:
+    """Reorder team members to match the given ID sequence order."""
     factory = get_session_factory()
     async with factory() as session:
         for idx, mid in enumerate(member_ids):
@@ -223,6 +261,7 @@ async def reorder_team_members(team_id: str, member_ids: list[str]) -> None:
 
 
 async def link_agent_config(member_id: str, agent_config_id: str) -> bool:
+    """Bind a team member to an existing agent config. Returns False if member not found."""
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(select(TeamAgentDB).where(TeamAgentDB.id == member_id))

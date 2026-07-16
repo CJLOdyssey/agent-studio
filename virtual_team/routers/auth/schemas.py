@@ -100,7 +100,7 @@ def _generate_code() -> str:
 
 
 def _mask_email(email: str) -> str:
-    """Mask email for display: u***@example.com"""
+    """Mask email for display: u***@example.com."""
     local, at, domain = email.partition("@")
     if len(local) <= 1:
         return f"{local}***{at}{domain}"
