@@ -182,7 +182,14 @@ def run_command(command: str, cwd: str = None, timeout: int = 60) -> dict:
         "code": '''import requests
 from typing import Optional, Dict, Any
 
-def http_request(url: str, method: str = "GET", headers: Dict = None, data: Any = None, json_data: Any = None, timeout: int = 30) -> Dict:
+def http_request(
+    url: str,
+    method: str = "GET",
+    headers: Dict = None,
+    data: Any = None,
+    json_data: Any = None,
+    timeout: int = 30,
+) -> Dict:
     """
     发送HTTP请求
 

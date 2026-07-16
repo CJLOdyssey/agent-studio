@@ -66,6 +66,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     }).finally(() => setIsLoading(false));
   }, [api, itemName]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchItems(); }, [fetchItems]);
 
   const clearError = useCallback(() => setError(null), []);
@@ -292,10 +293,7 @@ export function useGenericCrud<T extends { id: string }, F>(
 
   // Click-outside for dropdown menu
   useEffect(() => {
-    if (!openMenuId) {
-      setMenuAnchorEl(null);
-      return;
-    }
+    if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
       if (!(e.target as HTMLElement).closest('.wsta-dropdown-portal')) {
         setOpenMenuId(null);
