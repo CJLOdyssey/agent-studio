@@ -28,7 +28,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
-      - run: NODE_OPTIONS="--max-old-space-size=4096" npm test
+      - run: npm test
 
   backend-quality:
     runs-on: ubuntu-latest

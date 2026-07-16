@@ -80,12 +80,10 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './src/test/setup.tsx',
       css: true,
-      pool: 'forks',
-      poolOptions: { forks: { singleFork: true, maxThreadWorkers: 1, minThreadWorkers: 1 } },
       testTimeout: 15000,
       hookTimeout: 15000,
       coverage: {
-        provider: 'istanbul',
+        provider: 'v8',
         reporter: ['text', 'lcov', 'html'],
         reportsDirectory: './coverage',
         thresholds: {
