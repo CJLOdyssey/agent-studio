@@ -22,9 +22,9 @@ from langgraph.graph.state import CompiledStateGraph
 import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
 from virtual_team._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
 from virtual_team.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
-from virtual_team.llm_stream import build_tool_calls_list, convert_messages_to_api, stream_llm_response
+from virtual_team.llm_stream import build_llm_request_body, build_tool_calls_list, convert_messages_to_api, stream_llm_response
 from virtual_team.logging_config import get_logger
-from virtual_team.tool_config import ToolConfig, _ToolWrapper
+from virtual_team.tool_config import ToolConfig, build_tool_definition, sanitize_tool_name
 
 logger = get_logger(__name__)
 
@@ -80,7 +80,15 @@ class SingleAgentGraph:
     ) -> tuple[str, str, list[dict]]:
         """Async raw HTTP streaming — captures content + reasoning_content + tool_calls."""
         api_messages = convert_messages_to_api(messages)
-        url, headers, body = self._build_request_body(api_messages)
+        url, headers, body = build_llm_request_body(
+            api_messages,
+            model=self.model,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            tool_definitions=self._tool_definitions,
+        )
 
         content_chunks, thinking_chunks, tool_calls_map, finish_reason, usage_info = (
             await _stream_handler(url, headers, body, self._stream_cb, self._tool_definitions)
@@ -104,44 +112,6 @@ class SingleAgentGraph:
                 )
         self._last_usage = usage_info
         return full_content, thinking, final_tool_calls
-
-    def _build_request_body(self, api_messages: list[dict]) -> tuple[str, dict, dict]:
-        """Build the HTTP request URL, headers, and JSON body."""
-        base_url = (self.base_url or "https://api.deepseek.com").rstrip("/")
-        url = f"{base_url}/chat/completions"
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
-
-        body: dict = {
-            "model": self.model,
-            "messages": api_messages,
-            "stream": True,
-            "stream_options": {"include_usage": True},
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-        }
-
-        if self._tool_definitions:
-            body["tools"] = self._tool_definitions
-            body["tool_choice"] = "auto"
-
-        is_deepseek = (
-            "deepseek" in (self.base_url or "").lower() or "deepseek" in self.model.lower()
-        )
-        if is_deepseek and not self._tool_definitions:
-            body["thinking"] = {"type": "enabled"}
-
-        logger.info(
-            "LLM request | model=%s | msgs=%d | tools=%d | thinking=%s",
-            self.model, len(api_messages), len(self._tool_definitions or []),
-            "thinking" in body,
-        )
-        if self._tool_definitions:
-            logger.info(
-                "Tools sent: %s",
-                json.dumps([t["function"]["name"] for t in self._tool_definitions]),
-            )
-
-        return url, headers, body
 
     # ── Graph nodes ────────────────────────────────────────────
 
@@ -279,40 +249,12 @@ class SingleAgentGraph:
     def set_stream_callback(self, cb: Callable) -> None:
         self._stream_cb = cb
 
-    @staticmethod
-    def _sanitize_tool_name(name: str) -> str:
-        """DeepSeek requires tool names matching ^[a-zA-Z0-9_-]+$."""
-        sanitized = "".join(c for c in name if c.isascii() and (c.isalnum() or c in "_-"))
-        return sanitized or f"tool_{hash(name) & 0xFFFFFFFF}"
-
     def bind_tools(self, tools: list[ToolDescriptor | ToolConfig]) -> None:
         """Bind tools to the graph — translates ToolConfig into tool definitions."""
         for tc in tools:
-            api_name = self._sanitize_tool_name(tc.name)
-            wrapper = _ToolWrapper(
-                name=tc.name,
-                description=tc.description,
-                instructions=tc.instructions,
-                mcp_type=tc.mcp_type,
-                mcp_endpoint=tc.mcp_endpoint,
-                mcp_tool_name=tc.mcp_tool_name,
-                endpoint=tc.endpoint,
-                method=tc.method,
-                headers=tc.headers,
-            )
-            wrapper.set_llm(self.llm)
+            api_name, wrapper, definition = build_tool_definition(tc, llm=self.llm)
             self._tool_map[api_name] = wrapper
-            schema = {"type": "object"}
-            if tc.parameters:
-                if isinstance(tc.parameters, dict):
-                    props = tc.parameters.get("properties", {}) or {}
-                    schema = tc.parameters if props else {"type": tc.parameters.get("type", "object")}
-                else:
-                    schema = tc.parameters
-            self._tool_definitions.append({
-                "type": "function",
-                "function": {"name": api_name, "description": tc.description, "parameters": schema},
-            })
+            self._tool_definitions.append(definition)
 
     @property
     def graph(self) -> CompiledStateGraph:
@@ -335,5 +277,4 @@ class SingleAgentGraph:
         return result["messages"][-1].content if result.get("messages") else ""
 
 
-# Re-export ToolConfig for backward compatibility
-# Re-export _ToolWrapper for backward compatibility
+
