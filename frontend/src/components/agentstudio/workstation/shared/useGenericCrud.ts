@@ -169,12 +169,14 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   const clearError = useCallback(() => setError(null), []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     const c = fetchItems();
     return c;
   }, [fetchItems]);
 
   // Reset page when filters change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
     setSelectedIds(new Set());
   }, [search, sortField, sortDir, extraFilterValues]);
@@ -280,70 +282,50 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   // ── CRUD handlers ─────────────────────────────────────────────
   const createItem = useCallback(
     async (data: F) => {
-      try {
-        await api.create(data);
-        await fetchItems();
-      } catch (e) {
-        throw e;
-      }
+      await api.create(data);
+      await fetchItems();
     },
     [api, fetchItems],
   );
 
   const updateItem = useCallback(
     async (id: string, data: Partial<T>) => {
-      try {
-        await api.update(id, data);
-        await fetchItems();
-      } catch (e) {
-        throw e;
-      }
+      await api.update(id, data);
+      await fetchItems();
     },
     [api, fetchItems],
   );
 
   const removeItem = useCallback(
     async (id: string) => {
-      try {
-        await api.remove(id);
-        await fetchItems();
-      } catch (e) {
-        throw e;
-      }
+      await api.remove(id);
+      await fetchItems();
     },
     [api, fetchItems],
   );
 
   const cloneItem = useCallback(
     async (item: T) => {
-      try {
-        if (api.clone) {
-          await api.clone(item);
-        } else {
-          // Default: create with same data (minus id + createdAt)
-          const { id: _id, createdAt: _createdAt, ...rest } = item as unknown as Record<string, unknown>;
-          await api.create(rest as unknown as F);
-        }
-        await fetchItems();
-      } catch (e) {
-        throw e;
+      if (api.clone) {
+        await api.clone(item);
+      } else {
+        // Default: create with same data (minus id + createdAt)
+        const { id: _id, createdAt: _createdAt, ...rest } = item as unknown as Record<string, unknown>;
+        await api.create(rest as unknown as F);
       }
+      await fetchItems();
     },
     [api, fetchItems],
   );
 
   const removeMultipleItems = useCallback(
     async (ids: Set<string>) => {
-      try {
-        if (api.removeBatch) {
-          await api.removeBatch(ids);
-        } else {
-          await Promise.all(Array.from(ids).map((id) => api.remove(id)));
-        }
-        await fetchItems();
-      } catch (e) {
-        throw e;
+      if (api.removeBatch) {
+        await api.removeBatch(ids);
+      } else {
+        await Promise.all(Array.from(ids).map((id) => api.remove(id)));
       }
+      await fetchItems();
     },
     [api, fetchItems],
   );
@@ -410,6 +392,7 @@ export function useGenericCrud<T extends { id: string }, F extends Record<string
   // Click-outside for dropdown menu
   useEffect(() => {
     if (!openMenuId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMenuAnchorEl(null);
       return;
     }
