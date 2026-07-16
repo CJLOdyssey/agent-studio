@@ -82,7 +82,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 ```
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
-  └─ routers/ (19 modules: admin, agents, attachments, auth, commands, keys, mcps, models,
+  └─ routers/ (20 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, run_continue, runs, sessions, skills, system_team, teams, tools, versions, workflows)
    │    └─ repository/ (18 modules: core, agents, keys, keys_crud, keys_connectivity, session_repo, run_repo, message_repo, memory_repo, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
    │    └─ repository/ (14 modules: core, agents, keys, keys_crud, keys_connectivity, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)

@@ -62,3 +62,5 @@ coverage.xml
 prototypes/
 scripts/deploy_prod.py
 scripts/ask_credentials.py
+.agents/
+.claude/
