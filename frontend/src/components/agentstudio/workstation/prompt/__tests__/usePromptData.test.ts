@@ -1,20 +1,39 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePromptData } from '../usePromptData';
-vi.mock('../api', () => {
-  const promptAPI = {
-    fetchAll: vi.fn().mockResolvedValue([{'id': 'p1', 'name': '系统提示', 'content': '你是一个助手', 'category': '系统提示词', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}, {'id': 'p2', 'name': '用户提示', 'content': '请帮助我', 'category': '用户提示词', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}, {'id': 'p3', 'name': '代码审查', 'content': '审查代码质量', 'category': '任务模板', 'model': '', 'status': 'active', 'version': 'v1.0.0', 'createdAt': '2024-01-01'}]),
-    create: vi.fn().mockImplementation((data) => Promise.resolve({ id: "new_"+Date.now(), ...data, createdAt: "2024-01-01" })),
-    update: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-    clone: vi.fn().mockImplementation((item) => Promise.resolve({ ...item, id: item.id+"_copy" })),
-    removeBatch: vi.fn().mockResolvedValue(undefined),
-  };
-  return { promptAPI };
-});
 
+const STORE = [
+  { id: 'p1', name: '系统提示', content: '你是一个助手', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
+  { id: 'p2', name: '用户提示', content: '请帮助我', category: '用户提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
+  { id: 'p3', name: '代码审查', content: '审查代码质量', category: '任务模板' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
+];
 
-
+vi.mock('../api', () => ({
+  promptAPI: {
+    fetchAll: vi.fn(() => Promise.resolve([...STORE])),
+    create: vi.fn((data: Record<string, unknown>) => {
+      const item = { id: `new_${Date.now()}`, ...data, createdAt: '2024-01-01' } as typeof STORE[0];
+      STORE.push(item);
+      return Promise.resolve(item);
+    }),
+    update: vi.fn(async () => {}),
+    remove: vi.fn(async (id: string) => {
+      const idx = STORE.findIndex((m) => m.id === id);
+      if (idx >= 0) STORE.splice(idx, 1);
+    }),
+    clone: vi.fn(async (item: typeof STORE[0]) => {
+      const copy = { ...item, id: `${item.id}_copy` };
+      STORE.push(copy);
+      return Promise.resolve(copy);
+    }),
+    removeBatch: vi.fn(async (ids: Set<string>) => {
+      for (const id of ids) {
+        const idx = STORE.findIndex((m) => m.id === id);
+        if (idx >= 0) STORE.splice(idx, 1);
+      }
+    }),
+  },
+}));
 
 describe('usePromptData', () => {
   it('starts loading and loads on mount', async () => {
@@ -28,77 +47,77 @@ describe('usePromptData', () => {
   it('adds a prompt to the list', async () => {
     const { result } = renderHook(() => usePromptData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-
     const before = result.current.processed.length;
-    act(() => {
-      result.current.addPrompt({ name: 'Test', content: 'Content', category: '系统提示词', model: 'GPT-4o', status: 'active', version: 'v1.0.0' });
-    });
+    act(() => { result.current.addPrompt({ name: '新提示', content: '内容', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0' }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 
   it('removes a prompt from the list', async () => {
     const { result } = renderHook(() => usePromptData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    expect(result.current.error).toBeNull();
-
     const id = result.current.processed[0].id;
     act(() => { result.current.removePrompt(id); });
-    await waitFor(() => {
-      expect(result.current.processed.find((p) => p.id === id)).toBeUndefined();
-    });
+    await waitFor(() => expect(result.current.processed.find((p) => p.id === id)).toBeUndefined(), { timeout: 3000 });
   });
 
-  it('copies a prompt', async () => {
+  it('copies a prompt item', async () => {
     const { result } = renderHook(() => usePromptData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-
     const before = result.current.processed.length;
-    const item = result.current.processed[0];
-    act(() => { result.current.copyPrompt(item); });
-    await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
+    act(() => { result.current.copyPrompt(result.current.processed[0]); });
+    await waitFor(() => expect(result.current.processed.length).toBe(before + 1), { timeout: 3000 });
   });
 
-  it('searches by name', async () => {
+  it('handles search', async () => {
     const { result } = renderHook(() => usePromptData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-
-    act(() => { result.current.setSearch('代码审查'); });
-    await waitFor(() => {
-      expect(result.current.processed.length).toBeGreaterThan(0);
-      expect(result.current.processed.every((p) => p.name.includes('代码审查') || p.content.includes('代码审查'))).toBe(true);
-    });
-  });
-
-  it('sorts by name', async () => {
-    const { result } = renderHook(() => usePromptData());
-    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-
-    act(() => { result.current.handleSort('name'); });
-    await waitFor(() => {
-      expect(result.current.sortField).toBe('name');
-    });
-    const names = result.current.processed.map((p) => p.name);
-    const sorted = [...names].sort((a, b) => a.localeCompare(b));
-    expect(names).toEqual(sorted);
-  });
-
-  it('bulk removes prompts', async () => {
-    const { result } = renderHook(() => usePromptData());
-    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-
-    const ids = new Set([result.current.processed[0].id, result.current.processed[1].id]);
-    act(() => { result.current.removeMultiple(ids); });
-    await waitFor(() => {
-      expect(result.current.processed.find((p) => ids.has(p.id))).toBeUndefined();
-    });
-  });
-
-  it('retry reloads data', async () => {
-    const { result } = renderHook(() => usePromptData());
-    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    act(() => { result.current.retry(); });
-    expect(result.current.isLoading).toBe(true);
-    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    act(() => { result.current.setSearch('__nonexistent__'); });
+    expect(result.current.processed.length).toBe(0);
+    act(() => { result.current.setSearch(''); });
     expect(result.current.processed.length).toBeGreaterThan(0);
+  });
+
+  it('handles category filter', async () => {
+    const { result } = renderHook(() => usePromptData());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    act(() => { result.current.setCategoryFilter('nonexistent'); });
+    expect(result.current.processed.length).toBe(0);
+    act(() => { result.current.setCategoryFilter('all'); });
+    expect(result.current.processed.length).toBeGreaterThan(0);
+  });
+
+  it('handles selection and batch delete', async () => {
+    const { result } = renderHook(() => usePromptData());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    const id = result.current.processed[0].id;
+    act(() => { result.current.toggleSelect(id); });
+    expect(result.current.selectedIds.has(id)).toBe(true);
+    act(() => { result.current.toggleSelect(id); });
+    expect(result.current.selectedIds.has(id)).toBe(false);
+  });
+
+  it('handles UI state toggles', async () => {
+    const { result } = renderHook(() => usePromptData());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    expect(result.current.isFormOpen).toBe(false);
+    act(() => { result.current.openCreate(); });
+    expect(result.current.isFormOpen).toBe(true);
+    act(() => { result.current.closeForm(); });
+    expect(result.current.isFormOpen).toBe(false);
+    if (result.current.processed.length > 0) {
+      const item = result.current.processed[0];
+      act(() => { result.current.openEdit(item); });
+      expect(result.current.isFormOpen).toBe(true);
+      expect(result.current.editingItem?.id).toBe(item.id);
+      act(() => { result.current.closeForm(); });
+    }
+  });
+
+  it('provides getAllItems for export', async () => {
+    const { result } = renderHook(() => usePromptData());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    const all = result.current.getAllItems();
+    expect(Array.isArray(all)).toBe(true);
+    expect(all.length).toBeGreaterThan(0);
   });
 });

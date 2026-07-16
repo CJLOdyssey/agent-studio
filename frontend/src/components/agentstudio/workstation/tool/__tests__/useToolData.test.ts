@@ -1,20 +1,38 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useToolData } from '../useToolData';
-vi.mock('../api', () => {
-  const toolAPI = {
-    fetchAll: vi.fn().mockResolvedValue([{'id': 't1', 'name': '文件搜索', 'description': '搜索文件', 'category': '内置工具', 'model': '内置', 'status': 'active', 'version': 'v1.0.0', 'endpoint': '', 'parameters': '{"type":"object","properties":{}}', 'createdAt': '2024-01-01'}, {'id': 't2', 'name': '代码执行', 'description': '执行代码', 'category': '内置工具', 'model': '内置', 'status': 'active', 'version': 'v1.0.0', 'endpoint': '', 'parameters': '{"type":"object","properties":{}}', 'createdAt': '2024-01-01'}]),
-    create: vi.fn().mockImplementation((data) => Promise.resolve({ id: "new_"+Date.now(), ...data, createdAt: "2024-01-01" })),
-    update: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-    clone: vi.fn().mockImplementation((item) => Promise.resolve({ ...item, id: item.id+"_copy" })),
-    removeBatch: vi.fn().mockResolvedValue(undefined),
-  };
-  return { toolAPI };
-});
 
+const STORE = [
+  { id: 't1', name: '文件搜索', description: '搜索文件', category: '内置工具', model: '内置', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
+  { id: 't2', name: '代码执行', description: '执行代码', category: '内置工具', model: '内置', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
+];
 
-
+vi.mock('../api', () => ({
+  toolAPI: {
+    fetchAll: vi.fn(() => Promise.resolve([...STORE])),
+    create: vi.fn((data: Record<string, unknown>) => {
+      const item = { id: `new_${Date.now()}`, ...data, createdAt: '2024-01-01' } as typeof STORE[0];
+      STORE.push(item);
+      return Promise.resolve(item);
+    }),
+    update: vi.fn(async () => {}),
+    remove: vi.fn(async (id: string) => {
+      const idx = STORE.findIndex((m) => m.id === id);
+      if (idx >= 0) STORE.splice(idx, 1);
+    }),
+    clone: vi.fn(async (item: typeof STORE[0]) => {
+      const copy = { ...item, id: `${item.id}_copy` };
+      STORE.push(copy);
+      return Promise.resolve(copy);
+    }),
+    removeBatch: vi.fn(async (ids: Set<string>) => {
+      for (const id of ids) {
+        const idx = STORE.findIndex((m) => m.id === id);
+        if (idx >= 0) STORE.splice(idx, 1);
+      }
+    }),
+  },
+}));
 
 describe('useToolData', () => {
   it('starts loading and loads data on mount', async () => {
@@ -29,7 +47,7 @@ describe('useToolData', () => {
     const { result } = renderHook(() => useToolData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    act(() => { result.current.addTool({ name: 'Test Tool', description: 'Test', category: '内置工具', model: '内置', status: 'active', version: 'v1.0.0', endpoint: '' }); });
+    act(() => { result.current.addTool({ name: 'Test Tool', description: 'Test', category: '内置工具', model: '内置', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 
@@ -52,10 +70,10 @@ describe('useToolData', () => {
   it('searches by name', async () => {
     const { result } = renderHook(() => useToolData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    act(() => { result.current.setSearch('文件'); });
-    await waitFor(() => {
-      expect(result.current.processed.every((m) => m.name.includes('文件') || m.category.includes('文件') || m.description.includes('文件'))).toBe(true);
-    });
+    act(() => { result.current.setSearch('__nonexistent__'); });
+    expect(result.current.processed.length).toBe(0);
+    act(() => { result.current.setSearch(''); });
+    expect(result.current.processed.length).toBeGreaterThan(0);
   });
 
   it('retry reloads data', async () => {

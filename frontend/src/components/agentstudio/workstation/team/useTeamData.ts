@@ -1,96 +1,51 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import type { SortDir } from '../types';
-import type { TeamEntry, TeamFormData, TeamCategoryFilter } from './team.types';
+import { useMemo, useCallback } from 'react';
+import type { TeamEntry, TeamFormData, TeamData, TeamCategoryFilter } from './team.types';
 import { teamAPI } from './api';
-import { PAGE_SIZE } from '../constants';
+import { useGenericCrud } from '../shared/useGenericCrud';
+import { EMPTY_FORM, validateTeamForm } from './validate';
 
-export type TeamSortField = 'name' | 'status';
-export type TeamStatusFilter = 'all' | TeamEntry['status'];
+export function useTeamData(): TeamData {
+  const crud = useGenericCrud<TeamEntry, TeamFormData>({
+    api: teamAPI,
+    emptyForm: EMPTY_FORM,
+    itemName: 'Team',
+    validate: validateTeamForm,
+    extraFilters: { categoryFilter: 'all', statusFilter: 'all' },
+  });
 
-export function useTeamData() {
-  const [teams, setTeams] = useState<TeamEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TeamStatusFilter>('all');
-  const [categoryFilter, setCategoryFilter] = useState<TeamCategoryFilter>('all');
-  const [sortField, setSortField] = useState<TeamSortField>('name');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const addTeam = useCallback(async (data: TeamFormData): Promise<TeamEntry | undefined> => {
+    await crud.createItem(data);
+    return undefined;
+  }, [crud]);
 
-  const fetchTeams = useCallback(() => {
-    setIsLoading(true); setError(null);
-    setTimeout(() => {
-      teamAPI.fetchAll().then((items) => {
-        setTeams(items); setIsLoading(false);
-      }).catch(() => {
-        setError('Failed to load teams'); setIsLoading(false);
-      });
-    }, 400);
-  }, []);
-  const retry = useCallback(() => fetchTeams(), [fetchTeams]);
-  const clearError = useCallback(() => setError(null), []);
+  const updateTeam = useCallback(async (id: string, data: Partial<TeamFormData>) => {
+    await crud.updateItem(id, data as Partial<TeamEntry>);
+  }, [crud]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { fetchTeams(); }, [fetchTeams]);
-
-  const handleSort = useCallback((field: TeamSortField) => {
-    setSortField((prev) => { if (prev === field) { setSortDir((d) => (d === 'asc' ? 'desc' : 'asc')); return prev; } setSortDir('asc'); return field; });
-    setPage(1);
-  }, []);
-
-  const processed = useMemo(() => {
-    let arr = [...teams];
-    const q = search.toLowerCase();
-    if (q) arr = arr.filter((t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
-    if (statusFilter !== 'all') arr = arr.filter((t) => t.status === statusFilter);
-    if (categoryFilter !== 'all') arr = arr.filter((t) => t.category === categoryFilter);
-    arr.sort((a, b) => {
-      const cmp = a[sortField] < b[sortField] ? -1 : 1;
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-    return arr;
-  }, [teams, search, statusFilter, categoryFilter, sortField, sortDir]);
-
-  const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paged = useMemo(() => processed.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE), [processed, safePage]);
-  const allOnPageSelected = paged.length > 0 && paged.every((t) => selectedIds.has(t.id));
-
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  }, []);
-  const toggleSelectAll = useCallback(() => {
-    setSelectedIds((prev) => paged.every((t) => prev.has(t.id)) ? new Set() : new Set(paged.map((t) => t.id)));
-  }, [paged]);
-
-  const addTeam = useCallback(async (data: TeamFormData) => {
-    const created = await teamAPI.create(data);
-    setTeams((prev) => [created, ...prev]);
-    return created;
-  }, []);
-  const updateTeam = useCallback(async (id: string, data: TeamFormData) => {
-    try { await teamAPI.update(id, data); setTeams((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t)); } catch (e) { setError(`更新失败：${(e as Error).message}`); }
-  }, []);
   const deleteTeam = useCallback(async (id: string) => {
-    try { await teamAPI.remove(id); setTeams((prev) => prev.filter((t) => t.id !== id)); setSelectedIds((prev) => { const n = new Set(prev); n.delete(id); return n; }); } catch (e) { setError(`删除失败：${(e as Error).message}`); }
-  }, []);
-  const copyTeam = useCallback(async (item: TeamEntry) => {
-    try { const cloned = await teamAPI.clone(item); setTeams((prev) => [cloned, ...prev]); setPage(1); } catch (e) { setError(`复制失败：${(e as Error).message}`); }
-  }, []);
-  const batchDelete = useCallback(async (ids: Set<string>) => {
-    try { await teamAPI.removeBatch(ids); setTeams((prev) => prev.filter((t) => !ids.has(t.id))); setSelectedIds(new Set()); setPage(1); } catch (e) { setError(`批量删除失败：${(e as Error).message}`); }
-  }, []);
+    await crud.removeItem(id);
+  }, [crud]);
 
-  return {
-    isLoading, error, search, setSearch, statusFilter, setStatusFilter,
-    categoryFilter, setCategoryFilter,
-    sortField, sortDir,
-    page, setPage, selectedIds, setSelectedIds,
-    processed, totalPages: Math.max(1, Math.ceil(processed.length / PAGE_SIZE)), paged,
-    allOnPageSelected, toggleSelect, toggleSelectAll,
-    handleSort, addTeam, updateTeam, deleteTeam, copyTeam, batchDelete,
-    retry, clearError, teams,
-  };
+  const copyTeam = useCallback(async (item: TeamEntry) => {
+    await crud.cloneItem(item);
+  }, [crud]);
+
+  const batchDelete = useCallback(async (ids: Set<string>) => {
+    await crud.removeMultipleItems(ids);
+  }, [crud]);
+
+  return useMemo(() => ({
+    ...crud,
+    get teams() { return crud.items; },
+    get sortField() { return (crud.sortField ?? 'name') as 'name' | 'status'; },
+    get categoryFilter() { return (crud.extraFilterValues.categoryFilter ?? 'all') as TeamCategoryFilter; },
+    get statusFilter() { return (crud.extraFilterValues.statusFilter ?? 'all') as 'all' | TeamEntry['status']; },
+    setCategoryFilter: (v: TeamCategoryFilter) => crud.setExtraFilter('categoryFilter', v),
+    setStatusFilter: (v: 'all' | TeamEntry['status']) => crud.setExtraFilter('statusFilter', v),
+    addTeam,
+    updateTeam,
+    deleteTeam,
+    copyTeam,
+    batchDelete,
+  }), [crud, addTeam, updateTeam, deleteTeam, copyTeam, batchDelete]);
 }

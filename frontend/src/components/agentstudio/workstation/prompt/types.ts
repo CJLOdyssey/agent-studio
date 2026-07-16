@@ -1,4 +1,4 @@
-import type { SortDir } from '../types';
+import type { GenericCrudReturn } from '../shared/useGenericCrud';
 
 export interface PromptEntry {
   id: string;
@@ -19,33 +19,15 @@ export type PromptSortField = 'name' | 'category' | 'status';
 
 export type CategoryFilter = 'all' | PromptCategory;
 
-export interface PromptData {
-  isLoading: boolean;
-  paged: PromptEntry[];
-  processed: PromptEntry[];
-  page: number;
-  totalPages: number;
-  search: string;
+/** Data + UI state + CRUD ops for Prompt management. */
+export interface PromptData extends GenericCrudReturn<PromptEntry, PromptFormData> {
   categoryFilter: CategoryFilter;
-  sortField: PromptSortField | null;
-  sortDir: SortDir;
-  selectedIds: Set<string>;
-  allOnPageSelected: boolean;
-  error: string | null;
-  setSearch: (v: string) => void;
   setCategoryFilter: (v: CategoryFilter) => void;
-  setPage: (v: number) => void;
-  setSelectedIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
-  handleSort: (field: PromptSortField) => void;
-  toggleSelectAll: () => void;
-  toggleSelect: (id: string) => void;
   addPrompt: (data: PromptFormData) => void;
   updatePrompt: (id: string, data: Partial<PromptEntry>) => void;
   removePrompt: (id: string) => void;
   copyPrompt: (item: PromptEntry) => void;
   removeMultiple: (ids: Set<string>) => void;
-  clearError: () => void;
-  retry: () => void;
   /** Exposed for import/export composition — returns all items (unfiltered, unsorted) */
   getAllItems: () => PromptEntry[];
   /** Exposed for import/export composition — batch-append new items */
