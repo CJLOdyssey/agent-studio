@@ -21,6 +21,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
 from virtual_team.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
+from virtual_team._interfaces import ToolDescriptor, ToolExecutor, StreamResponseHandler
 from virtual_team.llm_stream import build_tool_calls_list, convert_messages_to_api, stream_llm_response
 from virtual_team.logging_config import get_logger
 from virtual_team.tool_config import ToolConfig, _ToolWrapper
@@ -59,7 +60,7 @@ class SingleAgentGraph:
         self.llm = ChatOpenAI(**llm_kwargs)
 
         self._tools: list = []
-        self._tool_map: dict = {}
+        self._tool_map: dict[str, ToolExecutor] = {}
         self._tool_definitions: list[dict] = []
         if checkpointer is not None:
             self.checkpointer = checkpointer
@@ -72,13 +73,17 @@ class SingleAgentGraph:
 
     # ── LLM streaming ──────────────────────────────────────────
 
-    async def _raw_llm_stream(self, messages: list[BaseMessage]) -> tuple[str, str, list[dict]]:
+    async def _raw_llm_stream(
+        self,
+        messages: list[BaseMessage],
+        _stream_handler: StreamResponseHandler = stream_llm_response,
+    ) -> tuple[str, str, list[dict]]:
         """Async raw HTTP streaming — captures content + reasoning_content + tool_calls."""
         api_messages = convert_messages_to_api(messages)
         url, headers, body = self._build_request_body(api_messages)
 
         content_chunks, thinking_chunks, tool_calls_map, finish_reason, usage_info = (
-            await stream_llm_response(url, headers, body, self._stream_cb, self._tool_definitions)
+            await _stream_handler(url, headers, body, self._stream_cb, self._tool_definitions)
         )
 
         full_content = "".join(content_chunks)
@@ -280,7 +285,7 @@ class SingleAgentGraph:
         sanitized = "".join(c for c in name if c.isascii() and (c.isalnum() or c in "_-"))
         return sanitized or f"tool_{hash(name) & 0xFFFFFFFF}"
 
-    def bind_tools(self, tools: list[ToolConfig]) -> None:
+    def bind_tools(self, tools: list[ToolDescriptor | ToolConfig]) -> None:
         """Bind tools to the graph — translates ToolConfig into tool definitions."""
         for tc in tools:
             api_name = self._sanitize_tool_name(tc.name)

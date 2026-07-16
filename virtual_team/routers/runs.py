@@ -13,17 +13,8 @@ from virtual_team.broker import buffer_run_messages, drain_buffer, stop_buffer, 
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary
-from virtual_team.repository import (
-    create_session,
-    get_api_key_for_use,
-    get_default_api_key,
-    get_messages,
-    get_run,
-    get_runs,
-    get_session,
-    update_run_status,
-    update_session_title,
-)
+from virtual_team.repository import get_messages, get_run
+from virtual_team.services.run_service import run_service
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])
@@ -51,8 +42,6 @@ class RunResponse(BaseModel):
 
 @router.post("/api/runs", response_model=RunResponse)
 async def create_run(req: RunRequest, request: Request):
-    from virtual_team.repository import create_run as db_create_run
-
     requirement = req.requirement.strip()
     config = load_config()
     if len(requirement) > config.max_requirement_length:
@@ -62,141 +51,34 @@ async def create_run(req: RunRequest, request: Request):
     if not requirement:
         raise HTTPException(status_code=400, detail="需求不能为空")
 
-    session_id = req.session_id
     user_id = get_user_id(request)
-    if session_id is None:
-        sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=req.agent_id)
-        session_id = sess.id
-    else:
-        existing_sess = await get_session(session_id)
-        if existing_sess is None:
-            logger.warning("session_id=%s not found, creating new session", session_id)
-            sess = await create_session(
-                title=requirement[:64], user_id=user_id, agent_id=req.agent_id
-            )
-            session_id = sess.id
-
-    # ── Resolve API credentials from the enterprise key vault ──────────────
-    user_id = get_user_id(request)
-    api_key = None
-    api_base = None
-    effective_model = req.model or config.model
-
     try:
-        if req.key_id:
-            key_cfg = await get_api_key_for_use(req.key_id, user_id)
-            if key_cfg:
-                api_key = key_cfg["api_key"]
-                api_base = key_cfg["base_url"]
-        else:
-            # No key_id specified — use user's default key
-            default_key = await get_default_api_key(user_id)
-            if default_key:
-                api_key = default_key["api_key"]
-                api_base = default_key["base_url"]
-    except Exception:
-        logger.warning("Key vault lookup failed — falling back to server env var")
-
-    # BYOK: no server-side key fallback — user must configure their own key
-    if not api_key:
-        raise HTTPException(status_code=400, detail="请先在设置中配置 API Key")
-
-    try:
-        run_id = await db_create_run(requirement, session_id=session_id)
+        result = await run_service.create_run(
+            requirement=requirement,
+            session_id=req.session_id,
+            user_id=user_id,
+            key_id=req.key_id,
+            agent_id=req.agent_id,
+            team_id=req.team_id,
+            model=req.model,
+        )
+        return RunResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Failed to create run: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"创建失败: {e}") from e
-
-    try:
-        existing_sess = await get_session(session_id)
-        if existing_sess:
-            await update_session_title(session_id, existing_sess.title)
-    except Exception:
-        pass
-
-    # Subscribe to Redis *before* starting the task — eliminates the timing gap
-    # where early thinking_stream / stream messages would be lost.
-    await buffer_run_messages(run_id)
-    logger.info("[create_run] team_id=%s | agent_id=%s | session_id=%s", req.team_id, req.agent_id, session_id)
-    try:
-        if req.team_id:
-            from virtual_team.repository.workflows import get_workflow_config_by_team
-            workflow = await get_workflow_config_by_team(req.team_id)
-            if workflow:
-                from virtual_team.tasks import _run_team_pipeline
-                asyncio.create_task(
-                    _run_team_pipeline(
-                        requirement=requirement,
-                        run_id=run_id,
-                        session_id=session_id,
-                        team_id=req.team_id,
-                        key_id=req.key_id,
-                        model=effective_model,
-                        api_key=api_key,
-                        api_base=api_base,
-                    )
-                )
-                logger.info("Team task started | run=%s | team=%s | nodes=%d", run_id, req.team_id, len(workflow.nodes))
-                return RunResponse(run_id=run_id, status="pending", session_id=session_id)
-
-        from virtual_team.tasks import _run_agent_pipeline
-        asyncio.create_task(
-            _run_agent_pipeline(
-                requirement=requirement,
-                run_id=run_id,
-                session_id=session_id,
-                agent_id=req.agent_id,
-                api_key=api_key,
-                api_base=api_base,
-                model=effective_model,
-                user_id=user_id,
-            )
-        )
-        logger.info(
-            "Task started | run_id=%s | session_id=%s | model=%s",
-            run_id,
-            session_id,
-            effective_model,
-        )
-    except Exception as e:
-        logger.exception("Failed to start agent task for run=%s", run_id)
-        await update_run_status(run_id, "error")
         raise HTTPException(status_code=500, detail=f"执行失败: {e}") from e
-
-    return RunResponse(run_id=run_id, status="pending", session_id=session_id)
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
 async def get_run_detail(run_id: str):
     try:
-        run = await get_run(run_id)
-        if run is None:
+        result = await run_service.get_run(run_id)
+        if result is None:
             raise HTTPException(status_code=404, detail="未找到该次讨论")
-        messages = await get_messages(run_id)
-        return {
-            "id": run.id,
-            "session_id": run.session_id,
-            "requirement": run.requirement,
-            "pm_document": run.pm_document,
-            "code": run.code,
-            "review": run.review,
-            "approved": run.approved,
-            "status": run.status,
-            "created_at": run.created_at.isoformat() if run.created_at else None,
-            "updated_at": run.updated_at.isoformat() if run.updated_at else None,
-            "messages": [
-                {
-                    "id": m.id,
-                    "role": m.role,
-                    "agent_name": m.agent_name,
-                    "content": m.content,
-                    "thinking": m.thinking,
-                    "round_number": m.round_number,
-                    "created_at": m.created_at.isoformat() if m.created_at else None,
-                }
-                for m in messages
-            ],
-        }
+        return result
     except HTTPException:
         raise
     except Exception as e:
@@ -207,22 +89,7 @@ async def get_run_detail(run_id: str):
 @router.get("/api/runs", response_model=list[RunSummary])
 async def list_runs(limit: int = 20):
     try:
-        runs = await get_runs(limit=min(limit, 100))
-        return [
-            {
-                "id": r.id,
-                "session_id": r.session_id,
-                "requirement": r.requirement,
-                "pm_document": r.pm_document,
-                "code": r.code,
-                "review": r.review,
-                "approved": r.approved,
-                "status": r.status,
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-            }
-            for r in runs
-        ]
+        return await run_service.list_runs(limit=limit)
     except Exception as e:
         logger.error("Error listing runs: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -244,7 +111,6 @@ async def run_websocket(websocket: WebSocket, run_id: str):
         try:
             run = await get_run(run_id)
             if run and run.status in ("converged", "error"):
-                # Clean up pre-subscription buffer — don't leak it
                 await stop_buffer(run_id)
                 messages = await get_messages(run_id)
                 for m in messages:
@@ -273,7 +139,6 @@ async def run_websocket(websocket: WebSocket, run_id: str):
             logger.warning("Pre-check run status failed: %s", e)
 
         try:
-            # Replay any messages buffered before WebSocket connected
             for msg in drain_buffer(run_id):
                 try:
                     await websocket.send_json(msg)
