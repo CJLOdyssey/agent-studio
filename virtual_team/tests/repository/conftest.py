@@ -1,5 +1,4 @@
-"""
-Repository test fixtures.
+"""Repository test fixtures.
 
 Provides an in-memory SQLite database for fast, isolated repository tests.
 Monkey-patches ``virtual_team.database._async_session_factory`` so that

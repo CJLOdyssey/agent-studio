@@ -1,6 +1,4 @@
-"""
-E2E Test: Skill CRUD operations.
-"""
+"""E2E Test: Skill CRUD operations."""
 
 from virtual_team.tests.conftest import Api, _cleanup
 

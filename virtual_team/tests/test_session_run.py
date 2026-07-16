@@ -1,6 +1,4 @@
-"""
-E2E Test: Session + Run operations.
-"""
+"""E2E Test: Session + Run operations."""
 
 from virtual_team.tests.conftest import Api, _cleanup
 

@@ -9,6 +9,7 @@ ThinkingNodeType = Literal["thought", "tool_call"]
 @dataclass
 class RefLink:
     """A reference link from a search/tool result."""
+
     title: str
     url: str
     snippet: str | None = None
@@ -21,6 +22,7 @@ class ThinkingNode:
     - ``thought`` nodes: regular reasoning text (same as before)
     - ``tool_call`` nodes: tool invocations with name, params, and optional references
     """
+
     type: ThinkingNodeType
     content: str
     tool_name: str | None = None

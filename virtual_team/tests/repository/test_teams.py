@@ -1,6 +1,4 @@
-"""
-Repository tests for Team CRUD and member management.
-"""
+"""Repository tests for Team CRUD and member management."""
 
 import uuid
 

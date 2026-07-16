@@ -105,7 +105,7 @@ def _fresh_state():
 
 
 class TestAuthConfig:
-    """GET /api/auth/config"""
+    """GET /api/auth/config."""
 
     def test_auth_config(self, api: AuthApi):
         resp = api.get("/api/auth/config")
@@ -116,7 +116,7 @@ class TestAuthConfig:
 
 
 class TestSendRegisterCode:
-    """POST /api/auth/send-register-code"""
+    """POST /api/auth/send-register-code."""
 
     def test_send_code_success(self, api: AuthApi):
         email = f"{_rid('code')}@test.com"
@@ -149,7 +149,7 @@ class TestSendRegisterCode:
 
 
 class TestRegister:
-    """POST /api/auth/register"""
+    """POST /api/auth/register."""
 
     def test_register_success(self, api: AuthApi):
         email = f"{_rid('reg')}@test.com"
@@ -234,7 +234,7 @@ class TestRegister:
 
 
 class TestLogin:
-    """POST /api/auth/login"""
+    """POST /api/auth/login."""
 
     @pytest.fixture
     def registered_user(self, api: AuthApi):
@@ -289,7 +289,7 @@ class TestLogin:
 
 
 class TestRefresh:
-    """POST /api/auth/refresh"""
+    """POST /api/auth/refresh."""
 
     @pytest.fixture
     def tokens(self, api: AuthApi):
@@ -318,7 +318,7 @@ class TestRefresh:
 
 
 class TestMe:
-    """GET /api/auth/me"""
+    """GET /api/auth/me."""
 
     @pytest.fixture
     def auth_header(self, api: AuthApi) -> dict:
@@ -348,7 +348,7 @@ class TestMe:
 
 
 class TestForgotResetPassword:
-    """POST /api/auth/forgot-password + /api/auth/reset-password"""
+    """POST /api/auth/forgot-password + /api/auth/reset-password."""
 
     @pytest.fixture
     def registered_user(self, api: AuthApi):
@@ -434,7 +434,7 @@ class TestForgotResetPassword:
 
 
 class TestLogout:
-    """POST /api/auth/logout"""
+    """POST /api/auth/logout."""
 
     @pytest.fixture
     def tokens(self, api: AuthApi):
@@ -464,7 +464,7 @@ class TestLogout:
 
 
 class TestResendVerification:
-    """POST /api/auth/resend-verification"""
+    """POST /api/auth/resend-verification."""
 
     def test_resend_to_nonexistent_email(self, api: AuthApi):
         resp = api.post("/api/auth/resend-verification", json={"email": f"{_rid('noexist')}@test.com"})

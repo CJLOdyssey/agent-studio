@@ -1,5 +1,4 @@
-"""
-Unit tests for SingleAgentGraph and related components.
+"""Unit tests for SingleAgentGraph and related components.
 
 These tests validate graph construction, tool binding, tool execution,
 and checkpointer creation — without requiring a live LLM API key.
