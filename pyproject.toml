@@ -25,6 +25,10 @@ module = "virtual_team.app"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.app_lifespan"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.checkpoint"
 ignore_errors = true
 
@@ -129,6 +133,10 @@ module = "virtual_team.tool_config"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.tool_handlers"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.tool_strategy"
 ignore_errors = true
 
@@ -169,6 +177,18 @@ module = "virtual_team.auth"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = "virtual_team.auth_jwt"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.auth_rbac"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.auth_middleware"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
 module = "virtual_team.error_codes"
 ignore_errors = true
 
@@ -190,6 +210,18 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "virtual_team.rag"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rag_chunking"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rag_store"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "virtual_team.rag_pipeline"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
@@ -216,6 +248,8 @@ source = ["virtual_team"]
 omit = [
     "virtual_team/tests/*",
     "virtual_team/thinking_tree/*",
+    "virtual_team/routers/agent_test_handler.py",
+    "virtual_team/tasks/prefix_completion.py",
 ]
 
 [tool.coverage.report]

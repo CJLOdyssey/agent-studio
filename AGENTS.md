@@ -82,9 +82,10 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 ```
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
-  └─ routers/ (18 modules: admin, agents, attachments, auth, commands, keys, mcps, models,
-   │            prompts, providers, runs, sessions, skills, system_team, teams, tools, versions, workflows)
-  │    └─ repository/ (12 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
+  └─ routers/ (20 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
+   │            prompts, providers, run_continue, runs, sessions, skills, system_team, teams, tools, versions, workflows)
+   │    └─ repository/ (18 modules: core, agents, keys, keys_crud, keys_connectivity, session_repo, run_repo, message_repo, memory_repo, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
+   │    └─ repository/ (14 modules: core, agents, keys, keys_crud, keys_connectivity, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
   │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
@@ -103,7 +104,7 @@ app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog
 
 **Celery tasks** (`tasks.py`): Parse JSON config fields → look up DB → create `ToolConfig` → bind to graph → execute via `asyncio.run()` (`_run_async` wrapper).
 
-**Continuation flow** (interrupted → "继续生成"): POST `/api/runs/complete` → `routers/runs.py:create_complete_run`. Unlike the main flow (which goes through Celery), continuation runs **directly in the uvicorn process** via `asyncio.create_task(_complete_pipeline(...))`. This avoids Docker Celery worker image rebuilds when modifying continuation logic. The pipeline uses DeepSeek's prefix completion API (`/beta/chat/completions` with `thinking: {type: "enabled"}`) and streams results through the same Redis → WebSocket pipeline. Key constraint: the HTTP response returns immediately (background task), so the frontend must not depend on the POST response body for stream data.
+**Continuation flow** (interrupted → "继续生成"): POST `/api/runs/complete` → `routers/run_continue.py:create_complete_run`. Unlike the main flow (which goes through Celery), continuation runs **directly in the uvicorn process** via `asyncio.create_task(_complete_pipeline(...))`. This avoids Docker Celery worker image rebuilds when modifying continuation logic. The pipeline uses DeepSeek's prefix completion API (`/beta/chat/completions` with `thinking: {type: "enabled"}`) and streams results through the same Redis → WebSocket pipeline. Key constraint: the HTTP response returns immediately (background task), so the frontend must not depend on the POST response body for stream data.
 
 **Streaming**: `StreamEmitter` → Redis pub/sub → frontend WebSocket. Thinking tokens buffered in `_pending_thinking`.
 

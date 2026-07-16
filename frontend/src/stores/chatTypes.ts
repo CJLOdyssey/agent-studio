@@ -29,15 +29,10 @@ export interface ChatState {
   activeTeamId: string | null;
   selectedAgentId: string | null;
 
-  submitRequirement: (requirement: string, session_id?: string, agent_id?: string, skipAddUserMessage?: boolean, submissionConvId?: string | null) => Promise<void>;
   setActiveTeam: (teamId: string | null) => void;
-  editMessage: (msgIndex: number, newContent: string) => Promise<void>;
-  regenerateMessage: (msgIndex: number) => Promise<void>;
-  retry: () => Promise<void>;
   restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
   loadConversation: (messages: ChatMessage[], convId?: string | null, sessionId?: string | null) => void;
   cancelRun: () => void;
-  continueGeneration: () => Promise<void>;
   addMessage: (msg: import('../types').WsMessage & { id?: string }) => void;
   setStatus: (status: AppStatus) => void;
   setResult: (result: RunResult | null) => void;

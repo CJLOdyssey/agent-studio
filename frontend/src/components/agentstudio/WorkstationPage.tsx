@@ -1,17 +1,7 @@
 import { useState } from 'react';
-import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText, GitBranch } from 'lucide-react';
-import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
-import AgentManagement from './workstation/agent/AgentManagement';
-import { PromptManagement } from './workstation/prompt';
-import OutputConstraintManagement from './workstation/output/OutputConstraintManagement';
-import ToolManagement from './workstation/tool/ToolManagement';
-import MCPManagement from './workstation/mcp/MCPManagement';
-import SkillManagement from './workstation/skill/SkillManagement';
-import TeamManagement from './workstation/team/TeamManagement';
-import MonitorCenter from './workstation/monitor/MonitorCenter';
-import LogAudit from './workstation/logs/LogAudit';
-import { WorkflowManagement } from './workstation/workflow';
 import { RefreshCw } from 'lucide-react';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
+import { navGroups, TAB_RENDERERS, type WorkstationTab } from './workstation/tabConfig';
 
 function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
@@ -23,41 +13,7 @@ function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
   );
 }
 
-type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'workflow' | 'monitor' | 'logs';
 
-interface NavTab {
-  id: WorkstationTab;
-  label: string;
-  icon: typeof Bot;
-}
-
-const navGroups: { label: string; tabs: NavTab[] }[] = [
-  {
-    label: '核心资源',
-    tabs: [
-      { id: 'teams', label: '团队管理', icon: Users },
-      { id: 'workflow', label: '工作流', icon: GitBranch },
-      { id: 'agents', label: 'Agent 管理', icon: Bot },
-      { id: 'prompts', label: '提示词管理', icon: MessageSquare },
-      { id: 'outputs', label: '输出约束', icon: FileCheck },
-    ],
-  },
-  {
-    label: '集成',
-    tabs: [
-      { id: 'tools', label: '工具管理', icon: Wrench },
-      { id: 'mcp', label: 'MCP 管理', icon: Server },
-      { id: 'skills', label: 'Skills 管理', icon: Zap },
-    ],
-  },
-  {
-    label: '运维',
-    tabs: [
-      { id: 'monitor', label: '监控中心', icon: BarChart3 },
-      { id: 'logs', label: '日志审计', icon: FileText },
-    ],
-  },
-];
 
 export default function WorkstationPage() {
   const [activeTab, setActiveTab] = useState<WorkstationTab>('teams');
@@ -100,16 +56,7 @@ export default function WorkstationPage() {
           {(() => { const tab = navGroups.flatMap(g => g.tabs).find(t => t.id === activeTab); return tab ? <><tab.icon size={20} style={{ color: 'var(--da-accent)', flexShrink: 0 }} /><h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--da-text-primary)', margin: 0, letterSpacing: '-0.01em' }}>{tab.label}</h2></> : null; })()}
         </header>
         <ErrorBoundary key={activeTab} FallbackComponent={ModuleFallback}>
-          {activeTab === 'agents' && <AgentManagement />}
-          {activeTab === 'prompts' && <PromptManagement />}
-          {activeTab === 'outputs' && <OutputConstraintManagement />}
-          {activeTab === 'tools' && <ToolManagement />}
-          {activeTab === 'mcp' && <MCPManagement />}
-          {activeTab === 'skills' && <SkillManagement />}
-          {activeTab === 'teams' && <TeamManagement />}
-          {activeTab === 'workflow' && <WorkflowManagement />}
-          {activeTab === 'monitor' && <MonitorCenter onNavigate={(tab) => setActiveTab(tab as WorkstationTab)} />}
-          {activeTab === 'logs' && <LogAudit />}
+          {TAB_RENDERERS[activeTab]({ onNavigate: (tab) => setActiveTab(tab as WorkstationTab) })}
         </ErrorBoundary>
       </main>
     </div>
