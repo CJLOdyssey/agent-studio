@@ -1,16 +1,22 @@
 """Application lifespan — startup tasks, database init, seed tools, and graceful shutdown."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import gc
 import os
 import platform
+from typing import TYPE_CHECKING
 
 from virtual_team.broker import BROKER_URL, REDIS_URL, get_redis
 from virtual_team.config import load_config
 from virtual_team.database import DATABASE_URL, get_session_factory, init_db
 from virtual_team.logging_config import get_logger
 from virtual_team.observability.startup_guard import mark_started, mark_stopped, record_crash
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
 
 logger = get_logger(__name__)
 
@@ -72,8 +78,8 @@ def _startup_report() -> list[str]:
 # ── Database init ───────────────────────────────────────────────────
 
 
-async def _do_init_db():
-    await init_db()
+async def _do_init_db() -> None:
+    await init_db()  # type: ignore[no-untyped-call]
     await seed_default_tools()
     from sqlalchemy import text
 
@@ -84,7 +90,7 @@ async def _do_init_db():
         logger.info("[LIFECYCLE] database connection verified")
 
 
-async def _init_database():
+async def _init_database() -> None:
     logger.info("[LIFECYCLE] initializing database...")
     try:
         await _do_init_db()
@@ -92,20 +98,21 @@ async def _init_database():
         logger.warning("[LIFECYCLE] database init skipped: %s", e)
 
 
-async def _check_redis():
+async def _check_redis() -> None:
     logger.info("[LIFECYCLE] verifying Redis connection...")
     try:
         r = get_redis()
-        pong = await r.ping()  # type: ignore[arg-type]
+        pong = await r.ping()  # type: ignore[misc]
         logger.info("[LIFECYCLE] redis ping=%s", pong)
     except Exception as e:
         logger.warning("[LIFECYCLE] redis unavailable (pub/sub will fail): %s", e)
 
 
-async def seed_default_tools():
+async def seed_default_tools() -> None:
     from sqlalchemy import select
 
-    from virtual_team.database import RegisteredToolDB, get_session_factory
+    from virtual_team.database import get_session_factory
+    from virtual_team.db_models import RegisteredToolDB
 
     factory = get_session_factory()
     async with factory() as session:
@@ -142,7 +149,7 @@ async def seed_default_tools():
 # ── Lifespan ────────────────────────────────────────────────────────
 
 
-async def startup(app):
+async def startup(app: FastAPI) -> None:
     """Run on application startup — config, GC, DB, Redis."""
     load_config()
     startup_log = _startup_report()
@@ -151,10 +158,8 @@ async def startup(app):
 
     # Periodic GC
     gc.set_threshold(1000, 10, 10)
-    if hasattr(gc, "enable"):
-        gc.enable()
 
-    async def _periodic_gc():
+    async def _periodic_gc() -> None:
         while True:
             await asyncio.sleep(int(_env("GC_INTERVAL", "60")))
             collected = gc.collect()
@@ -173,7 +178,7 @@ async def startup(app):
         raise
 
 
-async def shutdown(app):
+async def shutdown(app: FastAPI) -> None:
     """Run on application shutdown — cancel GC, stop marker."""
     app.state.gc_task.cancel()
     with contextlib.suppress(asyncio.CancelledError):
