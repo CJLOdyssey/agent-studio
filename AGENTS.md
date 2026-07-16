@@ -99,7 +99,7 @@ app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog
 
 **Two graph engines**:
 - `agent_graph.py`: LangGraph single-agent (`SingleAgentGraph`). Tool name prefixes: raw → none, MCP → `mcp_`, skill → `skill_`.
-- `team_graph.py`: LangGraph multi-agent (`TeamGraph`). PM → Frontend → Backend → Tester loop, up to `MAX_ROUNDS`.
+- `workflow/dynamic_team_graph.py`: LangGraph multi-agent (`DynamicTeamGraph`). Roles read from DB WorkflowConfig, configurable DAG via fan-out/fan-in.
 
 **Celery tasks** (`tasks.py`): Parse JSON config fields → look up DB → create `ToolConfig` → bind to graph → execute via `asyncio.run()` (`_run_async` wrapper).
 
