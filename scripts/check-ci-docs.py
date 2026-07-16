@@ -29,8 +29,10 @@ else:
 # ── 2. AGENTS.md counts ──────────────────────────────────────────────────
 agents = root.joinpath("AGENTS.md").read_text()
 
-# Routers
-actual = len([f for f in sorted(root.joinpath("virtual_team/routers").glob("*.py")) if f.name != "__init__.py"])
+# Routers (files + packages)
+router_dir = root.joinpath("virtual_team/routers")
+actual = len([f for f in sorted(router_dir.glob("*.py")) if f.name != "__init__.py" and f.is_file()]) + \
+         len([d for d in sorted(router_dir.iterdir()) if d.is_dir() and d.joinpath("__init__.py").exists()])
 expected = int(re.search(r"routers/ \((\d+)", agents).group(1))
 if actual != expected:
     print(f"❌ Routers: AGENTS.md says {expected}, actual {actual}")
