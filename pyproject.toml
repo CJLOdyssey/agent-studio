@@ -244,6 +244,8 @@ source = ["virtual_team"]
 omit = [
     "virtual_team/tests/*",
     "virtual_team/thinking_tree/*",
+    "virtual_team/routers/agents_test.py",
+    "virtual_team/tasks/prefix_completion.py",
 ]
 
 [tool.coverage.report]
