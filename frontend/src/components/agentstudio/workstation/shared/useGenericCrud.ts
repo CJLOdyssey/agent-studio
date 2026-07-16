@@ -11,7 +11,7 @@
  * Returns unified data + UI state + action handlers.
  */
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { PAGE_SIZE } from '../constants';
 import type { CrudAPI, GenericCrudConfig, GenericCrudReturn } from './useGenericCrud.types';
 

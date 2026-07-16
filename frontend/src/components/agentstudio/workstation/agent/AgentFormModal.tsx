@@ -16,6 +16,7 @@ interface Props {
   editingAgent: AgentEntry | null;
   formData: AgentFormData;
   setFormData: (d: AgentFormData) => void;
+  formErrors: string[];
   onSave: () => void;
   onClose: () => void;
   availablePrompts: RefItem[];
