@@ -16,7 +16,6 @@ interface Props {
   editingAgent: AgentEntry | null;
   formData: AgentFormData;
   setFormData: (d: AgentFormData) => void;
-  formErrors: string[];
   onSave: () => void;
   onClose: () => void;
   availablePrompts: RefItem[];
@@ -27,7 +26,7 @@ interface Props {
 
 type PickerType = 'prompt' | 'tools' | 'mcp' | 'skills' | null;
 
-function AgentFormModal({ editingAgent, formData, setFormData, formErrors, onSave, onClose, availablePrompts, availableTools, availableMCPs, availableSkills }: Props) {
+function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, availablePrompts, availableTools, availableMCPs, availableSkills }: Props) {
   const modelOptions = useModelOptions();
   const [activePicker, setActivePicker] = useState<PickerType>(null);
   const [teamOptions, setTeamOptions] = useState<string[]>([]);

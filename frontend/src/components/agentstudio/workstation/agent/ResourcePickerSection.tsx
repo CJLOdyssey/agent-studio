@@ -56,7 +56,6 @@ function getResourcePicker(
   if (!pickerType) return null;
   const cfg = pickerConfig[pickerType];
   if (!cfg) return null;
-  const Icon = cfg.icon;
 
   let options: RefItem[];
   let selectedIds: string[];
@@ -92,10 +91,11 @@ function getResourcePicker(
 
   return (
     <ResourcePickerModal
-      icon={<Icon size={16} />}
       title={t(cfg.titleKey)}
       options={options}
       selectedIds={selectedIds}
+      getOptionId={(o: RefItem) => o.id}
+      getOptionLabel={(o: RefItem) => o.name}
       multiple={cfg.multiple}
       onConfirm={handleConfirm}
       onClose={() => setActivePicker(null)}

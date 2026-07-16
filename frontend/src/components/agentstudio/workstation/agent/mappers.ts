@@ -1,6 +1,6 @@
 /** Data mapping utilities — back-end ↔ front-end type conversion. */
 
-import type { AgentEntry, AgentFormData } from './agent.types';
+import type { AgentEntry } from './agent.types';
 import type { AgentConfig } from '../../../../types';
 import { listPrompts } from '../../../../api/client/prompts';
 import { listTools } from '../../../../api/client/tools';
@@ -70,16 +70,19 @@ export async function resolveLists(
     id: t.id,
     name: t.name,
     description: t.description,
+    enabled: true,
   }));
   const mcp = allMcps.filter((m) => mcpIds.includes(m.id)).map((m) => ({
     id: m.id,
     name: m.name,
-    endpoint: m.endpoint,
+    serverUrl: m.endpoint || '',
+    enabled: true,
   }));
   const skills = allSkills.filter((s) => skillIds.includes(s.id)).map((s) => ({
     id: s.id,
     name: s.name,
     description: s.description,
+    enabled: true,
   }));
 
   return { system_prompt, tools, mcp, skills };
