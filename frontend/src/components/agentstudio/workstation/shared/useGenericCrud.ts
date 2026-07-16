@@ -31,7 +31,7 @@ export function useGenericCrud<T extends { id: string }, F>(
   const [error, setError] = useState<string | null>(null);
 
   // ── Search / sort / filter state ───────────────────────────────
-  const [search, setSearch] = useState('');
+  const [search, setSearch_] = useState('');
   const [sortField, setSortField] = useState<keyof T | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [extraFilterValues, setExtraFilterValues_] = useState<Record<string, string>>(
@@ -39,10 +39,10 @@ export function useGenericCrud<T extends { id: string }, F>(
   );
 
   // ── Pagination state ───────────────────────────────────────────
-  const [page, setPage] = useState(1);
+  const [page, setPage_] = useState(1);
 
   // ── Selection state ────────────────────────────────────────────
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds_] = useState<Set<string>>(new Set());
 
   // ── Form / modal state ─────────────────────────────────────────
   const [editingItem, setEditingItem] = useState<T | null>(null);
@@ -71,8 +71,14 @@ export function useGenericCrud<T extends { id: string }, F>(
   const clearError = useCallback(() => setError(null), []);
   const retry = useCallback(() => fetchItems(), [fetchItems]);
 
-  // Reset page / selection on filter change
-  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, sortField, sortDir, extraFilterValues]);
+  // Wrappers that also reset page / selection when filter changes
+  const resetPagination = useCallback(() => { setPage_(1); setSelectedIds_(new Set()); }, []);
+
+  const setSearch = useCallback((v: string) => { setSearch_(v); resetPagination(); }, [resetPagination]);
+  const setPage = useCallback((v: number) => { setPage_(v); }, []);
+  const setSelectedIds = useCallback((v: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    setSelectedIds_(v);
+  }, []);
 
   // ── Data processing (memoized) ─────────────────────────────────
   const processed = useMemo(() => {
@@ -130,13 +136,13 @@ export function useGenericCrud<T extends { id: string }, F>(
   // ── Selection handlers ────────────────────────────────────────
   const toggleSelectAll = useCallback(() => {
     if (allOnPageSelected) {
-      setSelectedIds((prev) => {
+      setSelectedIds_((prev) => {
         const next = new Set(prev);
         paged.forEach((item) => next.delete(item.id));
         return next;
       });
     } else {
-      setSelectedIds((prev) => {
+      setSelectedIds_((prev) => {
         const next = new Set(prev);
         paged.forEach((item) => next.add(item.id));
         return next;
@@ -145,7 +151,7 @@ export function useGenericCrud<T extends { id: string }, F>(
   }, [allOnPageSelected, paged]);
 
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
+    setSelectedIds_((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -153,7 +159,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     });
   }, []);
 
-  // ── Sort handler ──────────────────────────────────────────────
+  // ── Sort handler (resets pagination) ──────────────────────────
   const handleSort = useCallback(
     (field: keyof T) => {
       if (sortFields && !sortFields.includes(field)) return;
@@ -164,14 +170,16 @@ export function useGenericCrud<T extends { id: string }, F>(
         }
         return field;
       });
+      resetPagination();
     },
-    [sortFields],
+    [sortFields, resetPagination],
   );
 
-  // ── Extra filter handler ──────────────────────────────────────
+  // ── Extra filter handler (resets pagination) ──────────────────
   const setExtraFilter = useCallback((key: string, value: string) => {
     setExtraFilterValues_((prev) => ({ ...prev, [key]: value }));
-  }, []);
+    resetPagination();
+  }, [resetPagination]);
 
   // ── Mutations ─────────────────────────────────────────────────
   const createItem = useCallback(
@@ -204,7 +212,6 @@ export function useGenericCrud<T extends { id: string }, F>(
       if (api.clone) {
         await api.clone(item);
       } else {
-        // Default: create with same data (minus id + createdAt)
         const { id: _id, createdAt: _createdAt, ...rest } = item as unknown as Record<string, unknown>;
         await api.create(rest as unknown as F);
       }
@@ -239,7 +246,6 @@ export function useGenericCrud<T extends { id: string }, F>(
 
   const openEdit = useCallback((item: T) => {
     setEditingItem(item);
-    // Populate form with current item values
     const { id: _id, createdAt: _createdAt, ...itemData } = item as unknown as Record<string, unknown>;
     setFormData_(itemData as unknown as F);
     setFormErrors([]);
@@ -287,7 +293,6 @@ export function useGenericCrud<T extends { id: string }, F>(
   // Click-outside for dropdown menu
   useEffect(() => {
     if (!openMenuId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMenuAnchorEl(null);
       return;
     }
@@ -325,7 +330,7 @@ export function useGenericCrud<T extends { id: string }, F>(
   const handleBatchDelete = useCallback(() => {
     removeMultipleItems(selectedIds).then(() => {
       setIsBatchDeleteOpen(false);
-      setSelectedIds(new Set());
+      setSelectedIds_(new Set());
     });
   }, [selectedIds, removeMultipleItems]);
 
