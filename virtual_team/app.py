@@ -20,8 +20,8 @@ from virtual_team.app_lifespan import shutdown, startup  # noqa: E402
 from virtual_team.logging_config import get_logger  # noqa: E402
 from virtual_team.routers import (  # noqa: E402
     admin,
+    agent_test_handler,
     agents,
-    agents_test,
     attachments,
     auth,
     commands,
@@ -96,7 +96,7 @@ app.add_middleware(
 
 
 # ── Routers ─────────────────────────────────────────────────────────────────
-routers = [auth, runs, run_continue, sessions, agents, agents_test, attachments, commands, models, keys,
+routers = [auth, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
            teams, tools, skills, prompts, mcps, admin, providers, versions,
            system_team, workflows]
 for r in routers:

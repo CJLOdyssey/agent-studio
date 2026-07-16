@@ -1,6 +1,6 @@
 [run]
 source = virtual_team
-omit = */tests/*, */routers/agents_test.py, */tasks/prefix_completion.py
+omit = */tests/*, */routers/agent_test_handler.py, */tasks/prefix_completion.py
 
 [report]
 fail_under = 0
