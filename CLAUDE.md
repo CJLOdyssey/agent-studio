@@ -87,7 +87,7 @@
 │   │   ├── skills.py, teams.py, keys.py, core.py, workflows.py
 │   │   └── __init__.py          # 统一导出
 │   ├── agent_graph.py           # ⭐ LangGraph Agent 引擎（工具绑定+执行）
-│   ├── team_graph.py            # ⭐ 多 Agent 团队协作 LangGraph
+│   ├── workflow/dynamic_team_graph.py  # ⭐ 多 Agent 团队协作 LangGraph（DB 驱动）
 │   ├── checkpoint.py            # 对话断点恢复 + create_checkpointer()
 │   ├── system_team/             # AI 代理引擎（tool/skill 生成器）
 │   ├── tasks.py                 # Celery 异步任务
