@@ -1,11 +1,13 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
+import type { ChatMessage, RunResult } from '../types';
+import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent } from './wsEvents';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
-export function handleThinkingDone(s: ChatState, msg: any): Partial<ChatState> {
+export function handleThinkingDone(s: ChatState, msg: WsThinkingDoneEvent): Partial<ChatState> {
   const continuingId = s.continuingId;
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
@@ -52,7 +54,7 @@ export function handleThinkingDone(s: ChatState, msg: any): Partial<ChatState> {
   };
 }
 
-export function handleThinkingDoneEvent(set: SetFn, msg: any): void {
+export function handleThinkingDoneEvent(set: SetFn, msg: WsThinkingDoneEvent): void {
   set((s) => {
     if (s.streamingId) {
       return {
@@ -69,7 +71,7 @@ export function handleResultEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  msg: any,
+  msg: WsResultEvent,
 ): void {
   const runId = get().currentRunId;
   const codeContent = msg.code ?? '';
@@ -81,14 +83,14 @@ export function handleResultEvent(
         const updated: Record<string, unknown> = {};
         if (codeContent) updated.content = codeContent;
         if (m.thinking === '') updated.thinking = undefined;
-        return { ...m, ...updated, thinkingDone: true } as any;
+        return { ...m, ...updated, thinkingDone: true } as ChatMessage;
       });
     }
     return {
       messages: msgs,
       status: 'idle' as ChatState['status'],
       streamingId: null,
-      result: { code: codeContent, run_id: _s.currentRunId, requirement: '', pm_document: '', review: '', approved: false, status: 'completed' },
+      result: { code: codeContent, run_id: _s.currentRunId, requirement: '', pm_document: '', review: '', approved: false, status: 'completed' } as unknown as RunResult,
       skipThinking: false,
     };
   });
@@ -100,7 +102,7 @@ export function handleTeamResultEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  _msg: any,
+  _msg: WsTeamResultEvent,
 ): void {
   const runId = get().currentRunId;
   set((_s) => {
@@ -108,7 +110,7 @@ export function handleTeamResultEvent(
     if (_s.streamingId) {
       msgs = _s.messages.map((m) => {
         if (m.id !== _s.streamingId) return m;
-        return { ...m, thinkingDone: true } as any;
+        return { ...m, thinkingDone: true } as ChatMessage;
       });
     }
     return {
@@ -122,7 +124,7 @@ export function handleTeamResultEvent(
   activeStreamMsgIds.delete(runId || '');
 }
 
-export function handleThumbsEvent(set: SetFn, msg: any): void {
+export function handleThumbsEvent(set: SetFn, msg: WsThumbsEvent): void {
   set((s) => ({
     messages: s.messages.map((m) =>
       m.id === msg.msgId ? { ...m, thumbs: msg.value } : m,
