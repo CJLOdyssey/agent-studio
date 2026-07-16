@@ -10,28 +10,22 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Annotated, Any, TypedDict, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 
 import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
+from virtual_team.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 from virtual_team.llm_stream import build_tool_calls_list, convert_messages_to_api, stream_llm_response
 from virtual_team.logging_config import get_logger
 from virtual_team.tool_config import ToolConfig, _ToolWrapper
 
 logger = get_logger(__name__)
-
-
-class AgentState(TypedDict):
-    messages: Annotated[list[BaseMessage], add_messages]
-    system_prompt: str
-    session_context: str
 
 
 class SingleAgentGraph:

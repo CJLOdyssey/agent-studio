@@ -5,7 +5,6 @@ from sqlalchemy import select
 
 from virtual_team.database import (
     AgentConfigDB,
-    ChatMessage,
     get_session_factory,
 )
 
@@ -44,16 +43,6 @@ async def get_agent_config(agent_id: str) -> AgentConfigDB | None:
         stmt = select(AgentConfigDB).where(AgentConfigDB.id == agent_id)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
-
-
-async def get_run_messages(run_id: str) -> list[ChatMessage]:
-    factory = get_session_factory()
-    async with factory() as session:
-        stmt = (
-            select(ChatMessage).where(ChatMessage.run_id == run_id).order_by(ChatMessage.created_at)
-        )
-        result = await session.execute(stmt)
-        return list(result.scalars().all())
 
 
 async def get_agent_config_count() -> int:
