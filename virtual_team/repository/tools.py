@@ -1,74 +1,36 @@
-from datetime import UTC, datetime
+"""Tools repository — CRUD for :class:`RegisteredToolDB`."""
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc
 
-from virtual_team.database import RegisteredToolDB, get_session_factory
-from virtual_team.logging_config import get_logger
-
-logger = get_logger(__name__)
+from virtual_team.database import RegisteredToolDB
+from virtual_team.repository.base import BaseRepository
 
 
-async def get_tools() -> list[dict]:
-    factory = get_session_factory()
-    async with factory() as session:
-        stmt = select(RegisteredToolDB).order_by(desc(RegisteredToolDB.updated_at))
-        result = await session.execute(stmt)
-        return [
-            {
-                "id": t.id,
-                "name": t.name,
-                "category": t.category,
-                "description": t.description,
-                "model": t.model,
-                "status": t.status,
-                "version": t.version,
-                "endpoint": t.endpoint,
-                "method": t.method,
-                "headers": t.headers,
-                "parameters": t.parameters,
-                "created_at": t.created_at.isoformat() if t.created_at else None,
-            }
-            for t in result.scalars().all()
-        ]
+class ToolRepository(BaseRepository):
+    model = RegisteredToolDB
+    default_order = desc(RegisteredToolDB.updated_at)
+
+    @staticmethod
+    def to_dict(obj) -> dict:
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "category": obj.category,
+            "description": obj.description,
+            "model": obj.model,
+            "status": obj.status,
+            "version": obj.version,
+            "endpoint": obj.endpoint,
+            "method": obj.method,
+            "headers": obj.headers,
+            "parameters": obj.parameters,
+            "created_at": obj.created_at.isoformat() if obj.created_at else None,
+        }
 
 
-async def get_tool(tool_id: str) -> RegisteredToolDB | None:
-    factory = get_session_factory()
-    async with factory() as session:
-        return await session.get(RegisteredToolDB, tool_id)
-
-
-async def create_tool(data: dict) -> RegisteredToolDB:
-    factory = get_session_factory()
-    async with factory() as session:
-        obj = RegisteredToolDB(**data)
-        session.add(obj)
-        await session.commit()
-        await session.refresh(obj)
-        return obj
-
-
-async def update_tool(tool_id: str, data: dict) -> RegisteredToolDB | None:
-    factory = get_session_factory()
-    async with factory() as session:
-        obj = await session.get(RegisteredToolDB, tool_id)
-        if not obj:
-            return None
-        for k, v in data.items():
-            if v is not None and hasattr(obj, k):
-                setattr(obj, k, v)
-        obj.updated_at = datetime.now(UTC)
-        await session.commit()
-        await session.refresh(obj)
-        return obj
-
-
-async def delete_tool(tool_id: str) -> bool:
-    factory = get_session_factory()
-    async with factory() as session:
-        obj = await session.get(RegisteredToolDB, tool_id)
-        if not obj:
-            return False
-        await session.delete(obj)
-        await session.commit()
-        return True
+# module-level aliases — preserve existing ``from repository import *`` API
+get_tools = ToolRepository.get_all     # await get_tools()
+get_tool = ToolRepository.get_one      # await get_tool(id)
+create_tool = ToolRepository.create_one
+update_tool = ToolRepository.update_one
+delete_tool = ToolRepository.delete_one

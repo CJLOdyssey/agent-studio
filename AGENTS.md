@@ -84,7 +84,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
   └─ routers/ (18 modules: admin, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, runs, sessions, skills, system_team, teams, tools, versions, workflows)
-  │    └─ repository/ (11 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions, workflows, auth)
+  │    └─ repository/ (12 modules: core, agents, keys, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
   │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)

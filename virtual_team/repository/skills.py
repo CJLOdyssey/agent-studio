@@ -1,68 +1,35 @@
-from datetime import UTC, datetime
+"""Skills repository — CRUD for :class:`RegisteredSkillDB`."""
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc
 
-from virtual_team.database import RegisteredSkillDB, get_session_factory
-from virtual_team.logging_config import get_logger
-
-logger = get_logger(__name__)
+from virtual_team.database import RegisteredSkillDB
+from virtual_team.repository.base import BaseRepository
 
 
-async def get_skills() -> list[dict]:
-    factory = get_session_factory()
-    async with factory() as session:
-        stmt = select(RegisteredSkillDB).order_by(desc(RegisteredSkillDB.updated_at))
-        result = await session.execute(stmt)
-        return [
-            {
-                "id": s.id,
-                "name": s.name,
-                "category": s.category,
-                "description": s.content,
-                "version": s.version,
-                "status": s.status,
-                "author": s.author,
-                "instructions": s.instructions,
-                "prompt_id": s.prompt_id,
-                "tool_names": s.tool_names or [],
-                "output_constraint": s.output_constraint,
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-            }
-            for s in result.scalars().all()
-        ]
+class SkillRepository(BaseRepository):
+    model = RegisteredSkillDB
+    default_order = desc(RegisteredSkillDB.updated_at)
+
+    @staticmethod
+    def to_dict(obj) -> dict:
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "category": obj.category,
+            "description": obj.content,
+            "version": obj.version,
+            "status": obj.status,
+            "author": obj.author,
+            "instructions": obj.instructions,
+            "prompt_id": obj.prompt_id,
+            "tool_names": obj.tool_names or [],
+            "output_constraint": obj.output_constraint,
+            "created_at": obj.created_at.isoformat() if obj.created_at else None,
+        }
 
 
-async def create_skill(data: dict) -> RegisteredSkillDB:
-    factory = get_session_factory()
-    async with factory() as session:
-        obj = RegisteredSkillDB(**data)
-        session.add(obj)
-        await session.commit()
-        await session.refresh(obj)
-        return obj
-
-
-async def update_skill(skill_id: str, data: dict) -> RegisteredSkillDB | None:
-    factory = get_session_factory()
-    async with factory() as session:
-        obj = await session.get(RegisteredSkillDB, skill_id)
-        if not obj:
-            return None
-        for k, v in data.items():
-            if v is not None and hasattr(obj, k):
-                setattr(obj, k, v)
-        obj.updated_at = datetime.now(UTC)
-        await session.commit()
-        await session.refresh(obj)
-        return obj
-
-
-async def delete_skill(skill_id: str) -> bool:
-    factory = get_session_factory()
-    async with factory() as session:
-        obj = await session.get(RegisteredSkillDB, skill_id)
-        if not obj:
-            return False
-        await session.delete(obj)
-        await session.commit()
-        return True
+# module-level aliases
+get_skills = SkillRepository.get_all
+create_skill = SkillRepository.create_one
+update_skill = SkillRepository.update_one
+delete_skill = SkillRepository.delete_one
