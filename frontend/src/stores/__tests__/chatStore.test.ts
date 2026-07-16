@@ -165,9 +165,9 @@ describe('chatStore', () => {
     it('提交需求时添加用户消息到列表', async () => {
       const client = await import('../../api/client');
       (client.submitRequirement as ReturnType<typeof vi.fn>).mockResolvedValue({ run_id: 'run-1', status: 'running' });
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().submitRequirement('测试需求');
-      const state = useChatStore.getState();
+      const { submitRequirement } = await import('../chatStore');
+      await submitRequirement('测试需求');
+      const state = (await import('../chatStore')).useChatStore.getState();
       expect(state.status).toBe('running');
       expect(state.currentRunId).toBe('run-1');
       expect(state.messages).toHaveLength(1);
@@ -180,9 +180,9 @@ describe('chatStore', () => {
     it('提交失败时保留用户消息并设置 wsStatus 为 disconnected', async () => {
       const client = await import('../../api/client');
       (client.submitRequirement as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('API Error'));
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().submitRequirement('test');
-      const state = useChatStore.getState();
+      const { submitRequirement } = await import('../chatStore');
+      await submitRequirement('test');
+      const state = (await import('../chatStore')).useChatStore.getState();
       expect(state.status).toBe('error');
       expect(state.error).toBe('API Error');
       expect(state.wsStatus).toBe('disconnected');
@@ -194,13 +194,12 @@ describe('chatStore', () => {
       const client = await import('../../api/client');
       (client.submitRequirement as ReturnType<typeof vi.fn>).mockClear();
       (client.listKeys as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().submitRequirement('测试需求');
-      const state = useChatStore.getState();
+      const { submitRequirement } = await import('../chatStore');
+      await submitRequirement('测试需求');
+      const state = (await import('../chatStore')).useChatStore.getState();
       expect(state.status).toBe('error');
       expect(state.error).toBe('请先在设置中配置 API Key');
       expect(state.wsStatus).toBe('disconnected');
-      // BYOK: should NOT call the API when no key is configured
       expect(client.submitRequirement).not.toHaveBeenCalled();
     });
   });
