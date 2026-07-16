@@ -7,6 +7,7 @@ concrete classes from ``tool_config.py`` and ``llm_stream.py``.
 # ▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -20,7 +21,7 @@ class ToolDescriptor(Protocol):
 
     name: str
     description: str
-    parameters: dict | None
+    parameters: dict[str, Any] | None
     instructions: str
     mcp_type: str
     mcp_endpoint: str
@@ -41,7 +42,7 @@ class ToolExecutor(Protocol):
     name: str
     description: str
 
-    async def invoke(self, args: dict) -> str: ...
+    async def invoke(self, args: dict[str, Any]) -> str: ...
 
     def set_llm(self, llm: Any) -> None: ...
 
@@ -58,11 +59,11 @@ class StreamResponseHandler(Protocol):
     async def __call__(
         self,
         url: str,
-        headers: dict,
-        body: dict,
-        stream_cb: Any | None,
-        tool_definitions: list[dict],
-    ) -> tuple[list[str], list[str], dict[int, dict], str | None, dict]: ...
+        headers: dict[str, str],
+        body: dict[str, Any],
+        stream_cb: Callable[..., Any] | None,
+        tool_definitions: list[dict[str, Any]],
+    ) -> tuple[list[str], list[str], dict[int, dict[str, Any]], str | None, dict[str, Any]]: ...
 
 
 __all__ = ["ToolDescriptor", "ToolExecutor", "StreamResponseHandler"]

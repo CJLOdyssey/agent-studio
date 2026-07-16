@@ -156,7 +156,7 @@ class RunService:
                 "Task started | run_id=%s | session_id=%s | model=%s",
                 run_id, session_id, effective_model,
             )
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to start agent task for run=%s", run_id)
             await update_run_status(run_id, "error")
             raise

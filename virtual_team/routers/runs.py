@@ -1,6 +1,5 @@
 """Run API routes: create, list, detail, and WebSocket streaming."""
 
-import asyncio
 import contextlib
 import time
 
@@ -9,7 +8,7 @@ from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
 
 from virtual_team.auth import get_user_id
-from virtual_team.broker import buffer_run_messages, drain_buffer, stop_buffer, subscribe_run
+from virtual_team.broker import drain_buffer, stop_buffer, subscribe_run
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary

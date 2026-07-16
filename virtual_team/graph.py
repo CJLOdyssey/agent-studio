@@ -20,8 +20,8 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 import virtual_team.thinking_tree.tools.tavily_search  # noqa: F401
+from virtual_team._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
 from virtual_team.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
-from virtual_team._interfaces import ToolDescriptor, ToolExecutor, StreamResponseHandler
 from virtual_team.llm_stream import build_tool_calls_list, convert_messages_to_api, stream_llm_response
 from virtual_team.logging_config import get_logger
 from virtual_team.tool_config import ToolConfig, _ToolWrapper
