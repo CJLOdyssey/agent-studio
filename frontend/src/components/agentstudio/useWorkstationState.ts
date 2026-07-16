@@ -98,7 +98,7 @@ export function useWorkstationState(
     const el = messagesContainerRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
-  }, [lastMsgLen, lastMsgStream]);
+  }, [lastMsgLen, lastMsgStream, messagesContainerRef]);
 
   useEffect(() => {
     if (apiStatus === 'loading' || apiStatus === 'running') return;
@@ -112,7 +112,7 @@ export function useWorkstationState(
         convRef.current.updateConversationSessionId(activeId, state.currentSessionId, false);
       }
     }
-  }, [apiMessages, apiStatus]);
+  }, [apiMessages, apiStatus, activeTeamId, activeTeamName]);
 
   useEffect(() => {
     const activeId = conv.activeConvId;
@@ -164,7 +164,7 @@ export function useWorkstationState(
       }
     }
     loadConversation(chatMessages, found.id, found.sessionId);
-  }, [conv.activeConvId]);
+  }, [conv.activeConvId, filteredConversations, loadConversation, resetApi]);
 
   const handleNewChat = useCallback(() => {
     if (apiMessages.length > 0 && conv.activeConvId) {
@@ -216,7 +216,7 @@ export function useWorkstationState(
       if (!document.fullscreenElement) await workspaceRef.current.requestFullscreen();
       else await document.exitFullscreen();
     } catch { /* ignore */ }
-  }, []);
+  }, [workspaceRef]);
 
   const handleSaveAgent = useCallback(
     async (agent: Agent) => {

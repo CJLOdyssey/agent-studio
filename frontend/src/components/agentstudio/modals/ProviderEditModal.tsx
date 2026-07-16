@@ -74,6 +74,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       if (patch.baseUrl) setBaseUrl(patch.baseUrl);
       if (patch.usageType) setUsageType(patch.usageType as 'llm' | 'embedding' | 'both');
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providerType]);
 
   const caps = providers[providerType]?.capabilities ?? ['llm'];
