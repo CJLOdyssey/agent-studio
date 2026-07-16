@@ -4,21 +4,12 @@ import { X, Wrench, Server, Sparkles } from 'lucide-react';
 import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/agentstudio';
 import { useItemList } from '../../../hooks/useItemList';
 import { useAutoSave } from '../../../hooks/useAutoSave';
-import { SystemPromptTab } from './tabs/SystemPromptTab';
-import { OutputConstraintTab } from './tabs/OutputConstraintTab';
-import { ToolsTab } from './tabs/ToolsTab';
-import { MCPTab } from './tabs/MCPTab';
-import { SkillsTab } from './tabs/SkillsTab';
 import { useAgentConfigForm } from './tabs/useAgentConfigForm';
-import type { PickerItem } from './PickerModal';
+import { usePickerState } from './tabs/usePickerState';
+import TabRenderer from './tabs/TabRenderer';
 import PickerSection from './PickerSection';
-import ItemEditor from './ItemEditor';
 import type { ToolFormData } from '../workstation/tool/tool.types';
-import { promptAPI } from '../workstation/prompt/api';
-import { outputAPI } from '../workstation/output/api';
 import { toolAPI } from '../workstation/tool/api';
-import { mcpAPI } from '../workstation/mcp/api';
-import { skillAPI } from '../workstation/skill/api';
 
 interface Props {
   agent: Agent;
@@ -89,8 +80,6 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   useAutoSave('agentstudio:agent:systemPrompt', systemPrompt);
   useAutoSave('agentstudio:agent:outputConstraints', outputConstraints);
   const [activeTab, setActiveTab] = useState('system');
-  const [pickerTab, setPickerTab] = useState<string | null>(null);
-  const [pickerItems, setPickerItems] = useState<Record<string, PickerItem[]>>({});
   const [editingToolItem, setEditingToolItem] = useState<AgentTool | null>(null);
   const [editingMcpItem, setEditingMcpItem] = useState<AgentMCP | null>(null);
   const [editingSkillItem, setEditingSkillItem] = useState<AgentSkill | null>(null);
@@ -106,25 +95,13 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    promptAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, system: items.map(p => ({ id: p.id, name: p.name, description: p.content.length > 120 ? p.content.slice(0, 120) + '…' : p.content, source: t('workstation.promptMgmt') } as PickerItem))}));
-    }).catch(() => {});
-    outputAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, output: items.map(o => ({ id: o.id, name: o.name, description: o.content, source: t('workstation.outputMgmt') } as PickerItem))}));
-    }).catch(() => {});
-    toolAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, tools: items.map(tool => ({id: tool.id, name: tool.name, description: tool.description || '', source: t('workstation.toolMgmt')}))}));
-    }).catch(e => console.error('AgentConfigModal: tool fetch failed', e));
-    mcpAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, mcp: items.map(m => ({id: m.id, name: m.name, description: m.description || '', source: t('workstation.mcpMgmt')}))}));
-    }).catch(e => console.error('AgentConfigModal: mcp fetch failed', e));
-    skillAPI.fetchAll().then(items => {
-      if (!cancelled) setPickerItems(prev => ({...prev, skills: items.map(s => ({id: s.id, name: s.name, description: s.description || '', source: t('workstation.skillMgmt')}))}));
-    }).catch(e => console.error('AgentConfigModal: skill fetch failed', e));
-    return () => { cancelled = true; };
-  }, []);
+  const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
+    setSystemPrompt,
+    setOutputConstraints,
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, parameters: (item as unknown as Record<string, string>).parameters || '' }) as AgentTool),
+    addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentMCP),
+    addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentSkill),
+  });
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -140,27 +117,6 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
       isConfigured: true,
     });
   };
-
-  function handlePickerSelect(tab: string, item: PickerItem) {
-    switch (tab) {
-      case 'system':
-        setSystemPrompt((prev) => prev + (prev ? '\n\n' : '') + item.description);
-        break;
-      case 'output':
-        setOutputConstraints((prev) => prev + (prev ? '\n' : '') + item.description);
-        break;
-      case 'tools':
-        tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, parameters: (item as unknown as Record<string, string>).parameters || '' }) as AgentTool);
-        break;
-      case 'mcp':
-        mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentMCP);
-        break;
-      case 'skills':
-        skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentSkill);
-        break;
-    }
-    setPickerTab(null);
-  }
 
   function saveFormItem(kind: 'tool' | 'mcp' | 'skill') {
     const f = form.forms[kind];
@@ -258,112 +214,33 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
     }));
   }
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'system':
-        return <SystemPromptTab ref={systemRef} value={systemPrompt} onChange={setSystemPrompt} onAddFromWorkstation={() => setPickerTab('system')} />;
-      case 'output':
-        return <OutputConstraintTab ref={outputRef} value={outputConstraints} onChange={setOutputConstraints} onAddFromWorkstation={() => setPickerTab('output')} />;
-      case 'tools':
-        return (
-          <ItemEditor
-            kind="tool"
-            form={form.forms.tool}
-            editingItem={editingToolItem as unknown as Record<string, unknown>}
-            onSave={() => saveFormItem('tool')}
-            onClose={handleFormClose}
-            setFormData={(fn) => form.updateFormData('tool', fn as (d: unknown) => unknown)}
-          >
-            <ToolsTab
-              items={tools.items}
-              editingId={tools.editingId}
-              showForm={false}
-              formData={form.forms.tool.data as Parameters<typeof ToolsTab>[0]['formData']}
-              formErrors={form.forms.tool.errors}
-              editingItem={null}
-              onToggle={tools.toggle}
-              onAdd={() => tools.addCustom(() => ({ id: `custom-${Date.now()}`, name: '新工具', description: '', enabled: true, parameters: '' }) as AgentTool)}
-              onUpdate={(id, name, desc) => tools.update(id, { name, description: desc } as Partial<AgentTool>)}
-              onRemove={tools.remove}
-              onStartEdit={tools.setEditingId}
-              onFinishEdit={() => tools.setEditingId(null)}
-              onPickerOpen={() => setPickerTab('tools')}
-              onCustomize={() => { setEditingToolItem(null); form.openForm('tool'); }}
-              onFormSave={() => {}}
-              onFormClose={() => {}}
-              setFormData={() => {}}
-              onEditFull={(item) => handleEditTool(item)}
-            />
-          </ItemEditor>
-        );
-      case 'mcp':
-        return (
-          <ItemEditor
-            kind="mcp"
-            form={form.forms.mcp}
-            editingItem={editingMcpItem as unknown as Record<string, unknown>}
-            onSave={() => saveFormItem('mcp')}
-            onClose={() => { form.closeForm('mcp'); setEditingMcpItem(null); }}
-            setFormData={(fn) => form.updateFormData('mcp', fn as (d: unknown) => unknown)}
-          >
-            <MCPTab
-              items={mcp.items}
-              editingId={mcp.editingId}
-              showForm={false}
-              formData={form.forms.mcp.data as Parameters<typeof MCPTab>[0]['formData']}
-              formErrors={form.forms.mcp.errors}
-              editingItem={null}
-              onToggle={mcp.toggle}
-              onAdd={() => mcp.addCustom(() => ({ id: `custom-${Date.now()}`, name: '新 MCP', description: '', enabled: true }) as AgentMCP)}
-              onUpdate={(id, name, desc) => mcp.update(id, { name, description: desc } as Partial<AgentMCP>)}
-              onRemove={mcp.remove}
-              onStartEdit={mcp.setEditingId}
-              onFinishEdit={() => mcp.setEditingId(null)}
-              onPickerOpen={() => setPickerTab('mcp')}
-              onCustomize={() => { setEditingMcpItem(null); form.openForm('mcp'); }}
-              onFormSave={() => {}}
-              onFormClose={() => {}}
-              setFormData={() => {}}
-              onEditFull={(item) => handleEditMcp(item)}
-            />
-          </ItemEditor>
-        );
-      case 'skills':
-        return (
-          <ItemEditor
-            kind="skill"
-            form={form.forms.skill}
-            editingItem={editingSkillItem as unknown as Record<string, unknown>}
-            onSave={() => saveFormItem('skill')}
-            onClose={() => { form.closeForm('skill'); setEditingSkillItem(null); }}
-            setFormData={(fn) => form.updateFormData('skill', fn as (d: unknown) => unknown)}
-          >
-            <SkillsTab
-              items={skills.items}
-              editingId={skills.editingId}
-              showForm={false}
-              formData={form.forms.skill.data as Parameters<typeof SkillsTab>[0]['formData']}
-              formErrors={form.forms.skill.errors}
-              editingItem={null}
-              onToggle={skills.toggle}
-              onAdd={() => skills.addCustom(() => ({ id: `custom-${Date.now()}`, name: '新 Skill', description: '', enabled: true }) as AgentSkill)}
-              onUpdate={(id, name, desc) => skills.update(id, { name, description: desc } as Partial<AgentSkill>)}
-              onRemove={skills.remove}
-              onStartEdit={skills.setEditingId}
-              onFinishEdit={() => skills.setEditingId(null)}
-              onPickerOpen={() => setPickerTab('skills')}
-              onCustomize={() => { setEditingSkillItem(null); form.openForm('skill'); }}
-              onFormSave={() => {}}
-              onFormClose={() => {}}
-              setFormData={() => {}}
-              onEditFull={(item) => handleEditSkill(item)}
-            />
-          </ItemEditor>
-        );
-      default:
-        return null;
-    }
-  };
+  const renderTabContent = () => (
+    <TabRenderer
+      activeTab={activeTab}
+      systemRef={systemRef}
+      outputRef={outputRef}
+      systemPrompt={systemPrompt}
+      onSystemPromptChange={setSystemPrompt}
+      outputConstraints={outputConstraints}
+      onOutputConstraintsChange={setOutputConstraints}
+      tools={tools}
+      mcp={mcp}
+      skills={skills}
+      form={form}
+      editingToolItem={editingToolItem}
+      editingMcpItem={editingMcpItem}
+      editingSkillItem={editingSkillItem}
+      onSaveFormItem={saveFormItem}
+      onFormClose={handleFormClose}
+      onSetEditingMcpItem={setEditingMcpItem}
+      onSetEditingSkillItem={setEditingSkillItem}
+      onEditTool={handleEditTool}
+      onEditMcp={handleEditMcp}
+      onEditSkill={handleEditSkill}
+      onPickerOpen={setPickerTab}
+      itemsToFormData={itemsToFormData}
+    />
+  );
 
   return (
     <div className="modal-overlay" onClick={onClose}>
