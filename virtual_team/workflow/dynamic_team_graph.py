@@ -1,3 +1,5 @@
+"""Dynamic team graph — LangGraph-based multi-agent workflow execution."""
+
 from collections.abc import Callable
 from typing import Any
 

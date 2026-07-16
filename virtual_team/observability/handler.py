@@ -1,3 +1,5 @@
+"""Logging handler that persists log records as observability events."""
+
 import logging
 import time
 import traceback
@@ -8,6 +10,8 @@ from virtual_team.observability.trace import current_trace_id
 
 
 class ObservabilityHandler(logging.Handler):
+    """Logging handler that writes records to the event store."""
+
     def emit(self, record: logging.LogRecord) -> None:
         try:
             evt = Event(

@@ -28,6 +28,7 @@ def mark_started() -> None:
 
 
 def mark_stopped() -> None:
+    """Remove the startup marker file on shutdown."""
     with contextlib.suppress(Exception):
         _MARKER_FILE.unlink(missing_ok=True)
 

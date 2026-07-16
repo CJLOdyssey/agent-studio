@@ -1,5 +1,4 @@
-"""
-Migration: create default workflow config for existing teams
+"""Migration: create default workflow config for existing teams
 that matches the old hardcoded PM→Frontend→Backend→Tester flow.
 
 Run once at startup or via: PYTHONPATH=. python -m virtual_team.workflow.migrate
