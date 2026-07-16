@@ -80,6 +80,7 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: './src/test/setup.tsx',
       css: true,
+      pool: 'forks',
       testTimeout: 15000,
       hookTimeout: 15000,
       coverage: {
