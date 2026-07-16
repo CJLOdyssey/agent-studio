@@ -9,8 +9,8 @@ import type { InputToolbarHandle, AttachedFile } from '../input';
 import { useAgents, useAvailableModels, useCommands } from '../../api/hooks';
 import { executeCommand } from '../../api/client';
 import { useAgentCommands } from '../../hooks/useAgentCommands';
-import { useChatStore, submitRequirement, retry } from '../../stores/chatStore';
 import { useChatStore } from '../../stores/chatStore';
+import { submitRequirement, retry } from '../../stores/chatActions';
 import { useDragAndDrop } from './useDragAndDrop';
 import Logger from '../../utils/logger';
 

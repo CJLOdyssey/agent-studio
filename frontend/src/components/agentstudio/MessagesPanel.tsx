@@ -3,7 +3,8 @@ import { Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Agent, Message } from '../../types/agentstudio';
 import TeamMessage from './TeamMessage';
-import { useChatStore, editMessage, regenerateMessage, continueGeneration } from '../../stores/chatStore';
+import { useChatStore } from '../../stores/chatStore';
+import { editMessage, regenerateMessage, continueGeneration } from '../../stores/chatActions';
 
 interface Props {
   showAgentChat: boolean;
