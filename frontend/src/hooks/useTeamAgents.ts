@@ -3,7 +3,7 @@ import { Bot } from 'lucide-react';
 import type { Agent, Team } from '../types/agentstudio';
 import { validateName, checkAgentLimit } from '../utils/validation';
 import { updateAgent } from '../api/client/agents';
-import { addTeamMember, removeTeamMember } from '../api/client/teams';
+import { addTeamMember, linkAgentToMember, removeTeamMember } from '../api/client/teams';
 import { removeConversationsByAgentIds } from './useTeamData';
 
 type ToastFn = (msg: string, type: 'success' | 'info' | 'error') => void;
