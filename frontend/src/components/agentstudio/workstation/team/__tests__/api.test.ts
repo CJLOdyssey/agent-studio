@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TeamEntry, TeamFormData } from '../team.types';
+import type { TeamFormData } from '../team.types';
 
 const mockListTeams = vi.fn();
 const mockCreateTeam = vi.fn();

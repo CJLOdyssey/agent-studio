@@ -1,14 +1,13 @@
-from typing import Any
+from __future__ import annotations
 
 """Web search tool strategy — perform web searches via DuckDuckGo."""
-
-from __future__ import annotations
 
 import json
 import os
 import re
 import urllib.parse
 import urllib.request
+from typing import Any
 
 from virtual_team.tool_strategy import ToolMetadata, ToolStrategy
 

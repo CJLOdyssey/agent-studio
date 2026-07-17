@@ -328,7 +328,7 @@ describe('instance', () => {
         },
       );
 
-      const { default: api } = await import('../instance');
+      await import('../instance');
 
       const axiosErr = new (await import('axios')).AxiosError(
         'Unauthorized',

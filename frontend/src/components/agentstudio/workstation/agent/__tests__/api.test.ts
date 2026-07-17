@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AgentEntry, AgentFormData } from '../agent.types';
 
 const mockListAgents = vi.fn();
 const mockCreateAgent = vi.fn();

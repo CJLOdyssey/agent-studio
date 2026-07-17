@@ -94,7 +94,9 @@ def _report_run_error(run_id: str, exc: Exception) -> None:
         logger.exception("Failed to update error status for run %s", run_id)
 
 
-def _try_mock_fallback(requirement: str, run_id: str, session_id: str | None, original_exc: Exception) -> dict[str, Any] | None:
+def _try_mock_fallback(
+    requirement: str, run_id: str, session_id: str | None, original_exc: Exception,
+) -> dict[str, Any] | None:
     try:
         output = _run_async(run_mock(requirement, run_id, session_id))
         _run_async(

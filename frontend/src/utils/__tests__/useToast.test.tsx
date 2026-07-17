@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { TestProviders } from '../../../test/setup';
 import { useToast, ToastProvider } from '../useToast';
 
 describe('useToast', () => {

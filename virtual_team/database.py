@@ -36,7 +36,9 @@ _async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
     @event.listens_for(engine.sync_engine, "before_cursor_execute")
-    def _before_execute(conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any) -> None:  # noqa: PLR0913
+    def _before_execute(
+        conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any
+    ) -> None:  # noqa: PLR0913
         conn.info.setdefault("_query_start", []).append(time.time())
 
     @event.listens_for(engine.sync_engine, "after_cursor_execute")

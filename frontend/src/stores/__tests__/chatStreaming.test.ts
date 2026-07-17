@@ -13,15 +13,6 @@ vi.mock('./uid', () => ({ uid: vi.fn(() => 'test-uid') }));
 import { createStreamHandler } from '../chatStreaming';
 
 describe('chatStreaming', () => {
-  function invokeSet(set: ReturnType<typeof vi.fn>) {
-    const updater = set.mock.calls[0][0] || set.mock.lastCall?.[0];
-    if (!updater || typeof updater !== 'function') {
-      const call = set.mock.calls[0];
-      return call ? call : {};
-    }
-    return updater({ messages: [], streamingId: null, currentRole: null });
-  }
-
   function makeBasicState() {
     return {
       currentRunId: 'run-1',
