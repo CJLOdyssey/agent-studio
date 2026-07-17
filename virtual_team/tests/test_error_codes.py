@@ -1,15 +1,9 @@
 """Unit tests for """
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi import HTTPException
-from pydantic import ValidationError
-
-
 
 
 class TestErrorCode:
@@ -38,14 +32,14 @@ class TestErrorCode:
 
 class TestErrorResponse:
     def test_returns_http_exception(self):
-        from virtual_team.error_codes import error_response, ErrorCode
+        from virtual_team.error_codes import ErrorCode, error_response
 
         exc = error_response(ErrorCode.TEAM_NOT_FOUND, detail="Team missing")
         assert isinstance(exc, HTTPException)
         assert exc.status_code == 404
 
     def test_detail_structure(self):
-        from virtual_team.error_codes import error_response, ErrorCode
+        from virtual_team.error_codes import ErrorCode, error_response
 
         exc = error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="Bad token")
         detail = exc.detail
@@ -53,7 +47,7 @@ class TestErrorResponse:
         assert detail["error"]["message"] == "Bad token"
 
     def test_default_message_from_enum_name(self):
-        from virtual_team.error_codes import error_response, ErrorCode
+        from virtual_team.error_codes import ErrorCode, error_response
 
         exc = error_response(ErrorCode.RATE_LIMITED)
         assert exc.detail["error"]["message"] == "Rate Limited"
@@ -75,13 +69,13 @@ class TestErrorResponse:
         ],
     )
     def test_status_codes(self, code, expected_status):
-        from virtual_team.error_codes import error_response, ErrorCode
+        from virtual_team.error_codes import ErrorCode, error_response
 
         exc = error_response(getattr(ErrorCode, code))
         assert exc.status_code == expected_status
 
     def test_unknown_code_falls_back_to_500(self):
-        from virtual_team.error_codes import error_response, ErrorCode, _STATUS_MAP
+        from virtual_team.error_codes import _STATUS_MAP, ErrorCode, error_response
 
         code = ErrorCode.AGENT_NOT_FOUND
         with patch.dict(_STATUS_MAP, clear=True):

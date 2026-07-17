@@ -1,15 +1,9 @@
 """Unit tests for virtual_team/broker.py (Redis URL parsing, pub/sub)."""
 
 import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
-from pydantic import ValidationError
-
-
 
 
 class TestBrokerRedis:
@@ -39,7 +33,7 @@ class TestBrokerRedis:
         mock_from_url.return_value = mock_redis
 
         # Clean up any existing pools
-        from virtual_team.broker import _pools, REDIS_URL
+        from virtual_team.broker import REDIS_URL, _pools
 
         _pools.clear()
 

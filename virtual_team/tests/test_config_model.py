@@ -1,15 +1,9 @@
 """Unit tests for """
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import patch
 
 import pytest
-from fastapi import HTTPException
 from pydantic import ValidationError
-
-
 
 
 class TestTeamConfig:

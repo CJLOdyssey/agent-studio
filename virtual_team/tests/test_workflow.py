@@ -1,8 +1,6 @@
 """Tests for virtual_team/workflow/ — strategies, node_factory, router, models."""
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 
 class TestStrategies:
@@ -407,8 +405,9 @@ class TestNodeFactory:
         assert body["stream"] is True
 
     def test_build_request_deepseek_thinking(self):
-        from virtual_team.workflow.node_factory import NodeFactory
         from unittest.mock import MagicMock
+
+        from virtual_team.workflow.node_factory import NodeFactory
 
         mock_llm = MagicMock()
         mock_llm.openai_api_key = "sk-test"
@@ -460,8 +459,9 @@ class TestNodeFactory:
         assert "sk-raw-key" in headers["Authorization"]
 
     def test_build_request_non_deepseek_no_thinking(self):
-        from virtual_team.workflow.node_factory import NodeFactory
         from unittest.mock import MagicMock
+
+        from virtual_team.workflow.node_factory import NodeFactory
 
         mock_llm = MagicMock()
         mock_llm.openai_api_key = "sk-test"
@@ -473,8 +473,9 @@ class TestNodeFactory:
         assert "thinking" not in body
 
     def test_build_request_with_secret_value(self):
-        from virtual_team.workflow.node_factory import NodeFactory
         from unittest.mock import MagicMock
+
+        from virtual_team.workflow.node_factory import NodeFactory
 
         secret = MagicMock()
         secret.get_secret_value.return_value = "sk-secret-resolved"
@@ -488,8 +489,9 @@ class TestNodeFactory:
         assert "sk-secret-resolved" in headers["Authorization"]
 
     def test_build_request_includes_temperature_and_max_tokens(self):
-        from virtual_team.workflow.node_factory import NodeFactory
         from unittest.mock import MagicMock
+
+        from virtual_team.workflow.node_factory import NodeFactory
 
         mock_llm = MagicMock()
         mock_llm.openai_api_key = "sk-test"
@@ -506,7 +508,13 @@ class TestNodeFactory:
 
 class TestModelEdgeCases:
     def test_get_previous_artifacts(self):
-        from virtual_team.workflow.models import WorkflowConfig, WorkflowEdge, WorkflowNode, WorkflowState, get_previous_artifacts
+        from virtual_team.workflow.models import (
+            WorkflowConfig,
+            WorkflowEdge,
+            WorkflowNode,
+            WorkflowState,
+            get_previous_artifacts,
+        )
 
         config = WorkflowConfig(
             id="cfg5",

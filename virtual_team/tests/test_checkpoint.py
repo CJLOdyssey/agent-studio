@@ -1,15 +1,8 @@
 """Unit tests for virtual_team/checkpoint/ (factory, models, repository)."""
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
-from pydantic import ValidationError
-
-
 
 
 class TestCheckpointerFactoryCore:
@@ -152,8 +145,8 @@ class TestCheckpointRepository:
     @patch("virtual_team.checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_save_checkpoint(self, mock_get_factory):
-        from virtual_team.checkpoint.repository import save_checkpoint
         from virtual_team.checkpoint.models import AgentCheckpoint
+        from virtual_team.checkpoint.repository import save_checkpoint
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -176,8 +169,8 @@ class TestCheckpointRepository:
     @patch("virtual_team.checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_load_latest_checkpoint_found(self, mock_get_factory):
-        from virtual_team.checkpoint.repository import load_latest_checkpoint
         from virtual_team.checkpoint.models import AgentCheckpoint
+        from virtual_team.checkpoint.repository import load_latest_checkpoint
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -215,8 +208,8 @@ class TestCheckpointRepository:
     @patch("virtual_team.checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_list_checkpoints(self, mock_get_factory):
-        from virtual_team.checkpoint.repository import list_checkpoints
         from virtual_team.checkpoint.models import AgentCheckpoint
+        from virtual_team.checkpoint.repository import list_checkpoints
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()

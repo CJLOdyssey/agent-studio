@@ -1,8 +1,6 @@
 """Tests for tool code generators — PythonToolGenerator and JavascriptToolGenerator."""
 
-from unittest.mock import patch
 
-import pytest
 
 from virtual_team.services.generators._models import GeneratedTool
 

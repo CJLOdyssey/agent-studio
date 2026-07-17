@@ -1,15 +1,9 @@
 """Unit tests for """
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import patch
 
 import pytest
-from fastapi import HTTPException
 from pydantic import ValidationError
-
-
 
 
 class TestKeysModels:
@@ -132,7 +126,7 @@ class TestKeysModels:
         assert resp.models == ["gpt-4"]
 
     def test_encrypt_decrypt_roundtrip(self):
-        from virtual_team.key_vault import encrypt_api_key, decrypt_api_key, mask_api_key
+        from virtual_team.key_vault import decrypt_api_key, encrypt_api_key
 
         with patch.dict("os.environ", {"KEY_VAULT_SECRET": "a" * 32}):
             plaintext = "sk-my-secret-api-key-12345"

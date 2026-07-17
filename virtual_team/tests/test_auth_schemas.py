@@ -1,15 +1,9 @@
 """Unit tests for virtual_team/routers/auth/schemas.py (Pydantic request/response models)."""
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from fastapi import HTTPException
 from pydantic import ValidationError
-
-
 
 
 class TestAuthSchemas:

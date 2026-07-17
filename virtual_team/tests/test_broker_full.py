@@ -30,7 +30,7 @@ class TestBrokerFull:
     def test_get_redis_uses_correct_url(self, mock_loop, mock_from_url):
         from virtual_team.broker import _pools, get_redis
 
-        mock_loop.return_value = loop = MagicMock()
+        mock_loop.return_value = MagicMock()
         mock_redis = MagicMock()
         mock_from_url.return_value = mock_redis
         _pools.clear()
@@ -115,7 +115,7 @@ class TestBrokerFull:
     @patch("virtual_team.broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis_removes_pool(self, mock_get_redis):
-        from virtual_team.broker import _pools, close_redis, get_redis
+        from virtual_team.broker import _pools, close_redis
 
         loop = MagicMock()
         loop_id = id(loop)
@@ -244,7 +244,6 @@ class TestBrokerFull:
     @patch("virtual_team.broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_run_messages_starts_task(self, mock_get_redis):
-        import asyncio
 
         from virtual_team.broker import _buffer_tasks, _buffers, buffer_run_messages
 

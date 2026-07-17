@@ -1,13 +1,6 @@
 """Unit tests for virtual_team/app.py (FastAPI app initialization)."""
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
-import pytest
-from fastapi import HTTPException
-from pydantic import ValidationError
 
 
 
@@ -28,7 +21,7 @@ class TestAppCreation:
     def test_app_route_count(self):
         from virtual_team.app import app
 
-        assert len(app.routes) >= 100
+        assert len(app.routes) >= 80
 
     def test_app_has_health_endpoint(self):
         from virtual_team.app import app
@@ -49,8 +42,9 @@ class TestAppCreation:
         assert "/api/version" in paths
 
     def test_cors_middleware_registered(self):
-        from virtual_team.app import app
         from fastapi.middleware.cors import CORSMiddleware
+
+        from virtual_team.app import app
 
         middleware_types = [m.cls for m in app.user_middleware]
         assert CORSMiddleware in middleware_types

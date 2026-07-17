@@ -294,7 +294,7 @@ class TestTrace:
 
     @patch("virtual_team.observability.trace.get_store")
     def test_span_context_manager(self, mock_get_store):
-        from virtual_team.observability.trace import current_trace_id, set_trace_id, span
+        from virtual_team.observability.trace import set_trace_id, span
 
         set_trace_id("span-trace")
         mock_store = MagicMock()

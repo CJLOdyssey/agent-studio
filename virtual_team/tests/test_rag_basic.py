@@ -1,8 +1,6 @@
 """Basic tests for virtual_team/rag_chunking.py — Chunk model, chunking, metadata."""
 
-import hashlib
 
-import pytest
 
 
 class TestChunkModel:

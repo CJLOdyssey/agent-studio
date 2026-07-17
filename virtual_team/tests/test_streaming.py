@@ -1,15 +1,8 @@
 """Unit tests for virtual_team/streaming.py (StreamEmitter edge cases)."""
 
-import json
-import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import HTTPException
-from pydantic import ValidationError
-
-
 
 
 class TestStreamingEdgeCases:

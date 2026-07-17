@@ -2,14 +2,6 @@
 
 import json
 import time
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
-
-import pytest
-from fastapi import HTTPException
-from pydantic import ValidationError
-
-
 
 
 class TestCreateToken:
@@ -100,7 +92,9 @@ class TestDecodeJWT:
         from virtual_team.auth_jwt import decode_jwt
 
         past = int(time.time()) - 90000
-        import base64, hashlib, hmac
+        import base64
+        import hashlib
+        import hmac
 
         raw = f"testuser:{past}"
         sig = hmac.new(b"secret", raw.encode(), hashlib.sha256).hexdigest()[:16]

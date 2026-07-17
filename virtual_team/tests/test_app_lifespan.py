@@ -24,9 +24,9 @@ class TestAppLifespan:
         from virtual_team.app_lifespan import _startup_report
         lines = _startup_report()
         assert len(lines) >= 3
-        assert any("Application Starting" in l for l in lines)
-        assert any("python=" in l for l in lines)
-        assert any("Startup config complete" in l for l in lines)
+        assert any("Application Starting" in line for line in lines)
+        assert any("python=" in line for line in lines)
+        assert any("Startup config complete" in line for line in lines)
 
     @pytest.mark.asyncio
     async def test_check_redis_success(self):

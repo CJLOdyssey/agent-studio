@@ -1,9 +1,7 @@
 """Unit tests for virtual_team/services/tool_generator.py."""
 
-from unittest.mock import patch
 
 import pytest
-from pydantic import ValidationError
 
 from virtual_team.services.tool_generator import (
     ToolValidateRequest,

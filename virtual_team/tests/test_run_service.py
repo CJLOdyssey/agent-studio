@@ -1,15 +1,9 @@
 """Unit tests for """
 
-import json
-import time
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import HTTPException
-from pydantic import ValidationError
-
-
 
 
 class TestRunService:
@@ -98,7 +92,7 @@ class TestRunService:
         with (
             patch("virtual_team.services.run_service.load_config") as mock_load,
             patch("virtual_team.services.run_service.get_session") as mock_get_sess,
-            patch("virtual_team.services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("virtual_team.services.run_service.get_api_key_for_use"),
             patch("virtual_team.services.run_service.get_default_api_key") as mock_get_default,
             patch("virtual_team.services.run_service.buffer_run_messages"),
             patch("virtual_team.services.run_service.asyncio.create_task"),
