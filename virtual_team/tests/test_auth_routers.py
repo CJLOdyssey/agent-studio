@@ -2,13 +2,11 @@
 import os
 
 os.environ["AUTH_MODE"] = "legacy"
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///test_auth.db"
 os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 os.environ["KEY_VAULT_SECRET"] = "0123456789abcdef0123456789abcdef"
 os.environ["AUTH_ENABLED"] = "0"
 os.environ["RATE_LIMIT"] = "9999"
-os.environ["CHECKPOINTER_BACKEND"] = "memory"
-os.environ["DATABASE_POOL_SIZE"] = "0"
 
 from unittest.mock import AsyncMock, patch
 
@@ -20,10 +18,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import virtual_team.database as db_mod
 
-_sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+_sqlite_engine = create_async_engine("sqlite+aiosqlite:///test_auth.db")
 db_mod._async_engine = _sqlite_engine
 db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
-db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+db_mod.DATABASE_URL = "sqlite+aiosqlite:///test_auth.db"
 
 from virtual_team.app import app
 from virtual_team.base import Base
