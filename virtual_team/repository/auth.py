@@ -224,7 +224,10 @@ async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
             await session.commit()
             return None, None
 
-        if rt.expires_at < datetime.now(UTC):
+        expires = rt.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=UTC)
+        if expires < datetime.now(UTC):
             return None, None
 
         # Rotate: revoke current, check global revocation

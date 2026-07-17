@@ -40,6 +40,10 @@ omit = [
     "virtual_team/tasks/prefix_completion.py",
 ]
 
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", ".opencode"]
+skips = ["B101", "B311"]  # assert allowed in tests, pseudo-random ok
+
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
