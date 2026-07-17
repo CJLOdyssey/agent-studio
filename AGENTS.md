@@ -82,10 +82,9 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 ```
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
-  └─ routers/ (20 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
-   │            prompts, providers, run_continue, runs, sessions, skills, system_team, teams, tools, versions, workflows)
+  └─ routers/ (19 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
+   │            prompts, providers, run_continue, runs, sessions, skills, teams, tools, versions, workflows)
    │    └─ repository/ (23 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
-   │    └─ repository/ (20 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
   │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
@@ -166,7 +165,6 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - **Frontend**: jsdom via Vitest. `TestProviders` wrapper for component tests.
 - **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
 - **E2E** (`test_e2e_full_flow.py`): Requires Docker (`virtual-team-redis` container). Runs against `localhost:8080`.
-- **Pre-existing failures**: `test_conversation.py` — 2 known failures in `StreamEmitter._pending_thinking`.
 
 ## Git & Hooks
 
