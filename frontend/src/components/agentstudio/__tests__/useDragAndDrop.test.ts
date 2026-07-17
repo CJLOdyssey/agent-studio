@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragAndDrop } from '../useDragAndDrop';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 describe('useDragAndDrop', () => {
   const createMockRef = () => ({ current: { addFiles: vi.fn() } }) as any;
 

@@ -7,7 +7,7 @@ import contextlib
 import gc
 import os
 import platform
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from virtual_team.broker import BROKER_URL, REDIS_URL, get_redis
 from virtual_team.config import load_config
@@ -103,7 +103,7 @@ async def _check_redis() -> None:
     logger.info("[LIFECYCLE] verifying Redis connection...")
     try:
         r = get_redis()
-        pong = await r.ping()
+        pong: bool = bool(await cast(Any, r.ping()))
         logger.info("[LIFECYCLE] redis ping=%s", pong)
     except Exception as e:
         logger.warning("[LIFECYCLE] redis unavailable (pub/sub will fail): %s", e)
