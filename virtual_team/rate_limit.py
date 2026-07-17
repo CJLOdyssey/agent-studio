@@ -35,7 +35,7 @@ class RateLimiter:
             if count == 1:
                 await r.expire(window_key, self.window + 1)
 
-            return count <= self.rate
+            return bool(count <= self.rate)
         except Exception:
             logger.warning("Rate limiter Redis check failed — allowing request")
             return True
