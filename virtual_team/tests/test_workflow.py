@@ -1,6 +1,7 @@
 """Tests for virtual_team/workflow/ — strategies, node_factory, router, models."""
 
-from unittest.mock import MagicMock
+import pytest
+from unittest.mock import MagicMock, patch
 
 
 class TestStrategies:
@@ -580,3 +581,83 @@ class TestModelEdgeCases:
 
         cfg = WorkflowConfig(id="cfg7", max_rounds=3)
         assert cfg.max_rounds == 3
+
+    def test_router_matches_none_condition(self):
+        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
+        from virtual_team.workflow.router import Router
+
+        router = Router()
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {"output": "some text"},
+            "round_number": 1,
+            "approved": {},
+        }
+        edge = WorkflowEdge(condition_key=None)
+        assert router._matches(state, edge) is False
+
+    def test_router_matches_empty_condition(self):
+        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
+        from virtual_team.workflow.router import Router
+
+        router = Router()
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {},
+            "round_number": 1,
+            "approved": {},
+        }
+        edge = WorkflowEdge(condition_key="bug|error")
+        result = router._matches(state, edge)
+        assert result is False
+
+    def test_router_matches_empty_condition_with_artifacts(self):
+        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
+        from virtual_team.workflow.router import Router
+
+        router = Router()
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {"output": "found a bug here"},
+            "round_number": 1,
+            "approved": {},
+        }
+        edge = WorkflowEdge(condition_key="bug")
+        assert router._matches(state, edge) is True
+
+    @pytest.mark.asyncio
+    async def test_node_fn_called_with_mocked_stream(self):
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from virtual_team.workflow.models import WorkflowNode, WorkflowState
+        from virtual_team.workflow.node_factory import NodeFactory
+
+        mock_llm = MagicMock()
+        mock_llm.openai_api_key = "sk-test"
+        mock_llm.openai_api_base = None
+        mock_llm.model_name = "deepseek-chat"
+
+        factory = NodeFactory(llm=mock_llm, agent_prompts={"dev": "You are a developer"}, run_id="r-nodefn")
+        node = WorkflowNode(id="n1", role_identifier="dev")
+        fn = factory.create(node)
+
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "build something",
+            "artifacts": {},
+            "round_number": 1,
+            "approved": {},
+        }
+
+        with patch("virtual_team.workflow.node_factory.stream_llm_response") as mock_stream:
+            with patch("virtual_team.workflow.node_factory.convert_messages_to_api") as mock_convert:
+                with patch("virtual_team.workflow.node_factory.publish_run_message", new_callable=AsyncMock):
+                    mock_convert.return_value = [{"role": "user", "content": "test"}]
+                    mock_stream.return_value = (["generated code"], [], [], [], [])
+
+                    result = await fn(state)
+                    assert "artifacts" in result
+                    assert result["artifacts"]["dev"] == "generated code"
