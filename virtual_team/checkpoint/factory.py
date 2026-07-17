@@ -1,5 +1,3 @@
-from typing import Any, cast
-
 """Checkpointer factory — creates the appropriate backend checkpointer.
 
 Supported backends:
@@ -9,6 +7,7 @@ Supported backends:
 """
 
 import os
+from typing import Any
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
@@ -43,9 +42,9 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
             ) from exc
 
         from psycopg import AsyncConnection
-        from psycopg.rows import dict_row
+        from psycopg.rows import DictRow, dict_row
 
-        conn = await AsyncConnection.connect(
+        conn = await AsyncConnection[DictRow].connect(
             dsn,
             autocommit=True,
             prepare_threshold=0,
@@ -68,7 +67,7 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
                 "and `aiosqlite` package"
             ) from exc
 
-        conn = cast(Any, await aiosqlite.connect(dsn))
+        conn = await aiosqlite.connect(dsn)
         return AsyncSqliteSaver(conn)
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
