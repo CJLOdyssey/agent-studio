@@ -16,6 +16,8 @@ Architecture:
 import base64
 import hashlib
 import os
+import platform
+import uuid
 
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes
@@ -72,8 +74,6 @@ def _machine_fingerprint() -> str:
     Uses hostname + filesystem UUID as entropy source.
     This is a last-resort fallback — production MUST set KEY_VAULT_SECRET.
     """
-    import platform
-    import uuid
 
     fingerprint = f"{platform.node()}-{uuid.getnode()}"
     return hashlib.sha256(fingerprint.encode()).hexdigest()

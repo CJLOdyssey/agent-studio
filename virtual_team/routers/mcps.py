@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.audit import log_audit
 from virtual_team.error_codes import ErrorCode, error_response
@@ -39,7 +40,7 @@ async def list_mcps() -> Any:
         raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
-async def _snapshot_mcp(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
+async def _snapshot_mcp(resource_id: str, session: AsyncSession | None = None) -> Any:
     """Create a version snapshot after mcp save."""
     try:
         from virtual_team.repository import get_mcps as _gmcps

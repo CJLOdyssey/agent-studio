@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 from typing import Any
 
 import httpx
@@ -193,7 +194,6 @@ async def stream_llm_response(
                             tool_calls_map[idx]["id"] = tc["id"]
 
     except httpx.HTTPError:
-        import logging
         logging.getLogger(__name__).error("Raw LLM stream failed", exc_info=True)
         raise
 

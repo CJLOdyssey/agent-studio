@@ -103,7 +103,7 @@ async def get_api_keys(user_id: str) -> list[dict[str, Any]]:
         return results
 
 
-async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:  # type: ignore[type-arg]
+async def get_api_key_for_use(key_id: str, user_id: str) -> dict[str, Any] | None:
     """Fetch a decrypted API key for actual use (not masked).
 
     Args:
@@ -150,7 +150,7 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:  # type
         }
 
 
-async def _resolve_key_row(session, user_id: str) -> Any:  # type: ignore[no-untyped-def]
+async def _resolve_key_row(session: Any, user_id: str) -> Any:
     stmt = select(UserApiKey).where(
         UserApiKey.user_id == user_id,
         UserApiKey.is_active,
@@ -174,7 +174,7 @@ async def _resolve_key_row(session, user_id: str) -> Any:  # type: ignore[no-unt
     return result.scalar_one_or_none()
 
 
-async def get_default_api_key(user_id: str) -> dict | None:  # type: ignore[type-arg]
+async def get_default_api_key(user_id: str) -> dict[str, Any] | None:
     """Fetch the user's default API key, with anonymous and system-wide fallbacks.
 
     Falls back chain: user default → anonymous → any active default in system.
@@ -225,7 +225,7 @@ async def update_api_key(
     is_active: bool | None = None,
     is_default: bool | None = None,
     usage_type: str | None = None,
-) -> dict | None:  # type: ignore[type-arg]
+) -> dict[str, Any] | None:
     """Update an API key configuration."""
     factory = get_session_factory()
     async with factory() as session:

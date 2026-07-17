@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, cast
 
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
@@ -26,7 +26,7 @@ class BaseRepository(Generic[ModelT]):
     @classmethod
     async def get_one(cls, entity_id: str) -> ModelT | None:
         async with cls._session_cm() as session:
-            return await session.get(cls.model, entity_id)  # type: ignore[no-any-return]
+            return cast(ModelT | None, await session.get(cls.model, entity_id))
 
     @classmethod
     async def get_all(cls) -> list[ModelT]:
@@ -49,11 +49,11 @@ class BaseRepository(Generic[ModelT]):
     @classmethod
     async def create_one(cls, data: dict[str, Any]) -> ModelT:
         async with cls._session_cm() as session:
-            obj = cls.model(**data)
+            obj = cast(ModelT, cls.model(**data))
             session.add(obj)
             await session.commit()
             await session.refresh(obj)
-            return obj  # type: ignore[return-value]
+            return obj
 
     @classmethod
     async def update_one(cls, entity_id: str, data: dict[str, Any]) -> ModelT | None:
@@ -67,7 +67,7 @@ class BaseRepository(Generic[ModelT]):
             obj.updated_at = datetime.now(UTC)
             await session.commit()
             await session.refresh(obj)
-            return obj  # type: ignore[no-any-return]
+            return cast(ModelT | None, obj)
 
     @classmethod
     async def delete_one(cls, entity_id: str) -> bool:

@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+from dataclasses import dataclass
 from typing import Any
 
 from virtual_team.streaming import StreamEmitter
@@ -25,8 +26,6 @@ async def run_mock(requirement: str, run_id: str, session_id: str | None) -> Any
     for msg in messages:
         await emitter._emit("Agent", msg)
         await asyncio.sleep(0.5)
-
-    from dataclasses import dataclass
 
     @dataclass
     class MockOutput:

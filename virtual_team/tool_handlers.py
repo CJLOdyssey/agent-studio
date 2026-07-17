@@ -81,7 +81,8 @@ def execute_tool(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
                     tool_self.mcp_endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST"
                 )
                 with urllib.request.urlopen(req, timeout=30) as resp:
-                    return resp.read().decode("utf-8", errors="ignore")[:5000]  # type: ignore[no-any-return]
+                    data: bytes = resp.read()
+                    return data.decode("utf-8", errors="ignore")[:5000]
             except Exception as e:
                 return json.dumps({"error": str(e)})
         else:

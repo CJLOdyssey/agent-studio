@@ -13,7 +13,7 @@ class ToolRepository(BaseRepository[RegisteredToolDB]):
     default_order = desc(RegisteredToolDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    def to_dict(obj: Any) -> dict[str, Any]:
         return {
             "id": obj.id,
             "name": obj.name,

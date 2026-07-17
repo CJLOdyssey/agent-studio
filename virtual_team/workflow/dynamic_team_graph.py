@@ -81,7 +81,7 @@ class DynamicTeamGraph:
         self,
         requirement: str,
         thread_id: str,
-        stream_callback: Callable | None = None,  # type: ignore[type-arg]
+        stream_callback: Callable[..., Any] | None = None,
         run_id: str = "",
     ) -> dict[str, Any]:
         if run_id:
@@ -103,7 +103,7 @@ class DynamicTeamGraph:
                     if isinstance(result, dict):
                         for k in ["messages", "requirement", "artifacts", "round_number", "approved"]:
                             result.setdefault(k, initial_state.get(k))
-                if stream_callback:  # type: ignore
+                if stream_callback is not None:
                     try:
                         await stream_callback(event)
                     except Exception:
