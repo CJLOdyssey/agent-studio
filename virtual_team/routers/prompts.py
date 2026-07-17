@@ -111,7 +111,7 @@ async def remove_prompt(prompt_id: str):
         from virtual_team.repository import get_prompts
         prompts = await get_prompts()
         target = next((p for p in prompts if p.id == prompt_id), None)
-        prompt_name = target["name"] if target else prompt_id
+        prompt_name = target.name if target else prompt_id
         ok = await delete_prompt(prompt_id)
         if not ok:
             raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")

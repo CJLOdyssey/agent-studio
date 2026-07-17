@@ -123,7 +123,7 @@ async def remove_mcp(mcp_id: str):
     try:
         mcps = await get_mcps()
         target = next((m for m in mcps if m.id == mcp_id), None)
-        mcp_name = target["name"] if target else mcp_id
+        mcp_name = target.name if target else mcp_id
         ok = await delete_mcp(mcp_id)
         if not ok:
             raise error_response(ErrorCode.MCP_NOT_FOUND, detail="MCP not found")

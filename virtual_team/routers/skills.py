@@ -144,7 +144,7 @@ async def remove_skill(skill_id: str):
         from virtual_team.repository.skills import get_skills as _gskills
         all_items = await _gskills()
         target = next((s for s in all_items if s.id == skill_id), None)
-        skill_name = target["name"] if target else skill_id
+        skill_name = target.name if target else skill_id
         ok = await delete_skill(skill_id)
         if not ok:
             raise error_response(ErrorCode.SKILL_NOT_FOUND, detail="Skill not found")
