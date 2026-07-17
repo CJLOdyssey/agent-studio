@@ -1,6 +1,7 @@
 """Admin dashboard repository — stats and log queries."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import func, select
 
@@ -17,7 +18,7 @@ from virtual_team.database import (
 )
 
 
-async def get_dashboard_stats() -> dict:
+async def get_dashboard_stats() -> dict[str, Any]:
     """Return dashboard stat counts for agents, prompts, tools, MCPs, skills, teams, and today's logs."""
     factory = get_session_factory()
     async with factory() as session:
@@ -60,7 +61,7 @@ async def get_dashboard_stats() -> dict:
         }
 
 
-async def get_command_logs(limit: int = 50, offset: int = 0) -> list[dict]:
+async def get_command_logs(limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
     """Return paginated command logs, newest first."""
     factory = get_session_factory()
     async with factory() as session:
@@ -85,7 +86,7 @@ async def get_command_logs(limit: int = 50, offset: int = 0) -> list[dict]:
         ]
 
 
-async def get_recent_activity(limit: int = 10) -> list[dict]:
+async def get_recent_activity(limit: int = 10) -> list[dict[str, Any]]:
     """Return recent audit log entries, newest first."""
     factory = get_session_factory()
     async with factory() as session:

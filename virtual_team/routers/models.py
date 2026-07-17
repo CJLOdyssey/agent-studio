@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from virtual_team.auth import get_user_id
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import get_api_keys  # type: ignore[attr-defined]
+from virtual_team.repository import get_api_keys
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["models"])

@@ -17,7 +17,7 @@ from virtual_team.audit import log_audit
 from virtual_team.auth import get_user_id
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import (  # type: ignore[attr-defined]
+from virtual_team.repository import (
     create_api_key,
     delete_api_key,
     get_api_keys,
@@ -245,7 +245,7 @@ async def test_key_connection(key_id: str, request: Request) -> Any:
 @router.post("/api/keys/fetch-models")
 async def fetch_models_from_provider(req: FetchModelsRequest) -> Any:
     """Fetch available models from a provider's API without saving a key."""
-    from virtual_team.repository.keys import _test_connection_sync  # type: ignore[attr-defined]
+    from virtual_team.repository.keys import _test_connection_sync
 
     key_cfg = {
         "provider": req.provider,

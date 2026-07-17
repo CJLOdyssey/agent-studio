@@ -128,7 +128,7 @@ async def _snapshot_tool(resource_id: str, session=None) -> Any:  # type: ignore
         from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
 
-        async def _save(s, rt, rid, **kw):
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
             from virtual_team.repository.tools import get_tool as repo_get_tool
             item = await repo_get_tool(rid)
             if not item:
@@ -217,7 +217,7 @@ async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
 
 
 @router.delete("/api/tools/{tool_id}", status_code=204)
-async def remove_tool(tool_id: str):
+async def remove_tool(tool_id: str) -> None:
     try:
         t = await get_tool(tool_id)
         tool_name = t.name if t else tool_id

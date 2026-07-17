@@ -24,7 +24,7 @@ from virtual_team.repository import (
     update_run_result,
     update_run_status,
 )
-from virtual_team.repository.keys import log_key_usage  # type: ignore[attr-defined]
+from virtual_team.repository.keys import log_key_usage
 from virtual_team.streaming import StreamEmitter
 from virtual_team.tool_config import ToolConfig
 

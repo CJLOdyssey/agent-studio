@@ -3,6 +3,7 @@
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import or_, select, update
@@ -282,7 +283,7 @@ async def merge_guest_data(guest_ids: set[str], real_user_id: str) -> None:
     factory = get_session_factory()
     async with factory() as session:
         for table in (SessionDB, UserApiKey, KeyUsageLog):
-            conditions: list = []
+            conditions: list[Any] = []
 
             if guest_ids:
                 # For UserApiKey, skip "anonymous" — it's a shared fallback

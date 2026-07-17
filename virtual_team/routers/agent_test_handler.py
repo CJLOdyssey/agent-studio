@@ -33,7 +33,7 @@ async def test_agent(agent_id: str) -> Any:
         import httpx
 
         from virtual_team.config import load_config
-        from virtual_team.repository.keys import get_default_api_key  # type: ignore[attr-defined]
+        from virtual_team.repository.keys import get_default_api_key
 
         cfg = load_config()
         effective_model = agent.model or cfg.model

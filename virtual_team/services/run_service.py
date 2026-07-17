@@ -13,7 +13,7 @@ from typing import Any
 from virtual_team.broker import buffer_run_messages
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import (  # type: ignore[attr-defined]
+from virtual_team.repository import (
     create_session,
     get_api_key_for_use,
     get_default_api_key,

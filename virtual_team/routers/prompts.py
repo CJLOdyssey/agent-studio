@@ -47,7 +47,7 @@ async def _snapshot_prompt(resource_id: str, session=None) -> Any:  # type: igno
         from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
 
-        async def _save(s, rt, rid, **kw):
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
             from virtual_team.repository.prompts import get_prompt
             item = await get_prompt(rid)
             if not item:
@@ -106,7 +106,7 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
 
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
-async def remove_prompt(prompt_id: str):
+async def remove_prompt(prompt_id: str) -> None:
     try:
         from virtual_team.repository import get_prompts
         prompts = await get_prompts()

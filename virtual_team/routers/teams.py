@@ -78,7 +78,7 @@ async def _snapshot_team(resource_id: str, session=None) -> Any:  # type: ignore
         from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
 
-        async def _save(s, rt, rid, **kw):
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
             from virtual_team.repository.teams import get_team
             item = await get_team(rid)
             if not item:

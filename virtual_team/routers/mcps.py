@@ -46,7 +46,7 @@ async def _snapshot_mcp(resource_id: str, session=None) -> Any:  # type: ignore[
         from virtual_team.repository.snapshot_helper import with_session
         from virtual_team.repository.versions import create_version as _cv
 
-        async def _save(s, rt, rid, **kw):
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
             all_items = await _gmcps()
             item = next((m for m in all_items if m.id == rid), None)
             if not item:
@@ -119,7 +119,7 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
 
 
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
-async def remove_mcp(mcp_id: str):
+async def remove_mcp(mcp_id: str) -> None:
     try:
         mcps = await get_mcps()
         target = next((m for m in mcps if m.id == mcp_id), None)

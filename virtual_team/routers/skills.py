@@ -71,7 +71,7 @@ async def _snapshot_skill(resource_id: str, session=None) -> Any:  # type: ignor
         from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
 
-        async def _save(s, rt, rid, **kw):
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
             from virtual_team.repository.skills import get_skills as _gskills
             all_items = await _gskills()
             item = next((sk for sk in all_items if sk.id == rid), None)
@@ -139,7 +139,7 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
 
 
 @router.delete("/api/skills/{skill_id}", status_code=204)
-async def remove_skill(skill_id: str):
+async def remove_skill(skill_id: str) -> None:
     try:
         from virtual_team.repository.skills import get_skills as _gskills
         all_items = await _gskills()

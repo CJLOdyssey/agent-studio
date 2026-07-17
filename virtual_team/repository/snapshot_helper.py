@@ -20,6 +20,8 @@ Usage::
 from collections.abc import Callable
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from virtual_team.logging_config import get_logger
 from virtual_team.repository.versions import create_version
 
@@ -31,7 +33,7 @@ async def with_session(
     *,
     resource_type: str,
     resource_id: str,
-    session=None,
+    session: AsyncSession | None = None,
     **kwargs: Any,
 ) -> None:
     """Execute *fn* inside a session, or reuse an existing one.
@@ -64,7 +66,7 @@ async def create_snapshot_from_dict(
     resource_id: str,
     snapshot: dict[str, Any],
     created_by: str = "system",
-    session=None,
+    session: AsyncSession | None = None,
 ) -> None:
     """Create a version snapshot from a pre-built dictionary.
 
@@ -79,7 +81,7 @@ async def create_snapshot_from_dict(
         session: Optional existing async session.
     """
 
-    async def _save(s, rt, rid, **kw):
+    async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
         await create_version(s, rt, rid, kw["snapshot"], kw.get("created_by", "system"))
 
     await with_session(
@@ -112,7 +114,7 @@ def build_table_snapshot(item: Any, exclude: set[str] | None = None) -> dict[str
         if name in exclude:
             continue
         val = getattr(item, name, None)
-        if hasattr(val, "isoformat"):
+        if val is not None and hasattr(val, "isoformat"):
             val = val.isoformat()
         snapshot[name] = val
     return snapshot
