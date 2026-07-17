@@ -146,7 +146,7 @@ class TestSendRegisterCode:
 
         resp = api.post("/api/auth/send-register-code", json={"email": email})
         assert resp.status_code == 409
-        assert "已注册" in resp.json()["detail"]
+        assert "已注册" in resp.json()["detail"]["error"]["message"]
 
 
 class TestRegister:
@@ -181,7 +181,7 @@ class TestRegister:
 
         resp = api.post("/api/auth/register", json={"email": email, "code": "000000", "password": pwd})
         assert resp.status_code == 400
-        assert "验证码错误" in resp.json()["detail"]
+        assert "验证码错误" in resp.json()["detail"]["error"]["message"]
 
     def test_register_expired_code(self, api: AuthApi):
         email = f"{_rid('exp')}@test.com"
@@ -189,7 +189,7 @@ class TestRegister:
 
         resp = api.post("/api/auth/register", json={"email": email, "code": "123456", "password": pwd})
         assert resp.status_code == 400
-        assert "已过期" in resp.json()["detail"]
+        assert "已过期" in resp.json()["detail"]["error"]["message"]
 
     def test_register_weak_password(self, api: AuthApi):
         email = f"{_rid('weak')}@test.com"
@@ -202,7 +202,8 @@ class TestRegister:
 
         resp = api.post("/api/auth/register", json={"email": email, "code": code, "password": pwd})
         assert resp.status_code == 400
-        assert any(word in resp.json()["detail"] for word in ["密码", "数字", "小写", "大写", "特殊字符"])
+        msg = resp.json()["detail"]["error"]["message"]
+        assert any(word in msg for word in ["密码", "数字", "小写", "大写", "特殊字符"])
 
     def test_register_code_attempts_exhausted(self, api: AuthApi):
         email = f"{_rid('att')}@test.com"
@@ -231,7 +232,7 @@ class TestRegister:
 
         resp = api.post("/api/auth/send-register-code", json={"email": email})
         assert resp.status_code == 409
-        assert "已注册" in resp.json()["detail"]
+        assert "已注册" in resp.json()["detail"]["error"]["message"]
 
 
 class TestLogin:
@@ -267,7 +268,7 @@ class TestLogin:
             "password": "WrongPass@999",
         })
         assert resp.status_code == 401
-        assert "邮箱或密码错误" in resp.json()["detail"]
+        assert "邮箱或密码错误" in resp.json()["detail"]["error"]["message"]
 
     def test_login_nonexistent_email(self, api: AuthApi):
         resp = api.post("/api/auth/login", json={
@@ -275,7 +276,7 @@ class TestLogin:
             "password": _valid_password(),
         })
         assert resp.status_code == 401
-        assert "邮箱或密码错误" in resp.json()["detail"]
+        assert "邮箱或密码错误" in resp.json()["detail"]["error"]["message"]
 
     def test_login_with_remember_me(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/login", json={
@@ -315,7 +316,7 @@ class TestRefresh:
     def test_refresh_invalid_token(self, api: AuthApi):
         resp = api.post("/api/auth/refresh", json={"refresh_token": "garbage_token_here"})
         assert resp.status_code == 401
-        assert "已过期" in resp.json()["detail"]
+        assert "已过期" in resp.json()["detail"]["error"]["message"]
 
 
 class TestMe:
@@ -345,7 +346,8 @@ class TestMe:
     def test_me_unauthenticated(self, api: AuthApi):
         resp = api.get("/api/auth/me")
         assert resp.status_code == 401
-        assert "认证" in resp.json()["detail"] or "令牌" in resp.json()["detail"]
+        msg = resp.json()["detail"]["error"]["message"]
+        assert "认证" in msg or "令牌" in msg
 
 
 class TestForgotResetPassword:
@@ -417,7 +419,7 @@ class TestForgotResetPassword:
             "new_password": "NewPass@789",
         })
         assert resp.status_code == 400
-        assert "验证码错误" in resp.json()["detail"]
+        assert "验证码错误" in resp.json()["detail"]["error"]["message"]
 
     def test_reset_password_same_as_old(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/forgot-password", json={"email": registered_user["email"]})
@@ -431,7 +433,7 @@ class TestForgotResetPassword:
             "new_password": registered_user["password"],
         })
         assert resp.status_code == 400
-        assert "新密码不能与旧密码相同" in resp.json()["detail"]
+        assert "新密码不能与旧密码相同" in resp.json()["detail"]["error"]["message"]
 
 
 class TestLogout:

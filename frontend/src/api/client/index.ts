@@ -20,6 +20,6 @@ export {
 export { listAgents, createAgent, updateAgent, deleteAgent, toggleAgent } from './agents';
 export { listModels, listCommands, executeCommand } from './commands';
 export type { ModelInfo, CommandDef } from './commands';
-export { generateTool, validateTool, executeTool } from './tools';
-export type { GeneratedTool, ToolValidationResult } from './tools';
+export { validateTool, executeTool } from './tools';
+export type { ToolValidationResult } from './tools';
 export { default } from './instance';

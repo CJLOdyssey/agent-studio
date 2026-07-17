@@ -29,6 +29,7 @@ def run_cli(requirement: str, session_id: str | None = None) -> dict[str, Any]:
 async def _run_cli_async(requirement: str, session_id: str | None = None) -> dict[str, Any]:
     """Async implementation of CLI agent runner."""
     config = load_config()
+    import virtual_team.thinking_tree.tools  # noqa: F401
 
     db_configs = await get_active_agent_configs()
     primary = db_configs[0] if db_configs else None

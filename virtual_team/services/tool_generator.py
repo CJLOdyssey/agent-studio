@@ -4,8 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from virtual_team.services.generators import GeneratedTool, _generate_javascript_tool, _generate_python_tool
-
 
 class ToolValidateRequest(BaseModel):
     code: str
@@ -16,17 +14,6 @@ class ToolValidateResponse(BaseModel):
     is_valid: bool
     error_message: str | None = None
     suggestions: list[str] = []
-
-
-def _generate_tool_from_description(description: str, language: str) -> GeneratedTool:
-    import hashlib
-
-    tool_id = f"tool_{hashlib.md5(description.encode()).hexdigest()[:8]}"
-
-    if language == "python":
-        return _generate_python_tool(tool_id, description)
-    else:
-        return _generate_javascript_tool(tool_id, description)
 
 
 def _validate_tool_code(code: str, language: str) -> ToolValidateResponse:

@@ -153,6 +153,9 @@ async def seed_default_tools() -> None:
 async def startup(app: FastAPI) -> None:
     """Run on application startup — config, GC, DB, Redis."""
     load_config()
+
+    import virtual_team.thinking_tree.tools  # noqa: F401
+
     startup_log = _startup_report()
     for line in startup_log:
         logger.info("%s", line)
