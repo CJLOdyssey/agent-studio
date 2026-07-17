@@ -3,7 +3,7 @@ import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
+from starlette.testclient import TestClient
 
 os.environ['AUTH_MODE'] = 'legacy'
 os.environ['DATABASE_URL'] = 'sqlite+aiosqlite:///:memory:'
@@ -92,7 +92,7 @@ class TestApiEndpoints:
             "system_prompt": "You are a test agent",
         }
         resp = client.post("/api/agents", json=payload)
-        assert resp.status_code == 201, f"Create failed: {resp.text}"
+        assert resp.status_code == 201
         created = resp.json()
         assert "id" in created
         assert created.get("status") == "created"
@@ -110,7 +110,7 @@ class TestApiEndpoints:
     def test_tools_validate(self, client):
         payload = {"code": "def hello():\n    return 'world'", "language": "python"}
         resp = client.post("/api/tools/validate", json=payload)
-        assert resp.status_code == 200, f"Validate failed: {resp.text}"
+        assert resp.status_code == 200
         assert "is_valid" in resp.json()
 
     def test_skills_list(self, client):
@@ -161,39 +161,46 @@ class TestApiEndpoints:
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
 
+    def test_admin_logs(self, client):
+        resp = client.get("/api/admin/logs")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_admin_activity(self, client):
+        resp = client.get("/api/admin/activity")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_tool_plugins_list(self, client):
+        resp = client.get("/api/tools/plugins")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
 
 class TestAgentCRUD:
 
-    def test_agent_create_and_get_by_id(self, client):
-        payload = {
-            "name": "crud-agent",
-            "role_identifier": "crud_role",
-            "system_prompt": "You are a CRUD test agent",
-        }
-        resp = client.post("/api/agents", json=payload)
-        assert resp.status_code == 201
-        agent_id = resp.json()["id"]
+    USER_HEADERS = {"X-User-ID": "admin"}
 
+    def _create_agent(self, client, name="crud-agent", role="crud_role", prompt="You are a CRUD test agent"):
+        payload = {"name": name, "role_identifier": role, "system_prompt": prompt}
+        resp = client.post("/api/agents", json=payload, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_agent_create_and_get_by_id(self, client):
+        agent_id = self._create_agent(client)
         resp = client.get(f"/api/agents/{agent_id}")
         assert resp.status_code == 200
         data = resp.json()
         assert data["name"] == "crud-agent"
         assert data["role_identifier"] == "crud_role"
-        assert data["system_prompt"] == "You are a CRUD test agent"
 
     def test_agent_update(self, client):
-        payload = {
-            "name": "update-agent",
-            "role_identifier": "update_role",
-            "system_prompt": "Original prompt",
-        }
-        resp = client.post("/api/agents", json=payload)
-        agent_id = resp.json()["id"]
-
+        agent_id = self._create_agent(client, "update-agent", "update_role")
         resp = client.put(f"/api/agents/{agent_id}", json={
             "name": "updated-agent",
             "system_prompt": "Updated prompt",
-        })
+        }, headers=self.USER_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "updated"
@@ -203,30 +210,60 @@ class TestAgentCRUD:
         assert resp.json()["system_prompt"] == "Updated prompt"
 
     def test_agent_delete(self, client):
-        payload = {
-            "name": "delete-agent",
-            "role_identifier": "delete_role",
-            "system_prompt": "Delete me",
-        }
-        resp = client.post("/api/agents", json=payload)
-        agent_id = resp.json()["id"]
-
-        resp = client.delete(f"/api/agents/{agent_id}")
+        agent_id = self._create_agent(client, "delete-agent", "delete_role", "Delete me")
+        resp = client.delete(f"/api/agents/{agent_id}", headers=self.USER_HEADERS)
         assert resp.status_code == 200
         assert resp.json()["status"] == "deleted"
 
         resp = client.get(f"/api/agents/{agent_id}")
         assert resp.status_code == 404
 
+    def test_agent_duplicate_role_returns_409(self, client):
+        payload = {"name": "dup-agent", "role_identifier": "dup_role", "system_prompt": "dup"}
+        resp = client.post("/api/agents", json=payload, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+
+        resp = client.post("/api/agents", json=payload, headers=self.USER_HEADERS)
+        assert resp.status_code == 409
+
+    def test_agent_get_nonexistent_returns_404(self, client):
+        resp = client.get("/api/agents/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_agent_update_nonexistent_returns_404(self, client):
+        resp = client.put("/api/agents/nonexistent-id-99999", json={"name": "nope"}, headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_agent_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/agents/nonexistent-id-99999", headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_agent_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/agents", json={}, headers=self.USER_HEADERS)
+        assert resp.status_code == 422
+
+    def test_agent_toggle(self, client):
+        agent_id = self._create_agent(client, "toggle-agent", "toggle_role")
+        resp = client.put(f"/api/agents/{agent_id}/toggle", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["is_active"] is False
+
+        resp = client.put(f"/api/agents/{agent_id}/toggle", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["is_active"] is True
+
 
 class TestToolCRUD:
 
+    def _create_tool(self, client, name="test-tool", category="api"):
+        payload = {"name": name, "category": category, "description": "A test tool"}
+        resp = client.post("/api/tools", json=payload)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
     def test_tool_create(self, client):
-        payload = {
-            "name": "test-tool",
-            "category": "api",
-            "description": "A test tool",
-        }
+        payload = {"name": "test-tool", "category": "api", "description": "A test tool"}
         resp = client.post("/api/tools", json=payload)
         assert resp.status_code == 201
         data = resp.json()
@@ -234,14 +271,7 @@ class TestToolCRUD:
         assert data["name"] == "test-tool"
 
     def test_tool_update(self, client):
-        payload = {
-            "name": "tool-to-update",
-            "category": "api",
-            "description": "Original description",
-        }
-        resp = client.post("/api/tools", json=payload)
-        tool_id = resp.json()["id"]
-
+        tool_id = self._create_tool(client, "tool-to-update", "api")
         resp = client.put(f"/api/tools/{tool_id}", json={
             "name": "updated-tool",
             "description": "Updated description",
@@ -251,18 +281,29 @@ class TestToolCRUD:
         assert data["name"] == "updated-tool"
 
     def test_tool_delete(self, client):
-        payload = {
-            "name": "tool-to-delete",
-            "category": "api",
-        }
-        resp = client.post("/api/tools", json=payload)
-        tool_id = resp.json()["id"]
-
+        tool_id = self._create_tool(client, "tool-to-delete", "api")
         resp = client.delete(f"/api/tools/{tool_id}")
         assert resp.status_code == 204
 
+    def test_tool_get_nonexistent_returns_404(self, client):
+        resp = client.put("/api/tools/nonexistent-id-99999", json={"name": "nope"})
+        assert resp.status_code == 404
+
+    def test_tool_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/tools/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_tool_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/tools", json={})
+        assert resp.status_code == 422
+
 
 class TestTeamCRUD:
+
+    def _create_team(self, client, name="test-team"):
+        resp = client.post("/api/teams", json={"name": name, "description": "A test team"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
 
     def test_team_create_and_get(self, client):
         payload = {"name": "test-team", "description": "A test team"}
@@ -276,19 +317,179 @@ class TestTeamCRUD:
         assert data["name"] == "test-team"
         assert data.get("description") == "A test team"
 
-    def test_team_delete(self, client):
-        payload = {"name": "team-to-delete"}
-        resp = client.post("/api/teams", json=payload)
-        team_id = resp.json()["id"]
+    def test_team_update(self, client):
+        team_id = self._create_team(client, "team-to-update")
+        resp = client.put(f"/api/teams/{team_id}", json={"name": "updated-team", "description": "Updated"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "updated-team"
+        assert data["description"] == "Updated"
 
+    def test_team_delete(self, client):
+        team_id = self._create_team(client, "team-to-delete")
         resp = client.delete(f"/api/teams/{team_id}")
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
+
+    def test_team_get_nonexistent_returns_404(self, client):
+        resp = client.get("/api/teams/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_team_update_nonexistent_returns_404(self, client):
+        resp = client.put("/api/teams/nonexistent-id-99999", json={"name": "nope"})
+        assert resp.status_code == 404
+
+    def test_team_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/teams/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_team_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/teams", json={})
+        assert resp.status_code == 422
+
+
+class TestMCPCRUD:
+
+    def _create_mcp(self, client, name="test-mcp"):
+        payload = {"name": name, "type": "stdio", "endpoint": "/usr/bin/env"}
+        resp = client.post("/api/mcps", json=payload)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_mcp_create(self, client):
+        payload = {"name": "test-mcp", "type": "stdio", "endpoint": "/usr/bin/env"}
+        resp = client.post("/api/mcps", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["name"] == "test-mcp"
+
+    def test_mcp_list(self, client):
+        self._create_mcp(client, "mcp-for-list")
+        resp = client.get("/api/mcps")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+
+    def test_mcp_update(self, client):
+        mcp_id = self._create_mcp(client, "mcp-to-update")
+        resp = client.put(f"/api/mcps/{mcp_id}", json={"name": "updated-mcp"})
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "updated-mcp"
+
+    def test_mcp_delete(self, client):
+        mcp_id = self._create_mcp(client, "mcp-to-delete")
+        resp = client.delete(f"/api/mcps/{mcp_id}")
+        assert resp.status_code == 204
+
+    def test_mcp_get_nonexistent_returns_404(self, client):
+        resp = client.put("/api/mcps/nonexistent-id-99999", json={"name": "nope"})
+        assert resp.status_code == 404
+
+    def test_mcp_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/mcps/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_mcp_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/mcps", json={})
+        assert resp.status_code == 422
+
+
+class TestSkillCRUD:
+
+    def _create_skill(self, client, name="test-skill", category="general"):
+        payload = {"name": name, "category": category, "description": "A test skill"}
+        resp = client.post("/api/skills", json=payload)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_skill_create(self, client):
+        payload = {"name": "test-skill", "category": "general", "description": "A test skill"}
+        resp = client.post("/api/skills", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["name"] == "test-skill"
+
+    def test_skill_update(self, client):
+        skill_id = self._create_skill(client, "skill-to-update")
+        resp = client.put(f"/api/skills/{skill_id}", json={"name": "updated-skill", "description": "Updated"})
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "updated-skill"
+
+    def test_skill_delete(self, client):
+        skill_id = self._create_skill(client, "skill-to-delete")
+        resp = client.delete(f"/api/skills/{skill_id}")
+        assert resp.status_code == 204
+
+    def test_skill_get_nonexistent_returns_404(self, client):
+        resp = client.get("/api/skills/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_skill_update_nonexistent_returns_404(self, client):
+        resp = client.put("/api/skills/nonexistent-id-99999", json={"name": "nope"})
+        assert resp.status_code == 404
+
+    def test_skill_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/skills/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_skill_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/skills", json={})
+        assert resp.status_code == 422
+
+
+class TestPromptCRUD:
+
+    def _create_prompt(self, client, name="test-prompt", category="general"):
+        payload = {"name": name, "category": category, "content": "You are a helpful assistant."}
+        resp = client.post("/api/prompts", json=payload)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_prompt_create(self, client):
+        payload = {"name": "test-prompt", "category": "general", "content": "You are a helpful assistant."}
+        resp = client.post("/api/prompts", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["name"] == "test-prompt"
+
+    def test_prompt_update(self, client):
+        prompt_id = self._create_prompt(client, "prompt-to-update")
+        resp = client.put(f"/api/prompts/{prompt_id}", json={"name": "updated-prompt", "content": "Updated content"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "updated-prompt"
+        assert data["content"] == "Updated content"
+
+    def test_prompt_delete(self, client):
+        prompt_id = self._create_prompt(client, "prompt-to-delete")
+        resp = client.delete(f"/api/prompts/{prompt_id}")
+        assert resp.status_code == 204
+
+    def test_prompt_get_nonexistent_returns_404(self, client):
+        resp = client.put("/api/prompts/nonexistent-id-99999", json={"name": "nope"})
+        assert resp.status_code == 404
+
+    def test_prompt_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/prompts/nonexistent-id-99999")
+        assert resp.status_code == 404
+
+    def test_prompt_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/prompts", json={})
+        assert resp.status_code == 422
 
 
 class TestSessionCRUD:
 
     USER_HEADERS = {"X-User-ID": "admin"}
+
+    def _create_session(self, client, title="test-session"):
+        resp = client.post("/api/sessions", json={"title": title}, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        return resp.json()["id"]
 
     def test_session_create_and_list(self, client):
         resp = client.post("/api/sessions", json={"title": "test-session"}, headers=self.USER_HEADERS)
@@ -302,15 +503,119 @@ class TestSessionCRUD:
         assert session_id in ids
 
     def test_session_detail(self, client):
-        resp = client.post("/api/sessions", json={"title": "detail-session"}, headers=self.USER_HEADERS)
-        session_id = resp.json()["id"]
-
+        session_id = self._create_session(client, "detail-session")
         resp = client.get(f"/api/sessions/{session_id}", headers=self.USER_HEADERS)
         assert resp.status_code == 200
         data = resp.json()
         assert data["title"] == "detail-session"
         assert "runs" in data
         assert "memories" in data
+
+    def test_session_rename(self, client):
+        session_id = self._create_session(client, "rename-me")
+        resp = client.put(f"/api/sessions/{session_id}", json={"title": "renamed-session"}, headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["title"] == "renamed-session"
+
+    def test_session_delete(self, client):
+        session_id = self._create_session(client, "delete-me")
+        resp = client.delete(f"/api/sessions/{session_id}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+
+    def test_session_get_nonexistent_returns_404(self, client):
+        resp = client.get("/api/sessions/nonexistent-id-99999", headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_session_update_nonexistent_returns_404(self, client):
+        resp = client.put("/api/sessions/nonexistent-id-99999", json={"title": "nope"}, headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_session_delete_nonexistent_returns_404(self, client):
+        resp = client.delete("/api/sessions/nonexistent-id-99999", headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_session_rename_empty_body_returns_422(self, client):
+        resp = client.put("/api/sessions/nonexistent-id", json={}, headers=self.USER_HEADERS)
+        assert resp.status_code == 422
+
+
+class TestKeyCRUD:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_key_create(self, client):
+        payload = {
+            "provider": "openai",
+            "usage_type": "embedding",
+            "label": "test-key",
+            "api_key": "sk-test-key-value",
+        }
+        resp = client.post("/api/keys", json=payload, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["provider"] == "openai"
+
+    def test_key_list(self, client):
+        resp = client.get("/api/keys", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_key_create_empty_body_returns_422(self, client):
+        resp = client.post("/api/keys", json={}, headers=self.USER_HEADERS)
+        assert resp.status_code == 422
+
+
+class TestWorkflowCRUD:
+
+    def _create_workflow_team(self, client, suffix="wf"):
+        resp = client.post("/api/teams", json={"name": f"wf-team-{suffix}"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_workflow_create(self, client):
+        team_id = self._create_workflow_team(client, "create")
+        payload = {
+            "teamId": team_id,
+            "name": "test-workflow",
+            "maxRounds": 5,
+            "nodes": [],
+            "edges": [],
+        }
+        resp = client.post("/api/workflows", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "test-workflow"
+
+    def test_workflow_list(self, client):
+        team_id = self._create_workflow_team(client, "list")
+        payload = {
+            "teamId": team_id,
+            "name": "list-wf",
+            "maxRounds": 3,
+            "nodes": [],
+            "edges": [],
+        }
+        client.post("/api/workflows", json=payload)
+        resp = client.get("/api/workflows")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_workflow_delete(self, client):
+        team_id = self._create_workflow_team(client, "del")
+        payload = {
+            "teamId": team_id,
+            "name": "del-wf",
+            "maxRounds": 3,
+            "nodes": [],
+            "edges": [],
+        }
+        resp = client.post("/api/workflows", json=payload)
+        wf_id = resp.json()["id"]
+        resp = client.delete(f"/api/workflows/{wf_id}")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
 
 
 class TestRunBasic:
@@ -356,18 +661,3 @@ class TestDebugEndpoints:
         data = resp.json()
         assert "status" in data
         assert "events_stored" in data
-
-
-class TestErrorCases:
-
-    def test_get_nonexistent_agent_returns_404(self, client):
-        resp = client.get("/api/agents/nonexistent-id-12345")
-        assert resp.status_code == 404
-
-    def test_delete_nonexistent_agent_returns_404(self, client):
-        resp = client.delete("/api/agents/nonexistent-id-12345")
-        assert resp.status_code == 404
-
-    def test_create_agent_empty_body_returns_422(self, client):
-        resp = client.post("/api/agents", json={})
-        assert resp.status_code == 422
