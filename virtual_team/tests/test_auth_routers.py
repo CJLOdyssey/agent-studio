@@ -124,6 +124,22 @@ class TestAuthLogin:
         assert data["token_type"] == "bearer"
         assert data["user"]["email"] == "admin@test.com"
 
+    def test_login_returns_token_structure(self, client):
+        resp = client.post(
+            "/api/auth/login",
+            json={"email": "admin@test.com", "password": "admin123"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert "token_type" in data
+        assert "expires_in" in data
+        assert "user" in data
+        assert data["access_token"] != ""
+        assert data["refresh_token"] != ""
+        assert len(data["access_token"].split(".")) == 3
+
     def test_login_wrong_password(self, client):
         resp = client.post(
             "/api/auth/login",
@@ -157,6 +173,25 @@ class TestAuthLogin:
             "/api/auth/refresh", json={"refresh_token": "totally_invalid_token"}
         )
         assert resp.status_code == 401
+
+    def test_refresh_token_rotation(self, client):
+        login_resp = client.post(
+            "/api/auth/login",
+            json={"email": "admin@test.com", "password": "admin123"},
+        )
+        assert login_resp.status_code == 200
+        first_refresh = login_resp.json()["refresh_token"]
+
+        resp1 = client.post(
+            "/api/auth/refresh", json={"refresh_token": first_refresh}
+        )
+        assert resp1.status_code == 200
+        second_refresh = resp1.json()["refresh_token"]
+
+        resp2 = client.post(
+            "/api/auth/refresh", json={"refresh_token": first_refresh}
+        )
+        assert resp2.status_code == 401
 
 
 class TestAuthRegister:
@@ -211,6 +246,64 @@ class TestAuthRegister:
                 "email": "weakpass@test.com",
                 "code": "123456",
                 "password": "12345678",
+            },
+        )
+        assert resp.status_code == 400
+
+    @patch("virtual_team.routers.auth.register._generate_code", return_value="654321")
+    def test_register_flow_complete(self, mock_gen_code, client):
+        resp = client.post(
+            "/api/auth/send-register-code", json={"email": "flowtest@test.com"}
+        )
+        assert resp.status_code == 200
+
+        resp = client.post(
+            "/api/auth/register",
+            json={
+                "email": "flowtest@test.com",
+                "code": "654321",
+                "password": "StrongPass@1",
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["token_type"] == "bearer"
+        assert data["user"]["email"] == "flowtest@test.com"
+
+    def test_password_policy_rejects_common(self, client):
+        with patch(
+            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+        ):
+            client.post(
+                "/api/auth/send-register-code",
+                json={"email": "commonpass@test.com"},
+            )
+        resp = client.post(
+            "/api/auth/register",
+            json={
+                "email": "commonpass@test.com",
+                "code": "654321",
+                "password": "password123",
+            },
+        )
+        assert resp.status_code == 400
+
+    def test_password_policy_rejects_short(self, client):
+        with patch(
+            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+        ):
+            client.post(
+                "/api/auth/send-register-code",
+                json={"email": "shortpass@test.com"},
+            )
+        resp = client.post(
+            "/api/auth/register",
+            json={
+                "email": "shortpass@test.com",
+                "code": "654321",
+                "password": "Abc1!",
             },
         )
         assert resp.status_code == 400
@@ -297,3 +390,47 @@ class TestAuthProfile:
         data = resp.json()
         assert data["email"] == "admin@legacy.local"
         assert data["is_verified"] is True
+
+    def test_profile_returns_admin_in_legacy(self, client):
+        resp = client.get("/api/auth/me")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] is not None
+        assert data["email"] is not None
+        assert isinstance(data["roles"], list)
+        assert "admin" in data["roles"]
+        assert data["is_verified"] is True
+
+
+class TestAuthForgotPasswordFlow:
+
+    @patch("virtual_team.routers.auth.register._generate_code", return_value="112233")
+    @patch("virtual_team.routers.auth.password._generate_code", return_value="445566")
+    def test_forgot_password_full_flow(self, mock_pwd_code, mock_reg_code, client):
+        client.post(
+            "/api/auth/send-register-code", json={"email": "fpflow@test.com"}
+        )
+        reg_resp = client.post(
+            "/api/auth/register",
+            json={
+                "email": "fpflow@test.com",
+                "code": "112233",
+                "password": "StrongPass@1",
+            },
+        )
+        assert reg_resp.status_code == 201
+
+        forgot_resp = client.post(
+            "/api/auth/forgot-password", json={"email": "fpflow@test.com"}
+        )
+        assert forgot_resp.status_code == 200
+
+        reset_resp = client.post(
+            "/api/auth/reset-password",
+            json={
+                "email": "fpflow@test.com",
+                "code": "445566",
+                "new_password": "NewStr0ng@Pass",
+            },
+        )
+        assert reset_resp.status_code == 200
