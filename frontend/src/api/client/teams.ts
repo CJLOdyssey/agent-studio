@@ -45,3 +45,7 @@ export async function addTeamMember(
 export async function removeTeamMember(teamId: string, memberId: string): Promise<void> {
   await api.delete(`/teams/${teamId}/members/${memberId}`);
 }
+
+export async function linkAgentToMember(teamId: string, memberId: string, agentConfigId: string): Promise<void> {
+  await api.put(`/teams/${teamId}/members/${memberId}/link-agent`, { agent_config_id: agentConfigId });
+}

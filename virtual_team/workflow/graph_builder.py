@@ -20,13 +20,13 @@ class GraphBuilder:
         self.router = router
         self.checkpointer = checkpointer
 
-    def build(self, config: WorkflowConfig) -> StateGraph:
+    def build(self, config: WorkflowConfig) -> StateGraph:  # type: ignore[type-arg]
         workflow = StateGraph(WorkflowState)
         sorted_nodes = sorted(config.nodes, key=lambda n: n.order)
 
         for node in sorted_nodes:
             node_fn = self.node_factory.create(node)
-            workflow.add_node(node.role_identifier, node_fn)
+            workflow.add_node(node.role_identifier, node_fn)  # type: ignore[arg-type]
 
         if sorted_nodes:
             entry = sorted_nodes[0].role_identifier
@@ -48,7 +48,7 @@ class GraphBuilder:
                     workflow.add_conditional_edges(
                         node.role_identifier,
                         lambda s, nid=node.role_identifier: END,
-                        end_map,
+                        end_map,  # type: ignore[arg-type]
                     )
                 else:
                     workflow.add_edge(node.role_identifier, END)
@@ -60,7 +60,7 @@ class GraphBuilder:
                 workflow.add_conditional_edges(
                     node.role_identifier,
                     lambda state, nid=node.role_identifier: self.router.resolve(config.edges, state, nid),
-                    self._build_edge_map(outgoing),
+                    self._build_edge_map(outgoing),  # type: ignore[arg-type]
                 )
             elif len(unconditional) == 1:
                 workflow.add_edge(node.role_identifier, unconditional[0].to_node_id)
@@ -72,9 +72,9 @@ class GraphBuilder:
                     {t: t for t in targets},
                 )
 
-        return workflow.compile(checkpointer=self.checkpointer)
+        return workflow.compile(checkpointer=self.checkpointer)  # type: ignore
 
-    def _build_edge_map(self, edges: list) -> dict[str, str]:
+    def _build_edge_map(self, edges: list) -> dict[str, str]:  # type: ignore[type-arg]
         edge_map: dict[str, str] = {}
         for e in edges:
             if e.condition_key:

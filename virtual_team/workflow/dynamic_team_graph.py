@@ -26,7 +26,7 @@ class DynamicTeamGraph:
         max_tokens: int = 65536,
         checkpointer: Any | None = None,
     ):
-        llm_kwargs: dict = {
+        llm_kwargs: dict[str, Any] = {
             "model": model,
             "api_key": api_key,
             "temperature": temperature,
@@ -81,9 +81,9 @@ class DynamicTeamGraph:
         self,
         requirement: str,
         thread_id: str,
-        stream_callback: Callable | None = None,
+        stream_callback: Callable | None = None,  # type: ignore[type-arg]
         run_id: str = "",
-    ) -> dict:
+    ) -> dict[str, Any]:
         if run_id:
             self._run_id = run_id
             self._build()
@@ -103,7 +103,7 @@ class DynamicTeamGraph:
                     if isinstance(result, dict):
                         for k in ["messages", "requirement", "artifacts", "round_number", "approved"]:
                             result.setdefault(k, initial_state.get(k))
-                if stream_callback:
+                if stream_callback:  # type: ignore
                     try:
                         await stream_callback(event)
                     except Exception:

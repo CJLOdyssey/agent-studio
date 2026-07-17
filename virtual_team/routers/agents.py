@@ -1,12 +1,14 @@
 """Agent config API routes: CRUD and toggle."""
 
 import json
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from virtual_team.audit import log_audit
 from virtual_team.auth import CurrentUser, get_current_user
-from virtual_team.database import log_audit
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     create_agent_config,
@@ -16,7 +18,6 @@ from virtual_team.repository import (
     get_agent_configs,
     update_agent_config,
 )
-from virtual_team.repository.versions import create_version
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents"])
@@ -27,9 +28,9 @@ class AgentCreateRequest(BaseModel):
     role_identifier: str = Field(..., min_length=1, max_length=64)
     system_prompt: str = Field(default="")
     output_constraints: str | None = None
-    tools: list[dict] | None = None
-    mcp: list[dict] | None = None
-    skills: list[dict] | None = None
+    tools: list[dict[str, Any]] | None = None
+    mcp: list[dict[str, Any]] | None = None
+    skills: list[dict[str, Any]] | None = None
     model: str | None = None
     temperature: float | None = Field(default=None, ge=0.0, le=1.0)
     order: int = 0
@@ -42,9 +43,9 @@ class AgentUpdateRequest(BaseModel):
     name: str | None = None
     system_prompt: str | None = None
     output_constraints: str | None = None
-    tools: list[dict] | None = None
-    mcp: list[dict] | None = None
-    skills: list[dict] | None = None
+    tools: list[dict[str, Any]] | None = None
+    mcp: list[dict[str, Any]] | None = None
+    skills: list[dict[str, Any]] | None = None
     order: int | None = None
     is_active: bool | None = None
     is_approver: bool | None = None
@@ -54,7 +55,7 @@ class AgentUpdateRequest(BaseModel):
 
 
 @router.get("/api/agents")
-async def list_agents():
+async def list_agents() -> Any:
     try:
         configs = await get_agent_configs()
         return [
@@ -79,17 +80,17 @@ async def list_agents():
         ]
     except Exception as e:
         logger.error("Error listing agents: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.get("/api/agents/{agent_id}")
-async def get_agent(agent_id: str):
+async def get_agent(agent_id: str) -> Any:
     configs = await get_agent_configs()
     c = next((x for x in configs if x.id == agent_id), None)
     if not c:
-        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
 
-    def _parse_json(val):
+    def _parse_json(val):  # type: ignore
         if isinstance(val, str):
             try:
                 return json.loads(val)
@@ -103,9 +104,9 @@ async def get_agent(agent_id: str):
         "role_identifier": c.role_identifier,
         "system_prompt": c.system_prompt,
         "output_constraints": c.output_constraints,
-        "tools": _parse_json(c.tools),
-        "mcp": _parse_json(c.mcp),
-        "skills": _parse_json(c.skills),
+        "tools": _parse_json(c.tools),  # type: ignore[no-untyped-call]
+        "mcp": _parse_json(c.mcp),  # type: ignore[no-untyped-call]
+        "skills": _parse_json(c.skills),  # type: ignore[no-untyped-call]
         "model": c.model,
         "temperature": c.temperature,
         "order": c.order,
@@ -117,10 +118,10 @@ async def get_agent(agent_id: str):
 
 
 @router.post("/api/agents", status_code=201)
-async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)):  # noqa: B008
+async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
     existing = await get_agent_config_by_role(req.role_identifier)
     if existing:
-        raise HTTPException(status_code=409, detail=f"角色标识 '{req.role_identifier}' 已存在")
+        raise error_response(ErrorCode.AGENT_DUPLICATE, detail=f"角色标识 '{req.role_identifier}' 已存在")
     try:
         import json
 
@@ -145,14 +146,12 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
         return {"id": created.id, "status": "created"}
     except Exception as e:
         logger.error("Error creating agent: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
-async def _snapshot_agent(agent_id: str, current_user: CurrentUser):
+async def _snapshot_agent(agent_id: str, current_user: CurrentUser) -> Any:
     """Create a version snapshot after agent save. Runs in background."""
     try:
-        from virtual_team.database import get_session_factory
-
         agent = await get_agent_config(agent_id)
         if not agent:
             return
@@ -165,12 +164,11 @@ async def _snapshot_agent(agent_id: str, current_user: CurrentUser):
             "is_active": agent.is_active,
             "order": agent.order,
         }
-        factory = get_session_factory()
-        async with factory() as session:
-            await create_version(
-                session, "agent", agent_id, snapshot, current_user.id
-            )
-            await session.commit()
+        from virtual_team.repository.snapshot_helper import create_snapshot_from_dict
+
+        await create_snapshot_from_dict(
+            "agent", agent_id, snapshot, created_by=current_user.id,
+        )
     except Exception:
         logger.warning("Version snapshot failed for agent %s", agent_id, exc_info=True)
 
@@ -180,7 +178,7 @@ async def edit_agent(
     agent_id: str,
     req: AgentUpdateRequest,
     current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
-):
+) -> Any:
     import json
 
     updated = await update_agent_config(
@@ -199,45 +197,45 @@ async def edit_agent(
         temperature=req.temperature,
     )
     if not updated:
-        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
     await _snapshot_agent(updated.id, current_user)
     await log_audit("update", "agent", req.name or updated.name, "更新成功")
     return {"id": updated.id, "status": "updated"}
 
 
 @router.delete("/api/agents/{agent_id}")
-async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):  # noqa: B008  # noqa: B008
+async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008  # noqa: B008
     target = await get_agent_config(agent_id)
     if not target:
-        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
     if target.is_approver:
         configs = await get_agent_configs()
         approvers = [c for c in configs if c.is_approver and c.id != agent_id]
         if not approvers:
-            raise HTTPException(status_code=400, detail="不能删除唯一的审批者，请先设置其他审批者")
+            raise error_response(ErrorCode.AGENT_LAST_APPROVER, detail="不能删除唯一的审批者，请先设置其他审批者")
     agent_name = target.name
     deleted = await delete_agent_config(agent_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
     await log_audit("delete", "agent", agent_name, "删除成功")
     return {"status": "deleted"}
 
 
 @router.put("/api/agents/{agent_id}/toggle")
-async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)):  # noqa: B008
+async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
     configs = await get_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)
     if not target:
-        raise HTTPException(status_code=404, detail="未找到该 agent 配置")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
     if target.is_active and target.is_approver:
         active_approvers = [
             c for c in configs if c.is_approver and c.is_active and c.id != agent_id
         ]
         if not active_approvers:
-            raise HTTPException(status_code=400, detail="不能停用唯一的活跃审批者")
+            raise error_response(ErrorCode.AGENT_LAST_ACTIVE, detail="不能停用唯一的活跃审批者")
     updated = await update_agent_config(id=agent_id, is_active=not target.is_active)
     if not updated:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="Agent not found")
     return {"id": updated.id, "is_active": updated.is_active}
 
 

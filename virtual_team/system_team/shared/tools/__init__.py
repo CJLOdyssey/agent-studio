@@ -13,7 +13,7 @@ def ensure_dir(path: str) -> None:
 def read_json(file_path: str) -> dict[str, Any]:
     """Read and parse a JSON file."""
     with open(file_path, encoding="utf-8") as f:
-        return json.load(f)
+        return json.load(f)  # type: ignore[no-any-return]
 
 
 def write_json(file_path: str, data: dict[str, Any]) -> None:

@@ -1,3 +1,5 @@
+from typing import Any
+
 """CLI entry point — runs a single agent via LangGraph."""
 
 import asyncio
@@ -10,7 +12,7 @@ from virtual_team.repository import get_active_agent_configs, get_session_memori
 logger = get_logger(__name__)
 
 
-def _build_context(memories) -> str:
+def _build_context(memories: list[Any]) -> str:
     if not memories:
         return ""
     lines = ["\n\n【历史上下文】"]
@@ -19,12 +21,12 @@ def _build_context(memories) -> str:
     return "\n".join(lines)
 
 
-def run_cli(requirement: str, session_id: str | None = None) -> dict:
+def run_cli(requirement: str, session_id: str | None = None) -> dict[str, Any]:
     """Run a single agent from the command line."""
     return asyncio.run(_run_cli_async(requirement, session_id))
 
 
-async def _run_cli_async(requirement: str, session_id: str | None = None) -> dict:
+async def _run_cli_async(requirement: str, session_id: str | None = None) -> dict[str, Any]:
     """Async implementation of CLI agent runner."""
     config = load_config()
 
@@ -40,8 +42,8 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
         if memories:
             session_context = _build_context(memories)
 
-    from virtual_team.agent_graph import SingleAgentGraph
     from virtual_team.checkpoint import create_checkpointer_async
+    from virtual_team.graph import SingleAgentGraph
 
     checkpointer = await create_checkpointer_async()
     graph = SingleAgentGraph(
@@ -54,8 +56,8 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
     # No DEFAULT_TOOLS — tools are created via frontend API
 
     result = await graph.run(
+        requirement=requirement,
         system_prompt=system_prompt,
-        user_input=requirement,
         thread_id=session_id or "cli",
         session_context=session_context,
     )

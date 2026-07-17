@@ -1,6 +1,7 @@
 """Project run repository — CRUD for run lifecycle management."""
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import desc, select
@@ -66,7 +67,7 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
     return run_id
 
 
-async def update_run_status(run_id: str, status: str):
+async def update_run_status(run_id: str, status: str) -> Any:
     """Update the status field of a project run."""
     factory = get_session_factory()
     async with factory() as session:
@@ -84,7 +85,7 @@ async def update_run_result(
     review: str,
     approved: bool,
     status: str,
-):
+) -> Any:
     """Persist the full result payload of a completed run."""
     factory = get_session_factory()
     async with factory() as session:

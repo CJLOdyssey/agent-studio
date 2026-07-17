@@ -2,8 +2,10 @@
 
 import os
 import sys
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,7 +47,7 @@ logger = get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan manager — runs startup and shutdown hooks."""
     await startup(app)
     yield
@@ -106,7 +108,7 @@ for r in routers:
 
 # ── Exception handler ──────────────────────────────────────────────────────
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle uncaught exceptions — log and return 500 JSON response."""
     logger.error(
         "Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True
@@ -121,20 +123,20 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # ── Health / Metrics / Version ─────────────────────────────────────────────
 @app.get("/api/metrics")
-def metrics():
+def metrics() -> Any:
     """Prometheus metrics endpoint."""
     from virtual_team.metrics import metrics_endpoint
     return metrics_endpoint()
 
 
 @app.get("/api/health")
-async def health():
+async def health() -> Any:
     """Health check endpoint."""
     return {"status": "ok"}
 
 
 @app.get("/api/version")
-async def version():
+async def version() -> Any:
     """Application version endpoint."""
     return {"version": "0.1.0"}
 

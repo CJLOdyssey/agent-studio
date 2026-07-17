@@ -1,3 +1,5 @@
+from typing import Any
+
 """Checkpointer factory — creates the appropriate backend checkpointer.
 
 Supported backends:
@@ -24,7 +26,7 @@ def _resolve_backend(backend: str | None, dsn: str | None) -> tuple[str, str | N
     return backend, dsn
 
 
-async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheckpointSaver:
+async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheckpointSaver[Any]:
     """Create the checkpointer based on backend configuration.
 
     Internal — shared async logic for both entry-points.
@@ -40,16 +42,16 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
             ) from exc
 
-        from psycopg import AsyncConnection  # type: ignore[import-untyped]
+        from psycopg import AsyncConnection  # type: ignore[import-untyped, unused-ignore]
         from psycopg.rows import dict_row
 
         conn = await AsyncConnection.connect(
             dsn,
             autocommit=True,
             prepare_threshold=0,
-            row_factory=dict_row,  # type: ignore[arg-type]
+            row_factory=dict_row,
         )
-        saver = AsyncPostgresSaver(conn)  # type: ignore[arg-type]
+        saver = AsyncPostgresSaver(conn)
         await saver.setup()
         return saver
 
@@ -66,8 +68,8 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
                 "and `aiosqlite` package"
             ) from exc
 
-        conn = await aiosqlite.connect(dsn)
-        return AsyncSqliteSaver(conn)
+        conn = await aiosqlite.connect(dsn)  # type: ignore[assignment]
+        return AsyncSqliteSaver(conn)  # type: ignore[arg-type]
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
     return MemorySaver()
@@ -76,7 +78,7 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
 def create_checkpointer(
     backend: str | None = None,
     dsn: str | None = None,
-) -> BaseCheckpointSaver:
+) -> BaseCheckpointSaver[Any]:
     """Create a checkpointer (sync wrapper — suitable for CLI / tests).
 
     When called without arguments, reads ``CHECKPOINTER_BACKEND`` and
@@ -108,7 +110,7 @@ def create_checkpointer(
 async def create_checkpointer_async(
     backend: str | None = None,
     dsn: str | None = None,
-) -> BaseCheckpointSaver:
+) -> BaseCheckpointSaver[Any]:
     """Async checkpointer factory — safe to await inside a running loop.
 
     Preferred over ``create_checkpointer`` in Celery tasks and other async

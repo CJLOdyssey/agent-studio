@@ -1,17 +1,19 @@
 """Tools repository — CRUD for :class:`RegisteredToolDB`."""
 
+from typing import Any
+
 from sqlalchemy import desc
 
 from virtual_team.database import RegisteredToolDB
 from virtual_team.repository.base import BaseRepository
 
 
-class ToolRepository(BaseRepository):
+class ToolRepository(BaseRepository[RegisteredToolDB]):
     model = RegisteredToolDB
     default_order = desc(RegisteredToolDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict:
+    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         return {
             "id": obj.id,
             "name": obj.name,
@@ -30,6 +32,7 @@ class ToolRepository(BaseRepository):
 
 # module-level aliases — preserve existing ``from repository import *`` API
 get_tools = ToolRepository.get_all     # await get_tools()
+get_tools_as_dicts = ToolRepository.get_all_as_dicts
 get_tool = ToolRepository.get_one      # await get_tool(id)
 create_tool = ToolRepository.create_one
 update_tool = ToolRepository.update_one

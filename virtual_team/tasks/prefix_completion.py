@@ -1,6 +1,7 @@
 """Raw prefix completion streaming — DeepSeek /beta/chat/completions with thinking."""
 
 import json
+from typing import Any
 
 import httpx
 
@@ -12,8 +13,8 @@ logger = get_logger(__name__)
 
 async def stream_prefix_completion(
     url: str,
-    headers: dict,
-    body: dict,
+    headers: dict[str, Any],
+    body: dict[str, Any],
     run_id: str,
     timeout: float = 300.0,
 ) -> tuple[str, list[str]]:

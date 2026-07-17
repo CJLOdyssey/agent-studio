@@ -69,7 +69,7 @@ def analyze_trace(trace_id: str) -> dict[str, Any]:
     }
 
 
-def recent_errors_report(seconds: int = 300) -> list[dict]:
+def recent_errors_report(seconds: int = 300) -> list[dict[str, Any]]:
     """Generate an error report for recent traces within the time window."""
     store = get_store()
     traces = store.error_trace_ids(seconds=seconds)

@@ -1,6 +1,7 @@
 """Streaming emitter — bridges raw httpx streaming events to Redis pub/sub + DB."""
 
 import logging
+from typing import Any
 
 from virtual_team.broker import publish_run_message
 from virtual_team.repository import save_message
@@ -15,9 +16,9 @@ class StreamEmitter:
         self._stream_buffer: list[str] = []
         self._thinking_buffer: list[str] = []
         self._pending_thinking: str | None = None
-        self._pending_thinking_nodes: list[dict] | None = None
+        self._pending_thinking_nodes: list[dict[str, Any]] | None = None
 
-    async def __call__(self, event: dict):
+    async def __call__(self, event: dict[str, Any]) -> None:
         kind = event.get("event", "")
         data = event.get("data", {})
 
@@ -110,7 +111,7 @@ class StreamEmitter:
             output = str(data.get("output", ""))[:500]
             await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
 
-    async def emit_balance_warning(self, message: str = ""):
+    async def emit_balance_warning(self, message: str = "") -> None:
         await publish_run_message(
             self._run_id,
             {
@@ -120,7 +121,7 @@ class StreamEmitter:
             },
         )
 
-    async def emit_thinking_nodes(self, nodes: list[dict]):
+    async def emit_thinking_nodes(self, nodes: list[dict[str, Any]]) -> None:
         max_pending = 20
         if self._pending_thinking_nodes:
             self._pending_thinking_nodes.extend(nodes)
@@ -129,7 +130,7 @@ class StreamEmitter:
         else:
             self._pending_thinking_nodes = nodes[:max_pending]
 
-    async def emit_tool_results(self, tool_name: str, tool_call_id: str, references: list[dict]):
+    async def emit_tool_results(self, tool_name: str, tool_call_id: str, references: list[dict[str, Any]]) -> None:
         await publish_run_message(
             self._run_id,
             {
@@ -141,7 +142,7 @@ class StreamEmitter:
             },
         )
 
-    async def emit_tool_complete(self, data: dict):
+    async def emit_tool_complete(self, data: dict[str, Any]) -> None:
         try:
             node = {
                 "type": "tool_result",
@@ -164,7 +165,7 @@ class StreamEmitter:
             import traceback
             traceback.print_exc()
 
-    async def _flush_buffers(self):
+    async def _flush_buffers(self) -> None:
         thinking_text = ""
         if self._thinking_buffer:
             thinking_text = "".join(self._thinking_buffer).strip()
@@ -198,7 +199,7 @@ class StreamEmitter:
 
         if thinking_text:
             try:
-                payload: dict = {
+                payload: dict[str, Any] = {
                     "type": "thinking_done",
                     "agent_name": "Agent",
                     "thinking": thinking_text,
@@ -212,7 +213,7 @@ class StreamEmitter:
 
     async def _emit(
         self, agent_name: str, content: str, msg_type: str = "message", thinking: str | None = None
-    ):
+    ) -> None:
         self._message_index += 1
         payload = {
             "type": msg_type,

@@ -5,6 +5,8 @@ Models are read from the user_api_keys table — each active key contributes
 its configured models to the available list.
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
@@ -55,7 +57,7 @@ async def _get_models_from_keys(user_id: str) -> list[ModelInfo]:
 
 
 @router.get("/api/models", response_model=list[ModelInfo])
-async def list_models(request: Request):
+async def list_models(request: Request) -> Any:
     """Return available models from the user's active API keys."""
     user_id = get_user_id(request)
     return await _get_models_from_keys(user_id)

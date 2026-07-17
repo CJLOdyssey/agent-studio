@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateInput, sanitizeMessageContent } from '../validation';
+import { validateInput, sanitizeMessageContent, validateName, checkTeamLimit, checkAgentLimit } from '../validation';
 
 describe('validateInput', () => {
   it('rejects empty input', () => {
@@ -54,5 +54,73 @@ describe('sanitizeMessageContent', () => {
 
   it('preserves newlines and tabs', () => {
     expect(sanitizeMessageContent('line1\nline2\tindented')).toBe('line1\nline2\tindented');
+  });
+});
+
+describe('validateName', () => {
+  it('returns valid for a standard name', () => {
+    expect(validateName('TestAgent').valid).toBe(true);
+  });
+
+  it('rejects empty name', () => {
+    const r = validateName('');
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain('不能为空');
+  });
+
+  it('rejects name exceeding 64 chars', () => {
+    const r = validateName('a'.repeat(65));
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain('不能超过');
+  });
+
+  it('rejects dangerous characters', () => {
+    const r = validateName('<script>');
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain('非法字符');
+  });
+
+  it('rejects reserved names', () => {
+    expect(validateName('新建').valid).toBe(false);
+    expect(validateName('default').valid).toBe(false);
+  });
+
+  it('detects duplicate names case-insensitively', () => {
+    const r = validateName('Test', ['test']);
+    expect(r.valid).toBe(false);
+    expect(r.error).toBe('名称已存在，请使用其他名称');
+  });
+
+  it('allows duplicate when editing same item', () => {
+    expect(validateName('Test', ['test'], 'some-id').valid).toBe(true);
+  });
+
+  it('allows when editing and only one duplicate exists', () => {
+    const r = validateName('Test', ['test', 'other'], 'some-id');
+    expect(r.valid).toBe(true);
+  });
+});
+
+describe('checkTeamLimit', () => {
+  it('allows when under limit', () => {
+    expect(checkTeamLimit(49).valid).toBe(true);
+  });
+
+  it('rejects when at limit', () => {
+    const r = checkTeamLimit(50);
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain('最多只能创建');
+  });
+});
+
+describe('checkAgentLimit', () => {
+  it('allows when under limit', () => {
+    expect(checkAgentLimit(19).valid).toBe(true);
+  });
+
+  it('rejects when at limit', () => {
+    const r = checkAgentLimit(20);
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain('最多');
   });
 });

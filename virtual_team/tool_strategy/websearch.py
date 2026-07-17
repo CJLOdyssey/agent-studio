@@ -1,12 +1,13 @@
-"""Web search tool strategy — perform web searches via DuckDuckGo."""
-
 from __future__ import annotations
+
+"""Web search tool strategy — perform web searches via DuckDuckGo."""
 
 import json
 import os
 import re
 import urllib.parse
 import urllib.request
+from typing import Any
 
 from virtual_team.tool_strategy import ToolMetadata, ToolStrategy
 
@@ -19,7 +20,7 @@ class WebSearchStrategy(ToolStrategy):
         n = metadata.name.lower()
         return "websearch" in n or "search" in n
 
-    async def invoke(self, metadata: ToolMetadata, args: dict) -> str:
+    async def invoke(self, metadata: ToolMetadata, args: dict[str, Any]) -> str:
         query = args.get("query", "")
         if not query:
             return json.dumps({"tool": metadata.name, "error": "No query provided"})
@@ -33,7 +34,7 @@ class WebSearchStrategy(ToolStrategy):
 # ── search backends (module-level helpers, no class overhead needed) ──
 
 
-async def _web_search(query: str, max_results: int = 5) -> list[dict]:
+async def _web_search(query: str, max_results: int = 5) -> list[dict[str, Any]]:
     """Multi-backend web search: Tavily → Baidu Qianfan → Bing → stub."""
     tavily_key = os.environ.get("TAVILY_API_KEY", "")
     if tavily_key:
@@ -65,7 +66,7 @@ async def _web_search(query: str, max_results: int = 5) -> list[dict]:
     return [{"snippet": f"搜索失败: {query}"}]
 
 
-def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list[dict]:
+def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list[dict[str, Any]]:
     url = f"https://cn.bing.com/search?q={urllib.parse.quote(query)}"
     req = urllib.request.Request(
         url,
@@ -77,7 +78,7 @@ def _bing_search(query: str, max_results: int = 5, enrich: bool = False) -> list
     with urllib.request.urlopen(req, timeout=15) as resp:
         html = resp.read().decode("utf-8", errors="ignore")
 
-    results = []
+    results: list[dict[str, Any]] = []
     for match in re.finditer(r'<li class="b_algo"[^>]*>(.*?)</li>', html, re.DOTALL):
         if len(results) >= max_results:
             break
@@ -124,7 +125,7 @@ def _fetch_page(url: str, max_chars: int = 2000) -> str:
         return ""
 
 
-def _baidu_qianfan_search(query: str, api_key: str, max_results: int = 5) -> list[dict]:
+def _baidu_qianfan_search(query: str, api_key: str, max_results: int = 5) -> list[dict[str, Any]]:
     import json as _json
 
     body = _json.dumps(

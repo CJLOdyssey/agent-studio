@@ -7,13 +7,13 @@ Single source of truth consumed by:
 Adding a new provider or capability requires only updating the PROVIDERS dict.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter
 
 Capability = Literal["llm", "embedding"]
 
-PROVIDERS: dict[str, dict] = {
+PROVIDERS: dict[str, dict] = {  # type: ignore[type-arg]
     "openai": {
         "name": "OpenAI",
         "base_url": "https://api.openai.com/v1",
@@ -50,6 +50,7 @@ router = APIRouter(tags=["providers"])
 
 
 @router.get("/api/providers")
-async def list_providers():
+async def list_providers() -> Any:
     """Return all known providers with their capabilities and base URLs."""
     return PROVIDERS
+

@@ -23,6 +23,6 @@ http_errors_total = Counter(
 )
 
 
-def metrics_endpoint():
+def metrics_endpoint() -> Response:
     """Return Prometheus metrics in text format."""
     return Response(content=generate_latest(), media_type="text/plain; charset=utf-8")

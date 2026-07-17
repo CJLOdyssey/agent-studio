@@ -1,98 +1,62 @@
-"""Generic CRUD base for simple entity repositories.
+"""Generic CRUD base for simple entity repositories."""
 
-Usage
------
-Create a subclass, set ``model`` and ``to_dict``::
-
-    class ToolRepository(BaseRepository):
-        model = RegisteredToolDB
-
-        @staticmethod
-        def to_dict(obj) -> dict:
-            return {"id": obj.id, "name": obj.name, ...}
-
-Then expose module-level aliases::
-
-    get_tools = ToolRepository.get_all  # bound classmethod, no (cls) needed
-    get_tool = ToolRepository.get_one
-    create_tool = ToolRepository.create_one
-    update_tool = ToolRepository.update_one
-    delete_tool = ToolRepository.delete_one
-"""
+from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, ClassVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 
 from virtual_team.database import get_session_factory
 
-if TYPE_CHECKING:
-    _Model = type[DeclarativeBase]
-else:
-    _Model = None  # noqa: E701
+ModelT = TypeVar("ModelT", bound=DeclarativeBase)
 
 
-class BaseRepository:
-    """Shared CRUD infrastructure for entities with a single table.
+class BaseRepository(Generic[ModelT]):
 
-    Subclasses **must** define:
-
-    * ``model`` — the SQLAlchemy ORM model class
-    * ``to_dict(obj)`` — static method returning a serialisable dict
-
-    Subclasses **may** set ``default_order`` to a SQLAlchemy column expression
-    (e.g. ``desc(ModelClass.updated_at)``) that will be applied by default in
-    ``get_all()`` when called without explicit ordering.
-    """
-
-    model: ClassVar[_Model] = None  # type: ignore[valid-type]
-
-    # Subclasses can override this to provide a default ORDER BY clause.
-    default_order: ClassVar = None
-
-    # Dependency injection: set a different session factory per subclass/tests.
+    model: ClassVar[type[DeclarativeBase]]
+    default_order: ClassVar[Any] = None
     session_factory = staticmethod(get_session_factory)
 
-    # ── session helpers ────────────────────────────────────────────────────
-
     @classmethod
-    def _session_cm(cls):
-        """Return an async context manager for a fresh session."""
+    def _session_cm(cls) -> Any:
         return cls.session_factory()()
 
-    # ── CRUD operations (all classmethods) ─────────────────────────────────
-
     @classmethod
-    async def get_one(cls, entity_id: str):
-        """Fetch a single entity by primary-key ``id``, or return ``None``."""
+    async def get_one(cls, entity_id: str) -> ModelT | None:
         async with cls._session_cm() as session:
-            return await session.get(cls.model, entity_id)
+            return await session.get(cls.model, entity_id)  # type: ignore[no-any-return]
 
     @classmethod
-    async def get_all(cls):
-        """Fetch all entities, ordered by ``cls.default_order`` if set."""
+    async def get_all(cls) -> list[ModelT]:
         async with cls._session_cm() as session:
             stmt = select(cls.model)
             if cls.default_order is not None:
                 stmt = stmt.order_by(cls.default_order)
             result = await session.execute(stmt)
-            return [cls.to_dict(m) for m in result.scalars().all()]
+            return list(result.scalars().all())
 
     @classmethod
-    async def create_one(cls, data: dict):
-        """Insert a new row from ``data``, commit, refresh, and return."""
+    async def get_all_as_dicts(cls) -> list[dict[str, Any]]:
+        async with cls._session_cm() as session:
+            stmt = select(cls.model)
+            if cls.default_order is not None:
+                stmt = stmt.order_by(cls.default_order)
+            result = await session.execute(stmt)
+            return [cls.to_dict(obj) for obj in result.scalars().all()]
+
+    @classmethod
+    async def create_one(cls, data: dict[str, Any]) -> ModelT:
         async with cls._session_cm() as session:
             obj = cls.model(**data)
             session.add(obj)
             await session.commit()
             await session.refresh(obj)
-            return obj
+            return obj  # type: ignore[return-value]
 
     @classmethod
-    async def update_one(cls, entity_id: str, data: dict):
-        """Partial-update an entity, or return ``None`` if not found."""
+    async def update_one(cls, entity_id: str, data: dict[str, Any]) -> ModelT | None:
         async with cls._session_cm() as session:
             obj = await session.get(cls.model, entity_id)
             if not obj:
@@ -100,14 +64,13 @@ class BaseRepository:
             for k, v in data.items():
                 if v is not None and hasattr(obj, k):
                     setattr(obj, k, v)
-            obj.updated_at = datetime.now(UTC)  # type: ignore[attr-defined]
+            obj.updated_at = datetime.now(UTC)
             await session.commit()
             await session.refresh(obj)
-            return obj
+            return obj  # type: ignore[no-any-return]
 
     @classmethod
     async def delete_one(cls, entity_id: str) -> bool:
-        """Delete an entity by id.  Returns ``True`` if deleted."""
         async with cls._session_cm() as session:
             obj = await session.get(cls.model, entity_id)
             if not obj:
@@ -116,9 +79,6 @@ class BaseRepository:
             await session.commit()
             return True
 
-    # ── serialisation hook ─────────────────────────────────────────────────
-
     @staticmethod
-    def to_dict(obj) -> dict:
-        """Override in each subclass."""
+    def to_dict(obj: ModelT) -> dict[str, Any]:
         raise NotImplementedError

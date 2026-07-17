@@ -1,6 +1,7 @@
 """Celery task registry."""
 
 import time
+from typing import Any
 
 from virtual_team.broker import celery_app
 from virtual_team.logging_config import get_logger
@@ -13,9 +14,9 @@ from .helpers import _report_run_error, _run_async, _try_mock_fallback
 logger = get_logger(__name__)
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)  # type: ignore[untyped-decorator]
 def run_agent(
-    self,
+    self: Any,
     requirement: str,
     run_id: str | None = None,
     session_id: str | None = None,
@@ -23,7 +24,7 @@ def run_agent(
     api_key: str | None = None,
     api_base: str | None = None,
     model: str | None = None,
-):
+) -> Any:
     t0 = time.time()
     logger.info(
         "Celery task START | run=%s | session=%s | agent=%s | model=%s | retry=%d",
@@ -74,16 +75,16 @@ def run_agent(
 # Used by the "继续生成" flow on the frontend.
 # ---------------------------------------------------------------------------
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)
+@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)  # type: ignore[untyped-decorator]
 def complete_agent(
-    self,
+    self: Any,
     content: str,
     run_id: str,
     api_key: str,
     api_base: str | None = None,
     model: str | None = None,
     thinking: str | None = None,
-):
+) -> Any:
     t0 = time.time()
     logger.info(
         "Celery complete START | run=%s | model=%s | thinking=%s | retry=%d",

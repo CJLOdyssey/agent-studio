@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from virtual_team.logging_config import get_logger
 
@@ -24,7 +24,7 @@ class AgentManager:
         self.agents: dict[str, Any] = {}
         self._load_config()
 
-    def _load_config(self):
+    def _load_config(self) -> None:
         """Load team configuration from YAML file."""
         if self.config_path.exists():
             with open(self.config_path, encoding="utf-8") as f:
@@ -36,11 +36,11 @@ class AgentManager:
 
     def get_team_info(self) -> dict[str, Any]:
         """Return team metadata from config."""
-        return self.config.get("team", {})
+        return self.config.get("team", {})  # type: ignore[no-any-return]
 
     def list_agents(self) -> list[dict[str, Any]]:
         """List all agent definitions from config."""
-        return self.config.get("agents", [])
+        return self.config.get("agents", [])  # type: ignore[no-any-return]
 
     def get_agent_config(self, agent_id: str) -> dict[str, Any] | None:
         """Load full configuration for a specific agent."""
@@ -107,7 +107,7 @@ class AgentManager:
                 result[sub_dir] = []
         return result
 
-    def reload(self):
+    def reload(self) -> None:
         """Reload the team configuration from disk."""
         self._load_config()
         logger.info("System team config reloaded")

@@ -1,6 +1,7 @@
 """Memory entry repository — CRUD for session-scoped agent memory entries."""
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -61,7 +62,7 @@ async def create_memory_entry(
         return obj
 
 
-async def clear_session_memories(session_id: str):
+async def clear_session_memories(session_id: str) -> Any:
     """Delete all memory entries belonging to a session."""
     factory = get_session_factory()
     async with factory() as session:

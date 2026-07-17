@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from typing import Any
+
 """Database engine and session factory with slow-query detection."""
 
 import os
@@ -33,11 +36,13 @@ _async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
     @event.listens_for(engine.sync_engine, "before_cursor_execute")
-    def _before_execute(conn, cursor, statement, parameters, context, executemany):  # noqa: PLR0913
+    def _before_execute(
+        conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any
+    ) -> None:  # noqa: PLR0913
         conn.info.setdefault("_query_start", []).append(time.time())
 
     @event.listens_for(engine.sync_engine, "after_cursor_execute")
-    def _after_execute(conn, cursor, statement, parameters, context, executemany):  # noqa: PLR0913
+    def _after_execute(conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any) -> None:  # noqa: PLR0913
         start = conn.info["_query_start"].pop()
         elapsed = time.time() - start
         if elapsed > SLOW_QUERY_THRESHOLD:
@@ -52,10 +57,14 @@ def get_async_engine() -> AsyncEngine:
     """Return or create the singleton async SQLAlchemy engine."""
     global _async_engine
     if _async_engine is None:
+        pool_size = int(os.environ.get("DATABASE_POOL_SIZE", "20"))
+        max_overflow = int(os.environ.get("DATABASE_POOL_OVERFLOW", "10"))
         _async_engine = create_async_engine(
             DATABASE_URL,
             echo=False,
-            poolclass=NullPool,
+            poolclass=NullPool if pool_size == 0 else None,
+            pool_size=pool_size if pool_size > 0 else None,
+            max_overflow=max_overflow if pool_size > 0 else None,
         )
         _attach_slow_query_listeners(_async_engine)
     return _async_engine
@@ -67,7 +76,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
         _async_session_factory = async_sessionmaker(get_async_engine(), expire_on_commit=False)
     return _async_session_factory
 
-async def init_db():
+async def init_db() -> None:
     """Bootstrap database tables on first run.
 
     Uses create_all() which is idempotent — only creates tables that don't
@@ -111,61 +120,14 @@ async def init_db():
             text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);")
         )
 
+    from virtual_team.seed import seed_default_roles_and_admin  # noqa: F401
     await seed_default_roles_and_admin()
 
-async def seed_default_roles_and_admin():
-    """Create default roles (admin, member) and an admin user if they don't exist."""
-    import bcrypt
-    from sqlalchemy import select
+# log_audit moved to virtual_team/audit.py — kept for backward compatibility
+from virtual_team.audit import log_audit  # noqa: F401
 
-    factory = get_session_factory()
-    async with factory() as session:
-        admin_role = await session.execute(select(RoleDB).where(RoleDB.name == "admin"))
-        if not admin_role.scalar_one_or_none():
-            session.add(RoleDB(name="admin", permissions={"all": True}))
-        member_role = await session.execute(select(RoleDB).where(RoleDB.name == "member"))
-        if not member_role.scalar_one_or_none():
-            session.add(RoleDB(name="member", permissions={"read": True}))
-        await session.commit()
 
-        admin_user = await session.execute(select(UserDB).where(UserDB.username == "admin"))
-        if not admin_user.scalar_one_or_none():
-            admin_role_db = (
-                await session.execute(select(RoleDB).where(RoleDB.name == "admin"))
-            ).scalar_one_or_none()
-            user = UserDB(
-                username="admin",
-                email="admin@legacy.local",
-                password_hash=bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode(),
-                is_active=True,
-                is_verified=True,
-            )
-            session.add(user)
-            await session.flush()
-            if admin_role_db:
-                session.add(UserRoleDB(user_id=user.id, role_id=admin_role_db.id))
-            await session.commit()
-
-async def log_audit(
-    action: str,
-    entity_type: str,
-    entity_name: str = "",
-    detail: str = "",
-) -> None:
-    """Write an audit log entry for a management CRUD operation."""
-    from virtual_team.database import get_session_factory
-    entry = AuditLogDB(  # noqa: F811 — module-level re-export exists
-        action=action,
-        entity_type=entity_type,
-        entity_name=entity_name,
-        detail=detail,
-    )
-    factory = get_session_factory()
-    async with factory() as session:
-        session.add(entry)
-        await session.commit()
-
-async def get_session():
+async def get_session() -> AsyncIterator[AsyncSession]:
     """Async generator yielding a database session (FastAPI Depends)."""
     factory = get_session_factory()
     async with factory() as session:
@@ -200,3 +162,14 @@ from virtual_team.db_models import (  # noqa: E402, F401
     WorkflowEdgeDB,
     WorkflowNodeDB,
 )
+
+__all__ = [
+    "AgentConfigDB", "AttachmentDB", "AuditLogDB",
+    "ChatMessage", "CommandLogDB", "KeyUsageLog",
+    "MCPServerDB", "MemoryEntry", "ProjectRun",
+    "PromptDB", "RefreshTokenDB", "RegisteredSkillDB",
+    "RegisteredToolDB", "RoleDB", "SessionDB",
+    "TeamAgentDB", "TeamDB", "UserApiKey",
+    "UserDB", "UserRoleDB", "VersionDB",
+    "WorkflowConfigDB", "WorkflowEdgeDB", "WorkflowNodeDB",
+]
