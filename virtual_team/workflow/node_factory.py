@@ -16,15 +16,16 @@ from .strategies import get_strategy
 class LLMConfig(Protocol):
     """Protocol for LLM configuration — any object with these attributes works.
 
-    Decouples NodeFactory from concrete ChatOpenAI so tests can inject
-    a SimpleNamespace or mock without type-ignore.
+    ChatOpenAI fields are Optional in practice (temperature/max_tokens default to None),
+    so the Protocol mirrors that reality. The factory uses getattr() with defaults to
+    handle None values at call sites.
     """
 
     openai_api_key: Any
     openai_api_base: str | None
     model_name: str
-    temperature: float
-    max_tokens: int
+    temperature: float | None
+    max_tokens: int | None
 
 
 class NodeFactory:
