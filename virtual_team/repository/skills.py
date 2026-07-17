@@ -33,6 +33,7 @@ class SkillRepository(BaseRepository[RegisteredSkillDB]):
 
 # module-level aliases
 get_skills = SkillRepository.get_all
+get_skills_as_dicts = SkillRepository.get_all_as_dicts
 create_skill = SkillRepository.create_one
 update_skill = SkillRepository.update_one
 delete_skill = SkillRepository.delete_one

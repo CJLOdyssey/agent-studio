@@ -22,6 +22,9 @@ from virtual_team.repository import (
 from virtual_team.repository import (
     get_tools as repo_get_tools,
 )
+from virtual_team.repository import (
+    get_tools_as_dicts as repo_get_tools_as_dicts,
+)
 from virtual_team.services.tool_generator import (  # type: ignore[attr-defined]
     GeneratedTool,
     ToolValidateRequest,
@@ -114,7 +117,7 @@ async def list_tool_plugins() -> Any:
 @router.get("/api/tools")
 async def list_tools() -> Any:
     try:
-        return await repo_get_tools()
+        return await repo_get_tools_as_dicts()
     except Exception as e:
         raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 

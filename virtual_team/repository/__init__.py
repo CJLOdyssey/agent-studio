@@ -59,6 +59,7 @@ from virtual_team.repository.mcps import (
     create_mcp,
     delete_mcp,
     get_mcps,
+    get_mcps_as_dicts,
     update_mcp,
 )
 
@@ -81,6 +82,7 @@ from virtual_team.repository.prompts import (
     delete_prompt,
     get_prompt,
     get_prompts,
+    get_prompts_as_dicts,
     update_prompt,
 )
 
@@ -106,6 +108,7 @@ from virtual_team.repository.skills import (
     create_skill,
     delete_skill,
     get_skills,
+    get_skills_as_dicts,
     update_skill,
 )
 
@@ -126,6 +129,7 @@ from virtual_team.repository.tools import (
     delete_tool,
     get_tool,
     get_tools,
+    get_tools_as_dicts,
     update_tool,
 )
 
@@ -177,9 +181,11 @@ __all__ = [
     "get_embedding_api_key",
     "get_key_usage_stats",
     "get_mcps",
+    "get_mcps_as_dicts",
     "get_messages",
     "get_prompt",
     "get_prompts",
+    "get_prompts_as_dicts",
     "get_run",
     "get_run_messages",
     "get_runs",
@@ -190,10 +196,12 @@ __all__ = [
     "get_session_runs",
     "get_sessions",
     "get_skills",
+    "get_skills_as_dicts",
     "get_team",
     "get_teams",
     "get_tool",
     "get_tools",
+    "get_tools_as_dicts",
     "get_user_by_email",
     "get_user_by_id",
     "get_user_by_username",

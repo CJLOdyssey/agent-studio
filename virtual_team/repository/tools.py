@@ -32,6 +32,7 @@ class ToolRepository(BaseRepository[RegisteredToolDB]):
 
 # module-level aliases — preserve existing ``from repository import *`` API
 get_tools = ToolRepository.get_all     # await get_tools()
+get_tools_as_dicts = ToolRepository.get_all_as_dicts
 get_tool = ToolRepository.get_one      # await get_tool(id)
 create_tool = ToolRepository.create_one
 update_tool = ToolRepository.update_one

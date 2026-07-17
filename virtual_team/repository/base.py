@@ -29,7 +29,16 @@ class BaseRepository(Generic[ModelT]):
             return await session.get(cls.model, entity_id)  # type: ignore[no-any-return]
 
     @classmethod
-    async def get_all(cls) -> list[dict[str, Any]]:
+    async def get_all(cls) -> list[ModelT]:
+        async with cls._session_cm() as session:
+            stmt = select(cls.model)
+            if cls.default_order is not None:
+                stmt = stmt.order_by(cls.default_order)
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    @classmethod
+    async def get_all_as_dicts(cls) -> list[dict[str, Any]]:
         async with cls._session_cm() as session:
             stmt = select(cls.model)
             if cls.default_order is not None:

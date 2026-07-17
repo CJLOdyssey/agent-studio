@@ -30,6 +30,7 @@ class PromptRepository(BaseRepository[PromptDB]):
 
 # module-level aliases
 get_prompts = PromptRepository.get_all
+get_prompts_as_dicts = PromptRepository.get_all_as_dicts
 get_prompt = PromptRepository.get_one
 create_prompt = PromptRepository.create_one
 update_prompt = PromptRepository.update_one

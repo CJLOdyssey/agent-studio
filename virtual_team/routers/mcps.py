@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from virtual_team.audit import log_audit
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import create_mcp, delete_mcp, get_mcps, update_mcp
+from virtual_team.repository import create_mcp, delete_mcp, get_mcps, get_mcps_as_dicts, update_mcp
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["mcps"])
@@ -33,7 +33,7 @@ class MCPUpdate(BaseModel):
 @router.get("/api/mcps")
 async def list_mcps() -> Any:
     try:
-        return await get_mcps()
+        return await get_mcps_as_dicts()
     except Exception as e:
         logger.error("Error listing MCPs: %s", e, exc_info=True)
         raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
@@ -123,7 +123,7 @@ async def remove_mcp(mcp_id: str):
     try:
         mcps = await get_mcps()
         target = next((m for m in mcps if m.id == mcp_id), None)
-        mcp_name = target.name if target else mcp_id
+        mcp_name = target["name"] if target else mcp_id
         ok = await delete_mcp(mcp_id)
         if not ok:
             raise error_response(ErrorCode.MCP_NOT_FOUND, detail="MCP not found")

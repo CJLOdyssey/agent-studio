@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from virtual_team.audit import log_audit
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import create_prompt, delete_prompt, get_prompts, update_prompt
+from virtual_team.repository import create_prompt, delete_prompt, get_prompts, get_prompts_as_dicts, update_prompt
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["prompts"])
@@ -32,9 +32,9 @@ class PromptUpdate(BaseModel):
 @router.get("/api/prompts")
 async def list_prompts(category: str | None = None) -> Any:
     try:
-        prompts = await get_prompts()
+        prompts = await get_prompts_as_dicts()
         if category:
-            prompts = [p for p in prompts if p.category == category]
+            prompts = [p for p in prompts if p["category"] == category]
         return prompts
     except Exception as e:
         logger.error("Error listing prompts: %s", e, exc_info=True)
@@ -111,7 +111,7 @@ async def remove_prompt(prompt_id: str):
         from virtual_team.repository import get_prompts
         prompts = await get_prompts()
         target = next((p for p in prompts if p.id == prompt_id), None)
-        prompt_name = target.name if target else prompt_id
+        prompt_name = target["name"] if target else prompt_id
         ok = await delete_prompt(prompt_id)
         if not ok:
             raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
