@@ -29,25 +29,25 @@ class BaseRepository(Generic[ModelT]):
             return await session.get(cls.model, entity_id)  # type: ignore[no-any-return]
 
     @classmethod
-    async def get_all(cls) -> list[ModelT]:
+    async def get_all(cls) -> list[dict[str, Any]]:
         async with cls._session_cm() as session:
             stmt = select(cls.model)
             if cls.default_order is not None:
                 stmt = stmt.order_by(cls.default_order)
             result = await session.execute(stmt)
-            return list(result.scalars().all())
+            return [cls.to_dict(obj) for obj in result.scalars().all()]
 
     @classmethod
-    async def create_one(cls, data: dict[str, Any]) -> ModelT:
+    async def create_one(cls, data: dict[str, Any]) -> dict[str, Any]:
         async with cls._session_cm() as session:
             obj = cls.model(**data)
             session.add(obj)
             await session.commit()
             await session.refresh(obj)
-            return obj  # type: ignore[return-value]
+            return cls.to_dict(obj)  # type: ignore[return-value]
 
     @classmethod
-    async def update_one(cls, entity_id: str, data: dict[str, Any]) -> ModelT | None:
+    async def update_one(cls, entity_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         async with cls._session_cm() as session:
             obj = await session.get(cls.model, entity_id)
             if not obj:
@@ -58,7 +58,7 @@ class BaseRepository(Generic[ModelT]):
             obj.updated_at = datetime.now(UTC)
             await session.commit()
             await session.refresh(obj)
-            return obj  # type: ignore[no-any-return]
+            return cls.to_dict(obj)  # type: ignore[no-any-return]
 
     @classmethod
     async def delete_one(cls, entity_id: str) -> bool:
