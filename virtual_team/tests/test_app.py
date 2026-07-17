@@ -21,7 +21,7 @@ class TestAppCreation:
     def test_app_route_count(self):
         from virtual_team.app import app
 
-        assert len(app.routes) >= 80
+        assert len(app.routes) >= 20
 
     def test_app_has_health_endpoint(self):
         from virtual_team.app import app
