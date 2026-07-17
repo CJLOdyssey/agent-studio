@@ -1,3 +1,5 @@
+from typing import Any
+
 """pgvector vector store for RAG pipeline."""
 
 from sqlalchemy import text
@@ -18,10 +20,10 @@ class PgVectorStore:
       Index: CREATE INDEX ON vector_chunks USING hnsw (embedding vector_cosine_ops);
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._initialized = False
 
-    async def _ensure_table(self):
+    async def _ensure_table(self) -> None:
         if self._initialized:
             return
         from virtual_team.database import get_session_factory
@@ -71,7 +73,7 @@ class PgVectorStore:
             await session.commit()
         self._initialized = True
 
-    async def add(self, chunks: list[Chunk]):
+    async def add(self, chunks: list[Chunk]) -> None:
         """Insert chunks with embeddings into pgvector."""
         if not chunks:
             return
@@ -117,7 +119,7 @@ class PgVectorStore:
         session_id: str | None = None,
         tag_filter: list[str] | None = None,
         top_k: int = 5,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Search with hybrid vector similarity and optional tag filter.
 
         Returns list of {text, score, tags, session_id, run_id}.
@@ -171,7 +173,7 @@ class PgVectorStore:
                 for row in rows
             ]
 
-    async def clear_session(self, session_id: str):
+    async def clear_session(self, session_id: str) -> None:
         await self._ensure_table()
         from virtual_team.database import get_session_factory
 

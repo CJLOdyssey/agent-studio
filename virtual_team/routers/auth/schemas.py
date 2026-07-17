@@ -114,14 +114,14 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-async def _check_rate_limit(r, key: str, max_count: int, window: int = 60) -> bool:
+async def _check_rate_limit(r, key: str, max_count: int, window: int = 60) -> bool:  # type: ignore[no-untyped-def]
     current = await r.incr(key)
     if current == 1:
         await r.expire(key, window)
-    return current <= max_count
+    return current <= max_count  # type: ignore[no-any-return]
 
 
-async def _store_code_in_redis(r, key: str, code: str, ttl: int) -> None:
+async def _store_code_in_redis(r, key: str, code: str, ttl: int) -> None:  # type: ignore[no-untyped-def]
     await r.set(key, code)
     await r.expire(key, ttl)
 

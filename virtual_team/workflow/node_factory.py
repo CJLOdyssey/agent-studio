@@ -30,14 +30,14 @@ class NodeFactory:
         self.tools = tools or []
         self.run_id = run_id
 
-    def _build_request(self, api_messages: list[dict]) -> tuple[str, dict, dict]:
+    def _build_request(self, api_messages: list[dict[str, Any]]) -> tuple[str, dict, dict]:  # type: ignore[type-arg]
         """Build the HTTP request for the LLM streaming API."""
         raw_key = getattr(self.llm, "openai_api_key", "")
         actual_key = raw_key.get_secret_value() if hasattr(raw_key, "get_secret_value") else str(raw_key)
         base = (getattr(self.llm, "openai_api_base", None) or "https://api.deepseek.com").rstrip("/")
         url = f"{base}/chat/completions"
         headers = {"Authorization": f"Bearer {actual_key}", "Content-Type": "application/json"}
-        body: dict = {
+        body: dict[str, Any] = {
             "model": getattr(self.llm, "model_name", "deepseek-chat"),
             "messages": api_messages,
             "stream": True,
@@ -49,19 +49,19 @@ class NodeFactory:
             body["thinking"] = {"type": "enabled"}
         return url, headers, body
 
-    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict | Awaitable[dict]]:
+    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict | Awaitable[dict]]:  # type: ignore[type-arg]
         """Create a callable node function for a workflow node."""
         strategy = get_strategy(node)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")
         run_id = self.run_id
 
-        async def node_fn(state: WorkflowState) -> dict:
+        async def node_fn(state: WorkflowState) -> dict[str, Any]:
             context = strategy.build_prompt_context(state, node)
             messages = [SystemMessage(content=system_prompt), HumanMessage(content=context)]
             api_msgs = convert_messages_to_api(messages)
             url, headers, body = self._build_request(api_msgs)
 
-            async def cb(ev: dict):
+            async def cb(ev: dict[str, Any]) -> Any:
                 if not run_id:
                     return
                 chunk = ev.get("data", {}).get("content", "")

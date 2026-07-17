@@ -27,7 +27,7 @@ async def exec_stdio_mcp(tc: ToolConfig, args: str) -> str:
                     await session.initialize()
                     result = await session.call_tool(tc.name, {"args": args})
                     if result.isError:
-                        return f"[MCP Error] {result.content[0].text if result.content else 'unknown'}"
-                    return result.content[0].text if result.content else ""
+                        return f"[MCP Error] {result.content[0].text if result.content else 'unknown'}"  # type: ignore[union-attr]
+                    return result.content[0].text if result.content else ""  # type: ignore[union-attr]
     except TimeoutError:
         return f"[MCP Timeout] {tc.name}"

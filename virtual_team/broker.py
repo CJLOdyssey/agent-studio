@@ -5,8 +5,9 @@ import contextlib
 import json
 import os
 from collections.abc import AsyncIterator
+from typing import Any
 
-from celery import Celery
+from celery import Celery  # type: ignore[import-untyped]
 from redis.asyncio import Redis as AsyncRedis
 
 from virtual_team.logging_config import get_logger
@@ -84,7 +85,7 @@ def get_redis() -> AsyncRedis:
     return pool
 
 
-async def close_redis():
+async def close_redis() -> None:
     """Close the Redis connection pool for the current event loop."""
     import asyncio
 
@@ -95,13 +96,13 @@ async def close_redis():
         await pool.aclose()
 
 
-async def publish_run_message(run_id: str, message: dict):
+async def publish_run_message(run_id: str, message: dict[str, Any]) -> None:
     """Publish a message to a run's Redis pub/sub channel."""
     r = get_redis()
     await r.publish(_channel(run_id), json.dumps(message, ensure_ascii=False))
 
 
-async def subscribe_run(run_id: str) -> AsyncIterator[dict]:
+async def subscribe_run(run_id: str) -> AsyncIterator[dict[str, Any]]:
     """Subscribe to a run's pub/sub channel.
 
     Uses redis-py pubsub.listen() with socket_keepalive enabled on the
@@ -129,8 +130,8 @@ async def subscribe_run(run_id: str) -> AsyncIterator[dict]:
 # early messages (thinking_stream) are never lost.
 # ---------------------------------------------------------------------------
 
-_buffers: dict[str, list[dict]] = {}
-_buffer_tasks: dict[str, asyncio.Task] = {}
+_buffers: dict[str, list[dict[str, Any]]] = {}
+_buffer_tasks: dict[str, asyncio.Task[Any]] = {}
 _lock: asyncio.Lock = asyncio.Lock()
 
 
@@ -141,7 +142,7 @@ async def buffer_run_messages(run_id: str) -> None:
     Establishes the Redis subscription synchronously before returning so that
     no messages (especially early ``thinking_stream`` chunks) are lost.
     """
-    buf: list[dict] = []
+    buf: list[dict[str, Any]] = []
     _buffers[run_id] = buf
     logger = get_logger(__name__)
 
@@ -149,7 +150,7 @@ async def buffer_run_messages(run_id: str) -> None:
     pubsub = r.pubsub()
     await pubsub.subscribe(f"run:{run_id}")
 
-    async def _worker():
+    async def _worker() -> None:
         try:
             # Wait for subscribe confirmation before entering message loop
             while True:
@@ -187,7 +188,7 @@ async def buffer_run_messages(run_id: str) -> None:
     _buffer_tasks[run_id] = asyncio.create_task(_worker())
 
 
-def drain_buffer(run_id: str) -> list[dict]:
+def drain_buffer(run_id: str) -> list[dict[str, Any]]:
     """Return and clear the pre‑subscription buffer for *run_id*."""
     return _buffers.pop(run_id, [])
 

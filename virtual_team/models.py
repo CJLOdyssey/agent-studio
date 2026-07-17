@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -98,7 +99,7 @@ class SessionItem(BaseModel):
 class SessionDetail(SessionItem):
     """Detailed session view including runs."""
 
-    runs: list = Field(default_factory=list)
+    runs: list = Field(default_factory=list)  # type: ignore[type-arg]
 
 
 class AttachmentResponse(BaseModel):
@@ -131,7 +132,7 @@ class CommandExecuteRequest(BaseModel):
 
     command_id: str
     session_id: str
-    payload: dict = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class CommandExecuteResponse(BaseModel):
@@ -139,7 +140,7 @@ class CommandExecuteResponse(BaseModel):
 
     success: bool
     message: str = ""
-    data: dict = Field(default_factory=dict)
+    data: dict[str, Any] = Field(default_factory=dict)
 
 
 class TeamOutput(BaseModel):

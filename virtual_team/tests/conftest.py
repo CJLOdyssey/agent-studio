@@ -4,12 +4,13 @@ import contextlib
 import string
 import subprocess
 import uuid
+from typing import Any
 
 import httpx
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from virtual_team.database import Base
+from virtual_team.database import Base  # type: ignore[attr-defined]
 
 BASE = "http://localhost:8080"
 
@@ -26,7 +27,7 @@ def _rid(prefix: str = "test") -> str:
     return result
 
 
-def _clear_rate_limits():
+def _clear_rate_limits() -> None:
     try:
         out = subprocess.run(
             ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1", "KEYS", "ratelimit:*"],
@@ -102,7 +103,7 @@ def _attach_auth(client: httpx.Client) -> None:
         client.headers.update({"Authorization": f"Bearer {token}"})
 
 
-def _cleanup(*ids_and_endpoints: tuple[str, str]):
+def _cleanup(*ids_and_endpoints: tuple[str, str]) -> None:
     c = httpx.Client(base_url=BASE, timeout=10)
     _attach_auth(c)
     for eid, ep in ids_and_endpoints:
@@ -130,7 +131,7 @@ def _read_redis(pattern: str) -> list[str]:
         return []
 
 
-def _delete_redis(pattern: str):
+def _delete_redis(pattern: str) -> None:
     """Delete Redis keys matching a pattern (via docker exec)."""
     try:
         out = subprocess.run(
@@ -151,24 +152,24 @@ class Api:
     def __init__(self, base: str = BASE):
         self.client = httpx.Client(base_url=base, timeout=30)
 
-    def get(self, path: str, **kw):
+    def get(self, path: str, **kw: Any) -> httpx.Response:
         return self.client.get(path, **kw)
 
-    def post(self, path: str, json=None, **kw):
+    def post(self, path: str, json: object = None, **kw: Any) -> httpx.Response:
         return self.client.post(path, json=json, **kw)
 
-    def put(self, path: str, json=None, **kw):
+    def put(self, path: str, json: object = None, **kw: Any) -> httpx.Response:
         return self.client.put(path, json=json, **kw)
 
-    def delete(self, path: str, **kw):
+    def delete(self, path: str, **kw: Any) -> httpx.Response:
         return self.client.delete(path, **kw)
 
-    def close(self):
+    def close(self) -> None:
         self.client.close()
 
 
 @pytest.fixture
-def api():
+def api() -> Any:
     a = Api()
     _attach_auth(a.client)
     yield a
@@ -176,12 +177,12 @@ def api():
 
 
 @pytest.fixture(autouse=True)
-def _fresh_rate_limit():
+def _fresh_rate_limit() -> None:
     _clear_rate_limits()
 
 
 @pytest.fixture(scope="session")
-def event_loop():
+def event_loop() -> Any:
     """Session-scoped event loop for async fixtures."""
     import asyncio
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -190,7 +191,7 @@ def event_loop():
 
 
 @pytest.fixture(scope="session")
-async def test_client():
+async def test_client() -> Any:
     """FastAPI TestClient backed by in-memory SQLite.
 
     Patches the database session factory and Redis dependency so that
@@ -201,7 +202,7 @@ async def test_client():
     from unittest.mock import AsyncMock
 
     import virtual_team.rate_limit as rl_mod
-    rl_mod.RateLimiter.is_allowed = AsyncMock(return_value=True)  # type: ignore[assignment]
+    rl_mod.RateLimiter.is_allowed = AsyncMock(return_value=True)  # type: ignore[method-assign]
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)
@@ -225,7 +226,7 @@ async def test_client():
 
 
 @pytest.fixture(scope="session")
-async def db_engine(test_client):
+async def db_engine(test_client: Any) -> None:
     """Companion fixture for tests that also request ``db_engine``.
 
     The actual database is already set up by ``test_client``; this fixture

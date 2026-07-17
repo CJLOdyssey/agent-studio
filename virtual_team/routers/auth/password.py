@@ -1,7 +1,9 @@
 """Password management endpoints: forgot, reset, change."""
 
+from typing import Any
+
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from virtual_team.auth import CurrentUser, get_current_user
 from virtual_team.broker import get_redis
@@ -10,6 +12,7 @@ from virtual_team.email_service import (
     build_reset_email,
     send_email,
 )
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.password_policy import validate_password
 from virtual_team.repository.auth import (
@@ -44,13 +47,13 @@ def _fail_key(email: str) -> str:
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-async def forgot_password(body: ForgotPasswordRequest):
+async def forgot_password(body: ForgotPasswordRequest) -> Any:
     email = body.email.lower().strip()
     r = get_redis()
 
     rate_key = f"auth:forgot:{email}"
     if not await _check_rate_limit(r, rate_key, 3, 60):
-        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后重试")
+        raise error_response(ErrorCode.RATE_LIMITED, detail="操作过于频繁，请稍后重试")
 
     user = await get_user_by_email(email)
     if user:
@@ -64,7 +67,7 @@ async def forgot_password(body: ForgotPasswordRequest):
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-async def reset_password(body: ResetPasswordRequest):
+async def reset_password(body: ResetPasswordRequest) -> Any:
     email = body.email.lower().strip()
     code = body.code.strip()
     new_password = body.new_password
@@ -72,7 +75,7 @@ async def reset_password(body: ResetPasswordRequest):
 
     stored = await r.get(_reset_key(email))
     if stored is None:
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     attempts_key = f"auth:reset:attempts:{email}"
     attempts = await r.incr(attempts_key)
@@ -80,22 +83,22 @@ async def reset_password(body: ResetPasswordRequest):
         await r.expire(attempts_key, 900)
     if attempts > 3:
         await r.delete(_reset_key(email))
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     stored_code = stored.decode() if isinstance(stored, bytes) else stored
     if stored_code != code:
-        raise HTTPException(status_code=400, detail="验证码错误")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码错误")
 
     pwd_error = validate_password(new_password)
     if pwd_error:
-        raise HTTPException(status_code=400, detail=pwd_error)
+        raise error_response(ErrorCode.INVALID_REQUEST, detail=pwd_error)
 
     user = await get_user_by_email(email)
     if user is None:
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     if bcrypt.checkpw(new_password.encode(), user.password_hash.encode()):
-        raise HTTPException(status_code=400, detail="新密码不能与旧密码相同")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="新密码不能与旧密码相同")
 
     new_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt(rounds=12)).decode()
     await update_password(user.id, new_hash)
@@ -116,20 +119,20 @@ async def reset_password(body: ResetPasswordRequest):
 async def change_password(
     body: ChangePasswordRequest,
     current_user: CurrentUser = Depends(get_current_user),
-):
+) -> Any:
     user = await get_user_by_id(current_user.id)
     if user is None:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        raise error_response(ErrorCode.AUTH_USER_NOT_FOUND, detail="用户不存在")
 
     if not bcrypt.checkpw(body.old_password.encode(), user.password_hash.encode()):
-        raise HTTPException(status_code=401, detail="原密码错误")
+        raise error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="原密码错误")
 
     if bcrypt.checkpw(body.new_password.encode(), user.password_hash.encode()):
-        raise HTTPException(status_code=400, detail="新密码不能与旧密码相同")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="新密码不能与旧密码相同")
 
     pwd_error = validate_password(body.new_password)
     if pwd_error:
-        raise HTTPException(status_code=400, detail=pwd_error)
+        raise error_response(ErrorCode.INVALID_REQUEST, detail=pwd_error)
 
     new_hash = bcrypt.hashpw(body.new_password.encode(), bcrypt.gensalt(rounds=12)).decode()
     await update_password(user.id, new_hash)

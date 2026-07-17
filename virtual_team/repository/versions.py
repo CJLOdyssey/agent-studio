@@ -4,6 +4,7 @@ Follows Functional Cohesion: all methods serve the single purpose of
 managing version snapshots. No knowledge of business entity types.
 """
 
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -16,9 +17,9 @@ async def create_version(
     session: AsyncSession,
     resource_type: str,
     resource_id: str,
-    snapshot: dict,
+    snapshot: dict[str, Any],
     created_by: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Create a new version snapshot. Returns the created version dict."""
     # Compute next version number
     result = await session.execute(
@@ -61,7 +62,7 @@ async def list_versions(
     resource_id: str,
     limit: int = 50,
     offset: int = 0,
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """List versions for a resource, newest first."""
     result = await session.execute(
         select(VersionDB)
@@ -85,7 +86,7 @@ async def list_versions(
     ]
 
 
-async def get_version(session: AsyncSession, version_id: str) -> dict | None:
+async def get_version(session: AsyncSession, version_id: str) -> dict | None:  # type: ignore[type-arg]
     """Get a single version by ID."""
     result = await session.execute(
         select(VersionDB).where(VersionDB.id == version_id)

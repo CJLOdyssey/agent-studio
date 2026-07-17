@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -39,7 +40,7 @@ class ToolStrategy(ABC):
         """Return True if this strategy handles *metadata.name*."""
 
     @abstractmethod
-    async def invoke(self, metadata: ToolMetadata, args: dict) -> str:
+    async def invoke(self, metadata: ToolMetadata, args: dict[str, Any]) -> str:
         """Execute the tool and return a JSON string."""
 
 
@@ -57,7 +58,7 @@ def build_strategy_table(
 async def dispatch(
     strategies: list[ToolStrategy],
     metadata: ToolMetadata,
-    args: dict,
+    args: dict[str, Any],
 ) -> str | None:
     """Try each strategy in order; return the first non-error result or *None*."""
     for strategy in strategies:

@@ -1,12 +1,14 @@
 """Session and Memory API routes."""
 
 import json
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from starlette.responses import Response
 
 from virtual_team.auth import get_user_id
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.models import SessionDetailResponse, SessionSummary
 from virtual_team.repository import (
@@ -57,7 +59,7 @@ async def list_sessions(limit: int = 50, agent_id: str | None = None, request: R
         return result
     except Exception as e:
         logger.error("Error listing sessions: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.post("/api/sessions", status_code=201)
@@ -67,7 +69,7 @@ async def add_session(req: SessionCreateRequest, request: Request = None):  # ty
         if req.agent_id:
             agent = await get_agent_config(req.agent_id)
             if not agent:
-                raise HTTPException(status_code=400, detail="Agent 不存在")
+                raise error_response(ErrorCode.INVALID_REQUEST, detail="Agent 不存在")
         sess = await create_session(title=req.title, user_id=user_id, agent_id=req.agent_id)
         return {
             "id": sess.id,
@@ -77,7 +79,7 @@ async def add_session(req: SessionCreateRequest, request: Request = None):  # ty
         }
     except Exception as e:
         logger.error("Error creating session: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.get("/api/sessions/{session_id}", response_model=SessionDetailResponse)
@@ -86,9 +88,9 @@ async def get_session_detail(session_id: str, request: Request = None):  # type:
         user_id = get_user_id(request)
         sess = await get_session(session_id)
         if not sess:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         if sess.user_id != user_id:
-            raise HTTPException(status_code=403, detail="无权访问该对话")
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权访问该对话")
 
         runs = await get_session_runs(session_id)
         memories = await get_session_memories(session_id)
@@ -128,7 +130,7 @@ async def get_session_detail(session_id: str, request: Request = None):  # type:
         raise
     except Exception as e:
         logger.error("Error getting session %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.put("/api/sessions/{session_id}")
@@ -137,18 +139,18 @@ async def rename_session(session_id: str, req: SessionUpdateRequest, request: Re
         user_id = get_user_id(request)
         sess = await get_session(session_id)
         if not sess:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         if sess.user_id != user_id:
-            raise HTTPException(status_code=403, detail="无权修改该对话")
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权修改该对话")
         sess = await update_session_title(session_id, req.title)
         if not sess:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         return {"id": sess.id, "title": sess.title, "status": "updated"}
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error renaming session %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.delete("/api/sessions/{session_id}")
@@ -157,18 +159,18 @@ async def remove_session(session_id: str, request: Request = None):  # type: ign
         user_id = get_user_id(request)
         sess = await get_session(session_id)
         if not sess:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         if sess.user_id != user_id:
-            raise HTTPException(status_code=403, detail="无权删除该对话")
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权删除该对话")
         deleted = await delete_session(session_id)
         if not deleted:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         return {"status": "deleted"}
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error deleting session %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.get("/api/sessions/{session_id}/memories")
@@ -177,9 +179,9 @@ async def list_session_memories(session_id: str, request: Request = None):  # ty
         user_id = get_user_id(request)
         sess = await get_session(session_id)
         if not sess:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         if sess.user_id != user_id:
-            raise HTTPException(status_code=403, detail="无权访问该对话")
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权访问该对话")
         memories = await get_session_memories(session_id)
         return [
             {
@@ -196,21 +198,21 @@ async def list_session_memories(session_id: str, request: Request = None):  # ty
         raise
     except Exception as e:
         logger.error("Error listing memories for %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.delete("/api/memories/{memory_id}")
-async def delete_session_memory(memory_id: str):
+async def delete_session_memory(memory_id: str) -> Any:
     try:
         deleted = await delete_memory_entry(memory_id)
         if not deleted:
-            raise HTTPException(status_code=404, detail="未找到该记忆")
+            raise error_response(ErrorCode.MEMORY_NOT_FOUND, detail="未找到该记忆")
         return {"status": "deleted"}
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error deleting memory %s: %s", memory_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.get("/api/sessions/{session_id}/memories/export")
@@ -218,13 +220,13 @@ async def export_session_memories(session_id: str, format: str = "json", request
     try:
         user_id = get_user_id(request)
         if format not in ("json", "md"):
-            raise HTTPException(status_code=400, detail="format 参数必须为 json 或 md")
+            raise error_response(ErrorCode.INVALID_REQUEST, detail="format 参数必须为 json 或 md")
 
         sess = await get_session(session_id)
         if not sess:
-            raise HTTPException(status_code=404, detail="未找到该对话")
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
         if sess.user_id != user_id:
-            raise HTTPException(status_code=403, detail="无权访问该对话")
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权访问该对话")
 
         memories = await get_session_memories(session_id)
         items = [
@@ -273,4 +275,4 @@ async def export_session_memories(session_id: str, format: str = "json", request
         raise
     except Exception as e:
         logger.error("Error exporting memories for %s: %s", session_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e

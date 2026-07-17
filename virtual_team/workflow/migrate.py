@@ -80,7 +80,7 @@ async def migrate_teams() -> int:
                     agent_ids[agent.role_identifier] = agent.id
 
         nodes: list[WorkflowNode] = []
-        for nd in DEFAULT_WORKFLOW["nodes"]:
+        for nd in DEFAULT_WORKFLOW["nodes"]:  # type: ignore[attr-defined]
             rid = nd["role_identifier"]
             cfg_id = agent_ids.get(rid)
             if cfg_id:
@@ -96,7 +96,7 @@ async def migrate_teams() -> int:
             continue
 
         edges: list[WorkflowEdge] = []
-        for i, ed in enumerate(DEFAULT_WORKFLOW["edges"]):
+        for i, ed in enumerate(DEFAULT_WORKFLOW["edges"]):  # type: ignore[var-annotated, arg-type]
             edges.append(WorkflowEdge(
                 id=f"e-{i}", from_node_id=ed["from"], to_node_id=ed["to"],
                 condition_key=ed.get("condition_key"),
@@ -106,8 +106,8 @@ async def migrate_teams() -> int:
 
         config = WorkflowConfig(
             team_id=team.id,
-            name=DEFAULT_WORKFLOW["name"],
-            max_rounds=DEFAULT_WORKFLOW["max_rounds"],
+            name=DEFAULT_WORKFLOW["name"],  # type: ignore[arg-type]
+            max_rounds=DEFAULT_WORKFLOW["max_rounds"],  # type: ignore[arg-type]
             nodes=nodes,
             edges=edges,
         )

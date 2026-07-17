@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-async def handle_skill(tool_self: _ToolWrapper, args: dict) -> str:
+async def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     return tool_self.instructions if tool_self.instructions else json.dumps({
         "role": "skill",
         "name": tool_self.name,
@@ -29,11 +29,11 @@ async def handle_skill(tool_self: _ToolWrapper, args: dict) -> str:
     })
 
 
-async def handle_mcp(tool_self: _ToolWrapper, args: dict) -> str:
+async def handle_mcp(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     return await execute_mcp(tool_self, args)
 
 
-async def call_http_endpoint(tool_self: _ToolWrapper, args: dict) -> str:
+async def call_http_endpoint(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     try:
         hdrs = json.loads(tool_self.headers) if isinstance(tool_self.headers, str) else {}
         hdrs.setdefault("Content-Type", "application/json")
@@ -50,7 +50,7 @@ async def call_http_endpoint(tool_self: _ToolWrapper, args: dict) -> str:
         return json.dumps({"tool": tool_self.name, "error": str(e)})
 
 
-async def execute_mcp(tool_self: _ToolWrapper, args: dict) -> str:
+async def execute_mcp(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """MCP execution: sse → httpx, stdio → mcp SDK, fallback → execute_tool."""
     if tool_self.mcp_type == "sse" and tool_self.mcp_endpoint:
         try:
@@ -71,7 +71,7 @@ async def execute_mcp(tool_self: _ToolWrapper, args: dict) -> str:
     return result
 
 
-def execute_tool(tool_self: _ToolWrapper, args: dict) -> str:
+def execute_tool(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Execute a tool: HTTP POST or local command."""
     if tool_self.mcp_endpoint:
         if tool_self.mcp_endpoint.startswith("http://") or tool_self.mcp_endpoint.startswith("https://"):
@@ -81,7 +81,7 @@ def execute_tool(tool_self: _ToolWrapper, args: dict) -> str:
                     tool_self.mcp_endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST"
                 )
                 with urllib.request.urlopen(req, timeout=30) as resp:
-                    return resp.read().decode("utf-8", errors="ignore")[:5000]
+                    return resp.read().decode("utf-8", errors="ignore")[:5000]  # type: ignore[no-any-return]
             except Exception as e:
                 return json.dumps({"error": str(e)})
         else:
@@ -98,13 +98,13 @@ def execute_tool(tool_self: _ToolWrapper, args: dict) -> str:
     return json.dumps({"status": "called", "args": args})
 
 
-async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict) -> str:
+async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Call MCP stdio tool, caching sessions."""
     from mcp import StdioServerParameters
     from mcp.client.session import ClientSession
     from mcp.client.stdio import stdio_client
 
-    async def _call(session, name: str, arguments: dict | None, timeout: int = 45) -> Any:
+    async def _call(session: Any, name: str, arguments: dict[str, Any] | None, timeout: int = 45) -> Any:
         if name:
             return await asyncio.wait_for(session.call_tool(name, arguments=arguments or {}), timeout=timeout)
         return await asyncio.wait_for(session.list_tools(), timeout=20)
@@ -129,7 +129,7 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict) -> str:
     if tools:
         lines = []
         for t in tools:
-            props = {}
+            props: dict[str, Any] = {}
             if hasattr(t, "inputSchema") and t.inputSchema:
                 props = t.inputSchema.get("properties", {}) or {}
             desc = "; ".join(f"{k}: {v.get('description','')}" for k, v in props.items()) if props else ""
@@ -139,7 +139,7 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict) -> str:
     return json.dumps({"error": "no tools found"})
 
 
-async def handle_open_browser(tool_self: _ToolWrapper, args: dict) -> str:
+async def handle_open_browser(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Publish an open_url event so the frontend opens the URL in the user's browser."""
     url = args.get("url", "") or args.get("URL", "")
     if not url:
@@ -158,7 +158,7 @@ async def handle_open_browser(tool_self: _ToolWrapper, args: dict) -> str:
     return json.dumps({"status": "ok", "message": f"已在用户浏览器打开: {url}"})
 
 
-async def llm_fallback(tool_self: _ToolWrapper, args: dict) -> str:
+async def llm_fallback(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     if tool_self._llm:
         try:
             prompt = (

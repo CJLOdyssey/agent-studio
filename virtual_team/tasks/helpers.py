@@ -50,7 +50,7 @@ def log_memory_diff() -> None:
     _baseline_snapshot = current
 
 
-def _run_async(coro):
+def _run_async(coro: Any) -> Any:
     return asyncio.run(coro)
 
 
@@ -94,7 +94,9 @@ def _report_run_error(run_id: str, exc: Exception) -> None:
         logger.exception("Failed to update error status for run %s", run_id)
 
 
-def _try_mock_fallback(requirement: str, run_id: str, session_id: str | None, original_exc: Exception) -> dict | None:
+def _try_mock_fallback(
+    requirement: str, run_id: str, session_id: str | None, original_exc: Exception,
+) -> dict[str, Any] | None:
     try:
         output = _run_async(run_mock(requirement, run_id, session_id))
         _run_async(
@@ -120,7 +122,7 @@ def _try_mock_fallback(requirement: str, run_id: str, session_id: str | None, or
         raise mock_exc
 
 
-def _parse_json_field(field: Any) -> list:
+def _parse_json_field(field: Any) -> list[Any]:
     if isinstance(field, str):
         try:
             return json.loads(field) if field else []
@@ -129,7 +131,7 @@ def _parse_json_field(field: Any) -> list:
     return field or []
 
 
-async def _discover_mcp_tools(endpoint: str) -> list[dict]:
+async def _discover_mcp_tools(endpoint: str) -> list[dict[str, Any]]:
     cmd = shlex.split(endpoint)
     params = StdioServerParameters(command=cmd[0], args=cmd[1:])
     try:
@@ -151,7 +153,7 @@ async def _discover_mcp_tools(endpoint: str) -> list[dict]:
         return []
 
 
-def _build_session_context(memories) -> str:
+def _build_session_context(memories: list[Any]) -> str:
     if not memories:
         return ""
     lines = ["\n\n【历史上下文】"]
@@ -162,7 +164,7 @@ def _build_session_context(memories) -> str:
 
 async def _get_rag_context(query: str, session_id: str) -> str:
     try:
-        from virtual_team.rag import ensure_embedding_provider, retrieve_context
+        from virtual_team.rag import ensure_embedding_provider, retrieve_context  # type: ignore[attr-defined]
         from virtual_team.repository.keys import get_embedding_api_key
 
         api_key = await get_embedding_api_key()
@@ -172,7 +174,7 @@ async def _get_rag_context(query: str, session_id: str) -> str:
         return ""
 
 
-async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict):
+async def _save_output_memories(session_id: str, run_id: str, response: str, metadata: dict[str, Any]) -> None:
     summary = response[:200].replace("\n", " ")
     content_type = "code"
     if "<pm_document>" in response or "需求分析" in response:

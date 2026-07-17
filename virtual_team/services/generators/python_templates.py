@@ -10,7 +10,7 @@ Each template is a dict with keys:
 
 ToolTemplate = dict
 
-TOOL_TEMPLATES: list[ToolTemplate] = [
+TOOL_TEMPLATES: list[ToolTemplate] = [  # type: ignore[type-arg]
     # ── read_file ─────────────────────────────────────────────────
     {
         "keywords": ["读取", "read", "文件", "file"],

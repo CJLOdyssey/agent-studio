@@ -7,7 +7,7 @@ triggering their self-registration with the ToolRegistry.
 import importlib
 import pkgutil
 
-__path__ = __path__  # type: ignore[has-type]
+__path__ = __path__
 
 for _loader, _module_name, _is_pkg in pkgutil.iter_modules(__path__):
     if _module_name != "__init__":

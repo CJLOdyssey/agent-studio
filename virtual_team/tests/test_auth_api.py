@@ -11,6 +11,7 @@ import os
 import string
 import subprocess
 import uuid
+from typing import Any
 
 import httpx
 import pytest
@@ -26,7 +27,7 @@ def _rid(prefix: str = "test") -> str:
     return f"{prefix}_{clean}" if clean else f"{prefix}_x"
 
 
-def _redis(args: list[str]) -> subprocess.CompletedProcess:
+def _redis(args: list[str]) -> Any:  # type: ignore[type-arg]
     """Run redis-cli on db1 (matches .env REDIS_URL)."""
     return subprocess.run(
         ["docker", "exec", "virtual-team-redis", "redis-cli", "-n", "1"] + args,
@@ -34,7 +35,7 @@ def _redis(args: list[str]) -> subprocess.CompletedProcess:
     )
 
 
-def _clear_rate_limits():
+def _clear_rate_limits() -> None:
     try:
         keys = _redis(["KEYS", "ratelimit:*"])
         if keys.stdout.strip():
@@ -74,13 +75,13 @@ class AuthApi:
     def __init__(self, base: str = BASE):
         self.client = httpx.Client(base_url=base, timeout=30)
 
-    def get(self, path: str, **kw):
-        return self.client.get(path, **kw)
+    def get(self, path: str, **kw: Any) -> httpx.Response:
+        return self.client.get(path, **kw)  # type: ignore[arg-type]
 
-    def post(self, path: str, json=None, **kw):
-        return self.client.post(path, json=json, **kw)
+    def post(self, path: str, json: object = None, **kw: Any) -> httpx.Response:
+        return self.client.post(path, json=json, **kw)  # type: ignore[arg-type]
 
-    def close(self):
+    def close(self) -> None:
         self.client.close()
 
 
@@ -248,7 +249,7 @@ class TestLogin:
         assert resp.status_code == 201
         return {"email": email, "password": pwd, "user": resp.json()["user"]}
 
-    def test_login_success(self, api: AuthApi, registered_user: dict):
+    def test_login_success(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/login", json={
             "email": registered_user["email"],
             "password": registered_user["password"],
@@ -260,7 +261,7 @@ class TestLogin:
         assert data["user"]["email"] == registered_user["email"]
         assert data["user"]["is_verified"] is True
 
-    def test_login_wrong_password(self, api: AuthApi, registered_user: dict):
+    def test_login_wrong_password(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/login", json={
             "email": registered_user["email"],
             "password": "WrongPass@999",
@@ -276,7 +277,7 @@ class TestLogin:
         assert resp.status_code == 401
         assert "邮箱或密码错误" in resp.json()["detail"]
 
-    def test_login_with_remember_me(self, api: AuthApi, registered_user: dict):
+    def test_login_with_remember_me(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/login", json={
             "email": registered_user["email"],
             "password": registered_user["password"],
@@ -304,7 +305,7 @@ class TestRefresh:
         data = resp.json()
         return {"access_token": data["access_token"], "refresh_token": data["refresh_token"]}
 
-    def test_refresh_success(self, api: AuthApi, tokens: dict):
+    def test_refresh_success(self, api: AuthApi, tokens: dict[str, Any]):
         resp = api.post("/api/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
         assert resp.status_code == 200
         data = resp.json()
@@ -332,7 +333,7 @@ class TestMe:
         assert resp.status_code == 201
         return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
-    def test_me_authenticated(self, api: AuthApi, auth_header: dict):
+    def test_me_authenticated(self, api: AuthApi, auth_header: dict[str, Any]):
         resp = api.get("/api/auth/me", headers=auth_header)
         assert resp.status_code == 200
         data = resp.json()
@@ -362,7 +363,7 @@ class TestForgotResetPassword:
         assert resp.status_code == 201
         return {"email": email, "password": pwd}
 
-    def test_forgot_password(self, api: AuthApi, registered_user: dict):
+    def test_forgot_password(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/forgot-password", json={"email": registered_user["email"]})
         assert resp.status_code == 200
         assert "如果该邮箱已注册" in resp.json()["message"]
@@ -377,7 +378,7 @@ class TestForgotResetPassword:
         assert resp.status_code == 200
         assert "如果该邮箱已注册" in resp.json()["message"]
 
-    def test_reset_password_success(self, api: AuthApi, registered_user: dict):
+    def test_reset_password_success(self, api: AuthApi, registered_user: dict[str, Any]):
         new_pwd = "NewPass@789"
 
         resp = api.post("/api/auth/forgot-password", json={"email": registered_user["email"]})
@@ -406,7 +407,7 @@ class TestForgotResetPassword:
         })
         assert resp.status_code == 200
 
-    def test_reset_password_wrong_code(self, api: AuthApi, registered_user: dict):
+    def test_reset_password_wrong_code(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/forgot-password", json={"email": registered_user["email"]})
         assert resp.status_code == 200
 
@@ -418,7 +419,7 @@ class TestForgotResetPassword:
         assert resp.status_code == 400
         assert "验证码错误" in resp.json()["detail"]
 
-    def test_reset_password_same_as_old(self, api: AuthApi, registered_user: dict):
+    def test_reset_password_same_as_old(self, api: AuthApi, registered_user: dict[str, Any]):
         resp = api.post("/api/auth/forgot-password", json={"email": registered_user["email"]})
         assert resp.status_code == 200
         code = _get_redis_value(f"auth:reset:{registered_user['email']}")
@@ -449,12 +450,12 @@ class TestLogout:
         data = resp.json()
         return {"access_token": data["access_token"], "refresh_token": data["refresh_token"]}
 
-    def test_logout_success(self, api: AuthApi, tokens: dict):
+    def test_logout_success(self, api: AuthApi, tokens: dict[str, Any]):
         resp = api.post("/api/auth/logout", json={"refresh_token": tokens["refresh_token"]},
                         headers={"Authorization": f"Bearer {tokens['access_token']}"})
         assert resp.status_code == 204
 
-    def test_logout_then_refresh_fails(self, api: AuthApi, tokens: dict):
+    def test_logout_then_refresh_fails(self, api: AuthApi, tokens: dict[str, Any]):
         resp = api.post("/api/auth/logout", json={"refresh_token": tokens["refresh_token"]},
                         headers={"Authorization": f"Bearer {tokens['access_token']}"})
         assert resp.status_code == 204

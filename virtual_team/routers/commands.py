@@ -1,21 +1,20 @@
 """Command palette API routes."""
 
 import json
-from uuid import uuid4
+from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from virtual_team.database import CommandLogDB as CommandLog
-from virtual_team.database import get_session_factory
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
-from virtual_team.repository import get_session, update_session_title
+from virtual_team.repository import get_session, log_command, update_session_title
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["commands"])
 
 
-BUILTIN_COMMANDS: list[dict] = [
+BUILTIN_COMMANDS: list[dict[str, Any]] = [
     {
         "id": "clear",
         "name": "清空对话",
@@ -66,7 +65,7 @@ BUILTIN_COMMANDS: list[dict] = [
 
 
 @router.get("/api/commands", response_model=list[CommandResponse])
-async def list_commands():
+async def list_commands() -> Any:
     return [
         CommandResponse(
             id=cmd["id"],
@@ -82,7 +81,7 @@ async def list_commands():
 
 
 @router.get("/api/commands/{command_id}", response_model=CommandResponse)
-async def get_command(command_id: str):
+async def get_command(command_id: str) -> Any:
     for cmd in BUILTIN_COMMANDS:
         if cmd["id"] == command_id:
             return CommandResponse(
@@ -94,40 +93,35 @@ async def get_command(command_id: str):
                 requires_input=cmd.get("requires_input", False),
                 enabled=True,
             )
-    raise HTTPException(status_code=404, detail=f"未找到命令: {command_id}")
+    raise error_response(ErrorCode.COMMAND_NOT_FOUND, detail=f"未找到命令: {command_id}")
 
 
 @router.post("/api/commands/execute", response_model=CommandExecuteResponse)
-async def execute_command(req: CommandExecuteRequest):
+async def execute_command(req: CommandExecuteRequest) -> Any:
     cmd = next((c for c in BUILTIN_COMMANDS if c["id"] == req.command_id), None)
     if cmd is None:
-        raise HTTPException(status_code=404, detail=f"未知命令: {req.command_id}")
+        raise error_response(ErrorCode.COMMAND_NOT_FOUND, detail=f"未知命令: {req.command_id}")
 
     sess = await get_session(req.session_id)
     if sess is None:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="会话不存在")
 
     result = await _dispatch_command(cmd["id"], req.session_id, req.payload)
 
-    log = CommandLog(
-        id=str(uuid4()),
+    await log_command(
         session_id=req.session_id,
         command_id=cmd["id"],
         command_name=cmd["name"],
         payload=json.dumps(req.payload, ensure_ascii=False),
         result=json.dumps(result.data, ensure_ascii=False),
     )
-    factory = get_session_factory()
-    async with factory() as db:
-        db.add(log)
-        await db.commit()
 
     logger.info("Command executed | id=%s | session=%s", cmd["id"], req.session_id)
     return result
 
 
 async def _dispatch_command(
-    command_id: str, session_id: str, payload: dict
+    command_id: str, session_id: str, payload: dict  # type: ignore[type-arg]
 ) -> CommandExecuteResponse:
     if command_id == "clear":
         return CommandExecuteResponse(

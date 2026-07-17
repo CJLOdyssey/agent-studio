@@ -1,12 +1,14 @@
 """Login, refresh token, and logout endpoints."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
 from virtual_team.auth import AUTH_SECRET, CurrentUser, create_token, get_current_user
 from virtual_team.broker import get_redis
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.repository.auth import (
     consume_refresh_token,
@@ -34,7 +36,7 @@ router = APIRouter(tags=["auth"])
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(body: LoginRequest, request: Request):
+async def login(body: LoginRequest, request: Request) -> Any:
     email = body.email.lower().strip()
     password = body.password
     r = get_redis()
@@ -43,30 +45,30 @@ async def login(body: LoginRequest, request: Request):
     rate_key_ip = f"auth:login:ip:{ip}"
     rate_key_email = f"auth:login:email:{email}"
     if not await _check_rate_limit(r, rate_key_ip, 10, 60):
-        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后重试")
+        raise error_response(ErrorCode.RATE_LIMITED, detail="操作过于频繁，请稍后重试")
     if not await _check_rate_limit(r, rate_key_email, 5, 60):
-        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后重试")
+        raise error_response(ErrorCode.RATE_LIMITED, detail="操作过于频繁，请稍后重试")
 
     user = await get_user_by_email(email)
     if user is None:
-        raise HTTPException(status_code=401, detail="邮箱或密码错误")
+        raise error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="邮箱或密码错误")
 
     if user.locked_until and user.locked_until > datetime.now(UTC):
         remaining = int((user.locked_until - datetime.now(UTC)).total_seconds())
-        raise HTTPException(
-            status_code=423,
+        raise error_response(
+            ErrorCode.AUTH_ACCOUNT_LOCKED,
             detail=f"账户已被临时锁定，请 {max(remaining, 60)} 秒后再试",
         )
 
     if not user.is_verified:
-        raise HTTPException(status_code=403, detail="请先验证邮箱")
+        raise error_response(ErrorCode.AUTH_EMAIL_NOT_VERIFIED, detail="请先验证邮箱")
 
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="账户已被禁用")
+        raise error_response(ErrorCode.AUTH_ACCOUNT_DISABLED, detail="账户已被禁用")
 
     if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
         await increment_failed_logins(email)
-        raise HTTPException(status_code=401, detail="邮箱或密码错误")
+        raise error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="邮箱或密码错误")
 
     await reset_failed_logins(email)
     logger.info("User logged in: %s", _mask_email(email))
@@ -75,10 +77,10 @@ async def login(body: LoginRequest, request: Request):
 
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh(body: RefreshRequest):
+async def refresh(body: RefreshRequest) -> Any:
     user, family_id = await consume_refresh_token(body.refresh_token)
     if user is None:
-        raise HTTPException(status_code=401, detail="登录已过期，请重新登录")
+        raise error_response(ErrorCode.AUTH_TOKEN_EXPIRED, detail="登录已过期，请重新登录")
 
     new_refresh_token_raw, _ = await create_refresh_token(
         user.id, family_id=family_id, ttl_days=7
@@ -95,5 +97,5 @@ async def refresh(body: RefreshRequest):
 
 
 @router.post("/logout", status_code=204)
-async def logout(body: LogoutRequest, _user: CurrentUser = Depends(get_current_user)):
+async def logout(body: LogoutRequest, _user: CurrentUser = Depends(get_current_user)) -> None:
     await consume_refresh_token(body.refresh_token)

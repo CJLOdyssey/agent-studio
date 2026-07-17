@@ -11,6 +11,7 @@ import sqlite3
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 from virtual_team.observability.schema import SCHEMA_SQL, Event
 
@@ -29,7 +30,7 @@ class EventStore:
 
     def __init__(self, db_path: str = _DB_PATH) -> None:
         self._db_path = db_path
-        self._queue: queue.SimpleQueue[dict] = queue.SimpleQueue()
+        self._queue: queue.SimpleQueue[dict[str, Any]] = queue.SimpleQueue()
         self._closed = False
         self._write_errors: int = 0
         self._disk_errors: int = 0
@@ -65,7 +66,7 @@ class EventStore:
         except queue.Full:
             self._write_errors += 1
 
-    def self_check(self) -> dict:
+    def self_check(self) -> dict[str, Any]:
         """Return internal health metrics (queue size, errors, disk, writer status)."""
         free = self._disk_free()
         return {
@@ -80,7 +81,7 @@ class EventStore:
             "db_path": self._db_path,
         }
 
-    def _query(self, sql: str, params: tuple = ()) -> list[dict]:
+    def _query(self, sql: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
         """Run a read-only query and return results as dicts."""
         conn = sqlite3.connect(f"file:{self._db_path}?mode=ro", uri=True)
         conn.row_factory = sqlite3.Row
@@ -90,14 +91,14 @@ class EventStore:
         finally:
             conn.close()
 
-    def by_trace(self, trace_id: str, limit: int = 200) -> list[dict]:
+    def by_trace(self, trace_id: str, limit: int = 200) -> list[dict[str, Any]]:
         """Return all events for a given trace ID."""
         return self._query(
             "SELECT * FROM events WHERE trace_id=? ORDER BY timestamp ASC LIMIT ?",
             (trace_id, limit),
         )
 
-    def recent_errors(self, seconds: int = 300, limit: int = 50) -> list[dict]:
+    def recent_errors(self, seconds: int = 300, limit: int = 50) -> list[dict[str, Any]]:
         """Return recent events that have a non-empty error_type."""
         cutoff = time.time() - seconds
         return self._query(
@@ -107,7 +108,7 @@ class EventStore:
             (cutoff, limit),
         )
 
-    def slow_events(self, min_ms: float = 1000, seconds: int = 3600, limit: int = 50) -> list[dict]:
+    def slow_events(self, min_ms: float = 1000, seconds: int = 3600, limit: int = 50) -> list[dict[str, Any]]:
         """Return events exceeding a minimum duration threshold."""
         cutoff = time.time() - seconds
         return self._query(
@@ -117,7 +118,7 @@ class EventStore:
             (cutoff, min_ms, limit),
         )
 
-    def search(self, query: str, limit: int = 50) -> list[dict]:
+    def search(self, query: str, limit: int = 50) -> list[dict[str, Any]]:
         """Full-text search across message, error_type, logger, and trace_id."""
         like = f"%{query}%"
         return self._query(
@@ -127,7 +128,7 @@ class EventStore:
             (like, like, like, like, limit),
         )
 
-    def stats(self, seconds: int = 300) -> dict:
+    def stats(self, seconds: int = 300) -> dict[str, Any]:
         """Return per-level event counts and error total within the time window."""
         cutoff = time.time() - seconds
         data = self._query(
@@ -143,7 +144,7 @@ class EventStore:
         )[0]["cnt"]
         return {"window_seconds": seconds, "by_level": by_level, "errors": error_count}
 
-    def error_trace_ids(self, seconds: int = 300, limit: int = 20) -> list[dict]:
+    def error_trace_ids(self, seconds: int = 300, limit: int = 20) -> list[dict[str, Any]]:
         """Return distinct trace IDs that have errors in the time window."""
         cutoff = time.time() - seconds
         return self._query(
@@ -161,7 +162,7 @@ class EventStore:
         self._closed = True
 
 
-def _writer_loop(db_path: str, q: "queue.SimpleQueue[dict]") -> None:
+def _writer_loop(db_path: str, q: "queue.SimpleQueue[dict[str, Any]]") -> None:
     """Background thread that drains the queue and batch-inserts into SQLite."""
     conn = sqlite3.connect(db_path, timeout=10)
     conn.execute("PRAGMA synchronous=NORMAL")
@@ -187,7 +188,7 @@ def _writer_loop(db_path: str, q: "queue.SimpleQueue[dict]") -> None:
         conn.close()
 
 
-def _writer_size(q: "queue.SimpleQueue[dict]") -> int:
+def _writer_size(q: "queue.SimpleQueue[dict[str, Any]]") -> int:
     """Return the current queue size."""
     return q.qsize()
 

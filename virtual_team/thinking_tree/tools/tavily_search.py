@@ -1,6 +1,7 @@
 """Tavily Web Search tool — hybrid keyword + semantic search with AI reranking."""
 
 import os
+from typing import Any
 
 from virtual_team.logging_config import get_logger
 
@@ -16,7 +17,7 @@ def _get_api_key() -> str:
     return ""
 
 
-async def tavily_search(tool_name: str, args: dict) -> dict:
+async def tavily_search(tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
     query = args.get("query", "")
     max_results = int(args.get("max_results", 5))
     if not query:

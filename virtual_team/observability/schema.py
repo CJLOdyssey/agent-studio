@@ -22,7 +22,7 @@ class Event:
     tags: dict[str, Any] = field(default_factory=dict)
     event_type: str = "log"  # log | span | error
 
-    def to_row(self) -> dict:
+    def to_row(self) -> dict[str, Any]:
         """Serialize this event into a dict for SQLite insertion."""
         return {
             "timestamp": self.timestamp,

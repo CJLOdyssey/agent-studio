@@ -15,7 +15,7 @@ TOOLS_DIR = Path(__file__).parent / "tools"
 class ToolGenerator:
     """Generates tool code from descriptions, with optional LLM enhancement."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Set up tools output directory."""
         self.tools_dir = TOOLS_DIR
         self.tools_dir.mkdir(exist_ok=True)

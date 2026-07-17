@@ -1,9 +1,12 @@
 """Run continuation API — "继续生成" feature, runs directly in uvicorn process."""
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from virtual_team.auth import get_user_id
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.routers.runs import RunResponse
 from virtual_team.services.run_service import run_service
@@ -19,7 +22,7 @@ class CompleteRunRequest(BaseModel):
 
 
 @router.post("/api/runs/complete", response_model=RunResponse)
-async def create_complete_run(req: CompleteRunRequest, request: Request):
+async def create_complete_run(req: CompleteRunRequest, request: Request) -> Any:
     """Create a continuation run — streams raw LLM output without thinking/tools.
 
     Used by the frontend "继续生成" feature to append content to an interrupted
@@ -38,9 +41,9 @@ async def create_complete_run(req: CompleteRunRequest, request: Request):
         )
         return RunResponse(**result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise error_response(ErrorCode.INVALID_REQUEST, detail=str(e)) from e
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("Complete pipeline failed for run")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e

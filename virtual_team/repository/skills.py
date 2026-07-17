@@ -1,17 +1,19 @@
 """Skills repository — CRUD for :class:`RegisteredSkillDB`."""
 
+from typing import Any
+
 from sqlalchemy import desc
 
 from virtual_team.database import RegisteredSkillDB
 from virtual_team.repository.base import BaseRepository
 
 
-class SkillRepository(BaseRepository):
+class SkillRepository(BaseRepository[RegisteredSkillDB]):
     model = RegisteredSkillDB
     default_order = desc(RegisteredSkillDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict:
+    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """Serialize a RegisteredSkillDB row to a JSON-safe dict."""
         return {
             "id": obj.id,
@@ -31,6 +33,7 @@ class SkillRepository(BaseRepository):
 
 # module-level aliases
 get_skills = SkillRepository.get_all
+get_skills_as_dicts = SkillRepository.get_all_as_dicts
 create_skill = SkillRepository.create_one
 update_skill = SkillRepository.update_one
 delete_skill = SkillRepository.delete_one

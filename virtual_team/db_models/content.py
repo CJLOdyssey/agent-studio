@@ -2,6 +2,7 @@
 
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
@@ -81,7 +82,7 @@ class RegisteredSkillDB(Base):
     status: Mapped[str] = mapped_column(String(16), default="active")
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    tool_names: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    tool_names: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     output_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
@@ -98,7 +99,7 @@ class VersionDB(Base):
     resource_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     resource_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     version_num: Mapped[int] = mapped_column(Integer, nullable=False)
-    snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)

@@ -1,6 +1,6 @@
 """Workflow node strategies — generator, reviewer, and reporter implementations."""
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from .models import NodeStrategy, WorkflowNode, WorkflowState
 
@@ -14,7 +14,7 @@ class Strategy(Protocol):
         """Build the prompt context for a node from the current state."""
         ...
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict:
+    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Process the node's output and update the workflow state."""
         ...
 
@@ -34,7 +34,7 @@ class GeneratorStrategy:
                 parts.append(f"[{role_id}]: {content[:500]}")
         return "\n".join(parts)
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict:
+    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Store the generated output as an artifact in the state."""
         state["artifacts"][node.role_identifier] = output
         return {"artifacts": state["artifacts"]}
@@ -55,7 +55,7 @@ class ReviewerStrategy:
                 parts.append(f"=== {role_id} 的输出 ===\n{content}\n")
         return "\n".join(parts)
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict:
+    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Store the review and determine approval status from output keywords."""
         state["artifacts"][node.role_identifier] = output
         approved = False
@@ -81,7 +81,7 @@ class ReporterStrategy:
             parts.append(f"=== {role_id} ===\n{content}\n")
         return "\n".join(parts)
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict:
+    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Store the final report as a special artifact."""
         state["artifacts"]["_final_report"] = output
         state["artifacts"][node.role_identifier] = output

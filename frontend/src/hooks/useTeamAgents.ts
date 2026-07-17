@@ -3,8 +3,8 @@ import { Bot } from 'lucide-react';
 import type { Agent, Team } from '../types/agentstudio';
 import { validateName, checkAgentLimit } from '../utils/validation';
 import { updateAgent } from '../api/client/agents';
+import { addTeamMember, linkAgentToMember, removeTeamMember } from '../api/client/teams';
 import { removeConversationsByAgentIds } from './useTeamData';
-import api from '../api/client';
 
 type ToastFn = (msg: string, type: 'success' | 'info' | 'error') => void;
 
@@ -35,7 +35,7 @@ export function useTeamAgents(
       }
 
       try {
-        const member = (await api.post(`/api/teams/${teamId}/members`, { name: agentName })).data;
+        const member = await addTeamMember(teamId, { name: agentName });
         const newAgent: Agent = {
           id: member.id,
           name: member.name,
@@ -90,7 +90,7 @@ export function useTeamAgents(
       prev.map((t) => (t.id === teamId ? { ...t, agents: t.agents.filter((a) => a.id !== agentId) } : t)),
     );
     removeConversationsByAgentIds([agentId]);
-    await api.delete(`/api/teams/${teamId}/members/${agentId}`).catch(() => {});
+    await removeTeamMember(teamId, agentId).catch(() => {});
   }, [setTeams]);
 
   const handleAgentConfigSave = useCallback((agent: Agent) => {
@@ -113,7 +113,7 @@ export function useTeamAgents(
 
   const linkMemberAgent = useCallback(async (teamId: string, memberId: string, agentConfigId: string) => {
     try {
-      await api.put(`/teams/${teamId}/members/${memberId}/link-agent`, { agent_config_id: agentConfigId });
+      await linkAgentToMember(teamId, memberId, agentConfigId);
     } catch {
       /* non-fatal */
     }
