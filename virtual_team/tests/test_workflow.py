@@ -1,7 +1,8 @@
 """Tests for virtual_team/workflow/ — strategies, node_factory, router, models."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 class TestStrategies:
