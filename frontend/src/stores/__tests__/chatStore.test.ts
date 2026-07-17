@@ -203,4 +203,168 @@ describe('chatStore', () => {
       expect(client.submitRequirement).not.toHaveBeenCalled();
     });
   });
+
+  describe('switchVersion', () => {
+    it('switches to next version', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [{
+          id: 'm1',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'v1',
+          thinking: 't1',
+          versions: ['v1', 'v2'],
+          thinkingVersions: ['t1', 't2'],
+          currentVersion: 0,
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }],
+      });
+
+      useChatStore.getState().switchVersion('m1', 'next');
+      const msg = useChatStore.getState().messages[0];
+
+      expect(msg.content).toBe('v2');
+      expect(msg.thinking).toBe('t2');
+      expect(msg.currentVersion).toBe(1);
+    });
+
+    it('switches to previous version', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [{
+          id: 'm1',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'v2',
+          thinking: 't2',
+          versions: ['v1', 'v2', 'v3'],
+          thinkingVersions: ['t1', 't2', 't3'],
+          currentVersion: 2,
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }],
+      });
+
+      useChatStore.getState().switchVersion('m1', 'prev');
+      const msg = useChatStore.getState().messages[0];
+
+      expect(msg.content).toBe('v2');
+      expect(msg.currentVersion).toBe(1);
+    });
+
+    it('clamps version at bounds', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [{
+          id: 'm1',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'v1',
+          thinking: 't1',
+          versions: ['v1', 'v2'],
+          thinkingVersions: ['t1', 't2'],
+          currentVersion: 0,
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }],
+      });
+
+      useChatStore.getState().switchVersion('m1', 'prev');
+      const msg = useChatStore.getState().messages[0];
+      expect(msg.currentVersion).toBe(0);
+    });
+
+    it('ignores messages without versions', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [{
+          id: 'm1',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'old',
+          thinking: 'thinking',
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }],
+      });
+
+      useChatStore.getState().switchVersion('m1', 'next');
+      const msg = useChatStore.getState().messages[0];
+      expect(msg.content).toBe('old');
+    });
+  });
+
+  describe('setThumbsFeedback', () => {
+    it('sets thumbs feedback on a message', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [{
+          id: 'm1',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'test',
+          thinking: '',
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }, {
+          id: 'm2',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'other',
+          thinking: '',
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }],
+      });
+
+      useChatStore.getState().setThumbsFeedback('m1', 'up');
+      const msgs = useChatStore.getState().messages;
+      expect(msgs[0].thumbs).toBe('up');
+      expect(msgs[1].thumbs).toBeUndefined();
+    });
+
+    it('clears thumbs feedback when null', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [{
+          id: 'm1',
+          role: 'agent',
+          agent_name: 'Agent',
+          content: 'test',
+          thinking: '',
+          thumbs: 'up' as const,
+          round_number: 0,
+          created_at: new Date().toISOString(),
+        }],
+      });
+
+      useChatStore.getState().setThumbsFeedback('m1', null);
+      expect(useChatStore.getState().messages[0].thumbs).toBeNull();
+    });
+  });
+
+  describe('selectAgent', () => {
+    it('sets selectedAgentId', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.getState().selectAgent('agent-123');
+      expect(useChatStore.getState().selectedAgentId).toBe('agent-123');
+    });
+  });
+
+  describe('setActiveTeam', () => {
+    it('sets activeTeamId', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.getState().setActiveTeam('team-456');
+      expect(useChatStore.getState().activeTeamId).toBe('team-456');
+    });
+
+    it('clears activeTeamId', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({ activeTeamId: 'old-team' });
+      useChatStore.getState().setActiveTeam(null);
+      expect(useChatStore.getState().activeTeamId).toBeNull();
+    });
+  });
 });

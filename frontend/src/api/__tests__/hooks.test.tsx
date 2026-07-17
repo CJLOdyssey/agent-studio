@@ -9,6 +9,9 @@ const mockSessions = [{ id: 's1', title: 'Session 1', message_count: 3, updated_
 
 const mockAxiosInstance = {
   get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
 };
 
 vi.mock('axios', () => ({
@@ -73,5 +76,37 @@ describe('API hooks', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockAxiosInstance.get).toHaveBeenCalledWith('/agents');
+  });
+
+  it('useCommands fetches command list', async () => {
+    mockAxiosInstance.get.mockResolvedValue({ data: [{ id: 'c1', name: 'Run' }] });
+    const { useCommands } = await import('../hooks');
+    const { result } = renderHook(() => useCommands(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/commands');
+    expect(result.current.data).toEqual([{ id: 'c1', name: 'Run' }]);
+  });
+
+  it('useAvailableModels merges models from keys and api models', async () => {
+    let callCount = 0;
+    mockAxiosInstance.get.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve({ data: [{ id: 'gpt-4', label: 'GPT-4', provider: 'openai' }] });
+      }
+      return Promise.resolve({ data: [{ id: 'k1', provider: 'openai', usage_type: 'chat', label: 'Key', key_masked: 'sk-***', base_url: null, models: ['gpt-3.5'], is_active: true, is_default: false, last_used_at: null, created_at: null }] });
+    });
+    const { useAvailableModels } = await import('../hooks');
+    const { result } = renderHook(() => useAvailableModels(), { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(result.current.length).toBeGreaterThanOrEqual(1);
+    });
+
+    const models = result.current;
+    const ids = models.map(m => m.id);
+    expect(ids).toContain('gpt-4');
+    expect(ids).toContain('gpt-3.5');
   });
 });
