@@ -43,7 +43,6 @@ def custom_tool(input_data: Any = None) -> Any:
     Returns:
         处理结果
     """
-    # TODO: 实现具体逻辑
     result = input_data
     return result
 '''

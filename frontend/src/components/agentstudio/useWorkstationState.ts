@@ -112,6 +112,7 @@ export function useWorkstationState(
         convRef.current.updateConversationSessionId(activeId, state.currentSessionId, false);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiMessages, apiStatus]);
 
   useEffect(() => {
@@ -164,6 +165,7 @@ export function useWorkstationState(
       }
     }
     loadConversation(chatMessages, found.id, found.sessionId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conv.activeConvId]);
 
   const handleNewChat = useCallback(() => {

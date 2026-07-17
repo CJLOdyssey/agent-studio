@@ -76,12 +76,12 @@ class StreamEmitter:
                 await self.emit_thinking_nodes(nodes)
 
         elif kind == "on_tool_complete":
-            print(f"\n[DEBUG] streaming: on_tool_complete received tool={data.get('toolName')}")
+            logger.debug("streaming: on_tool_complete received tool=%s", data.get('toolName'))
             await self.emit_tool_complete(data)
 
         elif kind == "on_client_action":
             action = data.get("action", {})
-            print(f"\n[DEBUG] streaming: on_client_action received action={action}")
+            logger.debug("streaming: on_client_action received action=%s", action)
             await publish_run_message(
                 self._run_id,
                 {
@@ -150,7 +150,7 @@ class StreamEmitter:
                 "toolName": data.get("toolName", ""),
                 "status": data.get("status", "success"),
             }
-            print(f"\n[DEBUG] emit_tool_complete: publishing node type={node['type']} tool={node['toolName']}")
+            logger.debug("emit_tool_complete: publishing node type=%s tool=%s", node['type'], node['toolName'])
             await publish_run_message(
                 self._run_id,
                 {
@@ -159,11 +159,9 @@ class StreamEmitter:
                     "node": node,
                 },
             )
-            print("\n[DEBUG] emit_tool_complete: published successfully")
-        except Exception as e:
-            print(f"\n[DEBUG] emit_tool_complete ERROR: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.debug("emit_tool_complete: published successfully")
+        except Exception:
+            logger.exception("emit_tool_complete failed")
 
     async def _flush_buffers(self) -> None:
         thinking_text = ""
