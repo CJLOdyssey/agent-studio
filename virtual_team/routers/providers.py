@@ -13,7 +13,7 @@ from fastapi import APIRouter
 
 Capability = Literal["llm", "embedding"]
 
-PROVIDERS: dict[str, dict] = {  # type: ignore[type-arg]
+PROVIDERS: dict[str, dict[str, Any]] = {
     "openai": {
         "name": "OpenAI",
         "base_url": "https://api.openai.com/v1",

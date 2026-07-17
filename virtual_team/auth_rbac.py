@@ -143,7 +143,7 @@ def get_user_id(request: Any) -> str:
 
     Priority: auth middleware (request.state.user_id) → X-User-ID header (dev) → 'anonymous'
     """
-    user_id = getattr(request.state, "user_id", None)
+    user_id: str | None = getattr(request.state, "user_id", None)
     if user_id:
-        return user_id  # type: ignore[no-any-return]
-    return request.headers.get("X-User-ID", "anonymous")  # type: ignore[no-any-return]
+        return user_id
+    return str(request.headers.get("X-User-ID", "anonymous"))

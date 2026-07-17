@@ -1,6 +1,7 @@
 """Workflow graph builder — constructs LangGraph StateGraph from config."""
 
-from typing import Any
+from collections.abc import Hashable
+from typing import Any, cast
 
 from langgraph.graph import END, StateGraph
 
@@ -20,13 +21,13 @@ class GraphBuilder:
         self.router = router
         self.checkpointer = checkpointer
 
-    def build(self, config: WorkflowConfig) -> StateGraph:  # type: ignore[type-arg]
+    def build(self, config: WorkflowConfig) -> StateGraph[Any]:
         workflow = StateGraph(WorkflowState)
         sorted_nodes = sorted(config.nodes, key=lambda n: n.order)
 
         for node in sorted_nodes:
             node_fn = self.node_factory.create(node)
-            workflow.add_node(node.role_identifier, node_fn)  # type: ignore[arg-type]
+            workflow.add_node(node.role_identifier, cast(Any, node_fn))
 
         if sorted_nodes:
             entry = sorted_nodes[0].role_identifier
@@ -48,7 +49,7 @@ class GraphBuilder:
                     workflow.add_conditional_edges(
                         node.role_identifier,
                         lambda s, nid=node.role_identifier: END,
-                        end_map,  # type: ignore[arg-type]
+                        cast(dict[Hashable, str], end_map),
                     )
                 else:
                     workflow.add_edge(node.role_identifier, END)
@@ -60,7 +61,7 @@ class GraphBuilder:
                 workflow.add_conditional_edges(
                     node.role_identifier,
                     lambda state, nid=node.role_identifier: self.router.resolve(config.edges, state, nid),
-                    self._build_edge_map(outgoing),  # type: ignore[arg-type]
+                    cast(dict[Hashable, str], self._build_edge_map(outgoing)),
                 )
             elif len(unconditional) == 1:
                 workflow.add_edge(node.role_identifier, unconditional[0].to_node_id)
@@ -72,9 +73,9 @@ class GraphBuilder:
                     {t: t for t in targets},
                 )
 
-        return workflow.compile(checkpointer=self.checkpointer)  # type: ignore
+        return cast(StateGraph[Any], workflow.compile(checkpointer=self.checkpointer))
 
-    def _build_edge_map(self, edges: list) -> dict[str, str]:  # type: ignore[type-arg]
+    def _build_edge_map(self, edges: list[Any]) -> dict[str, str]:
         edge_map: dict[str, str] = {}
         for e in edges:
             if e.condition_key:

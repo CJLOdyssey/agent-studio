@@ -13,7 +13,7 @@ class SkillRepository(BaseRepository[RegisteredSkillDB]):
     default_order = desc(RegisteredSkillDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    def to_dict(obj: Any) -> dict[str, Any]:
         """Serialize a RegisteredSkillDB row to a JSON-safe dict."""
         return {
             "id": obj.id,

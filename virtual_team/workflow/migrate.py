@@ -4,6 +4,7 @@ that matches the old hardcoded PM→Frontend→Backend→Tester flow.
 Run once at startup or via: PYTHONPATH=. python -m virtual_team.workflow.migrate
 """
 import asyncio
+from typing import Any, cast
 
 from sqlalchemy import select
 
@@ -24,7 +25,7 @@ from virtual_team.workflow.models import (
 
 logger = get_logger(__name__)
 
-DEFAULT_WORKFLOW = {
+DEFAULT_WORKFLOW: dict[str, Any] = {
     "name": "默认四阶段协作",
     "max_rounds": 5,
     "nodes": [
@@ -80,7 +81,7 @@ async def migrate_teams() -> int:
                     agent_ids[agent.role_identifier] = agent.id
 
         nodes: list[WorkflowNode] = []
-        for nd in DEFAULT_WORKFLOW["nodes"]:  # type: ignore[attr-defined]
+        for nd in DEFAULT_WORKFLOW["nodes"]:
             rid = nd["role_identifier"]
             cfg_id = agent_ids.get(rid)
             if cfg_id:
@@ -96,7 +97,7 @@ async def migrate_teams() -> int:
             continue
 
         edges: list[WorkflowEdge] = []
-        for i, ed in enumerate(DEFAULT_WORKFLOW["edges"]):  # type: ignore[var-annotated, arg-type]
+        for i, ed in enumerate(cast(list[Any], DEFAULT_WORKFLOW["edges"])):
             edges.append(WorkflowEdge(
                 id=f"e-{i}", from_node_id=ed["from"], to_node_id=ed["to"],
                 condition_key=ed.get("condition_key"),
@@ -106,8 +107,8 @@ async def migrate_teams() -> int:
 
         config = WorkflowConfig(
             team_id=team.id,
-            name=DEFAULT_WORKFLOW["name"],  # type: ignore[arg-type]
-            max_rounds=DEFAULT_WORKFLOW["max_rounds"],  # type: ignore[arg-type]
+            name=cast(str, DEFAULT_WORKFLOW["name"]),
+            max_rounds=cast(int, DEFAULT_WORKFLOW["max_rounds"]),
             nodes=nodes,
             edges=edges,
         )

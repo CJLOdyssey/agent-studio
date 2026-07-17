@@ -8,9 +8,11 @@ Each template is a dict with keys:
   params    — JSON Schema parameter definitions
 """
 
-ToolTemplate = dict
+from typing import Any
 
-TOOL_TEMPLATES: list[ToolTemplate] = [  # type: ignore[type-arg]
+ToolTemplate = dict[str, Any]
+
+TOOL_TEMPLATES: list[ToolTemplate] = [
     # ── read_file ─────────────────────────────────────────────────
     {
         "keywords": ["读取", "read", "文件", "file"],

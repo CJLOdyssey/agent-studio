@@ -86,7 +86,7 @@ async def list_versions(
     ]
 
 
-async def get_version(session: AsyncSession, version_id: str) -> dict | None:  # type: ignore[type-arg]
+async def get_version(session: AsyncSession, version_id: str) -> dict[str, Any] | None:
     """Get a single version by ID."""
     result = await session.execute(
         select(VersionDB).where(VersionDB.id == version_id)

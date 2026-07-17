@@ -231,7 +231,7 @@ class RunService:
 
         return {"run_id": run_id, "status": "running", "session_id": session_id}
 
-    async def get_run(self, run_id: str) -> dict | None:  # type: ignore[type-arg]
+    async def get_run(self, run_id: str) -> dict[str, Any] | None:
         """Fetch a single run by id."""
         run = await get_run(run_id)
         if run is None:

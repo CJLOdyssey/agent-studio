@@ -1,7 +1,8 @@
 """Celery task registry."""
 
 import time
-from typing import Any
+from collections.abc import Callable
+from typing import Any, cast
 
 from virtual_team.broker import celery_app
 from virtual_team.logging_config import get_logger
@@ -14,7 +15,11 @@ from .helpers import _report_run_error, _run_async, _try_mock_fallback
 logger = get_logger(__name__)
 
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)  # type: ignore[untyped-decorator]
+def _task(*args: Any, **kwargs: Any) -> Callable[..., Any]:
+    return cast(Callable[..., Any], celery_app.task(*args, **kwargs))
+
+
+@_task(bind=True, max_retries=2, default_retry_delay=5)
 def run_agent(
     self: Any,
     requirement: str,
@@ -75,7 +80,7 @@ def run_agent(
 # Used by the "继续生成" flow on the frontend.
 # ---------------------------------------------------------------------------
 
-@celery_app.task(bind=True, max_retries=2, default_retry_delay=5)  # type: ignore[untyped-decorator]
+@_task(bind=True, max_retries=2, default_retry_delay=5)
 def complete_agent(
     self: Any,
     content: str,

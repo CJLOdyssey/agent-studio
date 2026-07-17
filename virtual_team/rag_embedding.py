@@ -1,6 +1,7 @@
 """Embedding provider for RAG pipeline (DashScope)."""
 
 import asyncio
+import json
 import os
 import urllib.request
 
@@ -35,7 +36,6 @@ class EmbeddingProvider:
 
     def _embed_sync(self, texts: list[str]) -> list[list[float]]:
         """Embed texts synchronously via DashScope HTTP API in a thread pool."""
-        import json
 
         body = json.dumps(
             {

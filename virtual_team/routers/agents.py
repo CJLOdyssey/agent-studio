@@ -90,7 +90,7 @@ async def get_agent(agent_id: str) -> Any:
     if not c:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
 
-    def _parse_json(val):  # type: ignore
+    def _parse_json(val: Any) -> Any:
         if isinstance(val, str):
             try:
                 return json.loads(val)
@@ -104,9 +104,9 @@ async def get_agent(agent_id: str) -> Any:
         "role_identifier": c.role_identifier,
         "system_prompt": c.system_prompt,
         "output_constraints": c.output_constraints,
-        "tools": _parse_json(c.tools),  # type: ignore[no-untyped-call]
-        "mcp": _parse_json(c.mcp),  # type: ignore[no-untyped-call]
-        "skills": _parse_json(c.skills),  # type: ignore[no-untyped-call]
+        "tools": _parse_json(c.tools),
+        "mcp": _parse_json(c.mcp),
+        "skills": _parse_json(c.skills),
         "model": c.model,
         "temperature": c.temperature,
         "order": c.order,
@@ -123,7 +123,6 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
     if existing:
         raise error_response(ErrorCode.AGENT_DUPLICATE, detail=f"角色标识 '{req.role_identifier}' 已存在")
     try:
-        import json
 
         created = await create_agent_config(
             name=req.name,
@@ -179,7 +178,6 @@ async def edit_agent(
     req: AgentUpdateRequest,
     current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
 ) -> Any:
-    import json
 
     updated = await update_agent_config(
         id=agent_id,

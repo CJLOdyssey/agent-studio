@@ -99,7 +99,7 @@ class SessionItem(BaseModel):
 class SessionDetail(SessionItem):
     """Detailed session view including runs."""
 
-    runs: list = Field(default_factory=list)  # type: ignore[type-arg]
+    runs: list[Any] = Field(default_factory=list)
 
 
 class AttachmentResponse(BaseModel):

@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.audit import log_audit
 from virtual_team.error_codes import ErrorCode, error_response
@@ -102,7 +103,7 @@ async def list_tools() -> Any:
         raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
-async def _snapshot_tool(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
+async def _snapshot_tool(resource_id: str, session: AsyncSession | None = None) -> Any:
     """Create a version snapshot after tool save."""
     try:
         from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session

@@ -2,10 +2,9 @@
 
 import contextlib
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 
 from virtual_team.broker import publish_run_message
 from virtual_team.llm_stream import convert_messages_to_api, stream_llm_response
@@ -14,23 +13,38 @@ from .models import WorkflowNode, WorkflowState
 from .strategies import get_strategy
 
 
+class LLMConfig(Protocol):
+    """Protocol for LLM configuration — any object with these attributes works.
+
+    ChatOpenAI fields are Optional in practice (temperature/max_tokens default to None),
+    so the Protocol mirrors that reality. The factory uses getattr() with defaults to
+    handle None values at call sites.
+    """
+
+    openai_api_key: Any
+    openai_api_base: str | None
+    model_name: str
+    temperature: float | None
+    max_tokens: int | None
+
+
 class NodeFactory:
     """Factory that creates callable LangGraph nodes from workflow definitions."""
 
     def __init__(
         self,
-        llm: ChatOpenAI,
+        llm: LLMConfig,
         agent_prompts: dict[str, str],
         tools: list[Any] | None = None,
         run_id: str = "",
     ):
-        """Initialize the node factory with LLM, prompts, and optional tools."""
+        """Initialize the node factory with LLM config, prompts, and optional tools."""
         self.llm = llm
         self.agent_prompts = agent_prompts
         self.tools = tools or []
         self.run_id = run_id
 
-    def _build_request(self, api_messages: list[dict[str, Any]]) -> tuple[str, dict, dict]:  # type: ignore[type-arg]
+    def _build_request(self, api_messages: list[dict[str, Any]]) -> tuple[str, dict[str, Any], dict[str, Any]]:
         """Build the HTTP request for the LLM streaming API."""
         raw_key = getattr(self.llm, "openai_api_key", "")
         actual_key = raw_key.get_secret_value() if hasattr(raw_key, "get_secret_value") else str(raw_key)
@@ -49,7 +63,7 @@ class NodeFactory:
             body["thinking"] = {"type": "enabled"}
         return url, headers, body
 
-    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict | Awaitable[dict]]:  # type: ignore[type-arg]
+    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict[str, Any] | Awaitable[dict[str, Any]]]:
         """Create a callable node function for a workflow node."""
         strategy = get_strategy(node)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")
