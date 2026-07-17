@@ -36,7 +36,6 @@ from virtual_team.routers import (  # noqa: E402
     runs,
     sessions,
     skills,
-    system_team,
     teams,
     tools,
     versions,
@@ -101,7 +100,7 @@ app.add_middleware(
 # ── Routers ─────────────────────────────────────────────────────────────────
 routers = [auth, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
            teams, tools, skills, prompts, mcps, admin, providers, versions,
-           system_team, workflows]
+           workflows]
 for r in routers:
     app.include_router(r.router)
 
