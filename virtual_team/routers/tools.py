@@ -20,9 +20,6 @@ from virtual_team.repository import (
     update_tool,
 )
 from virtual_team.repository import (
-    get_tools as repo_get_tools,
-)
-from virtual_team.repository import (
     get_tools_as_dicts as repo_get_tools_as_dicts,
 )
 from virtual_team.services.tool_generator import (  # type: ignore[attr-defined]

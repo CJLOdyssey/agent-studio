@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from virtual_team.audit import log_audit
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import create_prompt, delete_prompt, get_prompts, get_prompts_as_dicts, update_prompt
+from virtual_team.repository import create_prompt, delete_prompt, get_prompts_as_dicts, update_prompt
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["prompts"])
