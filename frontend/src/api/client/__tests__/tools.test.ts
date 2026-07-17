@@ -16,9 +16,6 @@ import {
   createTool,
   updateTool,
   deleteTool,
-  checkLlmStatus,
-  generateTool,
-  generateToolWithLlm,
   validateTool,
   executeTool,
 } from '../tools';
@@ -71,49 +68,6 @@ describe('deleteTool', () => {
     await deleteTool('1');
 
     expect(mockApi.delete).toHaveBeenCalledWith('/tools/1');
-  });
-});
-
-describe('checkLlmStatus', () => {
-  it('calls GET /system-team/llm/status', async () => {
-    mockApi.get.mockResolvedValue({ data: { available: true } });
-
-    const result = await checkLlmStatus();
-
-    expect(mockApi.get).toHaveBeenCalledWith('/system-team/llm/status');
-    expect(result).toEqual({ available: true });
-  });
-});
-
-describe('generateTool', () => {
-  it('calls POST /tools/generate with description and language', async () => {
-    const mockData = { id: '1', name: 'gen-tool', description: 'desc', code: 'print("hello")', language: 'python', parameters: {}, is_valid: true, error_message: null, source: 'llm' as const };
-    mockApi.post.mockResolvedValue({ data: mockData });
-
-    const result = await generateTool('create a hello world tool', 'python');
-
-    expect(mockApi.post).toHaveBeenCalledWith('/tools/generate', { description: 'create a hello world tool', language: 'python' });
-    expect(result).toEqual(mockData);
-  });
-
-  it('defaults language to python', async () => {
-    mockApi.post.mockResolvedValue({ data: {} });
-
-    await generateTool('description');
-
-    expect(mockApi.post).toHaveBeenCalledWith('/tools/generate', { description: 'description', language: 'python' });
-  });
-});
-
-describe('generateToolWithLlm', () => {
-  it('calls POST /system-team/tools/generate', async () => {
-    const mockData = { id: '1', name: 'gen-tool', description: 'desc', code: 'print("hello")', language: 'python', parameters: {}, is_valid: true, error_message: null, source: 'llm' as const };
-    mockApi.post.mockResolvedValue({ data: mockData });
-
-    const result = await generateToolWithLlm('create a tool', 'python');
-
-    expect(mockApi.post).toHaveBeenCalledWith('/system-team/tools/generate', { description: 'create a tool', language: 'python' });
-    expect(result).toEqual(mockData);
   });
 });
 
