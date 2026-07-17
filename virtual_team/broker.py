@@ -64,7 +64,6 @@ def get_redis() -> AsyncRedis:
     prefork model (where every asyncio.run() call creates a fresh loop) works
     correctly.
     """
-    import asyncio
 
     loop = asyncio.get_running_loop()
     loop_id = id(loop)
@@ -87,7 +86,6 @@ def get_redis() -> AsyncRedis:
 
 async def close_redis() -> None:
     """Close the Redis connection pool for the current event loop."""
-    import asyncio
 
     loop = asyncio.get_running_loop()
     loop_id = id(loop)

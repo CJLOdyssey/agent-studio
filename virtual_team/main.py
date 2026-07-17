@@ -3,6 +3,7 @@ from typing import Any
 """CLI entry point — runs a single agent via LangGraph."""
 
 import asyncio
+import json
 import sys
 
 from virtual_team.config import load_config
@@ -83,7 +84,6 @@ def main() -> int:
 
     try:
         result = run_cli(requirement)
-        import json
 
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0

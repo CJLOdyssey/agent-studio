@@ -123,7 +123,6 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
     if existing:
         raise error_response(ErrorCode.AGENT_DUPLICATE, detail=f"角色标识 '{req.role_identifier}' 已存在")
     try:
-        import json
 
         created = await create_agent_config(
             name=req.name,
@@ -179,7 +178,6 @@ async def edit_agent(
     req: AgentUpdateRequest,
     current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
 ) -> Any:
-    import json
 
     updated = await update_agent_config(
         id=agent_id,

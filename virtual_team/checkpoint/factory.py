@@ -67,8 +67,7 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
                 "and `aiosqlite` package"
             ) from exc
 
-        conn = await aiosqlite.connect(dsn)
-        return AsyncSqliteSaver(conn)
+        return AsyncSqliteSaver(await aiosqlite.connect(dsn))
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
     return MemorySaver()
