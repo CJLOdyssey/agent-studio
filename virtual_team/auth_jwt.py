@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 """JWT token creation and verification.
 
@@ -60,7 +60,7 @@ def decode_jwt(token: str, secret: str) -> dict[str, Any] | None:
             if exp and int(time.time()) > exp:
                 return None
 
-            return payload  # type: ignore[no-any-return]
+            return cast(dict[str, Any], payload)
 
         # Simplified token: HMAC-SHA256 of user_id:timestamp
         if len(parts) == 1:

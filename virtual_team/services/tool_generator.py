@@ -49,8 +49,8 @@ def _validate_tool_code(code: str, language: str) -> ToolValidateResponse:
 def _execute_tool_sandbox(code: str, language: str) -> str:
     if language == "python":
         try:
-            namespace: list[Any] = {}  # type: ignore[assignment]
-            exec(code, namespace)  # type: ignore[arg-type]
+            namespace: dict[str, Any] = {}
+            exec(code, namespace)
             return "代码语法检查通过"
         except SyntaxError as e:
             raise Exception(f"语法错误: {e}") from e

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 """Checkpointer factory — creates the appropriate backend checkpointer.
 
@@ -42,7 +42,7 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
                 "Postgres checkpointer requires `langgraph-checkpoint-postgres` extra"
             ) from exc
 
-        from psycopg import AsyncConnection  # type: ignore[import-untyped, unused-ignore]
+        from psycopg import AsyncConnection
         from psycopg.rows import dict_row
 
         conn = await AsyncConnection.connect(
@@ -68,8 +68,8 @@ async def _create_checkpointer_async(backend: str, dsn: str | None) -> BaseCheck
                 "and `aiosqlite` package"
             ) from exc
 
-        conn = await aiosqlite.connect(dsn)  # type: ignore[assignment]
-        return AsyncSqliteSaver(conn)  # type: ignore[arg-type]
+        conn = cast(Any, await aiosqlite.connect(dsn))
+        return AsyncSqliteSaver(conn)
 
     logger.info("Creating MemorySaver checkpointer (in-memory, no persistence)")
     return MemorySaver()

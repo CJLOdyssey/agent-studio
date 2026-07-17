@@ -90,7 +90,7 @@ async def get_agent(agent_id: str) -> Any:
     if not c:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
 
-    def _parse_json(val):  # type: ignore
+    def _parse_json(val: Any) -> Any:
         if isinstance(val, str):
             try:
                 return json.loads(val)
@@ -104,9 +104,9 @@ async def get_agent(agent_id: str) -> Any:
         "role_identifier": c.role_identifier,
         "system_prompt": c.system_prompt,
         "output_constraints": c.output_constraints,
-        "tools": _parse_json(c.tools),  # type: ignore[no-untyped-call]
-        "mcp": _parse_json(c.mcp),  # type: ignore[no-untyped-call]
-        "skills": _parse_json(c.skills),  # type: ignore[no-untyped-call]
+        "tools": _parse_json(c.tools),
+        "mcp": _parse_json(c.mcp),
+        "skills": _parse_json(c.skills),
         "model": c.model,
         "temperature": c.temperature,
         "order": c.order,

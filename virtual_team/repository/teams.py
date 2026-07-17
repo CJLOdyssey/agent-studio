@@ -64,7 +64,7 @@ async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:
         ]
 
 
-async def get_team(team_id: str) -> dict | None:  # type: ignore[type-arg]
+async def get_team(team_id: str) -> dict[str, Any] | None:
     """Fetch a single team by ID with its member agents eagerly loaded.
 
     Returns:
@@ -194,7 +194,7 @@ async def add_team_member(
     name: str,
     role: str = "待配置角色",
     agent_config_id: str | None = None,
-) -> dict | None:  # type: ignore[type-arg]
+) -> dict[str, Any] | None:
     """Add a new member agent to a team.
 
     Returns:

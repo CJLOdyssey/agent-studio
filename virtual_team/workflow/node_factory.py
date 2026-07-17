@@ -44,7 +44,7 @@ class NodeFactory:
         self.tools = tools or []
         self.run_id = run_id
 
-    def _build_request(self, api_messages: list[dict[str, Any]]) -> tuple[str, dict, dict]:  # type: ignore[type-arg]
+    def _build_request(self, api_messages: list[dict[str, Any]]) -> tuple[str, dict[str, Any], dict[str, Any]]:
         """Build the HTTP request for the LLM streaming API."""
         raw_key = getattr(self.llm, "openai_api_key", "")
         actual_key = raw_key.get_secret_value() if hasattr(raw_key, "get_secret_value") else str(raw_key)
@@ -63,7 +63,7 @@ class NodeFactory:
             body["thinking"] = {"type": "enabled"}
         return url, headers, body
 
-    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict | Awaitable[dict]]:  # type: ignore[type-arg]
+    def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict[str, Any] | Awaitable[dict[str, Any]]]:
         """Create a callable node function for a workflow node."""
         strategy = get_strategy(node)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")

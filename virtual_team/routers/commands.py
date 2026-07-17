@@ -121,7 +121,7 @@ async def execute_command(req: CommandExecuteRequest) -> Any:
 
 
 async def _dispatch_command(
-    command_id: str, session_id: str, payload: dict  # type: ignore[type-arg]
+    command_id: str, session_id: str, payload: dict[str, Any]
 ) -> CommandExecuteResponse:
     if command_id == "clear":
         return CommandExecuteResponse(

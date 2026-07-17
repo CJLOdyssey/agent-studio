@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.audit import log_audit
 from virtual_team.auth import get_user_id
@@ -72,7 +73,7 @@ async def list_teams(request: Request) -> Any:
         raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
-async def _snapshot_team(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
+async def _snapshot_team(resource_id: str, session: AsyncSession | None = None) -> Any:
     """Create a version snapshot after team save."""
     try:
         from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session

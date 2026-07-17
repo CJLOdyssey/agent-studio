@@ -262,7 +262,7 @@ async def _run_agent_pipeline(
         if not prev_msgs:
             # First run for this session → ingest into RAG
             try:
-                from virtual_team.rag import ingest_session_messages  # type: ignore[attr-defined]
+                from virtual_team.rag_pipeline import ingest_session_messages
 
                 await ingest_session_messages(session_id, run_id, [{"content": requirement}])
             except Exception:

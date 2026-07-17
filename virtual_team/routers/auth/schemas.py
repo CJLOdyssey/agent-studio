@@ -4,6 +4,7 @@ import secrets
 
 from fastapi import Request
 from pydantic import BaseModel, EmailStr
+from redis.asyncio import Redis as AsyncRedis
 
 from virtual_team.auth import AUTH_SECRET, create_token
 from virtual_team.repository.auth import create_refresh_token, get_user_by_id, get_user_roles
@@ -114,14 +115,14 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-async def _check_rate_limit(r, key: str, max_count: int, window: int = 60) -> bool:  # type: ignore[no-untyped-def]
+async def _check_rate_limit(r: AsyncRedis, key: str, max_count: int, window: int = 60) -> bool:
     current = await r.incr(key)
     if current == 1:
         await r.expire(key, window)
-    return current <= max_count  # type: ignore[no-any-return]
+    return bool(current <= max_count)
 
 
-async def _store_code_in_redis(r, key: str, code: str, ttl: int) -> None:  # type: ignore[no-untyped-def]
+async def _store_code_in_redis(r: AsyncRedis, key: str, code: str, ttl: int) -> None:
     await r.set(key, code)
     await r.expire(key, ttl)
 

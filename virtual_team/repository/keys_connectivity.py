@@ -58,7 +58,7 @@ def _test_connection_sync(key_cfg: dict[str, Any]) -> dict[str, Any]:
         return {"success": False, "message": str(e), "models": []}
 
 
-def _parse_models_from_response(resp, provider: str) -> list[str]:  # type: ignore[no-untyped-def]
+def _parse_models_from_response(resp: Any, provider: str) -> list[str]:
     """Extract model IDs from the provider's /models response."""
     try:
         body = json.loads(resp.read().decode())

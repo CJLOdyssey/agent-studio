@@ -13,7 +13,7 @@ class MCPRepository(BaseRepository[MCPServerDB]):
     default_order = desc(MCPServerDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    def to_dict(obj: Any) -> dict[str, Any]:
         """Serialize an MCPServerDB row to a JSON-safe dict."""
         return {
             "id": obj.id,

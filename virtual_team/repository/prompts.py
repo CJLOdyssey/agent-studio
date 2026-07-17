@@ -13,7 +13,7 @@ class PromptRepository(BaseRepository[PromptDB]):
     default_order = desc(PromptDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
+    def to_dict(obj: Any) -> dict[str, Any]:
         """Serialize a PromptDB row to a JSON-safe dict."""
         return {
             "id": obj.id,
