@@ -7,6 +7,8 @@ from sqlalchemy import select
 
 from virtual_team.database import KeyUsageLog, UserApiKey, get_session_factory
 from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
+from typing import Any
+
 
 
 async def create_api_key(
@@ -52,7 +54,7 @@ async def create_api_key(
         return obj
 
 
-async def get_api_keys(user_id: str) -> list[dict]:
+async def get_api_keys(user_id: str) -> list[dict[str, Any]]:
     """List a user's API keys — keys are MASKED, never returned raw.
 
     Falls back to 'anonymous' user's keys when the current user has none,
@@ -102,7 +104,7 @@ async def get_api_keys(user_id: str) -> list[dict]:
         return results
 
 
-async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
+async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:  # type: ignore[type-arg]
     """Fetch a decrypted API key for actual use (not masked).
 
     Args:
@@ -149,7 +151,7 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict | None:
         }
 
 
-async def _resolve_key_row(session, user_id: str):
+async def _resolve_key_row(session, user_id: str) -> Any:  # type: ignore[no-untyped-def]
     stmt = select(UserApiKey).where(
         UserApiKey.user_id == user_id,
         UserApiKey.is_active,
@@ -173,7 +175,7 @@ async def _resolve_key_row(session, user_id: str):
     return result.scalar_one_or_none()
 
 
-async def get_default_api_key(user_id: str) -> dict | None:
+async def get_default_api_key(user_id: str) -> dict | None:  # type: ignore[type-arg]
     """Fetch the user's default API key, with anonymous and system-wide fallbacks.
 
     Falls back chain: user default → anonymous → any active default in system.
@@ -224,7 +226,7 @@ async def update_api_key(
     is_active: bool | None = None,
     is_default: bool | None = None,
     usage_type: str | None = None,
-) -> dict | None:
+) -> dict | None:  # type: ignore[type-arg]
     """Update an API key configuration."""
     factory = get_session_factory()
     async with factory() as session:
@@ -325,7 +327,7 @@ async def log_key_usage(
     duration_ms: int = 0,
     status: str = "success",
     error_message: str | None = None,
-):
+) -> Any:
     """Record an LLM call in the audit log."""
     total = tokens_prompt + tokens_completion
     factory = get_session_factory()
@@ -348,7 +350,7 @@ async def log_key_usage(
         await session.commit()
 
 
-async def get_key_usage_stats(user_id: str | None = None) -> dict:
+async def get_key_usage_stats(user_id: str | None = None) -> dict[str, Any]:
     """Get usage statistics for API keys usage.
 
     If user_id is None or 'anonymous', returns stats across all users.

@@ -7,9 +7,11 @@ from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
 from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
+from typing import Any
 
 
-async def get_teams(user_id: str | None = None) -> list[dict]:
+
+async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:
     """Return all teams with their member agents eagerly loaded.
 
     Args:
@@ -63,7 +65,7 @@ async def get_teams(user_id: str | None = None) -> list[dict]:
         ]
 
 
-async def get_team(team_id: str) -> dict | None:
+async def get_team(team_id: str) -> dict | None:  # type: ignore[type-arg]
     """Fetch a single team by ID with its member agents eagerly loaded.
 
     Returns:
@@ -193,7 +195,7 @@ async def add_team_member(
     name: str,
     role: str = "待配置角色",
     agent_config_id: str | None = None,
-) -> dict | None:
+) -> dict | None:  # type: ignore[type-arg]
     """Add a new member agent to a team.
 
     Returns:

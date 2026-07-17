@@ -9,13 +9,16 @@ Security invariants:
 
 import asyncio
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
 from virtual_team.auth import get_user_id
-from virtual_team.database import log_audit
+from virtual_team.audit import log_audit
+from virtual_team.error_codes import ErrorCode, error_response
+from typing import Any
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import (
+from virtual_team.repository import (  # type: ignore[attr-defined]
+
     create_api_key,
     delete_api_key,
     get_api_keys,
@@ -74,7 +77,7 @@ class KeyResponse(BaseModel):
 
 
 @router.get("/api/keys", response_model=list[KeyResponse])
-async def list_keys(request: Request):
+async def list_keys(request: Request) -> Any:
     """List all API keys for the authenticated user. Keys are MASKED."""
     user_id = get_user_id(request)
     try:
@@ -97,11 +100,11 @@ async def list_keys(request: Request):
         ]
     except Exception as e:
         logger.error("Error listing keys for user %s: %s", user_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.post("/api/keys", status_code=201, response_model=KeyResponse)
-async def add_key(req: KeyCreateRequest, request: Request):
+async def add_key(req: KeyCreateRequest, request: Request) -> Any:
     """Save a new API key. Auto-validates connectivity and fetches available models."""
     user_id = get_user_id(request)
     logger.info(
@@ -174,7 +177,7 @@ async def add_key(req: KeyCreateRequest, request: Request):
 
 
 @router.put("/api/keys/{key_id}", response_model=KeyResponse)
-async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
+async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request) -> Any:
     """Update an API key. Re-validates if api_key or base_url changed."""
     user_id = get_user_id(request)
     result = await update_api_key(
@@ -188,7 +191,7 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
         is_default=req.is_default,
     )
     if not result:
-        raise HTTPException(status_code=404, detail="Key not found or access denied")
+        raise error_response(ErrorCode.KEY_NOT_FOUND, detail="Key not found or access denied")
 
     if req.api_key or req.base_url:
         test_result = await test_api_key_connection(key_id, user_id)
@@ -215,7 +218,7 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request):
 
 
 @router.delete("/api/keys/{key_id}")
-async def remove_key(key_id: str, request: Request):
+async def remove_key(key_id: str, request: Request) -> Any:
     """Delete an API key. Irreversible — the encrypted key is permanently removed."""
     user_id = get_user_id(request)
     # Get label before deletion
@@ -224,14 +227,14 @@ async def remove_key(key_id: str, request: Request):
     key_label = target["label"] if target else key_id
     deleted = await delete_api_key(key_id, user_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Key not found or access denied")
+        raise error_response(ErrorCode.KEY_NOT_FOUND, detail="Key not found or access denied")
     await log_audit("delete", "api_key", key_label, "删除成功")
     logger.info("Key deleted | user=%s | key_id=%s", user_id, key_id)
     return {"status": "deleted", "id": key_id}
 
 
 @router.post("/api/keys/{key_id}/test")
-async def test_key_connection(key_id: str, request: Request):
+async def test_key_connection(key_id: str, request: Request) -> Any:
     """Test connectivity for a stored key. Does NOT expose the plaintext key."""
     user_id = get_user_id(request)
     result = await test_api_key_connection(key_id, user_id)
@@ -241,9 +244,9 @@ async def test_key_connection(key_id: str, request: Request):
 
 
 @router.post("/api/keys/fetch-models")
-async def fetch_models_from_provider(req: FetchModelsRequest):
+async def fetch_models_from_provider(req: FetchModelsRequest) -> Any:
     """Fetch available models from a provider's API without saving a key."""
-    from virtual_team.repository.keys import _test_connection_sync
+    from virtual_team.repository.keys import _test_connection_sync  # type: ignore[attr-defined]
 
     key_cfg = {
         "provider": req.provider,
@@ -258,7 +261,7 @@ async def fetch_models_from_provider(req: FetchModelsRequest):
 
 
 @router.get("/api/keys/usage")
-async def key_usage(request: Request):
+async def key_usage(request: Request) -> Any:
     """Get token usage statistics for the authenticated user."""
     user_id = get_user_id(request)
     try:
@@ -266,4 +269,4 @@ async def key_usage(request: Request):
         return stats
     except Exception as e:
         logger.error("Error fetching usage for user %s: %s", user_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e

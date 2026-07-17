@@ -2,10 +2,13 @@
 
 import time
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
+from typing import Any
+
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents_test"])
@@ -18,20 +21,20 @@ class AgentTestResult(BaseModel):
 
 
 @router.post("/api/agents/{agent_id}/test")
-async def test_agent(agent_id: str):
+async def test_agent(agent_id: str) -> Any:
     """Test an agent config by running a single LLM call with its settings."""
     from virtual_team.repository.agents import get_agent_config
 
     agent = await get_agent_config(agent_id)
     if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="Agent not found")
 
     start = time.monotonic()
     try:
         import httpx
 
         from virtual_team.config import load_config
-        from virtual_team.repository.keys import get_default_api_key
+        from virtual_team.repository.keys import get_default_api_key  # type: ignore[attr-defined]
 
         cfg = load_config()
         effective_model = agent.model or cfg.model

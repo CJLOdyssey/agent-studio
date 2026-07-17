@@ -11,8 +11,10 @@ import asyncio
 
 from virtual_team.broker import buffer_run_messages
 from virtual_team.config import load_config
+from typing import Any
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import (
+from virtual_team.repository import (  # type: ignore[attr-defined]
+
     create_session,
     get_api_key_for_use,
     get_default_api_key,
@@ -52,7 +54,7 @@ class RunService:
         agent_id: str | None = None,
         team_id: str | None = None,
         model: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Create a run, resolve credentials, subscribe to buffer, dispatch pipeline.
 
         Returns a dict with ``run_id``, ``session_id``, ``status``.
@@ -170,7 +172,7 @@ class RunService:
         session_id: str | None,
         user_id: str,
         thinking: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Create a continuation run ("继续生成") — streams raw LLM output.
 
         Unlike ``create_run``, this bypasses the LangGraph pipeline and
@@ -210,7 +212,7 @@ class RunService:
         await buffer_run_messages(run_id)
 
         # ── Dispatch background pipeline ────────────────────────────
-        async def _run_pipeline():
+        async def _run_pipeline() -> Any:
             try:
                 from virtual_team.tasks import _complete_pipeline
 
@@ -230,7 +232,7 @@ class RunService:
 
         return {"run_id": run_id, "status": "running", "session_id": session_id}
 
-    async def get_run(self, run_id: str) -> dict | None:
+    async def get_run(self, run_id: str) -> dict | None:  # type: ignore[type-arg]
         """Fetch a single run by id."""
         run = await get_run(run_id)
         if run is None:
@@ -261,7 +263,7 @@ class RunService:
             ],
         }
 
-    async def list_runs(self, limit: int = 20) -> list[dict]:
+    async def list_runs(self, limit: int = 20) -> list[dict[str, Any]]:
         """List recent runs."""
         runs = await get_runs(limit=min(limit, 100))
         return [

@@ -3,16 +3,24 @@
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from virtual_team.database import AttachmentDB as Attachment
-from virtual_team.database import get_session_factory
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.models import AttachmentResponse
 from virtual_team.repository import get_session
+from virtual_team.repository.attachments import (
+    create_attachment,
+    get_attachment_by_id,
+    list_attachments_by_session,
+)
+from virtual_team.repository.attachments import (
+    delete_attachment as repo_delete_attachment,
+)
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["attachments"])
@@ -37,9 +45,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 def _validate_upload(content_type: str, size: int) -> None:
     if size > MAX_FILE_SIZE_MB * 1024 * 1024:
-        raise HTTPException(status_code=413, detail=f"文件超过 {MAX_FILE_SIZE_MB}MB 限制")
+        raise error_response(ErrorCode.ATTACHMENT_TOO_LARGE, detail=f"文件超过 {MAX_FILE_SIZE_MB}MB 限制")
     if content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(status_code=415, detail=f"不支持的文件类型: {content_type}")
+        raise error_response(ErrorCode.ATTACHMENT_TYPE_INVALID, detail=f"不支持的文件类型: {content_type}")
 
 
 async def _extract_text(file_path: Path, content_type: str) -> str:
@@ -60,10 +68,10 @@ async def upload_attachment(
     file: UploadFile = File(...),  # noqa: B008
     session_id: str = Form(...),
     run_id: str | None = Form(None),
-):
+) -> Any:
     sess = await get_session(session_id)
     if sess is None:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="会话不存在")
 
     content_type = file.content_type or "application/octet-stream"
     content = await file.read()
@@ -78,12 +86,12 @@ async def upload_attachment(
         storage_path.write_bytes(content)
     except Exception as e:
         logger.error("Failed to save attachment: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="文件保存失败") from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail="文件保存失败") from e
 
     extracted = await _extract_text(storage_path, content_type)
 
-    db_attachment = Attachment(
-        id=attachment_id,
+    await create_attachment(
+        attachment_id=attachment_id,
         session_id=session_id,
         run_id=run_id,
         filename=file.filename or "unnamed",
@@ -92,11 +100,6 @@ async def upload_attachment(
         storage_path=str(storage_path),
         extracted_text=extracted,
     )
-
-    factory = get_session_factory()
-    async with factory() as db:
-        db.add(db_attachment)
-        await db.commit()
 
     logger.info(
         "Attachment uploaded | id=%s | session=%s | size=%d",
@@ -118,37 +121,26 @@ async def upload_attachment(
 
 
 @router.get("/api/attachments/{attachment_id}")
-async def get_attachment(attachment_id: str):
-    factory = get_session_factory()
-    async with factory() as db:
-        att = await db.get(Attachment, attachment_id)
-        if att is None:
-            raise HTTPException(status_code=404, detail="附件不存在")
-        if not Path(att.storage_path).exists():
-            raise HTTPException(status_code=410, detail="文件已丢失")
-        return FileResponse(
-            att.storage_path,
-            media_type=att.content_type,
-            filename=att.filename,
-        )
+async def get_attachment(attachment_id: str) -> Any:
+    att = await get_attachment_by_id(attachment_id)
+    if att is None:
+        raise error_response(ErrorCode.ATTACHMENT_NOT_FOUND, detail="附件不存在")
+    if not Path(att.storage_path).exists():
+        raise error_response(ErrorCode.ATTACHMENT_FILE_MISSING, detail="文件已丢失")
+    return FileResponse(
+        att.storage_path,
+        media_type=att.content_type,
+        filename=att.filename,
+    )
 
 
 @router.get("/api/sessions/{session_id}/attachments", response_model=list[AttachmentResponse])
-async def list_session_attachments(session_id: str):
+async def list_session_attachments(session_id: str) -> Any:
     sess = await get_session(session_id)
     if sess is None:
-        raise HTTPException(status_code=404, detail="会话不存在")
+        raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="会话不存在")
 
-    factory = get_session_factory()
-    async with factory() as db:
-        from sqlalchemy import select
-
-        result = await db.execute(
-            select(Attachment)
-            .where(Attachment.session_id == session_id)
-            .order_by(Attachment.created_at.desc())
-        )
-        attachments = result.scalars().all()
+    attachments = await list_attachments_by_session(session_id)
 
     return [
         AttachmentResponse(
@@ -166,19 +158,15 @@ async def list_session_attachments(session_id: str):
 
 
 @router.delete("/api/attachments/{attachment_id}")
-async def delete_attachment(attachment_id: str):
-    factory = get_session_factory()
-    async with factory() as db:
-        att = await db.get(Attachment, attachment_id)
-        if att is None:
-            raise HTTPException(status_code=404, detail="附件不存在")
-        storage_path = Path(att.storage_path)
-        await db.delete(att)
-        await db.commit()
+async def delete_attachment(attachment_id: str) -> Any:
+    storage_path_str = await repo_delete_attachment(attachment_id)
+    if storage_path_str is None:
+        raise error_response(ErrorCode.ATTACHMENT_NOT_FOUND, detail="附件不存在")
 
     try:
-        if storage_path.exists():
-            storage_path.unlink()
+        storage_path_disk = Path(storage_path_str)
+        if storage_path_disk.exists():
+            storage_path_disk.unlink()
     except Exception as e:
         logger.warning("Failed to delete file from disk: %s", e)
 

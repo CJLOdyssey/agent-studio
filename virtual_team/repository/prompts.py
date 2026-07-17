@@ -4,14 +4,16 @@ from sqlalchemy import desc
 
 from virtual_team.database import PromptDB
 from virtual_team.repository.base import BaseRepository
+from typing import Any
 
 
-class PromptRepository(BaseRepository):
+
+class PromptRepository(BaseRepository[PromptDB]):
     model = PromptDB
     default_order = desc(PromptDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict:
+    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """Serialize a PromptDB row to a JSON-safe dict."""
         return {
             "id": obj.id,

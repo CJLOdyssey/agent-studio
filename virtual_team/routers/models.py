@@ -10,7 +10,9 @@ from pydantic import BaseModel
 
 from virtual_team.auth import get_user_id
 from virtual_team.logging_config import get_logger
-from virtual_team.repository import get_api_keys
+from virtual_team.repository import get_api_keys  # type: ignore[attr-defined]
+from typing import Any
+
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["models"])
@@ -55,7 +57,7 @@ async def _get_models_from_keys(user_id: str) -> list[ModelInfo]:
 
 
 @router.get("/api/models", response_model=list[ModelInfo])
-async def list_models(request: Request):
+async def list_models(request: Request) -> Any:
     """Return available models from the user's active API keys."""
     user_id = get_user_id(request)
     return await _get_models_from_keys(user_id)

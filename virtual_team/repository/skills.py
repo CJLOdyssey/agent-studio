@@ -4,14 +4,16 @@ from sqlalchemy import desc
 
 from virtual_team.database import RegisteredSkillDB
 from virtual_team.repository.base import BaseRepository
+from typing import Any
 
 
-class SkillRepository(BaseRepository):
+
+class SkillRepository(BaseRepository[RegisteredSkillDB]):
     model = RegisteredSkillDB
     default_order = desc(RegisteredSkillDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict:
+    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """Serialize a RegisteredSkillDB row to a JSON-safe dict."""
         return {
             "id": obj.id,

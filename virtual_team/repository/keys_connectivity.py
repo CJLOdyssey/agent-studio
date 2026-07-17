@@ -4,9 +4,11 @@ import asyncio
 import json
 
 from virtual_team.repository.keys_crud import get_api_key_for_use
+from typing import Any
 
 
-async def test_api_key_connection(key_id: str, user_id: str) -> dict:
+
+async def test_api_key_connection(key_id: str, user_id: str) -> dict[str, Any]:
     """Test connectivity for a stored key. Does NOT return the key itself.
 
     Runs the blocking HTTP call in a thread pool to avoid blocking the event loop.
@@ -18,7 +20,7 @@ async def test_api_key_connection(key_id: str, user_id: str) -> dict:
     return await asyncio.to_thread(_test_connection_sync, key_cfg)
 
 
-def _test_connection_sync(key_cfg: dict) -> dict:
+def _test_connection_sync(key_cfg: dict[str, Any]) -> dict[str, Any]:
     """Test API key connectivity synchronously via HTTP in a thread pool."""
     import urllib.request
 
@@ -57,7 +59,7 @@ def _test_connection_sync(key_cfg: dict) -> dict:
         return {"success": False, "message": str(e), "models": []}
 
 
-def _parse_models_from_response(resp, provider: str) -> list[str]:
+def _parse_models_from_response(resp, provider: str) -> list[str]:  # type: ignore[no-untyped-def]
     """Extract model IDs from the provider's /models response."""
     try:
         body = json.loads(resp.read().decode())

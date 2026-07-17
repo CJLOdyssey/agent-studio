@@ -6,6 +6,8 @@ from uuid import uuid4
 from sqlalchemy import desc, select
 
 from virtual_team.database import ProjectRun, SessionDB, get_session_factory
+from typing import Any
+
 
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:
@@ -66,7 +68,7 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
     return run_id
 
 
-async def update_run_status(run_id: str, status: str):
+async def update_run_status(run_id: str, status: str) -> Any:
     """Update the status field of a project run."""
     factory = get_session_factory()
     async with factory() as session:
@@ -84,7 +86,7 @@ async def update_run_result(
     review: str,
     approved: bool,
     status: str,
-):
+) -> Any:
     """Persist the full result payload of a completed run."""
     factory = get_session_factory()
     async with factory() as session:

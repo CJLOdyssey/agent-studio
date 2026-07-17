@@ -1,12 +1,20 @@
 """User profile endpoints: config, me, merge guest data."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import or_, update
+from typing import Any
+
+from fastapi import APIRouter, Depends, Request
 
 from virtual_team.auth import CurrentUser, get_current_user
-from virtual_team.database import KeyUsageLog, SessionDB, UserApiKey, get_session_factory
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from virtual_team.repository.auth import get_user_by_email, get_user_by_id, get_user_roles
+from virtual_team.repository.auth import (
+    get_user_by_email,
+    get_user_by_id,
+    get_user_roles,
+)
+from virtual_team.repository.auth import (
+    merge_guest_data as _merge_guest_data,
+)
 
 from .schemas import AuthConfigResponse, MergeRequest, UserResponse
 
@@ -16,19 +24,19 @@ router = APIRouter(tags=["auth"])
 
 
 @router.get("/config", response_model=AuthConfigResponse)
-async def auth_config():
+async def auth_config() -> Any:
     from virtual_team.auth import AUTH_ENABLED, AUTH_MODE
 
     return AuthConfigResponse(enabled=AUTH_ENABLED, mode=AUTH_MODE)
 
 
 @router.get("/me", response_model=UserResponse)
-async def me(current_user: CurrentUser = Depends(get_current_user)):
+async def me(current_user: CurrentUser = Depends(get_current_user)) -> Any:
     user = await get_user_by_email(current_user.email)
     if user is None:
         user = await get_user_by_id(current_user.id)
     if user is None:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        raise error_response(ErrorCode.AUTH_USER_NOT_FOUND, detail="用户不存在")
     roles = await get_user_roles(user.id)
     return UserResponse(
         id=user.id,
@@ -44,7 +52,7 @@ async def merge_guest_data(
     body: MergeRequest,
     request: Request,
     current_user: CurrentUser = Depends(get_current_user),
-):
+) -> Any:
     """Merge ALL anonymous guest data into the authenticated user's account.
 
     Strategy: scan every row in the affected tables whose ``user_id``
@@ -60,30 +68,7 @@ async def merge_guest_data(
     explicit_ids.discard(current_user.id)
     explicit_ids.discard("")
 
-    factory = get_session_factory()
-    async with factory() as session:
-        for table in (SessionDB, UserApiKey, KeyUsageLog):
-            conditions = []
-            # For UserApiKey, skip "anonymous" — it's a shared fallback for guests
-            if explicit_ids:
-                ids_for_table = (
-                    [aid for aid in explicit_ids if aid != "anonymous"]
-                    if table is UserApiKey
-                    else explicit_ids
-                )
-                if ids_for_table:
-                    conditions.extend(table.user_id == aid for aid in ids_for_table)
-            conditions.append(table.user_id.startswith("u_"))
-
-            await session.execute(
-                update(table)
-                .where(
-                    or_(*conditions),
-                    table.user_id != current_user.id,
-                )
-                .values(user_id=current_user.id)
-            )
-        await session.commit()
+    await _merge_guest_data(explicit_ids, current_user.id)
 
     logger.info(
         "Guest data merged: explicit=%s u_prefix=yes → user=%s",

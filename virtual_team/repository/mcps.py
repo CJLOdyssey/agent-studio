@@ -4,14 +4,16 @@ from sqlalchemy import desc
 
 from virtual_team.database import MCPServerDB
 from virtual_team.repository.base import BaseRepository
+from typing import Any
 
 
-class MCPRepository(BaseRepository):
+
+class MCPRepository(BaseRepository[MCPServerDB]):
     model = MCPServerDB
     default_order = desc(MCPServerDB.updated_at)
 
     @staticmethod
-    def to_dict(obj) -> dict:
+    def to_dict(obj) -> dict[str, Any]:  # type: ignore[no-untyped-def]
         """Serialize an MCPServerDB row to a JSON-safe dict."""
         return {
             "id": obj.id,

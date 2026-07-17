@@ -1,8 +1,11 @@
 """Workflow CRUD API endpoints."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
+from typing import Any
+
+from virtual_team.error_codes import ErrorCode, error_response
 
 from virtual_team.repository.workflows import (
     delete_workflow_config,
@@ -11,6 +14,7 @@ from virtual_team.repository.workflows import (
     save_workflow_config,
 )
 from virtual_team.workflow.models import (
+
     NodeStrategy,
     WorkflowConfig,
     WorkflowEdge,
@@ -91,7 +95,7 @@ def _to_schema(config: WorkflowConfig) -> WorkflowConfigSchema:
 
 
 @router.post("", response_model=WorkflowConfigSchema, status_code=201)
-async def create_workflow(req: WorkflowSaveRequest):
+async def create_workflow(req: WorkflowSaveRequest) -> Any:
     config = WorkflowConfig(
         id=req.id,
         team_id=req.team_id,
@@ -124,22 +128,22 @@ async def create_workflow(req: WorkflowSaveRequest):
 
 
 @router.get("/teams/{team_id}", response_model=WorkflowConfigSchema | None)
-async def get_team_workflow(team_id: str):
+async def get_team_workflow(team_id: str) -> Any:
     config = await get_workflow_config_by_team(team_id)
     if config is None:
-        raise HTTPException(status_code=404, detail="Workflow not found for this team")
+        raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found for this team")
     return _to_schema(config)
 
 
 @router.get("", response_model=list[WorkflowConfigSchema])
-async def list_workflows():
+async def list_workflows() -> Any:
     configs = await list_workflow_configs()
     return [_to_schema(c) for c in configs]
 
 
 @router.delete("/{config_id}")
-async def delete_workflow(config_id: str):
+async def delete_workflow(config_id: str) -> Any:
     deleted = await delete_workflow_config(config_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Workflow not found")
+        raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found")
     return {"status": "deleted"}

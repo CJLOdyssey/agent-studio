@@ -3,9 +3,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from virtual_team.database import log_audit
+from virtual_team.audit import log_audit
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_prompt, delete_prompt, get_prompts, update_prompt
+from typing import Any
+
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["prompts"])
@@ -27,49 +30,42 @@ class PromptUpdate(BaseModel):
 
 
 @router.get("/api/prompts")
-async def list_prompts(category: str | None = None):
+async def list_prompts(category: str | None = None) -> Any:
     try:
         prompts = await get_prompts()
         if category:
-            prompts = [p for p in prompts if p.get("category") == category]
+            prompts = [p for p in prompts if p.category == category]
         return prompts
     except Exception as e:
         logger.error("Error listing prompts: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
-async def _snapshot_prompt(resource_id: str, session=None):
+async def _snapshot_prompt(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
     """Create a version snapshot after prompt save."""
     try:
-        if session is None:
-            from virtual_team.database import get_session_factory
-            factory = get_session_factory()
-            async with factory() as s:
-                await _do_snapshot_prompt(resource_id, s)
-                await s.commit()
-        else:
-            await _do_snapshot_prompt(resource_id, session)
+        from virtual_team.repository.versions import create_version as _cv
+        from virtual_team.repository.snapshot_helper import with_session, build_table_snapshot
+
+        async def _save(s, rt, rid, **kw):
+            from virtual_team.repository.prompts import get_prompt
+            item = await get_prompt(rid)
+            if not item:
+                return
+            snapshot = build_table_snapshot(item)
+            await _cv(s, rt, rid, snapshot, "system")
+
+        await with_session(
+            _save,
+            resource_type="prompt",
+            resource_id=resource_id,
+            session=session,
+        )
     except Exception:
         logger.warning("Version snapshot failed for prompt %s", resource_id, exc_info=True)
 
-
-async def _do_snapshot_prompt(resource_id: str, session):
-    from virtual_team.repository.prompts import get_prompt
-    from virtual_team.repository.versions import create_version as _cv
-    item = await get_prompt(resource_id)
-    if not item:
-        return
-    snapshot = {k: getattr(item, k, None) for k in item.__table__.columns if not k.startswith('_')}
-    if "id" in snapshot:
-        del snapshot["id"]
-    if "created_at" in snapshot:
-        snapshot["created_at"] = str(snapshot["created_at"])
-    if "updated_at" in snapshot:
-        snapshot["updated_at"] = str(snapshot["updated_at"])
-    await _cv(session, "prompt", resource_id, snapshot, "system")
-
 @router.post("/api/prompts", status_code=201)
-async def add_prompt(req: PromptCreate):
+async def add_prompt(req: PromptCreate) -> Any:
     try:
         p = await create_prompt(req.model_dump())
         await log_audit("create", "prompt", p.name, "创建成功")
@@ -85,15 +81,15 @@ async def add_prompt(req: PromptCreate):
         }
     except Exception as e:
         logger.error("Error creating prompt: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.put("/api/prompts/{prompt_id}")
-async def edit_prompt(prompt_id: str, req: PromptUpdate):
+async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
     try:
         p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
         if not p:
-            raise HTTPException(status_code=404, detail="Prompt not found")
+            raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
         await log_audit("update", "prompt", p.name, "更新成功")
         return {
             "id": p.id,
@@ -106,22 +102,22 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate):
         raise
     except Exception as e:
         logger.error("Error updating prompt: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
-async def remove_prompt(prompt_id: str):
+async def remove_prompt(prompt_id: str) -> Any:
     try:
         from virtual_team.repository import get_prompts
         prompts = await get_prompts()
-        target = next((p for p in prompts if p["id"] == prompt_id), None)
-        prompt_name = target["name"] if target else prompt_id
+        target = next((p for p in prompts if p.id == prompt_id), None)
+        prompt_name = target.name if target else prompt_id
         ok = await delete_prompt(prompt_id)
         if not ok:
-            raise HTTPException(status_code=404, detail="Prompt not found")
+            raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
         await log_audit("delete", "prompt", prompt_name, "删除成功")
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error deleting prompt: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e

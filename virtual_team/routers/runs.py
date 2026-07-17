@@ -10,10 +10,13 @@ from pydantic.alias_generators import to_camel
 from virtual_team.auth import get_user_id
 from virtual_team.broker import drain_buffer, stop_buffer, subscribe_run
 from virtual_team.config import load_config
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary
 from virtual_team.repository import get_messages, get_run
 from virtual_team.services.run_service import run_service
+from typing import Any
+
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])
@@ -40,15 +43,15 @@ class RunResponse(BaseModel):
 
 
 @router.post("/api/runs", response_model=RunResponse)
-async def create_run(req: RunRequest, request: Request):
+async def create_run(req: RunRequest, request: Request) -> Any:
     requirement = req.requirement.strip()
     config = load_config()
     if len(requirement) > config.max_requirement_length:
-        raise HTTPException(
-            status_code=400, detail=f"需求不能超过 {config.max_requirement_length} 字"
+        raise error_response(
+            ErrorCode.INVALID_REQUEST, detail=f"需求不能超过 {config.max_requirement_length} 字"
         )
     if not requirement:
-        raise HTTPException(status_code=400, detail="需求不能为空")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="需求不能为空")
 
     user_id = get_user_id(request)
     try:
@@ -63,39 +66,39 @@ async def create_run(req: RunRequest, request: Request):
         )
         return RunResponse(**result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        raise error_response(ErrorCode.INVALID_REQUEST, detail=str(e)) from e
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Failed to create run: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"执行失败: {e}") from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=f"执行失败: {e}") from e
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
-async def get_run_detail(run_id: str):
+async def get_run_detail(run_id: str) -> Any:
     try:
         result = await run_service.get_run(run_id)
         if result is None:
-            raise HTTPException(status_code=404, detail="未找到该次讨论")
+            raise error_response(ErrorCode.RUN_NOT_FOUND, detail="未找到该次讨论")
         return result
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error fetching run %s: %s", run_id, e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.get("/api/runs", response_model=list[RunSummary])
-async def list_runs(limit: int = 20):
+async def list_runs(limit: int = 20) -> Any:
     try:
         return await run_service.list_runs(limit=limit)
     except Exception as e:
         logger.error("Error listing runs: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
 
 
 @router.websocket("/ws/runs/{run_id}")
-async def run_websocket(websocket: WebSocket, run_id: str):
+async def run_websocket(websocket: WebSocket, run_id: str) -> Any:
     client_host = websocket.client.host if websocket.client else "?"
     await websocket.accept()
     logger.info(

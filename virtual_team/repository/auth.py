@@ -5,11 +5,14 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import or_, select, update
 
 from virtual_team.database import (
+    KeyUsageLog,
     RefreshTokenDB,
     RoleDB,
+    SessionDB,
+    UserApiKey,
     UserDB,
     UserRoleDB,
     get_session_factory,
@@ -261,4 +264,44 @@ async def revoke_token_family(family_id: str) -> None:
         now = datetime.now(UTC)
         for row in result.scalars().all():
             row.revoked_at = now
+        await session.commit()
+
+
+async def merge_guest_data(guest_ids: set[str], real_user_id: str) -> None:
+    """Reassign all guest data rows to the authenticated user.
+
+    For each table (SessionDB, UserApiKey, KeyUsageLog), updates rows where
+    ``user_id`` matches any ``guest_id`` or starts with ``u_`` (client-generated
+    anonymous prefix), setting ``user_id = real_user_id``.
+
+    Args:
+        guest_ids: Set of candidate guest identifiers (already filtered to exclude
+                   the real user's ID and empty strings).
+        real_user_id: The authenticated user's ID to reassign data to.
+    """
+    factory = get_session_factory()
+    async with factory() as session:
+        for table in (SessionDB, UserApiKey, KeyUsageLog):
+            conditions: list = []
+
+            if guest_ids:
+                # For UserApiKey, skip "anonymous" — it's a shared fallback
+                ids_for_table = (
+                    [aid for aid in guest_ids if aid != "anonymous"]
+                    if table is UserApiKey
+                    else list(guest_ids)
+                )
+                if ids_for_table:
+                    conditions.extend(table.user_id == aid for aid in ids_for_table)
+
+            conditions.append(table.user_id.startswith("u_"))
+
+            await session.execute(
+                update(table)
+                .where(
+                    or_(*conditions),
+                    table.user_id != real_user_id,
+                )
+                .values(user_id=real_user_id)
+            )
         await session.commit()

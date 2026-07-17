@@ -80,7 +80,7 @@ def _startup_report() -> list[str]:
 
 
 async def _do_init_db() -> None:
-    await init_db()  # type: ignore[no-untyped-call]
+    await init_db()  
     await seed_default_tools()
     from sqlalchemy import text
 

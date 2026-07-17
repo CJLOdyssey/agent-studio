@@ -4,13 +4,16 @@ No dependency on any business entity type (avoids Stamp Coupling).
 Resource type and ID are passed as simple strings.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.auth import get_user_id
-from virtual_team.database import get_session
+from virtual_team.error_codes import ErrorCode, error_response
+from typing import Any
+from virtual_team.repository.deps import get_session
 from virtual_team.repository.versions import (
+
     create_version,
     get_version,
     list_versions,
@@ -22,7 +25,7 @@ router = APIRouter(tags=["versions"])
 class CreateVersionRequest(BaseModel):
     resource_type: str
     resource_id: str
-    snapshot: dict
+    snapshot: dict[str, Any]
 
 
 @router.get("/api/versions/{resource_type}/{resource_id}")
@@ -32,7 +35,7 @@ async def api_list_versions(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_session),
-):
+) -> Any:
     """List version history for a resource."""
     return await list_versions(session, resource_type, resource_id, limit, offset)
 
@@ -41,11 +44,11 @@ async def api_list_versions(
 async def api_get_version(
     version_id: str,
     session: AsyncSession = Depends(get_session),
-):
+) -> Any:
     """Get a single version by ID."""
     v = await get_version(session, version_id)
     if not v:
-        raise HTTPException(status_code=404, detail="Version not found")
+        raise error_response(ErrorCode.VERSION_NOT_FOUND, detail="Version not found")
     return v
 
 
@@ -54,7 +57,7 @@ async def api_create_version(
     req: CreateVersionRequest,
     request: Request,
     session: AsyncSession = Depends(get_session),
-):
+) -> Any:
     """Create a version snapshot for any resource type."""
     user_id = get_user_id(request)
     return await create_version(

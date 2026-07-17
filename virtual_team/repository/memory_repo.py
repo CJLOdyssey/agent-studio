@@ -6,6 +6,8 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from virtual_team.database import MemoryEntry, get_session_factory
+from typing import Any
+
 
 
 async def get_session_memories(session_id: str) -> list[MemoryEntry]:
@@ -61,7 +63,7 @@ async def create_memory_entry(
         return obj
 
 
-async def clear_session_memories(session_id: str):
+async def clear_session_memories(session_id: str) -> Any:
     """Delete all memory entries belonging to a session."""
     factory = get_session_factory()
     async with factory() as session:

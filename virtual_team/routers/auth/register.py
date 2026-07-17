@@ -1,10 +1,12 @@
 """Registration, email verification, and resend endpoints."""
 
 import bcrypt
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
+from typing import Any
 
 from virtual_team.broker import get_redis
 from virtual_team.email_service import build_verification_email, send_email
+from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.password_policy import validate_password
 from virtual_team.repository.auth import create_user, get_user_by_email, mark_user_verified
@@ -34,18 +36,18 @@ def _verify_key(email: str) -> str:
 
 
 @router.post("/send-register-code", status_code=200, response_model=EmailHintResponse)
-async def send_register_code(body: SendRegisterCodeRequest, request: Request):
+async def send_register_code(body: SendRegisterCodeRequest, request: Request) -> Any:
     email = body.email.lower().strip()
     r = get_redis()
 
     ip = _client_ip(request)
     rate_key = f"auth:send-register-code:ip:{ip}"
     if not await _check_rate_limit(r, rate_key, 3, 60):
-        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后重试")
+        raise error_response(ErrorCode.RATE_LIMITED, detail="操作过于频繁，请稍后重试")
 
     existing = await get_user_by_email(email)
     if existing:
-        raise HTTPException(status_code=409, detail="该邮箱已注册")
+        raise error_response(ErrorCode.AUTH_EMAIL_EXISTS, detail="该邮箱已注册")
 
     code = _generate_code()
     verify_key = _verify_key(email)
@@ -63,7 +65,7 @@ async def send_register_code(body: SendRegisterCodeRequest, request: Request):
 
 
 @router.post("/register", status_code=201, response_model=AuthResponse)
-async def register(body: RegisterRequest, request: Request):
+async def register(body: RegisterRequest, request: Request) -> Any:
     email = body.email.lower().strip()
     code = body.code.strip()
     password = body.password
@@ -72,11 +74,11 @@ async def register(body: RegisterRequest, request: Request):
     ip = _client_ip(request)
     rate_key = f"auth:register:ip:{ip}"
     if not await _check_rate_limit(r, rate_key, 3, 60):
-        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后重试")
+        raise error_response(ErrorCode.RATE_LIMITED, detail="操作过于频繁，请稍后重试")
 
     stored = await r.get(_verify_key(email))
     if stored is None:
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取验证码")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取验证码")
 
     attempts_key = f"auth:register:attempts:{email}"
     attempts = await r.incr(attempts_key)
@@ -84,19 +86,19 @@ async def register(body: RegisterRequest, request: Request):
         await r.expire(attempts_key, 300)
     if attempts > 3:
         await r.delete(_verify_key(email))
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取验证码")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取验证码")
 
     stored_code = stored.decode() if isinstance(stored, bytes) else stored
     if stored_code != code:
-        raise HTTPException(status_code=400, detail="验证码错误")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码错误")
 
     pwd_error = validate_password(password)
     if pwd_error:
-        raise HTTPException(status_code=400, detail=pwd_error)
+        raise error_response(ErrorCode.INVALID_REQUEST, detail=pwd_error)
 
     existing = await get_user_by_email(email)
     if existing:
-        raise HTTPException(status_code=409, detail="该邮箱已注册")
+        raise error_response(ErrorCode.AUTH_EMAIL_EXISTS, detail="该邮箱已注册")
 
     password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()
     user = await create_user(email=email, password_hash=password_hash, is_verified=True)
@@ -109,7 +111,7 @@ async def register(body: RegisterRequest, request: Request):
 
 
 @router.post("/verify", response_model=AuthResponse)
-async def verify(body: VerifyRequest, request: Request):
+async def verify(body: VerifyRequest, request: Request) -> Any:
     email = body.email.lower().strip()
     code = body.code.strip()
     r = get_redis()
@@ -117,11 +119,11 @@ async def verify(body: VerifyRequest, request: Request):
     ip = _client_ip(request)
     rate_key = f"auth:verify:ip:{ip}"
     if not await _check_rate_limit(r, rate_key, 5, 60):
-        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后重试")
+        raise error_response(ErrorCode.RATE_LIMITED, detail="操作过于频繁，请稍后重试")
 
     stored = await r.get(_verify_key(email))
     if stored is None:
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     attempts_key = f"auth:verify:attempts:{email}"
     attempts = await r.incr(attempts_key)
@@ -129,20 +131,20 @@ async def verify(body: VerifyRequest, request: Request):
         await r.expire(attempts_key, 300)
     if attempts > 3:
         await r.delete(_verify_key(email))
-        raise HTTPException(status_code=400, detail="验证码已过期，请重新获取")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     stored_code = stored.decode() if isinstance(stored, bytes) else stored
     if stored_code != code:
-        raise HTTPException(status_code=400, detail="验证码错误")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码错误")
 
     await r.delete(_verify_key(email))
     await r.delete(attempts_key)
 
     user = await get_user_by_email(email)
     if user is None:
-        raise HTTPException(status_code=400, detail="用户不存在")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="用户不存在")
     if user.is_verified:
-        raise HTTPException(status_code=400, detail="该邮箱已验证，请直接登录")
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="该邮箱已验证，请直接登录")
 
     await mark_user_verified(user.id)
     logger.info("Email verified: %s", _mask_email(email))
@@ -151,14 +153,14 @@ async def verify(body: VerifyRequest, request: Request):
 
 
 @router.post("/resend-verification", response_model=MessageResponse)
-async def resend_verification(body: SendRegisterCodeRequest):
+async def resend_verification(body: SendRegisterCodeRequest) -> Any:
     email = body.email.lower().strip()
     r = get_redis()
 
     rate_key = f"auth:resend:{email}"
     if not await _check_rate_limit(r, rate_key, 1, 60):
-        raise HTTPException(
-            status_code=429,
+        raise error_response(
+            ErrorCode.RATE_LIMITED,
             detail="请 60 秒后再试",
         )
 
