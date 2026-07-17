@@ -97,5 +97,5 @@ async def refresh(body: RefreshRequest) -> Any:
 
 
 @router.post("/logout", status_code=204)
-async def logout(body: LogoutRequest, _user: CurrentUser = Depends(get_current_user)) -> Any:
+async def logout(body: LogoutRequest, _user: CurrentUser = Depends(get_current_user)):
     await consume_refresh_token(body.refresh_token)

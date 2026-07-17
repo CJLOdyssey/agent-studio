@@ -214,7 +214,7 @@ async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
 
 
 @router.delete("/api/tools/{tool_id}", status_code=204)
-async def remove_tool(tool_id: str) -> Any:
+async def remove_tool(tool_id: str):
     try:
         t = await get_tool(tool_id)
         tool_name = t.name if t else tool_id

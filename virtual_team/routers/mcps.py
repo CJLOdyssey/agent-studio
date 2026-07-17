@@ -119,7 +119,7 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
 
 
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
-async def remove_mcp(mcp_id: str) -> Any:
+async def remove_mcp(mcp_id: str):
     try:
         mcps = await get_mcps()
         target = next((m for m in mcps if m.id == mcp_id), None)

@@ -138,7 +138,7 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
 
 
 @router.delete("/api/skills/{skill_id}", status_code=204)
-async def remove_skill(skill_id: str) -> Any:
+async def remove_skill(skill_id: str):
     try:
         from virtual_team.repository.skills import get_skills as _gskills
         all_items = await _gskills()

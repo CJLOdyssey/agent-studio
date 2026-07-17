@@ -106,7 +106,7 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
 
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
-async def remove_prompt(prompt_id: str) -> Any:
+async def remove_prompt(prompt_id: str):
     try:
         from virtual_team.repository import get_prompts
         prompts = await get_prompts()
