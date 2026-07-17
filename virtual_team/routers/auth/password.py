@@ -1,8 +1,9 @@
 """Password management endpoints: forgot, reset, change."""
 
+from typing import Any
+
 import bcrypt
 from fastapi import APIRouter, Depends
-from typing import Any
 
 from virtual_team.auth import CurrentUser, get_current_user
 from virtual_team.broker import get_redis

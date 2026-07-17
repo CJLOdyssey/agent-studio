@@ -1,11 +1,11 @@
 """MCP server repository — CRUD for :class:`MCPServerDB`."""
 
+from typing import Any
+
 from sqlalchemy import desc
 
 from virtual_team.database import MCPServerDB
 from virtual_team.repository.base import BaseRepository
-from typing import Any
-
 
 
 class MCPRepository(BaseRepository[MCPServerDB]):

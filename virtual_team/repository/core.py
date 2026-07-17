@@ -1,6 +1,6 @@
 """Shared repository helpers — owner filtering and pagination."""
 
-from typing import TypeVar, Any
+from typing import Any, TypeVar
 
 _T = TypeVar("_T")
 

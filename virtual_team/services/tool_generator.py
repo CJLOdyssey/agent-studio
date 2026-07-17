@@ -1,10 +1,10 @@
 """Tool generation service: Generate tools from natural language descriptions."""
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from virtual_team.services.generators import GeneratedTool, _generate_javascript_tool, _generate_python_tool
-from typing import Any
-
 
 
 class ToolValidateRequest(BaseModel):

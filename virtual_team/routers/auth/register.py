@@ -1,8 +1,9 @@
 """Registration, email verification, and resend endpoints."""
 
+from typing import Any
+
 import bcrypt
 from fastapi import APIRouter, Request
-from typing import Any
 
 from virtual_team.broker import get_redis
 from virtual_team.email_service import build_verification_email, send_email

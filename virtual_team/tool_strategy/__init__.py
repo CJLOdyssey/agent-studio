@@ -4,12 +4,11 @@ Each concrete strategy implements the ToolStrategy ABC and is registered
 via a name pattern that _ToolWrapper matches against.
 """
 
-from typing import Any
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass

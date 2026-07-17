@@ -1,5 +1,7 @@
 """Skill CRUD API routes."""
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -9,8 +11,6 @@ from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_skill as repo_create_skill
 from virtual_team.repository import delete_skill, update_skill
 from virtual_team.repository import get_skills as repo_get_skills
-from typing import Any
-
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["skills"])
@@ -67,8 +67,8 @@ async def get_skill(skill_id: str) -> Any:
 async def _snapshot_skill(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
     """Create a version snapshot after skill save."""
     try:
+        from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
-        from virtual_team.repository.snapshot_helper import with_session, build_table_snapshot
 
         async def _save(s, rt, rid, **kw):
             from virtual_team.repository.skills import get_skills as _gskills

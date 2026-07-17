@@ -1,12 +1,13 @@
 """Agent config API routes: CRUD and toggle."""
 
 import json
+from typing import Any
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from virtual_team.auth import CurrentUser, get_current_user
 from virtual_team.audit import log_audit
+from virtual_team.auth import CurrentUser, get_current_user
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
@@ -17,9 +18,6 @@ from virtual_team.repository import (
     get_agent_configs,
     update_agent_config,
 )
-from virtual_team.repository.versions import create_version
-from typing import Any
-
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents"])

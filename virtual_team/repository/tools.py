@@ -1,11 +1,11 @@
 """Tools repository — CRUD for :class:`RegisteredToolDB`."""
 
+from typing import Any
+
 from sqlalchemy import desc
 
 from virtual_team.database import RegisteredToolDB
 from virtual_team.repository.base import BaseRepository
-from typing import Any
-
 
 
 class ToolRepository(BaseRepository[RegisteredToolDB]):

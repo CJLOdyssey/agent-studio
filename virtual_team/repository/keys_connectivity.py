@@ -2,10 +2,9 @@
 
 import asyncio
 import json
-
-from virtual_team.repository.keys_crud import get_api_key_for_use
 from typing import Any
 
+from virtual_team.repository.keys_crud import get_api_key_for_use
 
 
 async def test_api_key_connection(key_id: str, user_id: str) -> dict[str, Any]:

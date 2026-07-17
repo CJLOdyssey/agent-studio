@@ -4,14 +4,13 @@ Follows Functional Cohesion: all methods serve the single purpose of
 managing version snapshots. No knowledge of business entity types.
 """
 
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.database import VersionDB
-from typing import Any
-
 
 
 async def create_version(

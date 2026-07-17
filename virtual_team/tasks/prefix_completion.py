@@ -1,11 +1,10 @@
 """Raw prefix completion streaming — DeepSeek /beta/chat/completions with thinking."""
 
 import json
+from typing import Any
 
 import httpx
 
-from typing import Any
-from typing import Any
 from virtual_team.broker import publish_run_message
 from virtual_team.logging_config import get_logger
 

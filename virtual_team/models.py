@@ -2,11 +2,10 @@
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
-from typing import Any
-
 
 
 class Role(StrEnum):

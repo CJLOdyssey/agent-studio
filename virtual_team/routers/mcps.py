@@ -1,6 +1,7 @@
 """MCP server CRUD API routes."""
 
 import json
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -9,8 +10,6 @@ from virtual_team.audit import log_audit
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import create_mcp, delete_mcp, get_mcps, update_mcp
-from typing import Any
-
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["mcps"])
@@ -43,9 +42,9 @@ async def list_mcps() -> Any:
 async def _snapshot_mcp(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
     """Create a version snapshot after mcp save."""
     try:
-        from virtual_team.repository.versions import create_version as _cv
-        from virtual_team.repository.snapshot_helper import with_session
         from virtual_team.repository import get_mcps as _gmcps
+        from virtual_team.repository.snapshot_helper import with_session
+        from virtual_team.repository.versions import create_version as _cv
 
         async def _save(s, rt, rid, **kw):
             all_items = await _gmcps()

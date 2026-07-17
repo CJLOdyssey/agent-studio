@@ -10,8 +10,8 @@ import shutil
 import sqlite3
 import threading
 import time
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 from virtual_team.observability.schema import SCHEMA_SQL, Event
 

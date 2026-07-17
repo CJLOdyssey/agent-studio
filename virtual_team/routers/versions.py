@@ -4,16 +4,16 @@ No dependency on any business entity type (avoids Stamp Coupling).
 Resource type and ID are passed as simple strings.
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.auth import get_user_id
 from virtual_team.error_codes import ErrorCode, error_response
-from typing import Any
 from virtual_team.repository.deps import get_session
 from virtual_team.repository.versions import (
-
     create_version,
     get_version,
     list_versions,

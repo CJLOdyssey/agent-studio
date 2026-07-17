@@ -1,12 +1,12 @@
 """Workflow CRUD API endpoints."""
 
+from typing import Any
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
-from typing import Any
 
 from virtual_team.error_codes import ErrorCode, error_response
-
 from virtual_team.repository.workflows import (
     delete_workflow_config,
     get_workflow_config_by_team,
@@ -14,7 +14,6 @@ from virtual_team.repository.workflows import (
     save_workflow_config,
 )
 from virtual_team.workflow.models import (
-
     NodeStrategy,
     WorkflowConfig,
     WorkflowEdge,

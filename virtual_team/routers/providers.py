@@ -7,7 +7,7 @@ Single source of truth consumed by:
 Adding a new provider or capability requires only updating the PROVIDERS dict.
 """
 
-from typing import Literal, Any
+from typing import Any, Literal
 
 from fastapi import APIRouter
 

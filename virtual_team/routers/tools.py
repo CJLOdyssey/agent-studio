@@ -2,6 +2,7 @@
 
 import json
 import time
+from typing import Any
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -12,14 +13,16 @@ from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     create_tool as repo_create_tool,
+)
+from virtual_team.repository import (
     delete_tool,
     get_tool,
-    get_tools as repo_get_tools,
     update_tool,
 )
-from typing import Any
+from virtual_team.repository import (
+    get_tools as repo_get_tools,
+)
 from virtual_team.services.tool_generator import (  # type: ignore[attr-defined]
-
     GeneratedTool,
     ToolValidateRequest,
     ToolValidateResponse,
@@ -119,8 +122,8 @@ async def list_tools() -> Any:
 async def _snapshot_tool(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
     """Create a version snapshot after tool save."""
     try:
+        from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
-        from virtual_team.repository.snapshot_helper import with_session, build_table_snapshot
 
         async def _save(s, rt, rid, **kw):
             from virtual_team.repository.tools import get_tool as repo_get_tool

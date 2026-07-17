@@ -42,8 +42,8 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
         if memories:
             session_context = _build_context(memories)
 
-    from virtual_team.graph import SingleAgentGraph
     from virtual_team.checkpoint import create_checkpointer_async
+    from virtual_team.graph import SingleAgentGraph
 
     checkpointer = await create_checkpointer_async()
     graph = SingleAgentGraph(

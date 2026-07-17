@@ -1,14 +1,13 @@
 """Agent config test endpoint: runs a single LLM call with agent settings."""
 
 import time
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from typing import Any
-
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents_test"])

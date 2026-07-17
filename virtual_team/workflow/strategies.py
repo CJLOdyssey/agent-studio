@@ -1,10 +1,8 @@
 """Workflow node strategies — generator, reviewer, and reporter implementations."""
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from .models import NodeStrategy, WorkflowNode, WorkflowState
-from typing import Any
-
 
 
 class Strategy(Protocol):

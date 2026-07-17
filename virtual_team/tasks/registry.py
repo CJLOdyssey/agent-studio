@@ -1,7 +1,7 @@
 """Celery task registry."""
 
-from typing import Any
 import time
+from typing import Any
 
 from virtual_team.broker import celery_app
 from virtual_team.logging_config import get_logger

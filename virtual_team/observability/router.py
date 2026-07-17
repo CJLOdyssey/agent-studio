@@ -1,6 +1,7 @@
 """Debug API router for observability events, traces, errors, and health checks."""
 
 from typing import Any
+
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 

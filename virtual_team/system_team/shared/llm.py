@@ -1,6 +1,7 @@
 """Lightweight LLM client for code generation."""
 
 from typing import Any
+
 import httpx
 
 from virtual_team.config import load_config

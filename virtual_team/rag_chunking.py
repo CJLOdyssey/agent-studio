@@ -1,10 +1,9 @@
 """Semantic chunking for RAG pipeline."""
 
-from typing import Any
-
 import hashlib
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass

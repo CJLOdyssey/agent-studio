@@ -1,10 +1,10 @@
 """Login, refresh token, and logout endpoints."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 import bcrypt
 from fastapi import APIRouter, Depends, Request
-from typing import Any
 
 from virtual_team.auth import AUTH_SECRET, CurrentUser, create_token, get_current_user
 from virtual_team.broker import get_redis

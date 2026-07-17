@@ -1,6 +1,7 @@
 """Session and Memory API routes."""
 
 import json
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -9,10 +10,8 @@ from starlette.responses import Response
 from virtual_team.auth import get_user_id
 from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
-from typing import Any
 from virtual_team.models import SessionDetailResponse, SessionSummary
 from virtual_team.repository import (
-
     create_session,
     delete_memory_entry,
     delete_session,

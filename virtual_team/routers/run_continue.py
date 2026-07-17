@@ -1,5 +1,7 @@
 """Run continuation API — "继续生成" feature, runs directly in uvicorn process."""
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
@@ -8,8 +10,6 @@ from virtual_team.error_codes import ErrorCode, error_response
 from virtual_team.logging_config import get_logger
 from virtual_team.routers.runs import RunResponse
 from virtual_team.services.run_service import run_service
-from typing import Any
-
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])

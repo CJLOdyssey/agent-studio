@@ -1,6 +1,7 @@
 """FastAPI middleware that validates JWT tokens on protected routes."""
 
 from typing import Any
+
 from fastapi import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware

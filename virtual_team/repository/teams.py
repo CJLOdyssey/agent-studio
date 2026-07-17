@@ -1,5 +1,6 @@
 """Team repository — CRUD for teams and their member agents."""
 
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -7,8 +8,6 @@ from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
 from virtual_team.database import TeamAgentDB, TeamDB, get_session_factory
-from typing import Any
-
 
 
 async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:

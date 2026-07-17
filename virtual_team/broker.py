@@ -4,8 +4,8 @@ import asyncio
 import contextlib
 import json
 import os
-from typing import Any
 from collections.abc import AsyncIterator
+from typing import Any
 
 from celery import Celery  # type: ignore[import-untyped]
 from redis.asyncio import Redis as AsyncRedis

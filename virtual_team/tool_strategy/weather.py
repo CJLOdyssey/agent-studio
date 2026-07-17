@@ -1,10 +1,9 @@
 """Weather tool strategy — fetch weather forecasts for a city."""
 
-from typing import Any
-
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from virtual_team.tool_strategy import ToolMetadata, ToolStrategy
 

@@ -1,6 +1,5 @@
-from typing import Any
-
 from collections.abc import AsyncIterator
+from typing import Any
 
 """Database engine and session factory with slow-query detection."""
 
@@ -124,6 +123,7 @@ async def init_db() -> None:
 
 # log_audit moved to virtual_team/audit.py — kept for backward compatibility
 from virtual_team.audit import log_audit  # noqa: F401
+
 
 async def get_session() -> AsyncIterator[AsyncSession]:
     """Async generator yielding a database session (FastAPI Depends)."""

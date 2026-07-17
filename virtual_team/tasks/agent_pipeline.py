@@ -1,19 +1,18 @@
 """Single-agent pipeline — tool discovery, RAG context, and graph execution."""
 
-from typing import Any
 # ruff: noqa: E402 — imports after tracemalloc setup are intentional
 import contextlib
 import gc
 import json
 import tracemalloc
+from typing import Any
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from virtual_team.graph import SingleAgentGraph
-from virtual_team.tool_config import ToolConfig
 from virtual_team.broker import publish_run_message
 from virtual_team.checkpoint import create_checkpointer_async
 from virtual_team.config import load_config
+from virtual_team.graph import SingleAgentGraph
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
     get_agent_config,
@@ -27,6 +26,7 @@ from virtual_team.repository import (
 )
 from virtual_team.repository.keys import log_key_usage  # type: ignore[attr-defined]
 from virtual_team.streaming import StreamEmitter
+from virtual_team.tool_config import ToolConfig
 
 from .helpers import (
     _build_session_context,

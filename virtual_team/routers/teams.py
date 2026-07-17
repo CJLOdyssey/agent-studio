@@ -1,15 +1,15 @@
 """Team API routes: CRUD and member management."""
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from virtual_team.auth import get_user_id
 from virtual_team.audit import log_audit
+from virtual_team.auth import get_user_id
 from virtual_team.error_codes import ErrorCode, error_response
-from typing import Any
 from virtual_team.logging_config import get_logger
 from virtual_team.repository import (
-
     add_team_member,
     create_team,
     delete_team,
@@ -75,8 +75,8 @@ async def list_teams(request: Request) -> Any:
 async def _snapshot_team(resource_id: str, session=None) -> Any:  # type: ignore[no-untyped-def]
     """Create a version snapshot after team save."""
     try:
+        from virtual_team.repository.snapshot_helper import build_table_snapshot, with_session
         from virtual_team.repository.versions import create_version as _cv
-        from virtual_team.repository.snapshot_helper import with_session, build_table_snapshot
 
         async def _save(s, rt, rid, **kw):
             from virtual_team.repository.teams import get_team

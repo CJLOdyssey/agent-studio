@@ -1,13 +1,12 @@
 """Memory entry repository — CRUD for session-scoped agent memory entries."""
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
 
 from virtual_team.database import MemoryEntry, get_session_factory
-from typing import Any
-
 
 
 async def get_session_memories(session_id: str) -> list[MemoryEntry]:

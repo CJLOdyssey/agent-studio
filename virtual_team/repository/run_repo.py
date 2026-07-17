@@ -1,13 +1,12 @@
 """Project run repository — CRUD for run lifecycle management."""
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import desc, select
 
 from virtual_team.database import ProjectRun, SessionDB, get_session_factory
-from typing import Any
-
 
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:

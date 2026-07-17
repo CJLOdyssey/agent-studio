@@ -1,8 +1,7 @@
 """Tavily Web Search tool — hybrid keyword + semantic search with AI reranking."""
 
-from typing import Any
-
 import os
+from typing import Any
 
 from virtual_team.logging_config import get_logger
 

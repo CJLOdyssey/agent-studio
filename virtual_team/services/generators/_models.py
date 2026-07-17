@@ -1,8 +1,8 @@
 """Shared models for tool generation."""
 
-from pydantic import BaseModel
 from typing import Any
 
+from pydantic import BaseModel
 
 
 class GeneratedTool(BaseModel):

@@ -1,7 +1,7 @@
 """Rate limiting middleware using token-bucket algorithm backed by Redis."""
 
-from typing import Any
 import time
+from typing import Any
 
 from virtual_team.broker import get_redis
 from virtual_team.logging_config import get_logger

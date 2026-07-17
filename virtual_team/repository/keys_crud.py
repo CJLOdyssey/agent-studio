@@ -1,14 +1,13 @@
 """API key CRUD repository — encrypt, store, list, and manage user API keys."""
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
 
 from virtual_team.database import KeyUsageLog, UserApiKey, get_session_factory
 from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
-from typing import Any
-
 
 
 async def create_api_key(

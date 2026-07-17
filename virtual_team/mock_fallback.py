@@ -1,9 +1,9 @@
 """Mock fallback for agent runs — returns canned responses when LLM is unavailable."""
 
-from typing import Any
 import asyncio
 import logging
 import os
+from typing import Any
 
 from virtual_team.streaming import StreamEmitter
 

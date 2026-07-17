@@ -2,6 +2,7 @@
 
 import contextlib
 import time
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
@@ -15,8 +16,6 @@ from virtual_team.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary
 from virtual_team.repository import get_messages, get_run
 from virtual_team.services.run_service import run_service
-from typing import Any
-
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])

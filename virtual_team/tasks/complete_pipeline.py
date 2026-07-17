@@ -3,10 +3,10 @@
 import gc
 import os
 import tracemalloc
+from typing import Any
 
 import httpx
 
-from typing import Any
 from virtual_team.broker import publish_run_message
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger

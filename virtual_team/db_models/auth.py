@@ -1,9 +1,7 @@
 """UserDB, RefreshTokenDB, RoleDB, UserRoleDB ORM models."""
 
-from typing import Any
-
-
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String
