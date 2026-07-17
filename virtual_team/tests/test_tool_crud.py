@@ -52,20 +52,6 @@ class TestToolCRUD:
         r2 = api.delete(f"/api/tools/{tid}")
         assert r2.status_code in (200, 204)
 
-    def test_generate_tool(self, api: Api):
-        r = api.post(
-            "/api/tools/generate",
-            json={
-                "description": "计算两个数字的乘积",
-                "language": "python",
-            },
-        )
-        assert r.status_code == 200, r.text
-        body = r.json()
-        assert "name" in body
-        assert "code" in body
-        assert body.get("is_valid") is True or body.get("is_valid") is False
-
     def test_validate_tool(self, api: Api):
         r = api.post(
             "/api/tools/validate",

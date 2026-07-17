@@ -202,7 +202,8 @@ class TestRegister:
 
         resp = api.post("/api/auth/register", json={"email": email, "code": code, "password": pwd})
         assert resp.status_code == 400
-        assert any(word in resp.json()["detail"]["error"]["message"] for word in ["密码", "数字", "小写", "大写", "特殊字符"])
+        msg = resp.json()["detail"]["error"]["message"]
+        assert any(word in msg for word in ["密码", "数字", "小写", "大写", "特殊字符"])
 
     def test_register_code_attempts_exhausted(self, api: AuthApi):
         email = f"{_rid('att')}@test.com"
@@ -345,7 +346,8 @@ class TestMe:
     def test_me_unauthenticated(self, api: AuthApi):
         resp = api.get("/api/auth/me")
         assert resp.status_code == 401
-        assert "认证" in resp.json()["detail"]["error"]["message"] or "令牌" in resp.json()["detail"]["error"]["message"]
+        msg = resp.json()["detail"]["error"]["message"]
+        assert "认证" in msg or "令牌" in msg
 
 
 class TestForgotResetPassword:
