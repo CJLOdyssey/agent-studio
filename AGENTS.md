@@ -84,8 +84,8 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
   └─ routers/ (20 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, run_continue, runs, sessions, skills, system_team, teams, tools, versions, workflows)
-   │    └─ repository/ (18 modules: core, agents, keys, keys_crud, keys_connectivity, session_repo, run_repo, message_repo, memory_repo, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
-   │    └─ repository/ (14 modules: core, agents, keys, keys_crud, keys_connectivity, teams, prompts, tools, mcps, skills, versions, workflows, auth, base)
+   │    └─ repository/ (23 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
+   │    └─ repository/ (20 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
   │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
@@ -96,7 +96,7 @@ app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog
 
 **Three-layer strict**: `database.py` (models) → `repository/` (async queries) → `routers/` (HTTP). Routers never touch database.py.
 
-**Star-import barrel**: `repository/__init__.py` uses `from x import *` — new repo functions auto-available.
+**Explicit re-exports**: `repository/__init__.py` uses named imports from each submodule — clear provenance tracking.
 
 **Two graph engines**:
 - `agent_graph.py`: LangGraph single-agent (`SingleAgentGraph`). Tool name prefixes: raw → none, MCP → `mcp_`, skill → `skill_`.
@@ -179,6 +179,6 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - Frontend coverage thresholds enforced — don't drop.
 - Chinese (`zh-CN`) is primary UI language. English translations must stay in sync.
 - New modules follow the 9-10 file pattern + register in `WorkstationPage.tsx` and `CLAUDE.md`.
-- New repo functions auto-exported via `repository/__init__.py` star imports.
+- New repo functions explicitly exported via `repository/__init__.py`.
 - Celery tasks must wrap async code in `_run_async(coro)`.
 - Backend mypy `--strict` has many module-level `ignore_errors` overrides in `pyproject.toml` — not fully enforced.
