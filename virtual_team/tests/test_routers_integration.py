@@ -653,6 +653,155 @@ class TestRunBasic:
             assert data[0]["id"] == "run-1"
 
 
+class TestTeamRoutes:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def _create_team(self, client, name="routes-team"):
+        resp = client.post("/api/teams", json={"name": name, "description": "routes test"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_create_team_with_agents(self, client):
+        team_id = self._create_team(client, "team-with-agents")
+        agent_payload = {"name": "team-agent", "role": "worker", "agent_config_id": None}
+        resp = client.post(f"/api/teams/{team_id}/members", json=agent_payload, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        resp = client.get(f"/api/teams/{team_id}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "agents" in data
+
+    def test_update_team_name(self, client):
+        team_id = self._create_team(client, "update-name-team")
+        resp = client.put(f"/api/teams/{team_id}", json={"name": "renamed-team"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "renamed-team"
+
+    def test_get_team_agents_populated(self, client):
+        team_id = self._create_team(client, "agents-populated")
+        agent_payload = {"name": "pop-agent", "role": "worker", "agent_config_id": None}
+        client.post(f"/api/teams/{team_id}/members", json=agent_payload, headers=self.USER_HEADERS)
+        resp = client.get(f"/api/teams/{team_id}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "agents" in data
+        if isinstance(data["agents"], list) and len(data["agents"]) > 0:
+            assert any(a.get("name") == "pop-agent" for a in data["agents"])
+
+    def test_start_team_run(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import AsyncMock
+        team_id = self._create_team(client, "team-run-test")
+        mock_result = {"run_id": "team-run-id-1", "session_id": None, "status": "running"}
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.return_value = mock_result
+            resp = client.post("/api/runs", json={"requirement": "team task", "teamId": team_id}, headers=self.USER_HEADERS)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["run_id"] == "team-run-id-1"
+            assert data["status"] == "running"
+            mock_create.assert_called_once()
+
+    def test_list_team_runs(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import AsyncMock
+        with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
+            mock_list.return_value = [
+                {"id": "team-run-1", "requirement": "team task 1", "status": "converged", "session_id": None},
+            ]
+            resp = client.get("/api/runs")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert isinstance(data, list)
+            assert len(data) >= 1
+
+
+class TestRunRoutes:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_create_run_with_session_id(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import AsyncMock
+        sess = client.post("/api/sessions", json={"title": "run-session"}, headers=self.USER_HEADERS).json()
+        mock_result = {"run_id": "test-run-456", "session_id": sess["id"], "status": "running"}
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.return_value = mock_result
+            resp = client.post("/api/runs", json={"requirement": "run with session", "sessionId": sess["id"]}, headers=self.USER_HEADERS)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["run_id"] == "test-run-456"
+            assert data["session_id"] == sess["id"]
+            assert data["status"] == "running"
+
+    def test_list_runs(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import AsyncMock
+        with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
+            mock_list.return_value = [
+                {"id": "list-run-1", "requirement": "test", "status": "converged", "session_id": None},
+            ]
+            resp = client.get("/api/runs")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert isinstance(data, list)
+            assert len(data) == 1
+
+    def test_get_run_detail(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import AsyncMock
+        mock_detail = {
+            "id": "detail-run-1",
+            "session_id": None,
+            "requirement": "detail test",
+            "pm_document": "",
+            "code": "",
+            "review": "",
+            "approved": False,
+            "status": "converged",
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
+            "messages": [],
+        }
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_detail
+            resp = client.get("/api/runs/detail-run-1")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["id"] == "detail-run-1"
+            assert data["status"] == "converged"
+            assert "messages" in data
+
+    def test_get_run_messages(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import AsyncMock
+        mock_detail = {
+            "id": "msg-run-1",
+            "session_id": None,
+            "requirement": "messages test",
+            "pm_document": "",
+            "code": "",
+            "review": "",
+            "approved": False,
+            "status": "converged",
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
+            "messages": [
+                {"id": "msg-1", "role": "user", "agent_name": "user", "content": "hello", "thinking": None, "round_number": 1, "created_at": "2025-01-01T00:00:00"},
+            ],
+        }
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_detail
+            resp = client.get("/api/runs/msg-run-1")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert len(data["messages"]) == 1
+            assert data["messages"][0]["content"] == "hello"
+            assert data["messages"][0]["role"] == "user"
+
+
 class TestDebugEndpoints:
 
     def test_debug_health(self, client):

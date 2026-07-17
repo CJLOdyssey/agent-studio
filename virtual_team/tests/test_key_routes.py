@@ -157,3 +157,34 @@ class TestKeyRoutes:
         assert resp.status_code == 200
         data = resp.json()
         assert "success" in data
+
+    def test_check_connectivity_via_fetch_models(self, client):
+        with patch("virtual_team.repository.keys._test_connection_sync") as mock_test:
+            mock_test.return_value = {"success": True, "models": ["gpt-4"], "message": "OK"}
+            resp = client.post("/api/keys/fetch-models", json={
+                "api_key": "sk-test",
+                "provider": "custom",
+                "base_url": "https://api.example.com",
+            })
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["success"] is True
+            assert "models" in data
+
+    def test_update_key_label_only(self, client):
+        created = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "original-label",
+            "api_key": "sk-label-update",
+        }).json()
+        resp = client.put(f"/api/keys/{created['id']}", json={"label": "updated-label"})
+        assert resp.status_code == 200
+        assert resp.json()["label"] == "updated-label"
+
+    def test_get_key_usage_stats_returns_dict(self, client):
+        resp = client.get("/api/keys/usage")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, dict)
+        assert "today_tokens" in data

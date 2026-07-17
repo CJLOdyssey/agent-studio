@@ -110,6 +110,27 @@ def client():
 
 
 class TestAuthLogin:
+    def test_login_inactive_user(self, client):
+        from virtual_team.database import UserDB, get_session_factory
+        from sqlalchemy import select, update
+        factory = get_session_factory()
+        async def _deactivate():
+            async with factory() as s:
+                await s.execute(update(UserDB).where(UserDB.email == "admin@test.com").values(is_active=False))
+                await s.commit()
+        import asyncio
+        asyncio.new_event_loop().run_until_complete(_deactivate())
+        resp = client.post(
+            "/api/auth/login",
+            json={"email": "admin@test.com", "password": "admin123"},
+        )
+        assert resp.status_code == 403
+        async def _reactivate():
+            async with factory() as s:
+                await s.execute(update(UserDB).where(UserDB.email == "admin@test.com").values(is_active=True))
+                await s.commit()
+        asyncio.new_event_loop().run_until_complete(_reactivate())
+
     def test_login_valid(self, client):
         resp = client.post(
             "/api/auth/login",
@@ -328,6 +349,24 @@ class TestAuthRegister:
         )
         assert resp.status_code == 409
 
+    def test_register_password_complexity_edge(self, client):
+        with patch(
+            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+        ):
+            client.post(
+                "/api/auth/send-register-code",
+                json={"email": "edgepass@test.com"},
+            )
+        resp = client.post(
+            "/api/auth/register",
+            json={
+                "email": "edgepass@test.com",
+                "code": "654321",
+                "password": "Ab1!xyzw",
+            },
+        )
+        assert resp.status_code == 201
+
 
 class TestAuthPassword:
     def test_forgot_password(self, client):
@@ -379,6 +418,25 @@ class TestAuthPassword:
             },
         )
         assert resp.status_code == 200
+
+    def test_forgot_password_nonexistent_email(self, client):
+        resp = client.post(
+            "/api/auth/forgot-password", json={"email": "doesnotexist@test.com"}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "message" in data
+
+    def test_reset_password_expired_code(self, client):
+        resp = client.post(
+            "/api/auth/reset-password",
+            json={
+                "email": "ghost@test.com",
+                "code": "000000",
+                "new_password": "NewStr0ng@Pass",
+            },
+        )
+        assert resp.status_code == 400
 
 
 class TestAuthProfile:

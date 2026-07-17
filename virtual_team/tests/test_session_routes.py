@@ -25,6 +25,7 @@ db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
 
 from virtual_team.app import app
 from virtual_team.base import Base
+from virtual_team.repository import create_memory_entry, get_session_memories
 
 
 @pytest.fixture
@@ -142,3 +143,62 @@ class TestSessionRoutes:
         data = resp.json()
         assert "run_id" in data
         assert data["session_id"] == created["id"]
+
+    def test_update_session_with_valid_body(self, client):
+        created = client.post("/api/sessions", json={"title": "Update Me"}).json()
+        resp = client.put(f"/api/sessions/{created['id']}", json={"title": "Updated Title"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["title"] == "Updated Title"
+
+    def test_delete_session_returns_204(self, client):
+        created = client.post("/api/sessions", json={"title": "Delete 204"}).json()
+        resp = client.delete(f"/api/sessions/{created['id']}")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+
+    def test_create_memory_entry(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem Create"}).json()
+        session_id = created["id"]
+        run_id = "test-run-id"
+        memory = await_memory_create(session_id, run_id)
+        assert memory.id is not None
+        assert memory.session_id == session_id
+        assert memory.summary == "Test memory summary"
+
+    def test_memories_list_with_entries(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem List"}).json()
+        session_id = created["id"]
+        await_memory_create(session_id, "run-1")
+        resp = client.get(f"/api/sessions/{session_id}/memories")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        assert data[0]["summary"] == "Test memory summary"
+
+    def test_memories_export_json(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem Export"}).json()
+        session_id = created["id"]
+        await_memory_create(session_id, "run-export")
+        resp = client.get(f"/api/sessions/{session_id}/memories/export?format=json")
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "application/json"
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        assert data[0]["summary"] == "Test memory summary"
+
+
+def await_memory_create(session_id: str, run_id: str):
+    import asyncio
+    return asyncio.new_event_loop().run_until_complete(
+        create_memory_entry(
+            session_id=session_id,
+            run_id=run_id,
+            agent_role="tester",
+            content_type="test",
+            summary="Test memory summary",
+            details="Test details",
+        )
+    )

@@ -125,3 +125,36 @@ class TestMcpRoutes:
         data = resp.json()
         assert "success" in data
         assert "message" in data
+
+    def test_test_mcp_connection_verify_response(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "conn-verify", "type": "stdio", "endpoint": "echo"},
+        ).json()
+        resp = client.post(f"/api/mcps/{created['id']}/test")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "success" in data
+        assert "message" in data
+        assert "duration_ms" in data
+
+    def test_update_mcp_with_valid_body(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "valid-update", "type": "stdio", "endpoint": "/bin/ls"},
+        ).json()
+        resp = client.put(f"/api/mcps/{created['id']}", json={"name": "valid-updated", "endpoint": "/bin/pwd"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "valid-updated"
+        assert data["endpoint"] == "/bin/pwd"
+
+    def test_create_mcp_with_type_sse(self, client):
+        resp = client.post(
+            "/api/mcps",
+            json={"name": "sse-server", "type": "sse", "endpoint": "http://localhost:9090"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["type"] == "sse"
+        assert data["name"] == "sse-server"
