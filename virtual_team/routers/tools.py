@@ -23,21 +23,14 @@ from virtual_team.repository import (
     get_tools_as_dicts as repo_get_tools_as_dicts,
 )
 from virtual_team.services.tool_generator import (  # type: ignore[attr-defined]
-    GeneratedTool,
     ToolValidateRequest,
     ToolValidateResponse,
     _execute_tool_sandbox,
-    _generate_tool_from_description,
     _validate_tool_code,
 )
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["tools"])
-
-
-class ToolGenerateRequest(BaseModel):
-    description: str = Field(..., min_length=1, max_length=500, description="自然语言描述")
-    language: str = Field(default="python", pattern=r"^(python|javascript|typescript)$")
 
 
 class ToolTestResult(BaseModel):
@@ -72,16 +65,6 @@ class ToolUpdate(BaseModel):
     method: str | None = None
     headers: str | None = None
     parameters: str | None = None
-
-
-@router.post("/api/tools/generate", response_model=GeneratedTool)
-async def generate_tool(req: ToolGenerateRequest) -> Any:
-    try:
-        tool = _generate_tool_from_description(req.description, req.language)
-        return tool
-    except Exception as e:
-        logger.error("Tool generation failed: %s", e, exc_info=True)
-        raise error_response(ErrorCode.TOOL_GENERATE_FAILED, detail=f"工具生成失败: {e}") from e
 
 
 @router.post("/api/tools/validate", response_model=ToolValidateResponse)
