@@ -1,6 +1,8 @@
 """FastAPI middleware that validates JWT tokens on protected routes."""
 
+from typing import Any
 from fastapi import Request
+from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from virtual_team.auth_jwt import AUTH_SECRET, decode_jwt
@@ -13,16 +15,16 @@ logger = get_logger(__name__)
 class AuthMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware that validates JWT tokens on protected routes."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Validate JWT tokens on incoming requests."""
         # Skip auth for public paths
         path = request.url.path
         if path in PUBLIC_PATHS or path.startswith(PUBLIC_PREFIXES):
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         # Skip if auth is not enabled
         if not AUTH_ENABLED:
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         # Extract token from Authorization header
         auth_header = request.headers.get("Authorization", "")
@@ -40,7 +42,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # ── Guest mode: no token → pass through as unauthenticated ────
         if not token:
             request.state.is_authenticated = False
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         payload = decode_jwt(token, AUTH_SECRET)
         if payload is None:
@@ -49,11 +51,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 client_ip, path,
             )
             request.state.is_authenticated = False
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         user_id = payload.get("sub", "unknown")
         # Attach user info to request state
         request.state.user_id = user_id
         request.state.is_authenticated = True
 
-        return await call_next(request)
+        return await call_next(request)  # type: ignore[no-any-return]

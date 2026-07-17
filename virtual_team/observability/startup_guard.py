@@ -1,3 +1,5 @@
+from typing import Any
+
 """Captures pre-startup crashes that the logging system can't reach.
 
 Writes to a simple file, not the EventStore, because the EventStore
@@ -48,11 +50,11 @@ def _clean_crash_log() -> None:
         _CRASH_LOG.unlink(missing_ok=True)
 
 
-def health() -> dict:
+def health() -> dict[str, Any]:
     """Report startup status — callable even if the app never finished starting."""
     marker_ok = _MARKER_FILE.exists()
     crashed = _CRASH_LOG.exists()
-    result = {
+    result: dict[str, Any] = {
         "marker_exists": marker_ok,
         "crashed": crashed,
     }

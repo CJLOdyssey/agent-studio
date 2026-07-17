@@ -20,7 +20,7 @@ class ToolConfig:
 
     name: str
     description: str = ""
-    parameters: dict | None = None
+    parameters: dict[str, Any] | None = None
     instructions: str = ""
     mcp_type: str = ""
     mcp_endpoint: str = ""
@@ -69,7 +69,7 @@ class _ToolWrapper:
         self._llm = None
         self._run_id: str | None = None
 
-    def set_llm(self, llm) -> None:
+    def set_llm(self, llm: Any) -> None:
         self._llm = llm
 
     def set_run_id(self, run_id: str) -> None:
@@ -90,7 +90,7 @@ class _ToolWrapper:
             return "skill"
         return None
 
-    async def invoke(self, args: dict) -> str:
+    async def invoke(self, args: dict[str, Any]) -> str:
         # 1) Pluggable external handlers
         from virtual_team.thinking_tree.registry import registry
 
@@ -136,7 +136,7 @@ def sanitize_tool_name(name: str) -> str:
 def build_tool_definition(
     tc: ToolConfig | ToolDescriptor,
     llm: Any = None,
-) -> tuple[str, _ToolWrapper, dict]:
+) -> tuple[str, _ToolWrapper, dict[str, Any]]:
     """Create a ``_ToolWrapper`` and an OpenAI tool-call definition from a ``ToolConfig``.
 
     Returns ``(api_name, wrapper, definition_dict)``.
@@ -156,7 +156,7 @@ def build_tool_definition(
     if llm is not None:
         wrapper.set_llm(llm)
 
-    schema: dict = {"type": "object"}
+    schema: dict[str, Any] = {"type": "object"}
     if tc.parameters:
         if isinstance(tc.parameters, dict):
             props = tc.parameters.get("properties", {}) or {}

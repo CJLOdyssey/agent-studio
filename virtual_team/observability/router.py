@@ -1,5 +1,6 @@
 """Debug API router for observability events, traces, errors, and health checks."""
 
+from typing import Any
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
@@ -18,7 +19,7 @@ async def list_events(
     slow: float | None = Query(None),
     seconds: int = Query(300),
     limit: int = Query(50),
-):
+) -> Any:
     """List observability events with optional filters."""
     store = get_store()
     if trace_id:
@@ -39,25 +40,25 @@ async def list_events(
 
 
 @router.get("/trace/{trace_id}")
-async def trace_detail(trace_id: str):
+async def trace_detail(trace_id: str)-> Any:
     """Analyze a single trace by ID."""
     return analyze_trace(trace_id)
 
 
 @router.get("/errors")
-async def errors(seconds: int = Query(300)):
+async def errors(seconds: int = Query(300))-> Any:
     """List recent error reports."""
     return {"reports": recent_errors_report(seconds)}
 
 
 @router.get("/stats")
-async def stats(seconds: int = Query(300)):
+async def stats(seconds: int = Query(300))-> Any:
     """Return event counts grouped by level."""
     return get_store().stats(seconds)
 
 
 @router.get("/health")
-async def observability_health():
+async def observability_health()-> Any:
     """Health check including self-check and startup guard status."""
     store = get_store()
     try:

@@ -1,5 +1,6 @@
 """Lightweight LLM client for code generation."""
 
+from typing import Any
 import httpx
 
 from virtual_team.config import load_config
@@ -11,11 +12,11 @@ logger = get_logger(__name__)
 class LLMClient:
     """Async client for LLM-powered code generation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with lazy config loading."""
-        self._config = None
+        self._config: Any = None
 
-    def _get_config(self):
+    def _get_config(self) -> Any:
         """Lazy-load and cache the application config."""
         if self._config is None:
             self._config = load_config()

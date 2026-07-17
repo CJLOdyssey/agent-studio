@@ -1,6 +1,8 @@
 """Shared models for tool generation."""
 
 from pydantic import BaseModel
+from typing import Any
+
 
 
 class GeneratedTool(BaseModel):
@@ -9,6 +11,6 @@ class GeneratedTool(BaseModel):
     description: str
     code: str
     language: str
-    parameters: dict
+    parameters: dict[str, Any]
     is_valid: bool
     error_message: str | None = None

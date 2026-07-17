@@ -1,5 +1,6 @@
 """Single-agent pipeline — tool discovery, RAG context, and graph execution."""
 
+from typing import Any
 # ruff: noqa: E402 — imports after tracemalloc setup are intentional
 import contextlib
 import gc
@@ -8,7 +9,8 @@ import tracemalloc
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from virtual_team.agent_graph import SingleAgentGraph, ToolConfig
+from virtual_team.graph import SingleAgentGraph
+from virtual_team.tool_config import ToolConfig
 from virtual_team.broker import publish_run_message
 from virtual_team.checkpoint import create_checkpointer_async
 from virtual_team.config import load_config
@@ -23,7 +25,7 @@ from virtual_team.repository import (
     update_run_result,
     update_run_status,
 )
-from virtual_team.repository.keys import log_key_usage
+from virtual_team.repository.keys import log_key_usage  # type: ignore[attr-defined]
 from virtual_team.streaming import StreamEmitter
 
 from .helpers import (
@@ -50,7 +52,7 @@ async def _run_agent_pipeline(
     api_base: str | None = None,
     model: str | None = None,
     user_id: str = 'system',
-) -> dict:
+) -> dict[str, Any]:
     global _run_counter
     _run_counter += 1
     if not tracemalloc.is_tracing():
@@ -66,7 +68,7 @@ async def _run_agent_pipeline(
 
     system_prompt = ""
     ac = None
-    all_skills: list = []
+    all_skills: list[Any] = []
     if agent_id:
         try:
             ac = await get_agent_config(agent_id)
@@ -127,8 +129,8 @@ async def _run_agent_pipeline(
                 continue
             name = item.get("name", "")
             if name:
-                match = next((t for t in all_tools if t["name"] == name), None)
-                raw_params = match.get("parameters") if match else (item.get("parameters"))
+                tool_match = next((t for t in all_tools if t.name == name), None)
+                raw_params = tool_match.parameters if tool_match else (item.get("parameters"))
                 if isinstance(raw_params, str):
                     try:
                         raw_params = json.loads(raw_params)
@@ -137,27 +139,28 @@ async def _run_agent_pipeline(
                 tool_configs.append(
                     ToolConfig(
                         name=name,
-                        description=match["description"]
-                        if match
+                        description=tool_match.description
+                        if tool_match
                         else (item.get("description") or name),
                         parameters=raw_params,
-                        endpoint=match.get("endpoint", "") if match else "",
-                        method=match.get("method", "GET") if match else "GET",
-                        headers=match.get("headers", "{}") if match else "{}",
+                        endpoint=tool_match.endpoint or "" if tool_match else "",
+                        method=tool_match.method or "GET" if tool_match else "GET",
+                        headers=tool_match.headers or "{}" if tool_match else "{}",
                     )
                 )
         all_mcps = await get_mcps()
         for item in _parse_json_field(ac.mcp):
             name = item.get("name", "")
             if name:
-                match = next((m for m in all_mcps if m["name"] == name), None)
-                mcp_config = match.get("config") if match else None
+                mcp_match = next((m for m in all_mcps if m.name == name), None)
+                mcp_config = mcp_match.config if mcp_match else None
+                mcp_params: dict[str, Any] = {}
                 if isinstance(mcp_config, str):
-                    mcp_config = json.loads(mcp_config) if mcp_config else {}
-                elif not mcp_config:
-                    mcp_config = {}
-                mcp_type = match.get("type", "") if match else ""
-                mcp_endpoint = match.get("endpoint", "") if match else ""
+                    mcp_params = json.loads(mcp_config) if mcp_config else {}
+                elif mcp_config:
+                    mcp_params = mcp_config
+                mcp_type = mcp_match.type or "" if mcp_match else ""
+                mcp_endpoint = mcp_match.endpoint or "" if mcp_match else ""
                 mcp_prefix = f"mcp_{name}_"
 
                 if mcp_type == "stdio" and mcp_endpoint:
@@ -179,11 +182,11 @@ async def _run_agent_pipeline(
                             ))
                 elif mcp_endpoint:
                     # Non-stdio MCP (like REST-based) → single tool
-                    params = mcp_config
+                    params = mcp_params
                     tool_configs.append(
                         ToolConfig(
                             name=f"{mcp_prefix}{name}",
-                            description=match.get("description", name) if match else name,
+                            description=mcp_match.name or name if mcp_match else name,
                             parameters=params,
                             endpoint=mcp_endpoint,
                             method=mcp_type.upper() if mcp_type else "GET",
@@ -195,16 +198,16 @@ async def _run_agent_pipeline(
         for item in _parse_json_field(ac.skills):
             name = item.get("name", "")
             if name:
-                match = next((s for s in all_skills if s["name"] == name), None)
-                if match:
+                skill_match = next((s for s in all_skills if s.name == name), None)
+                if skill_match:
                     tool_configs.append(
                         ToolConfig(
                             name=f"skill_{name}",
-                            description=match.get("description", name),
-                            parameters=match.get("parameters") or {"type": "object"},
-                            endpoint=match.get("endpoint", ""),
-                            method=match.get("method", "GET") if match.get("method") else "GET",
-                            headers=match.get("headers", "{}") if match.get("headers") else "{}",
+                            description=skill_match.name or name,
+                            parameters={"type": "object"},
+                            endpoint="",
+                            method="GET",
+                            headers="{}",
                         )
                     )
 
@@ -259,7 +262,7 @@ async def _run_agent_pipeline(
         if not prev_msgs:
             # First run for this session → ingest into RAG
             try:
-                from virtual_team.rag import ingest_session_messages
+                from virtual_team.rag import ingest_session_messages  # type: ignore[attr-defined]
 
                 await ingest_session_messages(session_id, run_id, [{"content": requirement}])
             except Exception:

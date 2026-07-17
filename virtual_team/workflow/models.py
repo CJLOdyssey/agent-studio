@@ -2,13 +2,13 @@
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Annotated, TypedDict
+from typing import Annotated, TypedDict, Any
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph.message import add_messages
 
 
-def _merge_dicts(left: dict, right: dict) -> dict:
+def _merge_dicts(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     """Merge two dicts, with the right dict taking precedence."""
     merged = left.copy()
     merged.update(right)
@@ -108,3 +108,4 @@ def get_previous_artifacts(
         if from_node and from_node.role_identifier in state.get("artifacts", {}):
             result[from_node.role_identifier] = state["artifacts"][from_node.role_identifier]
     return result
+

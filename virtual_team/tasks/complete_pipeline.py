@@ -6,6 +6,7 @@ import tracemalloc
 
 import httpx
 
+from typing import Any
 from virtual_team.broker import publish_run_message
 from virtual_team.config import load_config
 from virtual_team.logging_config import get_logger
@@ -25,7 +26,7 @@ async def _complete_pipeline(
     api_base: str | None = None,
     model: str | None = None,
     thinking: str | None = None,
-):
+) -> dict[str, Any] | None:
 
     global _complete_counter
     _complete_counter += 1
@@ -91,12 +92,12 @@ async def _complete_pipeline(
         logger.error("[complete] HTTP error for run %s: %s", run_id, e, exc_info=True)
         await update_run_status(run_id, "error")
         await publish_run_message(run_id, {"type": "error", "detail": f"LLM API 错误: {e}"})
-        return
+        return None
     except Exception as e:
         logger.error("[complete] Stream failed for run %s: %s", run_id, e, exc_info=True)
         await update_run_status(run_id, "error")
         await publish_run_message(run_id, {"type": "error", "detail": f"续写失败: {e}"})
-        return
+        return None
 
     if thinking_chunks:
         await publish_run_message(run_id, {
@@ -136,3 +137,4 @@ async def _complete_pipeline(
             logger.info("[MEM] complete end run=#%s pid=%s rss=%dKB", _complete_counter, pid, rss_kb)
         except Exception:
             pass
+    return None

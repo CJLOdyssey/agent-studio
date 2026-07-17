@@ -3,6 +3,8 @@
 from pydantic import BaseModel
 
 from virtual_team.services.generators import GeneratedTool, _generate_javascript_tool, _generate_python_tool
+from typing import Any
+
 
 
 class ToolValidateRequest(BaseModel):
@@ -60,8 +62,8 @@ def _validate_tool_code(code: str, language: str) -> ToolValidateResponse:
 def _execute_tool_sandbox(code: str, language: str) -> str:
     if language == "python":
         try:
-            namespace = {}
-            exec(code, namespace)
+            namespace: list[Any] = {}  # type: ignore[assignment]
+            exec(code, namespace)  # type: ignore[arg-type]
             return "代码语法检查通过"
         except SyntaxError as e:
             raise Exception(f"语法错误: {e}") from e

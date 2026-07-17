@@ -1,5 +1,7 @@
 """Semantic chunking for RAG pipeline."""
 
+from typing import Any
+
 import hashlib
 import re
 from dataclasses import dataclass, field
@@ -13,7 +15,7 @@ class Chunk:
     run_id: str | None
     tags: list[str] = field(default_factory=list)
     embedding: list[float] | None = None
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 def semantic_chunk(

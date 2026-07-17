@@ -1,5 +1,7 @@
 """UserDB, RefreshTokenDB, RoleDB, UserRoleDB ORM models."""
 
+from typing import Any
+
 
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -59,7 +61,7 @@ class RoleDB(Base):
     __tablename__ = "roles"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
-    permissions: Mapped[dict] = mapped_column(JSON, default=dict)
+    permissions: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
 class UserRoleDB(Base):
     __tablename__ = "user_roles"

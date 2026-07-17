@@ -20,7 +20,7 @@ from virtual_team.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict]:
+def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict[str, Any]]:
     """Convert LangChain BaseMessage list to OpenAI API message dicts."""
     api_messages = []
     for msg in messages:
@@ -29,7 +29,7 @@ def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict]:
         elif isinstance(msg, HumanMessage):
             api_messages.append({"role": "user", "content": msg.content})
         elif isinstance(msg, AIMessage):
-            entry: dict = {"role": "assistant", "content": msg.content}
+            entry: dict[str, Any] = {"role": "assistant", "content": msg.content}
             if msg.tool_calls:
                 entry["tool_calls"] = [
                     {
@@ -46,15 +46,15 @@ def convert_messages_to_api(messages: list[BaseMessage]) -> list[dict]:
 
 
 def build_llm_request_body(
-    api_messages: list[dict],
+    api_messages: list[dict[str, Any]],
     *,
     model: str,
     api_key: str,
     base_url: str | None = None,
     temperature: float = 0.7,
     max_tokens: int = 65536,
-    tool_definitions: list[dict] | None = None,
-) -> tuple[str, dict[str, str], dict]:
+    tool_definitions: list[dict[str, Any]] | None = None,
+) -> tuple[str, dict[str, str], dict[str, Any]]:
     """Build the HTTP request URL, headers, and JSON body for LLM chat completion.
 
     Returns ``(url, headers, body)``.
@@ -62,7 +62,7 @@ def build_llm_request_body(
     url = f"{(base_url or 'https://api.deepseek.com').rstrip('/')}/chat/completions"
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
-    body: dict = {
+    body: dict[str, Any] = {
         "model": model,
         "messages": api_messages,
         "stream": True,
@@ -93,7 +93,7 @@ def build_llm_request_body(
     return url, headers, body
 
 
-def build_tool_calls_list(tool_calls_map: dict[int, dict]) -> list[dict]:
+def build_tool_calls_list(tool_calls_map: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
     """Consolidate streaming tool-call fragments into final list."""
     final = []
     for idx in sorted(tool_calls_map):
@@ -109,23 +109,23 @@ def build_tool_calls_list(tool_calls_map: dict[int, dict]) -> list[dict]:
 
 async def stream_llm_response(
     url: str,
-    headers: dict,
-    body: dict,
+    headers: dict[str, Any],
+    body: dict[str, Any],
     stream_cb: Any = None,
-    tool_definitions: list[dict] | None = None,
-) -> tuple[list[str], list[str], dict[int, dict], str | None, dict]:
+    tool_definitions: list[dict[str, Any]] | None = None,
+) -> tuple[list[str], list[str], dict[int, dict[str, Any]], str | None, dict[str, Any]]:
     """Stream SSE from the LLM endpoint, parse chunks, emit callbacks.
 
     Returns (content_chunks, thinking_chunks, tool_calls_map, finish_reason, usage_info).
     """
     content_chunks: list[str] = []
     thinking_chunks: list[str] = []
-    tool_calls_map: dict[int, dict] = {}
+    tool_calls_map: dict[int, dict[str, Any]] = {}
     finish_reason: str | None = None
     _thinking_flushed = False
     _pending_content: list[str] = []
     _tool_calls_seen = False
-    usage_info: dict = {}
+    usage_info: dict[str, Any] = {}
 
     try:
         async with (

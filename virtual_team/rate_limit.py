@@ -1,5 +1,6 @@
 """Rate limiting middleware using token-bucket algorithm backed by Redis."""
 
+from typing import Any
 import time
 
 from virtual_team.broker import get_redis
@@ -34,7 +35,7 @@ class RateLimiter:
             if count == 1:
                 await r.expire(window_key, self.window + 1)
 
-            return count <= self.rate
+            return count <= self.rate  # type: ignore[no-any-return]
         except Exception:
             logger.warning("Rate limiter Redis check failed — allowing request")
             return True
@@ -46,12 +47,12 @@ _rate_limiter = RateLimiter()
 class RateLimitMiddleware:
     """FastAPI middleware that applies per-IP rate limiting to API routes."""
 
-    def __init__(self, app, rate: int = DEFAULT_RATE, window_seconds: int = DEFAULT_WINDOW):
+    def __init__(self, app: Any, rate: int = DEFAULT_RATE, window_seconds: int = DEFAULT_WINDOW) -> None:
         self.app = app
         self.limiter = RateLimiter(rate=rate, window_seconds=window_seconds)
         self._exempt_paths = {"/api/health", "/ws/"}
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -87,7 +88,7 @@ class RateLimitMiddleware:
 
         await self.app(scope, receive, send)
 
-    async def _rate_limited_response(self, scope, receive, send):
+    async def _rate_limited_response(self, scope: Any, receive: Any, send: Any) -> Any:
         from starlette.responses import JSONResponse
 
         response = JSONResponse(

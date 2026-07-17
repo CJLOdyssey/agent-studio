@@ -4,6 +4,8 @@ import json
 
 import httpx
 
+from typing import Any
+from typing import Any
 from virtual_team.broker import publish_run_message
 from virtual_team.logging_config import get_logger
 
@@ -12,8 +14,8 @@ logger = get_logger(__name__)
 
 async def stream_prefix_completion(
     url: str,
-    headers: dict,
-    body: dict,
+    headers: dict[str, Any],
+    body: dict[str, Any],
     run_id: str,
     timeout: float = 300.0,
 ) -> tuple[str, list[str]]:

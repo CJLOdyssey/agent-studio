@@ -44,7 +44,7 @@ class SingleAgentGraph:
         base_url: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 65536,
-        checkpointer: BaseCheckpointSaver | None = None,
+        checkpointer: BaseCheckpointSaver[Any] | None = None,
     ):
         """Initialize the ReAct agent graph with LLM and checkpointer."""
         self.model = model
@@ -53,9 +53,9 @@ class SingleAgentGraph:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._run_id = None
-        self._last_usage: dict = {}
+        self._last_usage: dict[str, Any] = {}
 
-        llm_kwargs = {
+        llm_kwargs: dict[str, Any] = {
             "model": model,
             "api_key": api_key,
             "temperature": temperature,
@@ -65,9 +65,9 @@ class SingleAgentGraph:
             llm_kwargs["base_url"] = base_url
         self.llm = ChatOpenAI(**llm_kwargs)
 
-        self._tools: list = []
+        self._tools: list[Any] = []
         self._tool_map: dict[str, ToolExecutor] = {}
-        self._tool_definitions: list[dict] = []
+        self._tool_definitions: list[dict[str, Any]] = []
         if checkpointer is not None:
             self.checkpointer = checkpointer
         else:
@@ -75,7 +75,7 @@ class SingleAgentGraph:
             self.checkpointer = create_checkpointer()
         self._graph = self._build_graph()
 
-        self._stream_cb: Callable | None = None
+        self._stream_cb: Callable[..., Any] | None = None
 
     # ── LLM streaming ──────────────────────────────────────────
 
@@ -83,7 +83,7 @@ class SingleAgentGraph:
         self,
         messages: list[BaseMessage],
         _stream_handler: StreamResponseHandler = stream_llm_response,
-    ) -> tuple[str, str, list[dict]]:
+    ) -> tuple[str, str, list[dict[str, Any]]]:
         """Async raw HTTP streaming — captures content + reasoning_content + tool_calls."""
         api_messages = convert_messages_to_api(messages)
         url, headers, body = build_llm_request_body(
@@ -121,13 +121,13 @@ class SingleAgentGraph:
 
     # ── Graph nodes ────────────────────────────────────────────
 
-    async def _agent_node(self, state: AgentState) -> dict:
+    async def _agent_node(self, state: AgentState) -> dict[str, Any]:
         """LangGraph agent node — builds messages, calls LLM, returns AIMessage."""
         messages = state.get("messages", [])
         system_prompt = state.get("system_prompt", "")
         session_context = state.get("session_context", "")
 
-        full_messages = []
+        full_messages: list[BaseMessage] = []
         now = datetime.now(UTC).astimezone()
         weekday_cn = ["一", "二", "三", "四", "五", "六", "日"][now.weekday()]
         date_context = (
@@ -143,7 +143,7 @@ class SingleAgentGraph:
 
         content, thinking, raw_tool_calls = await self._raw_llm_stream(full_messages)
 
-        kwargs: dict = {"content": content}
+        kwargs: dict[str, Any] = {"content": content}
         if raw_tool_calls:
             kwargs["tool_calls"] = [
                 {"name": tc["name"], "args": tc["args"], "id": tc["id"]}
@@ -153,7 +153,7 @@ class SingleAgentGraph:
             kwargs["additional_kwargs"] = {"thinking": thinking}
 
         if thinking:
-            thinking_nodes: list[dict] = [{"type": "thought", "content": thinking}]
+            thinking_nodes: list[dict[str, Any]] = [{"type": "thought", "content": thinking}]
             for tc in (raw_tool_calls or []):
                 tc_name = tc.get("name", "")
                 tc_args = tc.get("args", {})
@@ -173,7 +173,7 @@ class SingleAgentGraph:
 
         return {"messages": [AIMessage(**kwargs)]}
 
-    async def _tools_node(self, state: AgentState) -> dict:
+    async def _tools_node(self, state: AgentState) -> dict[str, Any]:
         """LangGraph tools node — executes tool calls."""
         messages = state.get("messages", [])
         last_msg = messages[-1] if messages else None
@@ -209,7 +209,7 @@ class SingleAgentGraph:
                     t0 = datetime.now(UTC)
                     llm_result = await self.llm.ainvoke([HumanMessage(content=prompt)])
                     elapsed = (datetime.now(UTC) - t0).total_seconds()
-                    result = llm_result.content
+                    result = str(llm_result.content) if llm_result.content else ""
                     logger.info(
                         "LLM tool-fallback | model=%s | tool=%s | elapsed=%.2fs | result_len=%d",
                         self.model, tool_name, elapsed, len(result or ""),
@@ -240,7 +240,7 @@ class SingleAgentGraph:
             return "tools"
         return END
 
-    def _build_graph(self) -> CompiledStateGraph:
+    def _build_graph(self) -> CompiledStateGraph[Any]:
         """Build the LangGraph StateGraph."""
         builder = StateGraph(AgentState)
         builder.add_node("agent", self._agent_node)
@@ -252,7 +252,7 @@ class SingleAgentGraph:
 
     # ── Public API ─────────────────────────────────────────────
 
-    def set_stream_callback(self, cb: Callable) -> None:
+    def set_stream_callback(self, cb: Callable[..., Any]) -> None:
         """Set the callback for streaming events."""
         self._stream_cb = cb
 
@@ -264,7 +264,7 @@ class SingleAgentGraph:
             self._tool_definitions.append(definition)
 
     @property
-    def graph(self) -> CompiledStateGraph:
+    def graph(self) -> CompiledStateGraph[Any]:
         """Return the compiled LangGraph state graph."""
         return self._graph
 
@@ -277,10 +277,10 @@ class SingleAgentGraph:
         requirement: str,
         system_prompt: str = "",
         session_context: str = "",
-        chat_history: list | None = None,
+        chat_history: list[Any] | None = None,
         thread_id: str = "",
         run_id: str = "",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Run the agent graph with the given requirement and return results."""
         config = cast(
             "RunnableConfig",

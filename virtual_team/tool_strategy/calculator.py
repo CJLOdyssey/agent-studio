@@ -1,5 +1,7 @@
 """Calculator tool strategy — evaluate mathematical expressions."""
 
+from typing import Any
+
 from __future__ import annotations
 
 import json
@@ -15,7 +17,7 @@ class CalculatorStrategy(ToolStrategy):
         n = metadata.name.lower()
         return "calculator" in n or "calc" in n
 
-    async def invoke(self, metadata: ToolMetadata, args: dict) -> str:
+    async def invoke(self, metadata: ToolMetadata, args: dict[str, Any]) -> str:
         expr = args.get("expression") or args.get("expr") or args.get("query") or ""
         if not expr:
             return json.dumps(

@@ -1,3 +1,5 @@
+from typing import Any
+
 """JWT token creation and verification.
 
 Handles HS256-signed JWTs and a simplified HMAC token format.
@@ -25,7 +27,7 @@ def _base64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data)
 
 
-def decode_jwt(token: str, secret: str) -> dict | None:
+def decode_jwt(token: str, secret: str) -> dict[str, Any] | None:
     """Decode and verify a JWT token.
 
     Returns the payload dict if valid, None otherwise.
@@ -58,7 +60,7 @@ def decode_jwt(token: str, secret: str) -> dict | None:
             if exp and int(time.time()) > exp:
                 return None
 
-            return payload
+            return payload  # type: ignore[no-any-return]
 
         # Simplified token: HMAC-SHA256 of user_id:timestamp
         if len(parts) == 1:

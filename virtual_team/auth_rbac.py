@@ -6,6 +6,7 @@ and constants ``PUBLIC_PATHS`` / ``PUBLIC_PREFIXES``.
 
 import os
 from dataclasses import dataclass, field
+from typing import Any
 
 from fastapi import Depends, HTTPException, Request, status
 
@@ -98,7 +99,7 @@ async def get_current_user(request: Request) -> CurrentUser:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或令牌无效")
 
 
-async def require_role(*names: str):
+async def require_role(*names: str) -> Any:
     """Require the current user to have at least one of the named roles.
 
     Dependency factory — returns a 403 if none match.
@@ -137,12 +138,12 @@ PUBLIC_PATHS = {
 PUBLIC_PREFIXES = ("/ws/", "/api/auth/")
 
 
-def get_user_id(request) -> str:
+def get_user_id(request: Any) -> str:
     """Extract user identity from the authenticated request.
 
     Priority: auth middleware (request.state.user_id) → X-User-ID header (dev) → 'anonymous'
     """
     user_id = getattr(request.state, "user_id", None)
     if user_id:
-        return user_id
-    return request.headers.get("X-User-ID", "anonymous")
+        return user_id  # type: ignore[no-any-return]
+    return request.headers.get("X-User-ID", "anonymous")  # type: ignore[no-any-return]

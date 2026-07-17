@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-ToolHandler = Callable[[str, dict], Any]
+ToolHandler = Callable[[str, dict[str, Any]], Any]
 
 
 class ToolRegistry:
@@ -31,13 +31,13 @@ class ToolRegistry:
     (for frontend discovery).  register() is the low-level variant.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._handlers: dict[str, list[tuple[int, ToolHandler]]] = {}
-        self._plugin_infos: dict[str, dict] = {}
+        self._plugin_infos: dict[str, dict[str, Any]] = {}
 
     # ── Registration ────────────────────────────────────────────────────
 
-    def register(self, tool_name: str, handler: ToolHandler, priority: int = 0):
+    def register(self, tool_name: str, handler: ToolHandler, priority: int = 0) -> None:
         """Low-level: register a handler for *tool_name*.
 
         Higher *priority* values are tried first in the fallback chain.
@@ -54,9 +54,9 @@ class ToolRegistry:
         *,
         label: str = "",
         description: str = "",
-        config_schema: dict | None = None,
+        config_schema: dict[str, Any] | None = None,
         priority: int = 0,
-    ):
+    ) -> None:
         """Register a full plugin with metadata for frontend discovery.
 
         Args:
@@ -93,14 +93,14 @@ class ToolRegistry:
 
     # ── Frontend discovery ──────────────────────────────────────────────
 
-    def list_plugins(self) -> list[dict]:
+    def list_plugins(self) -> list[dict[str, Any]]:
         """Return metadata for all registered plugins (for frontend display)."""
         return [
             {k: v for k, v in info.items() if not k.startswith("_")}
             for info in self._plugin_infos.values()
         ]
 
-    def get_plugin_info(self, tool_name: str) -> dict | None:
+    def get_plugin_info(self, tool_name: str) -> dict[str, Any] | None:
         """Return plugin metadata for a specific tool name."""
         info = self._plugin_infos.get(tool_name)
         if info:

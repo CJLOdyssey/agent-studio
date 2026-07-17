@@ -1,3 +1,5 @@
+from typing import Any
+
 """RAG pipeline: analysis → chunking → embedding → vector store → retrieval.
 
 Steps 8-15 of the single-agent template:
@@ -31,7 +33,7 @@ def get_rag_pipeline() -> tuple[EmbeddingProvider | None, PgVectorStore]:
     return _embedding_provider, _vector_store
 
 
-def ensure_embedding_provider(api_key: str | None = None):
+def ensure_embedding_provider(api_key: str | None = None) -> None:
     global _embedding_provider
     _embedding_provider = EmbeddingProvider(api_key=api_key) if api_key else None
 
@@ -39,8 +41,8 @@ def ensure_embedding_provider(api_key: str | None = None):
 async def ingest_session_messages(
     session_id: str,
     run_id: str,
-    messages: list[dict],
-):
+    messages: list[dict[str, Any]],
+) -> None:
     """Steps 8-11: Ingest conversation messages into pgvector.
 
     1. Concatenate messages → text

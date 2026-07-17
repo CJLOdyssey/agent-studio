@@ -1,5 +1,7 @@
 """Weather tool strategy — fetch weather forecasts for a city."""
 
+from typing import Any
+
 from __future__ import annotations
 
 import json
@@ -15,7 +17,7 @@ class WeatherStrategy(ToolStrategy):
         n = metadata.name.lower()
         return any(k in n for k in ("weather", "天气"))
 
-    async def invoke(self, metadata: ToolMetadata, args: dict) -> str:
+    async def invoke(self, metadata: ToolMetadata, args: dict[str, Any]) -> str:
         city = args.get("city", "北京")
         return json.dumps(
             {

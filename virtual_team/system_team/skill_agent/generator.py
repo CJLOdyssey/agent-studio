@@ -15,7 +15,7 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 class SkillGenerator:
     """Generates skill definitions from descriptions and categories."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Set up skills and templates directories."""
         self.skills_dir = SKILLS_DIR
         self.templates_dir = TEMPLATES_DIR
