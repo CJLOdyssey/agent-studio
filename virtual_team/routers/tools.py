@@ -22,7 +22,7 @@ from virtual_team.repository import (
 from virtual_team.repository import (
     get_tools_as_dicts as repo_get_tools_as_dicts,
 )
-from virtual_team.services.tool_generator import (  # type: ignore[attr-defined]
+from virtual_team.services.tool_generator import (
     ToolValidateRequest,
     ToolValidateResponse,
     _execute_tool_sandbox,
