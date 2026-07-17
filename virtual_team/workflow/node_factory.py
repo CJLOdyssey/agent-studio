@@ -2,10 +2,9 @@
 
 import contextlib
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Protocol
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 
 from virtual_team.broker import publish_run_message
 from virtual_team.llm_stream import convert_messages_to_api, stream_llm_response
@@ -14,17 +13,31 @@ from .models import WorkflowNode, WorkflowState
 from .strategies import get_strategy
 
 
+class LLMConfig(Protocol):
+    """Protocol for LLM configuration — any object with these attributes works.
+
+    Decouples NodeFactory from concrete ChatOpenAI so tests can inject
+    a SimpleNamespace or mock without type-ignore.
+    """
+
+    openai_api_key: Any
+    openai_api_base: str | None
+    model_name: str
+    temperature: float
+    max_tokens: int
+
+
 class NodeFactory:
     """Factory that creates callable LangGraph nodes from workflow definitions."""
 
     def __init__(
         self,
-        llm: ChatOpenAI,
+        llm: LLMConfig,
         agent_prompts: dict[str, str],
         tools: list[Any] | None = None,
         run_id: str = "",
     ):
-        """Initialize the node factory with LLM, prompts, and optional tools."""
+        """Initialize the node factory with LLM config, prompts, and optional tools."""
         self.llm = llm
         self.agent_prompts = agent_prompts
         self.tools = tools or []

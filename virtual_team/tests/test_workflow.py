@@ -1,8 +1,20 @@
 """Tests for virtual_team/workflow/ — strategies, node_factory, router, models."""
 
+from dataclasses import dataclass
 from unittest.mock import MagicMock
 
 import pytest
+
+
+@dataclass
+class MockLLM:
+    """Test double for LLMConfig Protocol."""
+
+    openai_api_key: str = "sk-test"
+    openai_api_base: str | None = None
+    model_name: str = "deepseek-chat"
+    temperature: float = 0.7
+    max_tokens: int = 65536
 
 
 class TestStrategies:
@@ -232,7 +244,7 @@ class TestWorkflowModels:
             ],
         )
         assert cfg.get_node_by_role("frontend") is not None
-        assert cfg.get_node_by_role("frontend").id == "n1"
+        assert cfg.get_node_by_role("frontend").id == "n1"  # type: ignore
         assert cfg.get_node_by_role("nonexistent") is None
 
     def test_workflow_config_get_outgoing_edges(self):
@@ -387,7 +399,7 @@ class TestNodeFactory:
         from virtual_team.workflow.node_factory import NodeFactory
 
         factory = NodeFactory(
-            llm=None,
+            llm=MockLLM(),
             agent_prompts={"dev": "You are a developer"},
             tools=[],
             run_id="run-test",
@@ -399,7 +411,7 @@ class TestNodeFactory:
     def test_build_request_includes_messages(self):
         from virtual_team.workflow.node_factory import NodeFactory
 
-        factory = NodeFactory(llm=None, agent_prompts={}, run_id="r1")
+        factory = NodeFactory(llm=MockLLM(), agent_prompts={}, run_id="r1")
         url, headers, body = factory._build_request([{"role": "user", "content": "hi"}])
         assert "chat/completions" in url
         assert "Authorization" in headers
@@ -407,14 +419,10 @@ class TestNodeFactory:
         assert body["stream"] is True
 
     def test_build_request_deepseek_thinking(self):
-        from unittest.mock import MagicMock
 
         from virtual_team.workflow.node_factory import NodeFactory
 
-        mock_llm = MagicMock()
-        mock_llm.openai_api_key = "sk-test"
-        mock_llm.openai_api_base = "https://api.deepseek.com"
-        mock_llm.model_name = "deepseek-chat"
+        mock_llm = MockLLM(openai_api_base="https://api.deepseek.com")
 
         factory = NodeFactory(llm=mock_llm, agent_prompts={}, run_id="r2")
         url, headers, body = factory._build_request([{"role": "user", "content": "hi"}])
@@ -424,7 +432,7 @@ class TestNodeFactory:
         from virtual_team.workflow.models import WorkflowNode
         from virtual_team.workflow.node_factory import NodeFactory
 
-        factory = NodeFactory(llm=None, agent_prompts={}, run_id="r3")
+        factory = NodeFactory(llm=MockLLM(), agent_prompts={}, run_id="r3")
         node = WorkflowNode(id="n1", role_identifier="dev")
         fn = factory.create(node)
         assert callable(fn)
@@ -433,7 +441,7 @@ class TestNodeFactory:
         from virtual_team.workflow.models import NodeStrategy, WorkflowNode
         from virtual_team.workflow.node_factory import NodeFactory
 
-        factory = NodeFactory(llm=None, agent_prompts={"reviewer": "Review code"}, run_id="r4")
+        factory = NodeFactory(llm=MockLLM(), agent_prompts={"reviewer": "Review code"}, run_id="r4")
         node = WorkflowNode(id="rev1", role_identifier="reviewer", strategy=NodeStrategy.REVIEWER)
         fn = factory.create(node)
         assert callable(fn)
@@ -442,7 +450,7 @@ class TestNodeFactory:
         from virtual_team.workflow.models import NodeStrategy, WorkflowNode
         from virtual_team.workflow.node_factory import NodeFactory
 
-        factory = NodeFactory(llm=None, agent_prompts={"reporter": "Report results"}, run_id="r5")
+        factory = NodeFactory(llm=MockLLM(), agent_prompts={"reporter": "Report results"}, run_id="r5")
         node = WorkflowNode(id="rep1", role_identifier="reporter", strategy=NodeStrategy.REPORTER)
         fn = factory.create(node)
         assert callable(fn)
@@ -450,10 +458,7 @@ class TestNodeFactory:
     def test_build_request_no_api_key_secret(self):
         from virtual_team.workflow.node_factory import NodeFactory
 
-        mock_llm = MagicMock()
-        mock_llm.openai_api_key = "sk-raw-key"
-        mock_llm.openai_api_base = None
-        mock_llm.model_name = "gpt-4"
+        mock_llm = MockLLM(openai_api_key="sk-raw-key", model_name="gpt-4")
 
         factory = NodeFactory(llm=mock_llm, agent_prompts={}, run_id="r6")
         url, headers, body = factory._build_request([{"role": "user", "content": "hi"}])
@@ -461,21 +466,16 @@ class TestNodeFactory:
         assert "sk-raw-key" in headers["Authorization"]
 
     def test_build_request_non_deepseek_no_thinking(self):
-        from unittest.mock import MagicMock
 
         from virtual_team.workflow.node_factory import NodeFactory
 
-        mock_llm = MagicMock()
-        mock_llm.openai_api_key = "sk-test"
-        mock_llm.openai_api_base = "https://api.openai.com"
-        mock_llm.model_name = "gpt-4"
+        mock_llm = MockLLM(openai_api_base="https://api.openai.com", model_name="gpt-4")
 
         factory = NodeFactory(llm=mock_llm, agent_prompts={}, run_id="r7")
         url, headers, body = factory._build_request([{"role": "user", "content": "hi"}])
         assert "thinking" not in body
 
     def test_build_request_with_secret_value(self):
-        from unittest.mock import MagicMock
 
         from virtual_team.workflow.node_factory import NodeFactory
 
@@ -491,16 +491,10 @@ class TestNodeFactory:
         assert "sk-secret-resolved" in headers["Authorization"]
 
     def test_build_request_includes_temperature_and_max_tokens(self):
-        from unittest.mock import MagicMock
 
         from virtual_team.workflow.node_factory import NodeFactory
 
-        mock_llm = MagicMock()
-        mock_llm.openai_api_key = "sk-test"
-        mock_llm.openai_api_base = None
-        mock_llm.model_name = "deepseek-chat"
-        mock_llm.temperature = 0.5
-        mock_llm.max_tokens = 8192
+        mock_llm = MockLLM(temperature=0.5, max_tokens=8192)
 
         factory = NodeFactory(llm=mock_llm, agent_prompts={}, run_id="r9")
         url, headers, body = factory._build_request([{"role": "user", "content": "hi"}])
@@ -631,17 +625,12 @@ class TestModelEdgeCases:
 
     @pytest.mark.asyncio
     async def test_node_fn_called_with_mocked_stream(self):
-        from unittest.mock import AsyncMock, MagicMock, patch
+        from unittest.mock import AsyncMock, patch
 
         from virtual_team.workflow.models import WorkflowNode, WorkflowState
         from virtual_team.workflow.node_factory import NodeFactory
 
-        mock_llm = MagicMock()
-        mock_llm.openai_api_key = "sk-test"
-        mock_llm.openai_api_base = None
-        mock_llm.model_name = "deepseek-chat"
-
-        factory = NodeFactory(llm=mock_llm, agent_prompts={"dev": "You are a developer"}, run_id="r-nodefn")
+        factory = NodeFactory(llm=MockLLM(), agent_prompts={"dev": "You are a developer"}, run_id="r-nodefn")
         node = WorkflowNode(id="n1", role_identifier="dev")
         fn = factory.create(node)
 
@@ -659,6 +648,6 @@ class TestModelEdgeCases:
                     mock_convert.return_value = [{"role": "user", "content": "test"}]
                     mock_stream.return_value = (["generated code"], [], [], [], [])
 
-                    result = await fn(state)
+                    result = await fn(state)  # type: ignore
                     assert "artifacts" in result
                     assert result["artifacts"]["dev"] == "generated code"
