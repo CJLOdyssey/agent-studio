@@ -111,15 +111,6 @@ class RequestLogMiddleware:
         body_for_log = body_bytes[:_MAX_BODY_BYTES].decode("utf-8", errors="replace")
         if len(body_bytes) > _MAX_BODY_BYTES:
             body_for_log += "... (truncated)"
-            logger.exception(
-                "[REQ] %s %s | UNHANDLED | duration=%s | rid=%s",
-                method,
-                path,
-                _format_duration(duration),
-                request_id,
-            )
-            # Re-raise so the global exception handler can send a 500
-            raise
 
         duration = time.monotonic() - start
 

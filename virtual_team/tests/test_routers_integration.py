@@ -1,5 +1,7 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
+import io
 import os
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,6 +15,7 @@ os.environ['AUTH_ENABLED'] = '0'
 os.environ['RATE_LIMIT'] = '9999'
 os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
+os.environ['UPLOAD_DIR'] = '/tmp/test_uploads'
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -957,6 +960,19 @@ class TestRunCRUD:
             assert data["id"] == "detail-1"
             assert "messages" in data
 
+    def test_get_run_detail_not_found(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock, return_value=None):
+            resp = client.get("/api/runs/nonexistent-id")
+            assert resp.status_code == 404
+            data = resp.json()
+            detail = data.get("detail", {})
+            if isinstance(detail, dict):
+                err = detail.get("error", {})
+                assert "未找到" in err.get("message", "")
+            else:
+                assert "未找到" in str(detail)
+
     def test_get_run_messages(self, client):
         import virtual_team.routers.runs as runs_router
         mock_detail = {
@@ -1040,6 +1056,346 @@ class TestToolEdgeCases:
         assert isinstance(data, list)
         names = [t["name"] for t in data]
         assert "list-tool" in names
+
+
+class TestToolFullCRUD:
+
+    def _create_tool(self, client, name="fullcrud-tool", category="api"):
+        resp = client.post("/api/tools", json={"name": name, "category": category, "description": "fullcrud"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_put_tool_valid_payload(self, client):
+        tool_id = self._create_tool(client, "put-valid-tool")
+        resp = client.put(f"/api/tools/{tool_id}", json={
+            "name": "updated-put", "category": "data", "description": "updated desc",
+            "status": "inactive", "version": "v2.0.0",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "updated-put"
+
+    def test_put_tool_name_and_description(self, client):
+        tool_id = self._create_tool(client, "put-nd-tool")
+        resp = client.put(f"/api/tools/{tool_id}", json={
+            "name": "nd-updated", "description": "just name and desc",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "nd-updated"
+
+    def test_put_tool_not_found(self, client):
+        resp = client.put("/api/tools/99999", json={"name": "ghost"})
+        assert resp.status_code == 404
+
+    def test_post_tool_execute_endpoint(self, client):
+        resp = client.post("/api/tools/execute?code=print('hi')&language=python")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is True
+
+    def test_post_tool_execute_with_syntax_error(self, client):
+        resp = client.post("/api/tools/execute", params={"code": "def broken(", "language": "python"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is False
+
+    def test_post_tool_validate_invalid_code(self, client):
+        resp = client.post("/api/tools/validate", json={
+            "code": "this is not python code @@@", "language": "python",
+        })
+        assert resp.status_code == 200
+        assert "is_valid" in resp.json()
+
+    def test_post_tool_test_endpoint_no_endpoint(self, client):
+        tool_id = self._create_tool(client, "test-no-endpoint")
+        resp = client.post(f"/api/tools/{tool_id}/test")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["success"] is False
+        assert "No endpoint configured" in data["message"]
+
+    def test_post_tool_test_with_endpoint(self, client):
+        import virtual_team.routers.tools as tools_router
+        tool_id = self._create_tool(client, "test-with-endpoint")
+        client.put(f"/api/tools/{tool_id}", json={"endpoint": "http://localhost:19999/test", "method": "GET"})
+        with patch.object(tools_router.httpx, 'AsyncClient') as mock_ac:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.text = "ok"
+            mock_ac.return_value.__aenter__.return_value.request = AsyncMock(return_value=mock_resp)
+            resp = client.post(f"/api/tools/{tool_id}/test")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["success"] is True
+
+    def test_delete_tool_twice_returns_404(self, client):
+        tool_id = self._create_tool(client, "delete-twice")
+        resp = client.delete(f"/api/tools/{tool_id}")
+        assert resp.status_code == 204
+        resp = client.delete(f"/api/tools/{tool_id}")
+        assert resp.status_code == 404
+
+
+class TestTeamEdgeCases:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+    _agent_counter = 0
+
+    def _create_team(self, client, name="edge-team"):
+        resp = client.post("/api/teams", json={"name": name, "description": "edge test"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def _create_agent(self, client):
+        TestTeamEdgeCases._agent_counter += 1
+        c = TestTeamEdgeCases._agent_counter
+        resp = client.post("/api/agents", json={
+            "name": f"edge-agent-{c}", "role_identifier": f"edge_role_{c}", "system_prompt": "edge",
+        }, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_put_team_update_name(self, client):
+        team_id = self._create_team(client, "put-update-name")
+        resp = client.put(f"/api/teams/{team_id}", json={"name": "edge-renamed"})
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "edge-renamed"
+
+    def test_post_team_with_agents(self, client):
+        team_id = self._create_team(client, "with-agents")
+        agent_id = self._create_agent(client)
+        member_resp = client.post(f"/api/teams/{team_id}/members", json={
+            "name": "member-agent", "role": "worker", "agent_config_id": agent_id,
+        }, headers=self.USER_HEADERS)
+        assert member_resp.status_code == 201
+
+    def test_get_team_detail_verifies_agents(self, client):
+        team_id = self._create_team(client, "detail-agents")
+        agent_id = self._create_agent(client)
+        client.post(f"/api/teams/{team_id}/members", json={
+            "name": "detail-agent", "role": "worker", "agent_config_id": agent_id,
+        }, headers=self.USER_HEADERS)
+        resp = client.get(f"/api/teams/{team_id}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "agents" in data
+        assert len(data["agents"]) >= 1
+
+    def test_delete_team_returns_200(self, client):
+        team_id = self._create_team(client, "delete-edge")
+        resp = client.delete(f"/api/teams/{team_id}")
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+    def test_add_member_to_nonexistent_team(self, client):
+        resp = client.post("/api/teams/nonexistent/members", json={
+            "name": "ghost", "role": "worker",
+        }, headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_remove_member(self, client):
+        team_id = self._create_team(client, "remove-member")
+        member_resp = client.post(f"/api/teams/{team_id}/members", json={
+            "name": "to-remove", "role": "worker",
+        }, headers=self.USER_HEADERS)
+        assert member_resp.status_code == 201
+        member_id = member_resp.json()["id"]
+        resp = client.delete(f"/api/teams/{team_id}/members/{member_id}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+    def test_remove_nonexistent_member(self, client):
+        team_id = self._create_team(client, "no-member")
+        resp = client.delete(f"/api/teams/{team_id}/members/nonexistent", headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_reorder_members(self, client):
+        team_id = self._create_team(client, "reorder")
+        m1 = client.post(f"/api/teams/{team_id}/members", json={"name": "m1", "role": "w"},
+                         headers=self.USER_HEADERS).json()["id"]
+        m2 = client.post(f"/api/teams/{team_id}/members", json={"name": "m2", "role": "w"},
+                         headers=self.USER_HEADERS).json()["id"]
+        resp = client.put(f"/api/teams/{team_id}/members/reorder", json={"member_ids": [m2, m1]},
+                          headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+    def test_link_agent_to_member(self, client):
+        team_id = self._create_team(client, "link-agent")
+        agent_id = self._create_agent(client)
+        member_resp = client.post(f"/api/teams/{team_id}/members", json={
+            "name": "linkable", "role": "worker",
+        }, headers=self.USER_HEADERS)
+        member_id = member_resp.json()["id"]
+        resp = client.put(f"/api/teams/{team_id}/members/{member_id}/link-agent",
+                          json={"agent_config_id": agent_id}, headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
+    def test_link_agent_to_nonexistent_member(self, client):
+        resp = client.put("/api/teams/nonexistent/members/nonexistent/link-agent",
+                          json={"agent_config_id": "nonexistent"}, headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+
+class TestSessionEdgeCasesExtended:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def _create_session(self, client, title="ext-session"):
+        resp = client.post("/api/sessions", json={"title": title}, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_put_session_rename(self, client):
+        session_id = self._create_session(client, "put-rename")
+        resp = client.put(f"/api/sessions/{session_id}", json={"title": "ext-renamed"}, headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["title"] == "ext-renamed"
+
+    def test_delete_session_returns_deleted(self, client):
+        session_id = self._create_session(client, "delete-ext")
+        resp = client.delete(f"/api/sessions/{session_id}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+
+    def test_post_session_create_run(self, client):
+        import virtual_team.routers.runs as runs_router
+        session_id = self._create_session(client, "create-run-ext")
+        mock_result = {"run_id": "ext-run-1", "session_id": session_id, "status": "running"}
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.return_value = mock_result
+            resp = client.post("/api/runs", json={
+                "requirement": "ext run req", "sessionId": session_id,
+            }, headers=self.USER_HEADERS)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["run_id"] == "ext-run-1"
+            assert data["session_id"] == session_id
+
+    def test_get_session_memories_json_format(self, client):
+        session_id = self._create_session(client, "mem-json")
+        resp = client.get(f"/api/sessions/{session_id}/memories/export?format=json", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+
+    def test_get_session_memories_md_format(self, client):
+        session_id = self._create_session(client, "mem-md")
+        resp = client.get(f"/api/sessions/{session_id}/memories/export?format=md", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+
+    def test_export_invalid_format(self, client):
+        session_id = self._create_session(client, "bad-format")
+        resp = client.get(f"/api/sessions/{session_id}/memories/export?format=xml", headers=self.USER_HEADERS)
+        assert resp.status_code == 400
+
+    def test_export_nonexistent_session(self, client):
+        resp = client.get("/api/sessions/nonexistent/memories/export?format=json", headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+    def test_delete_memory(self, client):
+        session_id = self._create_session(client, "del-mem")
+        resp = client.delete(f"/api/memories/nonexistent", headers=self.USER_HEADERS)
+        assert resp.status_code == 404
+
+
+class TestAttachmentRoutes:
+
+    def test_upload_attachment(self, client):
+        session_resp = client.post("/api/sessions", json={"title": "att-session"}, headers={"X-User-ID": "admin"})
+        assert session_resp.status_code == 201
+        session_id = session_resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("test.txt", io.BytesIO(b"hello world"), "text/plain")},
+            data={"session_id": session_id},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["filename"] == "test.txt"
+        assert data["session_id"] == session_id
+
+    def test_upload_attachment_to_nonexistent_session(self, client):
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("test.txt", io.BytesIO(b"data"), "text/plain")},
+            data={"session_id": "nonexistent"},
+        )
+        assert resp.status_code == 404
+
+    def test_upload_attachment_invalid_type(self, client):
+        session_resp = client.post("/api/sessions", json={"title": "att-type"}, headers={"X-User-ID": "admin"})
+        session_id = session_resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("test.exe", io.BytesIO(b"data"), "application/x-msdownload")},
+            data={"session_id": session_id},
+        )
+        assert resp.status_code == 415
+
+    def test_upload_attachment_too_large(self, client):
+        session_resp = client.post("/api/sessions", json={"title": "att-large"}, headers={"X-User-ID": "admin"})
+        session_id = session_resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("large.txt", io.BytesIO(b"x" * (10 * 1024 * 1024 + 1)), "text/plain")},
+            data={"session_id": session_id},
+        )
+        assert resp.status_code == 413
+
+    def test_list_attachments(self, client):
+        session_resp = client.post("/api/sessions", json={"title": "att-list"}, headers={"X-User-ID": "admin"})
+        session_id = session_resp.json()["id"]
+        client.post(
+            "/api/attachments",
+            files={"file": ("list.txt", io.BytesIO(b"data"), "text/plain")},
+            data={"session_id": session_id},
+        )
+        resp = client.get(f"/api/sessions/{session_id}/attachments")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+
+
+class TestMcpEdgeCases:
+
+    def _create_mcp(self, client, name="mcp-edge"):
+        resp = client.post("/api/mcps", json={"name": name, "type": "stdio", "endpoint": "/usr/bin/env"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_post_mcp_test_returns_200(self, client):
+        mcp_id = self._create_mcp(client, "mcp-test-me")
+        resp = client.post(f"/api/mcps/{mcp_id}/test")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "success" in data
+
+    def test_put_mcp_update(self, client):
+        mcp_id = self._create_mcp(client, "mcp-put-update")
+        resp = client.put(f"/api/mcps/{mcp_id}", json={"name": "mcp-edge-updated", "type": "sse"})
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "mcp-edge-updated"
+
+    def test_get_mcp_detail(self, client):
+        mcp_id = self._create_mcp(client, "mcp-get-detail")
+        resp = client.get("/api/mcps")
+        assert resp.status_code == 200
+        data = resp.json()
+        ids = [m["id"] for m in data]
+        assert mcp_id in ids
+
+    def test_test_mcp_not_found(self, client):
+        resp = client.post("/api/mcps/nonexistent/test")
+        assert resp.status_code == 404
+
+    def test_delete_mcp_twice(self, client):
+        mcp_id = self._create_mcp(client, "mcp-del-twice")
+        resp = client.delete(f"/api/mcps/{mcp_id}")
+        assert resp.status_code == 204
+        resp = client.delete(f"/api/mcps/{mcp_id}")
+        assert resp.status_code == 404
 
 
 class TestPromptEdgeCases:
@@ -1470,6 +1826,19 @@ class TestRunWebSocket:
                 data = ws.receive_json()
                 assert data["type"] == "result"
                 assert data["status"] == "converged"
+
+    def test_websocket_stop_buffer_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_async_gen([])),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock, side_effect=RuntimeError("stop failed")),
+        ):
+            with client.websocket_connect("/ws/runs/stop-err") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+                ws.close()
 
 
 class TestWorkflowRoutes:
