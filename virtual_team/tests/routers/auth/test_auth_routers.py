@@ -100,7 +100,7 @@ def client():
     mock_redis.delete.side_effect = _redis_delete
 
     with patch("virtual_team.rate_limit.get_redis", return_value=mock_redis), \
-         patch("virtual_team.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("virtual_team.core.app_lifespan.get_redis", return_value=mock_redis), \
          patch("virtual_team.broker.get_redis", return_value=mock_redis), \
          patch("virtual_team.routers.auth.login.get_redis", return_value=mock_redis), \
          patch("virtual_team.routers.auth.register.get_redis", return_value=mock_redis), \
