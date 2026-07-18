@@ -5,8 +5,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, Request
 
 from virtual_team.auth import CurrentUser, get_current_user
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository.auth import (
     get_user_by_email,
     get_user_by_id,

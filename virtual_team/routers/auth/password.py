@@ -6,20 +6,20 @@ import bcrypt
 from fastapi import APIRouter, Depends
 
 from virtual_team.auth import CurrentUser, get_current_user
+from virtual_team.auth.password_policy import validate_password
 from virtual_team.broker import get_redis
-from virtual_team.email_service import (
-    build_password_changed_email,
-    build_reset_email,
-    send_email,
-)
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
-from virtual_team.password_policy import validate_password
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository.auth import (
     get_user_by_email,
     get_user_by_id,
     revoke_all_user_tokens,
     update_password,
+)
+from virtual_team.services.email_service import (
+    build_password_changed_email,
+    build_reset_email,
+    send_email,
 )
 
 from .schemas import (

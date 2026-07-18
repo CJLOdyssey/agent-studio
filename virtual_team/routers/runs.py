@@ -10,9 +10,9 @@ from pydantic.alias_generators import to_camel
 
 from virtual_team.auth import get_user_id
 from virtual_team.broker import drain_buffer, stop_buffer, subscribe_run
-from virtual_team.config import load_config
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
+from virtual_team.core.config import load_config
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.models import RunDetail, RunSummary
 from virtual_team.repository import get_messages, get_run
 from virtual_team.services.run_service import run_service

@@ -65,3 +65,4 @@ scripts/ask_credentials.py
 .agents .claude
 .agents/
 .claude/
+uploads/*

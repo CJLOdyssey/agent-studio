@@ -9,8 +9,8 @@ from uuid import uuid4
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.models import AttachmentResponse
 from virtual_team.repository import get_session
 from virtual_team.repository.attachments import (
@@ -63,7 +63,7 @@ async def _extract_text(file_path: Path, content_type: str) -> str:
     return ""
 
 
-@router.post("/api/attachments", response_model=AttachmentResponse)
+@router.post("/api/attachments", response_model=AttachmentResponse, status_code=201)
 async def upload_attachment(
     file: UploadFile = File(...),  # noqa: B008
     session_id: str = Form(...),

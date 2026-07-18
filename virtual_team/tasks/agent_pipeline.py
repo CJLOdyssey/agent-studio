@@ -11,9 +11,9 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from virtual_team.broker import publish_run_message
 from virtual_team.checkpoint import create_checkpointer_async
-from virtual_team.config import load_config
-from virtual_team.graph import SingleAgentGraph
-from virtual_team.logging_config import get_logger
+from virtual_team.core.config import load_config
+from virtual_team.core.infra.logging_config import get_logger
+from virtual_team.graph.graph import SingleAgentGraph
 from virtual_team.repository import (
     get_agent_config,
     get_mcps,
@@ -25,10 +25,11 @@ from virtual_team.repository import (
     update_run_status,
 )
 from virtual_team.repository.keys import log_key_usage
-from virtual_team.streaming import StreamEmitter
-from virtual_team.tool_config import ToolConfig
+from virtual_team.services.tool_config import ToolConfig
+from virtual_team.streaming.streaming import StreamEmitter
 
-from .helpers import (
+from .mcp_executor import exec_stdio_mcp
+from .pipeline_utils import (
     _build_session_context,
     _discover_mcp_tools,
     _get_rag_context,
@@ -36,7 +37,6 @@ from .helpers import (
     _save_output_memories,
     log_memory_diff,
 )
-from .mcp_executor import exec_stdio_mcp
 
 logger = get_logger(__name__)
 
@@ -262,7 +262,7 @@ async def _run_agent_pipeline(
         if not prev_msgs:
             # First run for this session → ingest into RAG
             try:
-                from virtual_team.rag_pipeline import ingest_session_messages
+                from virtual_team.rag.rag_pipeline import ingest_session_messages
 
                 await ingest_session_messages(session_id, run_id, [{"content": requirement}])
             except Exception:

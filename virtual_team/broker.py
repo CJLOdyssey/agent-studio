@@ -10,7 +10,7 @@ from typing import Any
 from celery import Celery  # type: ignore[import-untyped]
 from redis.asyncio import Redis as AsyncRedis
 
-from virtual_team.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 
 # ---------------------------------------------------------------------------
 # Celery app

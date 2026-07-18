@@ -17,7 +17,7 @@ from sqlalchemy import create_engine, pool
 
 from alembic import context
 
-from virtual_team.database import Base as ProjectBase
+from virtual_team.core.base import Base as ProjectBase
 
 config = context.config
 
