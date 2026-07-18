@@ -1310,7 +1310,7 @@ class TestAttachmentRoutes:
             files={"file": ("test.txt", io.BytesIO(b"hello world"), "text/plain")},
             data={"session_id": session_id},
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         data = resp.json()
         assert data["filename"] == "test.txt"
         assert data["session_id"] == session_id
@@ -1887,3 +1887,32 @@ class TestWorkflowRoutes:
     def test_delete_workflow_not_found(self, client):
         resp = client.delete("/api/workflows/nonexistent")
         assert resp.status_code == 404
+
+    def test_workflow_create(self, client):
+        team_id = self._create_team(client, "quick-create")
+        payload = {"teamId": team_id, "name": "quick-wf", "maxRounds": 3, "nodes": [], "edges": []}
+        resp = client.post("/api/workflows", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "quick-wf"
+        assert "id" in data
+
+
+class TestMiscRoutes:
+
+    def test_provider_test(self, client):
+        resp = client.post("/api/providers/test", json={"provider": "openai"})
+        assert resp.status_code == 200
+
+    def test_attachment_upload(self, client):
+        session_resp = client.post("/api/sessions", json={"title": "misc-att"}, headers={"X-User-ID": "admin"})
+        assert session_resp.status_code == 201
+        session_id = session_resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("quick.txt", io.BytesIO(b"quick data"), "text/plain")},
+            data={"session_id": session_id},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["filename"] == "quick.txt"

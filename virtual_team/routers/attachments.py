@@ -63,7 +63,7 @@ async def _extract_text(file_path: Path, content_type: str) -> str:
     return ""
 
 
-@router.post("/api/attachments", response_model=AttachmentResponse)
+@router.post("/api/attachments", response_model=AttachmentResponse, status_code=201)
 async def upload_attachment(
     file: UploadFile = File(...),  # noqa: B008
     session_id: str = Form(...),
