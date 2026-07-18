@@ -7,7 +7,7 @@ import uuid
 
 from sqlalchemy import select
 
-from virtual_team.database import RoleDB, get_session_factory
+from virtual_team.core.infra.database import RoleDB, get_session_factory
 from virtual_team.repository.auth import (
     consume_refresh_token,
     create_refresh_token,

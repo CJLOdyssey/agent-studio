@@ -16,11 +16,11 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from virtual_team.database import (
+from virtual_team.core.infra.database import (
     AgentConfigDB,
     Base,
 )
-from virtual_team.database import (
+from virtual_team.core.infra.database import (
     _async_session_factory as _real_factory,
 )
 

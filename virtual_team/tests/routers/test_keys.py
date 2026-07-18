@@ -24,7 +24,7 @@ class TestKeysRoutes:
 
     @pytest.mark.asyncio
     async def test_key_model_has_encrypted_field(self):
-        from virtual_team.database import UserApiKey
+        from virtual_team.core.infra.database import UserApiKey
 
         cols = [c.name for c in UserApiKey.__table__.columns]
         assert "encrypted_key" in cols
@@ -40,7 +40,7 @@ class TestSessionsRoutes:
 
     @pytest.mark.asyncio
     async def test_session_model_exists(self):
-        from virtual_team.database import SessionDB
+        from virtual_team.core.infra.database import SessionDB
 
         cols = [c.name for c in SessionDB.__table__.columns]
         assert "title" in cols

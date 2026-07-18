@@ -10,7 +10,7 @@ import httpx
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from virtual_team.database import Base  # type: ignore[attr-defined]
+from virtual_team.core.infra.database import Base  # type: ignore[attr-defined]
 
 BASE = "http://localhost:8080"
 

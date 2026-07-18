@@ -29,7 +29,7 @@ class TestOwnedAgentRuns:
         # Basic sanity — function exists and returns stmt unchanged for None
         from sqlalchemy import select
 
-        from virtual_team.database import AgentConfigDB
+        from virtual_team.core.infra.database import AgentConfigDB
         from virtual_team.repository.core import apply_owner_filter
 
         stmt = select(AgentConfigDB)

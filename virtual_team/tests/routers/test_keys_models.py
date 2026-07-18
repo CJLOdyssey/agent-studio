@@ -160,7 +160,7 @@ class TestKeysModels:
             decrypt_api_key("")
 
     def test_user_api_key_model_columns(self):
-        from virtual_team.database import UserApiKey
+        from virtual_team.core.infra.database import UserApiKey
 
         cols = {c.name for c in UserApiKey.__table__.columns}
         assert "encrypted_key" in cols
@@ -170,7 +170,7 @@ class TestKeysModels:
         assert "is_active" in cols
 
     def test_user_api_key_defaults(self):
-        from virtual_team.database import UserApiKey
+        from virtual_team.core.infra.database import UserApiKey
 
         c_map = {c.name: c for c in UserApiKey.__table__.columns}
         assert c_map["usage_type"].default.arg == "llm"

@@ -172,7 +172,7 @@ async def test_remove_team_member():
 @pytest.mark.asyncio
 async def test_reorder_team_members():
     from virtual_team.repository.teams import add_team_member, create_team, reorder_team_members
-    from virtual_team.database import TeamAgentDB
+    from virtual_team.core.infra.database import TeamAgentDB
 
     team_obj = await create_team("ReorderTeam", "")
     assert team_obj is not None

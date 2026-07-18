@@ -35,7 +35,7 @@ def client():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from virtual_team.database import RoleDB, UserDB, UserRoleDB, get_session_factory
+        from virtual_team.core.infra.database import RoleDB, UserDB, UserRoleDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             for role_data in [
@@ -111,7 +111,7 @@ def client():
 
 class TestAuthLogin:
     def test_login_inactive_user(self, client):
-        from virtual_team.database import UserDB, get_session_factory
+        from virtual_team.core.infra.database import UserDB, get_session_factory
         from sqlalchemy import select, update
         factory = get_session_factory()
         async def _deactivate():

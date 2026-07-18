@@ -242,7 +242,7 @@ async def test_consume_refresh_token_invalid():
 @pytest.mark.asyncio
 async def test_consume_refresh_token_expired():
     from virtual_team.repository.auth import create_refresh_token, create_user, consume_refresh_token
-    from virtual_team.database import RefreshTokenDB
+    from virtual_team.core.infra.database import RefreshTokenDB
     from datetime import UTC, datetime, timedelta
 
     user = await create_user("test@example.com", "hash")

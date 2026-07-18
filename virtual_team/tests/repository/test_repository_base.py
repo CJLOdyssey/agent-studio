@@ -18,12 +18,12 @@ class TestRepositoryImports:
         assert inspect.isasyncgenfunction(get_session)
 
     def test_session_factory_import(self):
-        from virtual_team.database import get_session_factory
+        from virtual_team.core.infra.database import get_session_factory
 
         assert get_session_factory is not None
 
     def test_repository_subclass_has_model(self):
-        from virtual_team.database import RegisteredSkillDB
+        from virtual_team.core.infra.database import RegisteredSkillDB
         from virtual_team.repository.skills import SkillRepository
 
         assert SkillRepository.model is RegisteredSkillDB

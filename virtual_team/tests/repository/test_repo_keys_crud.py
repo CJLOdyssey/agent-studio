@@ -41,7 +41,7 @@ async def test_create_api_key_default_clears_others():
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.database import UserApiKey
+        from virtual_team.core.infra.database import UserApiKey
         from sqlalchemy import select
 
         result = await session.execute(
@@ -203,7 +203,7 @@ async def test_update_api_key_default_clears_others():
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.database import UserApiKey
+        from virtual_team.core.infra.database import UserApiKey
         from sqlalchemy import select
 
         result = await session.execute(
@@ -319,7 +319,7 @@ async def test_log_key_usage():
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.database import KeyUsageLog
+        from virtual_team.core.infra.database import KeyUsageLog
         from sqlalchemy import select
 
         result = await session.execute(select(KeyUsageLog))
@@ -337,7 +337,7 @@ async def test_get_key_usage_stats():
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.database import KeyUsageLog
+        from virtual_team.core.infra.database import KeyUsageLog
         from uuid import uuid4
 
         log = KeyUsageLog(
