@@ -33,7 +33,9 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/backend:latest
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/backend:latest
 
       - name: Build & push celery
         uses: docker/build-push-action@v6
@@ -41,7 +43,9 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/celery:latest
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/celery:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/celery:latest
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
@@ -49,7 +53,9 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/frontend:latest
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/frontend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/frontend:latest
 
   deploy:
     needs: build-and-push
@@ -86,6 +92,8 @@ jobs:
           host: ${{ env.REMOTE_HOST }}
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}
+          # Rollback: change the sha tag in docker compose and re-deploy
+          # docker compose -f docker/compose.prod.yml up -d --force-recreate
           script: |
             echo "${{ secrets.ACR_PASSWORD }}" | docker login --username ${{ secrets.ACR_USERNAME }} --password-stdin ${{ env.REGISTRY }}
             cd ${{ env.REMOTE_DIR }}

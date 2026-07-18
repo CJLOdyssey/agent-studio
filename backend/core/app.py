@@ -44,6 +44,35 @@ from backend.routers import (  # noqa: E402
 
 logger = get_logger(__name__)
 
+def _safe_float(key: str, default: float) -> float:
+    try:
+        return float(os.environ[key])
+    except (KeyError, ValueError, TypeError):
+        return default
+
+
+# ── Sentry APM (must be initialized before FastAPI app) ─────────────────────
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    import sentry_sdk  # type: ignore[import-not-found]
+    from sentry_sdk.integrations.starlette import StarletteIntegration  # type: ignore[import-not-found]
+    from sentry_sdk.integrations.fastapi import FastApiIntegration  # type: ignore[import-not-found]
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
+        integrations=[
+            StarletteIntegration(),
+            FastApiIntegration(),
+        ],
+        traces_sample_rate=_safe_float("SENTRY_TRACES_SAMPLE_RATE", 0.1),
+        profiles_sample_rate=_safe_float("SENTRY_PROFILES_SAMPLE_RATE", 0.1),
+        send_default_pii=False,
+    )
+    logger.info("Sentry initialized (environment=%s)", os.environ.get("SENTRY_ENVIRONMENT", "development"))
+else:
+    logger.info("Sentry DSN not configured — error tracking disabled")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
