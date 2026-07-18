@@ -810,3 +810,102 @@ class TestDebugEndpoints:
         data = resp.json()
         assert "status" in data
         assert "events_stored" in data
+
+
+class TestPromptVersions:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def _create_prompt(self, client, name="vp-prompt"):
+        payload = {"name": name, "category": "general", "content": "You are helpful."}
+        resp = client.post("/api/prompts", json=payload)
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_create_and_get_prompt(self, client):
+        prompt_id = self._create_prompt(client, "versioned-prompt")
+        assert prompt_id is not None
+        resp = client.get("/api/prompts")
+        ids = [p["id"] for p in resp.json()]
+        assert prompt_id in ids
+
+    def test_create_version(self, client):
+        prompt_id = self._create_prompt(client, "prompt-for-version")
+        version_payload = {
+            "resource_type": "prompt",
+            "resource_id": prompt_id,
+            "snapshot": {"name": "v1", "content": "Initial content"},
+        }
+        resp = client.post("/api/versions", json=version_payload, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        version_data = resp.json()
+        assert version_data is not None
+
+    def test_list_versions(self, client):
+        prompt_id = self._create_prompt(client, "prompt-for-list-versions")
+
+        for i in range(2):
+            client.post("/api/versions", json={
+                "resource_type": "prompt",
+                "resource_id": prompt_id,
+                "snapshot": {"name": f"v{i}", "content": f"content {i}"},
+            }, headers=self.USER_HEADERS)
+
+        resp = client.get(f"/api/versions/prompt/{prompt_id}")
+        assert resp.status_code == 200
+        versions = resp.json()
+        assert isinstance(versions, list)
+
+    def test_list_versions_unknown_resource(self, client):
+        resp = client.get("/api/versions/prompt/nonexistent-id")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+
+class TestWorkflows:
+
+    def _create_team(self, client, suffix="ext"):
+        resp = client.post("/api/teams", json={"name": f"ext-team-{suffix}", "description": "ext test"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_create_workflow_with_nodes_edges(self, client):
+        team_id = self._create_team(client, "node-edge-create")
+
+        payload = {
+            "teamId": team_id,
+            "name": "detailed-wf",
+            "maxRounds": 5,
+            "nodes": [
+                {"id": "n1", "agentConfigId": "ag1", "roleIdentifier": "writer", "strategy": "generator", "order": 0},
+                {"id": "n2", "agentConfigId": "ag2", "roleIdentifier": "reviewer", "strategy": "reviewer", "order": 1},
+            ],
+            "edges": [
+                {"fromNodeId": "writer", "toNodeId": "reviewer", "conditionKey": "approved", "isDefault": False},
+                {"fromNodeId": "reviewer", "toNodeId": "END", "isDefault": True},
+            ],
+        }
+        resp = client.post("/api/workflows", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "detailed-wf"
+        assert len(data["nodes"]) == 2
+        assert len(data["edges"]) == 2
+
+    def test_get_workflow_by_team(self, client):
+        team_id = self._create_team(client, "get-by-team")
+        payload = {"teamId": team_id, "name": "team-wf", "maxRounds": 3, "nodes": [], "edges": []}
+        client.post("/api/workflows", json=payload)
+
+        resp = client.get(f"/api/workflows/teams/{team_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "team-wf"
+
+    def test_get_workflow_by_missing_team_returns_404(self, client):
+        resp = client.get("/api/workflows/teams/nonexistent-team-id")
+        assert resp.status_code == 404
+
+    def test_workflow_delete_not_found(self, client):
+        resp = client.delete("/api/workflows/nonexistent-wf-id")
+        assert resp.status_code == 404

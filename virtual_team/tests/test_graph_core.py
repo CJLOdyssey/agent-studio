@@ -228,3 +228,64 @@ class TestGraphCore:
 
     def test_graph_property(self, graph):
         assert graph.graph is graph._graph
+
+
+class TestGraphLLMErrors:
+
+    @pytest.mark.asyncio
+    async def test_raw_llm_stream_raises(self, graph):
+        graph._raw_llm_stream = AsyncMock(side_effect=Exception("LLM connection failed"))
+        state = {
+            "messages": [HumanMessage(content="hello")],
+            "system_prompt": "",
+            "session_context": "",
+        }
+        with pytest.raises(Exception, match="LLM connection failed"):
+            await graph._raw_llm_stream(state["messages"])
+
+    @pytest.mark.asyncio
+    async def test_agent_node_llm_error(self, graph):
+        graph._raw_llm_stream = AsyncMock(side_effect=Exception("API error"))
+        state = {
+            "messages": [HumanMessage(content="hello")],
+            "system_prompt": "",
+            "session_context": "",
+        }
+        with pytest.raises(Exception, match="API error"):
+            await graph._agent_node(state)
+
+    def test_should_continue_returns_tools_string(self, graph):
+        state = {
+            "messages": [AIMessage(content="", tool_calls=[{"name": "t", "args": {}, "id": "1", "type": "tool_call"}])],
+            "system_prompt": "",
+            "session_context": "",
+        }
+        result = graph._should_continue(state)
+        assert result == "tools"
+
+    def test_should_continue_returns_end_string(self, graph):
+        state = {
+            "messages": [AIMessage(content="done")],
+            "system_prompt": "",
+            "session_context": "",
+        }
+        result = graph._should_continue(state)
+        from langgraph.graph import END
+        assert result == END
+
+    @pytest.mark.asyncio
+    async def test_run_builds_messages_with_system_context(self, graph):
+        graph._graph.ainvoke = AsyncMock(return_value={
+            "messages": [AIMessage(content="answer")],
+        })
+        graph._last_usage = {"input_tokens": 5, "output_tokens": 10}
+
+        result = await graph.run(
+            requirement="build a team",
+            system_prompt="You are a PM",
+            session_context="Session: test-123",
+        )
+
+        assert result["messages"][0].content == "answer"
+        assert result["input_tokens"] == 5
+        assert result["output_tokens"] == 10
