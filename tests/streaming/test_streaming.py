@@ -210,7 +210,7 @@ class TestStreamingEdgeCases:
 
         emitter = StreamEmitter("run-thinknodes")
         nodes = [{"title": "Step 1", "content": "thinking..."}]
-        await emitter.emit_thinking_nodes(nodes)
+        emitter.emit_thinking_nodes(nodes)
         assert len(emitter._pending_thinking_nodes) == 1
 
     @pytest.mark.asyncio
@@ -220,7 +220,7 @@ class TestStreamingEdgeCases:
         emitter = StreamEmitter("run-thinkcap")
         emitter._pending_thinking_nodes = [{"i": i} for i in range(15)]
         nodes = [{"i": i} for i in range(15, 30)]
-        await emitter.emit_thinking_nodes(nodes)
+        emitter.emit_thinking_nodes(nodes)
         assert len(emitter._pending_thinking_nodes) == 20
 
     @pytest.mark.asyncio
@@ -229,7 +229,7 @@ class TestStreamingEdgeCases:
 
         emitter = StreamEmitter("run-thinkappend")
         emitter._pending_thinking_nodes = [{"title": "first"}]
-        await emitter.emit_thinking_nodes([{"title": "second"}])
+        emitter.emit_thinking_nodes([{"title": "second"}])
         assert len(emitter._pending_thinking_nodes) == 2
 
     @pytest.mark.asyncio

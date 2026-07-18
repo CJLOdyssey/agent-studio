@@ -47,15 +47,13 @@ def mcp_wrapper():
 
 
 class TestHandleSkill:
-    @pytest.mark.asyncio
-    async def test_handle_skill_with_instructions(self, wrapper):
-        result = await handle_skill(wrapper, {"input": "hello"})
+    def test_handle_skill_with_instructions(self, wrapper):
+        result = handle_skill(wrapper, {"input": "hello"})
         assert result == "Follow instructions"
 
-    @pytest.mark.asyncio
-    async def test_handle_skill_without_instructions(self):
+    def test_handle_skill_without_instructions(self):
         w = _ToolWrapper(name="bare-skill")
-        result = await handle_skill(w, {})
+        result = handle_skill(w, {})
         parsed = json.loads(result)
         assert parsed["role"] == "skill"
         assert parsed["name"] == "bare-skill"

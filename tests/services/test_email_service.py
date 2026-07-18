@@ -55,15 +55,13 @@ class TestBuildEmail:
 
 class TestLogMailer:
 
-    @pytest.mark.asyncio
-    async def test_log_mailer_send(self):
+    def test_log_mailer_send(self):
         mailer = LogMailer()
-        await mailer.send("test@example.com", "Test Subject", "<p>Your code is 123456</p>")
+        mailer.send("test@example.com", "Test Subject", "<p>Your code is 123456</p>")
 
-    @pytest.mark.asyncio
-    async def test_log_mailer_no_code(self):
+    def test_log_mailer_no_code(self):
         mailer = LogMailer()
-        await mailer.send("test@example.com", "No Code", "<p>No digits here</p>")
+        mailer.send("test@example.com", "No Code", "<p>No digits here</p>")
 
 
 class TestSmtpMailer:
@@ -111,9 +109,9 @@ class TestSendEmailTopLevel:
 
     @pytest.mark.asyncio
     async def test_send_email_log_backend(self):
-        with patch("virtual_team.services.email_service.LogMailer.send", new_callable=AsyncMock) as mock_send:
+        with patch("virtual_team.services.email_service.LogMailer.send", new_callable=MagicMock) as mock_send:
             await send_email("to@test.com", "Subj", "<p>Body</p>")
-            mock_send.assert_awaited_once_with("to@test.com", "Subj", "<p>Body</p>")
+            mock_send.assert_called_once_with("to@test.com", "Subj", "<p>Body</p>")
 
     @pytest.mark.asyncio
     async def test_send_email_smtp_backend(self):
@@ -137,9 +135,9 @@ class TestSendEmailTopLevel:
              patch("virtual_team.services.email_service.SMTP_HOST", "smtp.test.com"):
             with patch("virtual_team.services.email_service.SmtpMailer.send", new_callable=AsyncMock) as mock_smtp:
                 mock_smtp.side_effect = Exception("SMTP error")
-                with patch("virtual_team.services.email_service.LogMailer.send", new_callable=AsyncMock) as mock_log:
+                with patch("virtual_team.services.email_service.LogMailer.send", new_callable=MagicMock) as mock_log:
                     await send_email("to@test.com", "Subj", "<p>Body</p>")
-                    mock_log.assert_awaited_once()
+                    mock_log.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_send_email_resend_fallback_on_error(self):
@@ -147,6 +145,6 @@ class TestSendEmailTopLevel:
              patch("virtual_team.services.email_service.RESEND_API_KEY", "re_test"):
             with patch("virtual_team.services.email_service.ResendApiMailer.send", new_callable=AsyncMock) as mock_resend:
                 mock_resend.side_effect = Exception("Resend error")
-                with patch("virtual_team.services.email_service.LogMailer.send", new_callable=AsyncMock) as mock_log:
+                with patch("virtual_team.services.email_service.LogMailer.send", new_callable=MagicMock) as mock_log:
                     await send_email("to@test.com", "Subj", "<p>Body</p>")
-                    mock_log.assert_awaited_once()
+                    mock_log.assert_called_once()
