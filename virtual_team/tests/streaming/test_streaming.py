@@ -249,7 +249,6 @@ class TestStreamingEdgeCases:
 
 """Extended tests for virtual_team/streaming.py — edge cases and event handlers."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 

@@ -13,9 +13,8 @@ os.environ['RATE_LIMIT'] = '9999'
 os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine
@@ -67,7 +66,7 @@ class TestProviderRoutes:
     def test_list_providers_has_capabilities(self, client):
         resp = client.get("/api/providers")
         data = resp.json()
-        for provider_name, provider_info in data.items():
+        for _provider_name, provider_info in data.items():
             assert "name" in provider_info
             assert "capabilities" in provider_info
             assert isinstance(provider_info["capabilities"], list)

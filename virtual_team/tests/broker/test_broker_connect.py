@@ -1,10 +1,10 @@
+import asyncio
 """Unit tests for virtual_team/broker.py (Redis URL parsing, pub/sub)."""
 
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 
 class TestBrokerExtended:

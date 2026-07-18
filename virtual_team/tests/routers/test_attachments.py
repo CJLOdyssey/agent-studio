@@ -1,8 +1,7 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
 import io
 import os
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -17,9 +16,8 @@ os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
 os.environ['UPLOAD_DIR'] = '/tmp/test_uploads'
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine

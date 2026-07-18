@@ -2,19 +2,11 @@
 
 Mock all external dependencies: Celery, Redis, LLM APIs, LangGraph, repositories.
 """
-from unittest.mock import ANY, AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
 import pytest
 
 from virtual_team.tasks.agent_pipeline import _run_agent_pipeline
-from virtual_team.tasks.complete_pipeline import _complete_pipeline
-from virtual_team.tasks.pipeline_utils import (
-    _build_session_context,
-    _is_balance_error,
-    _parse_json_field,
-)
-
 
 # =============================================================================
 # Fixtures

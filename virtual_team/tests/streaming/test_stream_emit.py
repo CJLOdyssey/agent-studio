@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 
-
 class TestStreamEmitterFull:
     def test_import(self):
         from virtual_team.streaming.streaming import StreamEmitter

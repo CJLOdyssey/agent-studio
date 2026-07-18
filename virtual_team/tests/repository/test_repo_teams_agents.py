@@ -14,6 +14,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
 import virtual_team.database as db_mod
+
 from virtual_team.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -171,8 +172,8 @@ async def test_remove_team_member():
 
 @pytest.mark.asyncio
 async def test_reorder_team_members():
-    from virtual_team.repository.teams import add_team_member, create_team, reorder_team_members
     from virtual_team.core.infra.database import TeamAgentDB
+    from virtual_team.repository.teams import add_team_member, create_team, reorder_team_members
 
     team_obj = await create_team("ReorderTeam", "")
     assert team_obj is not None
@@ -198,8 +199,8 @@ async def test_reorder_team_members():
 
 @pytest.mark.asyncio
 async def test_link_agent_config():
-    from virtual_team.repository.teams import add_team_member, create_team, link_agent_config
     from virtual_team.repository.agents import create_agent_config
+    from virtual_team.repository.teams import add_team_member, create_team, link_agent_config
 
     team_obj = await create_team("LinkTeam", "")
     assert team_obj is not None

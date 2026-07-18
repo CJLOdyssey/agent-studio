@@ -58,8 +58,8 @@ class TestAppCreation:
                 assert "http://localhost:8080" in m.kwargs["allow_origins"]
 
     def test_auth_middleware_registered(self):
-        from virtual_team.core.app import app
         from virtual_team.auth import AuthMiddleware
+        from virtual_team.core.app import app
 
         middleware_types = [m.cls for m in app.user_middleware]
         assert AuthMiddleware in middleware_types

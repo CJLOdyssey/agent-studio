@@ -13,10 +13,9 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from virtual_team.graph.graph import SingleAgentGraph
-from virtual_team.graph.graph_state import AgentState
 
 
 @pytest.fixture
@@ -52,7 +51,7 @@ class TestGraphExtended:
 
     def test_init_with_base_url(self, mock_llm):
         with patch("virtual_team.graph.ChatOpenAI", return_value=mock_llm) as mock_init:
-            g = SingleAgentGraph(
+            SingleAgentGraph(
                 model="test-model",
                 api_key="test-key",
                 base_url="https://custom.api.com/v1",
@@ -242,10 +241,8 @@ class TestGraphExtended:
         }
         result = await graph._tools_node(state)
         assert result["messages"][0].content == "plain result"
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
 
 
 def _make_graph(**kwargs):

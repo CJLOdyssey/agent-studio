@@ -12,11 +12,10 @@ from unittest.mock import AsyncMock, patch
 
 import bcrypt
 import pytest
+import virtual_team.database as db_mod
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
-import virtual_team.database as db_mod
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///test_auth.db")
 db_mod._async_engine = _sqlite_engine
@@ -111,8 +110,9 @@ def client():
 
 class TestAuthLogin:
     def test_login_inactive_user(self, client):
+        from sqlalchemy import update
+
         from virtual_team.core.infra.database import UserDB, get_session_factory
-        from sqlalchemy import select, update
         factory = get_session_factory()
         async def _deactivate():
             async with factory() as s:
@@ -205,7 +205,7 @@ class TestAuthLogin:
             "/api/auth/refresh", json={"refresh_token": first_refresh}
         )
         assert resp1.status_code == 200
-        second_refresh = resp1.json()["refresh_token"]
+        resp1.json()["refresh_token"]
 
         resp2 = client.post(
             "/api/auth/refresh", json={"refresh_token": first_refresh}

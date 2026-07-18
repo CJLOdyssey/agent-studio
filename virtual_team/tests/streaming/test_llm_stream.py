@@ -1,4 +1,3 @@
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -437,7 +436,7 @@ class TestStreamLlmResponse:
 class TestParseSse:
 
     def test_parse_sse_data_line(self):
-        from virtual_team.streaming.llm_stream import stream_llm_response
+        pass
 
     def test_parse_sse_event_line(self):
         pass

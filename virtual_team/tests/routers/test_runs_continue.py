@@ -1,7 +1,5 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
-import io
 import os
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,9 +15,8 @@ os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
 os.environ['UPLOAD_DIR'] = '/tmp/test_uploads'
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine
@@ -55,6 +52,11 @@ def client():
                 yield c
 
 
+ndef _async_gen(*a,**kw):
+    async def _inner():
+        for i in range(3): yield i
+    return _inner()
+
 class TestRunContinue:
 
     USER_HEADERS = {"X-User-ID": "admin"}
@@ -78,8 +80,9 @@ class TestRunContinue:
             assert resp.status_code == 400
 
     def test_complete_run_http_exception_re_raised(self, client):
-        import virtual_team.routers.run_continue as rc_router
         from fastapi import HTTPException
+
+        import virtual_team.routers.run_continue as rc_router
         with patch.object(rc_router.run_service, 'continue_run', new_callable=AsyncMock) as mock_cc:
             mock_cc.side_effect = HTTPException(status_code=409, detail="conflict")
             resp = client.post("/api/runs/complete", json={"content": "x"}, headers=self.USER_HEADERS)
@@ -97,14 +100,13 @@ class TestRunWebSocket:
 
     def test_websocket_connect_and_disconnect(self, client):
         import virtual_team.routers.runs as runs_router
-        from virtual_team.broker import drain_buffer, subscribe_run
         mock_messages = []
         async def _subscribe(*args, **kwargs):
             for m in mock_messages:
                 yield m
 
         with (
-            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None) as mock_get_run,
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
             patch.object(runs_router, 'drain_buffer', return_value=[]),
             patch.object(runs_router, 'subscribe_run', side_effect=_subscribe),
             patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
@@ -215,8 +217,9 @@ class TestRunWebSocket:
                 assert data["type"] == "status"
 
     def test_websocket_run_already_converged(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import MagicMock
+
+        import virtual_team.routers.runs as runs_router
 
         mock_run = MagicMock()
         mock_run.status = "converged"

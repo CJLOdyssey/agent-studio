@@ -1,8 +1,6 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
-import io
 import os
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -17,9 +15,8 @@ os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
 os.environ['UPLOAD_DIR'] = '/tmp/test_uploads'
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine
@@ -142,8 +139,9 @@ class TestTeamRoutes:
             assert any(a.get("name") == "pop-agent" for a in data["agents"])
 
     def test_start_team_run(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import AsyncMock
+
+        import virtual_team.routers.runs as runs_router
         team_id = self._create_team(client, "team-run-test")
         mock_result = {"run_id": "team-run-id-1", "session_id": None, "status": "running"}
         with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
@@ -156,8 +154,9 @@ class TestTeamRoutes:
             mock_create.assert_called_once()
 
     def test_list_team_runs(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import AsyncMock
+
+        import virtual_team.routers.runs as runs_router
         with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = [
                 {"id": "team-run-1", "requirement": "team task 1", "status": "converged", "session_id": None},

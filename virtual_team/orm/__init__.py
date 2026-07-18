@@ -11,8 +11,8 @@ from virtual_team.orm.agent import AgentConfigDB, TeamAgentDB, TeamDB
 from virtual_team.orm.auth import RefreshTokenDB, RoleDB, UserDB, UserRoleDB
 from virtual_team.orm.content import MCPServerDB, PromptDB, RegisteredSkillDB, RegisteredToolDB, VersionDB
 from virtual_team.orm.key import KeyUsageLog, UserApiKey
-from virtual_team.orm.team import AttachmentDB, AuditLogDB, CommandLogDB
 from virtual_team.orm.session import ChatMessage, MemoryEntry, ProjectRun, SessionDB
+from virtual_team.orm.team import AttachmentDB, AuditLogDB, CommandLogDB
 from virtual_team.orm.workflow import WorkflowConfigDB, WorkflowEdgeDB, WorkflowNodeDB
 
 __all__ = [

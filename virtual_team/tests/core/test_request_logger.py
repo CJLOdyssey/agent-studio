@@ -1,14 +1,14 @@
 """Unit tests for request_logger middleware functions."""
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from virtual_team.core.infra.request_logger import (
+    _SENSITIVE_HEADERS,
+    RequestLogMiddleware,
     _client_ip,
     _format_duration,
     _mask,
-    _SENSITIVE_HEADERS,
-    RequestLogMiddleware,
 )
 
 

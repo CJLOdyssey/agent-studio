@@ -13,7 +13,7 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from virtual_team.graph.graph import SingleAgentGraph
 from virtual_team.graph.graph_state import AgentState
@@ -154,7 +154,6 @@ class TestSingleAgentGraphBuildGraph:
 
 class TestSingleAgentGraphShouldContinue:
     def test_continue_when_tool_calls(self):
-        from virtual_team.graph.graph_state import AgentState
 
         sg, _ = _make_graph()
         state: AgentState = {
@@ -166,7 +165,6 @@ class TestSingleAgentGraphShouldContinue:
         assert result == "tools"
 
     def test_end_when_no_tool_calls(self):
-        from virtual_team.graph.graph_state import AgentState
 
         sg, _ = _make_graph()
         state: AgentState = {
@@ -178,7 +176,6 @@ class TestSingleAgentGraphShouldContinue:
         assert result == "__end__"
 
     def test_end_when_empty_messages(self):
-        from virtual_team.graph.graph_state import AgentState
 
         sg, _ = _make_graph()
         state: AgentState = {
@@ -258,12 +255,11 @@ class TestSingleAgentGraphRun:
         result = await sg.run(requirement="test")
         assert result["input_tokens"] == 10
         assert result["output_tokens"] == 20
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from virtual_team.workflow.graph_builder import GraphBuilder
-from virtual_team.workflow.models import WorkflowConfig, WorkflowEdge, WorkflowNode, WorkflowState
+from virtual_team.workflow.models import WorkflowConfig, WorkflowEdge, WorkflowNode
 
 
 @pytest.fixture

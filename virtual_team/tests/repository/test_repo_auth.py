@@ -13,6 +13,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
 import virtual_team.database as db_mod
+
 from virtual_team.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -208,8 +209,7 @@ async def test_get_user_roles_empty():
 
 @pytest.mark.asyncio
 async def test_create_refresh_token():
-    from virtual_team.repository.auth import create_refresh_token
-    from virtual_team.repository.auth import create_user
+    from virtual_team.repository.auth import create_refresh_token, create_user
 
     user = await create_user("test@example.com", "hash")
     token, token_hash = await create_refresh_token(user.id)
@@ -241,9 +241,10 @@ async def test_consume_refresh_token_invalid():
 
 @pytest.mark.asyncio
 async def test_consume_refresh_token_expired():
-    from virtual_team.repository.auth import create_refresh_token, create_user, consume_refresh_token
-    from virtual_team.core.infra.database import RefreshTokenDB
     from datetime import UTC, datetime, timedelta
+
+    from virtual_team.core.infra.database import RefreshTokenDB
+    from virtual_team.repository.auth import consume_refresh_token, create_refresh_token, create_user
 
     user = await create_user("test@example.com", "hash")
     token, token_hash = await create_refresh_token(user.id)
@@ -288,7 +289,6 @@ async def test_revoke_token_family():
     from virtual_team.repository.auth import (
         create_refresh_token,
         create_user,
-        revoke_token_family,
     )
 
     user = await create_user("test@example.com", "hash")
@@ -302,6 +302,8 @@ async def test_revoke_token_family():
 
     from virtual_team.repository.auth import (
         consume_refresh_token as crt,
+    )
+    from virtual_team.repository.auth import (
         create_refresh_token as crt2,
     )
 
@@ -312,14 +314,15 @@ async def test_revoke_token_family():
 
 @pytest.mark.asyncio
 async def test_merge_guest_data():
-    from virtual_team.repository.auth import create_user, create_user as create_another, merge_guest_data
+    from virtual_team.repository.auth import create_user, merge_guest_data
 
     real_user = await create_user("real@example.com", "hash")
     await create_user("guest1@example.com", "hash", username="u_guest1")
     await create_user("guest2@example.com", "hash", username="u_guest2")
 
-    from virtual_team.orm import SessionDB
     from uuid import uuid4
+
+    from virtual_team.orm import SessionDB
 
     factory = db_mod.get_session_factory()
     async with factory() as session:

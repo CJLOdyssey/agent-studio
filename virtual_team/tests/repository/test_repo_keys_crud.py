@@ -13,6 +13,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
 import virtual_team.database as db_mod
+
 from virtual_team.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -41,8 +42,9 @@ async def test_create_api_key_default_clears_others():
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.core.infra.database import UserApiKey
         from sqlalchemy import select
+
+        from virtual_team.core.infra.database import UserApiKey
 
         result = await session.execute(
             select(UserApiKey).where(UserApiKey.user_id == "user1", UserApiKey.is_default)
@@ -56,7 +58,7 @@ async def test_create_api_key_default_clears_others():
 async def test_get_api_keys_with_fallback():
     from virtual_team.repository.keys_crud import create_api_key, get_api_keys
 
-    k1 = await create_api_key("anonymous", "openai", plaintext_key="sk-anon-key-12345")
+    await create_api_key("anonymous", "openai", plaintext_key="sk-anon-key-12345")
     keys = await get_api_keys("someuser")
     assert len(keys) > 0
     assert keys[0]["provider"] == "openai"
@@ -76,10 +78,9 @@ async def test_get_api_keys_no_fallback_for_anonymous():
 
 @pytest.mark.asyncio
 async def test_get_api_keys_decrypt_failure_graceful():
-    from virtual_team.repository.keys_crud import get_api_keys
-
     import virtual_team.database as db
-    from sqlalchemy import select
+
+    from virtual_team.repository.keys_crud import get_api_keys
 
     factory = db.get_session_factory()
     async with factory() as session:
@@ -134,11 +135,7 @@ async def test_get_api_key_for_use_anonymous_fallback():
 
 @pytest.mark.asyncio
 async def test_get_api_key_for_use_inactive_returns_none():
-    from virtual_team.repository.keys_crud import create_api_key
-
-    from virtual_team.repository.keys_crud import get_api_key_for_use
-
-    from virtual_team.repository.keys_crud import update_api_key
+    from virtual_team.repository.keys_crud import create_api_key, get_api_key_for_use, update_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-test")
     await update_api_key(k.id, "user1", is_active=False)
@@ -196,15 +193,16 @@ async def test_update_api_key_reencrypt():
 async def test_update_api_key_default_clears_others():
     from virtual_team.repository.keys_crud import create_api_key, update_api_key
 
-    k1 = await create_api_key("user1", "openai", plaintext_key="sk-1", is_default=True)
+    await create_api_key("user1", "openai", plaintext_key="sk-1", is_default=True)
     k2 = await create_api_key("user1", "deepseek", plaintext_key="sk-2")
 
     await update_api_key(k2.id, "user1", is_default=True)
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.core.infra.database import UserApiKey
         from sqlalchemy import select
+
+        from virtual_team.core.infra.database import UserApiKey
 
         result = await session.execute(
             select(UserApiKey).where(UserApiKey.user_id == "user1", UserApiKey.is_default)
@@ -250,7 +248,7 @@ async def test_delete_api_key_anonymous_fallback():
 async def test_get_default_api_key():
     from virtual_team.repository.keys_crud import create_api_key, get_default_api_key
 
-    k = await create_api_key("user1", "openai", plaintext_key="sk-def", is_default=True)
+    await create_api_key("user1", "openai", plaintext_key="sk-def", is_default=True)
     result = await get_default_api_key("user1")
     assert result is not None
     assert result["api_key"] == "sk-def"
@@ -288,7 +286,7 @@ async def test_get_default_api_key_guest_fallback():
 async def test_get_default_api_key_system_wide_fallback():
     from virtual_team.repository.keys_crud import create_api_key, get_default_api_key
 
-    k = await create_api_key("otheruser", "openai", plaintext_key="sk-other", is_default=True)
+    await create_api_key("otheruser", "openai", plaintext_key="sk-other", is_default=True)
     result = await get_default_api_key("u_newguest_xyz")
     assert result is not None
 
@@ -319,8 +317,9 @@ async def test_log_key_usage():
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.core.infra.database import KeyUsageLog
         from sqlalchemy import select
+
+        from virtual_team.core.infra.database import KeyUsageLog
 
         result = await session.execute(select(KeyUsageLog))
         logs = result.scalars().all()
@@ -330,15 +329,15 @@ async def test_log_key_usage():
 
 @pytest.mark.asyncio
 async def test_get_key_usage_stats():
-    from virtual_team.repository.keys_crud import create_api_key, get_key_usage_stats, log_key_usage
+    from virtual_team.repository.keys_crud import create_api_key, get_key_usage_stats
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-stat")
-    from datetime import UTC, datetime
 
     factory = db_mod.get_session_factory()
     async with factory() as session:
-        from virtual_team.core.infra.database import KeyUsageLog
         from uuid import uuid4
+
+        from virtual_team.core.infra.database import KeyUsageLog
 
         log = KeyUsageLog(
             id=str(uuid4()),

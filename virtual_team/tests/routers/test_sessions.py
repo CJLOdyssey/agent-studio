@@ -1,8 +1,6 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
-import io
 import os
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -17,9 +15,8 @@ os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
 os.environ['UPLOAD_DIR'] = '/tmp/test_uploads'
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine
@@ -196,8 +193,8 @@ class TestSessionEdgeCasesExtended:
         assert resp.status_code == 404
 
     def test_delete_memory(self, client):
-        session_id = self._create_session(client, "del-mem")
-        resp = client.delete(f"/api/memories/nonexistent", headers=self.USER_HEADERS)
+        self._create_session(client, "del-mem")
+        resp = client.delete("/api/memories/nonexistent", headers=self.USER_HEADERS)
         assert resp.status_code == 404
 
 
@@ -400,21 +397,16 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-from unittest.mock import AsyncMock, patch
 
 import pytest
-from starlette.testclient import TestClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
 db_mod._async_engine = _sqlite_engine
 db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-from virtual_team.core.app import app
-from virtual_team.core.base import Base
 
 
 @pytest.fixture

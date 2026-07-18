@@ -110,8 +110,7 @@ class TestBrokerRedis:
 """Extended tests for virtual_team/broker.py — Redis connection, message formatting, buffer."""
 
 import asyncio
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -261,7 +260,6 @@ class TestBrokerFull:
 
     @pytest.mark.asyncio
     async def test_stop_buffer_cancels_task(self):
-        import asyncio
 
         from virtual_team.broker import _buffer_tasks, stop_buffer
 

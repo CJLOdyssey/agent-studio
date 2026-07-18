@@ -1,8 +1,6 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
-import io
 import os
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -17,9 +15,8 @@ os.environ['CHECKPOINTER_BACKEND'] = 'memory'
 os.environ['DATABASE_POOL_SIZE'] = '0'
 os.environ['UPLOAD_DIR'] = '/tmp/test_uploads'
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-
 import virtual_team.database as db_mod
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine
@@ -94,8 +91,9 @@ class TestRunRoutes:
     USER_HEADERS = {"X-User-ID": "admin"}
 
     def test_create_run_with_session_id(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import AsyncMock
+
+        import virtual_team.routers.runs as runs_router
         sess = client.post("/api/sessions", json={"title": "run-session"}, headers=self.USER_HEADERS).json()
         mock_result = {"run_id": "test-run-456", "session_id": sess["id"], "status": "running"}
         with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
@@ -108,8 +106,9 @@ class TestRunRoutes:
             assert data["status"] == "running"
 
     def test_list_runs(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import AsyncMock
+
+        import virtual_team.routers.runs as runs_router
         with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = [
                 {"id": "list-run-1", "requirement": "test", "status": "converged", "session_id": None},
@@ -121,8 +120,9 @@ class TestRunRoutes:
             assert len(data) == 1
 
     def test_get_run_detail(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import AsyncMock
+
+        import virtual_team.routers.runs as runs_router
         mock_detail = {
             "id": "detail-run-1",
             "session_id": None,
@@ -146,8 +146,9 @@ class TestRunRoutes:
             assert "messages" in data
 
     def test_get_run_messages(self, client):
-        import virtual_team.routers.runs as runs_router
         from unittest.mock import AsyncMock
+
+        import virtual_team.routers.runs as runs_router
         mock_detail = {
             "id": "msg-run-1",
             "session_id": None,
@@ -285,8 +286,9 @@ class TestRunRoutesExtended:
             assert resp.status_code == 400
 
     def test_create_run_http_exception_re_raised(self, client):
-        import virtual_team.routers.runs as runs_router
         from fastapi import HTTPException
+
+        import virtual_team.routers.runs as runs_router
         with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
             mock_create.side_effect = HTTPException(status_code=409, detail="conflict")
             resp = client.post("/api/runs", json={"requirement": "valid req"}, headers=self.USER_HEADERS)
@@ -307,8 +309,9 @@ class TestRunRoutesExtended:
             assert resp.status_code == 404
 
     def test_get_run_http_exception_re_raised(self, client):
-        import virtual_team.routers.runs as runs_router
         from fastapi import HTTPException
+
+        import virtual_team.routers.runs as runs_router
         with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
             mock_get.side_effect = HTTPException(status_code=410, detail="gone")
             resp = client.get("/api/runs/some-id")

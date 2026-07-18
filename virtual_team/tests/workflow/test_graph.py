@@ -13,7 +13,7 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from virtual_team.graph.graph import SingleAgentGraph
 from virtual_team.graph.graph_state import AgentState
@@ -97,7 +97,6 @@ class TestGraphCore:
             "session_context": "",
         }
 
-        original_raw = graph._raw_llm_stream
         graph._raw_llm_stream = AsyncMock(return_value=("response", "", []))
         graph._stream_cb = None
 

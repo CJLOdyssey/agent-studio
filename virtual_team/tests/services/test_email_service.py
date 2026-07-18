@@ -12,8 +12,6 @@ os.environ["RESEND_API_KEY"] = "re_test_key"
 
 import pytest
 
-import virtual_team.email_service as email_mod
-
 from virtual_team.services.email_service import (
     LogMailer,
     ResendApiMailer,

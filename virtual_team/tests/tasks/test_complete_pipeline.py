@@ -2,7 +2,7 @@
 
 Mock all external dependencies: Redis, httpx, LLM API.
 """
-from unittest.mock import ANY, AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import httpx
 import pytest

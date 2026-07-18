@@ -1,9 +1,6 @@
 """Tests for virtual_team/workflow/ — strategies, node_factory, router, models."""
 
 from dataclasses import dataclass
-from unittest.mock import MagicMock
-
-import pytest
 
 
 @dataclass
