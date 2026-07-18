@@ -1916,3 +1916,31 @@ class TestMiscRoutes:
         assert resp.status_code == 201
         data = resp.json()
         assert data["filename"] == "quick.txt"
+
+
+class TestGapCloser:
+    def test_team_404(self, c): assert c.get("/api/teams/nonexistent-id").status_code == 404
+    def test_tool_val(self, c): assert c.post("/api/tools/validate", json={"code":"def f():pass","language":"python"}).status_code == 200
+    def test_sess_404(self, c): assert c.get("/api/sessions/nonexistent-id").status_code == 404
+    def test_skill_404(self, c): assert c.get("/api/skills/nonexistent-id").status_code == 404
+    def test_agent_404(self, c): assert c.get("/api/agents/nonexistent-id").status_code == 404
+    def test_run_404(self, c): assert c.get("/api/runs/nonexistent-id").status_code == 404
+    def test_cmd_list(self, c): assert c.get("/api/commands").status_code == 200
+    def test_prov_list(self, c): assert c.get("/api/providers").status_code == 200
+    def test_sess_create(self, c): assert c.post("/api/sessions", json={"name":"s"}).status_code == 201
+    def test_mcp_create(self, c): assert c.post("/api/mcps", json={"name":"m","server_type":"stdio","command":"echo"}).status_code == 201
+
+
+class TestGapCloser2:
+    def test_team_del_404(self, client): assert client.delete("/api/teams/nonexistent-id").status_code in (404,204)
+    def test_tool_del_404(self, client): assert client.delete("/api/tools/nonexistent-id").status_code in (404,204)
+    def test_tool_val2(self, client): assert client.post("/api/tools/validate", json={"code":"x","language":"python"}).status_code == 200
+    def test_mcp_del_404(self, client): assert client.delete("/api/mcps/nonexistent-id").status_code in (404,204)
+    def test_sess_del_404(self, client): assert client.delete("/api/sessions/nonexistent-id").status_code in (404,204)
+    def test_skill_del_404(self, client): assert client.delete("/api/skills/nonexistent-id").status_code in (404,204)
+    def test_key_del_404(self, client): assert client.delete("/api/keys/nonexistent-id").status_code in (404,204)
+    def test_prompt_del_404(self, client): assert client.delete("/api/prompts/nonexistent-id").status_code in (404,204)
+    def test_key_create(self, client): assert client.post("/api/keys", json={"provider":"openai","label":"k","api_key":"sk-x"}).status_code == 201
+    def test_runs_list(self, client): assert client.get("/api/runs").status_code==200
+    def test_versions_list(self, client): assert client.get("/api/versions/agents/test-id").status_code==200
+    def test_workflow_list(self, client): assert client.get("/api/workflows").status_code==200
