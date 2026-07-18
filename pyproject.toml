@@ -8,6 +8,7 @@ ignore = ["E402"]
 
 [tool.ruff.lint.per-file-ignores]
 "virtual_team/routers/*.py" = ["B008"]
+"virtual_team/auth/auth_rbac.py" = ["F401"]
 "tests/*.py" = ["E501", "SIM117", "N806"]
 
 [tool.mypy]

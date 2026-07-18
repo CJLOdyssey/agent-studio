@@ -5,16 +5,13 @@ Public symbols are explicitly imported below so callers can use either:
     from virtual_team.core.xxx import XXX
 """
 
-from ._interfaces import ToolDescriptor, ToolExecutor, StreamResponseHandler
+from ._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
 from .audit import log_audit
 from .base import Base
 from .config import TeamConfig, load_config
 from .error_codes import ErrorCode, error_response
 from .infra.events import EventBus, Events
 from .infra.key_vault import (
-    _derive_fernet_key,
-    _get_fernet,
-    _machine_fingerprint,
     decrypt_api_key,
     encrypt_api_key,
 )
