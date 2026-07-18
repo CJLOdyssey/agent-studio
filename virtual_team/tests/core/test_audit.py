@@ -6,7 +6,7 @@ import pytest
 
 
 class TestLogAudit:
-    @patch("virtual_team.audit.get_session_factory")
+    @patch("virtual_team.core.audit.get_session_factory")
     @pytest.mark.asyncio
     async def test_log_audit_creates_entry(self, mock_get_factory):
         from virtual_team.core.audit import log_audit
@@ -29,7 +29,7 @@ class TestLogAudit:
         assert added.detail == "创建成功"
         mock_session.commit.assert_awaited_once()
 
-    @patch("virtual_team.audit.get_session_factory")
+    @patch("virtual_team.core.audit.get_session_factory")
     @pytest.mark.asyncio
     async def test_log_audit_minimal_args(self, mock_get_factory):
         from virtual_team.core.audit import log_audit

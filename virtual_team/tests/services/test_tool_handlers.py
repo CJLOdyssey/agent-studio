@@ -135,7 +135,7 @@ class TestHandleMcp:
     @pytest.mark.asyncio
     async def test_handle_mcp_mocked(self):
         w = _ToolWrapper(name="mcp", mcp_type="mocked")
-        with patch("virtual_team.tool_handlers.execute_tool", return_value="mock result"):
+        with patch("virtual_team.services.tool_handlers.execute_tool", return_value="mock result"):
             result = await handle_mcp(w, {})
             assert result == "mock result"
 
@@ -171,7 +171,7 @@ class TestExecuteMcp:
     @pytest.mark.asyncio
     async def test_execute_mcp_fallback_to_execute_tool(self):
         w = _ToolWrapper(name="fallback")
-        with patch("virtual_team.tool_handlers.execute_tool", return_value='{"status": "called"}'):
+        with patch("virtual_team.services.tool_handlers.execute_tool", return_value='{"status": "called"}'):
             result = await execute_mcp(w, {})
             assert "called" in result
 
@@ -357,7 +357,7 @@ class TestCallMcpSdk:
             mcp_endpoint="/usr/bin/env",
             mcp_tool_name="test_cmd",
         )
-        with patch("virtual_team.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
+        with patch("virtual_team.services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
             mock_sdk.return_value = '{"error": "mcp not available"}'
             result = await execute_mcp(w, {})
             assert "error" in result
