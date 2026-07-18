@@ -12,10 +12,11 @@ from unittest.mock import AsyncMock, patch
 
 import bcrypt
 import pytest
-import virtual_team.core.infra.database as db_mod
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.core.infra.database as db_mod
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///test_auth.db")
 db_mod._async_engine = _sqlite_engine

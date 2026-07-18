@@ -13,7 +13,6 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
 import virtual_team.core.infra.database as db_mod
-
 from virtual_team.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -79,7 +78,6 @@ async def test_get_api_keys_no_fallback_for_anonymous():
 @pytest.mark.asyncio
 async def test_get_api_keys_decrypt_failure_graceful():
     import virtual_team.core.infra.database as db
-
     from virtual_team.repository.keys_crud import get_api_keys
 
     factory = db.get_session_factory()
