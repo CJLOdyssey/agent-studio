@@ -13,7 +13,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
 import virtual_team.database as db_mod
-from virtual_team.base import Base
+from virtual_team.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
 
@@ -24,7 +24,7 @@ async def setup_db():
     db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
     async with _sqlite_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    from virtual_team.seed import seed_default_roles_and_admin
+    from virtual_team.core.seed import seed_default_roles_and_admin
     await seed_default_roles_and_admin()
     yield
     async with _sqlite_engine.begin() as conn:

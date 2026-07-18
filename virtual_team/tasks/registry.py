@@ -6,7 +6,7 @@ from typing import Any, cast
 
 from virtual_team.broker import celery_app
 from virtual_team.core.infra.logging_config import get_logger
-from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
+from virtual_team.core.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
 
 from .agent_pipeline import _run_agent_pipeline
 from .complete_pipeline import _complete_pipeline

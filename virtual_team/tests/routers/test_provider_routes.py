@@ -22,8 +22,8 @@ db_mod._async_engine = _sqlite_engine
 db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
 
-from virtual_team.app import app
-from virtual_team.base import Base
+from virtual_team.core.app import app
+from virtual_team.core.base import Base
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def client():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from virtual_team.seed import seed_default_roles_and_admin
+        from virtual_team.core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
 
     lifespan_mod.init_db = _safe_init_db

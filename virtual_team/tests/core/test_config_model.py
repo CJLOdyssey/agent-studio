@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 class TestTeamConfig:
     def test_default_values(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         cfg = TeamConfig()
         assert cfg.api_key == ""
@@ -21,19 +21,19 @@ class TestTeamConfig:
         assert cfg.max_requirement_length == 2000
 
     def test_extra_fields_forbidden(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         with pytest.raises(ValidationError):
             TeamConfig(unknown_field="nope")
 
     def test_model_min_length_validation(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         with pytest.raises(ValidationError):
             TeamConfig(model="")
 
     def test_temperature_range(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         with pytest.raises(ValidationError):
             TeamConfig(temperature=-0.1)
@@ -41,19 +41,19 @@ class TestTeamConfig:
             TeamConfig(temperature=1.1)
 
     def test_max_rounds_ge_1(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         with pytest.raises(ValidationError):
             TeamConfig(max_rounds=0)
 
     def test_timeout_ge_10(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         with pytest.raises(ValidationError):
             TeamConfig(timeout=5)
 
     def test_max_requirement_length_range(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         with pytest.raises(ValidationError):
             TeamConfig(max_requirement_length=0)
@@ -61,7 +61,7 @@ class TestTeamConfig:
             TeamConfig(max_requirement_length=20000)
 
     def test_repr_masks_api_key(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         cfg = TeamConfig(api_key="secret123")
         rep = repr(cfg)
@@ -69,7 +69,7 @@ class TestTeamConfig:
         assert "secret123" not in rep
 
     def test_repr_unset_key(self):
-        from virtual_team.config import TeamConfig
+        from virtual_team.core.config import TeamConfig
 
         rep = repr(TeamConfig())
         assert "(unset)" in rep
@@ -79,19 +79,19 @@ class TestTeamConfig:
 
 class TestSafeFloat:
     def test_returns_value_when_env_set(self):
-        from virtual_team.config import _safe_float
+        from virtual_team.core.config import _safe_float
 
         with patch("virtual_team.config.os.environ", {"TEST_KEY": "0.85"}):
             assert _safe_float("TEST_KEY", 0.7) == 0.85
 
     def test_returns_default_on_missing_key(self):
-        from virtual_team.config import _safe_float
+        from virtual_team.core.config import _safe_float
 
         with patch("virtual_team.config.os.environ", {}):
             assert _safe_float("MISSING", 0.5) == 0.5
 
     def test_returns_default_on_invalid_value(self):
-        from virtual_team.config import _safe_float
+        from virtual_team.core.config import _safe_float
 
         with patch("virtual_team.config.os.environ", {"BAD": "not-a-number"}):
             assert _safe_float("BAD", 0.3) == 0.3
@@ -101,19 +101,19 @@ class TestSafeFloat:
 
 class TestSafeInt:
     def test_returns_value_when_env_set(self):
-        from virtual_team.config import _safe_int
+        from virtual_team.core.config import _safe_int
 
         with patch("virtual_team.config.os.environ", {"TEST_KEY": "42"}):
             assert _safe_int("TEST_KEY", 10) == 42
 
     def test_returns_default_on_missing_key(self):
-        from virtual_team.config import _safe_int
+        from virtual_team.core.config import _safe_int
 
         with patch("virtual_team.config.os.environ", {}):
             assert _safe_int("MISSING", 7) == 7
 
     def test_returns_default_on_invalid_value(self):
-        from virtual_team.config import _safe_int
+        from virtual_team.core.config import _safe_int
 
         with patch("virtual_team.config.os.environ", {"BAD": "xyz"}):
             assert _safe_int("BAD", 3) == 3
@@ -123,7 +123,7 @@ class TestSafeInt:
 
 class TestLoadConfig:
     def test_loads_from_env(self):
-        from virtual_team.config import load_config
+        from virtual_team.core.config import load_config
 
         env = {
             "DEEPSEEK_API_KEY": "sk-test",
@@ -147,14 +147,14 @@ class TestLoadConfig:
             assert cfg.max_requirement_length == 5000
 
     def test_uses_openai_api_key_fallback(self):
-        from virtual_team.config import load_config
+        from virtual_team.core.config import load_config
 
         with patch("virtual_team.config.os.environ", {"OPENAI_API_KEY": "sk-fallback"}):
             cfg = load_config()
             assert cfg.api_key == "sk-fallback"
 
     def test_deepseek_takes_precedence(self):
-        from virtual_team.config import load_config
+        from virtual_team.core.config import load_config
 
         env = {"DEEPSEEK_API_KEY": "sk-deepseek", "OPENAI_API_KEY": "sk-openai"}
         with patch("virtual_team.config.os.environ", env):
@@ -162,7 +162,7 @@ class TestLoadConfig:
             assert cfg.api_key == "sk-deepseek"
 
     def test_defaults_when_no_env(self):
-        from virtual_team.config import load_config
+        from virtual_team.core.config import load_config
 
         with patch("virtual_team.config.os.environ", {}):
             cfg = load_config()

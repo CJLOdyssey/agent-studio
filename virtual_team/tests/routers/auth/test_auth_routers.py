@@ -23,8 +23,8 @@ db_mod._async_engine = _sqlite_engine
 db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///test_auth.db"
 
-from virtual_team.app import app
-from virtual_team.base import Base
+from virtual_team.core.app import app
+from virtual_team.core.base import Base
 
 
 @pytest.fixture

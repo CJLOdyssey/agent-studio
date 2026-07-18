@@ -213,7 +213,7 @@ async def test_client() -> Any:
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────
-    from virtual_team.app import app
+    from virtual_team.core.app import app
 
     app.router.lifespan_context = None  # type: ignore[assignment]
 

@@ -9,7 +9,7 @@ class TestLogAudit:
     @patch("virtual_team.audit.get_session_factory")
     @pytest.mark.asyncio
     async def test_log_audit_creates_entry(self, mock_get_factory):
-        from virtual_team.audit import log_audit
+        from virtual_team.core.audit import log_audit
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -18,7 +18,7 @@ class TestLogAudit:
 
         await log_audit("create", "agent", "my-agent", "创建成功")
 
-        from virtual_team.audit import AuditLogDB
+        from virtual_team.core.audit import AuditLogDB
 
         mock_session.add.assert_called_once()
         added = mock_session.add.call_args[0][0]
@@ -32,7 +32,7 @@ class TestLogAudit:
     @patch("virtual_team.audit.get_session_factory")
     @pytest.mark.asyncio
     async def test_log_audit_minimal_args(self, mock_get_factory):
-        from virtual_team.audit import log_audit
+        from virtual_team.core.audit import log_audit
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
