@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from virtual_team.auth.auth_jwt import AUTH_SECRET, decode_jwt
 from virtual_team.auth.auth_rbac import AUTH_ENABLED, PUBLIC_PATHS, PUBLIC_PREFIXES
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

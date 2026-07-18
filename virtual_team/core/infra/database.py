@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from virtual_team.core.base import Base
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -123,8 +123,6 @@ async def init_db() -> None:
     from virtual_team.core.seed import seed_default_roles_and_admin  # noqa: F401
     await seed_default_roles_and_admin()
 
-# log_audit moved to virtual_team/audit.py — kept for backward compatibility
-from virtual_team.core.audit import log_audit  # noqa: F401
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
@@ -135,7 +133,7 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 # ── Backward-compatible re-exports ─────────────────────────────────────
 # All ORM models moved to virtual_team.db_models package.
-# These imports keep `from virtual_team.core.database import XxxDB` working.
+# These imports keep `from virtual_team.core.infra.database import XxxDB` working.
 from virtual_team.db_models import (  # noqa: E402, F401
     AgentConfigDB,
     AttachmentDB,

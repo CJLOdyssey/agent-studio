@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
-from virtual_team.core.database import TeamAgentDB, TeamDB, get_session_factory
+from virtual_team.core.infra.database import TeamAgentDB, TeamDB, get_session_factory
 
 
 async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:

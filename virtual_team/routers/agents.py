@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from virtual_team.core.audit import log_audit
 from virtual_team.auth import CurrentUser, get_current_user
 from virtual_team.core.error_codes import ErrorCode, error_response
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import (
     create_agent_config,
     delete_agent_config,

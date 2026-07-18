@@ -9,7 +9,7 @@ import httpx
 
 from virtual_team.broker import publish_run_message
 from virtual_team.core.config import load_config
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import update_run_result, update_run_status
 
 from .prefix_completion import stream_prefix_completion

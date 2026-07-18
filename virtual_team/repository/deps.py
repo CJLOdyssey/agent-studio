@@ -14,6 +14,6 @@ Usage::
         ...
 """
 
-from virtual_team.core.database import get_session
+from virtual_team.core.infra.database import get_session
 
 __all__ = ["get_session"]

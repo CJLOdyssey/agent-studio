@@ -12,7 +12,7 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client
 
 from virtual_team.broker import publish_run_message
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.mock_fallback import run_mock
 from virtual_team.repository import (
     create_memory_entry,

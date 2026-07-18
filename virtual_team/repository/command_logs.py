@@ -2,7 +2,7 @@
 
 from uuid import uuid4
 
-from virtual_team.core.database import CommandLogDB, get_session_factory
+from virtual_team.core.infra.database import CommandLogDB, get_session_factory
 
 
 async def log_command(

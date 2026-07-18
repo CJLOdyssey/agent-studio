@@ -27,7 +27,7 @@ from virtual_team.streaming.llm_stream import (
     convert_messages_to_api,
     stream_llm_response,
 )
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.services.tool_config import ToolConfig, build_tool_definition
 
 logger = get_logger(__name__)

@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from virtual_team.core.error_codes import ErrorCode, error_response
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents_test"])

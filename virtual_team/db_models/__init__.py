@@ -1,7 +1,7 @@
 """ORM model definitions split by domain.
 
 Import from `virtual_team.db_models` for ORM model classes.
-Backward-compatible: `from virtual_team.core.database import X` also works.
+Backward-compatible: `from virtual_team.core.infra.database import X` also works.
 """
 
 from virtual_team.core.base import Base

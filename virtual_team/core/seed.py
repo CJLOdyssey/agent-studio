@@ -2,7 +2,7 @@
 
 from sqlalchemy import select
 
-from virtual_team.core.database import get_session_factory
+from virtual_team.core.infra.database import get_session_factory
 from virtual_team.db_models import RoleDB, UserDB, UserRoleDB
 
 

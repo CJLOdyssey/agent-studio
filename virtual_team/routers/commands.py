@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from virtual_team.core.error_codes import ErrorCode, error_response
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
 from virtual_team.repository import get_session, log_command, update_session_title
 

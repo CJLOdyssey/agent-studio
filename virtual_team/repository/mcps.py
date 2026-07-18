@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy import desc
 
-from virtual_team.core.database import MCPServerDB
+from virtual_team.core.infra.database import MCPServerDB
 from virtual_team.repository.base import BaseRepository
 
 

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from virtual_team.auth import get_user_id
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import get_api_keys
 
 logger = get_logger(__name__)

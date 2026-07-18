@@ -16,7 +16,7 @@ Production stack:
   - Vector DB: PostgreSQL + pgvector extension
 """
 
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.rag.rag_chunking import semantic_chunk
 from virtual_team.rag.rag_embedding import EmbeddingProvider
 from virtual_team.rag.rag_store import PgVectorStore

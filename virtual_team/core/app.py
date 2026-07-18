@@ -19,7 +19,7 @@ from virtual_team.observability.startup_guard import mark_starting
 mark_starting()
 
 from virtual_team.core.app_lifespan import shutdown, startup  # noqa: E402
-from virtual_team.core.logging_config import get_logger  # noqa: E402
+from virtual_team.core.infra.logging_config import get_logger  # noqa: E402
 from virtual_team.routers import (  # noqa: E402
     admin,
     agent_test_handler,
@@ -63,7 +63,7 @@ app.include_router(debug_router)
 
 
 # ── Middleware (order matters — outermost first) ────────────────────────────
-from virtual_team.core.rate_limit import RateLimitMiddleware  # noqa: E402
+from virtual_team.core.infra.rate_limit import RateLimitMiddleware  # noqa: E402
 
 app.add_middleware(
     RateLimitMiddleware,
@@ -75,7 +75,7 @@ from virtual_team.auth import AuthMiddleware  # noqa: E402
 
 app.add_middleware(AuthMiddleware)
 
-from virtual_team.core.request_logger import RequestLogMiddleware  # noqa: E402
+from virtual_team.core.infra.request_logger import RequestLogMiddleware  # noqa: E402
 
 app.add_middleware(RequestLogMiddleware)
 
@@ -124,7 +124,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 @app.get("/api/metrics")
 def metrics() -> Any:
     """Prometheus metrics endpoint."""
-    from virtual_team.core.metrics import metrics_endpoint
+    from virtual_team.core.infra.metrics import metrics_endpoint
     return metrics_endpoint()
 
 

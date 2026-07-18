@@ -8,7 +8,7 @@ Usage:
     await log_audit("create", "agent", "my-agent", "创建成功")
 """
 
-from virtual_team.core.database import get_session_factory
+from virtual_team.core.infra.database import get_session_factory
 from virtual_team.db_models import AuditLogDB
 
 

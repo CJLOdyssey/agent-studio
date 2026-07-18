@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from sqlalchemy import or_, select, update
 
-from virtual_team.core.database import (
+from virtual_team.core.infra.database import (
     KeyUsageLog,
     RefreshTokenDB,
     RoleDB,

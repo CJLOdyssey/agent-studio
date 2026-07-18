@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from virtual_team.core.database import (
+from virtual_team.core.infra.database import (
     AgentConfigDB,
     get_session_factory,
 )

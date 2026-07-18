@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import Depends, HTTPException, Request, status
 
 from virtual_team.auth.auth_jwt import AUTH_SECRET, decode_jwt
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -64,7 +64,7 @@ async def get_current_user(request: Request) -> CurrentUser:
     try:
         from sqlalchemy import select
 
-        from virtual_team.core.database import RoleDB, UserDB, UserRoleDB, get_session_factory
+        from virtual_team.core.infra.database import RoleDB, UserDB, UserRoleDB, get_session_factory
 
         factory = get_session_factory()
         async with factory() as session:

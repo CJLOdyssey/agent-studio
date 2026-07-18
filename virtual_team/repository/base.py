@@ -8,7 +8,7 @@ from typing import Any, ClassVar, Generic, TypeVar, cast
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 
-from virtual_team.core.database import get_session_factory
+from virtual_team.core.infra.database import get_session_factory
 
 ModelT = TypeVar("ModelT", bound=DeclarativeBase)
 

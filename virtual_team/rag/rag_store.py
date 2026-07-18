@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy import text
 
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.rag.rag_chunking import Chunk
 from virtual_team.rag.rag_embedding import EMBEDDING_DIM
 
@@ -26,7 +26,7 @@ class PgVectorStore:
     async def _ensure_table(self) -> None:
         if self._initialized:
             return
-        from virtual_team.core.database import get_session_factory
+        from virtual_team.core.infra.database import get_session_factory
 
         factory = get_session_factory()
         async with factory() as session:
@@ -79,7 +79,7 @@ class PgVectorStore:
             return
         await self._ensure_table()
 
-        from virtual_team.core.database import get_session_factory
+        from virtual_team.core.infra.database import get_session_factory
 
         factory = get_session_factory()
         async with factory() as session:
@@ -126,7 +126,7 @@ class PgVectorStore:
         """
         await self._ensure_table()
 
-        from virtual_team.core.database import get_session_factory
+        from virtual_team.core.infra.database import get_session_factory
 
         factory = get_session_factory()
         async with factory() as session:
@@ -175,7 +175,7 @@ class PgVectorStore:
 
     async def clear_session(self, session_id: str) -> None:
         await self._ensure_table()
-        from virtual_team.core.database import get_session_factory
+        from virtual_team.core.infra.database import get_session_factory
 
         factory = get_session_factory()
         async with factory() as session:

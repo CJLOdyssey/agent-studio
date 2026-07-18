@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from virtual_team.core.audit import log_audit
 from virtual_team.core.error_codes import ErrorCode, error_response
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import create_mcp, delete_mcp, get_mcps, get_mcps_as_dicts, update_mcp
 
 logger = get_logger(__name__)

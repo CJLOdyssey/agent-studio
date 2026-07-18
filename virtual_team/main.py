@@ -7,7 +7,7 @@ import json
 import sys
 
 from virtual_team.core.config import load_config
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import get_active_agent_configs, get_session_memories
 
 logger = get_logger(__name__)

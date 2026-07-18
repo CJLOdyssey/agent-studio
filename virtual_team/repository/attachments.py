@@ -2,7 +2,7 @@
 
 from sqlalchemy import select
 
-from virtual_team.core.database import AttachmentDB, get_session_factory
+from virtual_team.core.infra.database import AttachmentDB, get_session_factory
 
 
 async def create_attachment(

@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from virtual_team.core.database import MemoryEntry, get_session_factory
+from virtual_team.core.infra.database import MemoryEntry, get_session_factory
 
 
 async def get_session_memories(session_id: str) -> list[MemoryEntry]:

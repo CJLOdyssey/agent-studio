@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 from virtual_team.broker import get_redis
 from virtual_team.services.email_service import build_verification_email, send_email
 from virtual_team.core.error_codes import ErrorCode, error_response
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.auth.password_policy import validate_password
 from virtual_team.repository.auth import create_user, get_user_by_email, mark_user_verified
 

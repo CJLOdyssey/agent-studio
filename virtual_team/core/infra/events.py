@@ -2,7 +2,7 @@
 
 Usage
 -----
-    from virtual_team.core.events import bus, Events
+    from virtual_team.core.infra.events import bus, Events
 
     async def on_run_created(run_id: str, **kw):
         notify(run_id)

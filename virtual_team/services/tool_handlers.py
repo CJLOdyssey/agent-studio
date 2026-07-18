@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 from langchain_core.messages import HumanMessage
 
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 
 if TYPE_CHECKING:
     from virtual_team.services.tool_config import _ToolWrapper

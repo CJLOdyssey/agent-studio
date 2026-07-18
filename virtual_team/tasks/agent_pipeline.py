@@ -13,7 +13,7 @@ from virtual_team.broker import publish_run_message
 from virtual_team.checkpoint import create_checkpointer_async
 from virtual_team.core.config import load_config
 from virtual_team.graph.graph import SingleAgentGraph
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import (
     get_agent_config,
     get_mcps,

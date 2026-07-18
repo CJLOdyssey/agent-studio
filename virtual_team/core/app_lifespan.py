@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 from virtual_team.broker import BROKER_URL, REDIS_URL, get_redis
 from virtual_team.core.config import load_config
-from virtual_team.core.database import DATABASE_URL, get_session_factory, init_db
-from virtual_team.core.events import Events, bus
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.database import DATABASE_URL, get_session_factory, init_db
+from virtual_team.core.infra.events import Events, bus
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.observability.startup_guard import mark_started, mark_stopped, record_crash
 
 if TYPE_CHECKING:
@@ -112,7 +112,7 @@ async def _check_redis() -> None:
 async def seed_default_tools() -> None:
     from sqlalchemy import select
 
-    from virtual_team.core.database import get_session_factory
+    from virtual_team.core.infra.database import get_session_factory
     from virtual_team.db_models import RegisteredToolDB
 
     factory = get_session_factory()

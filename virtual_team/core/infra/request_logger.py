@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from virtual_team.core.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.observability import set_trace_id
 
 logger = get_logger(__name__)
