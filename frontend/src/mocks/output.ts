@@ -1,4 +1,4 @@
-import type { OutputEntry } from '../components/agentstudio/workstation/output/output.types';
+import type { OutputEntry } from '../components/AgentStudio/workstation/output/output.types';
 
 export const MOCK_OUTPUTS: OutputEntry[] = [
   { id: 'o1', name: '中文输出', content: '回复必须使用中文', category: '语言约束', model: '全部模型', status: 'active', version: 'v1.0.0', createdAt: '2026-05-10' },

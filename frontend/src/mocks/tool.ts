@@ -1,5 +1,5 @@
-import type { VersionEntry } from '../components/agentstudio/workstation/types';
-import type { ToolEntry } from '../components/agentstudio/workstation/tool/tool.types';
+import type { VersionEntry } from '../components/AgentStudio/workstation/types';
+import type { ToolEntry } from '../components/AgentStudio/workstation/tool/tool.types';
 
 const PARAMS = '{"type":"object","properties":{}}';
 
