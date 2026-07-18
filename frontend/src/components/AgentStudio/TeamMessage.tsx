@@ -15,7 +15,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from 'lucide-react';
-import type { Message, Agent } from '../../types/agentstudio';
+import type { Message, Agent } from '../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
 import { CopyBtn, CodeBlock } from './messages';

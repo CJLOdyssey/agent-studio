@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreVertical, Pencil, Trash2, Settings, Lock } from 'lucide-react';
-import type { Agent } from '../../../types/agentstudio';
+import type { Agent } from '../../../types/AgentStudio';
 import type { TFunction } from 'i18next';
 
 interface TeamTreeAgentItemProps {

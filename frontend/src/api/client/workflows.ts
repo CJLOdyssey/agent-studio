@@ -1,5 +1,5 @@
 import api from './instance';
-import type { WorkflowConfig } from '../../types/agentstudio';
+import type { WorkflowConfig } from '../../types/AgentStudio';
 
 export async function fetchWorkflow(teamId: string): Promise<WorkflowConfig | null> {
   try {

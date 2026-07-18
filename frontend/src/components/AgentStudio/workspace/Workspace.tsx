@@ -1,6 +1,6 @@
 import React from 'react';
 import { Maximize2, PanelRightClose, FolderKanban, FileCode } from 'lucide-react';
-import type { WorkspaceTab } from '../../../types/agentstudio';
+import type { WorkspaceTab } from '../../../types/AgentStudio';
 import { getAgentType, getWorkspaceTabs } from '../../../utils/workspaceConfig';
 import { useTranslation } from 'react-i18next';
 

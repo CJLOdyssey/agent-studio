@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import WorkflowEditor from './WorkflowEditor';
 import { fetchWorkflow } from '../../../../api/client';
 import { listTeams } from '../../../../api/client/teams';
-import type { WorkflowConfig } from '../../../../types/agentstudio';
+import type { WorkflowConfig } from '../../../../types/AgentStudio';
 
 interface TeamItem {
   id: string;
