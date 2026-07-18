@@ -55,8 +55,8 @@ def _safe_float(key: str, default: float) -> float:
 _sentry_dsn = os.environ.get("SENTRY_DSN", "")
 if _sentry_dsn:
     import sentry_sdk  # type: ignore[import-not-found]
-    from sentry_sdk.integrations.starlette import StarletteIntegration  # type: ignore[import-not-found]
     from sentry_sdk.integrations.fastapi import FastApiIntegration  # type: ignore[import-not-found]
+    from sentry_sdk.integrations.starlette import StarletteIntegration  # type: ignore[import-not-found]
 
     sentry_sdk.init(
         dsn=_sentry_dsn,
