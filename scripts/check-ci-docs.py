@@ -60,7 +60,7 @@ else:
 # ── 3. CLAUDE.md workstation modules ─────────────────────────────────────
 claude = root.joinpath("CLAUDE.md").read_text()
 modules = [
-    d for d in root.joinpath("frontend/src/components/agentstudio/workstation").iterdir()
+    d for d in root.joinpath("frontend/src/components/AgentStudio/workstation").iterdir()
     if d.is_dir() and d.name != "shared"
 ]
 actual = len(modules)

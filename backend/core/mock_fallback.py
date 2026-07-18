@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from backend.streaming.streaming import StreamEmitter
+from backend.streaming.emitter import StreamEmitter
 
 logger = logging.getLogger(__name__)
 

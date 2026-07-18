@@ -1,7 +1,7 @@
 import { RefObject } from 'react';
 import { Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Agent, Message } from '../../types/agentstudio';
+import type { Agent, Message } from '../../types/AgentStudio';
 import TeamMessage from './TeamMessage';
 import { useChatStore } from '../../stores/chatStore';
 import { editMessage, regenerateMessage, continueGeneration } from '../../stores/chatActions';

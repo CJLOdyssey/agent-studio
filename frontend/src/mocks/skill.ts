@@ -1,5 +1,5 @@
-import type { VersionEntry } from '../components/agentstudio/workstation/types';
-import type { SkillEntry } from '../components/agentstudio/workstation/skill/skill.types';
+import type { VersionEntry } from '../components/AgentStudio/workstation/types';
+import type { SkillEntry } from '../components/AgentStudio/workstation/skill/skill.types';
 
 export const MOCK_SKILLS: SkillEntry[] = [
   { id: 's1', name: 'React 组件开发', description: '提供 React 组件开发的最佳实践和代码生成能力', category: '前端开发', status: 'installed', version: 'v3.1.0', author: 'admin', instructions: '', prompt_id: '', tool_names: [], output_constraint: '', createdAt: '2026-04-10' },

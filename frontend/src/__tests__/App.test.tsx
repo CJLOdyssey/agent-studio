@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import App from '../App';
 import { TestProviders } from '../test/setup';
 
-vi.mock('../components/agentstudio/AgentStudioWorkstation', () => ({
+vi.mock('../components/AgentStudio/AgentStudioWorkstation', () => ({
   default: () => <div data-testid="workstation">Workstation</div>,
 }));
 

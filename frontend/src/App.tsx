@@ -4,7 +4,7 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ToastProvider } from './utils/useToast';
 import { AuthProvider, useAuth, LoginModal } from './components/auth';
-import AgentStudioWorkstation from './components/agentstudio/AgentStudioWorkstation';
+import AgentStudioWorkstation from './components/AgentStudio/AgentStudioWorkstation';
 import { useChatStore } from './stores/chatStore';
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';

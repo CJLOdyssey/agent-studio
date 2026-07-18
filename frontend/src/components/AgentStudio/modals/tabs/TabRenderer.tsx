@@ -4,7 +4,7 @@ import { ToolsTab } from './ToolsTab';
 import { MCPTab } from './MCPTab';
 import { SkillsTab } from './SkillsTab';
 import ItemEditor from '../ItemEditor';
-import type { AgentTool, AgentMCP, AgentSkill } from '../../../../types/agentstudio';
+import type { AgentTool, AgentMCP, AgentSkill } from '../../../../types/AgentStudio';
 import type { ToolFormData } from '../../workstation/tool/tool.types';
 import type { MCPFormData } from '../../workstation/mcp/mcp.types';
 import type { SkillFormData } from '../../workstation/skill/skill.types';

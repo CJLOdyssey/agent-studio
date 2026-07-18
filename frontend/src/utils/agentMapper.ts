@@ -1,4 +1,4 @@
-import type { Agent, Team } from '../types/agentstudio';
+import type { Agent, Team } from '../types/AgentStudio';
 
 /**
  * Get all agents from teams as a flat array.

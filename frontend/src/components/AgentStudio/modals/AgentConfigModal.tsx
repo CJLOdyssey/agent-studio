@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from 'react';
 import { X, Wrench, Server, Sparkles } from 'lucide-react';
-import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/agentstudio';
+import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/AgentStudio';
 import { useItemList } from '../../../hooks/useItemList';
 import { useAutoSave } from '../../../hooks/useAutoSave';
 import { useAgentConfigForm } from './tabs/useAgentConfigForm';

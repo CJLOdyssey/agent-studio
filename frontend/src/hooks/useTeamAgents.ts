@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Bot } from 'lucide-react';
-import type { Agent, Team } from '../types/agentstudio';
+import type { Agent, Team } from '../types/AgentStudio';
 import { validateName, checkAgentLimit } from '../utils/validation';
 import { updateAgent } from '../api/client/agents';
 import { addTeamMember, linkAgentToMember, removeTeamMember } from '../api/client/teams';
