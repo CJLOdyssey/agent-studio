@@ -2,21 +2,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('reactflow', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   const RF = {
     __esModule: true,
-    default: function MockReactFlow({ nodes, edges, onConnect, onNodeClick, onEdgeClick, onPaneClick, nodeTypes }: Record<string, unknown>) {
+    default: function MockReactFlow({ nodes, edges, _onConnect, onNodeClick, onEdgeClick, onPaneClick, _nodeTypes }: Record<string, unknown>) {
       return (
         <div data-testid="reactflow-canvas">
           {Array.isArray(nodes) && (nodes as Array<{ id: string; data: { label: string } }>).map((n: { id: string; data: { label: string } }) => (
-            <div key={n.id} data-testid={`node-${n.id}`} onClick={() => (onNodeClick as Function)?.({}, n)}>
+            <div key={n.id} data-testid={`node-${n.id}`} onClick={() => (onNodeClick as (...args: unknown[]) => void)?.({}, n)}>
               {n.data.label}
             </div>
           ))}
           {Array.isArray(edges) && (edges as Array<{ id: string }>).map((e: { id: string }) => (
-            <div key={e.id} data-testid={`edge-${e.id}`} onClick={() => (onEdgeClick as Function)?.({}, e)} />
+            <div key={e.id} data-testid={`edge-${e.id}`} onClick={() => (onEdgeClick as (...args: unknown[]) => void)?.({}, e)} />
           ))}
-          <button data-testid="pane" onClick={() => (onPaneClick as Function)?.()}>pane</button>
+          <button data-testid="pane" onClick={() => (onPaneClick as () => void)?.()}>pane</button>
         </div>
       );
     },
