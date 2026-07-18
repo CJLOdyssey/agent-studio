@@ -10,7 +10,7 @@ from virtual_team.repository import update_run_result, update_run_status
 from virtual_team.repository.workflows import get_workflow_config_by_team
 from virtual_team.workflow.dynamic_team_graph import DynamicTeamGraph
 
-from .helpers import log_memory_diff
+from .pipeline_utils import log_memory_diff
 
 logger = get_logger(__name__)
 

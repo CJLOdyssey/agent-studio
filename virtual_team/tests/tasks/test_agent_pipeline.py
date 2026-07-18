@@ -9,7 +9,7 @@ import pytest
 
 from virtual_team.tasks.agent_pipeline import _run_agent_pipeline
 from virtual_team.tasks.complete_pipeline import _complete_pipeline
-from virtual_team.tasks.helpers import (
+from virtual_team.tasks.pipeline_utils import (
     _build_session_context,
     _is_balance_error,
     _parse_json_field,

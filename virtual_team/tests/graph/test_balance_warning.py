@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from virtual_team.tasks.helpers import _is_balance_error
+from virtual_team.tasks.pipeline_utils import _is_balance_error
 
 
 class TestIsBalanceError:
@@ -43,12 +43,12 @@ class TestIsBalanceError:
 
 
 class TestReportRunErrorBalance:
-    @patch("virtual_team.tasks.helpers.publish_run_message")
-    @patch("virtual_team.tasks.helpers.update_run_status")
+    @patch("virtual_team.tasks.pipeline_utils.publish_run_message")
+    @patch("virtual_team.tasks.pipeline_utils.update_run_status")
     def test_publishes_balance_warning_on_balance_error(
         self, mock_update_status: AsyncMock, mock_publish: AsyncMock
     ):
-        from virtual_team.tasks.helpers import _report_run_error
+        from virtual_team.tasks.pipeline_utils import _report_run_error
 
         exc = Exception("insufficient_quota: no money")
         _report_run_error("run-123", exc)
@@ -60,12 +60,12 @@ class TestReportRunErrorBalance:
         assert len(balance_calls) == 1
         assert "余额不足" in balance_calls[0][0][1]["content"]
 
-    @patch("virtual_team.tasks.helpers.publish_run_message")
-    @patch("virtual_team.tasks.helpers.update_run_status")
+    @patch("virtual_team.tasks.pipeline_utils.publish_run_message")
+    @patch("virtual_team.tasks.pipeline_utils.update_run_status")
     def test_does_not_publish_balance_warning_on_other_errors(
         self, mock_update_status: AsyncMock, mock_publish: AsyncMock
     ):
-        from virtual_team.tasks.helpers import _report_run_error
+        from virtual_team.tasks.pipeline_utils import _report_run_error
 
         exc = Exception("rate limit exceeded")
         _report_run_error("run-456", exc)

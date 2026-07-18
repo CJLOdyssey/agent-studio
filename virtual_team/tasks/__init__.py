@@ -1,7 +1,7 @@
 """Re-exports — all logic migrated to virtual_team/tasks/ package."""
 from virtual_team.tasks.agent_pipeline import _run_agent_pipeline  # noqa: F401
 from virtual_team.tasks.complete_pipeline import _complete_pipeline  # noqa: F401
-from virtual_team.tasks.helpers import (  # noqa: F401
+from virtual_team.tasks.pipeline_utils import (  # noqa: F401
     _build_session_context,
     _discover_mcp_tools,
     _get_rag_context,

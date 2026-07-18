@@ -11,7 +11,7 @@ from virtual_team.db_models.agent import AgentConfigDB, TeamAgentDB, TeamDB
 from virtual_team.db_models.auth import RefreshTokenDB, RoleDB, UserDB, UserRoleDB
 from virtual_team.db_models.content import MCPServerDB, PromptDB, RegisteredSkillDB, RegisteredToolDB, VersionDB
 from virtual_team.db_models.key import KeyUsageLog, UserApiKey
-from virtual_team.db_models.misc import AttachmentDB, AuditLogDB, CommandLogDB
+from virtual_team.db_models.team import AttachmentDB, AuditLogDB, CommandLogDB
 from virtual_team.db_models.session import ChatMessage, MemoryEntry, ProjectRun, SessionDB
 from virtual_team.db_models.workflow import WorkflowConfigDB, WorkflowEdgeDB, WorkflowNodeDB
 

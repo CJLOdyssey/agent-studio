@@ -28,7 +28,7 @@ from virtual_team.repository.keys import log_key_usage
 from virtual_team.streaming.streaming import StreamEmitter
 from virtual_team.services.tool_config import ToolConfig
 
-from .helpers import (
+from .pipeline_utils import (
     _build_session_context,
     _discover_mcp_tools,
     _get_rag_context,
