@@ -51,7 +51,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-token")
-        with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_token", "data": {"content": "hello"}})
             assert emitter._stream_buffer == ["hello"]
             mock_pub.assert_awaited_once()
@@ -61,7 +61,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-emptycontent")
-        with patch("virtual_team.streaming.publish_run_message") as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message") as mock_pub:
             await emitter({"event": "on_custom_token", "data": {"content": ""}})
             assert emitter._stream_buffer == []
             mock_pub.assert_not_called()
@@ -71,7 +71,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-think")
-        with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_thinking", "data": {"content": "thinking..."}})
             assert emitter._thinking_buffer == ["thinking..."]
             mock_pub.assert_awaited_once()
@@ -81,7 +81,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-thinkempty")
-        with patch("virtual_team.streaming.publish_run_message") as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message") as mock_pub:
             await emitter({"event": "on_custom_thinking", "data": {"content": ""}})
             assert emitter._thinking_buffer == []
             mock_pub.assert_not_called()
@@ -92,8 +92,8 @@ class TestStreamingEdgeCases:
 
         emitter = StreamEmitter("run-flush")
         with (
-            patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock),
-            patch("virtual_team.streaming.save_message", new_callable=AsyncMock),
+            patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock),
+            patch("virtual_team.streaming.streaming.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["hello ", "world"]
             emitter._thinking_buffer = ["think"]
@@ -115,8 +115,8 @@ class TestStreamingEdgeCases:
 
         emitter = StreamEmitter("run-chatend")
         with (
-            patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock),
-            patch("virtual_team.streaming.save_message", new_callable=AsyncMock),
+            patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock),
+            patch("virtual_team.streaming.streaming.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["final"]
             await emitter({"event": "on_chat_model_end", "data": {}})
@@ -128,8 +128,8 @@ class TestStreamingEdgeCases:
 
         emitter = StreamEmitter("run-chain")
         with (
-            patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock),
-            patch("virtual_team.streaming.save_message", new_callable=AsyncMock),
+            patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock),
+            patch("virtual_team.streaming.streaming.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["chain-output"]
             await emitter({"event": "on_chain_end", "name": "LangGraph", "data": {}})
@@ -149,7 +149,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolempty")
-        with patch("virtual_team.streaming.publish_run_message") as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message") as mock_pub:
             await emitter({
                 "event": "on_tool_results",
                 "data": {"tool_name": "search", "tool_call_id": "call-1", "references": []},
@@ -161,7 +161,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolnoname")
-        with patch("virtual_team.streaming.publish_run_message") as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message") as mock_pub:
             await emitter({
                 "event": "on_tool_results",
                 "data": {"tool_name": "", "tool_call_id": "call-1", "references": [{"id": "1"}]},
@@ -173,7 +173,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolvalid")
-        with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({
                 "event": "on_tool_results",
                 "data": {
@@ -189,7 +189,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-balance")
-        with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter.emit_balance_warning()
             call_kwargs = mock_pub.await_args[0][1]
             assert call_kwargs["type"] == "balance_warning"
@@ -199,7 +199,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolres")
-        with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("virtual_team.streaming.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
             refs = [{"id": "r1", "content": "data"}]
             await emitter.emit_tool_results("search", "call-1", refs)
             mock_pub.assert_awaited_once()
@@ -237,7 +237,7 @@ class TestStreamingEdgeCases:
         from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-pubfail")
-        with patch("virtual_team.streaming.publish_run_message", side_effect=Exception("Redis down")):
+        with patch("virtual_team.streaming.streaming.publish_run_message", side_effect=Exception("Redis down")):
             await emitter({"event": "on_custom_token", "data": {"content": "hello"}})
             assert emitter._stream_buffer == ["hello"]
 

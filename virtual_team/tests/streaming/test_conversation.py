@@ -20,8 +20,8 @@ async def test_stream_emitter_buffers_chunks():
     from virtual_team.streaming.streaming import StreamEmitter
 
     with (
-        patch("virtual_team.streaming.publish_run_message") as mock_pub,
-        patch("virtual_team.streaming.save_message") as mock_save,
+        patch("virtual_team.streaming.streaming.publish_run_message") as mock_pub,
+        patch("virtual_team.streaming.streaming.save_message") as mock_save,
     ):
         emitter = StreamEmitter("test-run")
         await emitter(
@@ -42,8 +42,8 @@ async def test_stream_emitter_tool_events():
     from virtual_team.streaming.streaming import StreamEmitter
 
     with (
-        patch("virtual_team.streaming.publish_run_message"),
-        patch("virtual_team.streaming.save_message") as mock_save,
+        patch("virtual_team.streaming.streaming.publish_run_message"),
+        patch("virtual_team.streaming.streaming.save_message") as mock_save,
     ):
         emitter = StreamEmitter("test-run")
         await emitter({"event": "on_tool_start", "name": "search", "data": {"input": "query"}})
