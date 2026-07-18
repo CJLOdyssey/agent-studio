@@ -201,7 +201,7 @@ async def test_client() -> Any:
     # ── 1. Patch Redis-dependent rate limiter BEFORE app import ──────
     from unittest.mock import AsyncMock
 
-    import virtual_team.rate_limit as rl_mod
+    import virtual_team.core.infra.rate_limit as rl_mod
     rl_mod.RateLimiter.is_allowed = AsyncMock(return_value=True)  # type: ignore[method-assign]
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────

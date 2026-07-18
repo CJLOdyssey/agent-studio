@@ -81,19 +81,19 @@ class TestSafeFloat:
     def test_returns_value_when_env_set(self):
         from virtual_team.core.config import _safe_float
 
-        with patch("virtual_team.config.os.environ", {"TEST_KEY": "0.85"}):
+        with patch("virtual_team.core.config.os.environ", {"TEST_KEY": "0.85"}):
             assert _safe_float("TEST_KEY", 0.7) == 0.85
 
     def test_returns_default_on_missing_key(self):
         from virtual_team.core.config import _safe_float
 
-        with patch("virtual_team.config.os.environ", {}):
+        with patch("virtual_team.core.config.os.environ", {}):
             assert _safe_float("MISSING", 0.5) == 0.5
 
     def test_returns_default_on_invalid_value(self):
         from virtual_team.core.config import _safe_float
 
-        with patch("virtual_team.config.os.environ", {"BAD": "not-a-number"}):
+        with patch("virtual_team.core.config.os.environ", {"BAD": "not-a-number"}):
             assert _safe_float("BAD", 0.3) == 0.3
 
 
@@ -103,19 +103,19 @@ class TestSafeInt:
     def test_returns_value_when_env_set(self):
         from virtual_team.core.config import _safe_int
 
-        with patch("virtual_team.config.os.environ", {"TEST_KEY": "42"}):
+        with patch("virtual_team.core.config.os.environ", {"TEST_KEY": "42"}):
             assert _safe_int("TEST_KEY", 10) == 42
 
     def test_returns_default_on_missing_key(self):
         from virtual_team.core.config import _safe_int
 
-        with patch("virtual_team.config.os.environ", {}):
+        with patch("virtual_team.core.config.os.environ", {}):
             assert _safe_int("MISSING", 7) == 7
 
     def test_returns_default_on_invalid_value(self):
         from virtual_team.core.config import _safe_int
 
-        with patch("virtual_team.config.os.environ", {"BAD": "xyz"}):
+        with patch("virtual_team.core.config.os.environ", {"BAD": "xyz"}):
             assert _safe_int("BAD", 3) == 3
 
 
@@ -135,7 +135,7 @@ class TestLoadConfig:
             "MAX_RETRIES": "5",
             "MAX_REQUIREMENT_LENGTH": "5000",
         }
-        with patch("virtual_team.config.os.environ", env):
+        with patch("virtual_team.core.config.os.environ", env):
             cfg = load_config()
             assert cfg.api_key == "sk-test"
             assert cfg.api_base == "https://custom.example.com"
@@ -149,7 +149,7 @@ class TestLoadConfig:
     def test_uses_openai_api_key_fallback(self):
         from virtual_team.core.config import load_config
 
-        with patch("virtual_team.config.os.environ", {"OPENAI_API_KEY": "sk-fallback"}):
+        with patch("virtual_team.core.config.os.environ", {"OPENAI_API_KEY": "sk-fallback"}):
             cfg = load_config()
             assert cfg.api_key == "sk-fallback"
 
@@ -157,14 +157,14 @@ class TestLoadConfig:
         from virtual_team.core.config import load_config
 
         env = {"DEEPSEEK_API_KEY": "sk-deepseek", "OPENAI_API_KEY": "sk-openai"}
-        with patch("virtual_team.config.os.environ", env):
+        with patch("virtual_team.core.config.os.environ", env):
             cfg = load_config()
             assert cfg.api_key == "sk-deepseek"
 
     def test_defaults_when_no_env(self):
         from virtual_team.core.config import load_config
 
-        with patch("virtual_team.config.os.environ", {}):
+        with patch("virtual_team.core.config.os.environ", {}):
             cfg = load_config()
             assert cfg.api_key == ""
             assert cfg.model == "deepseek-v4-flash"

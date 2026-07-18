@@ -28,7 +28,7 @@ from virtual_team.core.base import Base
 
 @pytest.fixture
 def client():
-    from virtual_team import app_lifespan as lifespan_mod
+    from virtual_team.core import app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
@@ -45,7 +45,7 @@ def client():
     mock_redis.ping.return_value = True
     mock_redis.publish.return_value = 1
 
-    with patch('virtual_team.rate_limit.get_redis', return_value=mock_redis):
+    with patch('virtual_team.core.infra.rate_limit.get_redis', return_value=mock_redis):
         with patch('virtual_team.core.app_lifespan.get_redis', return_value=mock_redis):
             with TestClient(app) as c:
                 yield c
