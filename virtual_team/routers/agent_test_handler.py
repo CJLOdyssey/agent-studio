@@ -6,8 +6,8 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents_test"])
@@ -32,7 +32,7 @@ async def test_agent(agent_id: str) -> Any:
     try:
         import httpx
 
-        from virtual_team.config import load_config
+        from virtual_team.core.config import load_config
         from virtual_team.repository.keys import get_default_api_key
 
         cfg = load_config()

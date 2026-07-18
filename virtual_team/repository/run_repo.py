@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from sqlalchemy import desc, select
 
-from virtual_team.database import ProjectRun, SessionDB, get_session_factory
+from virtual_team.core.database import ProjectRun, SessionDB, get_session_factory
 
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:

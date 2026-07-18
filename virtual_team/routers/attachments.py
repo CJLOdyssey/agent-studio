@@ -9,8 +9,8 @@ from uuid import uuid4
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.logging_config import get_logger
 from virtual_team.models import AttachmentResponse
 from virtual_team.repository import get_session
 from virtual_team.repository.attachments import (

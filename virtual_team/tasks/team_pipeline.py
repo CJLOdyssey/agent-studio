@@ -4,8 +4,8 @@ import gc
 
 from virtual_team.broker import publish_run_message
 from virtual_team.checkpoint import create_checkpointer_async
-from virtual_team.config import load_config
-from virtual_team.logging_config import get_logger
+from virtual_team.core.config import load_config
+from virtual_team.core.logging_config import get_logger
 from virtual_team.repository import update_run_result, update_run_status
 from virtual_team.repository.workflows import get_workflow_config_by_team
 from virtual_team.workflow.dynamic_team_graph import DynamicTeamGraph

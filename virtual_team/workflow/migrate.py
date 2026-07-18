@@ -8,13 +8,13 @@ from typing import Any, cast
 
 from sqlalchemy import select
 
-from virtual_team.database import (
+from virtual_team.core.database import (
     AgentConfigDB,
     TeamAgentDB,
     TeamDB,
     get_session_factory,
 )
-from virtual_team.logging_config import get_logger
+from virtual_team.core.logging_config import get_logger
 from virtual_team.repository.workflows import get_workflow_config_by_team, save_workflow_config
 from virtual_team.workflow.models import (
     NodeStrategy,

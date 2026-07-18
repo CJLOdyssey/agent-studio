@@ -8,7 +8,7 @@ from uuid import uuid4
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from virtual_team.base import Base
+from virtual_team.core.base import Base
 
 if TYPE_CHECKING:
     from virtual_team.db_models.agent import AgentConfigDB

@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from virtual_team.base import Base
+from virtual_team.core.base import Base
 
 
 class UserDB(Base):

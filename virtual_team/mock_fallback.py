@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from virtual_team.streaming import StreamEmitter
+from virtual_team.streaming.streaming import StreamEmitter
 
 logger = logging.getLogger(__name__)
 

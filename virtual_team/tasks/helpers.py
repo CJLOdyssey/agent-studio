@@ -12,7 +12,7 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client
 
 from virtual_team.broker import publish_run_message
-from virtual_team.logging_config import get_logger
+from virtual_team.core.logging_config import get_logger
 from virtual_team.mock_fallback import run_mock
 from virtual_team.repository import (
     create_memory_entry,
@@ -164,7 +164,7 @@ def _build_session_context(memories: list[Any]) -> str:
 
 async def _get_rag_context(query: str, session_id: str) -> str:
     try:
-        from virtual_team.rag_pipeline import ensure_embedding_provider, retrieve_context
+        from virtual_team.rag.rag_pipeline import ensure_embedding_provider, retrieve_context
         from virtual_team.repository.keys import get_embedding_api_key
 
         api_key = await get_embedding_api_key()

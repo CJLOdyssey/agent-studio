@@ -6,8 +6,8 @@ Separated from the factory layer so it can evolve independently.
 from uuid import uuid4
 
 from virtual_team.checkpoint.models import AgentCheckpoint, CheckpointDB
-from virtual_team.database import get_session_factory
-from virtual_team.logging_config import get_logger
+from virtual_team.core.database import get_session_factory
+from virtual_team.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 

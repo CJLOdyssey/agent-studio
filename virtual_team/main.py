@@ -6,8 +6,8 @@ import asyncio
 import json
 import sys
 
-from virtual_team.config import load_config
-from virtual_team.logging_config import get_logger
+from virtual_team.core.config import load_config
+from virtual_team.core.logging_config import get_logger
 from virtual_team.repository import get_active_agent_configs, get_session_memories
 
 logger = get_logger(__name__)
@@ -45,7 +45,7 @@ async def _run_cli_async(requirement: str, session_id: str | None = None) -> dic
             session_context = _build_context(memories)
 
     from virtual_team.checkpoint import create_checkpointer_async
-    from virtual_team.graph import SingleAgentGraph
+    from virtual_team.graph.graph import SingleAgentGraph
 
     checkpointer = await create_checkpointer_async()
     graph = SingleAgentGraph(

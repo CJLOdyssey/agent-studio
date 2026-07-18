@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import desc, select
 
-from virtual_team.database import SessionDB, get_session_factory
+from virtual_team.core.database import SessionDB, get_session_factory
 
 
 async def create_session(

@@ -10,7 +10,7 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from virtual_team.database import VersionDB
+from virtual_team.core.database import VersionDB
 
 
 async def create_version(

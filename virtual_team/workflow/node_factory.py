@@ -7,7 +7,7 @@ from typing import Any, Protocol
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from virtual_team.broker import publish_run_message
-from virtual_team.llm_stream import convert_messages_to_api, stream_llm_response
+from virtual_team.streaming.llm_stream import convert_messages_to_api, stream_llm_response
 
 from .models import WorkflowNode, WorkflowState
 from .strategies import get_strategy

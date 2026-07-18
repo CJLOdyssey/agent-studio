@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 from virtual_team.broker import celery_app
-from virtual_team.logging_config import get_logger
+from virtual_team.core.logging_config import get_logger
 from virtual_team.mock_fallback import ENABLE as ENABLE_MOCK_FALLBACK
 
 from .agent_pipeline import _run_agent_pipeline

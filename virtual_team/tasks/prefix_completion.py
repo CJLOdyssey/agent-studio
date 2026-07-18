@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 
 from virtual_team.broker import publish_run_message
-from virtual_team.logging_config import get_logger
+from virtual_team.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 

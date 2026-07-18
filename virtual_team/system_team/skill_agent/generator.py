@@ -4,7 +4,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
-from virtual_team.logging_config import get_logger
+from virtual_team.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 

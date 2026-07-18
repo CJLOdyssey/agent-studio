@@ -5,7 +5,7 @@ from uuid import uuid4
 from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
-from virtual_team.database import (
+from virtual_team.core.database import (
     WorkflowConfigDB,
     WorkflowEdgeDB,
     WorkflowNodeDB,
