@@ -1,4 +1,4 @@
-"""Tests for virtual_team/workflow/ — strategies, node_factory, router, models."""
+"""Tests for backend/workflow/ — strategies, node_factory, router, models."""
 
 from dataclasses import dataclass
 
@@ -16,8 +16,8 @@ class MockLLM:
 
 class TestStrategies:
     def test_generator_strategy_build_prompt_context(self):
-        from virtual_team.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import GeneratorStrategy
+        from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
+        from backend.workflow.strategies import GeneratorStrategy
 
         strategy = GeneratorStrategy()
         assert strategy.node_strategy == NodeStrategy.GENERATOR
@@ -36,8 +36,8 @@ class TestStrategies:
         assert "code here" in context
 
     def test_generator_strategy_empty_artifacts(self):
-        from virtual_team.workflow.models import WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import GeneratorStrategy
+        from backend.workflow.models import WorkflowNode, WorkflowState
+        from backend.workflow.strategies import GeneratorStrategy
 
         strategy = GeneratorStrategy()
         state: WorkflowState = {
@@ -53,8 +53,8 @@ class TestStrategies:
         assert "前面节点" not in context
 
     def test_generator_strategy_process_output(self):
-        from virtual_team.workflow.models import WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import GeneratorStrategy
+        from backend.workflow.models import WorkflowNode, WorkflowState
+        from backend.workflow.strategies import GeneratorStrategy
 
         strategy = GeneratorStrategy()
         state: WorkflowState = {
@@ -69,8 +69,8 @@ class TestStrategies:
         assert result["artifacts"]["backend"] == "def main(): pass"
 
     def test_reviewer_strategy_build_prompt_context(self):
-        from virtual_team.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import ReviewerStrategy
+        from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
+        from backend.workflow.strategies import ReviewerStrategy
 
         strategy = ReviewerStrategy()
         assert strategy.node_strategy == NodeStrategy.REVIEWER
@@ -89,8 +89,8 @@ class TestStrategies:
         assert "code" in context
 
     def test_reviewer_strategy_process_output_approved(self):
-        from virtual_team.workflow.models import WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import ReviewerStrategy
+        from backend.workflow.models import WorkflowNode, WorkflowState
+        from backend.workflow.strategies import ReviewerStrategy
 
         strategy = ReviewerStrategy()
         state: WorkflowState = {
@@ -105,8 +105,8 @@ class TestStrategies:
         assert result["approved"]["reviewer"] is True
 
     def test_reviewer_strategy_process_output_rejected(self):
-        from virtual_team.workflow.models import WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import ReviewerStrategy
+        from backend.workflow.models import WorkflowNode, WorkflowState
+        from backend.workflow.strategies import ReviewerStrategy
 
         strategy = ReviewerStrategy()
         state: WorkflowState = {
@@ -121,8 +121,8 @@ class TestStrategies:
         assert result["approved"]["reviewer"] is False
 
     def test_reviewer_approval_keywords(self):
-        from virtual_team.workflow.models import WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import ReviewerStrategy
+        from backend.workflow.models import WorkflowNode, WorkflowState
+        from backend.workflow.strategies import ReviewerStrategy
 
         strategy = ReviewerStrategy()
         state: WorkflowState = {
@@ -140,8 +140,8 @@ class TestStrategies:
             assert result["approved"]["r"] is True, f"Keyword '{kw}' should trigger approval"
 
     def test_reporter_strategy_build_prompt_context(self):
-        from virtual_team.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import ReporterStrategy
+        from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
+        from backend.workflow.strategies import ReporterStrategy
 
         strategy = ReporterStrategy()
         assert strategy.node_strategy == NodeStrategy.REPORTER
@@ -160,8 +160,8 @@ class TestStrategies:
         assert "be" in context
 
     def test_reporter_strategy_process_output(self):
-        from virtual_team.workflow.models import WorkflowNode, WorkflowState
-        from virtual_team.workflow.strategies import ReporterStrategy
+        from backend.workflow.models import WorkflowNode, WorkflowState
+        from backend.workflow.strategies import ReporterStrategy
 
         strategy = ReporterStrategy()
         state: WorkflowState = {
@@ -177,8 +177,8 @@ class TestStrategies:
         assert result["artifacts"]["reporter"] == "Final report content"
 
     def test_get_strategy(self):
-        from virtual_team.workflow.models import NodeStrategy, WorkflowNode
-        from virtual_team.workflow.strategies import (
+        from backend.workflow.models import NodeStrategy, WorkflowNode
+        from backend.workflow.strategies import (
             GeneratorStrategy,
             ReporterStrategy,
             ReviewerStrategy,
@@ -194,8 +194,8 @@ class TestStrategies:
         assert isinstance(get_strategy(rep_node), ReporterStrategy)
 
     def test_get_strategy_defaults_to_generator(self):
-        from virtual_team.workflow.models import WorkflowNode
-        from virtual_team.workflow.strategies import GeneratorStrategy, get_strategy
+        from backend.workflow.models import WorkflowNode
+        from backend.workflow.strategies import GeneratorStrategy, get_strategy
 
         node = WorkflowNode()  # no strategy set
         assert isinstance(get_strategy(node), GeneratorStrategy)
@@ -203,14 +203,14 @@ class TestStrategies:
 
 class TestWorkflowModels:
     def test_node_strategy_enum(self):
-        from virtual_team.workflow.models import NodeStrategy
+        from backend.workflow.models import NodeStrategy
 
         assert NodeStrategy.GENERATOR == "generator"
         assert NodeStrategy.REVIEWER == "reviewer"
         assert NodeStrategy.REPORTER == "reporter"
 
     def test_workflow_node_defaults(self):
-        from virtual_team.workflow.models import NodeStrategy, WorkflowNode
+        from backend.workflow.models import NodeStrategy, WorkflowNode
 
         node = WorkflowNode()
         assert node.id == ""
@@ -220,7 +220,7 @@ class TestWorkflowModels:
         assert node.order == 0
 
     def test_workflow_edge_defaults(self):
-        from virtual_team.workflow.models import WorkflowEdge
+        from backend.workflow.models import WorkflowEdge
 
         edge = WorkflowEdge()
         assert edge.id == ""
@@ -231,7 +231,7 @@ class TestWorkflowModels:
         assert edge.priority == 0
 
     def test_workflow_config_get_node_by_role(self):
-        from virtual_team.workflow.models import WorkflowConfig, WorkflowNode
+        from backend.workflow.models import WorkflowConfig, WorkflowNode
 
         cfg = WorkflowConfig(
             id="cfg1",
@@ -245,7 +245,7 @@ class TestWorkflowModels:
         assert cfg.get_node_by_role("nonexistent") is None
 
     def test_workflow_config_get_outgoing_edges(self):
-        from virtual_team.workflow.models import WorkflowConfig, WorkflowEdge
+        from backend.workflow.models import WorkflowConfig, WorkflowEdge
 
         cfg = WorkflowConfig(
             id="cfg2",
@@ -260,7 +260,7 @@ class TestWorkflowModels:
         assert all(e.from_node_id == "n1" for e in outgoing)
 
     def test_workflow_config_get_entry_node(self):
-        from virtual_team.workflow.models import WorkflowConfig, WorkflowNode
+        from backend.workflow.models import WorkflowConfig, WorkflowNode
 
         cfg = WorkflowConfig(
             id="cfg3",
@@ -275,13 +275,13 @@ class TestWorkflowModels:
         assert entry.id == "n1"
 
     def test_workflow_config_get_entry_node_empty(self):
-        from virtual_team.workflow.models import WorkflowConfig
+        from backend.workflow.models import WorkflowConfig
 
         cfg = WorkflowConfig(id="cfg4")
         assert cfg.get_entry_node() is None
 
     def test_create_initial_state(self):
-        from virtual_team.workflow.models import create_initial_state
+        from backend.workflow.models import create_initial_state
 
         state = create_initial_state("Build feature X")
         assert state["requirement"] == "Build feature X"
@@ -291,7 +291,7 @@ class TestWorkflowModels:
         assert "messages" in state
 
     def test_create_initial_state_default(self):
-        from virtual_team.workflow.models import create_initial_state
+        from backend.workflow.models import create_initial_state
 
         state = create_initial_state()
         assert state["requirement"] == ""
@@ -299,8 +299,8 @@ class TestWorkflowModels:
 
 class TestRouter:
     def test_router_no_matching_edges(self):
-        from virtual_team.workflow.models import WorkflowState
-        from virtual_team.workflow.router import Router
+        from backend.workflow.models import WorkflowState
+        from backend.workflow.router import Router
 
         router = Router()
         state: WorkflowState = {
@@ -316,8 +316,8 @@ class TestRouter:
         assert result == END
 
     def test_router_default_edge(self):
-        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
-        from virtual_team.workflow.router import Router
+        from backend.workflow.models import WorkflowEdge, WorkflowState
+        from backend.workflow.router import Router
 
         router = Router()
         state: WorkflowState = {
@@ -335,8 +335,8 @@ class TestRouter:
         assert result == "n2"
 
     def test_router_condition_match(self):
-        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
-        from virtual_team.workflow.router import Router
+        from backend.workflow.models import WorkflowEdge, WorkflowState
+        from backend.workflow.router import Router
 
         router = Router()
         state: WorkflowState = {
@@ -354,8 +354,8 @@ class TestRouter:
         assert result == "fix"
 
     def test_router_priority_sorting(self):
-        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
-        from virtual_team.workflow.router import Router
+        from backend.workflow.models import WorkflowEdge, WorkflowState
+        from backend.workflow.router import Router
 
         router = Router()
         state: WorkflowState = {
@@ -373,8 +373,8 @@ class TestRouter:
         assert result == "high_prio"
 
     def test_router_matches_with_multiple_keywords(self):
-        from virtual_team.workflow.models import WorkflowEdge, WorkflowState
-        from virtual_team.workflow.router import Router
+        from backend.workflow.models import WorkflowEdge, WorkflowState
+        from backend.workflow.router import Router
 
         router = Router()
         state: WorkflowState = {

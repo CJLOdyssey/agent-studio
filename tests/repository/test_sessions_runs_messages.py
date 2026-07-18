@@ -5,13 +5,13 @@ Uses conftest fixtures (db_engine, async_session) against in-memory SQLite.
 
 import uuid
 
-from virtual_team.repository.message_repo import (
+from backend.repository.message_repo import (
     get_messages,
     get_run_messages,
     get_session_messages,
     save_message,
 )
-from virtual_team.repository.run_repo import (
+from backend.repository.run_repo import (
     create_run,
     get_run,
     get_runs,
@@ -20,7 +20,7 @@ from virtual_team.repository.run_repo import (
     update_run_result,
     update_run_status,
 )
-from virtual_team.repository.session_repo import (
+from backend.repository.session_repo import (
     create_session,
     delete_session,
     get_session,

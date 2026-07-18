@@ -1,7 +1,7 @@
 """Unit tests for _ToolWrapper init and build_tool_definition."""
 from unittest.mock import MagicMock
 
-from virtual_team.services.tool_config import ToolConfig, _ToolWrapper, build_tool_definition, sanitize_tool_name
+from backend.services.tool_config import ToolConfig, _ToolWrapper, build_tool_definition, sanitize_tool_name
 
 
 class TestSanitizeToolName:

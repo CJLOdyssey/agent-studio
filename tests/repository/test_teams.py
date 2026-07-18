@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from virtual_team.repository.teams import (
+from backend.repository.teams import (
     add_team_member,
     create_team,
     delete_team,

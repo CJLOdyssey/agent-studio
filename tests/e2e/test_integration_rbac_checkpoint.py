@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from virtual_team.checkpoint import create_checkpointer
+from backend.checkpoint import create_checkpointer
 
 
 class TestOwnedAgentRuns:
@@ -29,8 +29,8 @@ class TestOwnedAgentRuns:
         # Basic sanity — function exists and returns stmt unchanged for None
         from sqlalchemy import select
 
-        from virtual_team.core.infra.database import AgentConfigDB
-        from virtual_team.repository.core import apply_owner_filter
+        from backend.core.infra.database import AgentConfigDB
+        from backend.repository.core import apply_owner_filter
 
         stmt = select(AgentConfigDB)
         result = apply_owner_filter(stmt, AgentConfigDB, owner_id=None)
@@ -41,7 +41,7 @@ class TestOwnedAgentRuns:
         reason="RBAC integration test requires AUTH_MODE=rbac",
     )
     def test_get_current_user_dependency_importable(self):
-        from virtual_team.auth import CurrentUser, get_current_user
+        from backend.auth import CurrentUser, get_current_user
 
         assert callable(get_current_user)
         assert CurrentUser(id="test", username="test", roles=["admin"])

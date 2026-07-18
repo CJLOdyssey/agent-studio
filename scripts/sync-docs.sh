@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 changed=0
 
 # ── 1. Routers ──────────────────────────────────────────────────────────────
-actual_routers=$(ls virtual_team/routers/*.py | grep -v __init__ | wc -l)
+actual_routers=$(ls backend/routers/*.py | grep -v __init__ | wc -l)
 expected_routers=$(grep -oP 'routers/ \(\K[0-9]+' AGENTS.md || true)
 if [ "$actual_routers" != "$expected_routers" ]; then
   echo "  Routers: $expected_routers → $actual_routers"
@@ -20,7 +20,7 @@ if [ "$actual_routers" != "$expected_routers" ]; then
 fi
 
 # ── 2. Repository ───────────────────────────────────────────────────────────
-actual_repos=$(ls virtual_team/repository/*.py | grep -v __init__ | wc -l)
+actual_repos=$(ls backend/repository/*.py | grep -v __init__ | wc -l)
 expected_repos=$(grep -oP 'repository/ \(\K[0-9]+' AGENTS.md || true)
 if [ "$actual_repos" != "$expected_repos" ]; then
   echo "  Repository: $expected_repos → $actual_repos"
@@ -31,7 +31,7 @@ fi
 # ── 3. DB models ────────────────────────────────────────────────────────────
 actual_models=$(python3 -c "
 import re
-with open('virtual_team/database.py') as f:
+with open('backend/database.py') as f:
     content = f.read()
 classes = re.findall(r'class (\w+)\(Base\)', content)
 print(len(classes))
@@ -40,7 +40,7 @@ print(len(classes))
 actual_ckpt=$(python3 -c "
 import re
 try:
-    with open('virtual_team/checkpoint.py') as f:
+    with open('backend/checkpoint.py') as f:
         content = f.read()
     classes = re.findall(r'class (\w+)\(Base\)', content)
     print(len(classes))

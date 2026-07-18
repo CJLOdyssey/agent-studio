@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from virtual_team.checkpoint import create_checkpointer
-from virtual_team.graph.agent_graph import (
+from backend.checkpoint import create_checkpointer
+from backend.graph.agent_graph import (
     SingleAgentGraph,
     ToolConfig,
     _ToolWrapper,
