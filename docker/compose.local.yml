@@ -2,7 +2,7 @@ name: virtual-team
 
 x-common-env: &common-env
   PYTHONPATH: /app
-  DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/virtual_team
+  DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/backend
   REDIS_URL: redis://redis:6379/0
   CELERY_BROKER_URL: redis://redis:6379/0
   CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -20,7 +20,7 @@ x-common-env: &common-env
   NO_PROXY: localhost,127.0.0.1,postgres,redis,backend,.local
   BAIDU_QIANFAN_API_KEY: ${BAIDU_QIANFAN_API_KEY:-}
   CHECKPOINTER_BACKEND: ${CHECKPOINTER_BACKEND:-postgres}
-  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://postgres:postgres@postgres:5432/virtual_team}
+  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://postgres:postgres@postgres:5432/backend}
 
 services:
   postgres:
@@ -28,7 +28,7 @@ services:
     container_name: virtual-team-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: virtual_team
+      POSTGRES_DB: backend
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -91,7 +91,7 @@ services:
     image: virtual-team/backend:latest
     container_name: virtual-team-worker
     restart: unless-stopped
-    command: celery -A virtual_team.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
+    command: celery -A backend.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
     environment:
       <<: *common-env
     depends_on:

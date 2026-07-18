@@ -10,7 +10,7 @@ import httpx
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from virtual_team.core.infra.database import Base  # type: ignore[attr-defined]
+from backend.core.infra.database import Base  # type: ignore[attr-defined]
 
 BASE = "http://localhost:8080"
 
@@ -201,7 +201,7 @@ async def test_client() -> Any:
     # ── 1. Patch Redis-dependent rate limiter BEFORE app import ──────
     from unittest.mock import AsyncMock
 
-    import virtual_team.core.infra.rate_limit as rl_mod
+    import backend.core.infra.rate_limit as rl_mod
     rl_mod.RateLimiter.is_allowed = AsyncMock(return_value=True)  # type: ignore[method-assign]
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
@@ -209,11 +209,11 @@ async def test_client() -> Any:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    import virtual_team.core.infra.database as db_mod
+    import backend.core.infra.database as db_mod
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────
-    from virtual_team.core.app import app
+    from backend.core.app import app
 
     app.router.lifespan_context = None  # type: ignore[assignment]
 

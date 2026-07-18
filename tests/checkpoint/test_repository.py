@@ -1,4 +1,4 @@
-"""Integration tests for virtual_team/checkpoint/repository.py.
+"""Integration tests for backend/checkpoint/repository.py.
 
 Uses a real in-memory SQLite database — no mocks.
 """
@@ -9,13 +9,13 @@ import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from unittest.mock import patch
 
-from virtual_team.checkpoint.models import AgentCheckpoint, CheckpointDB
-from virtual_team.checkpoint.repository import (
+from backend.checkpoint.models import AgentCheckpoint, CheckpointDB
+from backend.checkpoint.repository import (
     save_checkpoint,
     load_latest_checkpoint,
     list_checkpoints,
 )
-from virtual_team.core.base import Base
+from backend.core.base import Base
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ async def db_session_factory():
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
     with patch(
-        "virtual_team.checkpoint.repository.get_session_factory",
+        "backend.checkpoint.repository.get_session_factory",
         return_value=factory,
     ):
         yield factory

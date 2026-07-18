@@ -17,7 +17,7 @@ def _extract_int(pattern: str, text: str, label: str) -> int:
 
 # ── 1. .env.example coverage ──────────────────────────────────────────────
 code_vars = set()
-for py in sorted(root.rglob("virtual_team/*.py")):
+for py in sorted(root.rglob("backend/*.py")):
     for m in re.finditer(r'os\.environ\.get\(["\']([A-Z_]+)', py.read_text()):
         code_vars.add(m.group(1))
 
@@ -38,7 +38,7 @@ else:
 agents = root.joinpath("AGENTS.md").read_text()
 
 # Routers (files + packages)
-router_dir = root.joinpath("virtual_team/routers")
+router_dir = root.joinpath("backend/routers")
 actual = len([f for f in sorted(router_dir.glob("*.py")) if f.name != "__init__.py" and f.is_file()]) + \
          len([d for d in sorted(router_dir.iterdir()) if d.is_dir() and d.joinpath("__init__.py").exists()])
 expected = _extract_int(r"routers/ \((\d+)", agents, "routers count")
@@ -49,7 +49,7 @@ else:
     print(f"✅ Routers: {actual}")
 
 # Repository
-actual = len([f for f in sorted(root.joinpath("virtual_team/repository").glob("*.py")) if f.name != "__init__.py"])
+actual = len([f for f in sorted(root.joinpath("backend/repository").glob("*.py")) if f.name != "__init__.py"])
 expected = _extract_int(r"repository/ \((\d+)", agents, "repository count")
 if actual != expected:
     print(f"❌ Repository: AGENTS.md says {expected}, actual {actual}")

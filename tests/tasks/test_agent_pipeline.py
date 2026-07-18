@@ -1,4 +1,4 @@
-"""Tests for virtual_team.tasks — agent pipeline, completion pipeline, and helpers.
+"""Tests for backend.tasks — agent pipeline, completion pipeline, and helpers.
 
 Mock all external dependencies: Celery, Redis, LLM APIs, LangGraph, repositories.
 """
@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from virtual_team.tasks.agent_pipeline import _run_agent_pipeline
+from backend.tasks.agent_pipeline import _run_agent_pipeline
 
 # =============================================================================
 # Fixtures
@@ -16,23 +16,23 @@ from virtual_team.tasks.agent_pipeline import _run_agent_pipeline
 def mock_agent_deps():
     """Mock all external dependencies for _run_agent_pipeline."""
     patchers = [
-        patch("virtual_team.tasks.agent_pipeline.load_config"),
-        patch("virtual_team.tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.StreamEmitter"),
-        patch("virtual_team.tasks.agent_pipeline.SingleAgentGraph"),
-        patch("virtual_team.tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
-        patch("virtual_team.tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
-        patch("virtual_team.tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.load_config"),
+        patch("backend.tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.StreamEmitter"),
+        patch("backend.tasks.agent_pipeline.SingleAgentGraph"),
+        patch("backend.tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
+        patch("backend.tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
+        patch("backend.tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -75,11 +75,11 @@ def _default_agent_mocks(mocks, agent_id="agent-1"):
 def mock_complete_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("virtual_team.tasks.complete_pipeline.load_config"),
-        patch("virtual_team.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.load_config"),
+        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -360,7 +360,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "node server.js"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("virtual_team.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("backend.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.return_value = [
                 {"name": "read_file", "description": "Read a file", "inputSchema": {"type": "object"}},
             ]
@@ -387,7 +387,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "nonexistent"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("virtual_team.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("backend.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.side_effect = Exception("Connection refused")
             await _run_agent_pipeline(
                 requirement="test",
@@ -596,7 +596,7 @@ class TestRunAgentPipeline:
         ac, _ = _default_agent_mocks(mock_agent_deps)
         mock_agent_deps["get_session_messages"].return_value = []
 
-        with patch("virtual_team.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
+        with patch("backend.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
             await _run_agent_pipeline(
                 requirement="test requirement",
                 run_id="run-rag",
@@ -610,7 +610,7 @@ class TestRunAgentPipeline:
         _default_agent_mocks(mock_agent_deps)
         mock_agent_deps["get_session_messages"].return_value = []
 
-        with patch("virtual_team.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
+        with patch("backend.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
             mock_ingest.side_effect = RuntimeError("RAG down")
             await _run_agent_pipeline(
                 requirement="test",

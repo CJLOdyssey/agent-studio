@@ -1,9 +1,9 @@
-"""Unit tests for virtual_team/services/tool_generator.py."""
+"""Unit tests for backend/services/tool_generator.py."""
 
 
 import pytest
 
-from virtual_team.services.tool_generator import (
+from backend.services.tool_generator import (
     ToolValidateRequest,
     ToolValidateResponse,
     _execute_tool_sandbox,

@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from virtual_team.repository.prompts import (
+from backend.repository.prompts import (
     create_prompt,
     delete_prompt,
     get_prompts,

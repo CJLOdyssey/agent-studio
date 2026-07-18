@@ -1,4 +1,4 @@
-"""Tests for virtual_team.tasks.complete_pipeline — continuation ("继续生成") flow.
+"""Tests for backend.tasks.complete_pipeline — continuation ("继续生成") flow.
 
 Mock all external dependencies: Redis, httpx, LLM API.
 """
@@ -7,18 +7,18 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import httpx
 import pytest
 
-from virtual_team.tasks.complete_pipeline import _complete_pipeline
+from backend.tasks.complete_pipeline import _complete_pipeline
 
 
 @pytest.fixture
 def mock_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("virtual_team.tasks.complete_pipeline.load_config"),
-        patch("virtual_team.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.load_config"),
+        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:

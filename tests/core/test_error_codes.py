@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 class TestErrorCode:
     def test_enum_values_are_strings(self):
-        from virtual_team.core.error_codes import ErrorCode
+        from backend.core.error_codes import ErrorCode
 
         assert ErrorCode.AGENT_NOT_FOUND.value == "AGENT_001"
         assert ErrorCode.AUTH_TOKEN_EXPIRED.value == "AUTH_003"
@@ -16,13 +16,13 @@ class TestErrorCode:
         assert ErrorCode.INTERNAL_ERROR.value == "GENERAL_001"
 
     def test_enum_is_str_enum(self):
-        from virtual_team.core.error_codes import ErrorCode
+        from backend.core.error_codes import ErrorCode
 
         assert isinstance(ErrorCode.INVALID_REQUEST, str)
         assert ErrorCode.INVALID_REQUEST == "GENERAL_002"
 
     def test_all_codes_have_unique_values(self):
-        from virtual_team.core.error_codes import ErrorCode
+        from backend.core.error_codes import ErrorCode
 
         values = [e.value for e in ErrorCode]
         assert len(values) == len(set(values))
@@ -32,14 +32,14 @@ class TestErrorCode:
 
 class TestErrorResponse:
     def test_returns_http_exception(self):
-        from virtual_team.core.error_codes import ErrorCode, error_response
+        from backend.core.error_codes import ErrorCode, error_response
 
         exc = error_response(ErrorCode.TEAM_NOT_FOUND, detail="Team missing")
         assert isinstance(exc, HTTPException)
         assert exc.status_code == 404
 
     def test_detail_structure(self):
-        from virtual_team.core.error_codes import ErrorCode, error_response
+        from backend.core.error_codes import ErrorCode, error_response
 
         exc = error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="Bad token")
         detail = exc.detail
@@ -47,7 +47,7 @@ class TestErrorResponse:
         assert detail["error"]["message"] == "Bad token"
 
     def test_default_message_from_enum_name(self):
-        from virtual_team.core.error_codes import ErrorCode, error_response
+        from backend.core.error_codes import ErrorCode, error_response
 
         exc = error_response(ErrorCode.RATE_LIMITED)
         assert exc.detail["error"]["message"] == "Rate Limited"
@@ -69,13 +69,13 @@ class TestErrorResponse:
         ],
     )
     def test_status_codes(self, code, expected_status):
-        from virtual_team.core.error_codes import ErrorCode, error_response
+        from backend.core.error_codes import ErrorCode, error_response
 
         exc = error_response(getattr(ErrorCode, code))
         assert exc.status_code == expected_status
 
     def test_unknown_code_falls_back_to_500(self):
-        from virtual_team.core.error_codes import _STATUS_MAP, ErrorCode, error_response
+        from backend.core.error_codes import _STATUS_MAP, ErrorCode, error_response
 
         code = ErrorCode.AGENT_NOT_FOUND
         with patch.dict(_STATUS_MAP, clear=True):
@@ -84,7 +84,7 @@ class TestErrorResponse:
 
 
 # ─────────────────────────────────────────────────────────────────────
-# 7. virtual_team/checkpoint/factory.py — Checkpointer factory
+# 7. backend/checkpoint/factory.py — Checkpointer factory
 # ─────────────────────────────────────────────────────────────────────
 
 

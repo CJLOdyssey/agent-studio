@@ -1,4 +1,4 @@
-"""Unit tests for virtual_team/repository/auth.py — direct repo function tests."""
+"""Unit tests for backend/repository/auth.py — direct repo function tests."""
 
 import os
 
@@ -12,8 +12,8 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-import virtual_team.core.infra.database as db_mod
-from virtual_team.core.base import Base
+import backend.core.infra.database as db_mod
+from backend.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
 
@@ -24,7 +24,7 @@ async def setup_db():
     db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
     async with _sqlite_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    from virtual_team.core.seed import seed_default_roles_and_admin
+    from backend.core.seed import seed_default_roles_and_admin
     await seed_default_roles_and_admin()
     yield
     async with _sqlite_engine.begin() as conn:
@@ -33,7 +33,7 @@ async def setup_db():
 
 @pytest.mark.asyncio
 async def test_get_user_by_email_found():
-    from virtual_team.repository.auth import create_user, get_user_by_email
+    from backend.repository.auth import create_user, get_user_by_email
 
     user = await create_user("test@example.com", "hashed_pw", username="tester")
     found = await get_user_by_email("test@example.com")
@@ -43,7 +43,7 @@ async def test_get_user_by_email_found():
 
 @pytest.mark.asyncio
 async def test_get_user_by_email_not_found():
-    from virtual_team.repository.auth import get_user_by_email
+    from backend.repository.auth import get_user_by_email
 
     found = await get_user_by_email("nobody@example.com")
     assert found is None
@@ -51,7 +51,7 @@ async def test_get_user_by_email_not_found():
 
 @pytest.mark.asyncio
 async def test_get_user_by_id():
-    from virtual_team.repository.auth import create_user, get_user_by_id
+    from backend.repository.auth import create_user, get_user_by_id
 
     user = await create_user("test@example.com", "hashed_pw", username="tester")
     found = await get_user_by_id(user.id)
@@ -61,14 +61,14 @@ async def test_get_user_by_id():
 
 @pytest.mark.asyncio
 async def test_get_user_by_id_not_found():
-    from virtual_team.repository.auth import get_user_by_id
+    from backend.repository.auth import get_user_by_id
 
     assert await get_user_by_id("nonexistent") is None
 
 
 @pytest.mark.asyncio
 async def test_get_user_by_username():
-    from virtual_team.repository.auth import create_user, get_user_by_username
+    from backend.repository.auth import create_user, get_user_by_username
 
     await create_user("test@example.com", "hashed_pw", username="tester")
     found = await get_user_by_username("tester")
@@ -78,14 +78,14 @@ async def test_get_user_by_username():
 
 @pytest.mark.asyncio
 async def test_get_user_by_username_not_found():
-    from virtual_team.repository.auth import get_user_by_username
+    from backend.repository.auth import get_user_by_username
 
     assert await get_user_by_username("nobody") is None
 
 
 @pytest.mark.asyncio
 async def test_create_user_with_member_role():
-    from virtual_team.repository.auth import create_user
+    from backend.repository.auth import create_user
 
     user = await create_user("new@example.com", "hashed_pw")
     assert user.email == "new@example.com"
@@ -93,14 +93,14 @@ async def test_create_user_with_member_role():
     assert user.is_active is True
     assert user.is_verified is False
 
-    from virtual_team.repository.auth import get_user_roles
+    from backend.repository.auth import get_user_roles
     roles = await get_user_roles(user.id)
     assert "member" in roles
 
 
 @pytest.mark.asyncio
 async def test_create_user_custom_username():
-    from virtual_team.repository.auth import create_user
+    from backend.repository.auth import create_user
 
     user = await create_user("custom@example.com", "hashed_pw", username="custom_user")
     assert user.username == "custom_user"
@@ -108,13 +108,13 @@ async def test_create_user_custom_username():
 
 @pytest.mark.asyncio
 async def test_mark_user_verified():
-    from virtual_team.repository.auth import create_user, mark_user_verified
+    from backend.repository.auth import create_user, mark_user_verified
 
     user = await create_user("test@example.com", "hashed_pw")
     assert user.is_verified is False
     await mark_user_verified(user.id)
 
-    from virtual_team.repository.auth import get_user_by_id
+    from backend.repository.auth import get_user_by_id
     found = await get_user_by_id(user.id)
     assert found is not None
     assert found.is_verified is True
@@ -122,19 +122,19 @@ async def test_mark_user_verified():
 
 @pytest.mark.asyncio
 async def test_mark_user_verified_not_found():
-    from virtual_team.repository.auth import mark_user_verified
+    from backend.repository.auth import mark_user_verified
 
     await mark_user_verified("nonexistent")
 
 
 @pytest.mark.asyncio
 async def test_update_password():
-    from virtual_team.repository.auth import create_user, update_password
+    from backend.repository.auth import create_user, update_password
 
     user = await create_user("test@example.com", "old_hash")
     await update_password(user.id, "new_hash")
 
-    from virtual_team.repository.auth import get_user_by_id
+    from backend.repository.auth import get_user_by_id
     found = await get_user_by_id(user.id)
     assert found is not None
     assert found.password_hash == "new_hash"
@@ -144,7 +144,7 @@ async def test_update_password():
 
 @pytest.mark.asyncio
 async def test_increment_failed_logins():
-    from virtual_team.repository.auth import create_user, increment_failed_logins
+    from backend.repository.auth import create_user, increment_failed_logins
 
     await create_user("test@example.com", "hash")
     count = await increment_failed_logins("test@example.com")
@@ -155,7 +155,7 @@ async def test_increment_failed_logins():
 
 @pytest.mark.asyncio
 async def test_increment_failed_logins_no_user():
-    from virtual_team.repository.auth import increment_failed_logins
+    from backend.repository.auth import increment_failed_logins
 
     count = await increment_failed_logins("nonexistent@example.com")
     assert count == 0
@@ -163,13 +163,13 @@ async def test_increment_failed_logins_no_user():
 
 @pytest.mark.asyncio
 async def test_increment_failed_logins_locks():
-    from virtual_team.repository.auth import create_user, increment_failed_logins
+    from backend.repository.auth import create_user, increment_failed_logins
 
     await create_user("test@example.com", "hash")
     for _ in range(5):
         await increment_failed_logins("test@example.com")
 
-    from virtual_team.repository.auth import get_user_by_email
+    from backend.repository.auth import get_user_by_email
     user = await get_user_by_email("test@example.com")
     assert user is not None
     assert user.locked_until is not None
@@ -177,13 +177,13 @@ async def test_increment_failed_logins_locks():
 
 @pytest.mark.asyncio
 async def test_reset_failed_logins():
-    from virtual_team.repository.auth import create_user, increment_failed_logins, reset_failed_logins
+    from backend.repository.auth import create_user, increment_failed_logins, reset_failed_logins
 
     await create_user("test@example.com", "hash")
     await increment_failed_logins("test@example.com")
     await reset_failed_logins("test@example.com")
 
-    from virtual_team.repository.auth import get_user_by_email
+    from backend.repository.auth import get_user_by_email
     user = await get_user_by_email("test@example.com")
     assert user is not None
     assert user.failed_login_attempts == 0
@@ -191,7 +191,7 @@ async def test_reset_failed_logins():
 
 @pytest.mark.asyncio
 async def test_get_user_roles():
-    from virtual_team.repository.auth import create_user, get_user_roles
+    from backend.repository.auth import create_user, get_user_roles
 
     user = await create_user("test@example.com", "hash")
     roles = await get_user_roles(user.id)
@@ -200,7 +200,7 @@ async def test_get_user_roles():
 
 @pytest.mark.asyncio
 async def test_get_user_roles_empty():
-    from virtual_team.repository.auth import get_user_roles
+    from backend.repository.auth import get_user_roles
 
     roles = await get_user_roles("nonexistent")
     assert roles == []
@@ -208,7 +208,7 @@ async def test_get_user_roles_empty():
 
 @pytest.mark.asyncio
 async def test_create_refresh_token():
-    from virtual_team.repository.auth import create_refresh_token, create_user
+    from backend.repository.auth import create_refresh_token, create_user
 
     user = await create_user("test@example.com", "hash")
     token, token_hash = await create_refresh_token(user.id)
@@ -219,7 +219,7 @@ async def test_create_refresh_token():
 
 @pytest.mark.asyncio
 async def test_consume_refresh_token():
-    from virtual_team.repository.auth import consume_refresh_token, create_refresh_token, create_user
+    from backend.repository.auth import consume_refresh_token, create_refresh_token, create_user
 
     user = await create_user("test@example.com", "hash")
     token, _ = await create_refresh_token(user.id)
@@ -231,7 +231,7 @@ async def test_consume_refresh_token():
 
 @pytest.mark.asyncio
 async def test_consume_refresh_token_invalid():
-    from virtual_team.repository.auth import consume_refresh_token
+    from backend.repository.auth import consume_refresh_token
 
     found_user, family_id = await consume_refresh_token("invalid-token")
     assert found_user is None
@@ -242,8 +242,8 @@ async def test_consume_refresh_token_invalid():
 async def test_consume_refresh_token_expired():
     from datetime import UTC, datetime, timedelta
 
-    from virtual_team.core.infra.database import RefreshTokenDB
-    from virtual_team.repository.auth import consume_refresh_token, create_refresh_token, create_user
+    from backend.core.infra.database import RefreshTokenDB
+    from backend.repository.auth import consume_refresh_token, create_refresh_token, create_user
 
     user = await create_user("test@example.com", "hash")
     token, token_hash = await create_refresh_token(user.id)
@@ -266,7 +266,7 @@ async def test_consume_refresh_token_expired():
 
 @pytest.mark.asyncio
 async def test_revoke_all_user_tokens():
-    from virtual_team.repository.auth import (
+    from backend.repository.auth import (
         create_refresh_token,
         create_user,
         revoke_all_user_tokens,
@@ -276,33 +276,33 @@ async def test_revoke_all_user_tokens():
     await create_refresh_token(user.id)
     await revoke_all_user_tokens(user.id)
 
-    from virtual_team.repository.auth import create_refresh_token
+    from backend.repository.auth import create_refresh_token
     token, _ = await create_refresh_token(user.id)
-    from virtual_team.repository.auth import consume_refresh_token
+    from backend.repository.auth import consume_refresh_token
     found_user, _ = await consume_refresh_token(token)
     assert found_user is not None
 
 
 @pytest.mark.asyncio
 async def test_revoke_token_family():
-    from virtual_team.repository.auth import (
+    from backend.repository.auth import (
         create_refresh_token,
         create_user,
     )
 
     user = await create_user("test@example.com", "hash")
     token, _ = await create_refresh_token(user.id)
-    from virtual_team.repository.auth import (
+    from backend.repository.auth import (
         consume_refresh_token,
     )
 
     first_user, _ = await consume_refresh_token(token)
     assert first_user is not None
 
-    from virtual_team.repository.auth import (
+    from backend.repository.auth import (
         consume_refresh_token as crt,
     )
-    from virtual_team.repository.auth import (
+    from backend.repository.auth import (
         create_refresh_token as crt2,
     )
 
@@ -313,7 +313,7 @@ async def test_revoke_token_family():
 
 @pytest.mark.asyncio
 async def test_merge_guest_data():
-    from virtual_team.repository.auth import create_user, merge_guest_data
+    from backend.repository.auth import create_user, merge_guest_data
 
     real_user = await create_user("real@example.com", "hash")
     await create_user("guest1@example.com", "hash", username="u_guest1")
@@ -321,7 +321,7 @@ async def test_merge_guest_data():
 
     from uuid import uuid4
 
-    from virtual_team.orm import SessionDB
+    from backend.orm import SessionDB
 
     factory = db_mod.get_session_factory()
     async with factory() as session:

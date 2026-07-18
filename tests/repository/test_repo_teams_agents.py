@@ -1,4 +1,4 @@
-"""Unit tests for virtual_team/repository/teams.py and agents.py."""
+"""Unit tests for backend/repository/teams.py and agents.py."""
 
 import os
 
@@ -13,8 +13,8 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-import virtual_team.core.infra.database as db_mod
-from virtual_team.core.base import Base
+import backend.core.infra.database as db_mod
+from backend.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
 
@@ -32,7 +32,7 @@ async def setup_db():
 
 @pytest.mark.asyncio
 async def test_get_team_not_found():
-    from virtual_team.repository.teams import get_team
+    from backend.repository.teams import get_team
 
     result = await get_team("nonexistent")
     assert result is None
@@ -40,7 +40,7 @@ async def test_get_team_not_found():
 
 @pytest.mark.asyncio
 async def test_get_team_found():
-    from virtual_team.repository.teams import create_team, get_team
+    from backend.repository.teams import create_team, get_team
 
     team_obj = await create_team("Test Team", "A test team")
     assert team_obj is not None
@@ -52,7 +52,7 @@ async def test_get_team_found():
 
 @pytest.mark.asyncio
 async def test_get_teams():
-    from virtual_team.repository.teams import create_team, get_teams
+    from backend.repository.teams import create_team, get_teams
 
     t1 = await create_team("Team A")
     assert t1 is not None
@@ -64,7 +64,7 @@ async def test_get_teams():
 
 @pytest.mark.asyncio
 async def test_get_teams_filtered_by_owner():
-    from virtual_team.repository.teams import get_teams
+    from backend.repository.teams import get_teams
 
     teams = await get_teams("some_owner")
     assert teams == []
@@ -72,7 +72,7 @@ async def test_get_teams_filtered_by_owner():
 
 @pytest.mark.asyncio
 async def test_create_team_duplicate_name():
-    from virtual_team.repository.teams import create_team
+    from backend.repository.teams import create_team
 
     t1 = await create_team("UniqueName", "first")
     assert t1 is not None
@@ -82,7 +82,7 @@ async def test_create_team_duplicate_name():
 
 @pytest.mark.asyncio
 async def test_create_team_auto_orders():
-    from virtual_team.repository.teams import create_team
+    from backend.repository.teams import create_team
 
     t1 = await create_team("First Team")
     assert t1 is not None
@@ -94,7 +94,7 @@ async def test_create_team_auto_orders():
 
 @pytest.mark.asyncio
 async def test_update_team_partial():
-    from virtual_team.repository.teams import create_team, update_team
+    from backend.repository.teams import create_team, update_team
 
     team_obj = await create_team("Original", "desc")
     assert team_obj is not None
@@ -106,7 +106,7 @@ async def test_update_team_partial():
 
 @pytest.mark.asyncio
 async def test_update_team_not_found():
-    from virtual_team.repository.teams import update_team
+    from backend.repository.teams import update_team
 
     result = await update_team("nonexistent", name="test")
     assert result is None
@@ -114,7 +114,7 @@ async def test_update_team_not_found():
 
 @pytest.mark.asyncio
 async def test_update_team_all_fields():
-    from virtual_team.repository.teams import create_team, update_team
+    from backend.repository.teams import create_team, update_team
 
     team_obj = await create_team("Original", "desc")
     assert team_obj is not None
@@ -129,7 +129,7 @@ async def test_update_team_all_fields():
 
 @pytest.mark.asyncio
 async def test_delete_team():
-    from virtual_team.repository.teams import create_team, delete_team
+    from backend.repository.teams import create_team, delete_team
 
     team_obj = await create_team("ToDelete", "bye")
     assert team_obj is not None
@@ -139,7 +139,7 @@ async def test_delete_team():
 
 @pytest.mark.asyncio
 async def test_add_team_member():
-    from virtual_team.repository.teams import add_team_member, create_team
+    from backend.repository.teams import add_team_member, create_team
 
     team_obj = await create_team("TeamWithMembers", "has members")
     assert team_obj is not None
@@ -151,7 +151,7 @@ async def test_add_team_member():
 
 @pytest.mark.asyncio
 async def test_add_team_member_team_not_found():
-    from virtual_team.repository.teams import add_team_member
+    from backend.repository.teams import add_team_member
 
     member = await add_team_member("nonexistent", "Agent1")
     assert member is None
@@ -159,7 +159,7 @@ async def test_add_team_member_team_not_found():
 
 @pytest.mark.asyncio
 async def test_remove_team_member():
-    from virtual_team.repository.teams import add_team_member, create_team, remove_team_member
+    from backend.repository.teams import add_team_member, create_team, remove_team_member
 
     team_obj = await create_team("T", "")
     assert team_obj is not None
@@ -171,8 +171,8 @@ async def test_remove_team_member():
 
 @pytest.mark.asyncio
 async def test_reorder_team_members():
-    from virtual_team.core.infra.database import TeamAgentDB
-    from virtual_team.repository.teams import add_team_member, create_team, reorder_team_members
+    from backend.core.infra.database import TeamAgentDB
+    from backend.repository.teams import add_team_member, create_team, reorder_team_members
 
     team_obj = await create_team("ReorderTeam", "")
     assert team_obj is not None
@@ -198,8 +198,8 @@ async def test_reorder_team_members():
 
 @pytest.mark.asyncio
 async def test_link_agent_config():
-    from virtual_team.repository.agents import create_agent_config
-    from virtual_team.repository.teams import add_team_member, create_team, link_agent_config
+    from backend.repository.agents import create_agent_config
+    from backend.repository.teams import add_team_member, create_team, link_agent_config
 
     team_obj = await create_team("LinkTeam", "")
     assert team_obj is not None
@@ -212,7 +212,7 @@ async def test_link_agent_config():
 
 @pytest.mark.asyncio
 async def test_link_agent_config_member_not_found():
-    from virtual_team.repository.teams import link_agent_config
+    from backend.repository.teams import link_agent_config
 
     result = await link_agent_config("nonexistent", "some-config-id")
     assert result is False
@@ -220,7 +220,7 @@ async def test_link_agent_config_member_not_found():
 
 @pytest.mark.asyncio
 async def test_get_agent_configs():
-    from virtual_team.repository.agents import create_agent_config, get_agent_configs
+    from backend.repository.agents import create_agent_config, get_agent_configs
 
     await create_agent_config("Agent1", "role-1", "prompt 1")
     await create_agent_config("Agent2", "role-2", "prompt 2")
@@ -230,7 +230,7 @@ async def test_get_agent_configs():
 
 @pytest.mark.asyncio
 async def test_get_active_agent_configs():
-    from virtual_team.repository.agents import create_agent_config, get_active_agent_configs
+    from backend.repository.agents import create_agent_config, get_active_agent_configs
 
     await create_agent_config("Active", "active-role", "prompt", is_active=True)
     await create_agent_config("Inactive", "inactive-role", "prompt", is_active=False)
@@ -242,7 +242,7 @@ async def test_get_active_agent_configs():
 
 @pytest.mark.asyncio
 async def test_get_agent_config_by_role():
-    from virtual_team.repository.agents import create_agent_config, get_agent_config_by_role
+    from backend.repository.agents import create_agent_config, get_agent_config_by_role
 
     await create_agent_config("Agent1", "pm-role", "prompt")
     found = await get_agent_config_by_role("pm-role")
@@ -252,7 +252,7 @@ async def test_get_agent_config_by_role():
 
 @pytest.mark.asyncio
 async def test_get_agent_config_by_role_not_found():
-    from virtual_team.repository.agents import get_agent_config_by_role
+    from backend.repository.agents import get_agent_config_by_role
 
     found = await get_agent_config_by_role("nonexistent")
     assert found is None
@@ -260,7 +260,7 @@ async def test_get_agent_config_by_role_not_found():
 
 @pytest.mark.asyncio
 async def test_get_agent_config():
-    from virtual_team.repository.agents import create_agent_config, get_agent_config
+    from backend.repository.agents import create_agent_config, get_agent_config
 
     cfg = await create_agent_config("Agent1", "role-1", "prompt")
     found = await get_agent_config(cfg.id)
@@ -270,14 +270,14 @@ async def test_get_agent_config():
 
 @pytest.mark.asyncio
 async def test_get_agent_config_not_found():
-    from virtual_team.repository.agents import get_agent_config
+    from backend.repository.agents import get_agent_config
 
     assert await get_agent_config("nonexistent") is None
 
 
 @pytest.mark.asyncio
 async def test_get_agent_config_count():
-    from virtual_team.repository.agents import create_agent_config, get_agent_config_count
+    from backend.repository.agents import create_agent_config, get_agent_config_count
 
     count_before = await get_agent_config_count()
     await create_agent_config("Agent1", "role-1", "prompt")
@@ -287,7 +287,7 @@ async def test_get_agent_config_count():
 
 @pytest.mark.asyncio
 async def test_create_agent_config():
-    from virtual_team.repository.agents import create_agent_config
+    from backend.repository.agents import create_agent_config
 
     cfg = await create_agent_config(
         "TestAgent", "test-role", "Be helpful",
@@ -312,7 +312,7 @@ async def test_create_agent_config():
 
 @pytest.mark.asyncio
 async def test_update_agent_config():
-    from virtual_team.repository.agents import create_agent_config, update_agent_config
+    from backend.repository.agents import create_agent_config, update_agent_config
 
     cfg = await create_agent_config("Original", "role-1", "prompt")
     updated = await update_agent_config(cfg.id, name="Updated", system_prompt="new prompt")
@@ -323,7 +323,7 @@ async def test_update_agent_config():
 
 @pytest.mark.asyncio
 async def test_update_agent_config_not_found():
-    from virtual_team.repository.agents import update_agent_config
+    from backend.repository.agents import update_agent_config
 
     result = await update_agent_config("nonexistent", name="test")
     assert result is None
@@ -331,7 +331,7 @@ async def test_update_agent_config_not_found():
 
 @pytest.mark.asyncio
 async def test_update_agent_config_all_fields():
-    from virtual_team.repository.agents import create_agent_config, update_agent_config
+    from backend.repository.agents import create_agent_config, update_agent_config
 
     cfg = await create_agent_config("Original", "role-1", "prompt")
     updated = await update_agent_config(
@@ -360,7 +360,7 @@ async def test_update_agent_config_all_fields():
 
 @pytest.mark.asyncio
 async def test_delete_agent_config():
-    from virtual_team.repository.agents import create_agent_config, delete_agent_config
+    from backend.repository.agents import create_agent_config, delete_agent_config
 
     cfg = await create_agent_config("ToDelete", "del-role", "prompt")
     assert await delete_agent_config(cfg.id) is True
@@ -369,6 +369,6 @@ async def test_delete_agent_config():
 
 @pytest.mark.asyncio
 async def test_delete_agent_config_not_found():
-    from virtual_team.repository.agents import delete_agent_config
+    from backend.repository.agents import delete_agent_config
 
     assert await delete_agent_config("nonexistent") is False

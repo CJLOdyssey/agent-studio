@@ -138,7 +138,7 @@ cp .env.example .env
 cd frontend && npm run dev
 
 # 终端 2 — 后端
-PYTHONPATH=. python3 -m uvicorn virtual_team.app:app --reload
+PYTHONPATH=. python3 -m uvicorn backend.app:app --reload
 ```
 
 或 Docker 一键启动：
@@ -163,7 +163,7 @@ AgentStudio/
 │       ├── api/                 # API 客户端
 │       ├── components/          # UI 组件
 │       └── stores/              # 状态管理
-├── virtual_team/                # Python 后端
+├── backend/                # Python 后端
 │   ├── app.py                   # FastAPI 入口 + 生命周期
 │   ├── routers/                 # API 路由（18 模块）
 │   ├── repository/              # 数据访问层
@@ -190,8 +190,8 @@ npm run format     # Prettier
 npm run typecheck  # TypeScript
 
 # 后端
-ruff check virtual_team/   # Python lint
-mypy virtual_team/ --strict # 类型检查
+ruff check backend/   # Python lint
+mypy backend/ --strict # 类型检查
 ```
 
 ### 测试

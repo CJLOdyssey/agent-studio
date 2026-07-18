@@ -5,10 +5,10 @@ Usage:
     pip install locust
 
     # Start with web UI (http://localhost:8089):
-    locust -f virtual_team/loadtests/locustfile.py
+    locust -f backend/loadtests/locustfile.py
 
     # Headless run (100 users, 10 spawn/s, 5 min):
-    locust -f virtual_team/loadtests/locustfile.py \
+    locust -f backend/loadtests/locustfile.py \
         --headless --users 100 --spawn-rate 10 --run-time 5m \
         --host http://localhost:8080
 """

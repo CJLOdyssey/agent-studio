@@ -19,15 +19,15 @@ RUN pip install --no-cache-dir -r requirements.txt \
     --trusted-host ${PIP_TRUSTED_HOST}
 
 # Copy project
-COPY virtual_team/ virtual_team/
+COPY backend/ backend/
 COPY alembic.ini .
 COPY alembic/ alembic/
 COPY scripts/ scripts/
 
-# PYTHONPATH so "from virtual_team import ..." works
+# PYTHONPATH so "from backend import ..." works
 ENV PYTHONPATH=/app
 
 EXPOSE 8080
 
 ENTRYPOINT ["scripts/docker-entrypoint.sh"]
-CMD ["uvicorn", "virtual_team.core.app:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "backend.core.app:app", "--host", "0.0.0.0", "--port", "8080"]
