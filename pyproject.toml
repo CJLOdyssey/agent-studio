@@ -8,7 +8,8 @@ ignore = ["E402"]
 
 [tool.ruff.lint.per-file-ignores]
 "virtual_team/routers/*.py" = ["B008"]
-"virtual_team/tests/*.py" = ["E501", "SIM117", "N806"]
+"virtual_team/auth/auth_rbac.py" = ["F401"]
+"tests/*.py" = ["E501", "SIM117", "N806"]
 
 [tool.mypy]
 strict = true
@@ -18,10 +19,12 @@ warn_unused_ignores = true
 exclude = ["tests/"]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "env: marks tests that need specific environment variables",
+    "integration: marks tests that require a running backend + Docker stack (deselect with '-m \"not integration\"')",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:langchain.*",
@@ -35,7 +38,7 @@ filterwarnings = [
 [tool.coverage.run]
 source = ["virtual_team"]
 omit = [
-    "virtual_team/tests/*",
+    "tests/*",
     "virtual_team/thinking_tree/*",
     "virtual_team/routers/agent_test_handler.py",
     "virtual_team/tasks/prefix_completion.py",

@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/debug", tags=["debug"])
 
 
 @router.get("/events")
-async def list_events(
+def list_events(
     trace_id: str | None = Query(None),
     q: str | None = Query(None),
     errors: bool = Query(False),
@@ -41,25 +41,25 @@ async def list_events(
 
 
 @router.get("/trace/{trace_id}")
-async def trace_detail(trace_id: str)-> Any:
+def trace_detail(trace_id: str)-> Any:
     """Analyze a single trace by ID."""
     return analyze_trace(trace_id)
 
 
 @router.get("/errors")
-async def errors(seconds: int = Query(300))-> Any:
+def errors(seconds: int = Query(300))-> Any:
     """List recent error reports."""
     return {"reports": recent_errors_report(seconds)}
 
 
 @router.get("/stats")
-async def stats(seconds: int = Query(300))-> Any:
+def stats(seconds: int = Query(300))-> Any:
     """Return event counts grouped by level."""
     return get_store().stats(seconds)
 
 
 @router.get("/health")
-async def observability_health()-> Any:
+def observability_health()-> Any:
     """Health check including self-check and startup guard status."""
     store = get_store()
     try:

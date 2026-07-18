@@ -38,6 +38,7 @@ def _verify_key(email: str) -> str:
 
 @router.post("/send-register-code", status_code=200, response_model=EmailHintResponse)
 async def send_register_code(body: SendRegisterCodeRequest, request: Request) -> Any:
+    """Send an email verification code for registration."""
     email = body.email.lower().strip()
     r = get_redis()
 
@@ -67,6 +68,7 @@ async def send_register_code(body: SendRegisterCodeRequest, request: Request) ->
 
 @router.post("/register", status_code=201, response_model=AuthResponse)
 async def register(body: RegisterRequest, request: Request) -> Any:
+    """Register a new user account with email verification."""
     email = body.email.lower().strip()
     code = body.code.strip()
     password = body.password
@@ -113,6 +115,7 @@ async def register(body: RegisterRequest, request: Request) -> Any:
 
 @router.post("/verify", response_model=AuthResponse)
 async def verify(body: VerifyRequest, request: Request) -> Any:
+    """Verify an email address with a verification code."""
     email = body.email.lower().strip()
     code = body.code.strip()
     r = get_redis()
@@ -155,6 +158,7 @@ async def verify(body: VerifyRequest, request: Request) -> Any:
 
 @router.post("/resend-verification", response_model=MessageResponse)
 async def resend_verification(body: SendRegisterCodeRequest) -> Any:
+    """Resend an email verification code."""
     email = body.email.lower().strip()
     r = get_redis()
 

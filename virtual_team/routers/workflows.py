@@ -95,6 +95,7 @@ def _to_schema(config: WorkflowConfig) -> WorkflowConfigSchema:
 
 @router.post("", response_model=WorkflowConfigSchema, status_code=201)
 async def create_workflow(req: WorkflowSaveRequest) -> Any:
+    """Create or update a workflow configuration for a team."""
     config = WorkflowConfig(
         id=req.id,
         team_id=req.team_id,
@@ -128,6 +129,7 @@ async def create_workflow(req: WorkflowSaveRequest) -> Any:
 
 @router.get("/teams/{team_id}", response_model=WorkflowConfigSchema | None)
 async def get_team_workflow(team_id: str) -> Any:
+    """Get the workflow configuration for a specific team."""
     config = await get_workflow_config_by_team(team_id)
     if config is None:
         raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found for this team")
@@ -136,12 +138,14 @@ async def get_team_workflow(team_id: str) -> Any:
 
 @router.get("", response_model=list[WorkflowConfigSchema])
 async def list_workflows() -> Any:
+    """List all workflow configurations."""
     configs = await list_workflow_configs()
     return [_to_schema(c) for c in configs]
 
 
 @router.delete("/{config_id}")
 async def delete_workflow(config_id: str) -> Any:
+    """Delete a workflow configuration by ID."""
     deleted = await delete_workflow_config(config_id)
     if not deleted:
         raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found")

@@ -271,8 +271,8 @@ npm run format           # Prettier 格式化
 ### 后端
 ```bash
 cd .
-PYTHONPATH=. python3 -m uvicorn virtual_team.app:app --reload  # 启动 FastAPI
-PYTHONPATH=. python3 -m pytest virtual_team/                   # 运行测试（113 用例）
+PYTHONPATH=. python3 -m uvicorn virtual_team.core.app:app --reload  # 启动 FastAPI
+PYTHONPATH=. python3 -m pytest tests/                              # 运行测试
 ```
 
 ---

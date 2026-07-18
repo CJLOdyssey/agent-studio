@@ -73,7 +73,7 @@ class StreamEmitter:
         elif kind == "on_thinking_nodes":
             nodes = data.get("nodes", [])
             if nodes:
-                await self.emit_thinking_nodes(nodes)
+                self.emit_thinking_nodes(nodes)
 
         elif kind == "on_tool_complete":
             logger.debug("streaming: on_tool_complete received tool=%s", data.get('toolName'))
@@ -121,7 +121,7 @@ class StreamEmitter:
             },
         )
 
-    async def emit_thinking_nodes(self, nodes: list[dict[str, Any]]) -> None:
+    def emit_thinking_nodes(self, nodes: list[dict[str, Any]]) -> None:
         max_pending = 20
         if self._pending_thinking_nodes:
             self._pending_thinking_nodes.extend(nodes)

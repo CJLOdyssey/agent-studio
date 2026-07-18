@@ -29,7 +29,7 @@ SMTP_USE_TLS = os.environ.get("EMAIL_SMTP_TLS", "1") == "1"
 class LogMailer:
     """Development mailer — prints emails to log and stdout."""
 
-    async def send(self, to: str, subject: str, html: str) -> None:
+    def send(self, to: str, subject: str, html: str) -> None:
         """Log email details to the console (dev fallback)."""
         code_match = re.search(r"(\d{6})", html)
         code = code_match.group(1) if code_match else "??????"
@@ -115,7 +115,7 @@ async def send_email(to: str, subject: str, html: str) -> None:
             return
         except Exception:
             logger.exception("[SMTP] Failed to send email, falling back to log")
-    await LogMailer().send(to, subject, html)
+    LogMailer().send(to, subject, html)
 
 
 def build_verification_email(code: str, ttl_minutes: int = 5) -> tuple[str, str]:

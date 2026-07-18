@@ -444,8 +444,8 @@
 }
 
 .wsta-version-item-selected {
-  border-color: var(--da-accent-indigo) !important;
-  background: color-mix(in srgb, var(--da-accent-indigo) 8%, transparent) !important;
+  border-color: var(--da-accent-indigo);
+  background: color-mix(in srgb, var(--da-accent-indigo) 8%, transparent);
 }
 
 .wsta-version-check {
@@ -575,5 +575,5 @@
   transition: all 0.15s;
 }
 .wsta-member-card:hover {
-  border-color: var(--da-border) !important;
+  border-color: var(--da-border);
 }

@@ -24,7 +24,8 @@ router = APIRouter(tags=["auth"])
 
 
 @router.get("/config", response_model=AuthConfigResponse)
-async def auth_config() -> Any:
+def auth_config() -> Any:
+    """Return the current auth mode and enabled status."""
     from virtual_team.auth import AUTH_ENABLED, AUTH_MODE
 
     return AuthConfigResponse(enabled=AUTH_ENABLED, mode=AUTH_MODE)
@@ -32,6 +33,7 @@ async def auth_config() -> Any:
 
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: CurrentUser = Depends(get_current_user)) -> Any:
+    """Return the current authenticated user's profile."""
     user = await get_user_by_email(current_user.email)
     if user is None:
         user = await get_user_by_id(current_user.id)

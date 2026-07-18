@@ -37,6 +37,7 @@ router = APIRouter(tags=["auth"])
 
 @router.post("/login", response_model=AuthResponse)
 async def login(body: LoginRequest, request: Request) -> Any:
+    """Authenticate a user with email and password."""
     email = body.email.lower().strip()
     password = body.password
     r = get_redis()
@@ -53,12 +54,14 @@ async def login(body: LoginRequest, request: Request) -> Any:
     if user is None:
         raise error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="邮箱或密码错误")
 
-    if user.locked_until and user.locked_until > datetime.now(UTC):
-        remaining = int((user.locked_until - datetime.now(UTC)).total_seconds())
-        raise error_response(
-            ErrorCode.AUTH_ACCOUNT_LOCKED,
-            detail=f"账户已被临时锁定，请 {max(remaining, 60)} 秒后再试",
-        )
+    if user.locked_until:
+        locked_until = user.locked_until.replace(tzinfo=UTC) if user.locked_until.tzinfo is None else user.locked_until
+        if locked_until > datetime.now(UTC):
+            remaining = int((locked_until - datetime.now(UTC)).total_seconds())
+            raise error_response(
+                ErrorCode.AUTH_ACCOUNT_LOCKED,
+                detail=f"账户已被临时锁定，请 {max(remaining, 60)} 秒后再试",
+            )
 
     if not user.is_verified:
         raise error_response(ErrorCode.AUTH_EMAIL_NOT_VERIFIED, detail="请先验证邮箱")
@@ -78,6 +81,7 @@ async def login(body: LoginRequest, request: Request) -> Any:
 
 @router.post("/refresh", response_model=AuthResponse)
 async def refresh(body: RefreshRequest) -> Any:
+    """Exchange a refresh token for new access and refresh tokens."""
     user, family_id = await consume_refresh_token(body.refresh_token)
     if user is None:
         raise error_response(ErrorCode.AUTH_TOKEN_EXPIRED, detail="登录已过期，请重新登录")
@@ -98,4 +102,5 @@ async def refresh(body: RefreshRequest) -> Any:
 
 @router.post("/logout", status_code=204)
 async def logout(body: LogoutRequest, _user: CurrentUser = Depends(get_current_user)) -> None:
+    """Invalidate a refresh token to log the user out."""
     await consume_refresh_token(body.refresh_token)

@@ -37,8 +37,8 @@ PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
 | Typecheck | `npm run typecheck` | `mypy virtual_team/ --strict` |
 | Lint | `npm run lint` (ESLint) | `ruff check virtual_team/` |
 | Format | `npm run format` (Prettier) | — (ruff handles) |
-| Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short` |
-| E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short` |
+| Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest tests/ -v --tb=short` |
+| E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short` |
 | Coverage | `npm run test:coverage` | — |
 | DB migrate | — | `PYTHONPATH=. alembic upgrade head` |
 

@@ -32,6 +32,7 @@ class PromptUpdate(BaseModel):
 
 @router.get("/api/prompts")
 async def list_prompts(category: str | None = None) -> Any:
+    """List all prompts, optionally filtered by category."""
     try:
         prompts = await get_prompts_as_dicts()
         if category:
@@ -67,6 +68,7 @@ async def _snapshot_prompt(resource_id: str, session: AsyncSession | None = None
 
 @router.post("/api/prompts", status_code=201)
 async def add_prompt(req: PromptCreate) -> Any:
+    """Create a new prompt."""
     try:
         p = await create_prompt(req.model_dump())
         await log_audit("create", "prompt", p.name, "创建成功")
@@ -87,6 +89,7 @@ async def add_prompt(req: PromptCreate) -> Any:
 
 @router.put("/api/prompts/{prompt_id}")
 async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
+    """Update an existing prompt."""
     try:
         p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
         if not p:
@@ -108,6 +111,7 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
 async def remove_prompt(prompt_id: str) -> None:
+    """Delete a prompt by ID."""
     try:
         from virtual_team.repository import get_prompts
         prompts = await get_prompts()

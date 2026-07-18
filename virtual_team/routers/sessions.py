@@ -10,7 +10,7 @@ from starlette.responses import Response
 from virtual_team.auth import get_user_id
 from virtual_team.core.error_codes import ErrorCode, error_response
 from virtual_team.core.infra.logging_config import get_logger
-from virtual_team.models import SessionDetailResponse, SessionSummary
+from virtual_team.core.models import SessionDetailResponse, SessionSummary
 from virtual_team.repository import (
     create_session,
     delete_memory_entry,
@@ -39,6 +39,7 @@ class SessionUpdateRequest(BaseModel):
 
 @router.get("/api/sessions", response_model=list[SessionSummary])
 async def list_sessions(limit: int = 50, agent_id: str | None = None, request: Request = None):  # type: ignore
+    """List sessions for the current user."""
     try:
         user_id = get_user_id(request)
         sessions = await get_sessions(limit=min(limit, 100), user_id=user_id, agent_id=agent_id)
@@ -64,6 +65,7 @@ async def list_sessions(limit: int = 50, agent_id: str | None = None, request: R
 
 @router.post("/api/sessions", status_code=201)
 async def add_session(req: SessionCreateRequest, request: Request = None):  # type: ignore
+    """Create a new chat session."""
     try:
         user_id = get_user_id(request)
         if req.agent_id:
@@ -84,6 +86,7 @@ async def add_session(req: SessionCreateRequest, request: Request = None):  # ty
 
 @router.get("/api/sessions/{session_id}", response_model=SessionDetailResponse)
 async def get_session_detail(session_id: str, request: Request = None):  # type: ignore
+    """Get full session detail including runs and memories."""
     try:
         user_id = get_user_id(request)
         sess = await get_session(session_id)
@@ -135,6 +138,7 @@ async def get_session_detail(session_id: str, request: Request = None):  # type:
 
 @router.put("/api/sessions/{session_id}")
 async def rename_session(session_id: str, req: SessionUpdateRequest, request: Request = None):  # type: ignore
+    """Rename a session's title."""
     try:
         user_id = get_user_id(request)
         sess = await get_session(session_id)
@@ -155,6 +159,7 @@ async def rename_session(session_id: str, req: SessionUpdateRequest, request: Re
 
 @router.delete("/api/sessions/{session_id}")
 async def remove_session(session_id: str, request: Request = None):  # type: ignore
+    """Delete a session and its associated data."""
     try:
         user_id = get_user_id(request)
         sess = await get_session(session_id)
@@ -175,6 +180,7 @@ async def remove_session(session_id: str, request: Request = None):  # type: ign
 
 @router.get("/api/sessions/{session_id}/memories")
 async def list_session_memories(session_id: str, request: Request = None):  # type: ignore
+    """List all memory entries for a session."""
     try:
         user_id = get_user_id(request)
         sess = await get_session(session_id)
@@ -203,6 +209,7 @@ async def list_session_memories(session_id: str, request: Request = None):  # ty
 
 @router.delete("/api/memories/{memory_id}")
 async def delete_session_memory(memory_id: str) -> Any:
+    """Delete a single memory entry."""
     try:
         deleted = await delete_memory_entry(memory_id)
         if not deleted:
@@ -217,6 +224,7 @@ async def delete_session_memory(memory_id: str) -> Any:
 
 @router.get("/api/sessions/{session_id}/memories/export")
 async def export_session_memories(session_id: str, format: str = "json", request: Request = None):  # type: ignore
+    """Export session memories as JSON or Markdown."""
     try:
         user_id = get_user_id(request)
         if format not in ("json", "md"):

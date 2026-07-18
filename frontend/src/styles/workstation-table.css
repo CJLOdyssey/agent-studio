@@ -60,7 +60,7 @@
 
 .wsta-empty-cell {
   text-align: center;
-  padding: var(--sp-12) var(--sp-4) !important;
+  padding: var(--sp-12) var(--sp-4);
   color: var(--da-text-muted);
 }
 
@@ -345,7 +345,7 @@
 .wsta-table .wsta-td-check,
 .wsta-col-checkbox {
   width: 40px;
-  text-align: center !important;
+  text-align: center;
   vertical-align: middle;
   padding: var(--sp-1) var(--sp-2);
 }
@@ -388,7 +388,7 @@
 }
 
 .wsta-row-selected {
-  background: var(--da-bg-surface) !important;
+  background: var(--da-bg-surface);
 }
 
 /* ── Agent name link ── */
@@ -471,7 +471,7 @@
 /* ── Empty state ── */
 .wsta-empty {
   text-align: center;
-  padding: var(--sp-12) var(--sp-4) !important;
+  padding: var(--sp-12) var(--sp-4);
   color: var(--da-text-muted);
 }
 
@@ -544,7 +544,7 @@
 .wsta-col-expand {
   width: 32px;
   text-align: center;
-  padding: var(--sp-1) 0 !important;
+  padding: var(--sp-1) 0;
 }
 
 .wsta-expand-btn {
@@ -568,7 +568,7 @@
 
 /* ── Expanded row ── */
 .wsta-expanded-row td {
-  padding: var(--sp-3) var(--sp-6) !important;
+  padding: var(--sp-3) var(--sp-6);
   background: var(--da-bg-surface);
 }
 
@@ -672,13 +672,13 @@
 }
 
 .wsta-sub-table td {
-  padding: var(--sp-1) var(--sp-2) !important;
+  padding: var(--sp-1) var(--sp-2);
   border-bottom: 1px solid var(--da-border-subtle);
-  background: transparent !important;
+  background: transparent;
 }
 
 .wsta-sub-table tbody tr:hover {
-  background: var(--da-bg-hover) !important;
+  background: var(--da-bg-hover);
 }
 
 /* ── Badge blue (for linked config) ── */
