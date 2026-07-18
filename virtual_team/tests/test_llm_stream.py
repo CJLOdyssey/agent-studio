@@ -1,3 +1,4 @@
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -355,3 +356,91 @@ class TestStreamLlmResponse:
                 {"Authorization": "Bearer sk-test"},
                 {"model": "deepseek-chat", "messages": []},
             )
+
+    @pytest.mark.asyncio
+    async def test_skips_chunk_with_no_choices(self):
+        from virtual_team.llm_stream import stream_llm_response
+
+        sse_lines = [
+            'data: {"choices":[],"finish_reason":null}',
+            'data: {"choices":[{"delta":{"content":"hi"},"finish_reason":"stop"}]}',
+            "data: [DONE]",
+        ]
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(sse_lines)):
+            content, thinking, tool_calls, finish_reason, usage = await stream_llm_response(
+                "https://api.deepseek.com/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "deepseek-chat", "messages": []},
+            )
+        assert "".join(content) == "hi"
+
+    @pytest.mark.asyncio
+    async def test_calls_callback_for_reasoning_content(self):
+        from virtual_team.llm_stream import stream_llm_response
+
+        callback = AsyncMock()
+        sse_lines = [
+            'data: {"choices":[{"delta":{"reasoning_content":"Let me think..."},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":"Answer"},"finish_reason":"stop"}]}',
+            "data: [DONE]",
+        ]
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(sse_lines)):
+            await stream_llm_response(
+                "https://api.deepseek.com/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "deepseek-chat", "messages": []},
+                stream_cb=callback,
+            )
+        callback.assert_any_call({"event": "on_custom_thinking", "data": {"content": "Let me think..."}})
+
+    @pytest.mark.asyncio
+    async def test_pending_content_flushed_after_stream(self):
+        from virtual_team.llm_stream import stream_llm_response
+
+        sse_lines = [
+            'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":" world"},"finish_reason":"stop"}]}',
+            "data: [DONE]",
+        ]
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(sse_lines)):
+            content, thinking, tool_calls, finish_reason, usage = await stream_llm_response(
+                "https://api.deepseek.com/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "deepseek-chat", "messages": []},
+                tool_definitions=[{"type": "function", "function": {"name": "test"}}],
+            )
+        assert "".join(content) == "Hello world"
+
+    @pytest.mark.asyncio
+    async def test_pending_content_with_callback(self):
+        from virtual_team.llm_stream import stream_llm_response
+
+        callback = AsyncMock()
+        sse_lines = [
+            'data: {"choices":[{"delta":{"content":"pending"},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":" content"},"finish_reason":"stop"}]}',
+            "data: [DONE]",
+        ]
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(sse_lines)):
+            content, thinking, tool_calls, finish_reason, usage = await stream_llm_response(
+                "https://api.deepseek.com/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "deepseek-chat", "messages": []},
+                stream_cb=callback,
+                tool_definitions=[{"type": "function", "function": {"name": "test"}}],
+            )
+        assert "".join(content) == "pending content"
+        callback.assert_any_call({"event": "on_custom_token", "data": {"content": "pending"}})
+        callback.assert_any_call({"event": "on_custom_token", "data": {"content": " content"}})
+
+
+class TestParseSse:
+
+    def test_parse_sse_data_line(self):
+        from virtual_team.llm_stream import stream_llm_response
+
+    def test_parse_sse_event_line(self):
+        pass
+
+    def test_parse_sse_empty_line(self):
+        pass

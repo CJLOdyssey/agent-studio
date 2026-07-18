@@ -202,3 +202,42 @@ def await_memory_create(session_id: str, run_id: str):
             details="Test details",
         )
     )
+
+
+class TestSessionEdgeCases:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_add_memory_with_file_id(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem File"}, headers=self.USER_HEADERS).json()
+        session_id = created["id"]
+        memory = await_memory_create(session_id, "run-file")
+        assert memory.id is not None
+        assert memory.session_id == session_id
+
+    def test_create_session_run_with_agent_id(self, client):
+        created = client.post("/api/sessions", json={"title": "Session Run Agent"}, headers=self.USER_HEADERS).json()
+        key_resp = client.post("/api/keys", json={
+            "provider": "custom", "usage_type": "embedding", "label": "run-agent-key",
+            "api_key": "sk-test-run-agent",
+        }, headers=self.USER_HEADERS)
+        assert key_resp.status_code == 201
+        key_id = key_resp.json()["id"]
+        resp = client.post("/api/runs", json={
+            "requirement": "Run with session and agent",
+            "sessionId": created["id"],
+            "keyId": key_id,
+            "agentId": "test-agent-1",
+        }, headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "run_id" in data
+        assert data["session_id"] == created["id"]
+
+    def test_delete_session_deletes(self, client):
+        created = client.post("/api/sessions", json={"title": "Delete Final"}, headers=self.USER_HEADERS).json()
+        resp = client.delete(f"/api/sessions/{created['id']}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+        get_resp = client.get(f"/api/sessions/{created['id']}", headers=self.USER_HEADERS)
+        assert get_resp.status_code == 404

@@ -172,3 +172,25 @@ class TestAgentRoutes:
         agent_id = resp.json()["id"]
         resp = client.put(f"/api/agents/{agent_id}/toggle")
         assert resp.status_code == 200
+
+
+class TestAgentListDetail:
+
+    def test_list_agents_has_elements(self, client):
+        client.post("/api/agents", json={
+            "name": "list-test-agent", "role_identifier": "list_role", "system_prompt": "test",
+        })
+        resp = client.get("/api/agents")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        names = [a["name"] for a in data]
+        assert "list-test-agent" in names
+
+    def test_agent_validate(self, client):
+        resp = client.post("/api/tools/validate", json={
+            "code": "def hello():\n    return 'world'", "language": "python",
+        })
+        assert resp.status_code == 200
+        assert "is_valid" in resp.json()

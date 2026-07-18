@@ -909,3 +909,452 @@ class TestWorkflows:
     def test_workflow_delete_not_found(self, client):
         resp = client.delete("/api/workflows/nonexistent-wf-id")
         assert resp.status_code == 404
+
+
+class TestRunCRUD:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_create_run_with_session_and_agent(self, client):
+        import virtual_team.routers.runs as runs_router
+        sess = client.post("/api/sessions", json={"title": "run-session"}, headers=self.USER_HEADERS).json()
+        mock_result = {"run_id": "crud-run-1", "session_id": sess["id"], "status": "running"}
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.return_value = mock_result
+            resp = client.post("/api/runs", json={
+                "requirement": "test requirement", "sessionId": sess["id"], "agentId": "ag-1",
+            }, headers=self.USER_HEADERS)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["run_id"] == "crud-run-1"
+            assert data["session_id"] == sess["id"]
+
+    def test_list_runs_returns_list(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
+            mock_list.return_value = [
+                {"id": "r1", "requirement": "req1", "status": "converged", "session_id": None},
+            ]
+            resp = client.get("/api/runs")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert isinstance(data, list)
+            assert len(data) == 1
+
+    def test_get_run_detail(self, client):
+        import virtual_team.routers.runs as runs_router
+        mock_detail = {
+            "id": "detail-1", "session_id": None, "requirement": "detail",
+            "pm_document": "", "code": "", "review": "", "approved": False,
+            "status": "converged", "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00", "messages": [],
+        }
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_detail
+            resp = client.get("/api/runs/detail-1")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["id"] == "detail-1"
+            assert "messages" in data
+
+    def test_get_run_messages(self, client):
+        import virtual_team.routers.runs as runs_router
+        mock_detail = {
+            "id": "msg-run-1", "session_id": None, "requirement": "msg test",
+            "pm_document": "", "code": "", "review": "", "approved": False,
+            "status": "converged", "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
+            "messages": [
+                {"id": "m1", "role": "user", "agent_name": "user", "content": "hello",
+                 "thinking": None, "round_number": 1, "created_at": "2025-01-01T00:00:00"},
+            ],
+        }
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_detail
+            resp = client.get("/api/runs/msg-run-1")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert len(data["messages"]) == 1
+            assert data["messages"][0]["content"] == "hello"
+
+    def test_run_complete_invalid_session(self, client):
+        import virtual_team.routers.run_continue as rc_router
+        with patch.object(rc_router.run_service, 'continue_run', new_callable=AsyncMock) as mock_cc:
+            mock_cc.side_effect = ValueError("Session not found")
+            resp = client.post("/api/runs/complete", json={
+                "content": "continue", "session_id": "nonexistent-id",
+            }, headers=self.USER_HEADERS)
+            assert resp.status_code == 400
+
+
+class TestSessionEdgeCases:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_list_sessions_returns_list(self, client):
+        resp = client.get("/api/sessions", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
+    def test_create_session_with_agent_id(self, client):
+        agent_resp = client.post("/api/agents", json={
+            "name": "session-agent", "role_identifier": "sess_role", "system_prompt": "test",
+        }, headers=self.USER_HEADERS)
+        assert agent_resp.status_code == 201
+        agent_id = agent_resp.json()["id"]
+        resp = client.post("/api/sessions", json={"title": "agent-session", "agent_id": agent_id}, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["title"] == "agent-session"
+
+    def test_get_session_memories_structure(self, client):
+        sid = client.post("/api/sessions", json={"title": "mem-struct"}, headers=self.USER_HEADERS).json()["id"]
+        resp = client.get(f"/api/sessions/{sid}/memories", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
+
+class TestToolEdgeCases:
+
+    def test_create_tool_minimal(self, client):
+        resp = client.post("/api/tools", json={"name": "minimal-tool", "category": "api", "description": "minimal"})
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "minimal-tool"
+
+    def test_create_tool_with_description(self, client):
+        resp = client.post("/api/tools", json={
+            "name": "desc-tool", "category": "data", "description": "a tool with description",
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "desc-tool"
+
+    def test_list_returns_created_tools(self, client):
+        client.post("/api/tools", json={"name": "list-tool", "category": "api", "description": "listme"})
+        resp = client.get("/api/tools")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        names = [t["name"] for t in data]
+        assert "list-tool" in names
+
+
+class TestPromptEdgeCases:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_create_prompt_with_category(self, client):
+        resp = client.post("/api/prompts", json={
+            "name": "cat-prompt", "category": "coding", "content": "Write code",
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "cat-prompt"
+
+    def test_list_prompts_returns_created(self, client):
+        client.post("/api/prompts", json={"name": "list-prompt", "category": "general", "content": "hello"})
+        resp = client.get("/api/prompts")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        names = [p["name"] for p in data]
+        assert "list-prompt" in names
+
+    def test_create_prompt_version(self, client):
+        pid = client.post("/api/prompts", json={
+            "name": "version-prompt", "category": "general", "content": "v0",
+        }).json()["id"]
+        resp = client.post("/api/versions", json={
+            "resource_type": "prompt", "resource_id": pid,
+            "snapshot": {"name": "v1", "content": "v1 content"},
+        }, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+
+    def test_list_prompt_versions(self, client):
+        pid = client.post("/api/prompts", json={
+            "name": "list-ver-prompt", "category": "general", "content": "base",
+        }).json()["id"]
+        client.post("/api/versions", json={
+            "resource_type": "prompt", "resource_id": pid,
+            "snapshot": {"name": "v1", "content": "v1"},
+        }, headers=self.USER_HEADERS)
+        resp = client.get(f"/api/versions/prompt/{pid}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
+
+class TestKeyEdgeCases:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_create_key(self, client):
+        resp = client.post("/api/keys", json={
+            "provider": "custom", "usage_type": "embedding", "label": "test-key-edge",
+            "api_key": "sk-test-key-val",
+        }, headers=self.USER_HEADERS)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["provider"] == "custom"
+
+    def test_update_key_label(self, client):
+        created = client.post("/api/keys", json={
+            "provider": "openai", "usage_type": "embedding", "label": "old-label",
+            "api_key": "sk-old-key",
+        }, headers=self.USER_HEADERS).json()
+        resp = client.put(f"/api/keys/{created['id']}", json={"label": "new-label"}, headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["label"] == "new-label"
+
+    def test_get_keys_has_masked_key(self, client):
+        client.post("/api/keys", json={
+            "provider": "anthropic", "usage_type": "embedding", "label": "masked-test",
+            "api_key": "sk-anthropic-secret",
+        }, headers=self.USER_HEADERS)
+        resp = client.get("/api/keys", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        for k in data:
+            assert "key_masked" in k
+            assert k["key_masked"] != "sk-anthropic-secret"
+            assert "..." in k["key_masked"]
+
+
+class TestRunRoutesExtended:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_create_run_requirement_too_long(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router, 'load_config') as mock_cfg:
+            mock_cfg.return_value.max_requirement_length = 5
+            resp = client.post("/api/runs", json={"requirement": "way too long requirement"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 400
+
+    def test_create_run_empty_after_strip(self, client):
+        resp = client.post("/api/runs", json={"requirement": "   "}, headers=self.USER_HEADERS)
+        assert resp.status_code == 400
+
+    def test_create_run_value_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.side_effect = ValueError("invalid session")
+            resp = client.post("/api/runs", json={"requirement": "valid req"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 400
+
+    def test_create_run_http_exception_re_raised(self, client):
+        import virtual_team.routers.runs as runs_router
+        from fastapi import HTTPException
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.side_effect = HTTPException(status_code=409, detail="conflict")
+            resp = client.post("/api/runs", json={"requirement": "valid req"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 409
+
+    def test_create_run_internal_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'create_run', new_callable=AsyncMock) as mock_create:
+            mock_create.side_effect = RuntimeError("unexpected")
+            resp = client.post("/api/runs", json={"requirement": "valid req"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 500
+
+    def test_get_run_not_found(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = None
+            resp = client.get("/api/runs/nonexistent-id")
+            assert resp.status_code == 404
+
+    def test_get_run_http_exception_re_raised(self, client):
+        import virtual_team.routers.runs as runs_router
+        from fastapi import HTTPException
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.side_effect = HTTPException(status_code=410, detail="gone")
+            resp = client.get("/api/runs/some-id")
+            assert resp.status_code == 410
+
+    def test_get_run_internal_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'get_run', new_callable=AsyncMock) as mock_get:
+            mock_get.side_effect = RuntimeError("db error")
+            resp = client.get("/api/runs/some-id")
+            assert resp.status_code == 500
+
+    def test_list_runs_internal_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
+            mock_list.side_effect = RuntimeError("list failed")
+            resp = client.get("/api/runs")
+            assert resp.status_code == 500
+
+
+class TestRunContinue:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_complete_run_success(self, client):
+        import virtual_team.routers.run_continue as rc_router
+        mock_result = {"run_id": "continue-run-1", "session_id": "sess-1", "status": "running"}
+        with patch.object(rc_router.run_service, 'continue_run', new_callable=AsyncMock) as mock_cc:
+            mock_cc.return_value = mock_result
+            resp = client.post("/api/runs/complete", json={"content": "continue", "session_id": "sess-1"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["run_id"] == "continue-run-1"
+            assert data["status"] == "running"
+
+    def test_complete_run_value_error(self, client):
+        import virtual_team.routers.run_continue as rc_router
+        with patch.object(rc_router.run_service, 'continue_run', new_callable=AsyncMock) as mock_cc:
+            mock_cc.side_effect = ValueError("Session not found")
+            resp = client.post("/api/runs/complete", json={"content": "x", "session_id": "bad"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 400
+
+    def test_complete_run_http_exception_re_raised(self, client):
+        import virtual_team.routers.run_continue as rc_router
+        from fastapi import HTTPException
+        with patch.object(rc_router.run_service, 'continue_run', new_callable=AsyncMock) as mock_cc:
+            mock_cc.side_effect = HTTPException(status_code=409, detail="conflict")
+            resp = client.post("/api/runs/complete", json={"content": "x"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 409
+
+    def test_complete_run_internal_error(self, client):
+        import virtual_team.routers.run_continue as rc_router
+        with patch.object(rc_router.run_service, 'continue_run', new_callable=AsyncMock) as mock_cc:
+            mock_cc.side_effect = RuntimeError("crash")
+            resp = client.post("/api/runs/complete", json={"content": "x"}, headers=self.USER_HEADERS)
+            assert resp.status_code == 500
+
+
+class TestSkillCreateAndVerify:
+
+    def test_skill_create_and_list(self, client):
+        payload = {"name": "verify-skill", "category": "general", "description": "Verify skill test"}
+        resp = client.post("/api/skills", json=payload)
+        assert resp.status_code == 201
+        skill_id = resp.json()["id"]
+        assert skill_id is not None
+
+        resp = client.get("/api/skills")
+        assert resp.status_code == 200
+        ids = [s["id"] for s in resp.json()]
+        assert skill_id in ids
+
+    def test_skill_update_name(self, client):
+        payload = {"name": "update-skill", "category": "general", "description": "Update test"}
+        resp = client.post("/api/skills", json=payload)
+        skill_id = resp.json()["id"]
+
+        resp = client.put(f"/api/skills/{skill_id}", json={"name": "updated-skill-name"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "updated-skill-name"
+
+    def test_skill_get_nonexistent(self, client):
+        resp = client.get("/api/skills/nonexistent-id")
+        assert resp.status_code == 404
+
+    def test_skill_update_nonexistent(self, client):
+        resp = client.put("/api/skills/nonexistent-id", json={"name": "nope"})
+        assert resp.status_code == 404
+
+    def test_skill_delete_nonexistent(self, client):
+        resp = client.delete("/api/skills/nonexistent-id")
+        assert resp.status_code == 404
+
+
+class TestSkillErrorHandling:
+
+    def test_list_skills_exception(self, client):
+        import virtual_team.routers.skills as skills_router
+        with patch.object(skills_router, 'repo_get_skills_as_dicts', new_callable=AsyncMock) as mock_list:
+            mock_list.side_effect = RuntimeError("list failed")
+            resp = client.get("/api/skills")
+            assert resp.status_code == 500
+
+    def test_get_skill_exception(self, client):
+        import virtual_team.routers.skills as skills_router
+        with patch.object(skills_router, 'repo_get_skills', new_callable=AsyncMock) as mock_get_skills:
+            mock_get_skills.side_effect = RuntimeError("get skills failed")
+            resp = client.get("/api/skills/some-id")
+            assert resp.status_code == 500
+
+    def test_create_skill_exception(self, client):
+        import virtual_team.routers.skills as skills_router
+        with patch.object(skills_router, 'repo_create_skill', new_callable=AsyncMock) as mock_create:
+            mock_create.side_effect = RuntimeError("create failed")
+            resp = client.post("/api/skills", json={"name": "fail", "category": "general", "description": "fail"})
+            assert resp.status_code == 500
+
+    def test_update_skill_exception(self, client):
+        import virtual_team.routers.skills as skills_router
+        payload = {"name": "update-exc", "category": "general", "description": "update exc"}
+        resp = client.post("/api/skills", json=payload)
+        skill_id = resp.json()["id"]
+        with patch.object(skills_router, 'update_skill', new_callable=AsyncMock) as mock_update:
+            mock_update.side_effect = RuntimeError("update failed")
+            resp = client.put(f"/api/skills/{skill_id}", json={"name": "new-name"})
+            assert resp.status_code == 500
+
+    def test_delete_skill_exception(self, client):
+        import virtual_team.routers.skills as skills_router
+        payload = {"name": "delete-exc", "category": "general", "description": "delete exc"}
+        resp = client.post("/api/skills", json=payload)
+        skill_id = resp.json()["id"]
+        with patch.object(skills_router, 'delete_skill', new_callable=AsyncMock) as mock_delete:
+            mock_delete.side_effect = RuntimeError("delete failed")
+            resp = client.delete(f"/api/skills/{skill_id}")
+            assert resp.status_code == 500
+
+
+class TestWorkflowRoutes:
+
+    def _create_team(self, client, suffix="wfr"):
+        resp = client.post("/api/teams", json={"name": f"wfr-team-{suffix}", "description": "wfr"})
+        assert resp.status_code == 201
+        return resp.json()["id"]
+
+    def test_create_workflow_with_nodes_edges(self, client):
+        team_id = self._create_team(client, "nodes-edges")
+        payload = {
+            "teamId": team_id,
+            "name": "wf-nodes-edges",
+            "maxRounds": 5,
+            "nodes": [
+                {"agentConfigId": "ag1", "roleIdentifier": "writer", "strategy": "generator", "order": 0},
+                {"agentConfigId": "ag2", "roleIdentifier": "reviewer", "strategy": "reviewer", "order": 1},
+            ],
+            "edges": [
+                {"fromNodeId": "writer", "toNodeId": "reviewer"},
+                {"fromNodeId": "reviewer", "toNodeId": "END"},
+            ],
+        }
+        resp = client.post("/api/workflows", json=payload)
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "wf-nodes-edges"
+        assert len(data["nodes"]) == 2
+        assert len(data["edges"]) == 2
+
+    def test_list_workflows(self, client):
+        resp = client.get("/api/workflows")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_delete_workflow(self, client):
+        team_id = self._create_team(client, "delete-wf")
+        payload = {"teamId": team_id, "name": "delete-wf", "maxRounds": 3, "nodes": [], "edges": []}
+        resp = client.post("/api/workflows", json=payload)
+        wf_id = resp.json()["id"]
+        resp = client.delete(f"/api/workflows/{wf_id}")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+
+    def test_delete_workflow_not_found(self, client):
+        resp = client.delete("/api/workflows/nonexistent")
+        assert resp.status_code == 404
