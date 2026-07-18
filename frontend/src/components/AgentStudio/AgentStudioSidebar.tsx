@@ -1,6 +1,6 @@
 import { memo, useCallback } from 'react';
 import { Bot, Sparkles, MessageSquare } from 'lucide-react';
-import type { Team, Agent, Conversation } from '../../types/agentstudio';
+import type { Team, Agent, Conversation } from '../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import UserMenu from './sidebar/UserMenu';
 import ConversationsList from './sidebar/ConversationsList';

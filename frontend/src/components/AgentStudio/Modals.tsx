@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import type { Agent } from '../../types/agentstudio';
+import type { Agent } from '../../types/AgentStudio';
 
 const AgentConfigModal = lazy(() => import('./modals/AgentConfigModal'));
 const SettingsModal = lazy(() => import('./modals/SettingsModal'));

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Conversation } from '../types/agentstudio';
+import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);

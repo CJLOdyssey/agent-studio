@@ -1,5 +1,5 @@
-import type { VersionEntry } from '../components/agentstudio/workstation/types';
-import type { TeamEntry } from '../components/agentstudio/workstation/team/team.types';
+import type { VersionEntry } from '../components/AgentStudio/workstation/types';
+import type { TeamEntry } from '../components/AgentStudio/workstation/team/team.types';
 
 export const MOCK_TEAMS: TeamEntry[] = [
   { id: 't1', name: '前端开发团队', description: '负责前端架构和组件开发', status: 'active', category: 'dev', createdAt: '2026-03-10', agents: [], memberCount: 0 },
