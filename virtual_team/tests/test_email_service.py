@@ -12,6 +12,8 @@ os.environ["RESEND_API_KEY"] = "re_test_key"
 
 import pytest
 
+import virtual_team.email_service as email_mod
+
 from virtual_team.email_service import (
     LogMailer,
     ResendApiMailer,
@@ -71,7 +73,10 @@ class TestSmtpMailer:
     @pytest.mark.asyncio
     async def test_send_email_calls_smtp(self):
         mailer = SmtpMailer()
-        with patch("virtual_team.email_service.smtplib.SMTP") as mock_smtp:
+        with patch("virtual_team.email_service.SMTP_HOST", "smtp.test.com"), \
+             patch("virtual_team.email_service.SMTP_USER", "user"), \
+             patch("virtual_team.email_service.SMTP_PASSWORD", "pass"), \
+             patch("virtual_team.email_service.smtplib.SMTP") as mock_smtp:
             instance = mock_smtp.return_value.__enter__.return_value
             await mailer.send("to@test.com", "Subj", "<p>Body</p>")
             instance.sendmail.assert_called_once()
@@ -81,11 +86,14 @@ class TestSmtpMailer:
     @pytest.mark.asyncio
     async def test_send_email_port_465(self):
         mailer = SmtpMailer()
-        with patch("virtual_team.email_service.SMTP_PORT", 465):
-            with patch("virtual_team.email_service.smtplib.SMTP_SSL") as mock_smtp_ssl:
-                instance = mock_smtp_ssl.return_value.__enter__.return_value
-                await mailer.send("to@test.com", "Subj", "<p>Body</p>")
-                instance.sendmail.assert_called_once()
+        with patch("virtual_team.email_service.SMTP_PORT", 465), \
+             patch("virtual_team.email_service.SMTP_HOST", "smtp.test.com"), \
+             patch("virtual_team.email_service.SMTP_USER", "user"), \
+             patch("virtual_team.email_service.SMTP_PASSWORD", "pass"), \
+             patch("virtual_team.email_service.smtplib.SMTP_SSL") as mock_smtp_ssl:
+            instance = mock_smtp_ssl.return_value.__enter__.return_value
+            await mailer.send("to@test.com", "Subj", "<p>Body</p>")
+            instance.sendmail.assert_called_once()
 
 
 class TestResendApiMailer:
@@ -111,21 +119,24 @@ class TestSendEmailTopLevel:
 
     @pytest.mark.asyncio
     async def test_send_email_smtp_backend(self):
-        with patch("virtual_team.email_service.EMAIL_BACKEND", "smtp"):
+        with patch("virtual_team.email_service.EMAIL_BACKEND", "smtp"), \
+             patch("virtual_team.email_service.SMTP_HOST", "smtp.test.com"):
             with patch("virtual_team.email_service.SmtpMailer.send", new_callable=AsyncMock) as mock_send:
                 await send_email("to@test.com", "Subj", "<p>Body</p>")
                 mock_send.assert_awaited_once_with("to@test.com", "Subj", "<p>Body</p>")
 
     @pytest.mark.asyncio
     async def test_send_email_resend_backend(self):
-        with patch("virtual_team.email_service.EMAIL_BACKEND", "resend"):
+        with patch("virtual_team.email_service.EMAIL_BACKEND", "resend"), \
+             patch("virtual_team.email_service.RESEND_API_KEY", "re_test"):
             with patch("virtual_team.email_service.ResendApiMailer.send", new_callable=AsyncMock) as mock_send:
                 await send_email("to@test.com", "Subj", "<p>Body</p>")
                 mock_send.assert_awaited_once_with("to@test.com", "Subj", "<p>Body</p>")
 
     @pytest.mark.asyncio
     async def test_send_email_smtp_fallback_on_error(self):
-        with patch("virtual_team.email_service.EMAIL_BACKEND", "smtp"):
+        with patch("virtual_team.email_service.EMAIL_BACKEND", "smtp"), \
+             patch("virtual_team.email_service.SMTP_HOST", "smtp.test.com"):
             with patch("virtual_team.email_service.SmtpMailer.send", new_callable=AsyncMock) as mock_smtp:
                 mock_smtp.side_effect = Exception("SMTP error")
                 with patch("virtual_team.email_service.LogMailer.send", new_callable=AsyncMock) as mock_log:
@@ -134,7 +145,8 @@ class TestSendEmailTopLevel:
 
     @pytest.mark.asyncio
     async def test_send_email_resend_fallback_on_error(self):
-        with patch("virtual_team.email_service.EMAIL_BACKEND", "resend"):
+        with patch("virtual_team.email_service.EMAIL_BACKEND", "resend"), \
+             patch("virtual_team.email_service.RESEND_API_KEY", "re_test"):
             with patch("virtual_team.email_service.ResendApiMailer.send", new_callable=AsyncMock) as mock_resend:
                 mock_resend.side_effect = Exception("Resend error")
                 with patch("virtual_team.email_service.LogMailer.send", new_callable=AsyncMock) as mock_log:

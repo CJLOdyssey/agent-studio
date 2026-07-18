@@ -1,6 +1,6 @@
 """Integration tests for FastAPI REST API routes using in-memory SQLite and TestClient."""
 import os
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -1310,6 +1310,166 @@ class TestSkillErrorHandling:
             mock_delete.side_effect = RuntimeError("delete failed")
             resp = client.delete(f"/api/skills/{skill_id}")
             assert resp.status_code == 500
+
+
+async def _async_gen(items):
+    for item in items:
+        yield item
+
+
+class TestRunWebSocket:
+
+    def test_websocket_connect_and_disconnect(self, client):
+        import virtual_team.routers.runs as runs_router
+        from virtual_team.broker import drain_buffer, subscribe_run
+        mock_messages = []
+        async def _subscribe(*args, **kwargs):
+            for m in mock_messages:
+                yield m
+
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None) as mock_get_run,
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', side_effect=_subscribe),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/test-run-id") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+                assert data["status"] == "connected"
+                ws.close()
+
+    def test_websocket_pre_check_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, side_effect=RuntimeError("db fail")),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_async_gen([])),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/err-run") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+                ws.close()
+
+    def test_websocket_subscribe_streams_messages(self, client):
+        import virtual_team.routers.runs as runs_router
+        msgs = [
+            {"type": "message", "content": "first"},
+            {"type": "message", "content": "second"},
+        ]
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_async_gen(msgs)),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/stream-run") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+                data = ws.receive_json()
+                assert data["content"] == "first"
+                data = ws.receive_json()
+                assert data["content"] == "second"
+                ws.close()
+
+    def test_websocket_disconnect_during_drain(self, client):
+        import virtual_team.routers.runs as runs_router
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[{"type": "message"}]),
+            patch.object(runs_router, 'subscribe_run', return_value=_async_gen([])),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/drain-id") as ws:
+                ws.close()
+
+    def test_websocket_disconnect_during_subscribe(self, client):
+        import virtual_team.routers.runs as runs_router
+        msgs = [{"type": "message", "content": "test"}]
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_async_gen(msgs)),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/sub-id") as ws:
+                ws.close()
+        import virtual_team.routers.runs as runs_router
+        msgs = [{"type": "message", "content": "test"}]
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_async_gen(msgs)),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/sub-id") as ws:
+                ws.close()
+
+    def test_websocket_subscribe_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        async def _error_gen():
+            raise RuntimeError("subscribe failed")
+            yield
+
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_error_gen()),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+        ):
+            with client.websocket_connect("/ws/runs/error-run") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+
+    def test_websocket_send_error(self, client):
+        import virtual_team.routers.runs as runs_router
+        async def _gen():
+            yield {"type": "message"}
+
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=None),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+            patch.object(runs_router, 'subscribe_run', return_value=_gen()),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+            patch.object(runs_router, 'logger', MagicMock()),
+        ):
+            with client.websocket_connect("/ws/runs/send-err") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+
+    def test_websocket_run_already_converged(self, client):
+        import virtual_team.routers.runs as runs_router
+        from unittest.mock import MagicMock
+
+        mock_run = MagicMock()
+        mock_run.status = "converged"
+        mock_run.approved = True
+        mock_run.pm_document = "doc"
+        mock_run.code = "code"
+        mock_run.review = "review"
+
+        mock_msg = MagicMock()
+        mock_msg.role = "assistant"
+        mock_msg.agent_name = "agent"
+        mock_msg.content = "hello"
+        mock_msg.round_number = 1
+
+        with (
+            patch.object(runs_router, 'get_run', new_callable=AsyncMock, return_value=mock_run),
+            patch.object(runs_router, 'get_messages', new_callable=AsyncMock, return_value=[mock_msg]),
+            patch.object(runs_router, 'stop_buffer', new_callable=AsyncMock),
+            patch.object(runs_router, 'drain_buffer', return_value=[]),
+        ):
+            with client.websocket_connect("/ws/runs/converged-run") as ws:
+                data = ws.receive_json()
+                assert data["type"] == "status"
+                data = ws.receive_json()
+                assert data["type"] == "message"
+                assert data["content"] == "hello"
+                data = ws.receive_json()
+                assert data["type"] == "result"
+                assert data["status"] == "converged"
 
 
 class TestWorkflowRoutes:
