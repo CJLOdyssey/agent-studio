@@ -83,7 +83,7 @@ async def test_get_api_keys_decrypt_failure_graceful():
 
     factory = db.get_session_factory()
     async with factory() as session:
-        from virtual_team.db_models.key import UserApiKey
+        from virtual_team.orm.key import UserApiKey
 
         obj = UserApiKey(
             id="bad-key-id-1234",

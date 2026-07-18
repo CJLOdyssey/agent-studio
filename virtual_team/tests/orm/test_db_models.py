@@ -1,4 +1,4 @@
-"""Tests for virtual_team/db_models/ — ORM table definitions."""
+"""Tests for virtual_team/orm/ — ORM table definitions."""
 import os
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
@@ -10,7 +10,7 @@ def test_tables_registered():
 
 def test_agent_columns():
     from sqlalchemy import inspect
-    from virtual_team.db_models.agent import AgentConfigDB
+    from virtual_team.orm.agent import AgentConfigDB
     cols = {c.name for c in inspect(AgentConfigDB).columns}
     assert "name" in cols
     assert "role_identifier" in cols

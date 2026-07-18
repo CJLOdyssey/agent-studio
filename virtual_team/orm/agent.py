@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from virtual_team.core.base import Base
 
 if TYPE_CHECKING:
-    from virtual_team.db_models.workflow import WorkflowConfigDB
+    from virtual_team.orm.workflow import WorkflowConfigDB
 
 
 class TeamDB(Base):

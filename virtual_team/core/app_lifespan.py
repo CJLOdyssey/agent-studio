@@ -113,7 +113,7 @@ async def seed_default_tools() -> None:
     from sqlalchemy import select
 
     from virtual_team.core.infra.database import get_session_factory
-    from virtual_team.db_models import RegisteredToolDB
+    from virtual_team.orm import RegisteredToolDB
 
     factory = get_session_factory()
     async with factory() as session:

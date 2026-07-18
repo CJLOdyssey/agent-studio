@@ -3,7 +3,7 @@
 from sqlalchemy import select
 
 from virtual_team.core.infra.database import get_session_factory
-from virtual_team.db_models import RoleDB, UserDB, UserRoleDB
+from virtual_team.orm import RoleDB, UserDB, UserRoleDB
 
 
 async def seed_default_roles_and_admin() -> None:

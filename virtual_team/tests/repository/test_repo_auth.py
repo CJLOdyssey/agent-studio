@@ -318,7 +318,7 @@ async def test_merge_guest_data():
     await create_user("guest1@example.com", "hash", username="u_guest1")
     await create_user("guest2@example.com", "hash", username="u_guest2")
 
-    from virtual_team.db_models import SessionDB
+    from virtual_team.orm import SessionDB
     from uuid import uuid4
 
     factory = db_mod.get_session_factory()

@@ -9,7 +9,7 @@ Usage:
 """
 
 from virtual_team.core.infra.database import get_session_factory
-from virtual_team.db_models import AuditLogDB
+from virtual_team.orm import AuditLogDB
 
 
 async def log_audit(

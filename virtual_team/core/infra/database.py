@@ -132,9 +132,9 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         yield session
 
 # ── Backward-compatible re-exports ─────────────────────────────────────
-# All ORM models moved to virtual_team.db_models package.
+# All ORM models moved to virtual_team.orm package.
 # These imports keep `from virtual_team.core.infra.database import XxxDB` working.
-from virtual_team.db_models import (  # noqa: E402, F401
+from virtual_team.orm import (  # noqa: E402, F401
     AgentConfigDB,
     AttachmentDB,
     AuditLogDB,
