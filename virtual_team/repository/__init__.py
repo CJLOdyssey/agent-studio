@@ -130,6 +130,7 @@ from virtual_team.repository.tools import (
     get_tool,
     get_tools,
     get_tools_as_dicts,
+    list_tool_plugins,
     update_tool,
 )
 
@@ -210,6 +211,7 @@ __all__ = [
     "increment_failed_logins",
     "link_agent_config",
     "list_attachments_by_session",
+    "list_tool_plugins",
     "list_workflow_configs",
     "log_command",
     "log_key_usage",

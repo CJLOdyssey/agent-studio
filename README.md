@@ -201,11 +201,11 @@ mypy virtual_team/ --strict # 类型检查
 cd frontend && npm test
 
 # 后端（170 个测试用例）
-PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short --ignore=virtual_team/tests/test_e2e_full_flow.py
+PYTHONPATH=. python3 -m pytest tests/ -v --tb=short --ignore=tests/e2e/
 
 # 集成测试（需要 Docker）
 PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory \
-  python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short
+  python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short
 ```
 
 ### 启动前检查

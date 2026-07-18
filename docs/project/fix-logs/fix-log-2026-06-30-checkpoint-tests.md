@@ -13,7 +13,7 @@
 | 关联缺陷 | FIX-20260630-002（引入 AsyncSqliteSaver 后测试未同步更新） |
 | 日期 | 2026-06-30 |
 | 作者 | Sisyphus |
-| 涉及模块 | `virtual_team/tests/test_checkpoint_persistence.py` |
+| 涉及模块 | `tests/checkpoint/test_checkpoint_persistence.py` |
 | 影响范围 | CI `backend-quality` job 中的 pytest 阶段 |
 | 触发条件 | CI 运行 pytest，3 个 checkpoint 测试全部失败 |
 
@@ -77,7 +77,7 @@ test:
 
 | # | 文件 | 变更说明 |
 |---|------|---------|
-| 1 | `virtual_team/tests/test_checkpoint_persistence.py` | fixture 改为 async；测试函数标记 `@pytest.mark.asyncio`；使用 async API；修复 subprocess DSN 不匹配 |
+| 1 | `tests/checkpoint/test_checkpoint_persistence.py` | fixture 改为 async；测试函数标记 `@pytest.mark.asyncio`；使用 async API；修复 subprocess DSN 不匹配 |
 
 ### 3.3 关键代码 diff
 

@@ -3,7 +3,6 @@
 import time
 from typing import Any
 
-from virtual_team.broker import get_redis
 from virtual_team.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -27,6 +26,8 @@ class RateLimiter:
     async def is_allowed(self, key: str) -> bool:
         """Check if request identified by `key` is within the rate limit."""
         try:
+            from virtual_team.broker import get_redis
+
             r = get_redis()
             current = int(time.time())
             window_key = f"ratelimit:{key}:{current // self.window}"
@@ -82,13 +83,13 @@ class RateLimitMiddleware:
                 "Rate limit hit | client=%s | rate=%d/%ds | path=%s",
                 client_ip, self.limiter.rate, self.limiter.window, path,
             )
-            response = await self._rate_limited_response(scope, receive, send)
+            response = self._rate_limited_response(scope, receive, send)
             await response(scope, receive, send)
             return
 
         await self.app(scope, receive, send)
 
-    async def _rate_limited_response(self, scope: Any, receive: Any, send: Any) -> Any:
+    def _rate_limited_response(self, scope: Any, receive: Any, send: Any) -> Any:
         from starlette.responses import JSONResponse
 
         response = JSONResponse(

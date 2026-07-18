@@ -96,7 +96,7 @@
   }
 
   .wsta-monitor-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr;
   }
 
   .wsta-settings-header {

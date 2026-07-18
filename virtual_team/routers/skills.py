@@ -46,6 +46,7 @@ class SkillUpdate(BaseModel):
 
 @router.get("/api/skills")
 async def list_skills() -> Any:
+    """List all skill configurations."""
     try:
         return await repo_get_skills_as_dicts()
     except Exception as e:
@@ -54,6 +55,7 @@ async def list_skills() -> Any:
 
 @router.get("/api/skills/{skill_id}")
 async def get_skill(skill_id: str) -> Any:
+    """Get a single skill by ID."""
     try:
         skills = await repo_get_skills()
         s = next((sk for sk in skills if sk.id == skill_id), None)
@@ -93,6 +95,7 @@ async def _snapshot_skill(resource_id: str, session: AsyncSession | None = None)
 
 @router.post("/api/skills", status_code=201)
 async def add_skill(req: SkillCreate) -> Any:
+    """Create a new skill."""
     try:
         data = req.model_dump()
         data["content"] = data.pop("description", "")
@@ -115,6 +118,7 @@ async def add_skill(req: SkillCreate) -> Any:
 
 @router.put("/api/skills/{skill_id}")
 async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
+    """Update an existing skill."""
     try:
         data = req.model_dump(exclude_unset=True)
         if "description" in data:
@@ -141,6 +145,7 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
 
 @router.delete("/api/skills/{skill_id}", status_code=204)
 async def remove_skill(skill_id: str) -> None:
+    """Delete a skill by ID."""
     try:
         from virtual_team.repository.skills import get_skills as _gskills
         all_items = await _gskills()

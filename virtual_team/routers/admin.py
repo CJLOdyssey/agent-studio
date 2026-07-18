@@ -19,14 +19,17 @@ router = APIRouter(tags=["admin"])
 
 @router.get("/api/admin/stats")
 async def get_dashboard_stats() -> Any:
+    """Return aggregated dashboard statistics."""
     return await _get_dashboard_stats()
 
 
 @router.get("/api/admin/logs")
 async def get_command_logs(limit: int = 50, offset: int = 0) -> Any:
+    """Return paginated command execution logs."""
     return await _get_command_logs(limit=limit, offset=offset)
 
 
 @router.get("/api/admin/activity")
 async def get_recent_activity(limit: int = 10) -> Any:
+    """Return the most recent audit activity entries."""
     return await _get_recent_activity(limit=limit)

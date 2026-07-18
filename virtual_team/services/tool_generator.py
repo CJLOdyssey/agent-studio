@@ -49,7 +49,7 @@ def _validate_tool_code(code: str, language: str) -> ToolValidateResponse:
 def _execute_tool_sandbox(code: str, language: str) -> str:
     if language == "python":
         try:
-            namespace: dict[str, Any] = {}
+            namespace: dict[str, Any] = {"__builtins__": {}}  # noqa: F821
             exec(code, namespace)
             return "代码语法检查通过"
         except SyntaxError as e:

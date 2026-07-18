@@ -238,6 +238,6 @@
 
 | TC | 测试 | 命令 | 预期 |
 |----|------|------|------|
-| 25 | 后端单元测试 | `PYTHONPATH=. python3 -m pytest virtual_team/tests/test_agent_graph.py virtual_team/tests/test_team_graph.py -v --tb=short` | 16 passed |
+| 25 | 后端单元测试 | `PYTHONPATH=. python3 -m pytest tests/ -v --tb=short --ignore=tests/e2e/ --ignore=tests/repository/` | 全部非集成测试 |
 | 26 | 前端单元测试 | `cd frontend && npm test -- --run` | 225 passed, 31 files |
 | 27 | Ruff 检查 | `ruff check virtual_team/` | 无新增 error |

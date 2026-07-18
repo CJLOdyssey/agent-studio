@@ -56,6 +56,7 @@ class AgentUpdateRequest(BaseModel):
 
 @router.get("/api/agents")
 async def list_agents() -> Any:
+    """List all agent configurations."""
     try:
         configs = await get_agent_configs()
         return [
@@ -85,6 +86,7 @@ async def list_agents() -> Any:
 
 @router.get("/api/agents/{agent_id}")
 async def get_agent(agent_id: str) -> Any:
+    """Get a single agent configuration by ID."""
     configs = await get_agent_configs()
     c = next((x for x in configs if x.id == agent_id), None)
     if not c:
@@ -119,6 +121,7 @@ async def get_agent(agent_id: str) -> Any:
 
 @router.post("/api/agents", status_code=201)
 async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
+    """Create a new agent configuration."""
     existing = await get_agent_config_by_role(req.role_identifier)
     if existing:
         raise error_response(ErrorCode.AGENT_DUPLICATE, detail=f"角色标识 '{req.role_identifier}' 已存在")
@@ -178,7 +181,7 @@ async def edit_agent(
     req: AgentUpdateRequest,
     current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
 ) -> Any:
-
+    """Update an existing agent configuration."""
     updated = await update_agent_config(
         id=agent_id,
         name=req.name,
@@ -203,6 +206,7 @@ async def edit_agent(
 
 @router.delete("/api/agents/{agent_id}")
 async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008  # noqa: B008
+    """Delete an agent configuration (with last-approver guard)."""
     target = await get_agent_config(agent_id)
     if not target:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
@@ -221,6 +225,7 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
 
 @router.put("/api/agents/{agent_id}/toggle")
 async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
+    """Toggle an agent's active/inactive status."""
     configs = await get_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)
     if not target:

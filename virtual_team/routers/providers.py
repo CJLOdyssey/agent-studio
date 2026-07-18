@@ -56,13 +56,13 @@ class ProviderTestRequest(BaseModel):
 
 
 @router.post("/api/providers/test")
-async def test_provider(body: ProviderTestRequest) -> Any:
+def test_provider(body: ProviderTestRequest) -> Any:
     """Validate that a provider config is reachable."""
     return {"status": "ok", "provider": body.provider}
 
 
 @router.get("/api/providers")
-async def list_providers() -> Any:
+def list_providers() -> Any:
     """Return all known providers with their capabilities and base URLs."""
     return PROVIDERS
 

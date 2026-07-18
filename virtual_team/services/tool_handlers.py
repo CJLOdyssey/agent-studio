@@ -21,7 +21,8 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-async def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+    """Return the skill's instruction text as the tool result."""
     return tool_self.instructions if tool_self.instructions else json.dumps({
         "role": "skill",
         "name": tool_self.name,
@@ -30,10 +31,12 @@ async def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
 
 
 async def handle_mcp(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+    """Dispatch an MCP tool call."""
     return await execute_mcp(tool_self, args)
 
 
 async def call_http_endpoint(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+    """Call an HTTP endpoint with the tool's configured method and headers."""
     try:
         hdrs = json.loads(tool_self.headers) if isinstance(tool_self.headers, str) else {}
         hdrs.setdefault("Content-Type", "application/json")
@@ -160,6 +163,7 @@ async def handle_open_browser(tool_self: _ToolWrapper, args: dict[str, Any]) -> 
 
 
 async def llm_fallback(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+    """Use an LLM as a fallback executor when no other handler matches."""
     if tool_self._llm:
         try:
             prompt = (

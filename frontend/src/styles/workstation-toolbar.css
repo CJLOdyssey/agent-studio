@@ -194,9 +194,9 @@
 }
 
 .wsta-pagination .ant-pagination-item-active {
-  background: var(--da-accent) !important;
-  border-color: var(--da-accent) !important;
-  color: white !important;
+  background: var(--da-accent);
+  border-color: var(--da-accent);
+  color: white;
   font-weight: 600;
 }
 
@@ -263,22 +263,22 @@
 }
 
 .wsta-pagination .ant-select-selector {
-  height: 32px !important;
-  padding: 0 8px !important;
-  background: var(--da-bg-surface) !important;
-  border: 1px solid var(--da-border) !important;
-  border-radius: 6px !important;
-  color: var(--da-text-secondary) !important;
-  font-size: var(--da-font-size-sm) !important;
+  height: 32px;
+  padding: 0 8px;
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
 }
 
 .wsta-pagination .ant-select-selector:hover {
-  border-color: var(--da-border-strong) !important;
+  border-color: var(--da-border-strong);
 }
 
 .wsta-pagination .ant-select-focused .ant-select-selector {
-  border-color: var(--da-accent) !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+  border-color: var(--da-accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
 /* ── Toast ── */

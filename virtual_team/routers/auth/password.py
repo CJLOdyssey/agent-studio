@@ -48,6 +48,7 @@ def _fail_key(email: str) -> str:
 
 @router.post("/forgot-password", response_model=MessageResponse)
 async def forgot_password(body: ForgotPasswordRequest) -> Any:
+    """Send a password reset verification code via email."""
     email = body.email.lower().strip()
     r = get_redis()
 
@@ -68,6 +69,7 @@ async def forgot_password(body: ForgotPasswordRequest) -> Any:
 
 @router.post("/reset-password", response_model=MessageResponse)
 async def reset_password(body: ResetPasswordRequest) -> Any:
+    """Reset a user's password using a verification code."""
     email = body.email.lower().strip()
     code = body.code.strip()
     new_password = body.new_password
@@ -120,6 +122,7 @@ async def change_password(
     body: ChangePasswordRequest,
     current_user: CurrentUser = Depends(get_current_user),
 ) -> Any:
+    """Change the current user's password after verifying the old one."""
     user = await get_user_by_id(current_user.id)
     if user is None:
         raise error_response(ErrorCode.AUTH_USER_NOT_FOUND, detail="用户不存在")
