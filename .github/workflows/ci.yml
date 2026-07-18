@@ -47,7 +47,7 @@ jobs:
       - run: mypy virtual_team/ --strict
       - run: pip-audit --strict --progress-spinner=off -r requirements.txt -r requirements-test.txt 2>&1 || echo "⚠️ pip-audit found vulnerabilities (non-blocking)"
       - run: bandit -c pyproject.toml -r virtual_team/ -ll 2>&1 || echo "⚠️ bandit warnings (non-blocking)"
-      - run: PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short --ignore=virtual_team/tests/test_e2e_full_flow.py --ignore=virtual_team/tests/test_agent_crud.py --ignore=virtual_team/tests/test_mcp_crud.py --ignore=virtual_team/tests/test_prompt_crud.py --ignore=virtual_team/tests/test_skill_crud.py --ignore=virtual_team/tests/test_team_crud.py --ignore=virtual_team/tests/test_tool_crud.py --ignore=virtual_team/tests/test_full_e2e.py --ignore=virtual_team/tests/test_session_run.py --ignore=virtual_team/tests/test_routers_health.py --ignore=virtual_team/tests/test_auth_api.py --ignore=virtual_team/tests/repository/test_agents.py --ignore=virtual_team/tests/repository/test_teams.py --ignore=virtual_team/tests/repository/test_prompts.py --ignore=virtual_team/tests/repository/test_tools_mcps_skills.py --cov=virtual_team --cov-report=term --cov-fail-under=45
+      - run: PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short --ignore=virtual_team/tests/e2e/ --ignore=virtual_team/tests/repository/ --ignore=virtual_team/tests/routers/auth/test_auth_api.py --cov=virtual_team --cov-report=term --cov-fail-under=45
 
   integration:
     runs-on: ubuntu-latest
@@ -95,7 +95,7 @@ jobs:
             curl -sf http://localhost:8080/api/models > /dev/null 2>&1 && break
             sleep 2
           done
-      - run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short
+      - run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest virtual_team/tests/e2e/test_e2e_full_flow.py -v --tb=short
       - name: Dump backend log
         if: always()
         run: cat /tmp/backend.log || true
