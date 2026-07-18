@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from virtual_team.tool_config import _ToolWrapper, ToolConfig, build_tool_definition, sanitize_tool_name
+from virtual_team.services.tool_config import _ToolWrapper, ToolConfig, build_tool_definition, sanitize_tool_name
 
 
 class TestSanitizeToolName:

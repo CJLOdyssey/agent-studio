@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from virtual_team.tool_config import _ToolWrapper
-from virtual_team.tool_handlers import (
+from virtual_team.services.tool_config import _ToolWrapper
+from virtual_team.services.tool_handlers import (
     call_http_endpoint,
     call_mcp_sdk,
     execute_mcp,
@@ -389,7 +389,7 @@ class TestCallMcpSdk:
 class TestHandleOpenBrowser:
     @pytest.mark.asyncio
     async def test_open_browser_publishes_event(self):
-        from virtual_team.tool_handlers import handle_open_browser
+        from virtual_team.services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         w._run_id = "run-123"
@@ -405,7 +405,7 @@ class TestHandleOpenBrowser:
 
     @pytest.mark.asyncio
     async def test_open_browser_missing_url(self):
-        from virtual_team.tool_handlers import handle_open_browser
+        from virtual_team.services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         result = await handle_open_browser(w, {})
@@ -415,7 +415,7 @@ class TestHandleOpenBrowser:
 
     @pytest.mark.asyncio
     async def test_open_browser_publish_failure_handled(self):
-        from virtual_team.tool_handlers import handle_open_browser
+        from virtual_team.services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         w._run_id = "run-456"
@@ -428,7 +428,7 @@ class TestHandleOpenBrowser:
 
     @pytest.mark.asyncio
     async def test_open_browser_without_run_id(self):
-        from virtual_team.tool_handlers import handle_open_browser
+        from virtual_team.services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         result = await handle_open_browser(w, {"url": "https://example.com"})

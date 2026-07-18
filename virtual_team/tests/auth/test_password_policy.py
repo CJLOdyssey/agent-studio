@@ -1,6 +1,6 @@
 """Password policy tests — equivalence class + boundary value analysis."""
 
-from virtual_team.password_policy import validate_password
+from virtual_team.auth.password_policy import validate_password
 
 
 class TestPasswordLength:

@@ -17,7 +17,7 @@ async def test_run_agent_pipeline_importable():
 @pytest.mark.asyncio
 async def test_stream_emitter_buffers_chunks():
     """Verify StreamEmitter buffers streaming chunks before publishing."""
-    from virtual_team.streaming import StreamEmitter
+    from virtual_team.streaming.streaming import StreamEmitter
 
     with (
         patch("virtual_team.streaming.publish_run_message") as mock_pub,
@@ -39,7 +39,7 @@ async def test_stream_emitter_buffers_chunks():
 @pytest.mark.asyncio
 async def test_stream_emitter_tool_events():
     """Verify StreamEmitter saves tool start events."""
-    from virtual_team.streaming import StreamEmitter
+    from virtual_team.streaming.streaming import StreamEmitter
 
     with (
         patch("virtual_team.streaming.publish_run_message"),

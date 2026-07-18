@@ -14,7 +14,7 @@ import pytest
 
 import virtual_team.email_service as email_mod
 
-from virtual_team.email_service import (
+from virtual_team.services.email_service import (
     LogMailer,
     ResendApiMailer,
     SmtpMailer,

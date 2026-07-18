@@ -126,7 +126,7 @@ class TestKeysModels:
         assert resp.models == ["gpt-4"]
 
     def test_encrypt_decrypt_roundtrip(self):
-        from virtual_team.key_vault import decrypt_api_key, encrypt_api_key
+        from virtual_team.core.infra.key_vault import decrypt_api_key, encrypt_api_key
 
         with patch.dict("os.environ", {"KEY_VAULT_SECRET": "a" * 32}):
             plaintext = "sk-my-secret-api-key-12345"
@@ -136,25 +136,25 @@ class TestKeysModels:
             assert decrypted == plaintext
 
     def test_mask_api_key(self):
-        from virtual_team.key_vault import mask_api_key
+        from virtual_team.core.infra.key_vault import mask_api_key
 
         masked = mask_api_key("sk-my-secret-key-xyz")
         assert masked == "sk-...-xyz"
 
     def test_mask_short_key(self):
-        from virtual_team.key_vault import mask_api_key
+        from virtual_team.core.infra.key_vault import mask_api_key
 
         masked = mask_api_key("abc")
         assert masked == "ab***"
 
     def test_encrypt_empty_key_raises(self):
-        from virtual_team.key_vault import encrypt_api_key
+        from virtual_team.core.infra.key_vault import encrypt_api_key
 
         with pytest.raises(ValueError, match="must not be empty"):
             encrypt_api_key("")
 
     def test_decrypt_empty_key_raises(self):
-        from virtual_team.key_vault import decrypt_api_key
+        from virtual_team.core.infra.key_vault import decrypt_api_key
 
         with pytest.raises(ValueError, match="must not be empty"):
             decrypt_api_key("")

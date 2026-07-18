@@ -9,9 +9,9 @@ class TestAppCreation:
     """Test FastAPI app creation: route count, CORS, routers, lifespan."""
 
     def test_app_import(self):
-        import virtual_team.app
+        import virtual_team.core.app
 
-        assert virtual_team.app.app is not None
+        assert virtual_team.core.app.app is not None
 
     def test_app_title(self):
         from virtual_team.core.app import app
@@ -73,7 +73,7 @@ class TestAppCreation:
 
     def test_request_log_middleware_registered(self):
         from virtual_team.core.app import app
-        from virtual_team.request_logger import RequestLogMiddleware
+        from virtual_team.core.infra.request_logger import RequestLogMiddleware
 
         middleware_types = [m.cls for m in app.user_middleware]
         assert RequestLogMiddleware in middleware_types

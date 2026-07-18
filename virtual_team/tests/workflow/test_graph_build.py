@@ -15,8 +15,8 @@ os.environ["DATABASE_POOL_SIZE"] = "0"
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
-from virtual_team.graph import SingleAgentGraph
-from virtual_team.graph_state import AgentState
+from virtual_team.graph.graph import SingleAgentGraph
+from virtual_team.graph.graph_state import AgentState
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ class TestSingleAgentGraphInit:
     def test_init_with_model_and_api_key(self):
         with patch("virtual_team.graph.ChatOpenAI") as mock_llm_cls:
             with patch("virtual_team.graph.StateGraph"):
-                from virtual_team.graph import SingleAgentGraph
+                from virtual_team.graph.graph import SingleAgentGraph
 
                 sg = SingleAgentGraph(
                     model="deepseek-chat",
@@ -71,7 +71,7 @@ class TestSingleAgentGraphInit:
     def test_init_with_base_url(self):
         with patch("virtual_team.graph.ChatOpenAI") as mock_llm_cls:
             with patch("virtual_team.graph.StateGraph"):
-                from virtual_team.graph import SingleAgentGraph
+                from virtual_team.graph.graph import SingleAgentGraph
 
                 SingleAgentGraph(
                     model="gpt-4",
@@ -90,7 +90,7 @@ class TestSingleAgentGraphInit:
     def test_init_with_custom_params(self):
         with patch("virtual_team.graph.ChatOpenAI") as mock_llm_cls:
             with patch("virtual_team.graph.StateGraph"):
-                from virtual_team.graph import SingleAgentGraph
+                from virtual_team.graph.graph import SingleAgentGraph
 
                 SingleAgentGraph(
                     model="deepseek-chat",
@@ -111,7 +111,7 @@ class TestSingleAgentGraphInit:
             with patch("virtual_team.graph.StateGraph"):
                 from langgraph.checkpoint.memory import MemorySaver
 
-                from virtual_team.graph import SingleAgentGraph
+                from virtual_team.graph.graph import SingleAgentGraph
 
                 ms = MemorySaver()
                 graph = SingleAgentGraph(model="deepseek-chat", api_key="sk-test", checkpointer=ms)
@@ -125,7 +125,7 @@ class TestSingleAgentGraphInit:
                 mock_compiled = MagicMock()
                 mock_builder.compile.return_value = mock_compiled
 
-                from virtual_team.graph import SingleAgentGraph
+                from virtual_team.graph.graph import SingleAgentGraph
 
                 sg = SingleAgentGraph(
                     model="deepseek-chat",
@@ -139,7 +139,7 @@ class TestSingleAgentGraphInit:
             with patch("virtual_team.graph.StateGraph"):
                 with patch("virtual_team.checkpoint.create_checkpointer") as mock_cc:
                     mock_cc.return_value = MagicMock()
-                    from virtual_team.graph import SingleAgentGraph
+                    from virtual_team.graph.graph import SingleAgentGraph
 
                     sg = SingleAgentGraph(model="deepseek-chat", api_key="sk-test")
                     assert sg.checkpointer is mock_cc.return_value
@@ -154,7 +154,7 @@ class TestSingleAgentGraphBuildGraph:
 
 class TestSingleAgentGraphShouldContinue:
     def test_continue_when_tool_calls(self):
-        from virtual_team.graph_state import AgentState
+        from virtual_team.graph.graph_state import AgentState
 
         sg, _ = _make_graph()
         state: AgentState = {
@@ -166,7 +166,7 @@ class TestSingleAgentGraphShouldContinue:
         assert result == "tools"
 
     def test_end_when_no_tool_calls(self):
-        from virtual_team.graph_state import AgentState
+        from virtual_team.graph.graph_state import AgentState
 
         sg, _ = _make_graph()
         state: AgentState = {
@@ -178,7 +178,7 @@ class TestSingleAgentGraphShouldContinue:
         assert result == "__end__"
 
     def test_end_when_empty_messages(self):
-        from virtual_team.graph_state import AgentState
+        from virtual_team.graph.graph_state import AgentState
 
         sg, _ = _make_graph()
         state: AgentState = {
@@ -209,7 +209,7 @@ class TestSingleAgentGraphErrors:
         with patch("virtual_team.graph.ChatOpenAI") as mock_llm:
             mock_llm.side_effect = ValueError("API key required")
             with patch("virtual_team.graph.StateGraph"):
-                from virtual_team.graph import SingleAgentGraph
+                from virtual_team.graph.graph import SingleAgentGraph
 
                 with pytest.raises(ValueError, match="API key required"):
                     SingleAgentGraph(model="deepseek-chat", api_key="", checkpointer=MagicMock())

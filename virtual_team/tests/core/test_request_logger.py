@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 import pytest
 
-from virtual_team.request_logger import (
+from virtual_team.core.infra.request_logger import (
     _client_ip,
     _format_duration,
     _mask,

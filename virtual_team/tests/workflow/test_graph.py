@@ -15,8 +15,8 @@ os.environ["DATABASE_POOL_SIZE"] = "0"
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
-from virtual_team.graph import SingleAgentGraph
-from virtual_team.graph_state import AgentState
+from virtual_team.graph.graph import SingleAgentGraph
+from virtual_team.graph.graph_state import AgentState
 
 
 @pytest.fixture

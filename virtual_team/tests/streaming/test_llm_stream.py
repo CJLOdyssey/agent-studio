@@ -8,28 +8,28 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 
 class TestConvertMessagesToApi:
     def test_system_message(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         msgs = [SystemMessage(content="You are a helpful assistant.")]
         result = convert_messages_to_api(msgs)
         assert result == [{"role": "system", "content": "You are a helpful assistant."}]
 
     def test_human_message(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         msgs = [HumanMessage(content="Hello!")]
         result = convert_messages_to_api(msgs)
         assert result == [{"role": "user", "content": "Hello!"}]
 
     def test_ai_message(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         msgs = [AIMessage(content="Hi there!")]
         result = convert_messages_to_api(msgs)
         assert result == [{"role": "assistant", "content": "Hi there!"}]
 
     def test_ai_message_with_tool_calls(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         msgs = [
             AIMessage(
@@ -46,7 +46,7 @@ class TestConvertMessagesToApi:
         assert result[0]["tool_calls"][0]["function"]["name"] == "search"
 
     def test_tool_message(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         msgs = [ToolMessage(content='{"result": "ok"}', tool_call_id="call_1")]
         result = convert_messages_to_api(msgs)
@@ -55,7 +55,7 @@ class TestConvertMessagesToApi:
         ]
 
     def test_mixed_messages(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         msgs = [
             SystemMessage(content="Be helpful."),
@@ -68,14 +68,14 @@ class TestConvertMessagesToApi:
         assert [m["role"] for m in result] == ["system", "user", "assistant", "tool"]
 
     def test_empty_list(self):
-        from virtual_team.llm_stream import convert_messages_to_api
+        from virtual_team.streaming.llm_stream import convert_messages_to_api
 
         assert convert_messages_to_api([]) == []
 
 
 class TestBuildLlmRequestBody:
     def test_minimal_body(self):
-        from virtual_team.llm_stream import build_llm_request_body
+        from virtual_team.streaming.llm_stream import build_llm_request_body
 
         url, headers, body = build_llm_request_body(
             [{"role": "user", "content": "hello"}],
@@ -90,7 +90,7 @@ class TestBuildLlmRequestBody:
         assert body["thinking"] == {"type": "enabled"}
 
     def test_custom_base_url(self):
-        from virtual_team.llm_stream import build_llm_request_body
+        from virtual_team.streaming.llm_stream import build_llm_request_body
 
         url, headers, body = build_llm_request_body(
             [{"role": "user", "content": "hi"}],
@@ -102,7 +102,7 @@ class TestBuildLlmRequestBody:
         assert "thinking" not in body
 
     def test_with_tool_definitions(self):
-        from virtual_team.llm_stream import build_llm_request_body
+        from virtual_team.streaming.llm_stream import build_llm_request_body
 
         tools = [{
             "type": "function",
@@ -119,7 +119,7 @@ class TestBuildLlmRequestBody:
         assert "thinking" not in body
 
     def test_custom_temperature_max_tokens(self):
-        from virtual_team.llm_stream import build_llm_request_body
+        from virtual_team.streaming.llm_stream import build_llm_request_body
 
         url, headers, body = build_llm_request_body(
             [{"role": "user", "content": "hi"}],
@@ -134,7 +134,7 @@ class TestBuildLlmRequestBody:
 
 class TestBuildToolCallsList:
     def test_consolidates_fragments(self):
-        from virtual_team.llm_stream import build_tool_calls_list
+        from virtual_team.streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             0: {"id": "call_1", "name": "get_wea", "arguments": '{"loc": "NYC"}'},
@@ -147,12 +147,12 @@ class TestBuildToolCallsList:
         assert result[0]["args"] == {"loc": "NYC"}
 
     def test_empty_map(self):
-        from virtual_team.llm_stream import build_tool_calls_list
+        from virtual_team.streaming.llm_stream import build_tool_calls_list
 
         assert build_tool_calls_list({}) == []
 
     def test_invalid_json_arguments(self):
-        from virtual_team.llm_stream import build_tool_calls_list
+        from virtual_team.streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             0: {"id": "c1", "name": "test", "arguments": "not valid json {"},
@@ -161,7 +161,7 @@ class TestBuildToolCallsList:
         assert result[0]["args"] == {}
 
     def test_empty_name_skipped(self):
-        from virtual_team.llm_stream import build_tool_calls_list
+        from virtual_team.streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             0: {"id": "c1", "name": "", "arguments": "{}"},
@@ -170,7 +170,7 @@ class TestBuildToolCallsList:
         assert result == []
 
     def test_sorted_by_index(self):
-        from virtual_team.llm_stream import build_tool_calls_list
+        from virtual_team.streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             2: {"id": "c3", "name": "third", "arguments": '{"z": 1}'},
@@ -222,7 +222,7 @@ class _MockClientCtx:
 class TestStreamLlmResponse:
     @pytest.mark.asyncio
     async def test_streams_content_chunks(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}',
@@ -244,7 +244,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_streams_reasoning_content(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"reasoning_content":"Let me think"},"finish_reason":null}]}',
@@ -264,7 +264,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_parses_tool_call_deltas(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}',
@@ -286,7 +286,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_skips_non_data_lines(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             ":comment line",
@@ -305,7 +305,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_handles_json_decode_error(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             "data: {invalid json",
@@ -323,7 +323,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_calls_stream_callback(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         callback = AsyncMock()
         sse_lines = [
@@ -343,7 +343,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_raises_on_http_error(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = ["data: [DONE]"]
 
@@ -359,7 +359,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_skips_chunk_with_no_choices(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[],"finish_reason":null}',
@@ -376,7 +376,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_calls_callback_for_reasoning_content(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         callback = AsyncMock()
         sse_lines = [
@@ -395,7 +395,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_pending_content_flushed_after_stream(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}',
@@ -413,7 +413,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_pending_content_with_callback(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
         callback = AsyncMock()
         sse_lines = [
@@ -437,7 +437,7 @@ class TestStreamLlmResponse:
 class TestParseSse:
 
     def test_parse_sse_data_line(self):
-        from virtual_team.llm_stream import stream_llm_response
+        from virtual_team.streaming.llm_stream import stream_llm_response
 
     def test_parse_sse_event_line(self):
         pass

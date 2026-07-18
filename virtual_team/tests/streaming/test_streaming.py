@@ -9,12 +9,12 @@ class TestStreamingEdgeCases:
     """Test StreamEmitter edge cases: empty data, None values, error handling."""
 
     def test_import(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         assert StreamEmitter is not None
 
     def test_init_sets_run_id(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-test")
         assert emitter._run_id == "run-test"
@@ -24,7 +24,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_call_with_empty_event(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-empty")
         await emitter({})
@@ -32,7 +32,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_call_with_none_data(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-none")
         await emitter({"event": "on_custom_token", "data": {}})
@@ -40,7 +40,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_call_with_empty_data(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-emptydata")
         await emitter({"event": "on_custom_token", "data": {}})
@@ -48,7 +48,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_custom_token_appends_to_buffer(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-token")
         with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
@@ -58,7 +58,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_custom_token_empty_content(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-emptycontent")
         with patch("virtual_team.streaming.publish_run_message") as mock_pub:
@@ -68,7 +68,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_custom_thinking_appends(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-think")
         with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
@@ -78,7 +78,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_custom_thinking_empty_content(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-thinkempty")
         with patch("virtual_team.streaming.publish_run_message") as mock_pub:
@@ -88,7 +88,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_node_end_flushes_buffers(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-flush")
         with (
@@ -103,7 +103,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_chat_model_stream_no_chunk(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-nostream")
         await emitter({"event": "on_chat_model_stream", "data": {}})
@@ -111,7 +111,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_chat_model_end_flushes(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-chatend")
         with (
@@ -124,7 +124,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_chain_end_langgraph_flushes(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-chain")
         with (
@@ -137,7 +137,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_chain_end_non_langgraph_skips(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-chain-skip")
         emitter._stream_buffer = ["no-flush"]
@@ -146,7 +146,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_tool_results_with_empty_references(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolempty")
         with patch("virtual_team.streaming.publish_run_message") as mock_pub:
@@ -158,7 +158,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_tool_results_without_tool_name(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolnoname")
         with patch("virtual_team.streaming.publish_run_message") as mock_pub:
@@ -170,7 +170,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_on_tool_results_with_valid_data(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolvalid")
         with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
@@ -186,7 +186,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_emit_balance_warning_default_message(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-balance")
         with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
@@ -196,7 +196,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_emit_tool_results(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-toolres")
         with patch("virtual_team.streaming.publish_run_message", new_callable=AsyncMock) as mock_pub:
@@ -206,7 +206,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_emit_thinking_nodes(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-thinknodes")
         nodes = [{"title": "Step 1", "content": "thinking..."}]
@@ -215,7 +215,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_emit_thinking_nodes_caps_at_20(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-thinkcap")
         emitter._pending_thinking_nodes = [{"i": i} for i in range(15)]
@@ -225,7 +225,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_emit_thinking_nodes_appends_to_existing(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-thinkappend")
         emitter._pending_thinking_nodes = [{"title": "first"}]
@@ -234,7 +234,7 @@ class TestStreamingEdgeCases:
 
     @pytest.mark.asyncio
     async def test_publish_failure_on_stream_chunk(self):
-        from virtual_team.streaming import StreamEmitter
+        from virtual_team.streaming.streaming import StreamEmitter
 
         emitter = StreamEmitter("run-pubfail")
         with patch("virtual_team.streaming.publish_run_message", side_effect=Exception("Redis down")):

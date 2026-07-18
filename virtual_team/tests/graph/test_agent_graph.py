@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from virtual_team.agent_graph import (
+from virtual_team.graph.agent_graph import (
     SingleAgentGraph,
     ToolConfig,
     _ToolWrapper,
