@@ -53,7 +53,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await shutdown(app)
 
 
-app = FastAPI(title="AgentStudio", lifespan=lifespan)
+app = FastAPI(
+    title="AgentStudio API",
+    description="AI Agent 管理平台 API — 支持 Agent 配置、Prompt 管理、工具集成、MCP 协议、技能系统、团队协作",
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    lifespan=lifespan,
+)
 
 
 # ── Debug routes ───────────────────────────────────────────────────────────
