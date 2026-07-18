@@ -130,8 +130,8 @@ jobs:
             --cov=backend \
             --cov-report=term-missing \
             --cov-fail-under=45 \
-            -n auto 2>/dev/null || \
-          PYTHONPATH=. python3 -m pytest tests/ \
+            -n auto \
+            || PYTHONPATH=. python3 -m pytest tests/ \
             -x -q --tb=short \
             --ignore=tests/e2e/ \
             --ignore=tests/repository/ \

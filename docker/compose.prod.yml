@@ -9,7 +9,7 @@ x-common-env: &common-env
   DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
   OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.deepseek.com}
   OPENAI_MODEL: ${OPENAI_MODEL:-deepseek-v4-flash}
-  KEY_VAULT_SECRET: ${KEY_VAULT_SECRET:-FfV3G_KwEPBqHG0gKhMJGPeGalSBqaay9lqDU3F9PI}
+  KEY_VAULT_SECRET: ${KEY_VAULT_SECRET:-}
   MAX_ROUNDS: ${MAX_ROUNDS:-5}
   TEMPERATURE: ${TEMPERATURE:-0.7}
   TIMEOUT: ${TIMEOUT:-120}
@@ -137,7 +137,7 @@ services:
     <<: *restart-policy
     logging: *default-logging
     ports:
-      - "5173:80"
+      - "5173:8080"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
     depends_on:
