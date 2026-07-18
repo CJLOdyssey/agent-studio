@@ -57,13 +57,20 @@ coverage/
 # ── Testing Tools ──────────────────────────────────────────────────────────
 .playwright-mcp/
 
+# ── AI Tool Directories ───────────────────────────────────────────────────
+.mimocode/
+.opencode/
+.agents/
+.claude/
+
+# ── Runtime Artifacts ─────────────────────────────────────────────────────
+checkpoints.db
+uploads/
+
 # ── Project-specific ───────────────────────────────────────────────────────
 skills-lock.json
+requirements-lock.txt
 .sisyphus/
 prototypes/
 scripts/deploy_prod.py
 scripts/ask_credentials.py
-.agents .claude
-.agents/
-.claude/
-uploads/*
