@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Trash2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Conversation, Agent } from '../../../types/agentstudio';
+import type { Conversation, Agent } from '../../../types/AgentStudio';
 
 interface ConversationsListProps {
   conversations: Conversation[];

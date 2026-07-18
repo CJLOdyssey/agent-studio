@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '../../../../test/setup';
 import AgentConfigModal from '../AgentConfigModal';
-import type { Agent } from '../../../types/agentstudio';
+import type { Agent } from '../../../types/AgentStudio';
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<TestProviders>{ui}</TestProviders>);

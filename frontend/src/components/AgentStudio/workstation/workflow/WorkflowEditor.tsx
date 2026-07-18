@@ -15,7 +15,7 @@ import ReactFlow, {
   Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import type { WorkflowConfig, WorkflowNode, WorkflowEdge } from '../../../../types/agentstudio';
+import type { WorkflowConfig, WorkflowNode, WorkflowEdge } from '../../../../types/AgentStudio';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { saveWorkflow, deleteWorkflow } from '../../../../api/client';
 

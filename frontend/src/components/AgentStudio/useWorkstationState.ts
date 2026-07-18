@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { Agent, WorkspaceTab, Message } from '../../types/agentstudio';
+import type { Agent, WorkspaceTab, Message } from '../../types/AgentStudio';
 import { useToast } from '../../utils/useToast';
 import { useTeamManagement } from '../../hooks/useTeamManagement';
 import { useConversation } from '../../hooks/useConversation';
@@ -194,7 +194,7 @@ export function useWorkstationState(
 
   const handleHomeSend = useCallback(
     (text: string, _files: AttachedFile[]) => {
-      const userMessage: import('../../types/agentstudio').Message = {
+      const userMessage: import('../../types/AgentStudio').Message = {
         id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
         role: 'user',
         content: text,

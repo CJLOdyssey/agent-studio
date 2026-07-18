@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AgentStudioWorkstation from '../agentstudio/AgentStudioWorkstation';
+import AgentStudioWorkstation from '../AgentStudio/AgentStudioWorkstation';
 import { TestProviders } from '../../test/setup';
 import { useChatStore } from '../../stores/chatStore';
 

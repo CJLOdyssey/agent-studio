@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Bot } from 'lucide-react';
-import type { Team, Agent } from '../types/agentstudio';
+import type { Team, Agent } from '../types/AgentStudio';
 import type { TeamMember } from '../types/team';
 import { getAllAgents } from '../utils/agentMapper';
 import { validateName, checkTeamLimit } from '../utils/validation';

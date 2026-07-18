@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Users, Plus, ChevronDown, MoreVertical, Pencil, Trash2, Pin, PinOff, Lock } from 'lucide-react';
-import type { Team, Agent } from '../../../types/agentstudio';
+import type { Team, Agent } from '../../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { validateName } from '../../../utils/validation';
 import TeamTreeAgentItem from './TeamTreeAgentItem';
