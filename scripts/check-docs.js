@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = new URL('.', import.meta.url).pathname;
 
 const PROJECT_ROOT = join(__dirname, '..');
-const WORKSTATION_DIR = join(PROJECT_ROOT, 'frontend/src/components/agentstudio/workstation');
+const WORKSTATION_DIR = join(PROJECT_ROOT, 'frontend/src/components/AgentStudio/workstation');
 
 // 颜色输出
 const colors = {
