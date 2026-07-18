@@ -1,4 +1,4 @@
-def __getattr__(name):
+def __getattr__(name: str) -> object:
     if name == "AUTH_SECRET":
         from .auth_jwt import AUTH_SECRET
         return AUTH_SECRET
