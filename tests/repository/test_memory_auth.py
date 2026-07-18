@@ -7,8 +7,8 @@ import uuid
 
 from sqlalchemy import select
 
-from virtual_team.core.infra.database import RoleDB, get_session_factory
-from virtual_team.repository.auth import (
+from backend.core.infra.database import RoleDB, get_session_factory
+from backend.repository.auth import (
     consume_refresh_token,
     create_refresh_token,
     create_user,
@@ -24,13 +24,13 @@ from virtual_team.repository.auth import (
     revoke_token_family,
     update_password,
 )
-from virtual_team.repository.memory_repo import (
+from backend.repository.memory_repo import (
     clear_session_memories,
     create_memory_entry,
     delete_memory_entry,
     get_session_memories,
 )
-from virtual_team.repository.session_repo import create_session
+from backend.repository.session_repo import create_session
 
 # ── Memory Tests ───────────────────────────────────────────────────────
 

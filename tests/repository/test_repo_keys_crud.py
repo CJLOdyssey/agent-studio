@@ -1,4 +1,4 @@
-"""Unit tests for virtual_team/repository/keys_crud.py — direct repo function tests."""
+"""Unit tests for backend/repository/keys_crud.py — direct repo function tests."""
 
 import os
 
@@ -12,8 +12,8 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
-import virtual_team.core.infra.database as db_mod
-from virtual_team.core.base import Base
+import backend.core.infra.database as db_mod
+from backend.core.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
 
@@ -31,7 +31,7 @@ async def setup_db():
 
 @pytest.mark.asyncio
 async def test_create_api_key_default_clears_others():
-    from virtual_team.repository.keys_crud import create_api_key
+    from backend.repository.keys_crud import create_api_key
 
     key1 = await create_api_key("user1", "openai", plaintext_key="sk-key-1", is_default=True)
     assert key1.is_default is True
@@ -43,7 +43,7 @@ async def test_create_api_key_default_clears_others():
     async with factory() as session:
         from sqlalchemy import select
 
-        from virtual_team.core.infra.database import UserApiKey
+        from backend.core.infra.database import UserApiKey
 
         result = await session.execute(
             select(UserApiKey).where(UserApiKey.user_id == "user1", UserApiKey.is_default)
@@ -55,7 +55,7 @@ async def test_create_api_key_default_clears_others():
 
 @pytest.mark.asyncio
 async def test_get_api_keys_with_fallback():
-    from virtual_team.repository.keys_crud import create_api_key, get_api_keys
+    from backend.repository.keys_crud import create_api_key, get_api_keys
 
     await create_api_key("anonymous", "openai", plaintext_key="sk-anon-key-12345")
     keys = await get_api_keys("someuser")
@@ -69,7 +69,7 @@ async def test_get_api_keys_with_fallback():
 
 @pytest.mark.asyncio
 async def test_get_api_keys_no_fallback_for_anonymous():
-    from virtual_team.repository.keys_crud import get_api_keys
+    from backend.repository.keys_crud import get_api_keys
 
     keys = await get_api_keys("anonymous")
     assert keys == []
@@ -77,12 +77,12 @@ async def test_get_api_keys_no_fallback_for_anonymous():
 
 @pytest.mark.asyncio
 async def test_get_api_keys_decrypt_failure_graceful():
-    import virtual_team.core.infra.database as db
-    from virtual_team.repository.keys_crud import get_api_keys
+    import backend.core.infra.database as db
+    from backend.repository.keys_crud import get_api_keys
 
     factory = db.get_session_factory()
     async with factory() as session:
-        from virtual_team.orm.key import UserApiKey
+        from backend.orm.key import UserApiKey
 
         obj = UserApiKey(
             id="bad-key-id-1234",
@@ -104,7 +104,7 @@ async def test_get_api_keys_decrypt_failure_graceful():
 
 @pytest.mark.asyncio
 async def test_get_api_key_for_use_found():
-    from virtual_team.repository.keys_crud import create_api_key, get_api_key_for_use
+    from backend.repository.keys_crud import create_api_key, get_api_key_for_use
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-real-key-xyz")
     result = await get_api_key_for_use(k.id, "user1")
@@ -115,7 +115,7 @@ async def test_get_api_key_for_use_found():
 
 @pytest.mark.asyncio
 async def test_get_api_key_for_use_not_found():
-    from virtual_team.repository.keys_crud import get_api_key_for_use
+    from backend.repository.keys_crud import get_api_key_for_use
 
     result = await get_api_key_for_use("nonexistent", "user1")
     assert result is None
@@ -123,7 +123,7 @@ async def test_get_api_key_for_use_not_found():
 
 @pytest.mark.asyncio
 async def test_get_api_key_for_use_anonymous_fallback():
-    from virtual_team.repository.keys_crud import create_api_key, get_api_key_for_use
+    from backend.repository.keys_crud import create_api_key, get_api_key_for_use
 
     k = await create_api_key("anonymous", "openai", plaintext_key="sk-anon-key")
     result = await get_api_key_for_use(k.id, "someuser")
@@ -133,7 +133,7 @@ async def test_get_api_key_for_use_anonymous_fallback():
 
 @pytest.mark.asyncio
 async def test_get_api_key_for_use_inactive_returns_none():
-    from virtual_team.repository.keys_crud import create_api_key, get_api_key_for_use, update_api_key
+    from backend.repository.keys_crud import create_api_key, get_api_key_for_use, update_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-test")
     await update_api_key(k.id, "user1", is_active=False)
@@ -143,7 +143,7 @@ async def test_get_api_key_for_use_inactive_returns_none():
 
 @pytest.mark.asyncio
 async def test_update_api_key_partial():
-    from virtual_team.repository.keys_crud import create_api_key, update_api_key
+    from backend.repository.keys_crud import create_api_key, update_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-original", label="old")
     result = await update_api_key(k.id, "user1", label="new-label")
@@ -153,7 +153,7 @@ async def test_update_api_key_partial():
 
 @pytest.mark.asyncio
 async def test_update_api_key_not_found():
-    from virtual_team.repository.keys_crud import update_api_key
+    from backend.repository.keys_crud import update_api_key
 
     result = await update_api_key("nonexistent", "user1", label="test")
     assert result is None
@@ -161,7 +161,7 @@ async def test_update_api_key_not_found():
 
 @pytest.mark.asyncio
 async def test_update_api_key_wrong_owner():
-    from virtual_team.repository.keys_crud import create_api_key, update_api_key
+    from backend.repository.keys_crud import create_api_key, update_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-test")
     result = await update_api_key(k.id, "otheruser", label="hacked")
@@ -170,7 +170,7 @@ async def test_update_api_key_wrong_owner():
 
 @pytest.mark.asyncio
 async def test_update_api_key_anonymous_fallback():
-    from virtual_team.repository.keys_crud import create_api_key, update_api_key
+    from backend.repository.keys_crud import create_api_key, update_api_key
 
     k = await create_api_key("anonymous", "openai", plaintext_key="sk-anon")
     result = await update_api_key(k.id, "realuser", label="adopted")
@@ -180,7 +180,7 @@ async def test_update_api_key_anonymous_fallback():
 
 @pytest.mark.asyncio
 async def test_update_api_key_reencrypt():
-    from virtual_team.repository.keys_crud import create_api_key, update_api_key
+    from backend.repository.keys_crud import create_api_key, update_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-original")
     result = await update_api_key(k.id, "user1", plaintext_key="sk-new-value")
@@ -189,7 +189,7 @@ async def test_update_api_key_reencrypt():
 
 @pytest.mark.asyncio
 async def test_update_api_key_default_clears_others():
-    from virtual_team.repository.keys_crud import create_api_key, update_api_key
+    from backend.repository.keys_crud import create_api_key, update_api_key
 
     await create_api_key("user1", "openai", plaintext_key="sk-1", is_default=True)
     k2 = await create_api_key("user1", "deepseek", plaintext_key="sk-2")
@@ -200,7 +200,7 @@ async def test_update_api_key_default_clears_others():
     async with factory() as session:
         from sqlalchemy import select
 
-        from virtual_team.core.infra.database import UserApiKey
+        from backend.core.infra.database import UserApiKey
 
         result = await session.execute(
             select(UserApiKey).where(UserApiKey.user_id == "user1", UserApiKey.is_default)
@@ -212,7 +212,7 @@ async def test_update_api_key_default_clears_others():
 
 @pytest.mark.asyncio
 async def test_delete_api_key():
-    from virtual_team.repository.keys_crud import create_api_key, delete_api_key
+    from backend.repository.keys_crud import create_api_key, delete_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-del")
     assert await delete_api_key(k.id, "user1") is True
@@ -221,14 +221,14 @@ async def test_delete_api_key():
 
 @pytest.mark.asyncio
 async def test_delete_api_key_not_found():
-    from virtual_team.repository.keys_crud import delete_api_key
+    from backend.repository.keys_crud import delete_api_key
 
     assert await delete_api_key("nonexistent", "user1") is False
 
 
 @pytest.mark.asyncio
 async def test_delete_api_key_wrong_owner():
-    from virtual_team.repository.keys_crud import create_api_key, delete_api_key
+    from backend.repository.keys_crud import create_api_key, delete_api_key
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-del")
     assert await delete_api_key(k.id, "otheruser") is False
@@ -236,7 +236,7 @@ async def test_delete_api_key_wrong_owner():
 
 @pytest.mark.asyncio
 async def test_delete_api_key_anonymous_fallback():
-    from virtual_team.repository.keys_crud import create_api_key, delete_api_key
+    from backend.repository.keys_crud import create_api_key, delete_api_key
 
     k = await create_api_key("anonymous", "openai", plaintext_key="sk-del")
     assert await delete_api_key(k.id, "realuser") is True
@@ -244,7 +244,7 @@ async def test_delete_api_key_anonymous_fallback():
 
 @pytest.mark.asyncio
 async def test_get_default_api_key():
-    from virtual_team.repository.keys_crud import create_api_key, get_default_api_key
+    from backend.repository.keys_crud import create_api_key, get_default_api_key
 
     await create_api_key("user1", "openai", plaintext_key="sk-def", is_default=True)
     result = await get_default_api_key("user1")
@@ -254,7 +254,7 @@ async def test_get_default_api_key():
 
 @pytest.mark.asyncio
 async def test_get_default_api_key_fallback_anonymous():
-    from virtual_team.repository.keys_crud import create_api_key, get_default_api_key
+    from backend.repository.keys_crud import create_api_key, get_default_api_key
 
     await create_api_key("anonymous", "openai", plaintext_key="sk-anon-def", is_default=True)
     result = await get_default_api_key("someuser")
@@ -264,7 +264,7 @@ async def test_get_default_api_key_fallback_anonymous():
 
 @pytest.mark.asyncio
 async def test_get_default_api_key_none():
-    from virtual_team.repository.keys_crud import get_default_api_key
+    from backend.repository.keys_crud import get_default_api_key
 
     result = await get_default_api_key("someuser")
     assert result is None
@@ -272,7 +272,7 @@ async def test_get_default_api_key_none():
 
 @pytest.mark.asyncio
 async def test_get_default_api_key_guest_fallback():
-    from virtual_team.repository.keys_crud import create_api_key, get_default_api_key
+    from backend.repository.keys_crud import create_api_key, get_default_api_key
 
     await create_api_key("u_guest1", "openai", plaintext_key="sk-guest-def", is_default=True)
     result = await get_default_api_key("u_guest1")
@@ -282,7 +282,7 @@ async def test_get_default_api_key_guest_fallback():
 
 @pytest.mark.asyncio
 async def test_get_default_api_key_system_wide_fallback():
-    from virtual_team.repository.keys_crud import create_api_key, get_default_api_key
+    from backend.repository.keys_crud import create_api_key, get_default_api_key
 
     await create_api_key("otheruser", "openai", plaintext_key="sk-other", is_default=True)
     result = await get_default_api_key("u_newguest_xyz")
@@ -291,7 +291,7 @@ async def test_get_default_api_key_system_wide_fallback():
 
 @pytest.mark.asyncio
 async def test_get_embedding_api_key():
-    from virtual_team.repository.keys_crud import create_api_key, get_embedding_api_key
+    from backend.repository.keys_crud import create_api_key, get_embedding_api_key
 
     await create_api_key("user1", "openai", usage_type="embedding", plaintext_key="sk-emb")
     result = await get_embedding_api_key()
@@ -300,7 +300,7 @@ async def test_get_embedding_api_key():
 
 @pytest.mark.asyncio
 async def test_get_embedding_api_key_none():
-    from virtual_team.repository.keys_crud import get_embedding_api_key
+    from backend.repository.keys_crud import get_embedding_api_key
 
     result = await get_embedding_api_key()
     assert result is None
@@ -308,7 +308,7 @@ async def test_get_embedding_api_key_none():
 
 @pytest.mark.asyncio
 async def test_log_key_usage():
-    from virtual_team.repository.keys_crud import create_api_key, log_key_usage
+    from backend.repository.keys_crud import create_api_key, log_key_usage
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-log")
     await log_key_usage(k.id, "user1", "run-1", "openai", "gpt-4", tokens_prompt=10, tokens_completion=20)
@@ -317,7 +317,7 @@ async def test_log_key_usage():
     async with factory() as session:
         from sqlalchemy import select
 
-        from virtual_team.core.infra.database import KeyUsageLog
+        from backend.core.infra.database import KeyUsageLog
 
         result = await session.execute(select(KeyUsageLog))
         logs = result.scalars().all()
@@ -327,7 +327,7 @@ async def test_log_key_usage():
 
 @pytest.mark.asyncio
 async def test_get_key_usage_stats():
-    from virtual_team.repository.keys_crud import create_api_key, get_key_usage_stats
+    from backend.repository.keys_crud import create_api_key, get_key_usage_stats
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-stat")
 
@@ -335,7 +335,7 @@ async def test_get_key_usage_stats():
     async with factory() as session:
         from uuid import uuid4
 
-        from virtual_team.core.infra.database import KeyUsageLog
+        from backend.core.infra.database import KeyUsageLog
 
         log = KeyUsageLog(
             id=str(uuid4()),
@@ -359,7 +359,7 @@ async def test_get_key_usage_stats():
 
 @pytest.mark.asyncio
 async def test_get_key_usage_stats_all_users():
-    from virtual_team.repository.keys_crud import get_key_usage_stats
+    from backend.repository.keys_crud import get_key_usage_stats
 
     stats = await get_key_usage_stats()
     assert "today_requests" in stats

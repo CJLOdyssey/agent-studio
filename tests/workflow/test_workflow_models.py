@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage
 
-from virtual_team.workflow.models import (
+from backend.workflow.models import (
     WorkflowConfig,
     WorkflowEdge,
     WorkflowNode,

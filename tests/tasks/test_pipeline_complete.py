@@ -1,4 +1,4 @@
-"""Tests for virtual_team.tasks — agent pipeline, completion pipeline, and helpers.
+"""Tests for backend.tasks — agent pipeline, completion pipeline, and helpers.
 
 Mock all external dependencies: Celery, Redis, LLM APIs, LangGraph, repositories.
 """
@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import httpx
 import pytest
 
-from virtual_team.tasks.complete_pipeline import _complete_pipeline
-from virtual_team.tasks.pipeline_utils import (
+from backend.tasks.complete_pipeline import _complete_pipeline
+from backend.tasks.pipeline_utils import (
     _build_session_context,
     _is_balance_error,
     _parse_json_field,
@@ -22,23 +22,23 @@ from virtual_team.tasks.pipeline_utils import (
 def mock_agent_deps():
     """Mock all external dependencies for _run_agent_pipeline."""
     patchers = [
-        patch("virtual_team.tasks.agent_pipeline.load_config"),
-        patch("virtual_team.tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
-        patch("virtual_team.tasks.agent_pipeline.StreamEmitter"),
-        patch("virtual_team.tasks.agent_pipeline.SingleAgentGraph"),
-        patch("virtual_team.tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
-        patch("virtual_team.tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
-        patch("virtual_team.tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.load_config"),
+        patch("backend.tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
+        patch("backend.tasks.agent_pipeline.StreamEmitter"),
+        patch("backend.tasks.agent_pipeline.SingleAgentGraph"),
+        patch("backend.tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
+        patch("backend.tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
+        patch("backend.tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -81,11 +81,11 @@ def _default_agent_mocks(mocks, agent_id="agent-1"):
 def mock_complete_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("virtual_team.tasks.complete_pipeline.load_config"),
-        patch("virtual_team.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("virtual_team.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.load_config"),
+        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:

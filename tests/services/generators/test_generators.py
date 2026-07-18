@@ -9,12 +9,12 @@ class TestGeneratedToolModel:
     """Test GeneratedTool Pydantic model validation, field defaults."""
 
     def test_import(self):
-        from virtual_team.services.generators._models import GeneratedTool
+        from backend.services.generators._models import GeneratedTool
 
         assert GeneratedTool is not None
 
     def test_valid_tool_creation(self):
-        from virtual_team.services.generators._models import GeneratedTool
+        from backend.services.generators._models import GeneratedTool
 
         tool = GeneratedTool(
             id="tool-1",
@@ -30,7 +30,7 @@ class TestGeneratedToolModel:
         assert tool.error_message is None
 
     def test_error_message_defaults_to_none(self):
-        from virtual_team.services.generators._models import GeneratedTool
+        from backend.services.generators._models import GeneratedTool
 
         tool = GeneratedTool(
             id="tool-2",
@@ -44,7 +44,7 @@ class TestGeneratedToolModel:
         assert tool.error_message is None
 
     def test_error_message_set(self):
-        from virtual_team.services.generators._models import GeneratedTool
+        from backend.services.generators._models import GeneratedTool
 
         tool = GeneratedTool(
             id="tool-3",
@@ -61,7 +61,7 @@ class TestGeneratedToolModel:
     def test_field_types(self):
         from typing import get_type_hints
 
-        from virtual_team.services.generators._models import GeneratedTool
+        from backend.services.generators._models import GeneratedTool
 
         hints = get_type_hints(GeneratedTool)
         assert hints["id"] is str
@@ -70,7 +70,7 @@ class TestGeneratedToolModel:
 
 
 # ─────────────────────────────────────────────────────────────────────
-# 9. virtual_team/routers/keys.py — Key models & encryption
+# 9. backend/routers/keys.py — Key models & encryption
 # ─────────────────────────────────────────────────────────────────────
 
 

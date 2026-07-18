@@ -10,7 +10,7 @@ class TestKeysModels:
     """Test KeyCreateRequest/KeyUpdateRequest validation, Fernet encryption roundtrip."""
 
     def test_key_create_request_valid(self):
-        from virtual_team.routers.keys import KeyCreateRequest
+        from backend.routers.keys import KeyCreateRequest
 
         req = KeyCreateRequest(
             provider="openai",
@@ -25,7 +25,7 @@ class TestKeysModels:
         assert req.is_default is False
 
     def test_key_create_request_with_all_fields(self):
-        from virtual_team.routers.keys import KeyCreateRequest
+        from backend.routers.keys import KeyCreateRequest
 
         req = KeyCreateRequest(
             provider="deepseek",
@@ -43,7 +43,7 @@ class TestKeysModels:
         assert req.is_default is True
 
     def test_key_create_request_invalid_provider_pattern(self):
-        from virtual_team.routers.keys import KeyCreateRequest
+        from backend.routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -53,7 +53,7 @@ class TestKeysModels:
             )
 
     def test_key_create_request_invalid_usage_type(self):
-        from virtual_team.routers.keys import KeyCreateRequest
+        from backend.routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -64,7 +64,7 @@ class TestKeysModels:
             )
 
     def test_key_create_request_empty_provider(self):
-        from virtual_team.routers.keys import KeyCreateRequest
+        from backend.routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -74,7 +74,7 @@ class TestKeysModels:
             )
 
     def test_key_create_request_label_max_length(self):
-        from virtual_team.routers.keys import KeyCreateRequest
+        from backend.routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -84,7 +84,7 @@ class TestKeysModels:
             )
 
     def test_key_update_request_partial(self):
-        from virtual_team.routers.keys import KeyUpdateRequest
+        from backend.routers.keys import KeyUpdateRequest
 
         req = KeyUpdateRequest(label="Updated Label")
         assert req.label == "Updated Label"
@@ -92,13 +92,13 @@ class TestKeysModels:
         assert req.is_active is None
 
     def test_key_update_request_invalid_usage_type(self):
-        from virtual_team.routers.keys import KeyUpdateRequest
+        from backend.routers.keys import KeyUpdateRequest
 
         with pytest.raises(ValidationError):
             KeyUpdateRequest(usage_type="bad_type")
 
     def test_fetch_models_request(self):
-        from virtual_team.routers.keys import FetchModelsRequest
+        from backend.routers.keys import FetchModelsRequest
 
         req = FetchModelsRequest(api_key="sk-test", base_url="https://api.test.com")
         assert req.api_key == "sk-test"
@@ -106,7 +106,7 @@ class TestKeysModels:
         assert req.provider == "custom"
 
     def test_key_response_model_fields(self):
-        from virtual_team.routers.keys import KeyResponse
+        from backend.routers.keys import KeyResponse
 
         resp = KeyResponse(
             id="key-1",
@@ -126,7 +126,7 @@ class TestKeysModels:
         assert resp.models == ["gpt-4"]
 
     def test_encrypt_decrypt_roundtrip(self):
-        from virtual_team.core.infra.key_vault import decrypt_api_key, encrypt_api_key
+        from backend.core.infra.key_vault import decrypt_api_key, encrypt_api_key
 
         with patch.dict("os.environ", {"KEY_VAULT_SECRET": "a" * 32}):
             plaintext = "sk-my-secret-api-key-12345"
@@ -136,31 +136,31 @@ class TestKeysModels:
             assert decrypted == plaintext
 
     def test_mask_api_key(self):
-        from virtual_team.core.infra.key_vault import mask_api_key
+        from backend.core.infra.key_vault import mask_api_key
 
         masked = mask_api_key("sk-my-secret-key-xyz")
         assert masked == "sk-...-xyz"
 
     def test_mask_short_key(self):
-        from virtual_team.core.infra.key_vault import mask_api_key
+        from backend.core.infra.key_vault import mask_api_key
 
         masked = mask_api_key("abc")
         assert masked == "ab***"
 
     def test_encrypt_empty_key_raises(self):
-        from virtual_team.core.infra.key_vault import encrypt_api_key
+        from backend.core.infra.key_vault import encrypt_api_key
 
         with pytest.raises(ValueError, match="must not be empty"):
             encrypt_api_key("")
 
     def test_decrypt_empty_key_raises(self):
-        from virtual_team.core.infra.key_vault import decrypt_api_key
+        from backend.core.infra.key_vault import decrypt_api_key
 
         with pytest.raises(ValueError, match="must not be empty"):
             decrypt_api_key("")
 
     def test_user_api_key_model_columns(self):
-        from virtual_team.core.infra.database import UserApiKey
+        from backend.core.infra.database import UserApiKey
 
         cols = {c.name for c in UserApiKey.__table__.columns}
         assert "encrypted_key" in cols
@@ -170,7 +170,7 @@ class TestKeysModels:
         assert "is_active" in cols
 
     def test_user_api_key_defaults(self):
-        from virtual_team.core.infra.database import UserApiKey
+        from backend.core.infra.database import UserApiKey
 
         c_map = {c.name: c for c in UserApiKey.__table__.columns}
         assert c_map["usage_type"].default.arg == "llm"
@@ -179,7 +179,7 @@ class TestKeysModels:
 
 
 # ─────────────────────────────────────────────────────────────────────
-# 10. virtual_team/streaming.py — StreamEmitter edge cases
+# 10. backend/streaming.py — StreamEmitter edge cases
 # ─────────────────────────────────────────────────────────────────────
 
 

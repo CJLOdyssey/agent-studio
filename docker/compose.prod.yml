@@ -2,7 +2,7 @@ name: virtual-team-prod
 
 x-common-env: &common-env
   PYTHONPATH: /app
-  DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/virtual_team
+  DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/backend
   REDIS_URL: redis://redis:6379/0
   CELERY_BROKER_URL: redis://redis:6379/0
   CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -21,7 +21,7 @@ x-common-env: &common-env
   BAIDU_QIANFAN_API_KEY: ${BAIDU_QIANFAN_API_KEY:-}
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:80}
   CHECKPOINTER_BACKEND: ${CHECKPOINTER_BACKEND:-postgres}
-  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://postgres:postgres@postgres:5432/virtual_team}
+  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://postgres:postgres@postgres:5432/backend}
 
 x-logging: &default-logging
   driver: "json-file"
@@ -39,7 +39,7 @@ services:
     <<: *restart-policy
     logging: *default-logging
     environment:
-      POSTGRES_DB: virtual_team
+      POSTGRES_DB: backend
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
@@ -110,11 +110,11 @@ services:
     container_name: virtual-team-worker-prod
     <<: *restart-policy
     logging: *default-logging
-    command: celery -A virtual_team.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
+    command: celery -A backend.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
     environment:
       <<: *common-env
     healthcheck:
-      test: ["CMD-SHELL", "celery -A virtual_team.broker.celery_app inspect ping >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "celery -A backend.broker.celery_app inspect ping >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

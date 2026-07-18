@@ -16,7 +16,7 @@ from uuid import uuid4
 
 import pytest
 
-# Ensure virtual_team is importable
+# Ensure backend is importable
 _sys_insert = str(Path(__file__).resolve().parent.parent.parent)
 if _sys_insert not in sys.path:
     sys.path.insert(0, _sys_insert)
@@ -69,7 +69,7 @@ def checkpoint_db_path(tmp_path):
 @pytest.fixture
 async def checkpointer_sqlite(checkpoint_db_path):
     """Create an AsyncSqliteSaver backed by a temp file."""
-    from virtual_team.checkpoint import create_checkpointer_async
+    from backend.checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()
     yield cp
@@ -86,7 +86,7 @@ async def checkpointer_sqlite(checkpoint_db_path):
 @pytest.fixture
 async def checkpointer_sqlite_fresh(checkpoint_db_path):
     """Create a fresh AsyncSqliteSaver instance against the same DB file."""
-    from virtual_team.checkpoint import create_checkpointer_async
+    from backend.checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()
     yield cp
@@ -150,7 +150,7 @@ async def test_recovery_after_restart(tmp_path):
     os.environ["CHECKPOINTER_DSN"] = {db_path!r}
 
     async def main():
-        from virtual_team.checkpoint import create_checkpointer_async
+        from backend.checkpoint import create_checkpointer_async
 
         cp = await create_checkpointer_async()
         config = {{"configurable": {{"thread_id": "recovery-t1", "checkpoint_ns": ""}}}}
@@ -190,7 +190,7 @@ async def test_recovery_after_restart(tmp_path):
     # Now recover from the same DB file in this process
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = db_path
-    from virtual_team.checkpoint import create_checkpointer_async
+    from backend.checkpoint import create_checkpointer_async
 
     recovery_cp = await create_checkpointer_async()
     config = _make_config("recovery-t1")

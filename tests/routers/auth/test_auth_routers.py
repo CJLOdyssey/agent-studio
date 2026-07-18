@@ -16,26 +16,26 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import virtual_team.core.infra.database as db_mod
+import backend.core.infra.database as db_mod
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///test_auth.db")
 db_mod._async_engine = _sqlite_engine
 db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///test_auth.db"
 
-from virtual_team.core.app import app
-from virtual_team.core.base import Base
+from backend.core.app import app
+from backend.core.base import Base
 
 
 @pytest.fixture
 def client():
-    from virtual_team.core import app_lifespan as lifespan_mod
+    from backend.core import app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from virtual_team.core.infra.database import RoleDB, UserDB, UserRoleDB, get_session_factory
+        from backend.core.infra.database import RoleDB, UserDB, UserRoleDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             for role_data in [
@@ -99,11 +99,11 @@ def client():
     mock_redis.set.side_effect = _redis_set
     mock_redis.delete.side_effect = _redis_delete
 
-    with patch("virtual_team.core.app_lifespan.get_redis", return_value=mock_redis), \
-         patch("virtual_team.broker.get_redis", return_value=mock_redis), \
-         patch("virtual_team.routers.auth.login.get_redis", return_value=mock_redis), \
-         patch("virtual_team.routers.auth.register.get_redis", return_value=mock_redis), \
-         patch("virtual_team.routers.auth.password.get_redis", return_value=mock_redis):
+    with patch("backend.core.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("backend.broker.get_redis", return_value=mock_redis), \
+         patch("backend.routers.auth.login.get_redis", return_value=mock_redis), \
+         patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
+         patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
         with TestClient(app) as c:
             yield c
 
@@ -112,7 +112,7 @@ class TestAuthLogin:
     def test_login_inactive_user(self, client):
         from sqlalchemy import update
 
-        from virtual_team.core.infra.database import UserDB, get_session_factory
+        from backend.core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async def _deactivate():
             async with factory() as s:
@@ -214,7 +214,7 @@ class TestAuthLogin:
 
 
 class TestAuthRegister:
-    @patch("virtual_team.routers.auth.register._generate_code", return_value="654321")
+    @patch("backend.routers.auth.register._generate_code", return_value="654321")
     def test_register_flow(self, mock_gen_code, client):
         resp = client.post(
             "/api/auth/send-register-code", json={"email": "newuser@test.com"}
@@ -235,7 +235,7 @@ class TestAuthRegister:
 
     def test_register_wrong_code(self, client):
         with patch(
-            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+            "backend.routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -253,7 +253,7 @@ class TestAuthRegister:
 
     def test_register_weak_password(self, client):
         with patch(
-            "virtual_team.routers.auth.register._generate_code", return_value="123456"
+            "backend.routers.auth.register._generate_code", return_value="123456"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -269,7 +269,7 @@ class TestAuthRegister:
         )
         assert resp.status_code == 400
 
-    @patch("virtual_team.routers.auth.register._generate_code", return_value="654321")
+    @patch("backend.routers.auth.register._generate_code", return_value="654321")
     def test_register_flow_complete(self, mock_gen_code, client):
         resp = client.post(
             "/api/auth/send-register-code", json={"email": "flowtest@test.com"}
@@ -293,7 +293,7 @@ class TestAuthRegister:
 
     def test_password_policy_rejects_common(self, client):
         with patch(
-            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+            "backend.routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -311,7 +311,7 @@ class TestAuthRegister:
 
     def test_password_policy_rejects_short(self, client):
         with patch(
-            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+            "backend.routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -329,10 +329,10 @@ class TestAuthRegister:
 
     def test_register_duplicate(self, client):
         with patch(
-            "virtual_team.routers.auth.register._generate_code", return_value="123456"
+            "backend.routers.auth.register._generate_code", return_value="123456"
         ):
             with patch(
-                "virtual_team.routers.auth.register.get_user_by_email",
+                "backend.routers.auth.register.get_user_by_email",
                 return_value=None,
             ):
                 client.post(
@@ -351,7 +351,7 @@ class TestAuthRegister:
 
     def test_register_password_complexity_edge(self, client):
         with patch(
-            "virtual_team.routers.auth.register._generate_code", return_value="654321"
+            "backend.routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -376,7 +376,7 @@ class TestAuthPassword:
         assert resp.status_code == 200
 
     @patch(
-        "virtual_team.routers.auth.password._generate_code", return_value="999999"
+        "backend.routers.auth.password._generate_code", return_value="999999"
     )
     def test_reset_password(self, mock_gen_code, client):
         client.post(
@@ -394,7 +394,7 @@ class TestAuthPassword:
 
     def test_reset_wrong_code(self, client):
         with patch(
-            "virtual_team.routers.auth.password._generate_code", return_value="111111"
+            "backend.routers.auth.password._generate_code", return_value="111111"
         ):
             client.post(
                 "/api/auth/forgot-password", json={"email": "admin@test.com"}
@@ -460,8 +460,8 @@ class TestAuthProfile:
 
 class TestAuthForgotPasswordFlow:
 
-    @patch("virtual_team.routers.auth.register._generate_code", return_value="112233")
-    @patch("virtual_team.routers.auth.password._generate_code", return_value="445566")
+    @patch("backend.routers.auth.register._generate_code", return_value="112233")
+    @patch("backend.routers.auth.password._generate_code", return_value="445566")
     def test_forgot_password_full_flow(self, mock_pwd_code, mock_reg_code, client):
         client.post(
             "/api/auth/send-register-code", json={"email": "fpflow@test.com"}

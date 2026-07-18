@@ -126,7 +126,7 @@ curl http://localhost:5173/
 | `DEEPSEEK_API_KEY` | ✅ | — | LLM provider API key |
 | `KEY_VAULT_SECRET` | ✅ | — | Fernet key for API key encryption (≥32 bytes) |
 | `AUTH_SECRET` | ✅ | — | JWT signing secret |
-| `DATABASE_URL` | — | `postgresql+asyncpg://postgres:postgres@postgres:5432/virtual_team` | Postgres connection string |
+| `DATABASE_URL` | — | `postgresql+asyncpg://postgres:postgres@postgres:5432/backend` | Postgres connection string |
 | `REDIS_URL` | — | `redis://redis:6379/0` | Redis connection string |
 | `OPENAI_BASE_URL` | — | `https://api.deepseek.com` | LLM API base URL |
 | `OPENAI_MODEL` | — | `deepseek-v4-flash` | LLM model name |
@@ -157,10 +157,10 @@ See `.env.example` for the full list with comments.
 
 ```bash
 # Inside the container
-docker exec -it virtual-team-db-prod psql -U postgres -d virtual_team
+docker exec -it virtual-team-db-prod psql -U postgres -d backend
 
 # From host (if port exposed)
-psql -h localhost -U postgres -d virtual_team
+psql -h localhost -U postgres -d backend
 ```
 
 ### Migrations (Alembic)
@@ -216,12 +216,12 @@ Migrations run **automatically** on container startup via `scripts/docker-entryp
 
 ```bash
 # Full backup (daily recommended)
-docker exec virtual-team-db-prod pg_dump -U postgres -d virtual_team \
+docker exec virtual-team-db-prod pg_dump -U postgres -d backend \
   | gzip > /backups/virtual-team-$(date +%Y%m%d-%H%M%S).sql.gz
 
 # Restore from backup
 gunzip -c /backups/virtual-team-20260401-120000.sql.gz | \
-  docker exec -i virtual-team-db-prod psql -U postgres -d virtual_team
+  docker exec -i virtual-team-db-prod psql -U postgres -d backend
 ```
 
 For Alibaba Cloud RDS or similar managed Postgres, use the cloud provider's native snapshot/backup mechanism.
@@ -391,7 +391,7 @@ docker exec virtual-team-api-prod alembic upgrade head
 # Increase proxy_read_timeout in frontend/nginx.conf if needed
 
 # Check if celery worker is alive
-docker exec virtual-team-worker-prod celery -A virtual_team.broker.celery_app inspect ping
+docker exec virtual-team-worker-prod celery -A backend.broker.celery_app inspect ping
 ```
 
 #### Celery tasks not executing

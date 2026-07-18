@@ -12,10 +12,10 @@ import pytest
 # ---------------------------------------------------------------------------
 
 class TestSubscribeRun:
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_yields_messages_from_pubsub(self, mock_get_redis):
-        from virtual_team.broker import subscribe_run
+        from backend.broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -40,10 +40,10 @@ class TestSubscribeRun:
         ]
         mock_pubsub.subscribe.assert_awaited_once_with("run:r1")
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_no_messages_yields_nothing(self, mock_get_redis):
-        from virtual_team.broker import subscribe_run
+        from backend.broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -61,10 +61,10 @@ class TestSubscribeRun:
         results = [m async for m in subscribe_run("r2")]
         assert results == []
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_skips_non_message_types(self, mock_get_redis):
-        from virtual_team.broker import subscribe_run
+        from backend.broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -85,10 +85,10 @@ class TestSubscribeRun:
         results = [m async for m in subscribe_run("r3")]
         assert results == [{"type": "done"}]
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_skips_non_string_data(self, mock_get_redis):
-        from virtual_team.broker import subscribe_run
+        from backend.broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -107,10 +107,10 @@ class TestSubscribeRun:
         results = [m async for m in subscribe_run("r4")]
         assert results == []
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_unsubscribes_and_closes_in_finally(self, mock_get_redis):
-        from virtual_team.broker import subscribe_run
+        from backend.broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -129,10 +129,10 @@ class TestSubscribeRun:
         mock_pubsub.unsubscribe.assert_awaited_once_with("run:r5")
         mock_pubsub.close.assert_awaited_once()
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_finally_survives_unsubscribe_error(self, mock_get_redis):
-        from virtual_team.broker import subscribe_run
+        from backend.broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -156,20 +156,20 @@ class TestSubscribeRun:
 # ---------------------------------------------------------------------------
 
 class TestCloseRedisEdgeCases:
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis_no_pool_does_not_raise(self, mock_get_redis):
-        from virtual_team.broker import _pools, close_redis
+        from backend.broker import _pools, close_redis
 
         _pools.clear()
         loop = MagicMock()
-        with patch("virtual_team.broker.asyncio.get_running_loop", return_value=loop):
+        with patch("backend.broker.asyncio.get_running_loop", return_value=loop):
             await close_redis()
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis_different_loop_does_not_affect_other(self, mock_get_redis):
-        from virtual_team.broker import _pools, close_redis
+        from backend.broker import _pools, close_redis
 
         _pools.clear()
         loop_a = MagicMock()
@@ -179,7 +179,7 @@ class TestCloseRedisEdgeCases:
         _pools[id(loop_a)] = pool_a
         _pools[id(loop_b)] = pool_b
 
-        with patch("virtual_team.broker.asyncio.get_running_loop", return_value=loop_a):
+        with patch("backend.broker.asyncio.get_running_loop", return_value=loop_a):
             await close_redis()
 
         assert id(loop_a) not in _pools
@@ -198,7 +198,7 @@ class TestEnvVarOverrides:
     def test_redis_url_env_override(self):
         with patch.dict("os.environ", {"REDIS_URL": "redis://env-host:9999/1"}):
             import importlib
-            import virtual_team.broker as broker_mod
+            import backend.broker as broker_mod
             importlib.reload(broker_mod)
             assert broker_mod.REDIS_URL == "redis://env-host:9999/1"
             # Restore default for other tests
@@ -208,7 +208,7 @@ class TestEnvVarOverrides:
     def test_celery_broker_url_env_override(self):
         with patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://broker-host:6380/2"}):
             import importlib
-            import virtual_team.broker as broker_mod
+            import backend.broker as broker_mod
             # Reload picks up the new env var
             old_broker = broker_mod.BROKER_URL
             importlib.reload(broker_mod)
@@ -219,7 +219,7 @@ class TestEnvVarOverrides:
     def test_result_backend_env_override(self):
         with patch.dict("os.environ", {"CELERY_RESULT_BACKEND": "redis://result-host:6381/3"}):
             import importlib
-            import virtual_team.broker as broker_mod
+            import backend.broker as broker_mod
             importlib.reload(broker_mod)
             assert broker_mod.RESULT_BACKEND == "redis://result-host:6381/3"
             importlib.reload(broker_mod)
@@ -230,10 +230,10 @@ class TestEnvVarOverrides:
 # ---------------------------------------------------------------------------
 
 class TestBufferRunMessages:
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_accumulates_messages(self, mock_get_redis):
-        from virtual_team.broker import (
+        from backend.broker import (
             _buffers,
             _buffer_tasks,
             buffer_run_messages,
@@ -272,10 +272,10 @@ class TestBufferRunMessages:
         await asyncio.sleep(0.1)  # let worker process messages
         await stop_buffer("run-buf-acc")
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_drain_buffer_returns_and_clears(self, mock_get_redis):
-        from virtual_team.broker import _buffers, drain_buffer
+        from backend.broker import _buffers, drain_buffer
 
         _buffers.clear()
         _buffers["run-d"] = [{"type": "x"}, {"type": "y"}]
@@ -284,18 +284,18 @@ class TestBufferRunMessages:
         assert result == [{"type": "x"}, {"type": "y"}]
         assert "run-d" not in _buffers
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_drain_buffer_nonexistent_returns_empty(self, mock_get_redis):
-        from virtual_team.broker import drain_buffer
+        from backend.broker import drain_buffer
 
         result = drain_buffer("no-such-run")
         assert result == []
 
-    @patch("virtual_team.broker.get_redis")
+    @patch("backend.broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_run_messages_subscribe_called(self, mock_get_redis):
-        from virtual_team.broker import (
+        from backend.broker import (
             _buffers,
             _buffer_tasks,
             buffer_run_messages,
@@ -328,14 +328,14 @@ class TestBufferRunMessages:
 class TestStopBuffer:
     @pytest.mark.asyncio
     async def test_stop_buffer_no_task(self):
-        from virtual_team.broker import _buffer_tasks, stop_buffer
+        from backend.broker import _buffer_tasks, stop_buffer
 
         _buffer_tasks.clear()
         await stop_buffer("nonexistent")
 
     @pytest.mark.asyncio
     async def test_stop_buffer_clears_buffers_and_task(self):
-        from virtual_team.broker import (
+        from backend.broker import (
             _buffers,
             _buffer_tasks,
             stop_buffer,

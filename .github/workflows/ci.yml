@@ -41,11 +41,11 @@ jobs:
           cache-dependency-path: |
             requirements-lock.txt
       - run: pip install -r requirements-lock.txt
-      - run: ruff check virtual_team/
-      - run: mypy virtual_team/ --strict
+      - run: ruff check backend/
+      - run: mypy backend/ --strict
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt 2>&1 || echo "⚠️ pip-audit found vulnerabilities (non-blocking)"
-      - run: bandit -c pyproject.toml -r virtual_team/ -ll 2>&1 || echo "⚠️ bandit warnings (non-blocking)"
-      - run: PYTHONPATH=. python3 -m pytest tests/ -v --tb=short --ignore=tests/e2e/ --ignore=tests/repository/ --ignore=tests/routers/auth/test_auth_api.py --cov=virtual_team --cov-report=term --cov-fail-under=45
+      - run: bandit -c pyproject.toml -r backend/ -ll 2>&1 || echo "⚠️ bandit warnings (non-blocking)"
+      - run: PYTHONPATH=. python3 -m pytest tests/ -v --tb=short --ignore=tests/e2e/ --ignore=tests/repository/ --ignore=tests/routers/auth/test_auth_api.py --cov=backend --cov-report=term --cov-fail-under=45
 
   integration:
     runs-on: ubuntu-latest
@@ -66,7 +66,7 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_DB: virtual_team
+          POSTGRES_DB: backend
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         options: >-
@@ -83,10 +83,10 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements-lock.txt
       - name: Preflight check
-        run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. python3 scripts/preflight.py
+        run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. python3 scripts/preflight.py
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret nohup python3 -m uvicorn virtual_team.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
+          PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret nohup python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
           sleep 3
           # Wait for backend to be ready
           for i in $(seq 1 15); do

@@ -15,26 +15,26 @@ os.environ['DATABASE_POOL_SIZE'] = '0'
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import virtual_team.core.infra.database as db_mod
+import backend.core.infra.database as db_mod
 
 _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
 db_mod._async_engine = _sqlite_engine
 db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
 
-from virtual_team.core.app import app
-from virtual_team.core.base import Base
+from backend.core.app import app
+from backend.core.base import Base
 
 
 @pytest.fixture
 def client():
-    from virtual_team.core import app_lifespan as lifespan_mod
+    from backend.core import app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from virtual_team.core.seed import seed_default_roles_and_admin
+        from backend.core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
 
     lifespan_mod.init_db = _safe_init_db
@@ -45,8 +45,8 @@ def client():
     mock_redis.ping.return_value = True
     mock_redis.publish.return_value = 1
 
-    with patch('virtual_team.broker.get_redis', return_value=mock_redis):
-        with patch('virtual_team.core.app_lifespan.get_redis', return_value=mock_redis):
+    with patch('backend.broker.get_redis', return_value=mock_redis):
+        with patch('backend.core.app_lifespan.get_redis', return_value=mock_redis):
             with TestClient(app) as c:
                 yield c
 

@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from virtual_team.core.infra.request_logger import (
+from backend.core.infra.request_logger import (
     _SENSITIVE_HEADERS,
     RequestLogMiddleware,
     _client_ip,
