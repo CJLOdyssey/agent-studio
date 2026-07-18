@@ -145,4 +145,4 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", "8080"))
     logger.info("Starting uvicorn on 0.0.0.0:%d", port)
-    uvicorn.run("virtual_team.app:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("virtual_team.core.app:app", host="0.0.0.0", port=port, reload=True)
