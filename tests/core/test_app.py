@@ -16,7 +16,7 @@ class TestAppCreation:
     def test_app_title(self):
         from backend.core.app import app
 
-        assert app.title == "AgentStudio"
+        assert app.title == "AgentStudio API"
 
     def test_app_route_count(self):
         from backend.core.app import app
