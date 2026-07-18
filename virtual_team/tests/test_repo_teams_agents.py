@@ -17,12 +17,12 @@ import virtual_team.database as db_mod
 from virtual_team.base import Base
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-db_mod._async_engine = _sqlite_engine
-db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 
 
 @pytest.fixture(autouse=True)
 async def setup_db():
+    db_mod._async_engine = _sqlite_engine
+    db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
     async with _sqlite_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
