@@ -311,11 +311,11 @@ class TestCallMcpSdk:
         mock_session.initialize = AsyncMock()
         mock_session.call_tool = AsyncMock(return_value=mock_result)
 
-        with patch("virtual_team.tool_handlers.stdio_client") as mock_stdio:
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
             mock_read = AsyncMock()
             mock_write = AsyncMock()
             mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
-            with patch("virtual_team.tool_handlers.ClientSession", return_value=mock_session) as mock_cs:
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
                 mock_cs.return_value.__aenter__.return_value = mock_session
                 result = await call_mcp_sdk(w, {"x": 1})
                 assert "tool output" in result
@@ -339,11 +339,11 @@ class TestCallMcpSdk:
         mock_session.initialize = AsyncMock()
         mock_session.list_tools = AsyncMock(return_value=mock_result)
 
-        with patch("virtual_team.tool_handlers.stdio_client") as mock_stdio:
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
             mock_read = AsyncMock()
             mock_write = AsyncMock()
             mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
-            with patch("virtual_team.tool_handlers.ClientSession", return_value=mock_session) as mock_cs:
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
                 mock_cs.return_value.__aenter__.return_value = mock_session
                 result = await call_mcp_sdk(w, {})
                 assert "MCP server provides" in result
@@ -376,11 +376,11 @@ class TestCallMcpSdk:
         mock_session.initialize = AsyncMock()
         mock_session.call_tool = AsyncMock(return_value=mock_result)
 
-        with patch("virtual_team.tool_handlers.stdio_client") as mock_stdio:
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
             mock_read = AsyncMock()
             mock_write = AsyncMock()
             mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
-            with patch("virtual_team.tool_handlers.ClientSession", return_value=mock_session) as mock_cs:
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
                 mock_cs.return_value.__aenter__.return_value = mock_session
                 result = await call_mcp_sdk(w, {})
                 assert "result" in result
