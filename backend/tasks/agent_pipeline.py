@@ -26,7 +26,7 @@ from backend.repository import (
 )
 from backend.repository.keys import log_key_usage
 from backend.services.tool_config import ToolConfig
-from backend.streaming.streaming import StreamEmitter
+from backend.streaming.emitter import StreamEmitter
 
 from .mcp_executor import exec_stdio_mcp
 from .pipeline_utils import (

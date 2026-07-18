@@ -17,11 +17,11 @@ async def test_run_agent_pipeline_importable():
 @pytest.mark.asyncio
 async def test_stream_emitter_buffers_chunks():
     """Verify StreamEmitter buffers streaming chunks before publishing."""
-    from backend.streaming.streaming import StreamEmitter
+    from backend.streaming.emitter import StreamEmitter
 
     with (
-        patch("backend.streaming.streaming.publish_run_message") as mock_pub,
-        patch("backend.streaming.streaming.save_message") as mock_save,
+        patch("backend.streaming.emitter.publish_run_message") as mock_pub,
+        patch("backend.streaming.emitter.save_message") as mock_save,
     ):
         emitter = StreamEmitter("test-run")
         await emitter(
@@ -39,11 +39,11 @@ async def test_stream_emitter_buffers_chunks():
 @pytest.mark.asyncio
 async def test_stream_emitter_tool_events():
     """Verify StreamEmitter saves tool start events."""
-    from backend.streaming.streaming import StreamEmitter
+    from backend.streaming.emitter import StreamEmitter
 
     with (
-        patch("backend.streaming.streaming.publish_run_message"),
-        patch("backend.streaming.streaming.save_message") as mock_save,
+        patch("backend.streaming.emitter.publish_run_message"),
+        patch("backend.streaming.emitter.save_message") as mock_save,
     ):
         emitter = StreamEmitter("test-run")
         await emitter({"event": "on_tool_start", "name": "search", "data": {"input": "query"}})
