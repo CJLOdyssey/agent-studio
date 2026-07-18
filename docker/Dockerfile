@@ -27,6 +27,12 @@ COPY scripts/ scripts/
 # PYTHONPATH so "from backend import ..." works
 ENV PYTHONPATH=/app
 
+# Run as non-root user for security
+RUN groupadd -r appgroup -g 1000 && useradd -r -g appgroup -u 1000 -m appuser && \
+    mkdir -p /app/uploads /app/data && \
+    chown -R appuser:appgroup /app
+USER appuser
+
 EXPOSE 8080
 
 ENTRYPOINT ["scripts/docker-entrypoint.sh"]
