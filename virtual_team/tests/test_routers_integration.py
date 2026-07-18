@@ -1944,3 +1944,1010 @@ class TestGapCloser2:
     def test_runs_list(self, client): assert client.get("/api/runs").status_code==200
     def test_versions_list(self, client): assert client.get("/api/versions/agents/test-id").status_code==200
     def test_workflow_list(self, client): assert client.get("/api/workflows").status_code==200
+"""Tests for session API routes using in-memory SQLite and TestClient."""
+import os
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from starlette.testclient import TestClient
+
+os.environ['AUTH_MODE'] = 'legacy'
+os.environ['DATABASE_URL'] = 'sqlite+aiosqlite:///:memory:'
+os.environ['REDIS_URL'] = 'redis://localhost:6379/0'
+os.environ['KEY_VAULT_SECRET'] = '0123456789abcdef0123456789abcdef'
+os.environ['AUTH_ENABLED'] = '0'
+os.environ['RATE_LIMIT'] = '9999'
+os.environ['CHECKPOINTER_BACKEND'] = 'memory'
+os.environ['DATABASE_POOL_SIZE'] = '0'
+
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.database as db_mod
+
+_sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
+db_mod._async_engine = _sqlite_engine
+db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
+
+from virtual_team.app import app
+from virtual_team.base import Base
+from virtual_team.repository import create_memory_entry, get_session_memories
+
+
+@pytest.fixture
+def client():
+    from virtual_team import app_lifespan as lifespan_mod
+
+    async def _safe_init_db():
+        engine = db_mod.get_async_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from virtual_team.seed import seed_default_roles_and_admin
+        await seed_default_roles_and_admin()
+
+    lifespan_mod.init_db = _safe_init_db
+
+    mock_redis = AsyncMock()
+    mock_redis.incr.return_value = 1
+    mock_redis.expire.return_value = True
+    mock_redis.ping.return_value = True
+    mock_redis.publish.return_value = 1
+
+    with patch('virtual_team.rate_limit.get_redis', return_value=mock_redis):
+        with patch('virtual_team.app_lifespan.get_redis', return_value=mock_redis):
+            with TestClient(app) as c:
+                yield c
+
+
+class TestSessionRoutes:
+
+    def test_create_session(self, client):
+        resp = client.post("/api/sessions", json={"title": "Test Session"})
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["title"] == "Test Session"
+
+    def test_create_session_with_agent_id_500_on_missing(self, client):
+        resp = client.post("/api/sessions", json={"title": "Test", "agent_id": "nonexistent"})
+        assert resp.status_code == 500
+
+    def test_list_sessions(self, client):
+        client.post("/api/sessions", json={"title": "Session A"})
+        resp = client.get("/api/sessions")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        assert "id" in data[0]
+        assert "title" in data[0]
+
+    def test_get_session_detail(self, client):
+        created = client.post("/api/sessions", json={"title": "Detail Session"}).json()
+        resp = client.get(f"/api/sessions/{created['id']}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == created["id"]
+        assert data["title"] == "Detail Session"
+        assert "runs" in data
+        assert "memories" in data
+
+    def test_get_session_404(self, client):
+        resp = client.get("/api/sessions/99999")
+        assert resp.status_code == 404
+
+    def test_rename_session(self, client):
+        created = client.post("/api/sessions", json={"title": "Old Title"}).json()
+        resp = client.put(f"/api/sessions/{created['id']}", json={"title": "New Title"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["title"] == "New Title"
+
+    def test_delete_session(self, client):
+        created = client.post("/api/sessions", json={"title": "Delete Me"}).json()
+        resp = client.delete(f"/api/sessions/{created['id']}")
+        assert resp.status_code == 200
+        resp = client.get(f"/api/sessions/{created['id']}")
+        assert resp.status_code == 404
+
+    def test_session_memories_list(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem Session"}).json()
+        resp = client.get(f"/api/sessions/{created['id']}/memories")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_session_memories_404(self, client):
+        resp = client.get("/api/sessions/99999/memories")
+        assert resp.status_code == 404
+
+    def test_create_run_linked_to_session_fails_without_key(self, client):
+        created = client.post("/api/sessions", json={"title": "Run Session"}).json()
+        resp = client.post("/api/runs", json={
+            "requirement": "Test run linked to session",
+            "sessionId": created["id"],
+        })
+        assert resp.status_code == 400
+        data = resp.json()
+        assert "detail" in data
+
+    def test_create_run_linked_to_session_success(self, client):
+        created = client.post("/api/sessions", json={"title": "Run Session"}).json()
+        key_resp = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "test-key",
+            "api_key": "sk-test123",
+        })
+        assert key_resp.status_code == 201
+        key_id = key_resp.json()["id"]
+        resp = client.post("/api/runs", json={
+            "requirement": "Test run linked to session",
+            "sessionId": created["id"],
+            "keyId": key_id,
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "run_id" in data
+        assert data["session_id"] == created["id"]
+
+    def test_update_session_with_valid_body(self, client):
+        created = client.post("/api/sessions", json={"title": "Update Me"}).json()
+        resp = client.put(f"/api/sessions/{created['id']}", json={"title": "Updated Title"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["title"] == "Updated Title"
+
+    def test_delete_session_returns_204(self, client):
+        created = client.post("/api/sessions", json={"title": "Delete 204"}).json()
+        resp = client.delete(f"/api/sessions/{created['id']}")
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+
+    def test_create_memory_entry(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem Create"}).json()
+        session_id = created["id"]
+        run_id = "test-run-id"
+        memory = await_memory_create(session_id, run_id)
+        assert memory.id is not None
+        assert memory.session_id == session_id
+        assert memory.summary == "Test memory summary"
+
+    def test_memories_list_with_entries(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem List"}).json()
+        session_id = created["id"]
+        await_memory_create(session_id, "run-1")
+        resp = client.get(f"/api/sessions/{session_id}/memories")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        assert data[0]["summary"] == "Test memory summary"
+
+    def test_memories_export_json(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem Export"}).json()
+        session_id = created["id"]
+        await_memory_create(session_id, "run-export")
+        resp = client.get(f"/api/sessions/{session_id}/memories/export?format=json")
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "application/json"
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        assert data[0]["summary"] == "Test memory summary"
+
+
+def await_memory_create(session_id: str, run_id: str):
+    import asyncio
+    return asyncio.new_event_loop().run_until_complete(
+        create_memory_entry(
+            session_id=session_id,
+            run_id=run_id,
+            agent_role="tester",
+            content_type="test",
+            summary="Test memory summary",
+            details="Test details",
+        )
+    )
+
+
+class TestSessionEdgeCases:
+
+    USER_HEADERS = {"X-User-ID": "admin"}
+
+    def test_add_memory_with_file_id(self, client):
+        created = client.post("/api/sessions", json={"title": "Mem File"}, headers=self.USER_HEADERS).json()
+        session_id = created["id"]
+        memory = await_memory_create(session_id, "run-file")
+        assert memory.id is not None
+        assert memory.session_id == session_id
+
+    def test_create_session_run_with_agent_id(self, client):
+        created = client.post("/api/sessions", json={"title": "Session Run Agent"}, headers=self.USER_HEADERS).json()
+        key_resp = client.post("/api/keys", json={
+            "provider": "custom", "usage_type": "embedding", "label": "run-agent-key",
+            "api_key": "sk-test-run-agent",
+        }, headers=self.USER_HEADERS)
+        assert key_resp.status_code == 201
+        key_id = key_resp.json()["id"]
+        resp = client.post("/api/runs", json={
+            "requirement": "Run with session and agent",
+            "sessionId": created["id"],
+            "keyId": key_id,
+            "agentId": "test-agent-1",
+        }, headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "run_id" in data
+        assert data["session_id"] == created["id"]
+
+    def test_delete_session_deletes(self, client):
+        created = client.post("/api/sessions", json={"title": "Delete Final"}, headers=self.USER_HEADERS).json()
+        resp = client.delete(f"/api/sessions/{created['id']}", headers=self.USER_HEADERS)
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "deleted"
+        get_resp = client.get(f"/api/sessions/{created['id']}", headers=self.USER_HEADERS)
+        assert get_resp.status_code == 404
+import os
+
+os.environ["AUTH_MODE"] = "legacy"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["KEY_VAULT_SECRET"] = "0123456789abcdef0123456789abcdef"
+os.environ["AUTH_ENABLED"] = "0"
+os.environ["RATE_LIMIT"] = "9999"
+os.environ["CHECKPOINTER_BACKEND"] = "memory"
+os.environ["DATABASE_POOL_SIZE"] = "0"
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from starlette.testclient import TestClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.database as db_mod
+
+_sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+db_mod._async_engine = _sqlite_engine
+db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+from virtual_team.app import app
+from virtual_team.base import Base
+
+
+@pytest.fixture
+def client():
+    from virtual_team import app_lifespan as lifespan_mod
+
+    async def _safe_init_db():
+        engine = db_mod.get_async_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from virtual_team.seed import seed_default_roles_and_admin
+        await seed_default_roles_and_admin()
+
+    lifespan_mod.init_db = _safe_init_db
+
+    mock_redis = AsyncMock()
+    mock_redis.incr.return_value = 1
+    mock_redis.expire.return_value = True
+    mock_redis.ping.return_value = True
+    mock_redis.publish.return_value = 1
+
+    with patch("virtual_team.rate_limit.get_redis", return_value=mock_redis):
+        with patch("virtual_team.app_lifespan.get_redis", return_value=mock_redis):
+            with TestClient(app) as c:
+                yield c
+
+
+class TestAgentRoutes:
+
+    def test_list_agents_empty(self, client):
+        resp = client.get("/api/agents")
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_create_and_list_agents(self, client):
+        resp = client.post(
+            "/api/agents",
+            json={
+                "name": "test-agent",
+                "role_identifier": "role_a",
+                "system_prompt": "You are a test agent",
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["status"] == "created"
+        agent_id = data["id"]
+
+        resp = client.get("/api/agents")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        agent = next(a for a in data if a["id"] == agent_id)
+        assert agent["name"] == "test-agent"
+        assert agent["role_identifier"] == "role_a"
+
+    def test_create_agent_duplicate_role(self, client):
+        client.post(
+            "/api/agents",
+            json={
+                "name": "dup-agent",
+                "role_identifier": "dup_role",
+                "system_prompt": "test",
+            },
+        )
+        resp = client.post(
+            "/api/agents",
+            json={
+                "name": "dup-agent-2",
+                "role_identifier": "dup_role",
+                "system_prompt": "test",
+            },
+        )
+        assert resp.status_code == 409
+
+    def test_update_agent_skills(self, client):
+        resp = client.post(
+            "/api/agents",
+            json={
+                "name": "update-agent",
+                "role_identifier": "role_update",
+                "system_prompt": "test",
+            },
+        )
+        agent_id = resp.json()["id"]
+        resp = client.put(
+            f"/api/agents/{agent_id}",
+            json={"skills": [{"name": "python", "version": "3.12"}]},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "updated"
+
+    def test_update_agent_not_found(self, client):
+        resp = client.put(
+            "/api/agents/nonexistent",
+            json={"name": "ghost"},
+        )
+        assert resp.status_code == 404
+
+    def test_get_agent_versions(self, client):
+        resp = client.post(
+            "/api/agents",
+            json={
+                "name": "version-agent",
+                "role_identifier": "role_ver",
+                "system_prompt": "test",
+            },
+        )
+        agent_id = resp.json()["id"]
+        resp = client.get(f"/api/versions/agent/{agent_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
+    def test_get_agent_not_found(self, client):
+        resp = client.get("/api/agents/nonexistent-id")
+        assert resp.status_code == 404
+
+    def test_delete_agent(self, client):
+        resp = client.post(
+            "/api/agents",
+            json={
+                "name": "delete-agent",
+                "role_identifier": "role_del",
+                "system_prompt": "test",
+            },
+        )
+        agent_id = resp.json()["id"]
+        resp = client.delete(f"/api/agents/{agent_id}")
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.status_code == 404
+
+    def test_toggle_agent(self, client):
+        resp = client.post(
+            "/api/agents",
+            json={
+                "name": "toggle-agent",
+                "role_identifier": "role_toggle",
+                "system_prompt": "test",
+            },
+        )
+        agent_id = resp.json()["id"]
+        resp = client.put(f"/api/agents/{agent_id}/toggle")
+        assert resp.status_code == 200
+
+
+class TestAgentListDetail:
+
+    def test_list_agents_has_elements(self, client):
+        client.post("/api/agents", json={
+            "name": "list-test-agent", "role_identifier": "list_role", "system_prompt": "test",
+        })
+        resp = client.get("/api/agents")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 1
+        names = [a["name"] for a in data]
+        assert "list-test-agent" in names
+
+    def test_agent_validate(self, client):
+        resp = client.post("/api/tools/validate", json={
+            "code": "def hello():\n    return 'world'", "language": "python",
+        })
+        assert resp.status_code == 200
+        assert "is_valid" in resp.json()
+"""Tests for key management API routes using in-memory SQLite and TestClient."""
+import os
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from starlette.testclient import TestClient
+
+os.environ['AUTH_MODE'] = 'legacy'
+os.environ['DATABASE_URL'] = 'sqlite+aiosqlite:///:memory:'
+os.environ['REDIS_URL'] = 'redis://localhost:6379/0'
+os.environ['KEY_VAULT_SECRET'] = '0123456789abcdef0123456789abcdef'
+os.environ['AUTH_ENABLED'] = '0'
+os.environ['RATE_LIMIT'] = '9999'
+os.environ['CHECKPOINTER_BACKEND'] = 'memory'
+os.environ['DATABASE_POOL_SIZE'] = '0'
+
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.database as db_mod
+
+_sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
+db_mod._async_engine = _sqlite_engine
+db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
+
+from virtual_team.app import app
+from virtual_team.base import Base
+
+
+@pytest.fixture
+def client():
+    from virtual_team import app_lifespan as lifespan_mod
+
+    async def _safe_init_db():
+        engine = db_mod.get_async_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from virtual_team.seed import seed_default_roles_and_admin
+        await seed_default_roles_and_admin()
+
+    lifespan_mod.init_db = _safe_init_db
+
+    mock_redis = AsyncMock()
+    mock_redis.incr.return_value = 1
+    mock_redis.expire.return_value = True
+    mock_redis.ping.return_value = True
+    mock_redis.publish.return_value = 1
+
+    with patch('virtual_team.rate_limit.get_redis', return_value=mock_redis):
+        with patch('virtual_team.app_lifespan.get_redis', return_value=mock_redis):
+            with TestClient(app) as c:
+                yield c
+
+
+class TestKeyRoutes:
+
+    def test_create_key(self, client):
+        resp = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "my-key",
+            "api_key": "sk-test123",
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["provider"] == "custom"
+        assert data["label"] == "my-key"
+        assert "key_masked" in data
+
+    def test_create_key_validation(self, client):
+        resp = client.post("/api/keys", json={
+            "provider": "",
+            "usage_type": "llm",
+            "label": "bad-key",
+            "api_key": "sk-test123",
+        })
+        assert resp.status_code == 422
+
+    def test_list_keys(self, client):
+        client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "key-1",
+            "api_key": "sk-one",
+        })
+        client.post("/api/keys", json={
+            "provider": "openai",
+            "usage_type": "embedding",
+            "label": "key-2",
+            "api_key": "sk-two",
+        })
+        resp = client.get("/api/keys")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 2
+
+    def test_update_key(self, client):
+        created = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "old-label",
+            "api_key": "sk-update",
+        }).json()
+        resp = client.put(f"/api/keys/{created['id']}", json={
+            "label": "new-label",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["label"] == "new-label"
+
+    def test_update_key_not_found(self, client):
+        resp = client.put("/api/keys/nonexistent", json={"label": "new"})
+        assert resp.status_code == 404
+
+    def test_key_fetch_models(self, client):
+        resp = client.post("/api/keys/fetch-models", json={
+            "api_key": "sk-test123",
+            "base_url": "https://api.example.com",
+            "provider": "custom",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "success" in data
+
+    def test_key_usage_stats(self, client):
+        resp = client.get("/api/keys/usage")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, dict)
+
+    def test_delete_key(self, client):
+        created = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "delete-me",
+            "api_key": "sk-delete",
+        }).json()
+        resp = client.delete(f"/api/keys/{created['id']}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "deleted"
+
+    def test_delete_key_not_found(self, client):
+        resp = client.delete("/api/keys/nonexistent-id")
+        assert resp.status_code == 404
+
+    def test_key_connectivity_test(self, client):
+        created = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "conn-key",
+            "api_key": "sk-conn",
+        }).json()
+        resp = client.post(f"/api/keys/{created['id']}/test")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "success" in data
+
+    def test_check_connectivity_via_fetch_models(self, client):
+        with patch("virtual_team.repository.keys._test_connection_sync") as mock_test:
+            mock_test.return_value = {"success": True, "models": ["gpt-4"], "message": "OK"}
+            resp = client.post("/api/keys/fetch-models", json={
+                "api_key": "sk-test",
+                "provider": "custom",
+                "base_url": "https://api.example.com",
+            })
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["success"] is True
+            assert "models" in data
+
+    def test_update_key_label_only(self, client):
+        created = client.post("/api/keys", json={
+            "provider": "custom",
+            "usage_type": "embedding",
+            "label": "original-label",
+            "api_key": "sk-label-update",
+        }).json()
+        resp = client.put(f"/api/keys/{created['id']}", json={"label": "updated-label"})
+        assert resp.status_code == 200
+        assert resp.json()["label"] == "updated-label"
+
+    def test_get_key_usage_stats_returns_dict(self, client):
+        resp = client.get("/api/keys/usage")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, dict)
+        assert "today_tokens" in data
+import os
+
+os.environ["AUTH_MODE"] = "legacy"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["KEY_VAULT_SECRET"] = "0123456789abcdef0123456789abcdef"
+os.environ["AUTH_ENABLED"] = "0"
+os.environ["RATE_LIMIT"] = "9999"
+os.environ["CHECKPOINTER_BACKEND"] = "memory"
+os.environ["DATABASE_POOL_SIZE"] = "0"
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from starlette.testclient import TestClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.database as db_mod
+
+_sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+db_mod._async_engine = _sqlite_engine
+db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+from virtual_team.app import app
+from virtual_team.base import Base
+
+
+@pytest.fixture
+def client():
+    from virtual_team import app_lifespan as lifespan_mod
+
+    async def _safe_init_db():
+        engine = db_mod.get_async_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from virtual_team.seed import seed_default_roles_and_admin
+        await seed_default_roles_and_admin()
+
+    lifespan_mod.init_db = _safe_init_db
+
+    mock_redis = AsyncMock()
+    mock_redis.incr.return_value = 1
+    mock_redis.expire.return_value = True
+    mock_redis.ping.return_value = True
+    mock_redis.publish.return_value = 1
+
+    with patch("virtual_team.rate_limit.get_redis", return_value=mock_redis):
+        with patch("virtual_team.app_lifespan.get_redis", return_value=mock_redis):
+            with TestClient(app) as c:
+                yield c
+
+
+class TestMcpRoutes:
+
+    def test_list_mcps_empty(self, client):
+        resp = client.get("/api/mcps")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_create_mcp(self, client):
+        resp = client.post(
+            "/api/mcps",
+            json={"name": "test-mcp", "type": "stdio", "endpoint": "/usr/bin/python"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "test-mcp"
+        assert data["type"] == "stdio"
+        assert data["endpoint"] == "/usr/bin/python"
+        assert "id" in data
+        assert "created_at" in data
+
+    def test_create_and_list_mcps(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "list-mcp", "type": "sse", "endpoint": "http://localhost:9090"},
+        ).json()
+        resp = client.get("/api/mcps")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        ids = [m["id"] for m in data]
+        assert created["id"] in ids
+
+    def test_update_mcp_config(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "update-mcp", "type": "stdio", "endpoint": "/bin/echo"},
+        ).json()
+        resp = client.put(
+            f"/api/mcps/{created['id']}",
+            json={"name": "updated-mcp", "config": '{"key": "value"}'},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "updated-mcp"
+
+    def test_update_mcp_not_found(self, client):
+        resp = client.put(
+            "/api/mcps/nonexistent",
+            json={"name": "ghost"},
+        )
+        assert resp.status_code == 404
+
+    def test_delete_mcp(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "delete-mcp", "type": "stdio", "endpoint": "/bin/ls"},
+        ).json()
+        resp = client.delete(f"/api/mcps/{created['id']}")
+        assert resp.status_code == 204
+
+    def test_delete_mcp_not_found(self, client):
+        resp = client.delete("/api/mcps/nonexistent")
+        assert resp.status_code == 404
+
+    def test_test_mcp_connection(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "test-conn-mcp", "type": "stdio", "endpoint": "echo"},
+        ).json()
+        resp = client.post(f"/api/mcps/{created['id']}/test")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "success" in data
+        assert "message" in data
+
+    def test_test_mcp_connection_verify_response(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "conn-verify", "type": "stdio", "endpoint": "echo"},
+        ).json()
+        resp = client.post(f"/api/mcps/{created['id']}/test")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "success" in data
+        assert "message" in data
+        assert "duration_ms" in data
+
+    def test_update_mcp_with_valid_body(self, client):
+        created = client.post(
+            "/api/mcps",
+            json={"name": "valid-update", "type": "stdio", "endpoint": "/bin/ls"},
+        ).json()
+        resp = client.put(f"/api/mcps/{created['id']}", json={"name": "valid-updated", "endpoint": "/bin/pwd"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "valid-updated"
+        assert data["endpoint"] == "/bin/pwd"
+
+    def test_create_mcp_with_type_sse(self, client):
+        resp = client.post(
+            "/api/mcps",
+            json={"name": "sse-server", "type": "sse", "endpoint": "http://localhost:9090"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["type"] == "sse"
+        assert data["name"] == "sse-server"
+"""Tests for version management API routes using in-memory SQLite and TestClient."""
+import os
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from starlette.testclient import TestClient
+
+os.environ['AUTH_MODE'] = 'legacy'
+os.environ['DATABASE_URL'] = 'sqlite+aiosqlite:///:memory:'
+os.environ['REDIS_URL'] = 'redis://localhost:6379/0'
+os.environ['KEY_VAULT_SECRET'] = '0123456789abcdef0123456789abcdef'
+os.environ['AUTH_ENABLED'] = '0'
+os.environ['RATE_LIMIT'] = '9999'
+os.environ['CHECKPOINTER_BACKEND'] = 'memory'
+os.environ['DATABASE_POOL_SIZE'] = '0'
+
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.database as db_mod
+
+_sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
+db_mod._async_engine = _sqlite_engine
+db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
+
+from virtual_team.app import app
+from virtual_team.base import Base
+
+
+@pytest.fixture
+def client():
+    from virtual_team import app_lifespan as lifespan_mod
+
+    async def _safe_init_db():
+        engine = db_mod.get_async_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from virtual_team.seed import seed_default_roles_and_admin
+        await seed_default_roles_and_admin()
+
+    lifespan_mod.init_db = _safe_init_db
+
+    mock_redis = AsyncMock()
+    mock_redis.incr.return_value = 1
+    mock_redis.expire.return_value = True
+    mock_redis.ping.return_value = True
+    mock_redis.publish.return_value = 1
+
+    with patch('virtual_team.rate_limit.get_redis', return_value=mock_redis):
+        with patch('virtual_team.app_lifespan.get_redis', return_value=mock_redis):
+            with TestClient(app) as c:
+                yield c
+
+
+class TestVersionRoutes:
+
+    def get_id(self, client):
+        resp = client.post("/api/sessions", json={"title": "Version Test Session"})
+        return resp.json()["id"]
+
+    def test_create_version(self, client):
+        resource_id = self.get_id(client)
+        resp = client.post("/api/versions", json={
+            "resource_type": "session",
+            "resource_id": resource_id,
+            "snapshot": {"title": "v1 snapshot"},
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert "id" in data
+        assert data["version_num"] == 1
+        assert data["snapshot"]["title"] == "v1 snapshot"
+
+    def test_list_versions_empty(self, client):
+        resource_id = self.get_id(client)
+        resp = client.get(f"/api/versions/session/{resource_id}")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_get_version_no_detail_route_match(self, client):
+        resp = client.get("/api/versions/detail/nonexistent-id")
+        assert resp.status_code == 200
+        assert isinstance(resp.json(), list)
+
+    def test_create_version_for_prompt(self, client):
+        resource_id = self.get_id(client)
+        resp = client.post("/api/versions", json={
+            "resource_type": "prompt",
+            "resource_id": resource_id,
+            "snapshot": {"name": "test prompt", "content": "hello"},
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["resource_type"] == "prompt"
+        assert data["version_num"] == 1
+
+    def test_list_prompt_versions(self, client):
+        resource_id = self.get_id(client)
+        client.post("/api/versions", json={
+            "resource_type": "prompt",
+            "resource_id": resource_id,
+            "snapshot": {"name": "prompt v1"},
+        })
+        resp = client.get(f"/api/versions/prompt/{resource_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        if data:
+            assert data[0]["snapshot"]["name"] == "prompt v1"
+import os
+
+os.environ["AUTH_MODE"] = "legacy"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["REDIS_URL"] = "redis://localhost:6379/0"
+os.environ["KEY_VAULT_SECRET"] = "0123456789abcdef0123456789abcdef"
+os.environ["AUTH_ENABLED"] = "0"
+os.environ["RATE_LIMIT"] = "9999"
+os.environ["CHECKPOINTER_BACKEND"] = "memory"
+os.environ["DATABASE_POOL_SIZE"] = "0"
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from starlette.testclient import TestClient
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+import virtual_team.database as db_mod
+
+_sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+db_mod._async_engine = _sqlite_engine
+db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+from virtual_team.app import app
+from virtual_team.base import Base
+
+
+@pytest.fixture
+def client():
+    from virtual_team import app_lifespan as lifespan_mod
+
+    async def _safe_init_db():
+        engine = db_mod.get_async_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        from virtual_team.seed import seed_default_roles_and_admin
+        await seed_default_roles_and_admin()
+
+    lifespan_mod.init_db = _safe_init_db
+
+    mock_redis = AsyncMock()
+    mock_redis.incr.return_value = 1
+    mock_redis.expire.return_value = True
+    mock_redis.ping.return_value = True
+    mock_redis.publish.return_value = 1
+
+    with patch("virtual_team.rate_limit.get_redis", return_value=mock_redis):
+        with patch("virtual_team.app_lifespan.get_redis", return_value=mock_redis):
+            with TestClient(app) as c:
+                yield c
+
+
+class TestCommandsRoutes:
+
+    def test_list_commands(self, client):
+        resp = client.get("/api/commands")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        ids = [c["id"] for c in data]
+        assert "clear" in ids
+        assert "export" in ids
+        assert "rename" in ids
+        assert "help" in ids
+
+    def test_list_commands_structure(self, client):
+        resp = client.get("/api/commands")
+        assert resp.status_code == 200
+        for cmd in resp.json():
+            assert "id" in cmd
+            assert "name" in cmd
+            assert "description" in cmd
+            assert "category" in cmd
+            assert "enabled" in cmd
+
+    def test_get_command_by_id(self, client):
+        resp = client.get("/api/commands/clear")
+        assert resp.status_code == 200
+        assert resp.json()["id"] == "clear"
+
+    def test_get_command_not_found(self, client):
+        resp = client.get("/api/commands/nonexistent")
+        assert resp.status_code == 404
+
+    def test_execute_command_clear(self, client):
+        resp = client.post(
+            "/api/commands/execute",
+            json={"session_id": "nonexistent", "command_id": "clear", "payload": {}},
+        )
+        assert resp.status_code == 404
+
+    def test_execute_command_not_found(self, client):
+        resp = client.post(
+            "/api/commands/execute",
+            json={"session_id": "test-session", "command_id": "unknown", "payload": {}},
+        )
+        assert resp.status_code == 404
+
+    def test_execute_command_rename(self, client):
+        resp = client.post(
+            "/api/commands/execute",
+            json={
+                "session_id": "nonexistent",
+                "command_id": "rename",
+                "payload": {"title": "New Title"},
+            },
+        )
+        assert resp.status_code == 404
