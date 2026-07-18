@@ -33,6 +33,7 @@ class MCPUpdate(BaseModel):
 
 @router.get("/api/mcps")
 async def list_mcps() -> Any:
+    """List all MCP server configurations."""
     try:
         return await get_mcps_as_dicts()
     except Exception as e:
@@ -78,6 +79,7 @@ async def _snapshot_mcp(resource_id: str, session: AsyncSession | None = None) -
 
 @router.post("/api/mcps", status_code=201)
 async def add_mcp(req: MCPCreate) -> Any:
+    """Create a new MCP server configuration."""
     try:
         m = await create_mcp(req.model_dump())
         await log_audit("create", "mcp", m.name, "创建成功")
@@ -97,6 +99,7 @@ async def add_mcp(req: MCPCreate) -> Any:
 
 @router.put("/api/mcps/{mcp_id}")
 async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
+    """Update an MCP server configuration."""
     try:
         m = await update_mcp(mcp_id, req.model_dump(exclude_unset=True))
         if not m:
@@ -121,6 +124,7 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
 
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
 async def remove_mcp(mcp_id: str) -> None:
+    """Delete an MCP server configuration."""
     try:
         mcps = await get_mcps()
         target = next((m for m in mcps if m.id == mcp_id), None)

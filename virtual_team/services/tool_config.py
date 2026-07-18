@@ -70,9 +70,11 @@ class _ToolWrapper:
         self._run_id: str | None = None
 
     def set_llm(self, llm: Any) -> None:
+        """Set the LLM instance for tool fallback execution."""
         self._llm = llm
 
     def set_run_id(self, run_id: str) -> None:
+        """Set the current run ID for event publishing."""
         self._run_id = run_id
 
     # ── Dispatch ────────────────────────────────────────────────
@@ -91,6 +93,7 @@ class _ToolWrapper:
         return None
 
     async def invoke(self, args: dict[str, Any]) -> str:
+        """Dispatch a tool call to the appropriate handler."""
         # 1) Pluggable external handlers
         from virtual_team.thinking_tree.registry import registry
 
@@ -117,7 +120,7 @@ class _ToolWrapper:
         if kind == "http":
             return await call_http_endpoint(self, args)
         if kind == "skill":
-            return await handle_skill(self, args)
+            return handle_skill(self, args)
 
         # 4) LLM fallback
         from virtual_team.services.tool_handlers import llm_fallback

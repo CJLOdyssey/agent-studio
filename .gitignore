@@ -58,6 +58,7 @@ coverage/
 .playwright-mcp/
 
 # ── Project-specific ───────────────────────────────────────────────────────
+skills-lock.json
 .sisyphus/
 prototypes/
 scripts/deploy_prod.py

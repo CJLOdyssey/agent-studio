@@ -16,6 +16,8 @@ from typing import Any
 import httpx
 import pytest
 
+pytestmark = pytest.mark.integration
+
 BASE = os.environ.get("AUTH_TEST_BASE", "http://localhost:8081")
 
 # ── helpers ────────────────────────────────────────────────────────────────

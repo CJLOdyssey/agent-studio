@@ -1,6 +1,6 @@
 """E2E Test: Agent CRUD operations + full config."""
 
-from virtual_team.tests.conftest import Api, _cleanup, _rid
+from tests.conftest import Api, _cleanup, _rid
 
 
 class TestAgentCRUD:

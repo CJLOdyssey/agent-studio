@@ -52,6 +52,7 @@ class ReorderRequest(BaseModel):
 
 @router.get("/api/teams")
 async def list_teams(request: Request) -> Any:
+    """List all teams for the current user."""
     try:
         user_id = get_user_id(request)
         teams = await get_teams(user_id=user_id)
@@ -98,6 +99,7 @@ async def _snapshot_team(resource_id: str, session: AsyncSession | None = None) 
 
 @router.post("/api/teams", status_code=201)
 async def add_team(req: TeamCreateRequest) -> Any:
+    """Create a new team."""
     try:
         team = await create_team(name=req.name, description=req.description, status=req.status)
         if team is None:
@@ -121,6 +123,7 @@ async def add_team(req: TeamCreateRequest) -> Any:
 
 @router.get("/api/teams/{team_id}")
 async def get_team_detail(team_id: str) -> Any:
+    """Get detailed information for a specific team."""
     team = await get_team(team_id)
     if not team:
         raise error_response(ErrorCode.TEAM_NOT_FOUND, detail="团队不存在")
@@ -129,6 +132,7 @@ async def get_team_detail(team_id: str) -> Any:
 
 @router.put("/api/teams/{team_id}")
 async def update_team_endpoint(team_id: str, req: TeamUpdateRequest) -> Any:
+    """Update a team's properties."""
     try:
         team = await update_team(
             team_id=team_id,
@@ -158,6 +162,7 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest) -> Any:
 
 @router.delete("/api/teams/{team_id}")
 async def delete_team_endpoint(team_id: str) -> Any:
+    """Delete a team by ID."""
     try:
         from virtual_team.repository import get_team
         team = await get_team(team_id)
@@ -176,6 +181,7 @@ async def delete_team_endpoint(team_id: str) -> Any:
 
 @router.post("/api/teams/{team_id}/members", status_code=201)
 async def add_member(team_id: str, req: MemberAddRequest) -> Any:
+    """Add a member to a team."""
     try:
         member = await add_team_member(
             team_id=team_id,
@@ -195,6 +201,7 @@ async def add_member(team_id: str, req: MemberAddRequest) -> Any:
 
 @router.delete("/api/teams/{team_id}/members/{member_id}")
 async def remove_member(team_id: str, member_id: str) -> Any:
+    """Remove a member from a team."""
     try:
         deleted = await remove_team_member(team_id, member_id)
         if not deleted:
@@ -209,6 +216,7 @@ async def remove_member(team_id: str, member_id: str) -> Any:
 
 @router.put("/api/teams/{team_id}/members/reorder")
 async def reorder_members(team_id: str, req: ReorderRequest) -> Any:
+    """Reorder members within a team."""
     try:
         await reorder_team_members(team_id, req.member_ids)
         return {"ok": True}
@@ -223,6 +231,7 @@ class LinkAgentRequest(BaseModel):
 
 @router.put("/api/teams/{team_id}/members/{member_id}/link-agent")
 async def link_agent(team_id: str, member_id: str, req: LinkAgentRequest) -> Any:
+    """Link an agent configuration to a team member."""
     try:
         ok = await link_agent_config(member_id, req.agent_config_id)
         if not ok:

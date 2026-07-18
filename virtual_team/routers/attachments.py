@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 
 from virtual_team.core.error_codes import ErrorCode, error_response
 from virtual_team.core.infra.logging_config import get_logger
-from virtual_team.models import AttachmentResponse
+from virtual_team.core.models import AttachmentResponse
 from virtual_team.repository import get_session
 from virtual_team.repository.attachments import (
     create_attachment,
@@ -50,7 +50,7 @@ def _validate_upload(content_type: str, size: int) -> None:
         raise error_response(ErrorCode.ATTACHMENT_TYPE_INVALID, detail=f"不支持的文件类型: {content_type}")
 
 
-async def _extract_text(file_path: Path, content_type: str) -> str:
+def _extract_text(file_path: Path, content_type: str) -> str:
     try:
         if content_type.startswith("text/") or content_type == "application/json":
             return file_path.read_text(encoding="utf-8", errors="ignore")[:50000]
@@ -69,6 +69,7 @@ async def upload_attachment(
     session_id: str = Form(...),
     run_id: str | None = Form(None),
 ) -> Any:
+    """Upload a file attachment to a session."""
     sess = await get_session(session_id)
     if sess is None:
         raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="会话不存在")
@@ -88,7 +89,7 @@ async def upload_attachment(
         logger.error("Failed to save attachment: %s", e, exc_info=True)
         raise error_response(ErrorCode.INTERNAL_ERROR, detail="文件保存失败") from e
 
-    extracted = await _extract_text(storage_path, content_type)
+    extracted = _extract_text(storage_path, content_type)
 
     await create_attachment(
         attachment_id=attachment_id,
@@ -122,6 +123,7 @@ async def upload_attachment(
 
 @router.get("/api/attachments/{attachment_id}")
 async def get_attachment(attachment_id: str) -> Any:
+    """Download an attachment file by its ID."""
     att = await get_attachment_by_id(attachment_id)
     if att is None:
         raise error_response(ErrorCode.ATTACHMENT_NOT_FOUND, detail="附件不存在")
@@ -136,6 +138,7 @@ async def get_attachment(attachment_id: str) -> Any:
 
 @router.get("/api/sessions/{session_id}/attachments", response_model=list[AttachmentResponse])
 async def list_session_attachments(session_id: str) -> Any:
+    """List all attachments belonging to a session."""
     sess = await get_session(session_id)
     if sess is None:
         raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="会话不存在")
@@ -159,6 +162,7 @@ async def list_session_attachments(session_id: str) -> Any:
 
 @router.delete("/api/attachments/{attachment_id}")
 async def delete_attachment(attachment_id: str) -> Any:
+    """Delete an attachment from DB and disk."""
     storage_path_str = await repo_delete_attachment(attachment_id)
     if storage_path_str is None:
         raise error_response(ErrorCode.ATTACHMENT_NOT_FOUND, detail="附件不存在")

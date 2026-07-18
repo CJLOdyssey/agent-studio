@@ -98,10 +98,10 @@ Build & Deploy
 ## 命令备忘录
 ```bash
 # API E2E 测试
-PYTHONPATH=. python3 -m pytest virtual_team/tests/test_e2e_full_flow.py -v --tb=short
+PYTHONPATH=. python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short
 
 # 全部后端测试
-PYTHONPATH=. python3 -m pytest virtual_team/tests/ -v --tb=short
+PYTHONPATH=. python3 -m pytest tests/ -v --tb=short
 
 # 前端 E2E 测试
 export LD_LIBRARY_PATH=/tmp/playwright-libs/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH

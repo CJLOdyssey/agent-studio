@@ -13,7 +13,7 @@ from virtual_team.broker import drain_buffer, stop_buffer, subscribe_run
 from virtual_team.core.config import load_config
 from virtual_team.core.error_codes import ErrorCode, error_response
 from virtual_team.core.infra.logging_config import get_logger
-from virtual_team.models import RunDetail, RunSummary
+from virtual_team.core.models import RunDetail, RunSummary
 from virtual_team.repository import get_messages, get_run
 from virtual_team.services.run_service import run_service
 
@@ -43,6 +43,7 @@ class RunResponse(BaseModel):
 
 @router.post("/api/runs", response_model=RunResponse)
 async def create_run(req: RunRequest, request: Request) -> Any:
+    """Create and start a new agent run."""
     requirement = req.requirement.strip()
     config = load_config()
     if len(requirement) > config.max_requirement_length:
@@ -75,6 +76,7 @@ async def create_run(req: RunRequest, request: Request) -> Any:
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
 async def get_run_detail(run_id: str) -> Any:
+    """Get detailed information for a specific run."""
     try:
         result = await run_service.get_run(run_id)
         if result is None:
@@ -89,6 +91,7 @@ async def get_run_detail(run_id: str) -> Any:
 
 @router.get("/api/runs", response_model=list[RunSummary])
 async def list_runs(limit: int = 20) -> Any:
+    """List recent runs with a configurable limit."""
     try:
         return await run_service.list_runs(limit=limit)
     except Exception as e:
@@ -98,6 +101,7 @@ async def list_runs(limit: int = 20) -> Any:
 
 @router.websocket("/ws/runs/{run_id}")
 async def run_websocket(websocket: WebSocket, run_id: str) -> Any:
+    """Stream run progress and messages over a WebSocket connection."""
     client_host = websocket.client.host if websocket.client else "?"
     await websocket.accept()
     logger.info(

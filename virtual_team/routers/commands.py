@@ -7,7 +7,7 @@ from fastapi import APIRouter
 
 from virtual_team.core.error_codes import ErrorCode, error_response
 from virtual_team.core.infra.logging_config import get_logger
-from virtual_team.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
+from virtual_team.core.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
 from virtual_team.repository import get_session, log_command, update_session_title
 
 logger = get_logger(__name__)
@@ -65,7 +65,8 @@ BUILTIN_COMMANDS: list[dict[str, Any]] = [
 
 
 @router.get("/api/commands", response_model=list[CommandResponse])
-async def list_commands() -> Any:
+def list_commands() -> Any:
+    """List all available built-in commands."""
     return [
         CommandResponse(
             id=cmd["id"],
@@ -81,7 +82,8 @@ async def list_commands() -> Any:
 
 
 @router.get("/api/commands/{command_id}", response_model=CommandResponse)
-async def get_command(command_id: str) -> Any:
+def get_command(command_id: str) -> Any:
+    """Get a single command by its ID."""
     for cmd in BUILTIN_COMMANDS:
         if cmd["id"] == command_id:
             return CommandResponse(
@@ -98,6 +100,7 @@ async def get_command(command_id: str) -> Any:
 
 @router.post("/api/commands/execute", response_model=CommandExecuteResponse)
 async def execute_command(req: CommandExecuteRequest) -> Any:
+    """Execute a command and return the result."""
     cmd = next((c for c in BUILTIN_COMMANDS if c["id"] == req.command_id), None)
     if cmd is None:
         raise error_response(ErrorCode.COMMAND_NOT_FOUND, detail=f"未知命令: {req.command_id}")

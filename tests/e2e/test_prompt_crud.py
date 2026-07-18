@@ -1,6 +1,6 @@
 """E2E Test: Prompt CRUD operations."""
 
-from virtual_team.tests.conftest import Api, _cleanup
+from tests.conftest import Api, _cleanup
 
 
 class TestPromptCRUD:

@@ -39,15 +39,13 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-            requirements-test.txt
-      - run: pip install -r requirements.txt -r requirements-dev.txt -r requirements-test.txt
+            requirements-lock.txt
+      - run: pip install -r requirements-lock.txt
       - run: ruff check virtual_team/
       - run: mypy virtual_team/ --strict
-      - run: pip-audit --strict --progress-spinner=off -r requirements.txt -r requirements-test.txt 2>&1 || echo "⚠️ pip-audit found vulnerabilities (non-blocking)"
+      - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt 2>&1 || echo "⚠️ pip-audit found vulnerabilities (non-blocking)"
       - run: bandit -c pyproject.toml -r virtual_team/ -ll 2>&1 || echo "⚠️ bandit warnings (non-blocking)"
-      - run: PYTHONPATH=. python3 -m pytest virtual_team/ -v --tb=short --ignore=virtual_team/tests/e2e/ --ignore=virtual_team/tests/repository/ --ignore=virtual_team/tests/routers/auth/test_auth_api.py --cov=virtual_team --cov-report=term --cov-fail-under=45
+      - run: PYTHONPATH=. python3 -m pytest tests/ -v --tb=short --ignore=tests/e2e/ --ignore=tests/repository/ --ignore=tests/routers/auth/test_auth_api.py --cov=virtual_team --cov-report=term --cov-fail-under=45
 
   integration:
     runs-on: ubuntu-latest
@@ -83,7 +81,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt -r requirements-test.txt
+      - run: pip install -r requirements-lock.txt
       - name: Preflight check
         run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. python3 scripts/preflight.py
       - name: Start backend
@@ -95,7 +93,7 @@ jobs:
             curl -sf http://localhost:8080/api/models > /dev/null 2>&1 && break
             sleep 2
           done
-      - run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest virtual_team/tests/e2e/test_e2e_full_flow.py -v --tb=short
+      - run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short
       - name: Dump backend log
         if: always()
         run: cat /tmp/backend.log || true
@@ -110,7 +108,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements-dev.txt
+      - run: pip install -r requirements-lock.txt
       - name: Run module consistency check
         run: node scripts/check-docs.js
       - name: Verify .env.example + AGENTS.md/CLAUDE.md counts

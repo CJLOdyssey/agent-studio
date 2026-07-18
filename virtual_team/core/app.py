@@ -107,7 +107,7 @@ for r in routers:
 
 # ── Exception handler ──────────────────────────────────────────────────────
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle uncaught exceptions — log and return 500 JSON response."""
     logger.error(
         "Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True
@@ -129,13 +129,13 @@ def metrics() -> Any:
 
 
 @app.get("/api/health")
-async def health() -> Any:
+def health() -> Any:
     """Health check endpoint."""
     return {"status": "ok"}
 
 
 @app.get("/api/version")
-async def version() -> Any:
+def version() -> Any:
     """Application version endpoint."""
     return {"version": "0.1.0"}
 

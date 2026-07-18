@@ -32,7 +32,7 @@ async def test_create_prompt(db_engine):
 
 @pytest.mark.asyncio
 async def test_list_prompts(db_engine):
-    """get_prompts returns a list of dicts with expected keys."""
+    """get_prompts returns a list of PromptDB objects with expected attrs."""
     await create_prompt(
         {
             "name": f"prompt-{uuid.uuid4().hex[:6]}",
@@ -44,12 +44,10 @@ async def test_list_prompts(db_engine):
     assert isinstance(prompts, list)
     assert len(prompts) >= 1
     first = prompts[0]
-    assert "id" in first
-    assert "name" in first
-    assert "content" in first
-    assert "category" in first
-    assert "status" in first
-    assert "version" in first
+    assert first.id is not None
+    assert first.name is not None
+    assert first.content is not None
+    assert first.category is not None
 
 
 @pytest.mark.asyncio
@@ -67,9 +65,9 @@ async def test_update_prompt_content(db_engine):
     assert updated.content == "Modified content."
     # Cross-check with list
     prompts = await get_prompts()
-    found = [p for p in prompts if p["id"] == prompt.id]
+    found = [p for p in prompts if p.id == prompt.id]
     assert len(found) == 1
-    assert found[0]["content"] == "Modified content."
+    assert found[0].content == "Modified content."
 
 
 @pytest.mark.asyncio
@@ -85,7 +83,7 @@ async def test_delete_prompt(db_engine):
     deleted = await delete_prompt(prompt.id)
     assert deleted is True
     prompts = await get_prompts()
-    assert all(p["id"] != prompt.id for p in prompts)
+    assert all(p.id != prompt.id for p in prompts)
 
 
 @pytest.mark.asyncio

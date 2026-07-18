@@ -1,6 +1,6 @@
 """E2E Test: MCP CRUD operations."""
 
-from virtual_team.tests.conftest import Api, _cleanup
+from tests.conftest import Api, _cleanup
 
 
 class TestMCPCrud:

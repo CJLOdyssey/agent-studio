@@ -6,9 +6,13 @@ and constants ``PUBLIC_PATHS`` / ``PUBLIC_PREFIXES``.
 
 import os
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import Depends, HTTPException, Request, status
+
+if TYPE_CHECKING:
+    # Only for type checker — runtime uses deferred imports to avoid circular dep
+    from virtual_team.orm.auth import RoleDB, UserDB, UserRoleDB
 
 from virtual_team.auth.auth_jwt import AUTH_SECRET, decode_jwt
 from virtual_team.core.infra.logging_config import get_logger
@@ -99,7 +103,7 @@ async def get_current_user(request: Request) -> CurrentUser:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或令牌无效")
 
 
-async def require_role(*names: str) -> Any:
+def require_role(*names: str) -> Any:
     """Require the current user to have at least one of the named roles.
 
     Dependency factory — returns a 403 if none match.
@@ -113,7 +117,7 @@ async def require_role(*names: str) -> Any:
         ): ...
     """
 
-    async def _role_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:  # noqa: B008
+    def _role_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:  # noqa: B008
         if AUTH_MODE == "legacy":
             return current_user
         if not any(r in current_user.roles for r in names):

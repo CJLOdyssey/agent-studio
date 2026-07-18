@@ -14,6 +14,7 @@ class ToolRepository(BaseRepository[RegisteredToolDB]):
 
     @staticmethod
     def to_dict(obj: Any) -> dict[str, Any]:
+        """Serialize a RegisteredToolDB instance to a JSON-safe dictionary."""
         return {
             "id": obj.id,
             "name": obj.name,
@@ -37,3 +38,11 @@ get_tool = ToolRepository.get_one      # await get_tool(id)
 create_tool = ToolRepository.create_one
 update_tool = ToolRepository.update_one
 delete_tool = ToolRepository.delete_one
+
+
+def list_tool_plugins() -> list[dict[str, Any]]:
+    """List registered tool plugins from the thinking-tree registry."""
+    import virtual_team.thinking_tree.tools  # noqa: F401 — side-effect registration
+    from virtual_team.thinking_tree.registry import registry
+
+    return registry.list_plugins()

@@ -2,7 +2,7 @@
 
 import contextlib
 
-from virtual_team.tests.conftest import Api, _clear_rate_limits, _rid
+from tests.conftest import Api, _clear_rate_limits, _rid
 
 
 class TestFullE2EFlow:

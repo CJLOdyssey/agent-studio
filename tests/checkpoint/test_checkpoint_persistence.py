@@ -4,7 +4,7 @@ Validates that LangGraph checkpoints survive process restarts,
 cross-process access, error rollback, and optional PostgreSQL backend.
 
 Usage:
-    PYTHONPATH=. python3 -m pytest virtual_team/tests/test_checkpoint_persistence.py -v
+    PYTHONPATH=. python3 -m pytest tests/checkpoint/test_checkpoint_persistence.py -v
 """
 
 import os

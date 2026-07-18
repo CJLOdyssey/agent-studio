@@ -23,6 +23,9 @@ from virtual_team.repository import (
 from virtual_team.repository import (
     get_tools_as_dicts as repo_get_tools_as_dicts,
 )
+from virtual_team.repository import (
+    list_tool_plugins as list_tool_plugins_repo,
+)
 from virtual_team.services.tool_generator import (
     ToolValidateRequest,
     ToolValidateResponse,
@@ -69,7 +72,8 @@ class ToolUpdate(BaseModel):
 
 
 @router.post("/api/tools/validate", response_model=ToolValidateResponse)
-async def validate_tool(req: ToolValidateRequest) -> Any:
+def validate_tool(req: ToolValidateRequest) -> Any:
+    """Validate tool code in a sandbox."""
     try:
         result = _validate_tool_code(req.code, req.language)
         return result
@@ -79,7 +83,8 @@ async def validate_tool(req: ToolValidateRequest) -> Any:
 
 
 @router.post("/api/tools/execute")
-async def execute_tool(code: str, language: str = "python") -> Any:
+def execute_tool(code: str, language: str = "python") -> Any:
+    """Execute tool code in a sandbox and return the output."""
     try:
         result = _execute_tool_sandbox(code, language)
         return {"success": True, "output": result}
@@ -88,15 +93,14 @@ async def execute_tool(code: str, language: str = "python") -> Any:
 
 
 @router.get("/api/tools/plugins")
-async def list_tool_plugins() -> Any:
-    import virtual_team.thinking_tree.tools  # noqa: F401
-    from virtual_team.thinking_tree.registry import registry
-
-    return registry.list_plugins()
+def list_tool_plugins() -> Any:
+    """List registered tool plugins from the thinking-tree registry."""
+    return list_tool_plugins_repo()
 
 
 @router.get("/api/tools")
 async def list_tools() -> Any:
+    """List all registered tools."""
     try:
         return await repo_get_tools_as_dicts()
     except Exception as e:
@@ -129,6 +133,7 @@ async def _snapshot_tool(resource_id: str, session: AsyncSession | None = None) 
 
 @router.post("/api/tools/{tool_id}/test")
 async def test_tool_endpoint(tool_id: str) -> Any:
+    """Test a tool's HTTP endpoint connectivity."""
     timeout = 10
     try:
         t = await get_tool(tool_id)
@@ -167,6 +172,7 @@ async def test_tool_endpoint(tool_id: str) -> Any:
 
 @router.post("/api/tools", status_code=201)
 async def add_tool(req: ToolCreate) -> Any:
+    """Create a new tool."""
     try:
         t = await repo_create_tool(req.model_dump())
         await log_audit("create", "tool", t.name, "创建成功")
@@ -183,6 +189,7 @@ async def add_tool(req: ToolCreate) -> Any:
 
 @router.put("/api/tools/{tool_id}")
 async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
+    """Update an existing tool."""
     try:
         t = await update_tool(tool_id, req.model_dump(exclude_unset=True))
         if not t:
@@ -199,6 +206,7 @@ async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
 
 @router.delete("/api/tools/{tool_id}", status_code=204)
 async def remove_tool(tool_id: str) -> None:
+    """Delete a tool by ID."""
     try:
         t = await get_tool(tool_id)
         tool_name = t.name if t else tool_id

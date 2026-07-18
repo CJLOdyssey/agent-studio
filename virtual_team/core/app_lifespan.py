@@ -161,7 +161,7 @@ async def startup(app: FastAPI) -> None:
         logger.info("%s", line)
 
     # Event bus observability — log every event at DEBUG level
-    async def _log_event(event: str, **kw: object) -> None:
+    def _log_event(event: str, **kw: object) -> None:
         logger.debug("[EVENT] %s %s", event, kw)
 
     for ev in (Events.RUN_CREATED, Events.AGENT_CONFIG_CHANGED, Events.KEY_CREATED, Events.KEY_DELETED):
@@ -172,10 +172,15 @@ async def startup(app: FastAPI) -> None:
 
     async def _periodic_gc() -> None:
         while True:
-            await asyncio.sleep(int(_env("GC_INTERVAL", "60")))
-            collected = gc.collect()
-            if collected:
-                logger.info("GC collected %d objects", collected)
+            try:
+                await asyncio.sleep(int(_env("GC_INTERVAL", "60")))
+                collected = gc.collect()
+                if collected:
+                    logger.info("GC collected %d objects", collected)
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.exception("Periodic GC failed, continuing...")
 
     app.state.gc_task = asyncio.create_task(_periodic_gc())
 
