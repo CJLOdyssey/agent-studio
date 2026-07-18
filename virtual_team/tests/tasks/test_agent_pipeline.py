@@ -596,7 +596,7 @@ class TestRunAgentPipeline:
         ac, _ = _default_agent_mocks(mock_agent_deps)
         mock_agent_deps["get_session_messages"].return_value = []
 
-        with patch("virtual_team.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
+        with patch("virtual_team.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
             await _run_agent_pipeline(
                 requirement="test requirement",
                 run_id="run-rag",
@@ -610,7 +610,7 @@ class TestRunAgentPipeline:
         _default_agent_mocks(mock_agent_deps)
         mock_agent_deps["get_session_messages"].return_value = []
 
-        with patch("virtual_team.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
+        with patch("virtual_team.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
             mock_ingest.side_effect = RuntimeError("RAG down")
             await _run_agent_pipeline(
                 requirement="test",
