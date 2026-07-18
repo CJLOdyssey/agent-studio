@@ -104,7 +104,7 @@ class TestDecodeJWT:
 
 
 # ─────────────────────────────────────────────────────────────────────
-# 4. virtual_team/database.py — Engine & session factory
+# 4. virtual_team.core.infra.database.py — Engine & session factory
 # ─────────────────────────────────────────────────────────────────────
 
 

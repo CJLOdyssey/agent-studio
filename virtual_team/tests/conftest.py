@@ -209,7 +209,7 @@ async def test_client() -> Any:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    import virtual_team.database as db_mod
+    import virtual_team.core.infra.database as db_mod
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────

@@ -1,7 +1,7 @@
 """Repository test fixtures.
 
 Provides an in-memory SQLite database for fast, isolated repository tests.
-Monkey-patches ``virtual_team.database._async_session_factory`` so that
+Monkey-patches ``virtual_team.core.infra.database._async_session_factory`` so that
 repository functions (which use ``get_session_factory()``) run against the
 test database automatically.
 """
@@ -27,14 +27,14 @@ from virtual_team.core.infra.database import (
 
 def _set_factory(engine: AsyncEngine) -> None:
     """Replace the module-level session factory with a test one."""
-    import virtual_team.database as db
+    import virtual_team.core.infra.database as db
 
     db._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
 
 def _restore_factory() -> None:
     """Restore the original session factory."""
-    import virtual_team.database as db
+    import virtual_team.core.infra.database as db
 
     db._async_session_factory = _real_factory
 

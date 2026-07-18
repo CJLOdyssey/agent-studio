@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, patch
 
 import bcrypt
 import pytest
-import virtual_team.database as db_mod
+import virtual_team.core.infra.database as db_mod
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine

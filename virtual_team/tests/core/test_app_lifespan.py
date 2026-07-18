@@ -80,7 +80,7 @@ class TestAppLifespan:
         mock_cm.__aenter__.return_value = mock_session
         mock_factory = MagicMock(return_value=mock_cm)
 
-        with patch("virtual_team.database.get_session_factory", return_value=mock_factory):
+        with patch("virtual_team.core.infra.database.get_session_factory", return_value=mock_factory):
             await seed_default_tools()
             assert mock_session.add.call_count == 3
             mock_session.commit.assert_awaited_once()
@@ -104,7 +104,7 @@ class TestAppLifespan:
         mock_cm.__aenter__.return_value = mock_session
         mock_factory = MagicMock(return_value=mock_cm)
 
-        with patch("virtual_team.database.get_session_factory", return_value=mock_factory):
+        with patch("virtual_team.core.infra.database.get_session_factory", return_value=mock_factory):
             await seed_default_tools()
             mock_session.add.assert_not_called()
             mock_session.commit.assert_not_called()
