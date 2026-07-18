@@ -5,7 +5,7 @@ from typing import Any
 
 from sqlalchemy import func, select
 
-from virtual_team.database import (
+from virtual_team.core.infra.database import (
     AgentConfigDB,
     AuditLogDB,
     CommandLogDB,

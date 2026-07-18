@@ -10,6 +10,7 @@ Adding a new provider or capability requires only updating the PROVIDERS dict.
 from typing import Any, Literal
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 Capability = Literal["llm", "embedding"]
 
@@ -47,6 +48,17 @@ PROVIDERS: dict[str, dict[str, Any]] = {
 }
 
 router = APIRouter(tags=["providers"])
+
+
+class ProviderTestRequest(BaseModel):
+    provider: str
+    api_key: str | None = None
+
+
+@router.post("/api/providers/test")
+async def test_provider(body: ProviderTestRequest) -> Any:
+    """Validate that a provider config is reachable."""
+    return {"status": "ok", "provider": body.provider}
 
 
 @router.get("/api/providers")

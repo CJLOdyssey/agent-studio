@@ -6,8 +6,8 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from virtual_team.database import KeyUsageLog, UserApiKey, get_session_factory
-from virtual_team.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
+from virtual_team.core.infra.database import KeyUsageLog, UserApiKey, get_session_factory
+from virtual_team.core.infra.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
 
 
 async def create_api_key(
@@ -295,8 +295,8 @@ async def delete_api_key(key_id: str, user_id: str) -> bool:
 
 async def get_embedding_api_key() -> str | None:
     """Get the decrypted API key for embedding (any active key with embedding capability)."""
-    from virtual_team.database import UserApiKey
-    from virtual_team.key_vault import decrypt_api_key
+    from virtual_team.core.infra.database import UserApiKey
+    from virtual_team.core.infra.key_vault import decrypt_api_key
 
     factory = get_session_factory()
     async with factory() as session:

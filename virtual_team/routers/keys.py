@@ -13,10 +13,10 @@ from typing import Any
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
-from virtual_team.audit import log_audit
 from virtual_team.auth import get_user_id
-from virtual_team.error_codes import ErrorCode, error_response
-from virtual_team.logging_config import get_logger
+from virtual_team.core.audit import log_audit
+from virtual_team.core.error_codes import ErrorCode, error_response
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import (
     create_api_key,
     delete_api_key,
@@ -126,7 +126,7 @@ async def add_key(req: KeyCreateRequest, request: Request) -> Any:
 
     # For embedding-only and both keys, skip connectivity test and model fetch
     if req.usage_type in ("embedding", "both"):
-        from virtual_team.key_vault import decrypt_api_key, mask_api_key
+        from virtual_team.core.infra.key_vault import decrypt_api_key, mask_api_key
 
         return KeyResponse(
             id=obj.id,
@@ -158,7 +158,7 @@ async def add_key(req: KeyCreateRequest, request: Request) -> Any:
         models=models_to_store,
     )
 
-    from virtual_team.key_vault import decrypt_api_key, mask_api_key
+    from virtual_team.core.infra.key_vault import decrypt_api_key, mask_api_key
 
     return KeyResponse(
         id=obj.id,

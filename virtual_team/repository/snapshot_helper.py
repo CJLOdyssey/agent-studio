@@ -3,7 +3,7 @@
 Replaces the duplicated ``_snapshot_*`` / ``_do_snapshot_*`` pattern
 that previously lived in 6 router files (agents, teams, mcps, skills,
 prompts, tools). Each of those files had an identical session-management
-boilerplate with a lazy ``from virtual_team.database import get_session_factory``
+boilerplate with a lazy ``from virtual_team.core.infra.database import get_session_factory``
 that violated the three-layer strictness rule.
 
 Usage::
@@ -22,7 +22,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from virtual_team.logging_config import get_logger
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository.versions import create_version
 
 logger = get_logger(__name__)
@@ -53,7 +53,7 @@ async def with_session(
         await fn(session, resource_type, resource_id, **kwargs)
         return
 
-    from virtual_team.database import get_session_factory
+    from virtual_team.core.infra.database import get_session_factory
 
     factory = get_session_factory()
     async with factory() as s:

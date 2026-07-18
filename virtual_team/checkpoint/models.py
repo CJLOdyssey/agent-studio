@@ -8,7 +8,7 @@ from uuid import uuid4
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from virtual_team.base import Base
+from virtual_team.core.base import Base
 
 
 class CheckpointDB(Base):

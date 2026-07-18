@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
 
-from virtual_team.error_codes import ErrorCode, error_response
+from virtual_team.core.error_codes import ErrorCode, error_response
 from virtual_team.repository.workflows import (
     delete_workflow_config,
     get_workflow_config_by_team,

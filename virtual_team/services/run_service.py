@@ -11,8 +11,8 @@ import asyncio
 from typing import Any
 
 from virtual_team.broker import buffer_run_messages
-from virtual_team.config import load_config
-from virtual_team.logging_config import get_logger
+from virtual_team.core.config import load_config
+from virtual_team.core.infra.logging_config import get_logger
 from virtual_team.repository import (
     create_session,
     get_api_key_for_use,
@@ -120,18 +120,17 @@ class RunService:
 
                 workflow = await get_workflow_config_by_team(team_id)
                 if workflow:
-                    from virtual_team.tasks import _run_team_pipeline
+                    from virtual_team.tasks import _run_agent_pipeline
 
                     asyncio.create_task(
-                        _run_team_pipeline(
+                        _run_agent_pipeline(
                             requirement=requirement,
                             run_id=run_id,
                             session_id=session_id,
-                            team_id=team_id,
-                            key_id=key_id,
-                            model=effective_model,
+                            agent_id=None,
                             api_key=api_key,
                             api_base=api_base,
+                            model=effective_model,
                         )
                     )
                     logger.info(

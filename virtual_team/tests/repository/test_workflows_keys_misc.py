@@ -287,19 +287,19 @@ class TestCommandLogsRepo:
 
 class TestCoreRepo:
     async def test_apply_owner_filter_with_owner(self, db_engine):
-        from virtual_team.database import AgentConfigDB
+        from virtual_team.core.infra.database import AgentConfigDB
         stmt = select(AgentConfigDB)
         filtered = apply_owner_filter(stmt, AgentConfigDB, owner_id="user123")
         assert filtered is not None
 
     async def test_apply_owner_filter_no_owner(self, db_engine):
-        from virtual_team.database import AgentConfigDB
+        from virtual_team.core.infra.database import AgentConfigDB
         stmt = select(AgentConfigDB)
         filtered = apply_owner_filter(stmt, AgentConfigDB, owner_id=None)
         assert filtered is not None
 
     async def test_apply_owner_filter_wildcard(self, db_engine):
-        from virtual_team.database import AgentConfigDB
+        from virtual_team.core.infra.database import AgentConfigDB
         stmt = select(AgentConfigDB)
         filtered = apply_owner_filter(stmt, AgentConfigDB, owner_id="*")
         assert filtered is not None

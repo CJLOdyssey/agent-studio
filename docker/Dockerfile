@@ -30,4 +30,4 @@ ENV PYTHONPATH=/app
 EXPOSE 8080
 
 ENTRYPOINT ["scripts/docker-entrypoint.sh"]
-CMD ["uvicorn", "virtual_team.app:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "virtual_team.core.app:app", "--host", "0.0.0.0", "--port", "8080"]
