@@ -65,6 +65,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Wait for CI to pass
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.ref }}
+          check-regexp: 'CI Passed'
+          wait-interval: 30
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       # ╔════════════════════════════════════════════════════════════════════════╗
       # ║   ⚠️ 重 要 安 全 提 示 ⚠️                                            ║
       # ║   下方使用 SSH Key 直连生产服务器。                                    ║
@@ -109,4 +117,20 @@ jobs:
             docker compose -f docker/compose.prod.yml pull
             docker compose -f docker/compose.prod.yml up -d --force-recreate
             docker image prune -f
+
+      - name: Post-deploy smoke test
+        run: |
+          echo "Waiting for services to start..."
+          sleep 30
+          for i in $(seq 1 5); do
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${{ env.REMOTE_SSH_HOST }}:8080/api/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: status=$STATUS, retrying..."
+            sleep 10
+          done
+          echo "❌ Health check failed"
+          exit 1
 

@@ -33,6 +33,8 @@ from backend.repository.session_repo import (
 # ── Session Tests ──────────────────────────────────────────────────────
 
 
+@pytest.mark.requirement("REQ-SES-001")
+@pytest.mark.requirement("REQ-SES-003")
 class TestSessionRepo:
     async def test_create_and_get_session(self, db_engine):
         title = "Test Session"
@@ -50,6 +52,7 @@ class TestSessionRepo:
         result = await get_session("nonexistent-id")
         assert result is None
 
+    @pytest.mark.requirement("REQ-SES-002")
     async def test_get_sessions_default(self, db_engine):
         await create_session(title="Session A", user_id="u1")
         await create_session(title="Session B", user_id="u2")
@@ -89,6 +92,7 @@ class TestSessionRepo:
         result = await update_session_title("nonexistent", "Nope")
         assert result is None
 
+    @pytest.mark.requirement("REQ-SES-004")
     async def test_delete_session(self, db_engine):
         sess = await create_session(title="To Delete")
         await delete_session(sess.id)

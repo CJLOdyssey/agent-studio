@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import * as axeMatchers from 'vitest-axe/matchers';
+import { vi, expect } from 'vitest';
+
+expect.extend(axeMatchers);
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from '../contexts/SettingsContext';

@@ -61,7 +61,21 @@ async def get_skill(skill_id: str) -> Any:
         s = next((sk for sk in skills if sk.id == skill_id), None)
         if not s:
             raise error_response(ErrorCode.SKILL_NOT_FOUND, detail="Skill not found")
-        return s
+        return {
+            "id": s.id,
+            "name": s.name,
+            "category": s.category,
+            "content": s.content,
+            "author": s.author,
+            "version": s.version,
+            "status": s.status,
+            "instructions": s.instructions,
+            "prompt_id": s.prompt_id,
+            "tool_names": s.tool_names,
+            "output_constraint": s.output_constraint,
+            "created_at": str(s.created_at) if s.created_at else None,
+            "updated_at": str(s.updated_at) if s.updated_at else None,
+        }
     except HTTPException:
         raise
     except Exception as e:

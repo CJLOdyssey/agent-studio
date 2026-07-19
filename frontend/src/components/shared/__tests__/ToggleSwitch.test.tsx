@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ToggleSwitch from '../ToggleSwitch';
+import { expectNoA11yViolations } from '../../../test/a11y-setup';
 
 describe('ToggleSwitch', () => {
   it('renders checkbox with checked state', () => {
@@ -30,5 +31,15 @@ describe('ToggleSwitch', () => {
   it('renders with md size by default', () => {
     const { container } = render(<ToggleSwitch checked={false} onChange={vi.fn()} />);
     expect(container.querySelector('.toggle-switch.md')).toBeInTheDocument();
+  });
+
+  it('has no accessibility violations', async () => {
+    const { container } = render(<ToggleSwitch checked={false} onChange={() => {}} />);
+    await expectNoA11yViolations(container);
+  });
+
+  it('has no accessibility violations when checked', async () => {
+    const { container } = render(<ToggleSwitch checked={true} onChange={() => {}} />);
+    await expectNoA11yViolations(container);
   });
 });

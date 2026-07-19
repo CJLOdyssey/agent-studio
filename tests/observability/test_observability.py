@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
+@pytest.mark.requirement("REQ-OBS-001")
 class TestEventSchema:
     def test_create_event(self):
         from backend.observability.schema import Event
@@ -90,6 +91,7 @@ class TestEventSchema:
         assert evt2.tags == {"x": 1}
 
 
+@pytest.mark.requirement("REQ-OBS-002")
 class TestEventStore:
     def test_create_and_close(self):
         from backend.observability.store import EventStore

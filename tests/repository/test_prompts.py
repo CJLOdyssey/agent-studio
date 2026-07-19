@@ -12,6 +12,7 @@ from backend.repository.prompts import (
 )
 
 
+@pytest.mark.requirement("REQ-PROMPT-001")
 @pytest.mark.asyncio
 async def test_create_prompt(db_engine):
     """create_prompt persists a new PromptDB row and returns it with an ID."""
@@ -30,6 +31,7 @@ async def test_create_prompt(db_engine):
     assert prompt.status == "active"
 
 
+@pytest.mark.requirement("REQ-PROMPT-001")
 @pytest.mark.asyncio
 async def test_list_prompts(db_engine):
     """get_prompts returns a list of PromptDB objects with expected attrs."""
@@ -50,6 +52,7 @@ async def test_list_prompts(db_engine):
     assert first.category is not None
 
 
+@pytest.mark.requirement("REQ-PROMPT-001")
 @pytest.mark.asyncio
 async def test_update_prompt_content(db_engine):
     """Updating a prompt's content persists and is reflected in a fresh read."""
@@ -70,6 +73,7 @@ async def test_update_prompt_content(db_engine):
     assert found[0].content == "Modified content."
 
 
+@pytest.mark.requirement("REQ-PROMPT-001")
 @pytest.mark.asyncio
 async def test_delete_prompt(db_engine):
     """delete_prompt removes the row and returns True."""
