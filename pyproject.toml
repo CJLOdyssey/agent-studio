@@ -64,7 +64,7 @@ exclude_dirs = ["tests", ".venv", ".opencode"]
 skips = ["B101", "B311"]  # assert allowed in tests, pseudo-random ok
 
 [tool.coverage.report]
-fail_under = 89
+fail_under = 90
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
