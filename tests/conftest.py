@@ -204,13 +204,13 @@ async def test_client() -> Any:
     # ── 1. Patch Redis BEFORE app import (mock get_redis, not RateLimiter) ──
     from unittest.mock import AsyncMock, patch
 
-    _session_redis = AsyncMock()
-    _session_redis.incr.return_value = 1
-    _session_redis.expire.return_value = True
-    _session_redis.publish.return_value = 1
+    session_redis = AsyncMock()
+    session_redis.incr.return_value = 1
+    session_redis.expire.return_value = True
+    session_redis.publish.return_value = 1
 
-    _patch_redis = patch("backend.broker.get_redis", return_value=_session_redis)
-    _patch_redis.start()
+    patch_redis = patch("backend.broker.get_redis", return_value=session_redis)
+    patch_redis.start()
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)
@@ -228,7 +228,10 @@ async def test_client() -> Any:
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+        try:
+            yield client
+        finally:
+            patch_redis.stop()
 
 
 @pytest.fixture(scope="session")
