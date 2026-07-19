@@ -91,6 +91,10 @@ export default defineConfig(({ mode }) => {
           branches: 57,
           functions: 54,
           lines: 70,
+          statements: 88,
+          branches: 74,
+          functions: 90,
+          lines: 89,
         },
         include: ['src/**/*.{ts,tsx}'],
         exclude: [

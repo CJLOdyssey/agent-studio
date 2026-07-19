@@ -10,6 +10,7 @@ omit =
 
 [report]
 fail_under = 70
+fail_under = 89
 skip_empty = true
 exclude_lines =
     pragma: no cover
