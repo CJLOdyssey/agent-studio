@@ -16,9 +16,8 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
-from backend.core.infra.logging_config import get_logger
-
 from backend.core.infra.circuit_breaker import CircuitBreakerOpenError, llm_circuit
+from backend.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

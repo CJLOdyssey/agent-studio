@@ -173,8 +173,9 @@ async def health() -> Any:
 
     # DB check
     try:
-        from backend.core.infra.database import get_session_factory
         from sqlalchemy import text
+
+        from backend.core.infra.database import get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             await session.execute(text("SELECT 1"))

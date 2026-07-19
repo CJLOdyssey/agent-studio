@@ -195,7 +195,10 @@ async def startup(app: FastAPI) -> None:
                 store = get_store()
                 deleted = store.cleanup(retention_days=_retention_days)
                 if deleted > 0:
-                    logger.info("[RETENTION] cleaned up %d observability events older than %d days", deleted, _retention_days)
+                    logger.info(
+                        "[RETENTION] cleaned up %d observability events older than %d days",
+                        deleted, _retention_days,
+                    )
             except asyncio.CancelledError:
                 break
             except Exception:

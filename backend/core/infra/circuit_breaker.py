@@ -78,12 +78,11 @@ class CircuitBreaker:
                 self._state = State.HALF_OPEN
                 self._half_open_calls = 0
 
-        elif self._state == State.HALF_OPEN:
-            if self._half_open_calls >= self.half_open_max_calls:
-                raise CircuitBreakerOpenError(
-                    f"Circuit '{self.name}' is HALF_OPEN — "
-                    f"{self._half_open_calls} test calls already in flight"
-                )
+        elif self._state == State.HALF_OPEN and self._half_open_calls >= self.half_open_max_calls:
+            raise CircuitBreakerOpenError(
+                f"Circuit '{self.name}' is HALF_OPEN — "
+                f"{self._half_open_calls} test calls already in flight"
+            )
 
     async def _on_success(self) -> None:
         """Record a successful call."""
@@ -102,10 +101,7 @@ class CircuitBreaker:
             self._failures += 1
             self._last_failure = now
 
-            if self._state == State.HALF_OPEN:
-                self._state = State.OPEN
-                self._opened_at = now
-            elif self._state == State.CLOSED and self._failures >= self.maxfail:
+            if self._state == State.HALF_OPEN or self._state == State.CLOSED and self._failures >= self.maxfail:
                 self._state = State.OPEN
                 self._opened_at = now
 

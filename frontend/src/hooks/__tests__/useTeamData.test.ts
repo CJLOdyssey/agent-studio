@@ -21,7 +21,7 @@ vi.mock('../../utils/validation', () => ({
 }));
 
 import { useTeamData, removeConversationsByAgentIds, teamMemberToAgent } from '../useTeamData';
-import { listTeams, createTeam, updateTeam, deleteTeam } from '../../api/client/teams';
+import { listTeams, updateTeam, deleteTeam } from '../../api/client/teams';
 import type { TeamMember } from '../../types/team';
 
 describe('removeConversationsByAgentIds', () => {
