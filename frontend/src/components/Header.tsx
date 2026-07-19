@@ -8,9 +8,10 @@ export default function Header({ onToggleSidebar }: Props) {
   return (
     <header className="devagents-header">
       <div className="devagents-header-left">
-        <button 
+        <button
           className="devagents-header-btn"
           onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
         >
           <PanelLeft size={20} />
         </button>

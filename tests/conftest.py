@@ -12,6 +12,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from backend.core.infra.database import Base  # type: ignore[attr-defined]
 
+# Register the requirement coverage plugin
+from tests.requirement_coverage import pytest_addoption, pytest_configure, pytest_collection_modifyitems, pytest_runtest_makereport, pytest_sessionfinish  # noqa: F401
+
 BASE = "http://localhost:8080"
 
 # Test user credentials for rbac mode
@@ -215,8 +218,6 @@ async def test_client() -> Any:
     # ── 3. Import the app (deps already patched) ────────────────────
     from backend.core.app import app
 
-    app.router.lifespan_context = None  # type: ignore[assignment]
-
     # ── 4. Create ASGI client ───────────────────────────────────────
     from httpx import ASGITransport, AsyncClient
 
@@ -233,3 +234,50 @@ async def db_engine(test_client: Any) -> None:
     exists only to satisfy test signatures that request both.
     """
     return None
+
+
+# ── Test data factories ──────────────────────────────────────────────────────
+from tests.factories import (  # noqa: E402
+    agent_factory,
+    team_factory,
+    session_factory,
+    tool_factory,
+    prompt_factory,
+    skill_factory,
+    mcp_factory,
+)
+
+
+@pytest.fixture
+def agent_data():
+    return agent_factory
+
+
+@pytest.fixture
+def team_data():
+    return team_factory
+
+
+@pytest.fixture
+def session_data():
+    return session_factory
+
+
+@pytest.fixture
+def tool_data():
+    return tool_factory
+
+
+@pytest.fixture
+def prompt_data():
+    return prompt_factory
+
+
+@pytest.fixture
+def skill_data():
+    return skill_factory
+
+
+@pytest.fixture
+def mcp_data():
+    return mcp_factory

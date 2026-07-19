@@ -3,7 +3,10 @@
 import json
 import time
 
+import pytest
 
+
+@pytest.mark.requirement("REQ-AUTH-004")
 class TestCreateToken:
     def test_returns_valid_jwt_string(self):
         from backend.auth.auth_jwt import create_token
@@ -23,7 +26,7 @@ class TestCreateToken:
 
 
 
-
+@pytest.mark.requirement("REQ-AUTH-004")
 class TestDecodeJWT:
     def test_valid_token(self):
         from backend.auth.auth_jwt import create_token, decode_jwt

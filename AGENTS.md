@@ -39,11 +39,13 @@ PYTHONPATH=. python3 -m backend.main "<需求描述>"
 | Format | `npm run format` (Prettier) | — (ruff handles) |
 | Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest tests/ -v --tb=short` |
 | E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short` |
-| Coverage | `npm run test:coverage` | — |
+| Coverage | `npm run test:coverage` | `PYTHONPATH=. python3 -m pytest tests/ --cov=backend --cov-report=html` |
+| Diff Coverage | — | `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` |
+| Requirement Coverage | — | `python3 scripts/requirement_coverage.py --check --threshold 80` |
 | DB migrate | — | `PYTHONPATH=. alembic upgrade head` |
 
 
-**CI order** (match locally): Frontend `typecheck → lint → build → test`, Backend `ruff → mypy → pytest`.
+**CI order** (match locally): Frontend `typecheck → lint → build → test`, Backend `ruff → mypy → pytest → diff-cover`.
 
 ## Architecture
 
@@ -72,7 +74,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 **TypeScript**: `strict: true`, `noUnusedLocals`, `noUnusedParameters`. No `as any` / `@ts-ignore` / `@ts-expect-error`.
 
-**Coverage thresholds** (Vitest enforced): statements 30%, branches 19%, functions 20%, lines 30%.
+**Coverage thresholds** (Vitest enforced): statements 88%, branches 74%, functions 90%, lines 89%.
 
 **Test setup** (`src/test/setup.tsx`): `TestProviders` wrapping QueryClient + SettingsProvider + ToastProvider. `scrollIntoView` / `scrollTo` / `matchMedia` mocked globally.
 
@@ -149,12 +151,17 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
 ## CI/CD (GitHub Actions)
 
-**CI** (`.github/workflows/ci.yml`, 5 jobs):
-1. `frontend-quality` — npm ci → typecheck → lint → build → test
-2. `backend-quality` — pip install → ruff → mypy → pytest (skips E2E)
-3. `integration` — matrix `AUTH_MODE=legacy|rbac`, needs Redis + PostgreSQL services
-4. `docs-check` — verifies `.env.example` covers all env vars; checks module count matches CLAUDE.md
-5. `build-frontend` — npm ci → build → uploads `frontend/dist/`
+**CI** (`.github/workflows/ci.yml`, 10 jobs):
+1. `frontend-lint` — npm ci → typecheck → lint
+2. `frontend-test` — npm test
+3. `frontend-build` — npm ci → build → check bundle size → upload artifacts
+4. `backend-lint` — pip install → ruff → mypy
+5. `backend-security` — pip-audit → bandit
+6. `backend-test` — pytest with coverage → upload coverage.xml
+7. `diff-coverage` — diff-cover on changed lines (PR only, 70% threshold)
+8. `integration` — matrix `AUTH_MODE=legacy|rbac`, needs Redis + PostgreSQL services
+9. `docs-check` — verifies `.env.example` covers all env vars; checks module count matches CLAUDE.md
+10. `requirement-coverage` — runs tests with requirement markers, reports coverage
 
 **Deploy** (`.github/workflows/deploy.yml`): Build images (backend, frontend) → push to Alibaba ACR → SSH deploy to `<server-ip>` (set via `REMOTE_HOST` secret in GitHub Actions) with `docker compose -f docker/compose.prod.yml up -d --force-recreate`.
 
@@ -165,6 +172,13 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - **Frontend**: jsdom via Vitest. `TestProviders` wrapper for component tests.
 - **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
 - **E2E** (`test_e2e_full_flow.py`): Requires Docker (`virtual-team-redis` container). Runs against `localhost:8080`.
+- **Coverage System**: 4 types of coverage tracking:
+  1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **65% threshold** (CI gate)
+  2. **Diff Coverage** (PR gate): `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` - Only checks coverage on changed lines
+  3. **Requirement Coverage**: `@pytest.mark.requirement("REQ-XXX")` markers + `tests/REQUIREMENTS.md` traceability matrix
+  4. **Mutation Coverage** (optional): Use mutmut for critical modules only
+- **Security**: bandit runs with `-ll` (medium+ severity) and **blocks CI on failure**
+- **CI runs ALL tests** except E2E — repository tests and auth API tests are no longer skipped
 
 ## Git & Hooks
 

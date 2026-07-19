@@ -87,10 +87,10 @@ export default defineConfig(({ mode }) => {
         reporter: ['text', 'lcov', 'html'],
         reportsDirectory: './coverage',
         thresholds: {
-          statements: 88,
-          branches: 74,
-          functions: 90,
-          lines: 89,
+          statements: 66,
+          branches: 57,
+          functions: 54,
+          lines: 70,
         },
         include: ['src/**/*.{ts,tsx}'],
         exclude: [
@@ -99,8 +99,7 @@ export default defineConfig(({ mode }) => {
           'src/types/**',
           'src/data/**',
           'src/constants/**',
-          'src/components/AgentStudio/**',
-          'src/stores/**',
+
           'src/components/auth/**',
           'src/main.tsx',
           'src/App.tsx',

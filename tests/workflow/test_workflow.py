@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+import pytest
+
 
 @dataclass
 class MockLLM:
@@ -14,6 +16,7 @@ class MockLLM:
     max_tokens: int = 65536
 
 
+@pytest.mark.requirement("REQ-WF-001")
 class TestStrategies:
     def test_generator_strategy_build_prompt_context(self):
         from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
@@ -419,5 +422,45 @@ class TestRouter:
         }
         edge = WorkflowEdge(id="e1", from_node_id="n1", to_node_id="n2")
         assert router._matches(state, edge) is False
+
+
+class TestStrategyProtocol:
+    def test_protocol_build_prompt_context_ellipsis(self):
+        from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
+        from backend.workflow.strategies import Strategy
+
+        class BareStrategy(Strategy):
+            node_strategy = NodeStrategy.GENERATOR
+
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {},
+            "round_number": 1,
+            "approved": {},
+        }
+        node = WorkflowNode(id="n1", role_identifier="r")
+        instance = BareStrategy()
+        result = instance.build_prompt_context(state, node)
+        assert result is None  # Ellipsis is returned
+
+    def test_protocol_process_output_ellipsis(self):
+        from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState
+        from backend.workflow.strategies import Strategy
+
+        class BareStrategy(Strategy):
+            node_strategy = NodeStrategy.GENERATOR
+
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {},
+            "round_number": 1,
+            "approved": {},
+        }
+        node = WorkflowNode(id="n1", role_identifier="r")
+        instance = BareStrategy()
+        result = instance.process_output(state, node, "output")
+        assert result is None  # Ellipsis is returned
 
 

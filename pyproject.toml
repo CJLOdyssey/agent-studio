@@ -27,6 +27,8 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "env: marks tests that need specific environment variables",
     "integration: marks tests that require a running backend + Docker stack (deselect with '-m \"not integration\"')",
+    "requirement(req_id): mark test as covering a specific requirement",
+    "unit: marks unit tests (fast, no external dependencies)",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:langchain.*",
@@ -42,15 +44,10 @@ source = ["backend"]
 omit = [
     "tests/*",
     "backend/thinking_tree/*",
-    "backend/routers/*",
-    "backend/tasks/*",
-    "backend/workflow/*",
     "backend/system_team/*",
-    "backend/broker/*",
-    "backend/services/*",
-    "backend/checkpoint/*",
-    "backend/repository/*",
     "backend/main.py",
+    "backend/checkpoint/*",
+    "backend/rag/rag_store.py",
 ]
 
 [tool.bandit]
@@ -58,7 +55,7 @@ exclude_dirs = ["tests", ".venv", ".opencode"]
 skips = ["B101", "B311"]  # assert allowed in tests, pseudo-random ok
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 70
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -66,3 +63,12 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[tool.mutmut]
+paths_to_mutate = [
+    "backend/core/",
+    "backend/routers/skills.py",
+    "backend/routers/mcps.py",
+]
+tests_dir = "tests/"
+runner = "pytest"

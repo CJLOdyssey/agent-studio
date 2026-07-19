@@ -17,6 +17,7 @@ from backend.repository.agents import (
 )
 
 
+@pytest.mark.requirement("REQ-AGT-001")
 @pytest.mark.asyncio
 async def test_create_agent(db_engine):
     """Creating an agent via repository returns a persisted AgentConfigDB row."""
@@ -34,6 +35,7 @@ async def test_create_agent(db_engine):
     assert agent.system_prompt == "You are a unit test agent."
 
 
+@pytest.mark.requirement("REQ-AGT-001")
 @pytest.mark.asyncio
 async def test_get_agent(db_engine, sample_agent):
     """get_agent_config returns the agent by its ID."""
@@ -50,6 +52,7 @@ async def test_get_agent_not_found(db_engine):
     assert fetched is None
 
 
+@pytest.mark.requirement("REQ-AGT-001")
 @pytest.mark.asyncio
 async def test_list_agents(db_engine, sample_agent):
     """get_agent_configs returns all agents, including the seeded sample."""
@@ -60,6 +63,7 @@ async def test_list_agents(db_engine, sample_agent):
     assert sample_agent.id in ids
 
 
+@pytest.mark.requirement("REQ-AGT-002")
 @pytest.mark.asyncio
 async def test_update_agent(db_engine, sample_agent):
     """Updating an agent's name and is_active fields persists correctly."""
@@ -77,6 +81,7 @@ async def test_update_agent(db_engine, sample_agent):
     assert refetched.name == "Updated Agent"
 
 
+@pytest.mark.requirement("REQ-AGT-003")
 @pytest.mark.asyncio
 async def test_delete_agent(db_engine, sample_agent):
     """Deleting an agent removes it from the database."""
