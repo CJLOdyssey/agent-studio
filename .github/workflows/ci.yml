@@ -106,7 +106,7 @@ jobs:
           cache-dependency-path: requirements-lock.txt
       - run: pip install -r requirements-lock.txt --quiet
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
-      - run: bandit -c pyproject.toml -r backend/ -ll 2>&1 || echo "Warning: bandit found issues (non-blocking)"
+      - run: "bandit -c pyproject.toml -r backend/ -ll 2>&1 || echo 'Warning: bandit found issues (non-blocking)'"
 
   # ── Backend Tests ────────────────────────────────────────────────────────
   backend-test:
