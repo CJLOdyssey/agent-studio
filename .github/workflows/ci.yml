@@ -123,7 +123,7 @@ jobs:
       - name: Run unit tests
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
-            -x -q --tb=short \
+            -q --tb=short \
             --ignore=tests/e2e/ \
             -m 'not integration' \
             --ignore=tests/broker/ \
@@ -133,17 +133,7 @@ jobs:
             --cov-report=xml \
             --cov-fail-under=70 \
             --reruns 2 \
-            --reruns-delay 5 \
-            || PYTHONPATH=. python3 -m pytest tests/ \
-            -x -q --tb=short \
-            --ignore=tests/e2e/ \
-            --ignore=tests/test_requirement_markers.py \
-            --ignore=tests/broker/ \
-            -m 'not integration' \
-            --cov=backend \
-            --cov-report=term-missing \
-            --cov-report=xml \
-            --cov-fail-under=70
+            --reruns-delay 5
       - uses: actions/upload-artifact@v4
         if: always()
         with:
