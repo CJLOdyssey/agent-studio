@@ -1,3 +1,6 @@
+import pytest
+pytestmark = pytest.mark.integration
+
 from tests.e2e.test_agent_crud import TestAgentCRUD  # noqa: F401
 from tests.e2e.test_full_e2e import TestFullE2EFlow  # noqa: F401
 from tests.e2e.test_mcp_crud import TestMCPCrud  # noqa: F401
