@@ -1,3 +1,6 @@
+import pytest
+pytestmark = pytest.mark.integration
+
 """Repository tests for Team CRUD and member management."""
 
 import uuid
