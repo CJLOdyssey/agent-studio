@@ -90,6 +90,15 @@ describe('installGlobalErrorHandlers', () => {
     expect(mockLogger.error).toHaveBeenCalledWith('Unhandled promise rejection', { reason: undefined });
   });
 
+  it('returns early when window is undefined (SSR guard)', () => {
+    const origWindow = globalThis.window;
+    // @ts-expect-error intentional removal for SSR test
+    delete globalThis.window;
+    installGlobalErrorHandlers();
+    globalThis.window = origWindow;
+    // Should not throw — the function returned early
+  });
+
   it('returns false from onerror', () => {
     installGlobalErrorHandlers();
     const result = window.onerror?.('msg', '', 0, 0, null);

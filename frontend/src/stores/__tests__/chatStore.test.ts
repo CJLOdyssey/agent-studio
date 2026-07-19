@@ -112,6 +112,66 @@ describe('chatStore', () => {
     });
   });
 
+  describe('restoreSession', () => {
+    it('restores session state with messages', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.getState().restoreSession(
+        'sess-1',
+        'run-1',
+        [{ id: 'm1', role: 'user', agent_name: '我', content: 'hello', round_number: 0, created_at: new Date().toISOString() }],
+        null,
+        'completed',
+      );
+      const state = useChatStore.getState();
+      expect(state.currentSessionId).toBe('sess-1');
+      expect(state.currentRunId).toBe('run-1');
+      expect(state.messages).toHaveLength(1);
+      expect(state.status).toBe('completed');
+      expect(state.currentRole).toBe('user');
+      expect(state.error).toBeNull();
+    });
+  });
+
+  describe('loadConversation', () => {
+    it('loads conversation and clears run state', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({ currentRunId: 'old-run', status: 'running' });
+      useChatStore.getState().loadConversation(
+        [{ id: 'm1', role: 'user', agent_name: '我', content: 'hi', round_number: 0, created_at: new Date().toISOString() }],
+        'conv-1',
+        'sess-1',
+      );
+      const state = useChatStore.getState();
+      expect(state.messages).toHaveLength(1);
+      expect(state.currentConvId).toBe('conv-1');
+      expect(state.currentSessionId).toBe('sess-1');
+      expect(state.status).toBe('idle');
+      expect(state.wsStatus).toBe('disconnected');
+      expect(state.streamingId).toBeNull();
+    });
+
+    it('loads conversation without optional params', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.getState().loadConversation([]);
+      const state = useChatStore.getState();
+      expect(state.currentConvId).toBeNull();
+      expect(state.currentSessionId).toBeNull();
+    });
+  });
+
+  describe('cancelRun', () => {
+    it('disconnects and clears run state', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({ currentRunId: 'run-1', streamingId: 'stream-1', status: 'running' });
+      useChatStore.getState().cancelRun();
+      const state = useChatStore.getState();
+      expect(state.currentRunId).toBeNull();
+      expect(state.streamingId).toBeNull();
+      expect(state.status).toBe('idle');
+      expect(state.wsStatus).toBe('disconnected');
+    });
+  });
+
   it('reset 重置所有状态包括 wsStatus', async () => {
     const { useChatStore } = await import('../chatStore');
     useChatStore.getState().setStatus('running');

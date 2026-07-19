@@ -48,6 +48,7 @@ function getModules() {
   
   return readdirSync(WORKSTATION_DIR, { withFileTypes: true })
     .filter(d => d.isDirectory())
+    .filter(d => d.name !== "__tests__" && !d.name.startsWith("__"))
     .map(d => d.name);
 }
 

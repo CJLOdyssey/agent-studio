@@ -61,12 +61,12 @@ async def test_list_tools(db_engine):
     assert isinstance(tools, list)
     assert len(tools) >= 1
     first = tools[0]
-    assert "id" in first
-    assert "name" in first
-    assert "category" in first
-    assert "description" in first
-    assert "endpoint" in first
-    assert "parameters" in first
+    assert hasattr(first, "id") and first.id is not None
+    assert hasattr(first, "name")
+    assert hasattr(first, "category")
+    assert hasattr(first, "description")
+    assert hasattr(first, "endpoint")
+    assert hasattr(first, "parameters")
 
 
 @pytest.mark.asyncio
@@ -99,7 +99,7 @@ async def test_delete_tool(db_engine):
     deleted = await delete_tool(tool.id)
     assert deleted is True
     tools = await get_tools()
-    assert all(t["id"] != tool.id for t in tools)
+    assert all(t.id != tool.id for t in tools)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -137,11 +137,11 @@ async def test_list_mcps(db_engine):
     assert isinstance(mcps, list)
     assert len(mcps) >= 1
     first = mcps[0]
-    assert "id" in first
-    assert "name" in first
-    assert "type" in first
-    assert "endpoint" in first
-    assert "status" in first
+    assert hasattr(first, "id") and first.id is not None
+    assert hasattr(first, "name")
+    assert hasattr(first, "type")
+    assert hasattr(first, "endpoint")
+    assert hasattr(first, "status")
 
 
 @pytest.mark.asyncio
@@ -172,7 +172,7 @@ async def test_delete_mcp(db_engine):
     deleted = await delete_mcp(mcp.id)
     assert deleted is True
     mcps = await get_mcps()
-    assert all(m["id"] != mcp.id for m in mcps)
+    assert all(m.id != mcp.id for m in mcps)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -215,14 +215,14 @@ async def test_list_skills(db_engine):
     assert isinstance(skills, list)
     assert len(skills) >= 1
     first = skills[0]
-    assert "id" in first
-    assert "name" in first
-    assert "category" in first
-    assert "description" in first
-    assert "instructions" in first
-    assert "version" in first
-    assert "author" in first
-    assert "status" in first
+    assert hasattr(first, "id") and first.id is not None
+    assert hasattr(first, "name")
+    assert hasattr(first, "category")
+    assert hasattr(first, "content")
+    assert hasattr(first, "instructions")
+    assert hasattr(first, "version")
+    assert hasattr(first, "author")
+    assert hasattr(first, "status")
 
 
 @pytest.mark.asyncio
@@ -257,4 +257,4 @@ async def test_delete_skill(db_engine):
     deleted = await delete_skill(skill.id)
     assert deleted is True
     skills = await get_skills()
-    assert all(s["id"] != skill.id for s in skills)
+    assert all(s.id != skill.id for s in skills)

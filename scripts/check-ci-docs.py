@@ -61,7 +61,7 @@ else:
 claude = root.joinpath("CLAUDE.md").read_text()
 modules = [
     d for d in root.joinpath("frontend/src/components/AgentStudio/workstation").iterdir()
-    if d.is_dir() and d.name != "shared"
+    if d.is_dir() and d.name != "shared" and d.name != "__tests__"
 ]
 actual = len(modules)
 expected = _extract_int(r"工作台 (\d+)", claude, "workstation count")

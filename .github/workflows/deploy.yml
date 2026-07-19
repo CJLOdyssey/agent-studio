@@ -12,7 +12,9 @@ env:
   REGISTRY: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com
   NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
   REMOTE_DIR: /opt/virtual-team
-  REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+  REMOTE_SSH_HOST: ${{ secrets.REMOTE_SSH_HOST || secrets.REMOTE_HOST }}
+  REMOTE_SSH_PORT: ${{ secrets.REMOTE_SSH_PORT || '22' }}
+  REMOTE_SSH_USER: ${{ secrets.REMOTE_SSH_USER || 'deploy' }}
 
 jobs:
   build-and-push:
@@ -65,23 +67,26 @@ jobs:
 
       # ╔════════════════════════════════════════════════════════════════════════╗
       # ║   ⚠️ 重 要 安 全 提 示 ⚠️                                            ║
-      # ║   下方使用 ${{ secrets.SERVER_PASSWORD }} 通过 SSH 直连生产服务器。        ║
+      # ║   下方使用 SSH Key 直连生产服务器。                                    ║
+      # ║   私钥存储在 GitHub Secrets → REMOTE_SSH_KEY。                         ║
+      # ║   服务器端对应公钥须写入 ~/.ssh/authorized_keys。                       ║
       # ║   任何 AI 或开发者使用这段配置前，必须、一定、务必先获得用户明确授权！      ║
       # ║   误操作可能导致生产环境宕机、数据丢失或安全泄露。                        ║
       # ╚════════════════════════════════════════════════════════════════════════╝
       - name: Sync files to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ env.REMOTE_HOST }}
-          username: root
-          password: ${{ secrets.SERVER_PASSWORD }}
+          host: ${{ env.REMOTE_SSH_HOST }}
+          port: ${{ env.REMOTE_SSH_PORT }}
+          username: ${{ env.REMOTE_SSH_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
           source: "docker/,frontend/Dockerfile,frontend/nginx.conf,.env.example"
           target: ${{ env.REMOTE_DIR }}
           strip_components: 0
 
       # ╔════════════════════════════════════════════════════════════════════════╗
       # ║   ⚠️ 重 要 安 全 提 示 ⚠️                                            ║
-      # ║   下方通过 SSH + SERVER_PASSWORD / ACR_PASSWORD 登录并操作生产服务器。    ║
+      # ║   下方通过 SSH Key 登录并操作生产服务器。                                ║
       # ║   执行 `docker compose pull && up -d --force-recreate` 会直接          ║
       # ║   影响生产环境运行中的容器。任何时候执行此步骤前，必须获得用户明确确认！    ║
       # ║   禁止在未告知用户的情况下触发此工作流或任何 SSH 操作。                   ║
@@ -89,6 +94,10 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
+          host: ${{ env.REMOTE_SSH_HOST }}
+          port: ${{ env.REMOTE_SSH_PORT }}
+          username: ${{ env.REMOTE_SSH_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
           host: ${{ env.REMOTE_HOST }}
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}

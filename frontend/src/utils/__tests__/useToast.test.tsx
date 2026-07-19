@@ -67,6 +67,33 @@ describe('useToast', () => {
     expect(screen.queryByText('Removable')).toBeNull();
   });
 
+  it('auto-dismisses toast after timeout', async () => {
+    vi.useFakeTimers();
+    const ToastConsumer = () => {
+      const { toast } = useToast();
+      return <button onClick={() => toast('Auto-dismiss')}>Show</button>;
+    };
+
+    render(
+      <ToastProvider>
+        <ToastConsumer />
+      </ToastProvider>,
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByText('Show'));
+    });
+
+    expect(screen.getByText('Auto-dismiss')).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(screen.queryByText('Auto-dismiss')).toBeNull();
+    vi.useRealTimers();
+  });
+
   it('renders multiple toasts', () => {
     const ToastConsumer = () => {
       const { toast } = useToast();

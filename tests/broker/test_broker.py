@@ -24,7 +24,7 @@ class TestBrokerRedis:
 
         assert _channel("run-abc") == "run:run-abc"
 
-    @patch("backend.broker.AsyncRedis.from_url")
+    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
     @patch("backend.broker.asyncio.get_running_loop")
     def test_get_redis_creates_pool(self, mock_loop, mock_from_url):
         mock_loop.return_value = loop = MagicMock()
@@ -51,7 +51,7 @@ class TestBrokerRedis:
         assert result == mock_redis
         assert _pools[loop_id] == mock_redis
 
-    @patch("backend.broker.AsyncRedis.from_url")
+    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
     @patch("backend.broker.asyncio.get_running_loop")
     def test_get_redis_reuses_pool(self, mock_loop, mock_from_url):
         mock_loop.return_value = loop = MagicMock()
@@ -133,30 +133,29 @@ class TestBrokerFull:
         assert _channel("abc-123") == "run:abc-123"
         assert _channel("") == "run:"
 
-    @patch("backend.broker.REDIS_URL", "redis://custom-host:7777/5")
-    @patch("backend.broker.AsyncRedis.from_url")
+    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
     @patch("backend.broker.asyncio.get_running_loop")
-    def test_get_redis_uses_correct_url(self, mock_loop, mock_from_url):
+    def test_get_redis_uses_correct_url(self, mock_loop, mock_from_url, monkeypatch):
         from backend.broker import _pools, get_redis
 
+        monkeypatch.setenv("REDIS_URL", "redis://custom-host:7777/5")
         mock_loop.return_value = MagicMock()
         mock_redis = MagicMock()
         mock_from_url.return_value = mock_redis
         _pools.clear()
 
-        with patch("backend.broker.REDIS_URL", "redis://custom-host:7777/5"):
-            result = get_redis()
-            mock_from_url.assert_called_once_with(
-                "redis://custom-host:7777/5",
-                decode_responses=True,
-                socket_keepalive=True,
-                socket_connect_timeout=10,
-                health_check_interval=30,
-                retry_on_timeout=True,
-            )
-            assert result == mock_redis
+        result = get_redis()
+        mock_from_url.assert_called_once_with(
+            "redis://custom-host:7777/5",
+            decode_responses=True,
+            socket_keepalive=True,
+            socket_connect_timeout=10,
+            health_check_interval=30,
+            retry_on_timeout=True,
+        )
+        assert result == mock_redis
 
-    @patch("backend.broker.AsyncRedis.from_url")
+    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
     @patch("backend.broker.asyncio.get_running_loop")
     def test_get_redis_creates_pool_on_new_loop(self, mock_loop, mock_from_url):
         from backend.broker import _pools, get_redis
@@ -278,7 +277,7 @@ class TestBrokerFull:
         assert _channel("run-123_abc") == "run:run-123_abc"
         assert _channel("run/test") == "run:run/test"
 
-    @patch("backend.broker.AsyncRedis.from_url")
+    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
     @patch("backend.broker.asyncio.get_running_loop")
     def test_get_redis_raises_on_no_loop(self, mock_loop, mock_from_url):
         from backend.broker import _pools, get_redis

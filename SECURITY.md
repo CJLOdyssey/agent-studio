@@ -15,6 +15,7 @@ We take security seriously. If you discover a security vulnerability, please rep
 
 **Do NOT open a public issue.** Instead:
 
+1. Email: **<your-security-email>** — replace with the actual security contact before going live
 1. Email: **security@example.com** (PGP key below)
 2. Expected response time: within 48 hours
 3. We will acknowledge your report within 24 hours and provide an estimated timeline for a fix
@@ -24,6 +25,7 @@ We take security seriously. If you discover a security vulnerability, please rep
 
 ```
 -----BEGIN PGP PUBLIC KEY BLOCK-----
+(Replace with your security team's actual PGP public key before production deployment)
 (replace with actual PGP key)
 -----END PGP PUBLIC KEY BLOCK-----
 ```

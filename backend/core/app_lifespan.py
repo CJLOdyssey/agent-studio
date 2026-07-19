@@ -184,6 +184,28 @@ async def startup(app: FastAPI) -> None:
 
     app.state.gc_task = asyncio.create_task(_periodic_gc())
 
+    # Periodic observability event retention cleanup
+    _retention_days = int(_env("OBSERVABILITY_RETENTION_DAYS", "30"))
+
+    async def _periodic_retention() -> None:
+        from backend.observability.store import get_store
+        while True:
+            try:
+                await asyncio.sleep(3600)  # Run every hour
+                store = get_store()
+                deleted = store.cleanup(retention_days=_retention_days)
+                if deleted > 0:
+                    logger.info(
+                        "[RETENTION] cleaned up %d observability events older than %d days",
+                        deleted, _retention_days,
+                    )
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.exception("Observability retention cleanup failed, continuing...")
+
+    app.state.retention_task = asyncio.create_task(_periodic_retention())
+
     # Database + Redis
     try:
         await _init_database()
@@ -195,9 +217,12 @@ async def startup(app: FastAPI) -> None:
 
 
 async def shutdown(app: FastAPI) -> None:
-    """Run on application shutdown — cancel GC, stop marker."""
-    app.state.gc_task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await app.state.gc_task
+    """Run on application shutdown — cancel GC + retention, stop marker."""
+    for attr in ("gc_task", "retention_task"):
+        task = getattr(app.state, attr, None)
+        if task:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
     mark_stopped()
     logger.info("[LIFECYCLE] shutting down — app=%s | pid=%d", app.title, os.getpid())

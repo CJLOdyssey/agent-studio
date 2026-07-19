@@ -166,9 +166,39 @@ def metrics() -> Any:
 
 
 @app.get("/api/health")
-def health() -> Any:
-    """Health check endpoint."""
-    return {"status": "ok"}
+async def health() -> Any:
+    """Deep health check — verifies DB and Redis connectivity."""
+    checks: dict[str, str] = {}
+    healthy = True
+
+    # DB check
+    try:
+        from sqlalchemy import text
+
+        from backend.core.infra.database import get_session_factory
+        factory = get_session_factory()
+        async with factory() as session:
+            await session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = str(e)
+        healthy = False
+
+    # Redis check
+    try:
+        from backend.broker import get_redis
+        r = get_redis()
+        await r.ping()
+        checks["redis"] = "ok"
+    except Exception as e:
+        checks["redis"] = str(e)
+        healthy = False
+
+    status_code = 200 if healthy else 503
+    return JSONResponse(
+        content={"status": "healthy" if healthy else "degraded", "checks": checks},
+        status_code=status_code,
+    )
 
 
 @app.get("/api/version")

@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from celery import Celery  # type: ignore[import-untyped]
-from redis.asyncio import Redis as AsyncRedis
+from redis.asyncio import Redis as AsyncRedis  # noqa: F401  # re-exported for backward compat
 
 from backend.core.infra.logging_config import get_logger
 
@@ -49,7 +49,7 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 # Per-event-loop connection pool — Celery prefork workers create a new event
 # loop via asyncio.run() in each child process, so a single global pool bound
 # to the parent's loop becomes invalid ("Event loop is closed").
-_pools: dict[int, AsyncRedis] = {}
+_pools: dict[int, Any] = {}
 CHANNEL_PREFIX = "run:"
 
 
@@ -57,12 +57,15 @@ def _channel(run_id: str) -> str:
     return f"{CHANNEL_PREFIX}{run_id}"
 
 
-def get_redis() -> AsyncRedis:
+def get_redis() -> Any:  # returns AsyncRedis
     """Return an AsyncRedis pool for the current event loop.
 
     Each asyncio event loop gets its own connection pool so that Celery's
     prefork model (where every asyncio.run() call creates a fresh loop) works
     correctly.
+
+    When REDIS_SENTINEL_ENABLED is set, creates the connection via
+    Sentinel discovery; otherwise falls back to a direct REDIS_URL connection.
     """
 
     loop = asyncio.get_running_loop()
@@ -70,16 +73,9 @@ def get_redis() -> AsyncRedis:
 
     pool = _pools.get(loop_id)
     if pool is None:
-        pool = AsyncRedis.from_url(
-            REDIS_URL,
-            decode_responses=True,
-            socket_keepalive=True,
-            socket_connect_timeout=10,
-            health_check_interval=30,
-            retry_on_timeout=True,
-            # NOTE: do NOT set socket_timeout — pubsub is a long-lived streaming
-            # connection that must remain open indefinitely for WebSocket push.
-        )
+        from backend.core.infra.redis_sentinel import create_redis
+
+        pool = create_redis()
         _pools[loop_id] = pool
     return pool
 

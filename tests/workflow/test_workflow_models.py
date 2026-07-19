@@ -1,9 +1,11 @@
 from langchain_core.messages import HumanMessage
 
 from backend.workflow.models import (
+    NodeStrategy,
     WorkflowConfig,
     WorkflowEdge,
     WorkflowNode,
+    _merge_dicts,
     create_initial_state,
     get_previous_artifacts,
 )
@@ -88,3 +90,64 @@ def test_get_previous_artifacts_no_incoming():
     state = create_initial_state("test")
     result = get_previous_artifacts(state, node, config)
     assert result == {}
+
+
+class TestMergeDicts:
+    def test_right_takes_precedence(self):
+        result = _merge_dicts({"a": 1, "b": 2}, {"b": 3, "c": 4})
+        assert result == {"a": 1, "b": 3, "c": 4}
+
+    def test_empty_right(self):
+        result = _merge_dicts({"a": 1}, {})
+        assert result == {"a": 1}
+
+    def test_empty_left(self):
+        result = _merge_dicts({}, {"a": 1})
+        assert result == {"a": 1}
+
+    def test_both_empty(self):
+        result = _merge_dicts({}, {})
+        assert result == {}
+
+    def test_original_left_unchanged(self):
+        left = {"a": 1}
+        _merge_dicts(left, {"b": 2})
+        assert left == {"a": 1}
+
+
+class TestNodeStrategy:
+    def test_enum_values(self):
+        assert NodeStrategy.GENERATOR.value == "generator"
+        assert NodeStrategy.REVIEWER.value == "reviewer"
+        assert NodeStrategy.REPORTER.value == "reporter"
+
+
+class TestWorkflowNodeDefaults:
+    def test_default_values(self):
+        node = WorkflowNode()
+        assert node.id == ""
+        assert node.agent_config_id == ""
+        assert node.role_identifier == ""
+        assert node.strategy == NodeStrategy.GENERATOR
+        assert node.order == 0
+
+
+class TestWorkflowEdgeDefaults:
+    def test_default_values(self):
+        edge = WorkflowEdge()
+        assert edge.id == ""
+        assert edge.from_node_id == ""
+        assert edge.to_node_id == ""
+        assert edge.is_default is False
+        assert edge.priority == 0
+
+
+class TestWorkflowConfigDefaults:
+    def test_default_values(self):
+        config = WorkflowConfig()
+        assert config.id == ""
+        assert config.team_id == ""
+        assert config.name == ""
+        assert config.max_rounds == 5
+        assert config.nodes == []
+        assert config.edges == []
