@@ -390,4 +390,34 @@ class TestRouter:
         result = router.resolve(edges, state, "n1")
         assert result == "fix"
 
+    def test_matches_empty_condition_key(self):
+        from backend.workflow.models import WorkflowEdge, WorkflowState
+        from backend.workflow.router import Router
+
+        router = Router()
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {"output": "test"},
+            "round_number": 1,
+            "approved": {},
+        }
+        edge = WorkflowEdge(id="e1", from_node_id="n1", to_node_id="n2", condition_key="")
+        assert router._matches(state, edge) is False
+
+    def test_matches_edge_no_condition_key(self):
+        from backend.workflow.models import WorkflowEdge, WorkflowState
+        from backend.workflow.router import Router
+
+        router = Router()
+        state: WorkflowState = {
+            "messages": [],
+            "requirement": "",
+            "artifacts": {"output": "test"},
+            "round_number": 1,
+            "approved": {},
+        }
+        edge = WorkflowEdge(id="e1", from_node_id="n1", to_node_id="n2")
+        assert router._matches(state, edge) is False
+
 

@@ -125,6 +125,7 @@ class TestAppLifespan:
         real_task = asyncio.create_task(asyncio.sleep(9999))
         mock_app = MagicMock()
         mock_app.state.gc_task = real_task
+        mock_app.state.retention_task = None
         mock_app.title = "test"
 
         await shutdown(mock_app)

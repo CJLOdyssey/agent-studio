@@ -42,8 +42,10 @@ describe('getWorkspaceTabs', () => {
     expect(tabs[1].id).toBe('backend-test');
   });
 
-  it('returns default tabs for unknown type', () => {
-    const tabs = getWorkspaceTabs('frontend' as 'backend');
-    expect(tabs.length).toBeGreaterThan(0);
+  it('returns default tabs for invalid type', () => {
+    const tabs = getWorkspaceTabs('invalid' as unknown as 'frontend');
+    expect(tabs).toHaveLength(2);
+    expect(tabs[0].id).toBe('code');
+    expect(tabs[1].id).toBe('preview');
   });
 });

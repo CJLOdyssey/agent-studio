@@ -18,6 +18,7 @@ import {
   deleteTool,
   validateTool,
   executeTool,
+  testTool,
 } from '../tools';
 
 beforeEach(() => {
@@ -108,5 +109,17 @@ describe('executeTool', () => {
     await executeTool('code');
 
     expect(mockApi.post).toHaveBeenCalledWith('/tools/execute', { code: 'code', language: 'python' });
+  });
+});
+
+describe('testTool', () => {
+  it('calls POST /tools/:id/test and returns result', async () => {
+    const mockData = { valid: true, result: 'ok' };
+    mockApi.post.mockResolvedValue({ data: mockData });
+
+    const result = await testTool('tool-1');
+
+    expect(mockApi.post).toHaveBeenCalledWith('/tools/tool-1/test');
+    expect(result).toEqual(mockData);
   });
 });

@@ -158,6 +158,30 @@ describe('handleResultEvent', () => {
     expect(result.messages![0].content).toBe('final code');
     expect(result.messages![0].thinkingDone).toBe(true);
   });
+
+  it('handles result without code', () => {
+    const s = makeState({ streamingId: 'msg-1', messages: [makeMsg('msg-1', { thinking: 't', content: 'old' })] });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>();
+
+    handleResultEvent(set as never, get, activeStreams, { type: 'result', code: '' });
+
+    const result = set.mock.results[0].value as { messages: Array<{ content: string }> };
+    expect(result.messages![0].content).toBe('old');
+  });
+
+  it('handles empty thinking becoming undefined on result', () => {
+    const s = makeState({ streamingId: 'msg-1', messages: [makeMsg('msg-1', { thinking: '', content: 'old' })] });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>();
+
+    handleResultEvent(set as never, get, activeStreams, { type: 'result', code: '' });
+
+    const result = set.mock.results[0].value as { messages: Array<{ thinking: string | undefined; thinkingDone: boolean }> };
+    expect(result.messages![0].thinking).toBeUndefined();
+  });
 });
 
 describe('handleTeamResultEvent', () => {
@@ -176,6 +200,19 @@ describe('handleTeamResultEvent', () => {
     expect(result.status).toBe('idle');
     expect(result.streamingId).toBeNull();
     expect(result.messages![0].thinkingDone).toBe(true);
+  });
+
+  it('handles team_result without streamingId', () => {
+    const s = makeState({ streamingId: null, messages: [makeMsg('msg-1')] });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>();
+
+    handleTeamResultEvent(set as never, get, activeStreams, { type: 'team_result' });
+
+    const result = set.mock.results[0].value as { status: string; streamingId: null };
+    expect(result.status).toBe('idle');
+    expect(result.streamingId).toBeNull();
   });
 });
 

@@ -57,7 +57,10 @@ class TestApiEndpoints:
     def test_health_check(self, client):
         resp = client.get("/api/health")
         assert resp.status_code == 200
-        assert resp.json()["status"] == "ok"
+        data = resp.json()
+        assert data["status"] in ("healthy", "degraded")
+        assert "checks" in data
+        assert "database" in data["checks"]
 
     def test_version_endpoint(self, client):
         resp = client.get("/api/version")

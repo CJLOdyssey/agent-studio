@@ -11,7 +11,7 @@ const { mockApi } = vi.hoisted(() => ({
 
 vi.mock('../instance', () => ({ default: mockApi }));
 
-import { listTeams, createTeam, updateTeam, deleteTeam, addTeamMember, removeTeamMember } from '../teams';
+import { listTeams, createTeam, updateTeam, deleteTeam, addTeamMember, removeTeamMember, linkAgentToMember } from '../teams';
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -84,5 +84,17 @@ describe('removeTeamMember', () => {
     await removeTeamMember('1', 'm1');
 
     expect(mockApi.delete).toHaveBeenCalledWith('/teams/1/members/m1');
+  });
+});
+
+describe('linkAgentToMember', () => {
+  it('calls PUT with agent_config_id', async () => {
+    mockApi.put.mockResolvedValue({});
+
+    await linkAgentToMember('team-1', 'member-1', 'agent-1');
+
+    expect(mockApi.put).toHaveBeenCalledWith('/teams/team-1/members/member-1/link-agent', {
+      agent_config_id: 'agent-1',
+    });
   });
 });

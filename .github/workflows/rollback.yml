@@ -27,12 +27,20 @@ jobs:
         env:
           REGISTRY: ${{ secrets.REGISTRY }}
           NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_SSH_HOST: ${{ secrets.REMOTE_SSH_HOST || secrets.REMOTE_HOST }}
+          REMOTE_SSH_PORT: ${{ secrets.REMOTE_SSH_PORT || '22' }}
+          REMOTE_SSH_USER: ${{ secrets.REMOTE_SSH_USER || 'deploy' }}
           REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
         run: |
           TAG="${{ github.event.inputs.version }}"
           echo "Rolling back to $TAG..."
-          ssh -o StrictHostKeyChecking=no "$REMOTE_HOST" << EOF
+
+          # Set up SSH key from secret
+          mkdir -p ~/.ssh
+          echo "${{ secrets.REMOTE_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            -p "${REMOTE_SSH_PORT}" "${REMOTE_SSH_USER}@${REMOTE_SSH_HOST}" << 'EOF'
             cd $REMOTE_DIR
             export BACKEND_TAG=$TAG
             docker compose -f docker/compose.prod.yml up -d --force-recreate

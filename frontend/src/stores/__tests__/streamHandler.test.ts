@@ -264,4 +264,22 @@ describe('handleThinkingStreamEvent', () => {
     const result = updateFn(s) as { messages: Array<{ thinking: string }> };
     expect(result.messages![0].thinking).toBe('new');
   });
+
+  it('handles streamingId but not active (non-active update path)', () => {
+    const s = makeState({
+      streamingId: 'msg-1',
+      currentRunId: 'run-1',
+      messages: [makeMsg('msg-1', { thinking: 'old' })],
+    });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>(); // not active
+
+    handleThinkingStreamEvent(set as never, get, activeStreams, { type: 'thinking_stream', content: 'chunk' } as never);
+
+    expect(activeStreams.has('run-1')).toBe(true);
+    const updateFn = set.mock.calls[0][0] as (state: typeof s) => Partial<typeof s>;
+    const result = updateFn(s) as { messages: Array<{ thinking: string }> };
+    expect(result.messages![0].thinking).toBe('oldchunk');
+  });
 });

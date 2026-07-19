@@ -325,3 +325,34 @@ class TestTrace:
         written = mock_store.write.call_args[0][0]
         assert written.error_type == "ValueError"
         assert written.level == "ERROR"
+
+    @patch("backend.observability.trace.get_store")
+    def test_span_auto_generates_trace_id(self, mock_get_store):
+        from backend.observability.trace import current_trace_id, set_trace_id, span
+
+        # Clear the current trace_id so span must auto-generate one
+        set_trace_id("")
+        mock_store = MagicMock()
+        mock_get_store.return_value = mock_store
+
+        with span("auto-span"):
+            pass
+
+        written = mock_store.write.call_args[0][0]
+        # trace_id should be auto-generated (not empty)
+        assert written.trace_id != ""
+
+    @patch("backend.observability.trace.get_store")
+    def test_span_nested(self, mock_get_store):
+        from backend.observability.trace import set_trace_id, span
+
+        set_trace_id("nested-trace")
+        mock_store = MagicMock()
+        mock_get_store.return_value = mock_store
+
+        with span("outer-span"):
+            with span("inner-span"):
+                pass
+
+        # Two spans written (enter and exit of outer + enter and exit of inner = 2 calls)
+        assert mock_store.write.call_count == 2

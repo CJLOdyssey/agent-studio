@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "virtual-team.fullname" . }}-celery
+  labels:
+    {{- include "virtual-team.labels" . | nindent 4 }}
+    component: celery
+spec:
+  replicas: {{ .Values.celery.replicas }}
+  selector:
+    matchLabels:
+      {{- include "virtual-team.selectorLabels" . | nindent 6 }}
+      component: celery
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "virtual-team.selectorLabels" . | nindent 8 }}
+        component: celery
+    spec:
+      {{- if .Values.checkpoints.persistence.enabled }}
+      volumes:
+        - name: checkpoints
+          persistentVolumeClaim:
+            claimName: {{ include "virtual-team.fullname" . }}-checkpoints
+      {{- end }}
+      containers:
+        - name: celery
+          image: {{ include "virtual-team.backend.image" . }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy | default "IfNotPresent" }}
+          command:
+            - celery
+            - -A
+            - backend.broker.celery_app
+            - worker
+            - --loglevel={{ .Values.celery.logLevel | lower }}
+            - --concurrency={{ .Values.celery.concurrency }}
+            - --pool=threads
+          envFrom:
+            - configMapRef:
+                name: {{ include "virtual-team.fullname" . }}-config
+            - secretRef:
+                name: {{ include "virtual-team.fullname" . }}-secret
+          {{- if .Values.checkpoints.persistence.enabled }}
+          volumeMounts:
+            - name: checkpoints
+              mountPath: /app/data
+          {{- end }}
+          resources:
+            {{- toYaml .Values.celery.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup }}
+            capabilities:
+              {{- toYaml .Values.securityContext.capabilities | nindent 14 }}
+          livenessProbe:
+            exec:
+              command:
+                - celery
+                - -A
+                - backend.broker.celery_app
+                - inspect
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - celery
+                - -A
+                - backend.broker.celery_app
+                - inspect
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3

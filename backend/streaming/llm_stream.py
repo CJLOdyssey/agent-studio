@@ -16,6 +16,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
+from backend.core.infra.circuit_breaker import CircuitBreakerOpenError, llm_circuit
 from backend.core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -128,6 +129,13 @@ async def stream_llm_response(
     _tool_calls_seen = False
     usage_info: dict[str, Any] = {}
 
+    # Circuit breaker guard — rejects the call if LLM API is in failure state
+    try:
+        await llm_circuit._acquire()
+    except CircuitBreakerOpenError:
+        logger.error("Circuit breaker open — rejecting LLM call (%s failures)", llm_circuit.failures)
+        raise
+
     try:
         async with (
             httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=15.0), proxy=None) as client,
@@ -195,7 +203,10 @@ async def stream_llm_response(
 
     except httpx.HTTPError:
         logging.getLogger(__name__).error("Raw LLM stream failed", exc_info=True)
+        await llm_circuit._on_failure()
         raise
+    else:
+        await llm_circuit._on_success()
 
     if _pending_content and not _tool_calls_seen and tool_definitions:
         for chunk in _pending_content:
