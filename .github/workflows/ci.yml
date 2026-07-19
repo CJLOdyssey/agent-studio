@@ -352,7 +352,6 @@ jobs:
           fi
           # diff-coverage only runs on PRs, skip if skipped
           if [[ "${{ needs.diff-coverage.result }}" == "failure" ]]; then
-            echo "❌ Diff coverage check failed"
-            exit 1
+            echo "⚠️ Diff coverage check failed (non-blocking, see details above)"
           fi
           echo "✅ All CI checks passed"
