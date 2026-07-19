@@ -163,7 +163,7 @@ jobs:
       - name: Run diff-cover
         run: |
           echo "📊 Checking diff coverage against ${{ github.base_ref }}..."
-          git diff origin/${{ github.base_ref }}...HEAD -- backend/ -- . ':!backend/system_team' > /tmp/filtered.diff
+          git diff origin/${{ github.base_ref }}...HEAD -- backend/ ':!backend/system_team' > /tmp/filtered.diff
           diff-cover coverage.xml \
             --diff-file /tmp/filtered.diff \
             --compare-branch=origin/${{ github.base_ref }} \
