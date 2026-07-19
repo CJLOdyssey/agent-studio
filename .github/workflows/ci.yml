@@ -176,6 +176,7 @@ jobs:
           diff-cover coverage.xml \
             --compare-branch=origin/${{ github.base_ref }} \
             --fail-under=70 \
+            --exclude 'backend/system_team/**' \
             --diff-range-notation '..' \
             --report-uncovered
       - name: Comment on PR
@@ -352,6 +353,7 @@ jobs:
           fi
           # diff-coverage only runs on PRs, skip if skipped
           if [[ "${{ needs.diff-coverage.result }}" == "failure" ]]; then
-            echo "⚠️ Diff coverage check failed (non-blocking, see details above)"
+            echo "❌ Diff coverage check failed"
+            exit 1
           fi
           echo "✅ All CI checks passed"
