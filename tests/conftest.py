@@ -201,11 +201,16 @@ async def test_client() -> Any:
     the full FastAPI application runs without external infrastructure.
     Tables are created once per session.
     """
-    # ── 1. Patch Redis-dependent rate limiter BEFORE app import ──────
-    from unittest.mock import AsyncMock
+    # ── 1. Patch Redis BEFORE app import (mock get_redis, not RateLimiter) ──
+    from unittest.mock import AsyncMock, patch
 
-    import backend.core.infra.rate_limit as rl_mod
-    rl_mod.RateLimiter.is_allowed = AsyncMock(return_value=True)  # type: ignore[method-assign]
+    _session_redis = AsyncMock()
+    _session_redis.incr.return_value = 1
+    _session_redis.expire.return_value = True
+    _session_redis.publish.return_value = 1
+
+    _patch_redis = patch("backend.broker.get_redis", return_value=_session_redis)
+    _patch_redis.start()
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)

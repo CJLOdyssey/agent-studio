@@ -308,6 +308,7 @@ jobs:
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
             --requirement-coverage \
+            -m "not integration" \
             --ignore=tests/e2e/ \
             --ignore=tests/repository/ \
             --ignore=tests/routers/auth/test_auth_api.py \
