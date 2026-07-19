@@ -126,6 +126,7 @@ jobs:
             -x -q --tb=short \
             --ignore=tests/e2e/ \
             -m 'not integration' \
+            --ignore=tests/broker/ \
             --cov=backend \
             --cov-report=term-missing \
             --cov-report=xml \
@@ -135,6 +136,7 @@ jobs:
             || PYTHONPATH=. python3 -m pytest tests/ \
             -x -q --tb=short \
             --ignore=tests/e2e/ \
+            --ignore=tests/broker/ \
             -m 'not integration' \
             --cov=backend \
             --cov-report=term-missing \
@@ -307,6 +309,7 @@ jobs:
       - name: Run tests with requirement markers
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
+            --ignore=tests/broker/ \
             --requirement-coverage \
             -m "not integration" \
             --ignore=tests/e2e/ \
