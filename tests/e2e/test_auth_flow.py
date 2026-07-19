@@ -1,3 +1,6 @@
+import pytest
+pytestmark = pytest.mark.integration
+
 """E2E Test: Authentication flow — config, login, profile, change-password, logout."""
 
 import uuid
