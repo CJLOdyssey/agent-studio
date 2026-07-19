@@ -24,9 +24,6 @@ pythonpath = ["."]
 addopts = [
     "--tb=line",
     "-n", "auto",
-    "--ignore=tests/e2e/",
-    "--ignore=tests/repository/",
-    "--ignore=tests/routers/auth/test_auth_api.py",
 ]
 asyncio_mode = "auto"
 markers = [
