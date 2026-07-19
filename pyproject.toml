@@ -24,7 +24,6 @@ pythonpath = ["."]
 addopts = [
     "--tb=line",
     "-n", "auto",
-    "-m", "not integration",
 ]
 asyncio_mode = "auto"
 markers = [
