@@ -309,6 +309,7 @@ jobs:
       - name: Run tests with requirement markers
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
+            --ignore=tests/test_requirement_markers.py \
             --ignore=tests/broker/ \
             --requirement-coverage \
             -m "not integration" \

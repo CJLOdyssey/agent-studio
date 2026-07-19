@@ -166,7 +166,7 @@ class TestPrompts:
             async def capture_call(fn, **kwargs):
                 await fn(MagicMock(), "prompt", "p-1")
             mock_ws.side_effect = capture_call
-            asyncio.get_event_loop().run_until_complete(_snapshot_prompt("p-1"))
+            asyncio.run(_snapshot_prompt("p-1"))
 
     def test_edit_prompt_generic_exception(self, client):
         resp = client.post("/api/prompts", json={

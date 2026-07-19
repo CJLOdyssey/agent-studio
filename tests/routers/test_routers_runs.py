@@ -109,7 +109,7 @@ class TestRuns:
         }, headers={"X-User-ID": "admin"})
         assert resp.status_code == 422
 
-    @patch("backend.core.config.load_config")
+    @patch("backend.routers.runs.load_config")
     def test_create_run_max_config_length(self, mock_config, client):
         mock_cfg = MagicMock()
         mock_cfg.max_requirement_length = 10
