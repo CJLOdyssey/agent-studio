@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from backend.observability.analyzer import analyze_trace, recent_errors_report
 from backend.observability.startup_guard import health as guard_health
 from backend.observability.store import get_store
+from backend.core.infra.circuit_breaker import llm_circuit
 
 router = APIRouter(prefix="/api/debug", tags=["debug"])
 
@@ -84,3 +85,9 @@ def observability_health()-> Any:
             status_code=500,
             content={"status": "error", "detail": str(e), "write_errors": -1},
         )
+
+
+@router.get("/circuit-breakers")
+def circuit_breakers() -> Any:
+    """Return current state of all circuit breakers."""
+    return {"circuit_breakers": [llm_circuit.status()]}

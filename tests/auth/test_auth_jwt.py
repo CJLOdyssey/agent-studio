@@ -102,6 +102,72 @@ class TestDecodeJWT:
         payload = decode_jwt(token, "secret")
         assert payload is None
 
+    def test_simplified_token_valid(self):
+        """Create a valid simplified token and verify it decodes correctly."""
+        from backend.auth.auth_jwt import decode_jwt
+
+        import base64
+        import hashlib
+        import hmac
+
+        now = int(time.time())
+        raw = f"testuser:{now}"
+        sig = hmac.new(b"secret", raw.encode(), hashlib.sha256).hexdigest()[:16]
+        token = base64.urlsafe_b64encode(f"{raw}:{sig}".encode()).rstrip(b"=").decode()
+        payload = decode_jwt(token, "secret")
+        assert payload is not None
+        assert payload["sub"] == "testuser"
+
+    def test_simplified_token_malformed_base64(self):
+        """Malformed base64 in simplified token returns None."""
+        from backend.auth.auth_jwt import decode_jwt
+        # Non-base64 string that can't be decoded
+        payload = decode_jwt("!!!not@base64!!!", "secret")
+        assert payload is None
+
+    def test_decode_jwt_exception_catch_all(self):
+        """The catch-all except branch handles unexpected errors gracefully."""
+        from backend.auth.auth_jwt import decode_jwt
+        # A token that causes json.loads to fail on valid-looking base64
+        import base64
+        bad_payload = base64.urlsafe_b64encode(b"{not json}").rstrip(b"=").decode()
+        bad_token = f"e30.{bad_payload}.e30"
+        payload = decode_jwt(bad_token, "secret")
+        assert payload is None
+
+    def test_token_without_expiration_is_valid(self):
+        """A token with already-passed expiration returns None."""
+        from backend.auth.auth_jwt import create_token, decode_jwt
+        token = create_token("user", "secret", ttl=-5)
+        payload = decode_jwt(token, "secret")
+        assert payload is None
+
+    def test_base64url_decode_different_paddings(self):
+        """Test base64url_decode with 0, 1, 2 padding chars needed."""
+        from backend.auth.auth_jwt import _base64url_decode
+        import base64
+        import json
+
+        # No padding needed (len divisible by 4)
+        data = base64.urlsafe_b64encode(b"abcd").rstrip(b"=").decode()
+        assert _base64url_decode(data) == b"abcd"
+
+        # 1 padding needed
+        data = base64.urlsafe_b64encode(b"abcde").rstrip(b"=").decode()
+        assert _base64url_decode(data) == b"abcde"
+
+        # 2 padding needed
+        data = base64.urlsafe_b64encode(b"abcdef").rstrip(b"=").decode()
+        assert _base64url_decode(data) == b"abcdef"
+
+    def test_create_token_custom_ttl(self):
+        from backend.auth.auth_jwt import create_token, decode_jwt
+        token = create_token("u1", "s", ttl=7200)
+        payload = decode_jwt(token, "s")
+        assert payload is not None
+        expected_exp = payload["iat"] + 7200
+        assert abs(payload["exp"] - expected_exp) <= 1
+
 
 # ─────────────────────────────────────────────────────────────────────
 # 4. backend.core.infra.database.py — Engine & session factory

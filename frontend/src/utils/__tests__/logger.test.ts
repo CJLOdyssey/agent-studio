@@ -42,4 +42,19 @@ describe('Logger', () => {
     expect(Logger.warn).toBeDefined();
     expect(Logger.error).toBeDefined();
   });
+
+  describe('error logging', () => {
+    it('error passes through optional params', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      error('test error', 'detail1', 'detail2');
+      expect(spy).toHaveBeenCalledWith('[ERROR] test error', 'detail1', 'detail2');
+    });
+
+    it('error with Error object still logs', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const err = new Error('some error');
+      error('error happened', err);
+      expect(spy).toHaveBeenCalledWith('[ERROR] error happened', err);
+    });
+  });
 });

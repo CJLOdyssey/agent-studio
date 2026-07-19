@@ -161,6 +161,30 @@ class EventStore:
         """Mark the store as closed, rejecting future writes."""
         self._closed = True
 
+    def cleanup(self, retention_days: int = 30) -> int:
+        """Delete events older than `retention_days` and return the row count.
+
+        Runs inline (not through the background writer queue) so it never
+        contends for queue slots with live writes.
+        """
+        if retention_days <= 0:
+            return 0
+        cutoff = time.time() - retention_days * 86400
+        try:
+            conn = sqlite3.connect(self._db_path, timeout=10)
+            conn.execute("PRAGMA synchronous=NORMAL")
+            try:
+                cursor = conn.execute(
+                    "DELETE FROM events WHERE timestamp < ?", (cutoff,)
+                )
+                deleted = cursor.rowcount
+                conn.commit()
+                return deleted
+            finally:
+                conn.close()
+        except Exception:
+            return -1
+
 
 def _writer_loop(db_path: str, q: "queue.SimpleQueue[dict[str, Any]]") -> None:
     """Background thread that drains the queue and batch-inserts into SQLite."""

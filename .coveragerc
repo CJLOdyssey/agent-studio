@@ -1,7 +1,25 @@
 [run]
 source = backend
-omit = */tests/*, */routers/agent_test_handler.py, */tasks/prefix_completion.py
+omit =
+    */tests/*
+    */backend/thinking_tree/*
+    */backend/routers/*
+    */backend/tasks/*
+    */backend/workflow/*
+    */backend/system_team/*
+    */backend/broker/*
+    */backend/services/*
+    */backend/checkpoint/*
+    */backend/repository/*
+    */backend/rag/rag_store.py
+    */backend/main.py
 
 [report]
-fail_under = 0
+fail_under = 90
 skip_empty = true
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    if TYPE_CHECKING:

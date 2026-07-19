@@ -80,6 +80,34 @@ Push to `main` triggers `.github/workflows/deploy.yml`:
 2. SCP `docker/`, `frontend/Dockerfile`, `frontend/nginx.conf`, `.env.example` to server
 3. SSH into server, `docker compose pull && up -d --force-recreate`
 
+### Staging Deployment (Pre-Production)
+
+Push to `staging` triggers `.github/workflows/deploy-staging.yml`:
+
+1. Build & push images tagged `staging` (isolated from production `latest` tags)
+2. Deploy to staging server at `/opt/virtual-team-staging`
+3. Wait for health check (up to 60s)
+4. Run E2E smoke tests against staging
+5. If all pass, the branch is safe to merge into `main` for production deployment
+
+**Staging server requirements:**
+
+| Secret | Purpose |
+|--------|---------|
+| `REMOTE_SSH_HOST_STAGING` | Staging server IP (falls back to `REMOTE_SSH_HOST` if unset) |
+| `REMOTE_SSH_KEY` | SSH private key (shared with production if same host) |
+
+**GitHub Secrets:**
+
+| Secret | Description |
+|--------|-------------|
+| `REMOTE_SSH_HOST` | Production server IP or hostname |
+| `REMOTE_SSH_HOST_STAGING` | (Optional) Staging server IP — defaults to `REMOTE_SSH_HOST` |
+| `REMOTE_SSH_PORT` | SSH port (default: 22) |
+| `REMOTE_SSH_USER` | SSH username (default: `deploy`) |
+| `REMOTE_SSH_KEY` | SSH private key (Ed25519 recommended) |
+| `REMOTE_DIR` | (Optional) Deployment directory on server (default: `/opt/virtual-team`) |
+
 ### Manual Deploy
 
 ```bash
@@ -487,7 +515,8 @@ PYTHONPATH=. alembic downgrade <revision_id>
 | `AUTH_SECRET` | `.env` + GitHub Secrets | On compromise |
 | `DEEPSEEK_API_KEY` | `.env` + GitHub Secrets | Quarterly or on compromise |
 | User API keys | Fernet-encrypted in Postgres `user_api_keys` table | User-managed via UI |
-| `SERVER_PASSWORD` | GitHub Secrets only | On SSO key rotation |
+| `SERVER_PASSWORD` (legacy) | GitHub Secrets only | Deprecated — use `REMOTE_SSH_KEY` |
+| `REMOTE_SSH_KEY` | GitHub Secrets only | On key rotation |
 
 ### Network Security
 
@@ -498,8 +527,8 @@ PYTHONPATH=. alembic downgrade <revision_id>
 
 ### CI/CD Security Checks
 
-- **pip-audit**: Scans Python dependencies for known vulnerabilities (CI, non-blocking)
-- **bandit**: SAST scan for Python security issues (CI, non-blocking)
+- **pip-audit**: Scans Python dependencies for known vulnerabilities (CI, blocking)
+- **bandit**: SAST scan for Python security issues (CI, blocking)
 - **npm audit**: Audits frontend dependencies for critical vulnerabilities (CI, blocking)
 - **mypy strict**: Static type checking (CI, blocking)
 - **Dependency review**: GitHub's `dependency-review-action` blocks known-vulnerable deps
