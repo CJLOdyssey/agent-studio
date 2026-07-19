@@ -52,7 +52,7 @@ omit = [
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", ".opencode"]
-skips = ["B101", "B311"]  # assert allowed in tests, pseudo-random ok
+skips = ["B101", "B104", "B311"]  # B101: assert in tests, B104: 0.0.0.0 for Docker, B311: pseudo-random ok
 
 [tool.coverage.report]
 fail_under = 70

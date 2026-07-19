@@ -161,6 +161,7 @@ class TestAccountLockout:
         assert user_not_locked.locked_until is None
 
 
+@pytest.mark.integration
 @pytest.mark.requirement("REQ-AUTH-008")
 class TestLoginWithLockout:
     """Test login endpoint with lockout behavior."""

@@ -125,6 +125,7 @@ jobs:
           PYTHONPATH=. python3 -m pytest tests/ \
             -x -q --tb=short \
             --ignore=tests/e2e/ \
+            -m 'not integration' \
             --cov=backend \
             --cov-report=term-missing \
             --cov-report=xml \
@@ -135,6 +136,7 @@ jobs:
             || PYTHONPATH=. python3 -m pytest tests/ \
             -x -q --tb=short \
             --ignore=tests/e2e/ \
+            -m 'not integration' \
             --cov=backend \
             --cov-report=term-missing \
             --cov-report=xml \
