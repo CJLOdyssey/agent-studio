@@ -207,3 +207,56 @@ class TestCompletePipeline:
         body = args[2]
         assert "custom.api.com" in url
         assert body["model"] == "custom-model"
+
+    async def test_proc_read_error_does_not_crash(self, mock_deps):
+        """Lines 38-39, 138-139: /proc read failure is silently ignored."""
+        mock_deps["stream_prefix_completion"].return_value = (" output", [])
+
+        with patch("backend.tasks.complete_pipeline.os") as mock_os:
+            mock_os.getpid.return_value = 999999
+            mock_os.open.side_effect = OSError("no such proc")
+            result = await _complete_pipeline(
+                content="test",
+                run_id="run-proc-err",
+                api_key="sk-test",
+                api_base=None,
+                model=None,
+                thinking=None,
+            )
+
+        assert result is None
+        mock_deps["update_run_result"].assert_awaited()
+
+    async def test_proc_read_error_in_thinking_path(self, mock_deps):
+        """Lines 38-39, 138-139: /proc read failure with thinking enabled."""
+        mock_deps["stream_prefix_completion"].return_value = (" result", ["thinking"])
+
+        with patch("backend.tasks.complete_pipeline.os") as mock_os:
+            mock_os.getpid.return_value = 999999
+            mock_os.open.side_effect = OSError("no such proc")
+            result = await _complete_pipeline(
+                content="test",
+                run_id="run-proc-think",
+                api_key="sk-test",
+                api_base="https://api.deepseek.com",
+                model="deepseek-v4",
+                thinking="prev thought",
+            )
+
+        assert result is None
+
+    async def test_tracemalloc_starts_when_not_tracing(self, mock_deps):
+        """Line 41: tracemalloc.start() called when not already tracing."""
+        mock_deps["stream_prefix_completion"].return_value = (" output", [])
+
+        with patch("backend.tasks.complete_pipeline.tracemalloc") as mock_tm:
+            mock_tm.is_tracing.return_value = False
+            await _complete_pipeline(
+                content="test",
+                run_id="run-tracemalloc",
+                api_key="sk-test",
+                api_base=None,
+                model=None,
+                thinking=None,
+            )
+            mock_tm.start.assert_called_once_with(25)

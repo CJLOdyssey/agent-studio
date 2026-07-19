@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from backend.auth.auth_middleware import AuthMiddleware
@@ -16,6 +17,33 @@ def client():
         yield c
 
 
+def _make_request(path="/api/models", headers=None, query_string=""):
+    """Create a real Starlette Request for testing middleware dispatch."""
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": path,
+        "query_string": query_string.encode() if query_string else b"",
+        "headers": [],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "state": {},
+    }
+    if headers:
+        scope["headers"] = [
+            (k.lower().encode(), v.encode()) for k, v in headers.items()
+        ]
+    return Request(scope)
+
+
+async def _noop_call_next(request):
+    """No-op call_next that returns a minimal response."""
+    from starlette.responses import PlainTextResponse
+    return PlainTextResponse("ok")
+
+
+@pytest.mark.requirement("REQ-AUTH-010")
 class TestAuthMiddleware:
     def test_health_check_exempt(self, client):
         resp = client.get("/api/health")
@@ -45,3 +73,139 @@ class TestAuthMiddleware:
         from backend.auth.auth_rbac import PUBLIC_PREFIXES
         # Just ensure PUBLIC_PREFIXES is iterable
         assert isinstance(PUBLIC_PREFIXES, (tuple, list))
+
+
+@pytest.mark.requirement("REQ-AUTH-010")
+class TestAuthMiddlewareDispatch:
+    """Direct unit tests for AuthMiddleware.dispatch — covers lines 19-62."""
+
+    @pytest.mark.asyncio
+    async def test_public_path_skips_auth(self):
+        """Line 23-24: public path → passes through without auth."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/health")
+        resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_public_prefix_skips_auth(self):
+        """Line 23-24: public prefix → passes through without auth."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/ws/some-connection")
+        resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_auth_prefix_skips_auth(self):
+        """Line 23-24: /api/auth/ prefix → passes through without auth."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/auth/login")
+        resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_auth_disabled_passes_through(self):
+        """Lines 27-28: AUTH_ENABLED is False → passes through."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models")
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", False):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_no_token_guest_mode(self):
+        """Lines 44-46: no token → guest mode, is_authenticated=False."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models")
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+        assert request.state.is_authenticated is False
+
+    @pytest.mark.asyncio
+    async def test_bearer_token_extracted(self):
+        """Lines 31-34: Bearer token extracted from header."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Bearer test.jwt.token"})
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("backend.auth.auth_middleware.decode_jwt", return_value={"sub": "user-123"}):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+        assert request.state.user_id == "user-123"
+        assert request.state.is_authenticated is True
+
+    @pytest.mark.asyncio
+    async def test_invalid_token_guest_mode(self):
+        """Lines 48-55: invalid token → guest mode with warning."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Bearer bad.token"})
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("backend.auth.auth_middleware.decode_jwt", return_value=None):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+        assert request.state.is_authenticated is False
+
+    @pytest.mark.asyncio
+    async def test_query_param_token_extracted(self):
+        """Lines 35-39: token from query string (WebSocket)."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(
+            path="/api/models",
+            query_string="token=ws.jwt.token&other=1",
+        )
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("backend.auth.auth_middleware.decode_jwt", return_value={"sub": "ws-user"}):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+        assert request.state.user_id == "ws-user"
+        assert request.state.is_authenticated is True
+
+    @pytest.mark.asyncio
+    async def test_no_client_info(self):
+        """Line 41: request.client is None."""
+        mw = AuthMiddleware(app=None)
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/models",
+            "query_string": b"",
+            "headers": [],
+            "client": None,
+            "server": ("testserver", 80),
+            "scheme": "http",
+            "state": {},
+        }
+        request = Request(scope)
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_non_bearer_auth_header(self):
+        """Lines 31-34: Authorization header without Bearer prefix → no token."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Basic abc123"})
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+        assert request.state.is_authenticated is False
+
+    @pytest.mark.asyncio
+    async def test_valid_token_user_id_from_sub(self):
+        """Lines 57-60: user_id extracted from JWT sub claim."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Bearer real.jwt"})
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("backend.auth.auth_middleware.decode_jwt", return_value={"sub": "uid-42"}):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert request.state.user_id == "uid-42"
+
+    @pytest.mark.asyncio
+    async def test_token_with_no_sub_defaults_to_unknown(self):
+        """Line 57: JWT without 'sub' claim → user_id='unknown'."""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Bearer no.sub.jwt"})
+        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("backend.auth.auth_middleware.decode_jwt", return_value={"iat": 123}):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert request.state.user_id == "unknown"

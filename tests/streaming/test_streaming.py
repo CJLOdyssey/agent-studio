@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 
+@pytest.mark.requirement("REQ-RUN-002")
 class TestStreamingEdgeCases:
     """Test StreamEmitter edge cases: empty data, None values, error handling."""
 

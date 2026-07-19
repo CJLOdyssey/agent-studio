@@ -3,16 +3,10 @@ source = backend
 omit =
     */tests/*
     */backend/thinking_tree/*
-    */backend/routers/*
-    */backend/tasks/*
-    */backend/workflow/*
     */backend/system_team/*
-    */backend/broker/*
-    */backend/services/*
-    */backend/checkpoint/*
-    */backend/repository/*
-    */backend/rag/rag_store.py
     */backend/main.py
+    */backend/checkpoint/*
+    */backend/rag/rag_store.py
 
 [report]
 fail_under = 89

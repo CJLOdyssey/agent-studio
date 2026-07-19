@@ -3,6 +3,7 @@ import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
+pytestmark = pytest.mark.integration
 from starlette.testclient import TestClient
 
 os.environ['AUTH_MODE'] = 'legacy'

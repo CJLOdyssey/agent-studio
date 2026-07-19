@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 
+@pytest.mark.requirement("REQ-AUTH-001")
 class TestAuthSchemas:
     def test_login_request_defaults(self):
         from backend.routers.auth.schemas import LoginRequest
@@ -129,6 +130,7 @@ class TestAuthSchemas:
 
 
 
+@pytest.mark.requirement("REQ-AUTH-001")
 class TestAuthHelpers:
     def test_generate_code_returns_six_digits(self):
         from backend.routers.auth.schemas import _generate_code

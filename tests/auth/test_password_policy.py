@@ -1,8 +1,11 @@
 """Password policy tests — equivalence class + boundary value analysis."""
 
+import pytest
+
 from backend.auth.password_policy import validate_password
 
 
+@pytest.mark.requirement("REQ-AUTH-007")
 class TestPasswordLength:
     """边界值：长度校验 (min=8, max=128)."""
 
@@ -27,6 +30,7 @@ class TestPasswordLength:
         assert validate_password(pwd) == "密码长度不能超过 128 位"
 
 
+@pytest.mark.requirement("REQ-AUTH-007")
 class TestCommonPasswords:
     """等价类：常见密码黑名单."""
 
@@ -43,6 +47,7 @@ class TestCommonPasswords:
         assert validate_password("Admin123") == "此密码过于常见，请更换"
 
 
+@pytest.mark.requirement("REQ-AUTH-007")
 class TestCharacterRequirements:
     """等价类：各类字符缺失."""
 
@@ -63,6 +68,7 @@ class TestCharacterRequirements:
         assert validate_password("Abcdef12") == "密码至少包含 1 个特殊字符"
 
 
+@pytest.mark.requirement("REQ-AUTH-007")
 class TestEdgeCases:
     """边界 + 特殊场景."""
 

@@ -12,6 +12,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from backend.core.infra.database import Base  # type: ignore[attr-defined]
 
+# Register the requirement coverage plugin
+from tests.requirement_coverage import pytest_addoption, pytest_configure, pytest_collection_modifyitems, pytest_runtest_makereport, pytest_sessionfinish  # noqa: F401
+
 BASE = "http://localhost:8080"
 
 # Test user credentials for rbac mode
@@ -198,11 +201,16 @@ async def test_client() -> Any:
     the full FastAPI application runs without external infrastructure.
     Tables are created once per session.
     """
-    # ── 1. Patch Redis-dependent rate limiter BEFORE app import ──────
-    from unittest.mock import AsyncMock
+    # ── 1. Patch Redis BEFORE app import (mock get_redis, not RateLimiter) ──
+    from unittest.mock import AsyncMock, patch
 
-    import backend.core.infra.rate_limit as rl_mod
-    rl_mod.RateLimiter.is_allowed = AsyncMock(return_value=True)  # type: ignore[method-assign]
+    session_redis = AsyncMock()
+    session_redis.incr.return_value = 1
+    session_redis.expire.return_value = True
+    session_redis.publish.return_value = 1
+
+    patch_redis = patch("backend.broker.get_redis", return_value=session_redis)
+    patch_redis.start()
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)
@@ -215,14 +223,15 @@ async def test_client() -> Any:
     # ── 3. Import the app (deps already patched) ────────────────────
     from backend.core.app import app
 
-    app.router.lifespan_context = None  # type: ignore[assignment]
-
     # ── 4. Create ASGI client ───────────────────────────────────────
     from httpx import ASGITransport, AsyncClient
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+        try:
+            yield client
+        finally:
+            patch_redis.stop()
 
 
 @pytest.fixture(scope="session")
@@ -233,3 +242,50 @@ async def db_engine(test_client: Any) -> None:
     exists only to satisfy test signatures that request both.
     """
     return None
+
+
+# ── Test data factories ──────────────────────────────────────────────────────
+from tests.factories import (  # noqa: E402
+    agent_factory,
+    team_factory,
+    session_factory,
+    tool_factory,
+    prompt_factory,
+    skill_factory,
+    mcp_factory,
+)
+
+
+@pytest.fixture
+def agent_data():
+    return agent_factory
+
+
+@pytest.fixture
+def team_data():
+    return team_factory
+
+
+@pytest.fixture
+def session_data():
+    return session_factory
+
+
+@pytest.fixture
+def tool_data():
+    return tool_factory
+
+
+@pytest.fixture
+def prompt_data():
+    return prompt_factory
+
+
+@pytest.fixture
+def skill_data():
+    return skill_factory
+
+
+@pytest.fixture
+def mcp_data():
+    return mcp_factory
