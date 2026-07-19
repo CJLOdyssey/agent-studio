@@ -4,7 +4,10 @@ When REDIS_SENTINEL_ENABLED=1, uses redis-py Sentinel client to discover
 the current master.  Otherwise falls back to a direct REDIS_URL connection.
 """
 
+from __future__ import annotations
+
 import os
+from typing import Any
 
 from redis.asyncio import Redis as AsyncRedis
 from redis.asyncio.sentinel import Sentinel
@@ -26,14 +29,14 @@ def _get_sentinel() -> Sentinel:
             (h.rsplit(":", 1)[0], int(h.rsplit(":", 1)[1]))
             for h in SENTINEL_HOSTS_STR.split(",")
         ]
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "decode_responses": True,
             "socket_keepalive": True,
             "socket_connect_timeout": 10,
         }
         if REDIS_PASSWORD:
             kwargs["password"] = REDIS_PASSWORD
-        _sentinel = Sentinel(hosts, **kwargs)
+        _sentinel = Sentinel(hosts, **kwargs)  # type: ignore[no-untyped-call]
     return _sentinel
 
 
@@ -45,7 +48,7 @@ def create_redis() -> AsyncRedis:
     """
     if SENTINEL_ENABLED:
         sentinel = _get_sentinel()
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "db": SENTINEL_DB,
             "decode_responses": True,
             "socket_keepalive": True,
@@ -55,7 +58,7 @@ def create_redis() -> AsyncRedis:
         }
         if REDIS_PASSWORD:
             kwargs["password"] = REDIS_PASSWORD
-        return sentinel.master_for(SERVICE_NAME, **kwargs)
+        return sentinel.master_for(SERVICE_NAME, **kwargs)  # type: ignore[no-any-return]
 
     # Direct connection — read REDIS_URL from env to avoid circular imports
     url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
