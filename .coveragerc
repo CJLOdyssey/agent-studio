@@ -9,7 +9,6 @@ omit =
     */backend/rag/rag_store.py
 
 [report]
-fail_under = 70
 fail_under = 89
 skip_empty = true
 exclude_lines =
