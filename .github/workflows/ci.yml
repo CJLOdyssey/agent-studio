@@ -316,6 +316,7 @@ jobs:
     name: "Backend: Mutation"
     runs-on: ubuntu-latest
     continue-on-error: true  # 首次集成，允许失败不阻塞流水线
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -326,9 +327,10 @@ jobs:
       - run: pip install -r requirements-lock.txt --quiet
       - run: pip install "mutmut==2.5.1" --quiet
       - name: Run mutation tests
+        timeout-minutes: 8
         run: |
           PYTHONPATH=. mutmut run \
-            --paths-to-mutate "backend/core/,backend/routers/skills.py,backend/routers/mcps.py" \
+            --paths-to-mutate "backend/core/infra/,backend/routers/skills.py,backend/routers/mcps.py" \
             --tests-dir tests/ \
             --runner "python3 -m pytest tests/ -q --tb=short -x -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
       - name: Show mutation score
