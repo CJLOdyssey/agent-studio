@@ -324,7 +324,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-lock.txt
       - run: pip install -r requirements-lock.txt --quiet
-      - run: pip install mutmut --quiet
+      - run: pip install "mutmut<3" --quiet
       - name: Run mutation tests
         run: |
           PYTHONPATH=. mutmut run \
