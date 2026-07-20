@@ -21,8 +21,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 import backend.core.infra.database as db_mod
 
 _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-db_mod._async_engine = _sqlite_engine
-db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+if db_mod._async_engine is None:
+    db_mod._async_engine = _sqlite_engine
+if db_mod._async_session_factory is None:
+    db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 from backend.core.app import app
@@ -42,10 +44,10 @@ def client():
         # id="admin" matching CurrentUser() defaults in legacy auth mode.
         from sqlalchemy import select
         from backend.core.infra.database import (
-            RoleDB, UserDB, UserRoleDB, get_session_factory,
+            RoleDB, UserDB, UserRoleDB,
         )
-        factory = get_session_factory()
-        async with factory() as session:
+
+        async with db_mod._async_session_factory() as session:  # type: ignore[arg-type]
             for role_data in [
                 ("role-admin", "admin", {"all": True}),
                 ("role-member", "member", {"read": True}),

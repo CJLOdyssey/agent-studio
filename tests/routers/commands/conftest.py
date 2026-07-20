@@ -16,9 +16,14 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import backend.core.infra.database as db_mod
 
-_sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-db_mod._async_engine = _sqlite_engine
-db_mod._async_session_factory = async_sessionmaker(_sqlite_engine, expire_on_commit=False)
+if db_mod._async_engine is None:
+    _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    db_mod._async_engine = _sqlite_engine
+if db_mod._async_session_factory is None:
+    db_mod._async_session_factory = async_sessionmaker(
+        db_mod._async_engine if db_mod._async_engine is not None else create_async_engine("sqlite+aiosqlite:///:memory:"),
+        expire_on_commit=False,
+    )
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 from backend.core.app import app
@@ -37,9 +42,8 @@ def client():
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
-        factory = get_session_factory()
-        async with factory() as session:
+        from backend.core.infra.database import UserDB
+        async with db_mod._async_session_factory() as session:  # type: ignore[arg-type]
             existing = await session.execute(
                 select(UserDB).where(UserDB.email == "admin@test.com")
             )

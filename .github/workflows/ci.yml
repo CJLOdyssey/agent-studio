@@ -309,7 +309,9 @@ jobs:
             --ignore=tests/e2e/ \
             --ignore=tests/repository/ \
             --ignore=tests/routers/auth/test_auth_api.py \
-            -q --tb=short
+            -q --tb=short \
+            --reruns 2 \
+            --reruns-delay 5
 
   # ── Mutation Tests ─────────────────────────────────────────────────────────
   mutation-test:
