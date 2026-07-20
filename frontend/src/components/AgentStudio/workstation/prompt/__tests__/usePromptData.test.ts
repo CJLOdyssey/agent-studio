@@ -120,4 +120,13 @@ describe('usePromptData', () => {
     expect(Array.isArray(all)).toBe(true);
     expect(all.length).toBeGreaterThan(0);
   });
+
+  it('addItems batch-adds items to local state', async () => {
+    const { result } = renderHook(() => usePromptData());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    const before = result.current.processed.length;
+    const newItem = { id: 'new-1', name: 'Batch', content: 'batch content', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' };
+    act(() => { result.current.addItems([newItem]); });
+    expect(result.current.processed.length).toBe(before + 1);
+  });
 });

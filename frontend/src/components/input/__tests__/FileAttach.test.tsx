@@ -89,4 +89,95 @@ describe('FileAttach', () => {
     fireEvent.change(input);
     expect(onReject).toHaveBeenCalledWith([{ file: exe, reason: 'type_denied' }]);
   });
+
+  it('handles paste event with files (clipboard handler)', () => {
+    render(
+      <TestProviders>
+        <FileAttach onAdd={onAdd} />
+      </TestProviders>,
+    );
+    const file = new File(['content'], 'paste.txt', { type: 'text/plain' });
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', {
+      value: { files: [file], items: [file], types: ['Files'] },
+      configurable: true,
+    });
+    expect(() => {
+      document.dispatchEvent(event);
+    }).not.toThrow();
+  });
+
+  it('handles paste event without files (clipboard handler)', () => {
+    render(
+      <TestProviders>
+        <FileAttach onAdd={onAdd} />
+      </TestProviders>,
+    );
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', {
+      value: { files: [] as File[], items: [] },
+      configurable: true,
+    });
+    expect(() => {
+      document.dispatchEvent(event);
+    }).not.toThrow();
+  });
+
+  it('paste handler skips when activeElement is file input', () => {
+    render(
+      <TestProviders>
+        <FileAttach onAdd={onAdd} />
+      </TestProviders>,
+    );
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    document.body.appendChild(fileInput);
+    fileInput.focus();
+    const file = new File(['paste'], 'paste.txt', { type: 'text/plain' });
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', {
+      value: { files: [file], items: [file], types: ['Files'] },
+      configurable: true,
+    });
+    expect(() => {
+      document.dispatchEvent(event);
+    }).not.toThrow();
+    document.body.removeChild(fileInput);
+  });
+
+  it('handleFiles early return on empty file list', () => {
+    const { container } = render(
+      <TestProviders>
+        <FileAttach onAdd={onAdd} />
+      </TestProviders>,
+    );
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [] });
+    fireEvent.change(input);
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it('paste handler skips when activeElement is inside input-wrapper', () => {
+    render(
+      <TestProviders>
+        <FileAttach onAdd={onAdd} />
+      </TestProviders>,
+    );
+    const wrapper = document.createElement('div');
+    wrapper.className = 'agentstudio-input-wrapper';
+    const inner = document.createElement('span');
+    wrapper.appendChild(inner);
+    document.body.appendChild(wrapper);
+    inner.focus();
+    const file = new File(['paste'], 'paste.txt', { type: 'text/plain' });
+    const event = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clipboardData', {
+      value: { files: [file], items: [file], types: ['Files'] },
+      configurable: true,
+    });
+    expect(() => {
+      document.dispatchEvent(event);
+    }).not.toThrow();
+    document.body.removeChild(wrapper);
+  });
 });

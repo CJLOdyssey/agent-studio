@@ -95,4 +95,27 @@ describe('CommandDropdown', () => {
     );
     expect(screen.getByText('Search files')).toBeInTheDocument();
   });
+
+  it('closes on outside click', () => {
+    const cmds = [makeCmd('1', { name: 'search' })];
+    render(
+      <TestProviders>
+        <CommandDropdown commands={cmds} activeIndex={0} onSelect={onSelect} onHover={onHover} onClose={onClose} />
+      </TestProviders>,
+    );
+    fireEvent.mouseDown(document.body);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('does not close on inside click', () => {
+    const cmds = [makeCmd('1', { name: 'search' })];
+    render(
+      <TestProviders>
+        <CommandDropdown commands={cmds} activeIndex={0} onSelect={onSelect} onHover={onHover} onClose={onClose} />
+      </TestProviders>,
+    );
+    const popover = document.querySelector('.agentstudio-command-popover')!;
+    fireEvent.mouseDown(popover);
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

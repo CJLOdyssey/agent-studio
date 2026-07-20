@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '../../../test/setup';
 import Modal from '../Modal';
@@ -8,6 +8,48 @@ describe('Modal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('renders focusable elements inside modal body', () => {
+    render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose}>
+          <input data-testid="input-1" />
+          <input data-testid="input-2" />
+        </Modal>
+      </TestProviders>,
+    );
+    expect(screen.getByTestId('input-1')).toBeInTheDocument();
+    expect(screen.getByTestId('input-2')).toBeInTheDocument();
+  });
+
+  it('handles Tab key on non-edge focusable without error', () => {
+    render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose}>
+          <input />
+          <button>OK</button>
+        </Modal>
+      </TestProviders>,
+    );
+    expect(() => {
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: false });
+      fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    }).not.toThrow();
+  });
+
+  it('renders with extra className and all ARIA attrs', () => {
+    const { container } = render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose} className="extra-class">
+          <p>Content</p>
+        </Modal>
+      </TestProviders>,
+    );
+    const content = container.querySelector('.modal-content');
+    expect(content).toHaveClass('extra-class');
+    expect(content).toHaveAttribute('role', 'dialog');
+    expect(content).toHaveAttribute('aria-modal', 'true');
   });
 
   it('renders title and children', () => {
@@ -125,5 +167,47 @@ describe('Modal', () => {
     );
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+  });
+
+  it('wraps Tab from first to last on Shift+Tab', () => {
+    render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose}>
+          <input data-testid="input-1" />
+          <button data-testid="btn-ok">OK</button>
+        </Modal>
+      </TestProviders>,
+    );
+    const dialog = screen.getByRole('dialog');
+    const focusable = dialog.querySelectorAll<HTMLElement>(
+      'input, button, textarea, select, [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first.focus();
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it('wraps Tab from last to first on Tab (no shift)', () => {
+    render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose}>
+          <input data-testid="input-1" />
+          <button data-testid="btn-ok">OK</button>
+        </Modal>
+      </TestProviders>,
+    );
+    const dialog = screen.getByRole('dialog');
+    const focusable = dialog.querySelectorAll<HTMLElement>(
+      'input, button, textarea, select, [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    last.focus();
+    expect(document.activeElement).toBe(last);
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: false });
+    expect(document.activeElement).toBe(first);
   });
 });
