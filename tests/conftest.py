@@ -11,9 +11,18 @@ import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from backend.core.infra.database import Base  # type: ignore[attr-defined]
+from backend.core.infra.redis_sentinel import (
+    create_redis as _original_create_redis,  # noqa: F401 — saved before test_client patches it
+)
 
 # Register the requirement coverage plugin
-from tests.requirement_coverage import pytest_addoption, pytest_configure, pytest_collection_modifyitems, pytest_runtest_makereport, pytest_sessionfinish  # noqa: F401
+from tests.requirement_coverage import (  # noqa: F401
+    pytest_addoption,
+    pytest_collection_modifyitems,
+    pytest_configure,
+    pytest_runtest_makereport,
+    pytest_sessionfinish,
+)
 
 BASE = "http://localhost:8080"
 
@@ -201,7 +210,14 @@ async def test_client() -> Any:
     the full FastAPI application runs without external infrastructure.
     Tables are created once per session.
     """
-    # ── 1. Patch Redis BEFORE app import (mock get_redis, not RateLimiter) ──
+    # ── 1. Patch Redis BEFORE app import ────────────────────────────
+    # Patch create_redis (the low-level connection factory) instead of
+    # get_redis — some callers (login.py, password.py, register.py)
+    # import get_redis via `from backend.broker import get_redis` at
+    # module level, creating local references that a later patch on
+    # backend.broker.get_redis cannot override.  create_redis is always
+    # looked up from its module at call time, so a single patch covers
+    # every code path.
     from unittest.mock import AsyncMock, patch
 
     session_redis = AsyncMock()
@@ -209,7 +225,7 @@ async def test_client() -> Any:
     session_redis.expire.return_value = True
     session_redis.publish.return_value = 1
 
-    patch_redis = patch("backend.broker.get_redis", return_value=session_redis)
+    patch_redis = patch("backend.core.infra.redis_sentinel.create_redis", return_value=session_redis)
     patch_redis.start()
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
@@ -221,10 +237,10 @@ async def test_client() -> Any:
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────
-    from backend.core.app import app
-
     # ── 4. Create ASGI client ───────────────────────────────────────
     from httpx import ASGITransport, AsyncClient
+
+    from backend.core.app import app
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -244,15 +260,31 @@ async def db_engine(test_client: Any) -> None:
     return None
 
 
+# ── Integration test skip helper ──────────────────────────────────────────────
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    """Skip @pytest.mark.integration tests when the backend is unreachable."""
+    if item.get_closest_marker("integration") is None:
+        return
+    try:
+        resp = httpx.get("http://localhost:8080/api/models", timeout=3)
+        if resp.status_code != 200:
+            pytest.skip(f"Backend not available (status {resp.status_code})")
+    except Exception:
+        pytest.skip("Backend not available (connection failed)")
+
+
 # ── Test data factories ──────────────────────────────────────────────────────
 from tests.factories import (  # noqa: E402
     agent_factory,
-    team_factory,
-    session_factory,
-    tool_factory,
-    prompt_factory,
-    skill_factory,
     mcp_factory,
+    prompt_factory,
+    session_factory,
+    skill_factory,
+    team_factory,
+    tool_factory,
 )
 
 
