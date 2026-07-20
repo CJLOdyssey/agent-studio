@@ -37,27 +37,51 @@ def client():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
-        await seed_default_roles_and_admin()
-        # Also create admin@test.com for login/password tests
+        # Create roles and users with explicit IDs for legacy mode compatibility.
+        # Use raw seeding (not seed_default_roles_and_admin) so admin user gets
+        # id="admin" matching CurrentUser() defaults in legacy auth mode.
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
+        from backend.core.infra.database import (
+            RoleDB, UserDB, UserRoleDB, get_session_factory,
+        )
         factory = get_session_factory()
         async with factory() as session:
-            existing = await session.execute(
-                select(UserDB).where(UserDB.email == "admin@test.com")
-            )
-            if not existing.scalar_one_or_none():
-                user = UserDB(
-                    id="admin-login",
-                    username="admin-login",
-                    email="admin@test.com",
-                    password_hash=bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode(),
-                    is_active=True,
-                    is_verified=True,
+            for role_data in [
+                ("role-admin", "admin", {"all": True}),
+                ("role-member", "member", {"read": True}),
+            ]:
+                existing = await session.execute(
+                    select(RoleDB).where(RoleDB.name == role_data[1])
                 )
-                session.add(user)
-                await session.commit()
+                if not existing.scalar_one_or_none():
+                    session.add(RoleDB(id=role_data[0], name=role_data[1], permissions=role_data[2]))
+            await session.flush()
+
+            admin_role = (
+                await session.execute(select(RoleDB).where(RoleDB.name == "admin"))
+            ).scalar_one_or_none()
+
+            for user_data in [
+                {"id": "admin", "email": "admin@legacy.local"},
+                {"id": "admin-login", "email": "admin@test.com"},
+            ]:
+                existing = await session.execute(
+                    select(UserDB).where(UserDB.id == user_data["id"])
+                )
+                if not existing.scalar_one_or_none():
+                    user = UserDB(
+                        id=user_data["id"],
+                        username=user_data["id"],
+                        email=user_data["email"],
+                        password_hash=bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode(),
+                        is_active=True,
+                        is_verified=True,
+                    )
+                    session.add(user)
+                    await session.flush()
+                    if admin_role:
+                        session.add(UserRoleDB(user_id=user.id, role_id=admin_role.id))
+            await session.commit()
 
     lifespan_mod.init_db = _safe_init_db
 
