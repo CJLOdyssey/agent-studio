@@ -328,7 +328,7 @@ jobs:
       - name: Run mutation tests
         run: |
           PYTHONPATH=. mutmut run \
-            --paths-to-mutate backend/core/ backend/routers/skills.py backend/routers/mcps.py \
+            --paths-to-mutate "backend/core/,backend/routers/skills.py,backend/routers/mcps.py" \
             --tests-dir tests/ \
             --runner "python3 -m pytest tests/ -q --tb=short -x -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
       - name: Show mutation score
