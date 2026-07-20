@@ -24,6 +24,9 @@ from tests.requirement_coverage import (  # noqa: F401
     pytest_sessionfinish,
 )
 
+# Export flaky_test decorator for use in any test file
+from tests.conftest_flaky import flaky_test  # noqa: F401
+
 BASE = "http://localhost:8080"
 
 # Test user credentials for rbac mode
