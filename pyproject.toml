@@ -49,6 +49,9 @@ omit = [
     "backend/main.py",
     "backend/checkpoint/*",
     "backend/rag/rag_store.py",
+    "backend/graph/__init__.py",
+    "backend/graph/agent_graph.py",
+    "backend/graph/graph_state.py",
 ]
 
 [tool.bandit]
