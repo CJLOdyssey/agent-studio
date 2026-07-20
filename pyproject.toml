@@ -29,6 +29,7 @@ markers = [
     "integration: marks tests that require a running backend + Docker stack (deselect with '-m \"not integration\"')",
     "requirement(req_id): mark test as covering a specific requirement",
     "unit: marks unit tests (fast, no external dependencies)",
+    "flaky: marks tests as flaky (retried automatically via pytest-rerunfailures)",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:langchain.*",
@@ -55,7 +56,7 @@ exclude_dirs = ["tests", ".venv", ".opencode"]
 skips = ["B101", "B104", "B311"]  # B101: assert in tests, B104: 0.0.0.0 for Docker, B311: pseudo-random ok
 
 [tool.coverage.report]
-fail_under = 70
+fail_under = 89
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
