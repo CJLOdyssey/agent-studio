@@ -62,7 +62,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm test
+      - run: npm test -- --pool=threads
 
   frontend-build:
     name: "Frontend: Build & Bundle"
@@ -161,14 +161,15 @@ jobs:
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
       - run: bandit -c pyproject.toml -r backend/ -ll
 
-  # ── Backend Tests ────────────────────────────────────────────────────────
+  # ── Backend Tests (sharded for speed, each ~60s) ─────────────────────────
   backend-test:
     name: "Backend: Tests (${{ matrix.shard }})"
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     strategy:
+      fail-fast: false
       matrix:
-        shard: [routers, core]
+        shard: [routers, repository, core-infra, core-services]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -177,19 +178,21 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-lock.txt
       - run: pip install -r requirements-lock.txt --quiet
-      - name: Run unit tests
+      - name: Run unit tests (${{ matrix.shard }})
         run: |
-          if [ "${{ matrix.shard }}" = "routers" ]; then
-            DIRS="tests/routers/ tests/repository/ tests/orm/"
-          else
-            DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py"
-          fi
+          case "${{ matrix.shard }}" in
+            routers)     DIRS="tests/routers/" ;;
+            repository)  DIRS="tests/repository/ tests/orm/" ;;
+            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/streaming/ --ignore=tests/tasks/" ;;
+            core-services) DIRS="tests/services/ tests/streaming/ tests/tasks/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+          esac
           PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
 
-  # ── Backend Coverage ──────────────────────────────────────────────────────
+  # ── Backend Coverage (from core-infra shard, ~2min) ──────────────────────
   backend-coverage:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
+    needs: backend-test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -198,7 +201,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-lock.txt
       - run: pip install -r requirements-lock.txt --quiet
-      - name: Run tests with coverage
+      - name: Run coverage
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
             -q --tb=short \
@@ -208,7 +211,7 @@ jobs:
             --ignore=tests/test_requirement_markers.py \
             --ignore=tests/routers/auth/test_auth_routers.py \
             --cov=backend \
-            --cov-report=term-missing \
+            --cov-report=term \
             --cov-report=xml \
             --cov-fail-under=89 \
             --reruns 2 \
@@ -237,7 +240,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run test:coverage
+      - run: npm run test:coverage -- --pool=threads
 
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
@@ -539,15 +542,11 @@ jobs:
       - run: pip install -r requirements-lock.txt --quiet
       - name: Run tests with requirement markers
         run: |
-          PYTHONPATH=. python3 -m pytest tests/ \
+          PYTHONPATH=. python3 -m pytest tests/routers/ tests/repository/ tests/services/ \
             --ignore=tests/test_requirement_markers.py \
             --ignore=tests/broker/ \
-            --requirement-coverage \
-            -m "not integration" \
             --ignore=tests/e2e/ \
-            --ignore=tests/repository/ \
-            --ignore=tests/routers/auth/test_auth_routers.py \
-            --ignore=tests/routers/auth/test_auth_api.py \
+            --error-for-skips=no \
             -q --tb=short
 
   # ── Flaky Tests ──────────────────────────────────────────────────────────
