@@ -1,17 +1,13 @@
-"""Content-Security-Policy middleware for defense-in-depth XSS protection.
+"""Content-Security-Policy ASGI middleware for defense-in-depth XSS protection.
 
-Adds a CSP header to every response. Policy is configurable via env vars or
-defaults to a permissive development policy.
+Pure ASGI to avoid Starlette BaseHTTPMiddleware header encoding issues with h11.
 """
 
 from __future__ import annotations
 
 import os
-from collections.abc import Awaitable, Callable
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 CSP_POLICY = os.environ.get(
     "CSP_POLICY",
@@ -23,16 +19,24 @@ CSP_POLICY = os.environ.get(
     "font-src 'self'; "
     "object-src 'none'; "
     "base-uri 'self'; "
-    "frame-ancestors 'none'; "
+    "frame-ancestors 'none'; ",
 )
 
 
-class CSPMiddleware(BaseHTTPMiddleware):
-    """Add Content-Security-Policy header to all responses."""
+class CSPMiddleware:
+    """Pure ASGI middleware that adds Content-Security-Policy header."""
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
-        response = await call_next(request)
-        response.headers["Content-Security-Policy"] = CSP_POLICY
-        return response
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        async def _send(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append(
+                    (b"content-security-policy", CSP_POLICY.encode("ascii"))
+                )
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, _send)
