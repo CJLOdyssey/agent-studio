@@ -204,7 +204,7 @@ class TestTeams:
     # ── Exception handler paths ──
 
     def test_list_teams_exception(self, client):
-        with patch("backend.routers.teams.get_teams", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("backend.routers.teams.get_cached_teams", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.get("/api/teams", headers={"X-User-ID": "admin"})
             assert resp.status_code == 500
 
