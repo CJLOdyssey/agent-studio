@@ -14,8 +14,8 @@ from backend.repository import (
     add_team_member,
     create_team,
     delete_team,
+    get_cached_teams,
     get_team,
-    get_teams,
     link_agent_config,
     remove_team_member,
     reorder_team_members,
@@ -55,7 +55,7 @@ async def list_teams(request: Request) -> Any:
     """List all teams for the current user."""
     try:
         user_id = get_user_id(request)
-        teams = await get_teams(user_id=user_id)
+        teams = await get_cached_teams(user_id=user_id)
         return [
             {
                 "id": t["id"],

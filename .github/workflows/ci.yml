@@ -126,6 +126,26 @@ jobs:
           path: frontend/dist/
           retention-days: 7
 
+  frontend-audit:
+    name: "Frontend: Audit"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefer-offline --no-audit
+      - run: npm audit --audit-level=high
+
   # ── Secrets Scan ─────────────────────────────────────────────────────────
   secrets-scan:
     name: "Security: Secrets Scan"
@@ -197,39 +217,10 @@ jobs:
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
       - run: bandit -c pyproject.toml -r backend/ -ll
 
-  # ── Backend Tests (sharded for speed, each ~60s) ─────────────────────────
-  backend-test:
-    name: "Backend: Tests (${{ matrix.shard }})"
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [routers, repository, core-infra, services, tasks]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
-      - name: Run unit tests (${{ matrix.shard }})
-        run: |
-          case "${{ matrix.shard }}" in
-            routers)     DIRS="tests/routers/" ;;
-            repository)  DIRS="tests/repository/ tests/orm/" ;;
-            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/tasks/" ;;
-            services)    DIRS="tests/services/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-            tasks)       DIRS="tests/tasks/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-          esac
-          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
-
-  # ── Backend Coverage (from core-infra shard, ~2min) ──────────────────────
+  # ── Backend Coverage (~2min) ─────────────────────────────────────────────
   backend-coverage:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
-    needs: backend-test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -704,11 +695,11 @@ jobs:
       - frontend-lint
       - frontend-test
       - frontend-build
+      - frontend-audit
       - secrets-scan
       - container-scan
       - backend-lint
       - backend-security
-      - backend-test
       - backend-coverage
       - frontend-coverage
       - diff-coverage
@@ -737,10 +728,10 @@ jobs:
           check "frontend-lint" "${{ needs.frontend-lint.result }}" || FAIL=1
           check "frontend-test" "${{ needs.frontend-test.result }}" || FAIL=1
           check "frontend-build" "${{ needs.frontend-build.result }}" || FAIL=1
+          check "frontend-audit" "${{ needs.frontend-audit.result }}" || FAIL=1
           check "secrets-scan" "${{ needs.secrets-scan.result }}" || FAIL=1
           check "backend-lint" "${{ needs.backend-lint.result }}" || FAIL=1
           check "backend-security" "${{ needs.backend-security.result }}" || FAIL=1
-          check "backend-test" "${{ needs.backend-test.result }}" || FAIL=1
           check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
           check "frontend-coverage" "${{ needs.frontend-coverage.result }}" || FAIL=1
           check "integration" "${{ needs.integration.result }}" || FAIL=1

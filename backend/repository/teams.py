@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
+from backend.core.infra.cache import get_cache
 from backend.core.infra.database import TeamAgentDB, TeamDB, get_session_factory
 
 
@@ -62,6 +63,57 @@ async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:
             }
             for t in teams
         ]
+
+
+async def get_cached_teams(user_id: str | None = None) -> list[dict[str, Any]]:
+    """Return all teams, using Redis cache with 5-min TTL.
+
+    Falls through to DB on cache miss; mutations invalidate the cache.
+    """
+    cache = get_cache()
+    cache_key = f"teams:all:{user_id or 'global'}"
+    cached = await cache.get(cache_key)
+    if cached is not None:
+        return [_team_from_dict(d) for d in cached]
+
+    result = await get_teams(user_id=user_id)
+    serialized = [_team_to_dict(t) for t in result]
+    await cache.set(cache_key, serialized)
+    return result
+
+
+async def _invalidate_team_cache() -> None:
+    """Invalidate all team cache entries after mutations."""
+    cache = get_cache()
+    await cache.invalidate_pattern("teams:all:*")
+
+
+def _team_to_dict(team: dict[str, Any]) -> dict[str, Any]:
+    """Serialize a team dict for cache storage."""
+    return {
+        "id": team["id"],
+        "name": team["name"],
+        "description": team.get("description"),
+        "status": team.get("status", "active"),
+        "order": team["order"],
+        "is_expanded": team.get("is_expanded", False),
+        "agents": team.get("agents", []),
+        "created_at": team.get("created_at"),
+    }
+
+
+def _team_from_dict(d: dict[str, Any]) -> dict[str, Any]:
+    """Deserialize a team dict from cache."""
+    return {
+        "id": str(d["id"]),
+        "name": str(d["name"]),
+        "description": d.get("description"),
+        "status": str(d.get("status", "active")),
+        "order": int(d.get("order", 0)),
+        "is_expanded": bool(d.get("is_expanded", False)),
+        "agents": d.get("agents", []),
+        "created_at": d.get("created_at"),
+    }
 
 
 async def get_team(team_id: str) -> dict[str, Any] | None:
@@ -137,6 +189,7 @@ async def create_team(
         )
         session.add(team)
         await session.commit()
+        await _invalidate_team_cache()
         await session.refresh(team)
         return team
 
@@ -172,6 +225,7 @@ async def update_team(
         if is_expanded is not None:
             team.is_expanded = is_expanded
         await session.commit()
+        await _invalidate_team_cache()
         await session.refresh(team)
         return team
 
@@ -186,6 +240,7 @@ async def delete_team(team_id: str) -> bool:
             return False
         await session.delete(team)
         await session.commit()
+        await _invalidate_team_cache()
         return True
 
 
@@ -223,6 +278,7 @@ async def add_team_member(
         )
         session.add(member)
         await session.commit()
+        await _invalidate_team_cache()
         await session.refresh(member)
         return {
             "id": member.id,
@@ -245,6 +301,7 @@ async def remove_team_member(team_id: str, member_id: str) -> bool:
             return False
         await session.delete(member)
         await session.commit()
+        await _invalidate_team_cache()
         return True
 
 
@@ -259,6 +316,7 @@ async def reorder_team_members(team_id: str, member_ids: list[str]) -> None:
                 .values(order=idx)
             )
         await session.commit()
+        await _invalidate_team_cache()
 
 
 async def link_agent_config(member_id: str, agent_config_id: str) -> bool:
@@ -271,4 +329,5 @@ async def link_agent_config(member_id: str, agent_config_id: str) -> bool:
             return False
         member.agent_config_id = agent_config_id
         await session.commit()
+        await _invalidate_team_cache()
         return True
