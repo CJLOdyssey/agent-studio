@@ -38,6 +38,26 @@ Element.prototype.scrollIntoView = vi.fn();
 Element.prototype.scrollTo = vi.fn();
 Object.defineProperty(window, 'matchMedia', { writable: true, value: vi.fn().mockImplementation((query: string) => ({ matches: false, media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() })) });
 
+// react-virtuoso requires ResizeObserver to measure container dimensions
+window.ResizeObserver = vi.fn(function ResizeObserver(callback: ResizeObserverCallback) {
+  const targets = new WeakSet<Element>();
+  return {
+    observe(target: Element) {
+      targets.add(target);
+      Promise.resolve().then(() => {
+        const width = parseFloat((target as HTMLElement).style.width) || 800;
+        const height = parseFloat((target as HTMLElement).style.height) || 600;
+        callback(
+          [{ borderBoxSize: [{ blockSize: height, inlineSize: width }], contentBoxSize: [{ blockSize: height, inlineSize: width }], contentRect: new DOMRectReadOnly(0, 0, width, height), devicePixelContentBoxSize: [{ blockSize: height, inlineSize: width }], target }],
+          this as unknown as ResizeObserver,
+        );
+      });
+    },
+    unobserve(target: Element) { targets.delete(target); },
+    disconnect() {},
+  } as unknown as ResizeObserver;
+});
+
 function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: {

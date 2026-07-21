@@ -24,8 +24,8 @@ async def get_dashboard_stats() -> Any:
 
 
 @router.get("/api/admin/logs")
-async def get_command_logs(limit: int = 50, offset: int = 0) -> Any:
-    """Return paginated command execution logs."""
+async def get_command_logs(limit: int = 20, offset: int = 0) -> Any:
+    """Return paginated command execution logs with total count."""
     return await _get_command_logs(limit=limit, offset=offset)
 
 

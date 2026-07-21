@@ -51,6 +51,7 @@
     "react-markdown": "^9.1.0",
     "react-router-dom": "^6.28.0",
     "react-syntax-highlighter": "^16.1.1",
+    "react-virtuoso": "^4.18.11",
     "reactflow": "^11.11.4",
     "vite-plugin-csp": "^1.1.2",
     "zustand": "^5.0.0"

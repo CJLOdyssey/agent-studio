@@ -79,6 +79,11 @@ graph_rounds_per_run = Histogram(
     buckets=(1, 2, 3, 5, 8, 12, 20, 35, 50),
 )
 
+stream_messages_dropped_total = Counter(
+    "stream_messages_dropped_total",
+    "Total stream messages dropped due to buffer overflow",
+)
+
 active_runs = Gauge(
     "active_runs",
     "Number of currently executing runs",

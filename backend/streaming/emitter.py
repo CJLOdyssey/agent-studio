@@ -1,12 +1,16 @@
 """Streaming emitter — bridges raw httpx streaming events to Redis pub/sub + DB."""
 
 import logging
+import os
 from typing import Any
 
 from backend.broker import publish_run_message
+from backend.core.infra.metrics import stream_messages_dropped_total
 from backend.repository import save_message
 
 logger = logging.getLogger(__name__)
+
+STREAM_DEFAULT_MAX_BUFFER_SIZE = 1000
 
 
 class StreamEmitter:
@@ -17,6 +21,28 @@ class StreamEmitter:
         self._thinking_buffer: list[str] = []
         self._pending_thinking: str | None = None
         self._pending_thinking_nodes: list[dict[str, Any]] | None = None
+        self._max_buffer_size = self._load_max_buffer_size()
+        self._backpressure_warned = False
+
+    @staticmethod
+    def _load_max_buffer_size() -> int:
+        try:
+            return int(os.environ.get("STREAM_MAX_BUFFER_SIZE", str(STREAM_DEFAULT_MAX_BUFFER_SIZE)))
+        except (ValueError, TypeError):
+            return STREAM_DEFAULT_MAX_BUFFER_SIZE
+
+    def _checked_append(self, buffer: list[str], item: str, label: str) -> None:
+        buffer.append(item)
+        overflow = len(buffer) - self._max_buffer_size
+        if overflow > 0:
+            del buffer[:overflow]
+            stream_messages_dropped_total.inc(overflow)
+            if not self._backpressure_warned:
+                logger.warning(
+                    "Stream buffer exceeded limit for run %s (%s): limit=%d, dropping oldest messages",
+                    self._run_id, label, self._max_buffer_size,
+                )
+                self._backpressure_warned = True
 
     async def __call__(self, event: dict[str, Any]) -> None:
         kind = event.get("event", "")
@@ -25,7 +51,7 @@ class StreamEmitter:
         if kind == "on_custom_token":
             content = data.get("content", "")
             if content:
-                self._stream_buffer.append(content)
+                self._checked_append(self._stream_buffer, content, "stream")
                 try:
                     await publish_run_message(
                         self._run_id,
@@ -41,7 +67,7 @@ class StreamEmitter:
         elif kind == "on_custom_thinking":
             rc = data.get("content", "")
             if rc:
-                self._thinking_buffer.append(rc)
+                self._checked_append(self._thinking_buffer, rc, "thinking")
                 try:
                     await publish_run_message(
                         self._run_id,
@@ -60,7 +86,7 @@ class StreamEmitter:
         elif kind == "on_chat_model_stream":
             chunk = data.get("chunk")
             if chunk and hasattr(chunk, "content") and chunk.content:
-                self._stream_buffer.append(chunk.content)
+                self._checked_append(self._stream_buffer, chunk.content, "stream")
 
         elif kind == "on_chat_model_end":
             await self._flush_buffers()
