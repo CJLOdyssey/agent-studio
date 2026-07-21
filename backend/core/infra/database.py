@@ -1,10 +1,9 @@
 """Database engine and session factory with slow-query detection."""
 
-from collections.abc import AsyncIterator
-from typing import Any
-
 import os
 import time
+from collections.abc import AsyncIterator
+from typing import Any
 
 from sqlalchemy import (
     event,
