@@ -15,7 +15,6 @@ from backend.repository import (
     delete_agent_config,
     get_agent_config,
     get_agent_config_by_role,
-    get_agent_config_count,
     get_cached_agent_configs,
     update_agent_config,
 )
