@@ -61,10 +61,13 @@ async def get_dashboard_stats() -> dict[str, Any]:
         }
 
 
-async def get_command_logs(limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
-    """Return paginated command logs, newest first."""
+async def get_command_logs(limit: int = 20, offset: int = 0) -> dict[str, Any]:
+    """Return paginated command logs (newest first) with total count."""
     factory = get_session_factory()
     async with factory() as session:
+        count_row = await session.execute(select(func.count()).select_from(CommandLogDB))
+        total = count_row.scalar() or 0
+
         rows = (
             await session.execute(
                 select(CommandLogDB)
@@ -74,7 +77,7 @@ async def get_command_logs(limit: int = 50, offset: int = 0) -> list[dict[str, A
             )
         ).scalars().all()
 
-        return [
+        items = [
             {
                 "id": r.id,
                 "timestamp": r.created_at.isoformat() if r.created_at else "",
@@ -84,6 +87,8 @@ async def get_command_logs(limit: int = 50, offset: int = 0) -> list[dict[str, A
             }
             for r in rows
         ]
+
+        return {"items": items, "total": total, "offset": offset, "limit": limit}
 
 
 async def get_recent_activity(limit: int = 10) -> list[dict[str, Any]]:

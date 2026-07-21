@@ -11,6 +11,7 @@ from backend.repository.agents import (
     get_agent_config_by_role,
     get_agent_config_count,
     get_agent_configs,
+    get_cached_agent_configs,
     update_agent_config,
 )
 
@@ -175,6 +176,7 @@ __all__ = [
     "get_agent_config_by_role",
     "get_agent_config_count",
     "get_agent_configs",
+    "get_cached_agent_configs",
     "get_api_key_for_use",
     "get_api_keys",
     "get_attachment_by_id",

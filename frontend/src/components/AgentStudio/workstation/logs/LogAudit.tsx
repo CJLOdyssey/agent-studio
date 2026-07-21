@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, forwardRef } from 'react';
+import { TableVirtuoso } from 'react-virtuoso';
 import { Input, Select } from 'antd';
 import { Search, FileText, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 import { PAGE_SIZE } from '../constants';
@@ -81,30 +82,44 @@ function LogAudit() {
         </div>
       </div>
 
-      <div className="wsta-table-wrap">
+      <div className="wsta-table-wrap" style={processed.length > 0 && !isLoading ? { overflow: 'hidden' } : undefined}>
         {isLoading ? <TableSkeleton rows={8} cols={7} /> : processed.length === 0 ? (
           <div className="wsta-empty-state">
             <FileText size={40} className="wsta-empty-state-icon" />
             <div className="wsta-empty-state-title">{t('logs.empty')}</div>
           </div>
         ) : (
-        <table className="wsta-table" role="grid" aria-label={t('logs.empty')}>
-          <thead><tr>
-            <th scope="col">{t('logs.col_time')}</th><th scope="col">{t('logs.col_level')}</th><th scope="col">{t('logs.col_module')}</th>
-            <th scope="col">{t('logs.col_user')}</th><th scope="col">{t('logs.col_action')}</th><th scope="col">{t('logs.col_details')}</th><th scope="col">{t('logs.col_ip')}</th>
-          </tr></thead>
-          <tbody>
-            {paged.map((entry: LogEntry) => (
-              <tr key={entry.id}>
-                <td><span className="wsta-mono-text">{entry.timestamp}</span></td>
-                <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
-                <td><span className="wsta-tag-pill wsta-tag-indigo">{MODULE_LABEL[entry.module] || entry.module}</span></td>
-                <td>{entry.user}</td><td>{entry.action}</td>
-                <td className="wsta-secondary-text">{entry.details}</td><td><span className="wsta-mono-text">{entry.ip}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <TableVirtuoso
+          style={{ height: '400px' }}
+          data={paged}
+          components={{
+            Table: forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>((props, ref) => (
+              <table ref={ref} className="wsta-table" role="grid" aria-label={t('logs.empty')} {...props} />
+            )),
+          }}
+          fixedHeaderContent={() => (
+            <tr>
+              <th scope="col">{t('logs.col_time')}</th>
+              <th scope="col">{t('logs.col_level')}</th>
+              <th scope="col">{t('logs.col_module')}</th>
+              <th scope="col">{t('logs.col_user')}</th>
+              <th scope="col">{t('logs.col_action')}</th>
+              <th scope="col">{t('logs.col_details')}</th>
+              <th scope="col">{t('logs.col_ip')}</th>
+            </tr>
+          )}
+          itemContent={(_index: number, entry: LogEntry) => (
+            <>
+              <td><span className="wsta-mono-text">{entry.timestamp}</span></td>
+              <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
+              <td><span className="wsta-tag-pill wsta-tag-indigo">{MODULE_LABEL[entry.module] || entry.module}</span></td>
+              <td>{entry.user}</td>
+              <td>{entry.action}</td>
+              <td className="wsta-secondary-text">{entry.details}</td>
+              <td><span className="wsta-mono-text">{entry.ip}</span></td>
+            </>
+          )}
+        />
         )}
       </div>
 

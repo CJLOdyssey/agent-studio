@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Trash2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Virtuoso } from 'react-virtuoso';
 import type { Conversation, Agent } from '../../../types/AgentStudio';
 
 interface ConversationsListProps {
@@ -66,92 +67,104 @@ const ConversationsList = memo(function ConversationsList({
     return map;
   }, [agents]);
 
-  if (conversations.length === 0) return null;
+  const nonEmptyGroups = useMemo(() => {
+    return [
+      { label: t('sidebar.today'), items: groupedConversations.today },
+      { label: t('sidebar.yesterday'), items: groupedConversations.yesterday },
+      { label: t('sidebar.threeDays'), items: groupedConversations.threeDays },
+      { label: t('sidebar.sevenDays'), items: groupedConversations.sevenDays },
+      { label: t('sidebar.month'), items: groupedConversations.month },
+      { label: t('sidebar.older'), items: groupedConversations.older },
+    ].filter((g) => g.items.length > 0);
+  }, [groupedConversations, t]);
 
-  const renderGroup = (label: string, items: Conversation[]) => {
-    if (items.length === 0) return null;
+  if (nonEmptyGroups.length === 0) return null;
+
+  const flatItems = nonEmptyGroups.flatMap((g) => [
+    { type: 'group' as const, label: g.label },
+    ...g.items.map((conv) => ({ type: 'item' as const, conv })),
+  ]);
+
+  const renderConversationItem = (conv: Conversation) => {
+    const agent = conv.agentId ? agentMap.get(conv.agentId) : undefined;
+    const AgentIcon = agent?.icon;
+    const isTeam = !!conv.teamId;
+    const isActive = activeConvId === conv.id && !selectedAgentId;
     return (
-      <div className="agentstudio-conv-group">
-        <div className="agentstudio-conv-group-label">{label}</div>
-        {items.map((conv) => {
-          const agent = conv.agentId ? agentMap.get(conv.agentId) : undefined;
-          const AgentIcon = agent?.icon;
-          const isTeam = !!conv.teamId;
-          const isActive = activeConvId === conv.id && !selectedAgentId;
-          return (
-            <div
-              key={conv.id}
-              className={`agentstudio-conv-item ${isActive ? 'active' : ''}`}
-              onClick={() => onSelect(conv)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelect(conv);
-                }
-              }}
-              tabIndex={0}
-              role="button"
-              aria-selected={isActive}
-            >
-              <div className="agentstudio-conv-item-content">
-                <div className="agentstudio-conv-item-title">
-                  {isTeam && (
-                    <span className="agentstudio-conv-item-agent-icon" style={{ color: 'var(--da-accent)' }}>
-                      <Users size={12} />
-                    </span>
-                  )}
-                  {agent && AgentIcon && !isTeam && (
-                    <span className="agentstudio-conv-item-agent-icon" style={{ color: agent.color }}>
-                      <AgentIcon size={12} />
-                    </span>
-                  )}
-                  {Array.from(conv.title).length > 26
-                    ? Array.from(conv.title).slice(0, 26).join('') + '...'
-                    : conv.title}
-                </div>
-                <div className="agentstudio-conv-item-meta">
-                  {isTeam && (
-                    <span className="agentstudio-conv-item-agent-name" style={{ color: 'var(--da-accent)' }}>{conv.teamName || '团队'}</span>
-                  )}
-                  {agent && !isTeam && (
-                    <span className="agentstudio-conv-item-agent-name">{agent.name}</span>
-                  )}
-                  {conv.messages.filter((m) => m.role === 'agent').length > 0
-                    ? t('sidebar.replied')
-                    : t('sidebar.pendingReply')}
-                  {' · '}
-                  {new Date(conv.updatedAt).toLocaleDateString(
-                    i18n.language === 'en-US' ? 'en-US' : 'zh-CN',
-                    { month: 'short', day: 'numeric' },
-                  )}
-                </div>
-              </div>
-              <button
-                className="agentstudio-conv-delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(conv.id);
-                }}
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          );
-        })}
+      <div
+        key={conv.id}
+        className={`agentstudio-conv-item ${isActive ? 'active' : ''}`}
+        onClick={() => onSelect(conv)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(conv);
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-selected={isActive}
+      >
+        <div className="agentstudio-conv-item-content">
+          <div className="agentstudio-conv-item-title">
+            {isTeam && (
+              <span className="agentstudio-conv-item-agent-icon" style={{ color: 'var(--da-accent)' }}>
+                <Users size={12} />
+              </span>
+            )}
+            {agent && AgentIcon && !isTeam && (
+              <span className="agentstudio-conv-item-agent-icon" style={{ color: agent.color }}>
+                <AgentIcon size={12} />
+              </span>
+            )}
+            {Array.from(conv.title).length > 26
+              ? Array.from(conv.title).slice(0, 26).join('') + '...'
+              : conv.title}
+          </div>
+          <div className="agentstudio-conv-item-meta">
+            {isTeam && (
+              <span className="agentstudio-conv-item-agent-name" style={{ color: 'var(--da-accent)' }}>{conv.teamName || '团队'}</span>
+            )}
+            {agent && !isTeam && (
+              <span className="agentstudio-conv-item-agent-name">{agent.name}</span>
+            )}
+            {conv.messages.filter((m) => m.role === 'agent').length > 0
+              ? t('sidebar.replied')
+              : t('sidebar.pendingReply')}
+            {' · '}
+            {new Date(conv.updatedAt).toLocaleDateString(
+              i18n.language === 'en-US' ? 'en-US' : 'zh-CN',
+              { month: 'short', day: 'numeric' },
+            )}
+          </div>
+        </div>
+        <button
+          className="agentstudio-conv-delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(conv.id);
+          }}
+          aria-label={t('common.delete')}
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
     );
   };
 
   return (
     <div className="agentstudio-conversations-list">
-      {renderGroup(t('sidebar.pinned'), groupedConversations.pinned)}
-      {renderGroup(t('sidebar.today'), groupedConversations.today)}
-      {renderGroup(t('sidebar.yesterday'), groupedConversations.yesterday)}
-      {renderGroup(t('sidebar.threeDays'), groupedConversations.threeDays)}
-      {renderGroup(t('sidebar.sevenDays'), groupedConversations.sevenDays)}
-      {renderGroup(t('sidebar.month'), groupedConversations.month)}
-      {renderGroup(t('sidebar.older'), groupedConversations.older)}
+      <Virtuoso
+        style={{ height: '300px' }}
+        data={flatItems}
+        itemContent={(_index: number, item: (typeof flatItems)[number]) =>
+          item.type === 'group' ? (
+            <div className="agentstudio-conv-group-label">{item.label}</div>
+          ) : (
+            renderConversationItem(item.conv)
+          )
+        }
+      />
     </div>
   );
 });
