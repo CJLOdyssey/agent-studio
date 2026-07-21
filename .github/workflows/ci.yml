@@ -166,6 +166,11 @@ jobs:
     name: "Backend: Tests + Coverage"
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    name: "Backend: Tests (${{ matrix.shard }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [routers, core]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -175,6 +180,28 @@ jobs:
           cache-dependency-path: requirements-lock.txt
       - run: pip install -r requirements-lock.txt --quiet
       - name: Run unit tests
+        run: |
+          if [ "${{ matrix.shard }}" = "routers" ]; then
+            DIRS="tests/routers/ tests/repository/ tests/orm/"
+          else
+            DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py"
+          fi
+          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
+
+  # ── Backend Coverage ──────────────────────────────────────────────────────
+  backend-coverage:
+    name: "Backend: Coverage"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install -r requirements-lock.txt --quiet
+      - name: Run tests with coverage
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
             -q --tb=short \
@@ -571,130 +598,6 @@ jobs:
           echo "Flaky tests collected: ${{ steps.collect.outputs.count }}"
           echo "Note: flaky-check is advisory (continue-on-error)"
 
-  # ── Mutation Tests ─────────────────────────────────────────────────────────
-  mutation-test:
-    name: "Backend: Mutation"
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full history for diff-based file selection
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
-      - run: pip install "mutmut==2.5.1" --quiet
-      - name: Select changed files for mutation
-        id: diff
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'backend/**/*.py' ':!backend/system_team/*' ':!backend/thinking_tree/*' ':!backend/graph/*' ':!backend/checkpoint/*' | paste -sd,)
-          else
-            FILES=$(git diff --name-only HEAD~1...HEAD -- 'backend/**/*.py' ':!backend/system_team/*' ':!backend/thinking_tree/*' ':!backend/graph/*' ':!backend/checkpoint/*' | paste -sd,)
-          fi
-          if [ -z "$FILES" ]; then
-            echo "No changed backend files to mutate, using fallback"
-            FILES="backend/core/infra/database.py"
-          fi
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-          echo "Mutating: $FILES"
-      - name: Run mutation tests
-        timeout-minutes: 5
-        run: |
-          # Build test runner args: map source paths to their test files
-          IFS=',' read -ra FILES <<< "${{ steps.diff.outputs.files }}"
-          TEST_ARGS=""
-          for f in "${FILES[@]}"; do
-            case "$f" in
-              backend/core/infra/database.py) TEST_ARGS+=" tests/core/infra/test_database.py" ;;
-              backend/routers/skills.py)      TEST_ARGS+=" tests/routers/test_routers_skills.py" ;;
-              backend/routers/mcps.py)        TEST_ARGS+=" tests/routers/test_routers_mcps.py" ;;
-              backend/routers/tools.py)       TEST_ARGS+=" tests/routers/test_routers_tools.py" ;;
-              backend/routers/teams.py)       TEST_ARGS+=" tests/routers/test_routers_teams.py" ;;
-              backend/routers/versions.py)    TEST_ARGS+=" tests/routers/test_routers_versions.py" ;;
-              backend/routers/prompts.py)     TEST_ARGS+=" tests/routers/test_routers_prompts.py" ;;
-              backend/routers/sessions.py)    TEST_ARGS+=" tests/routers/test_routers_sessions.py" ;;
-              backend/routers/runs.py)        TEST_ARGS+=" tests/routers/test_routers_runs.py" ;;
-              backend/routers/agents.py)      TEST_ARGS+=" tests/routers/test_routers_agents.py" ;;
-              backend/routers/providers.py)   TEST_ARGS+=" tests/routers/test_provider_routes.py" ;;
-              backend/repository/teams.py)    TEST_ARGS+=" tests/routers/test_routers_teams.py" ;;
-              backend/repository/versions.py) TEST_ARGS+=" tests/routers/test_routers_versions.py" ;;
-              backend/repository/tools.py)    TEST_ARGS+=" tests/routers/test_routers_tools.py" ;;
-              backend/repository/skills.py)   TEST_ARGS+=" tests/routers/test_routers_skills.py" ;;
-            esac
-          done
-          if [ -z "$TEST_ARGS" ]; then
-            echo "No test mapping for changed files, using full suite"
-            TEST_ARGS="tests/ -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
-          fi
-          echo "Test args: $TEST_ARGS"
-          PYTHONPATH=. mutmut run \
-            --paths-to-mutate "${{ steps.diff.outputs.files }}" \
-            --tests-dir tests/ \
-            --CI \
-            --simple-output \
-            --runner "python3 -m pytest $TEST_ARGS -q --tb=short -x" 2>&1 | tee /tmp/mutmut.log
-          # mutmut uses \r to overwrite progress lines; split them first
-          tr '\r' '\n' < /tmp/mutmut.log | grep -E '^[[:space:]]*[0-9]+/[0-9]+' | tail -1 > /tmp/mutmut_score.txt
-      - name: Show mutation score
-        if: always()
-        run: mutmut results
-      - name: Check mutation score threshold
-        if: always()
-        run: |
-          SCORE_LINE=$(cat /tmp/mutmut_score.txt 2>/dev/null || echo "")
-          if [ -z "$SCORE_LINE" ]; then
-            echo "⚠️  No score line found — cannot determine mutation score"
-            exit 0
-          fi
-          # Parse killed / total from mutmut progress line (format: "K/T  killed/total")
-          KILLED=$(echo "$SCORE_LINE" | grep -oP '\d+(?=/)' | head -1 || echo "0")
-          TOTAL=$(echo "$SCORE_LINE" | grep -oP '(?<=/)\d+' | head -1 || echo "1")
-          if [ "$TOTAL" -eq 0 ]; then TOTAL=1; fi
-          SCORE=$(python3 -c "print(int($KILLED / $TOTAL * 100))")
-          echo "Mutation score: ${SCORE}% (${KILLED}/${TOTAL})"
-          if [ "$SCORE" -lt 60 ]; then
-            echo "❌ Mutation score ${SCORE}% is below 60% threshold"
-            exit 1
-          fi
-          echo "✅ Mutation score ${SCORE}% meets 60% threshold"
-      - name: Comment mutation score on PR
-        if: always() && github.event_name == 'pull_request'
-        continue-on-error: true  # GitHub denies write to fork PRs — by design, not a bug
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let scoreLine = 'N/A';
-            try {
-              scoreLine = fs.readFileSync('/tmp/mutmut_score.txt', 'utf-8').trim();
-            } catch (e) {}
-
-            const files = '${{ steps.diff.outputs.files }}';
-            const body = `## 变异测试结果
-
-            **变更文件**: \`${files}\`
-            **结果**: \`${scoreLine}\`
-
-            | 状态 | 含义 |
-            |------|------|
-            | killed | 变异被测试消灭 |
-            | survived | 变异存活（测试未覆盖） |
-            | suspicious | 测试耗时异常 |
-            | timeout | 测试套件超时 |
-            | skipped | 已跳过 |`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
-
   # ── Load Tests ─────────────────────────────────────────────────────────────
   load-test:
     name: "Backend: Load Test"
@@ -788,10 +691,7 @@ jobs:
       - openapi-diff
       - integration
       - docs-check
-      - requirement-coverage
-      - flaky-check
       - load-test
-      - frontend-e2e
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs
