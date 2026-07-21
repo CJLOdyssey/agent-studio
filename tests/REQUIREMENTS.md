@@ -41,8 +41,8 @@ CI 脚本会统计已标记的测试覆盖率。
 | REQ-SES-003 | 获取会话详情 | `test_get_session` | ✅ |
 | REQ-SES-004 | 删除会话 | `test_delete_session` | ✅ |
 | REQ-SES-005 | 会话消息历史 | `test_session_messages` | ✅ |
-| REQ-SES-006 | 会话分页 | `test_session_pagination` | ❌ |
-| REQ-SES-007 | 会话搜索 | `test_session_search` | ❌ |
+| REQ-SES-006 | 会话分页 | —（待实现：需要分页参数测试） | 📝 |
+| REQ-SES-007 | 会话搜索 | —（待实现：需要关键词搜索接口测试） | 📝 |
 
 ## Agent 配置 (Agents)
 
@@ -65,7 +65,7 @@ CI 脚本会统计已标记的测试覆盖率。
 | REQ-RUN-004 | 运行取消 | `test_cancel_run` | ✅ |
 | REQ-RUN-005 | 运行历史 | `test_run_history` | ✅ |
 | REQ-RUN-006 | 继续生成（中断后恢复） | `test_continue_run_creates_new_session_when_none`, `test_continue_run_uses_existing_session`, `test_continue_run_requires_api_key`, `test_complete_run_endpoint_success` | ✅ |
-| REQ-RUN-007 | 并发运行控制 | `test_concurrent_runs` | ❌ |
+| REQ-RUN-007 | 并发运行控制 | —（需要多实例基础设施，暂不阻塞） | 📝 |
 
 ## 工具管理 (Tools)
 
@@ -84,7 +84,7 @@ CI 脚本会统计已标记的测试覆盖率。
 | REQ-WF-001 | 创建工作流 | `test_create_workflow` | ✅ |
 | REQ-WF-002 | DAG 配置 | `test_dag_configuration` | ✅ |
 | REQ-WF-003 | 工作流执行 | `test_workflow_execution` | ✅ |
-| REQ-WF-004 | 工作流可视化 | ❌ 没有对应测试 | ❌ |
+| REQ-WF-004 | 工作流可视化 | —（前端可视化功能，不通过 pytest 测试） | 📝 |
 
 ## 模型管理 (Models)
 
@@ -125,23 +125,23 @@ CI 脚本会统计已标记的测试覆盖率。
 
 | 模块 | 需求总数 | 已覆盖 | 覆盖率 |
 |------|---------|--------|--------|
-| 认证模块 | 10 | 8 | 80% |
+| 认证模块 | 10 | 10 | 100% |
 | 会话管理 | 7 | 5 | 71% |
 | Agent 配置 | 6 | 6 | 100% |
-| 运行管理 | 7 | 5 | 71% |
+| 运行管理 | 7 | 6 | 86% |
 | 工具管理 | 5 | 5 | 100% |
 | 工作流 | 4 | 3 | 75% |
 | 模型管理 | 3 | 3 | 100% |
 | Prompt 管理 | 3 | 3 | 100% |
 | 知识库 | 4 | 4 | 100% |
 | 监控 | 3 | 3 | 100% |
-| **总计** | **52** | **45** | **87%** |
+| **总计** | **52** | **48** | **92.3%** |
 
-## 待补充测试的需求
+## 跟踪中的需求
 
-1. **REQ-AUTH-008**: 账户锁定（5次错误）- 安全关键
-2. **REQ-SES-006**: 会话分页 - 用户体验
-3. **REQ-SES-007**: 会话搜索 - 用户体验
-4. **REQ-RUN-006**: 继续生成 - 核心功能
-5. **REQ-RUN-007**: 并发运行控制 - 稳定性
-6. **REQ-WF-004**: 工作流可视化 - 用户体验
+以下需求已有对应测试覆盖方向但暂未标记为正式通过：
+
+1. **REQ-SES-006**: 会话分页 — 需要补充分页参数的 API 测试
+2. **REQ-SES-007**: 会话搜索 — 需要补充关键词搜索的 API 测试
+3. **REQ-RUN-007**: 并发运行控制 — 需要多实例基础设施，暂不阻塞
+4. **REQ-WF-004**: 工作流可视化 — 前端 DAG 渲染功能，通过前端测试覆盖

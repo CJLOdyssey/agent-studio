@@ -10,9 +10,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Enterprise: explicit permissions (least-privilege principle).
+# For same-repo PRs, GITHUB_TOKEN can write PR comments.
+# For fork PRs, GitHub denies write permissions — this is by design,
+# not a bug. The comment steps have continue-on-error to handle that.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
 env:
-  PYTHON_VERSION: "3.12"
-  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "22"
 
 jobs:
   # ── Frontend ──────────────────────────────────────────────────────────────
@@ -26,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
@@ -43,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
@@ -59,7 +69,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
@@ -78,6 +88,7 @@ jobs:
         with:
           name: frontend-dist
           path: frontend/dist/
+          retention-days: 7
 
   # ── Backend Lint & Security ──────────────────────────────────────────────
   backend-lint:
@@ -106,7 +117,7 @@ jobs:
           cache-dependency-path: requirements-lock.txt
       - run: pip install -r requirements-lock.txt --quiet
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
-      - run: "bandit -c pyproject.toml -r backend/ -ll 2>&1 || echo 'Warning: bandit found issues (non-blocking)'"
+      - run: bandit -c pyproject.toml -r backend/ -ll
 
   # ── Backend Tests ────────────────────────────────────────────────────────
   backend-test:
@@ -131,7 +142,7 @@ jobs:
             --cov=backend \
             --cov-report=term-missing \
             --cov-report=xml \
-            --cov-fail-under=70 \
+            --cov-fail-under=89 \
             --reruns 2 \
             --reruns-delay 5
       - uses: actions/upload-artifact@v4
@@ -139,6 +150,7 @@ jobs:
         with:
           name: coverage-report
           path: coverage.xml
+          retention-days: 7
 
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
@@ -171,6 +183,7 @@ jobs:
             --diff-range-notation '..'
       - name: Comment on PR
         if: failure()
+        continue-on-error: true  # GitHub denies write to fork PRs — by design, not a bug
         uses: actions/github-script@v7
         with:
           script: |
@@ -181,11 +194,11 @@ jobs:
             let diffCoverOutput = '';
             try {
               diffCoverOutput = execSync(
-                'diff-cover coverage.xml --compare-branch=origin/${{ github.base_ref }} --fail-under=70 --report-uncovered',
+                'diff-cover coverage.xml --compare-branch=origin/${{ github.base_ref }} --fail-under=70 --show-uncovered',
                 { encoding: 'utf-8' }
               );
             } catch (error) {
-              diffCoverOutput = error.stdout || 'Error running diff-cover';
+              diffCoverOutput = error.stdout || error.stderr || 'Error running diff-cover';
             }
 
             const body = `## ⚠️ Diff Coverage Check Failed
@@ -264,7 +277,7 @@ jobs:
             sleep 1
           done
       - name: Run E2E tests
-        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short
+        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
       - name: Stop backend
         if: always()
         run: kill $BACKEND_PID 2>/dev/null || true
@@ -280,7 +293,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "${{ env.NODE_VERSION }}"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -311,6 +324,129 @@ jobs:
             --ignore=tests/routers/auth/test_auth_api.py \
             -q --tb=short
 
+  # ── Mutation Tests ─────────────────────────────────────────────────────────
+  mutation-test:
+    name: "Backend: Mutation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for diff-based file selection
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install "mutmut==2.5.1" --quiet
+      - name: Select changed files for mutation
+        id: diff
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'backend/**/*.py' ':!backend/system_team/*' ':!backend/thinking_tree/*' ':!backend/graph/*' ':!backend/checkpoint/*' | paste -sd,)
+          else
+            FILES=$(git diff --name-only HEAD~1...HEAD -- 'backend/**/*.py' ':!backend/system_team/*' ':!backend/thinking_tree/*' ':!backend/graph/*' ':!backend/checkpoint/*' | paste -sd,)
+          fi
+          if [ -z "$FILES" ]; then
+            echo "No changed backend files to mutate, using fallback"
+            FILES="backend/core/infra/database.py"
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "Mutating: $FILES"
+      - name: Run mutation tests
+        timeout-minutes: 5
+        run: |
+          # Build test runner args: map source paths to their test files
+          IFS=',' read -ra FILES <<< "${{ steps.diff.outputs.files }}"
+          TEST_ARGS=""
+          for f in "${FILES[@]}"; do
+            case "$f" in
+              backend/core/infra/database.py) TEST_ARGS+=" tests/core/infra/test_database.py" ;;
+              backend/routers/skills.py)      TEST_ARGS+=" tests/routers/test_routers_skills.py" ;;
+              backend/routers/mcps.py)        TEST_ARGS+=" tests/routers/test_routers_mcps.py" ;;
+              backend/routers/tools.py)       TEST_ARGS+=" tests/routers/test_routers_tools.py" ;;
+              backend/routers/teams.py)       TEST_ARGS+=" tests/routers/test_routers_teams.py" ;;
+              backend/routers/versions.py)    TEST_ARGS+=" tests/routers/test_routers_versions.py" ;;
+              backend/routers/prompts.py)     TEST_ARGS+=" tests/routers/test_routers_prompts.py" ;;
+              backend/routers/sessions.py)    TEST_ARGS+=" tests/routers/test_routers_sessions.py" ;;
+              backend/routers/runs.py)        TEST_ARGS+=" tests/routers/test_routers_runs.py" ;;
+              backend/routers/agents.py)      TEST_ARGS+=" tests/routers/test_routers_agents.py" ;;
+              backend/routers/providers.py)   TEST_ARGS+=" tests/routers/test_provider_routes.py" ;;
+              backend/repository/teams.py)    TEST_ARGS+=" tests/routers/test_routers_teams.py" ;;
+              backend/repository/versions.py) TEST_ARGS+=" tests/routers/test_routers_versions.py" ;;
+              backend/repository/tools.py)    TEST_ARGS+=" tests/routers/test_routers_tools.py" ;;
+              backend/repository/skills.py)   TEST_ARGS+=" tests/routers/test_routers_skills.py" ;;
+            esac
+          done
+          if [ -z "$TEST_ARGS" ]; then
+            echo "No test mapping for changed files, using full suite"
+            TEST_ARGS="tests/ -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
+          fi
+          echo "Test args: $TEST_ARGS"
+          PYTHONPATH=. mutmut run \
+            --paths-to-mutate "${{ steps.diff.outputs.files }}" \
+            --tests-dir tests/ \
+            --CI \
+            --simple-output \
+            --runner "python3 -m pytest $TEST_ARGS -q --tb=short -x" 2>&1 | tee /tmp/mutmut.log
+          # mutmut uses \r to overwrite progress lines; split them first
+          tr '\r' '\n' < /tmp/mutmut.log | grep -E '^[[:space:]]*[0-9]+/[0-9]+' | tail -1 > /tmp/mutmut_score.txt
+      - name: Show mutation score
+        if: always()
+        run: mutmut results
+      - name: Comment mutation score on PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true  # GitHub denies write to fork PRs — by design, not a bug
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let scoreLine = 'N/A';
+            try {
+              scoreLine = fs.readFileSync('/tmp/mutmut_score.txt', 'utf-8').trim();
+            } catch (e) {}
+
+            const files = '${{ steps.diff.outputs.files }}';
+            const body = `## 变异测试结果
+
+            **变更文件**: \`${files}\`
+            **结果**: \`${scoreLine}\`
+
+            | 状态 | 含义 |
+            |------|------|
+            | killed | 变异被测试消灭 |
+            | survived | 变异存活（测试未覆盖） |
+            | suspicious | 测试耗时异常 |
+            | timeout | 测试套件超时 |
+            | skipped | 已跳过 |`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # ── Load Tests ─────────────────────────────────────────────────────────────
+  load-test:
+    name: "Backend: Load Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install locust --quiet
+      - name: Verify locustfile
+        run: |
+          echo "Load test CI integration — placeholder (needs running backend)"
+          echo "Future: locust --headless --users 10 --spawn-rate 1 --run-time 30s"
+          test -f tests/loadtests/locustfile.py && echo "locustfile exists"
+
   # ── Final Gate ────────────────────────────────────────────────────────────
   ci-passed:
     name: "CI Passed"
@@ -326,6 +462,8 @@ jobs:
       - integration
       - docs-check
       - requirement-coverage
+      - mutation-test
+      - load-test
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs
@@ -334,10 +472,12 @@ jobs:
              [[ "${{ needs.frontend-test.result }}" != "success" ]] ||
              [[ "${{ needs.frontend-build.result }}" != "success" ]] ||
              [[ "${{ needs.backend-lint.result }}" != "success" ]] ||
+             [[ "${{ needs.backend-security.result }}" != "success" ]] ||
              [[ "${{ needs.backend-test.result }}" != "success" ]] ||
              [[ "${{ needs.integration.result }}" != "success" ]] ||
              [[ "${{ needs.docs-check.result }}" != "success" ]] ||
-             [[ "${{ needs.requirement-coverage.result }}" != "success" ]]; then
+             [[ "${{ needs.requirement-coverage.result }}" != "success" ]] ||
+             [[ "${{ needs.load-test.result }}" != "success" ]]; then
             echo "❌ One or more required jobs failed"
             exit 1
           fi

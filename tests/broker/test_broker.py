@@ -4,6 +4,44 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pytest import MonkeyPatch
+
+
+@pytest.fixture(autouse=True)
+def _restore_get_redis(monkeypatch: MonkeyPatch):
+    """Undo conftest's session-level patches so broker tests test real logic.
+
+    The test_client fixture patches backend.core.infra.redis_sentinel.create_redis
+    for the entire session. Broker tests need the REAL create_redis path.
+
+    Also resets SENTINEL_ENABLED to False — tests in test_redis_sentinel.py use
+    importlib.reload() which can leave the module with SENTINEL_ENABLED=True
+    after the test ends (monkeypatch restores the env var, but the module-level
+    constant is not re-evaluated).
+    """
+    import backend.broker as mod_broker
+    import backend.core.infra.redis_sentinel as rsmod
+
+    rsmod.SENTINEL_ENABLED = False
+    rsmod._sentinel = None
+
+    from tests.conftest import _original_create_redis
+
+    _real_create_redis = _original_create_redis
+
+    def real_get_redis():
+        loop = mod_broker.asyncio.get_running_loop()
+        loop_id = id(loop)
+        pool = mod_broker._pools.get(loop_id)
+        if pool is None:
+            pool = _real_create_redis()
+            mod_broker._pools[loop_id] = pool
+        return pool
+
+    monkeypatch.setattr("backend.broker.get_redis", real_get_redis)
+    monkeypatch.setattr(
+        "backend.core.infra.redis_sentinel.create_redis", _real_create_redis
+    )
 
 
 class TestBrokerRedis:

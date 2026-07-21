@@ -129,6 +129,37 @@ describe('resolveLists', () => {
     expect(result.system_prompt).toBe('');
   });
 
+  it('parseJsonArr with invalid JSON returns empty array', async () => {
+    const { backendToEntry } = await import('../mappers');
+    const entry = backendToEntry(makeConfig({
+      tools: 'not-json',
+    }));
+    expect(entry.toolIds).toEqual([]);
+  });
+
+  it('parseJsonArr with non-array non-string returns empty array', async () => {
+    const { backendToEntry } = await import('../mappers');
+    const entry = backendToEntry(makeConfig({
+      tools: 42 as unknown as string,
+    }));
+    expect(entry.toolIds).toEqual([]);
+  });
+
+  it('handles API errors for all resolveLists calls', async () => {
+    const { listTools } = await import('../../../../../api/client/tools');
+    const { listMCPs } = await import('../../../../../api/client/mcps');
+    const { listSkills } = await import('../../../../../api/client/skills');
+    (listTools as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+    (listMCPs as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+    (listSkills as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+
+    const { resolveLists } = await import('../mappers');
+    const result = await resolveLists('', ['t1'], ['m1'], ['s1']);
+    expect(result.tools).toHaveLength(0);
+    expect(result.mcp).toHaveLength(0);
+    expect(result.skills).toHaveLength(0);
+  });
+
   it('filters tools/mcp/skills by ID', async () => {
     const { listTools } = await import('../../../../../api/client/tools');
     const { listMCPs } = await import('../../../../../api/client/mcps');

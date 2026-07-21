@@ -90,4 +90,24 @@ describe('useItemList', () => {
 
     expect(result.current.items).toEqual([]);
   });
+
+  it('update with non-matching id leaves items unchanged', () => {
+    const { result } = renderHook(() => useItemList(presets));
+
+    act(() => result.current.toggle('preset-1'));
+    act(() => result.current.update('nonexistent', { name: 'Updated' }));
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].name).toBe('Preset 1');
+  });
+
+  it('remove when editingId is different does not clear editingId', () => {
+    const { result } = renderHook(() => useItemList(presets));
+
+    act(() => result.current.toggle('preset-1'));
+    act(() => result.current.remove('preset-2'));
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.editingId).toBeNull();
+  });
 });

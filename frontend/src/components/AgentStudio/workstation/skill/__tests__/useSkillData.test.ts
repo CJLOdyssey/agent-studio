@@ -87,6 +87,13 @@ describe('useSkillData', () => {
     expect(result.current.processed.length).toBeGreaterThan(0);
   });
 
+  it('ignores sort for invalid field', async () => {
+    const { result } = renderHook(() => useSkillData());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    act(() => { result.current.handleSort('description' as never); });
+    expect(result.current.sortField).toBeNull();
+  });
+
   it('handles sorting', async () => {
     const { result } = renderHook(() => useSkillData());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
