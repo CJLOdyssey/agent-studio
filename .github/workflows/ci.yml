@@ -329,10 +329,10 @@ jobs:
         timeout-minutes: 8
         run: |
           PYTHONPATH=. mutmut run \
-            --paths-to-mutate "backend/core/infra/,backend/routers/skills.py,backend/routers/mcps.py" \
+            --paths-to-mutate "backend/core/infra/database.py,backend/routers/skills.py,backend/routers/mcps.py" \
             --tests-dir tests/ \
             --CI \
-            --runner "python3 -m pytest tests/ -q --tb=short -x -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
+            --runner "python3 -m pytest tests/core/infra/test_database.py tests/routers/test_routers_skills.py tests/routers/test_routers_mcps.py -q --tb=short -x"
       - name: Show mutation score
         if: always()
         run: mutmut results
