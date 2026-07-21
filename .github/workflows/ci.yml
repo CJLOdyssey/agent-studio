@@ -10,6 +10,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Enterprise: explicit permissions (least-privilege principle).
+# For same-repo PRs, GITHUB_TOKEN can write PR comments.
+# For fork PRs, GitHub denies write permissions — this is by design,
+# not a bug. The comment steps have continue-on-error to handle that.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: read
+
 env:
   PYTHON_VERSION: "3.11"
   NODE_VERSION: "22"
@@ -173,7 +183,7 @@ jobs:
             --diff-range-notation '..'
       - name: Comment on PR
         if: failure()
-        continue-on-error: true  # fork PRs may lack issue write permissions
+        continue-on-error: true  # GitHub denies write to fork PRs — by design, not a bug
         uses: actions/github-script@v7
         with:
           script: |
@@ -386,7 +396,7 @@ jobs:
         run: mutmut results
       - name: Comment mutation score on PR
         if: always() && github.event_name == 'pull_request'
-        continue-on-error: true  # fork PRs may lack issue write permissions
+        continue-on-error: true  # GitHub denies write to fork PRs — by design, not a bug
         uses: actions/github-script@v7
         with:
           script: |
