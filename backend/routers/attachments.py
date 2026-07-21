@@ -79,7 +79,9 @@ async def upload_attachment(
     _validate_upload(content_type, len(content))
 
     attachment_id = str(uuid4())
-    safe_filename = f"{attachment_id}_{file.filename or 'unnamed'}"
+    from pathlib import Path as _Path
+    raw_name = _Path(file.filename).name if file.filename else "unnamed"
+    safe_filename = f"{attachment_id}_{raw_name}"
     storage_path = UPLOAD_DIR / session_id / safe_filename
     storage_path.parent.mkdir(parents=True, exist_ok=True)
 

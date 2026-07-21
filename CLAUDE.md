@@ -59,13 +59,13 @@
 │       ├── types/                          # 全局类型
 │       └── utils/                          # 工具函数（logger, errorHandler, sanitize...）
 ├── backend/                # Python FastAPI + SQLAlchemy 2.0 async + Celery
-│   ├── app.py                   # FastAPI 入口（中间件: Auth → RateLimit → CORS）
-│   ├── database.py              # ORM 模型（20 张表）
+│   ├── app.py                   # FastAPI 入口（中间件: RateLimit → Auth → RequestLog → CORS → CSP）
+│   ├── database.py              # ORM 模型（25 张表）
 │   ├── models.py                # Pydantic 业务模型
 │   ├── auth.py                  # JWT 认证 + RBAC (get_current_user / require_role)
 │   ├── error_codes.py           # 结构化错误码体系 (23 codes)
 │   ├── metrics.py               # Prometheus RED 指标端点
-│   ├── routers/                 # API 路由（18 模块）
+│   ├── routers/                 # API 路由（19 模块）
 │   ├── observability/            # 可观测性（7 模块：EventStore + Trace + 自诊断）
 │   │   ├── agents.py            # Agent CRUD + toggle
 │   │   ├── prompts.py           # 提示词 CRUD
@@ -82,7 +82,7 @@
 │   │   ├── admin.py             # 管理面板统计
 │   │   ├── system_team.py       # AI 代理生成器端点
 │   │   └── workflows.py         # 工作流 CRUD（DAG 配置）
-│   ├── repository/              # 数据访问层（10 模块）
+│   ├── repository/              # 数据访问层（23 模块）
 │   │   ├── agents.py, prompts.py, tools.py, mcps.py
 │   │   ├── skills.py, teams.py, keys.py, core.py, workflows.py
 │   │   └── __init__.py          # 统一导出
@@ -104,7 +104,7 @@
 
 ---
 
-## 🗄️ 数据库 Schema（20 张表）
+## 🗄️ 数据库 Schema（25 张表）
 
 ### 核心运行时
 | 表 | 模型 | 作用 |
@@ -144,7 +144,8 @@
 ### 外键关系速览
 ```
 sessions (1) ──→ project_runs (N) ──→ chat_messages (N)
-sessions (1) ──→ memory_entries (N) ──→ checkpoints (N)
+sessions (1) ──→ memory_entries (N)
+sessions (1) ──→ agent_checkpoints (N)
 agent_configs (1) ──→ team_agents (N) ← teams (1)
 user_api_keys (1) ──→ key_usage_logs (N)
 users (1) ──→ user_roles (N) ← roles (1)

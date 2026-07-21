@@ -138,7 +138,7 @@ cp .env.example .env
 cd frontend && npm run dev
 
 # 终端 2 — 后端
-PYTHONPATH=. python3 -m uvicorn backend.app:app --reload
+PYTHONPATH=. python3 -m uvicorn backend.core.app:app --reload
 ```
 
 或 Docker 一键启动：
@@ -165,7 +165,7 @@ AgentStudio/
 │       └── stores/              # 状态管理
 ├── backend/                # Python 后端
 │   ├── app.py                   # FastAPI 入口 + 生命周期
-│   ├── routers/                 # API 路由（18 模块）
+│   ├── routers/                 # API 路由（19 模块）
 │   ├── repository/              # 数据访问层
 │   ├── observability/           # 可观测性（7 模块）
 │   └── tasks/                   # Celery 任务
