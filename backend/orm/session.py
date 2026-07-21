@@ -95,6 +95,7 @@ class MemoryEntry(Base):
         String(36),
         ForeignKey("project_runs.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
     agent_role: Mapped[str] = mapped_column(String(32), nullable=False)
     content_type: Mapped[str] = mapped_column(

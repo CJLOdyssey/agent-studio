@@ -53,7 +53,7 @@ PYTHONPATH=. python3 -m backend.main "<需求描述>"
 
 ```
 AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
-  └─ WorkstationPage.tsx (9-tab → ErrorBoundary per module)
+  └─ WorkstationPage.tsx (10-tab → ErrorBoundary per module)
        ├─ agent/, prompt/, output/, tool/, mcp/, skill/, team/  ← CRUD
        ├─ monitor/, logs/                                       ← display-only
        └─ shared/ (ErrorBoundary, LoadingSkeleton, modals, ...)
@@ -83,11 +83,11 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 ### Backend
 
 ```
-app.py (FastAPI lifespan, middleware: RateLimit → Auth → CORS → RequestLog)
+app.py (FastAPI lifespan, middleware: RateLimit → Auth → RequestLog → CORS)
   └─ routers/ (19 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, run_continue, runs, sessions, skills, teams, tools, versions, workflows)
    │    └─ repository/ (23 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
-  │         └─ database.py (24 ORM models, 24 tables incl. checkpoint)
+  │         └─ orm/ (20 ORM models) + checkpoint.py (CheckpointDB)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
   └─ observability/ (7 modules: store, trace, handler, schema, analyzer, router, startup_guard)
@@ -193,4 +193,4 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - New modules follow the 9-10 file pattern + register in `WorkstationPage.tsx` and `CLAUDE.md`.
 - New repo functions explicitly exported via `repository/__init__.py`.
 - Celery tasks must wrap async code in `_run_async(coro)`.
-- Backend mypy `--strict` has many module-level `ignore_errors` overrides in `pyproject.toml` — not fully enforced.
+- Backend mypy `--strict` is fully enforced with zero module-level `ignore_errors` overrides in `pyproject.toml`. Only 7 targeted `# type: ignore[no-untyped-def]` on router functions.

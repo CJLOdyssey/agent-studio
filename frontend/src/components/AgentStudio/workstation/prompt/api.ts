@@ -32,4 +32,6 @@ const realImpl: PromptAPIService = {
   removeBatch: async (ids) => { await Promise.all(Array.from(ids).map(deletePrompt)); },
 };
 
-export const promptAPI: PromptAPIService = realImpl;
+export let promptAPI: PromptAPIService = realImpl;
+
+export function setPromptAPI(api: PromptAPIService): void { promptAPI = api; }

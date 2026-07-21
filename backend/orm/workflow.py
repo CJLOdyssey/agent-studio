@@ -51,7 +51,7 @@ class WorkflowNodeDB(Base):
         String(36), ForeignKey("workflow_configs.id", ondelete="CASCADE"), nullable=False, index=True
     )
     agent_config_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("agent_configs.id", ondelete="RESTRICT"), nullable=False
+        String(36), ForeignKey("agent_configs.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     role_identifier: Mapped[str] = mapped_column(String(32), nullable=False)
     strategy: Mapped[str] = mapped_column(String(16), default="generator", nullable=False)
@@ -81,10 +81,10 @@ class WorkflowEdgeDB(Base):
         String(36), ForeignKey("workflow_configs.id", ondelete="CASCADE"), nullable=False, index=True
     )
     from_node_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("workflow_nodes.id", ondelete="CASCADE"), nullable=False
+        String(36), ForeignKey("workflow_nodes.id", ondelete="CASCADE"), nullable=False, index=True
     )
     to_node_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("workflow_nodes.id", ondelete="CASCADE"), nullable=False
+        String(36), ForeignKey("workflow_nodes.id", ondelete="CASCADE"), nullable=False, index=True
     )
     condition_key: Mapped[str | None] = mapped_column(String(128), nullable=True, default=None)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

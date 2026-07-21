@@ -116,21 +116,26 @@ from backend.core.infra.request_logger import RequestLogMiddleware  # noqa: E402
 
 app.add_middleware(RequestLogMiddleware)
 
-_cors_origins = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8080",
-]
-_prod_origin = os.environ.get("CORS_ORIGIN")
-if _prod_origin:
-    _cors_origins.append(_prod_origin)
+_cors_origins_raw = os.environ.get("CORS_ORIGINS", "")
+if _cors_origins_raw:
+    _cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+else:
+    # Development defaults only when CORS_ORIGINS is not explicitly set
+    _cors_origins = [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8080",
+    ]
+    _prod_origin = os.environ.get("CORS_ORIGIN")
+    if _prod_origin:
+        _cors_origins.append(_prod_origin)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-User-ID", "X-Requested-With", "Accept"],
 )
 
 

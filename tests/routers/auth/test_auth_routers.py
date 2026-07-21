@@ -305,14 +305,24 @@ class TestAuthPassword:
         assert resp.status_code == 400
 
     def test_change_password(self, client):
-        resp = client.post(
-            "/api/auth/change-password",
-            json={
-                "old_password": "admin123",
-                "new_password": "NewStr0ng@Pass",
-            },
-        )
-        assert resp.status_code == 200
+        from unittest.mock import AsyncMock, MagicMock
+        import bcrypt
+        mock_user = MagicMock()
+        mock_user.id = "u-change-legacy"
+        mock_user.password_hash = bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode()
+        mock_user.email = "change-legacy@test.com"
+        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user), \
+             patch("backend.routers.auth.password.update_password", new_callable=AsyncMock), \
+             patch("backend.routers.auth.password.revoke_all_user_tokens", new_callable=AsyncMock), \
+             patch("backend.routers.auth.password.send_email", new_callable=AsyncMock):
+            resp = client.post(
+                "/api/auth/change-password",
+                json={
+                    "old_password": "admin123",
+                    "new_password": "NewStr0ng@Pass",
+                },
+            )
+            assert resp.status_code == 200
 
     def test_forgot_password_nonexistent_email(self, client):
         resp = client.post(

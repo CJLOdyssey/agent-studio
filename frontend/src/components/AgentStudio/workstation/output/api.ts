@@ -65,4 +65,6 @@ const realImpl: OutputAPIService = {
   removeBatch: async (ids) => { await Promise.all(Array.from(ids).map(deletePrompt)); },
 };
 
-export const outputAPI: OutputAPIService = realImpl;
+export let outputAPI: OutputAPIService = realImpl;
+
+export function setOutputAPI(api: OutputAPIService): void { outputAPI = api; }
