@@ -120,7 +120,7 @@ async def get_agent(agent_id: str) -> Any:
 
 
 @router.post("/api/agents", status_code=201)
-async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
+async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends(get_current_user)) -> Any:
     """Create a new agent configuration."""
     existing = await get_agent_config_by_role(req.role_identifier)
     if existing:
@@ -179,7 +179,7 @@ async def _snapshot_agent(agent_id: str, current_user: CurrentUser) -> Any:
 async def edit_agent(
     agent_id: str,
     req: AgentUpdateRequest,
-    current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Any:
     """Update an existing agent configuration."""
     updated = await update_agent_config(
@@ -205,7 +205,7 @@ async def edit_agent(
 
 
 @router.delete("/api/agents/{agent_id}")
-async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008  # noqa: B008
+async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:
     """Delete an agent configuration (with last-approver guard)."""
     target = await get_agent_config(agent_id)
     if not target:
@@ -224,7 +224,7 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
 
 
 @router.put("/api/agents/{agent_id}/toggle")
-async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
+async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:
     """Toggle an agent's active/inactive status."""
     configs = await get_cached_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)

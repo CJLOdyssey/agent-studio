@@ -19,7 +19,7 @@ docker compose -f docker/compose.local.yml up -d
 # 🔀 Method 2 — 混合模式 (Docker PG/Redis, local hot-reload)
 # ① infra: docker compose -f docker/compose.local.yml up -d postgres redis
 # ② backend (explicit DATABASE_URL overrides shell env if already set):
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. uvicorn backend.app:app --reload --port 8081  # → :8081
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. uvicorn backend.core.app:app --reload --port 8081  # → :8081
 # ③ frontend:
 cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 5174  # → :5174
 
@@ -83,7 +83,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 ### Backend
 
 ```
-app.py (FastAPI lifespan, middleware: RateLimit → Auth → RequestLog → CORS)
+app.py (FastAPI lifespan, middleware: RateLimit → Auth → RequestLog → CORS → CSP)
   └─ routers/ (19 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, run_continue, runs, sessions, skills, teams, tools, versions, workflows)
    │    └─ repository/ (23 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)

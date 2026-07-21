@@ -37,11 +37,11 @@ def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
     @event.listens_for(engine.sync_engine, "before_cursor_execute")
     def _before_execute(
         conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any
-    ) -> None:  # noqa: PLR0913
+    ) -> None:
         conn.info.setdefault("_query_start", []).append(time.time())
 
     @event.listens_for(engine.sync_engine, "after_cursor_execute")
-    def _after_execute(conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any) -> None:  # noqa: PLR0913
+    def _after_execute(conn: Any, cursor: Any, statement: Any, parameters: Any, context: Any, executemany: Any) -> None:
         start = conn.info["_query_start"].pop()
         elapsed = time.time() - start
         if elapsed > SLOW_QUERY_THRESHOLD:
@@ -134,7 +134,7 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 # ── Backward-compatible re-exports ─────────────────────────────────────
 # All ORM models moved to backend.orm package.
 # These imports keep `from backend.core.infra.database import XxxDB` working.
-from backend.orm import (  # noqa: E402, F401
+from backend.orm import (  # noqa: F401
     AgentConfigDB,
     AttachmentDB,
     AuditLogDB,

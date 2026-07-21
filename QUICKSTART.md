@@ -46,7 +46,7 @@ cp .env.example .env
 # 可观测性系统默认开启（OBSERVABILITY_ENABLED=1），磁盘低于 100MB 自动停止写入
 
 # ③ 后端 API（端口 8081，热更新）
-PYTHONPATH=. uvicorn backend.app:app --reload --port 8081
+PYTHONPATH=. uvicorn backend.core.app:app --reload --port 8081
 # → http://localhost:8081
 
 # ④ 前端开发服务器（端口 5174，热更新）
