@@ -87,7 +87,7 @@ app.py (FastAPI lifespan, middleware: RateLimit → Auth → RequestLog → CORS
   └─ routers/ (19 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, run_continue, runs, sessions, skills, teams, tools, versions, workflows)
    │    └─ repository/ (23 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
-  │         └─ orm/ (20 ORM models) + checkpoint.py (CheckpointDB)
+  │         └─ orm/ (24 ORM models) + checkpoint.py (CheckpointDB)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
   └─ observability/ (7 modules: store, trace, handler, schema, analyzer, router, startup_guard)
