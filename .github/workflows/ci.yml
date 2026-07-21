@@ -192,7 +192,6 @@ jobs:
   backend-coverage:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -222,16 +221,6 @@ jobs:
           name: coverage-report
           path: coverage.xml
           retention-days: 7
-
-  # ── Backend Coverage ──────────────────────────────────────────────────────
-  # NOTE: Coverage is now produced by backend-test to avoid double test execution.
-  # This stub job remains as a compatibility alias; diff-coverage depends on backend-test.
-  backend-coverage:
-    name: "Backend: Coverage (alias → backend-test)"
-    runs-on: ubuntu-latest
-    needs: backend-test
-    steps:
-      - run: echo "Coverage report produced by backend-test"
 
   # ── Frontend Coverage ────────────────────────────────────────────────────
   frontend-coverage:
