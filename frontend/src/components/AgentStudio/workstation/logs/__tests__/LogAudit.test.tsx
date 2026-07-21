@@ -27,7 +27,7 @@ beforeEach(() => {
 
 const renderWithVirtuoso = (ui: React.ReactElement) =>
   render(
-    <VirtuosoMockContext.Provider value={{ viewportHeight: 600, itemHeight: 50 }}>
+    <VirtuosoMockContext.Provider value={{ viewportHeight: 800, itemHeight: 50 }}>
       {ui}
     </VirtuosoMockContext.Provider>,
   );

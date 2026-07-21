@@ -5,6 +5,7 @@ import { vi, expect } from 'vitest';
 expect.extend(axeMatchers);
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { VirtuosoMockContext } from 'react-virtuoso';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ToastProvider } from '../utils/useToast';
 import '../i18n/index';
@@ -72,7 +73,11 @@ export function TestProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <VirtuosoMockContext.Provider value={{ viewportHeight: 800, itemHeight: 60 }}>
+            {children}
+          </VirtuosoMockContext.Provider>
+        </ToastProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );
