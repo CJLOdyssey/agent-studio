@@ -50,14 +50,17 @@ class TestAuthRequirements:
         assert len(token) > 0
 
     @pytest.mark.requirement("REQ-AUTH-005")
+    @pytest.mark.skip(reason="token refresh endpoint not yet implemented")
     async def test_token_refresh(self, test_client):
         pass
 
     @pytest.mark.requirement("REQ-AUTH-007")
+    @pytest.mark.skip(reason="password policy check is server-side only, no testable endpoint")
     async def test_password_policy_strong(self, test_client):
         pass
 
     @pytest.mark.requirement("REQ-AUTH-008")
+    @pytest.mark.skip(reason="account lockout requires multi-request state tracking — to be implemented with integration test fixture")
     async def test_account_lockout(self, test_client):
         pass
 
@@ -86,6 +89,7 @@ class TestAgentRequirements:
         assert response.status_code in [200, 201]
 
     @pytest.mark.requirement("REQ-AGT-004")
+    @pytest.mark.skip(reason="agent-tool binding endpoint not yet exposed via API")
     async def test_agent_tool_binding(self, test_client):
         pass
 
@@ -104,5 +108,6 @@ class TestSessionForRun:
         assert response.status_code in [200, 201, 400, 404, 422]
 
     @pytest.mark.requirement("REQ-RUN-002")
+    @pytest.mark.skip(reason="streaming output requires WebSocket/SSE test harness — tracked in test backlog")
     async def test_streaming_output(self, test_client):
         pass

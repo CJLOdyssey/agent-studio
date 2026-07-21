@@ -65,6 +65,7 @@ skips = [
     "B608",  # parameterized SQL via text() + params=; false positive
 ]
 
+
 [tool.coverage.report]
 fail_under = 89
 exclude_lines = [
