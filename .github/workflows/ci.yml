@@ -360,7 +360,7 @@ jobs:
           done
       - name: Validate OpenAPI schema
         run: |
-          curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; exit 1; }
+          curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; cat /tmp/backend.log; exit 1; }
           curl -s http://localhost:8080/openapi.json | python3 -c "
           import json, sys
           schema = json.load(sys.stdin)
