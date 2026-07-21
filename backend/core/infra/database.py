@@ -59,13 +59,14 @@ def get_async_engine() -> AsyncEngine:
     if _async_engine is None:
         pool_size = int(os.environ.get("DATABASE_POOL_SIZE", "20"))
         max_overflow = int(os.environ.get("DATABASE_POOL_OVERFLOW", "10"))
-        _async_engine = create_async_engine(
-            DATABASE_URL,
-            echo=False,
-            poolclass=NullPool if pool_size == 0 else None,
-            pool_size=pool_size if pool_size > 0 else None,
-            max_overflow=max_overflow if pool_size > 0 else None,
-        )
+        kwargs: dict[str, object] = dict(echo=False)
+        if pool_size == 0:
+            kwargs["poolclass"] = NullPool
+        else:
+            kwargs["poolclass"] = None
+            kwargs["pool_size"] = pool_size
+            kwargs["max_overflow"] = max_overflow
+        _async_engine = create_async_engine(DATABASE_URL, **kwargs)
         _attach_slow_query_listeners(_async_engine)
     return _async_engine
 

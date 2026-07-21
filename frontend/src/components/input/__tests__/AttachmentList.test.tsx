@@ -109,6 +109,21 @@ describe('AttachmentList', () => {
     expect(screen.getByText('archive.zip')).toBeInTheDocument();
   });
 
+  it('calls onRemove when remove button clicked', () => {
+    const onRemove = vi.fn();
+    render(
+      <TestProviders>
+        <AttachmentList
+          files={[makeFile('f1', { name: 'removable.txt' })]}
+          onRemove={onRemove}
+        />
+      </TestProviders>,
+    );
+    const removeBtn = screen.getByLabelText('Remove removable.txt');
+    removeBtn.click();
+    expect(onRemove).toHaveBeenCalledWith('f1');
+  });
+
   it('renders multiple files', () => {
     render(
       <TestProviders>

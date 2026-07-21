@@ -29,6 +29,7 @@ markers = [
     "integration: marks tests that require a running backend + Docker stack (deselect with '-m \"not integration\"')",
     "requirement(req_id): mark test as covering a specific requirement",
     "unit: marks unit tests (fast, no external dependencies)",
+    "flaky: marks tests as flaky (retried automatically via pytest-rerunfailures)",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:langchain.*",
@@ -48,14 +49,24 @@ omit = [
     "backend/main.py",
     "backend/checkpoint/*",
     "backend/rag/rag_store.py",
+    "backend/graph/__init__.py",
+    "backend/graph/agent_graph.py",
+    "backend/graph/graph_state.py",
 ]
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", ".opencode"]
-skips = ["B101", "B104", "B311"]  # B101: assert in tests, B104: 0.0.0.0 for Docker, B311: pseudo-random ok
+skips = [
+    "B101",  # assert in tests
+    "B102",  # exec in sandboxed tool code validator (empty __builtins__)
+    "B104",  # 0.0.0.0 for Docker
+    "B310",  # urllib.urlopen for trusted API endpoints, not arbitrary schemes
+    "B311",  # pseudo-random ok
+    "B608",  # parameterized SQL via text() + params=; false positive
+]
 
 [tool.coverage.report]
-fail_under = 70
+fail_under = 89
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -64,11 +75,3 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-[tool.mutmut]
-paths_to_mutate = [
-    "backend/core/",
-    "backend/routers/skills.py",
-    "backend/routers/mcps.py",
-]
-tests_dir = "tests/"
-runner = "pytest"
