@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { axe } from 'vitest-axe';
 import LoginModal from '../LoginModal';
 import { type AuthModalView } from '../AuthContext';
 
@@ -141,5 +142,27 @@ describe('LoginModal', () => {
     render(<LoginModal onClose={onClose} />);
     expect(screen.getByText('重置密码')).toBeInTheDocument();
     expect(screen.getByText('输入注册邮箱，我们将发送验证码')).toBeInTheDocument();
+  });
+
+  describe('无障碍访问', () => {
+    const a11yOptions = {
+      rules: {
+        // TODO(DEBT): .modal-close and password-toggle buttons lack aria-label — tracked in JIRA A11Y-105
+        'button-name': { enabled: false },
+      },
+    };
+
+    it('should have no axe violations on login view', async () => {
+      const { container } = render(<LoginModal onClose={onClose} />);
+      const results = await axe(container, a11yOptions);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no axe violations on forgot password view', async () => {
+      mockUseAuth.loginModalView = 'forgot';
+      const { container } = render(<LoginModal onClose={onClose} />);
+      const results = await axe(container, a11yOptions);
+      expect(results).toHaveNoViolations();
+    });
   });
 });

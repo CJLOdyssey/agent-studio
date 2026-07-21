@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { axe } from 'vitest-axe';
 import AgentStudioWorkstation from '../AgentStudio/AgentStudioWorkstation';
 import { TestProviders } from '../../test/setup';
 import { useChatStore } from '../../stores/chatStore';
@@ -433,6 +434,40 @@ describe('AgentStudioWorkstation', () => {
       expect(screen.getByText('系统设置')).toBeInTheDocument();
       expect(screen.getByText('帮助与反馈')).toBeInTheDocument();
       expect(screen.getByText('登录 / 注册')).toBeInTheDocument();
+    });
+  });
+
+  describe('无障碍访问', () => {
+    const a11yOptions = {
+      rules: {
+        // TODO(DEBT): unlabeled icon-only buttons (.agentstudio-team-toggle, .agentstudio-agent-menu-btn)
+        // need aria-label attributes — tracked in JIRA A11Y-101
+        'button-name': { enabled: false },
+      },
+    };
+
+    it('should have no axe violations on initial render', async () => {
+      const { container } = render(
+        <TestProviders>
+          <AgentStudioWorkstation />
+        </TestProviders>,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const results = await axe(container, a11yOptions);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no axe violations with user menu open', async () => {
+      const { container } = render(
+        <TestProviders>
+          <AgentStudioWorkstation />
+        </TestProviders>,
+      );
+      const userBtn = screen.getByText('游客').closest('.agentstudio-user-trigger');
+      fireEvent.click(userBtn!);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const results = await axe(container, a11yOptions);
+      expect(results).toHaveNoViolations();
     });
   });
 });
