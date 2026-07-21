@@ -67,3 +67,13 @@ Usage examples:
 - `python "<path-to-skill>/scripts/inspect_pr_checks.py" --repo "." --pr "123"`
 - `python "<path-to-skill>/scripts/inspect_pr_checks.py" --repo "." --pr "https://github.com/org/repo/pull/123" --json`
 - `python "<path-to-skill>/scripts/inspect_pr_checks.py" --repo "." --max-lines 200 --context 40`
+
+### 本项目快捷方式
+
+```bash
+# 查看当前 PR 的所有 CI 失败（自动识别 PR 编号）
+bash scripts/ci-debug.sh
+
+# 查看指定 PR
+bash scripts/ci-debug.sh 128
+```
