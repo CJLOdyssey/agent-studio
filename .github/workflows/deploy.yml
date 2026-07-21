@@ -46,8 +46,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/backend:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & push celery
         uses: docker/build-push-action@v6
@@ -58,8 +56,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/celery:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/celery:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
@@ -70,8 +66,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/frontend:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   deploy:
     needs: build-and-push
