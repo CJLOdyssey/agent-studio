@@ -5,6 +5,9 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -431,6 +434,74 @@ jobs:
         if: failure()
         run: cat /tmp/backend.log || true
 
+  # ── E2E Smoke Tests ─────────────────────────────────────────────────────
+  frontend-e2e:
+    name: "Frontend: E2E Smoke"
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+          --name virtual-team-redis
+        ports:
+          - 6379:6379
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: backend
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install playwright --quiet
+      - run: python3 -m playwright install chromium --with-deps
+      - name: Start backend
+        run: |
+          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend-e2e.log 2>&1 &
+          echo "BACKEND_PID=$!" >> $GITHUB_ENV
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/models > /dev/null 2>&1; then break; fi
+            sleep 1
+          done
+      - name: Start frontend dev server
+        working-directory: frontend
+        run: |
+          npm ci --prefer-offline --no-audit
+          npx vite --port 5173 &
+          echo "FRONTEND_PID=$!" >> $GITHUB_ENV
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5173 > /dev/null 2>&1; then break; fi
+            sleep 1
+          done
+      - name: Run smoke tests
+        run: PYTHONPATH=. python3 frontend/e2e/smoke_tests.py 2>&1 | tail -30
+      - name: Stop services
+        if: always()
+        run: kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+
   # ── Docs & Config ────────────────────────────────────────────────────────
   docs-check:
     name: "Docs & Config"
@@ -724,6 +795,7 @@ jobs:
       - requirement-coverage
       - flaky-check
       - load-test
+      - frontend-e2e
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs
