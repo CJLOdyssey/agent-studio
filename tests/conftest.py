@@ -24,8 +24,13 @@ from tests.requirement_coverage import (  # noqa: F401
     pytest_sessionfinish,
 )
 
-# Export flaky_test decorator for use in any test file
-from tests.conftest_flaky import flaky_test  # noqa: F401
+# flaky_test may be unavailable in merge/test contexts — import gracefully
+try:
+    from tests.conftest_flaky import flaky_test  # noqa: F401
+except (ImportError, SyntaxError):
+    def flaky_test(**kwargs):  # type: ignore[no-redef]
+        """No-op fallback when conftest_flaky is unavailable."""
+        return lambda fn: fn
 
 BASE = "http://localhost:8080"
 

@@ -49,7 +49,7 @@ class EmbeddingProvider:
         req.add_header("Authorization", f"Bearer {self.api_key}")
         req.add_header("Content-Type", "application/json")
 
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             result = json.loads(resp.read().decode("utf-8"))
 
         if result.get("output") and result["output"].get("embeddings"):

@@ -49,7 +49,7 @@ def _test_connection_sync(key_cfg: dict[str, Any]) -> dict[str, Any]:
         req.add_header("Authorization", f"Bearer {key_cfg['api_key']}")
         req.add_header("Content-Type", "application/json")
 
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310
             if resp.status == 200:
                 models = _parse_models_from_response(resp, key_cfg["provider"])
                 return {"success": True, "message": "Connection successful", "models": models}

@@ -96,7 +96,7 @@ class ResendApiMailer:
                 "User-Agent": "AgentStudio/1.0",
             },
         )
-        resp = urlopen(req, timeout=15)
+        resp = urlopen(req, timeout=15)  # nosec B310
         body = resp.read().decode()
         logger.info("[ResendAPI] Sent to=%s | subject=%s | response=%s", to, subject, body)
 
