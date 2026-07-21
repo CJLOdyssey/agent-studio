@@ -3,6 +3,14 @@ name: Build & Deploy
 on:
   push:
     branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '部署目标'
+        required: true
+        default: 'prod'
+        type: choice
+        options: [staging, prod]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
