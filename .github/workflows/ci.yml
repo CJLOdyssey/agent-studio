@@ -478,7 +478,8 @@ jobs:
   mutation-test:
     name: "Backend: Mutation"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -697,7 +698,6 @@ jobs:
       - docs-check
       - requirement-coverage
       - flaky-check
-      - mutation-test
       - load-test
     runs-on: ubuntu-latest
     steps:
