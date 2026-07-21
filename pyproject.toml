@@ -21,7 +21,7 @@ exclude = ["tests/"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# addopts intentionally left empty — CI controls pytest flags directly
+addopts = ["-n", "auto", "--dist", "loadfile"]
 asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -30,6 +30,7 @@ markers = [
     "requirement(req_id): mark test as covering a specific requirement",
     "unit: marks unit tests (fast, no external dependencies)",
     "flaky: marks tests as flaky (retried automatically via pytest-rerunfailures)",
+    "xdist_group: marks tests that must run in the same xdist worker (e.g. shared state, ordering)",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:langchain.*",
@@ -57,13 +58,13 @@ omit = [
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", ".opencode"]
 skips = [
-    "B101",  # assert in tests
-    "B102",  # exec in sandboxed tool code validator (empty __builtins__)
-    "B104",  # 0.0.0.0 for Docker
-    "B310",  # urllib.urlopen for trusted API endpoints, not arbitrary schemes
-    "B311",  # pseudo-random ok
-    "B608",  # parameterized SQL via text() + params=; false positive
+    "B101",  # assert — tests/ is already excluded; remaining asserts are intentional defensive checks
+    "B102",  # exec — sandboxed tool code validator runs with empty __builtins__ (no arbitrary code execution)
+    "B104",  # 0.0.0.0 — required for Docker container networking; not exposed to public internet
+    "B608",  # SQL injection — false positive: all SQL uses parameterized text() with params= bound variables
 ]
+
+[tool.bandit.asserts]
 
 
 [tool.coverage.report]
@@ -75,4 +76,15 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
 ]
+
+[tool.mutmut]
+paths_to_mutate = ["backend/"]
+exclude_paths = [
+    "backend/system_team/",
+    "backend/thinking_tree/",
+    "backend/checkpoint/",
+    "backend/graph/",
+]
+test_runner = "PYTHONPATH=. python3 -m pytest -x --no-header -q"
+score_threshold = 60
 

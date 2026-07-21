@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { LucideIcon } from 'lucide-react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { axe } from 'vitest-axe';
 import { TestProviders } from '../../../../test/setup';
 import AgentConfigModal from '../AgentConfigModal';
 import type { Agent } from '../../../types/AgentStudio';
@@ -158,5 +159,31 @@ describe('AgentConfigModal', () => {
     const { props } = renderModal();
     fireEvent.click(screen.getByText('workstation.agentManage').closest('.modal-overlay')!);
     expect(props.onClose).toHaveBeenCalled();
+  });
+
+  describe('无障碍访问', () => {
+    const a11yOptions = {
+      rules: {
+        // TODO(DEBT): .modal-close buttons lack aria-label — tracked in JIRA A11Y-102
+        'button-name': { enabled: false },
+        // TODO(DEBT): .modal-content lacks aria-label/aria-labelledby — tracked in JIRA A11Y-103
+        'aria-dialog-name': { enabled: false },
+        // TODO(DEBT): input[type="checkbox"] in config items lack explicit <label> — tracked in JIRA A11Y-104
+        'label': { enabled: false },
+      },
+    };
+
+    it('should have no axe violations on initial render', async () => {
+      const { container } = renderModal();
+      const results = await axe(container, a11yOptions);
+      expect(results).toHaveNoViolations();
+    });
+
+    it('should have no axe violations with tools tab selected', async () => {
+      const { container } = renderModal();
+      fireEvent.click(screen.getByText('workstation.tools'));
+      const results = await axe(container, a11yOptions);
+      expect(results).toHaveNoViolations();
+    });
   });
 });

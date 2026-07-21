@@ -83,7 +83,7 @@ def execute_tool(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
                 req = urllib.request.Request(
                     tool_self.mcp_endpoint, data=body, headers={"Content-Type": "application/json"}, method="POST"
                 )
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
                     data: bytes = resp.read()
                     return data.decode("utf-8", errors="ignore")[:5000]
             except Exception as e:

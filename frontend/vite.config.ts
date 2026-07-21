@@ -82,6 +82,7 @@ export default defineConfig(({ mode }) => {
       css: true,
       testTimeout: 15000,
       hookTimeout: 15000,
+      exclude: ['e2e/**', 'node_modules/**'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'lcov', 'html'],
