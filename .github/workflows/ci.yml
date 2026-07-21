@@ -28,9 +28,33 @@ env:
   NODE_VERSION: "22"
 
 jobs:
+  # ── Path Filters ─────────────────────────────────────────────────────────
+  changes:
+    name: "Detect Changes"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+              - 'requirements*.txt'
+              - 'alembic/**'
+              - 'pyproject.toml'
+
   # ── Frontend ──────────────────────────────────────────────────────────────
   frontend-lint:
     name: "Frontend: Lint & Typecheck"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -49,6 +73,8 @@ jobs:
 
   frontend-test:
     name: "Frontend: Test"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -66,6 +92,8 @@ jobs:
 
   frontend-build:
     name: "Frontend: Build & Bundle"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -134,6 +162,8 @@ jobs:
   # ── Backend Lint & Security ──────────────────────────────────────────────
   backend-lint:
     name: "Backend: Lint & Typecheck"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -149,6 +179,8 @@ jobs:
 
   backend-security:
     name: "Backend: Security"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -164,6 +196,8 @@ jobs:
   # ── Backend Tests (sharded for speed, each ~60s) ─────────────────────────
   backend-test:
     name: "Backend: Tests (${{ matrix.shard }})"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -192,8 +226,9 @@ jobs:
   # ── Backend Coverage (from core-infra shard, ~2min) ──────────────────────
   backend-coverage:
     name: "Backend: Coverage"
+    needs: [changes, backend-test]
+    if: (needs.changes.outputs.backend == 'true' || github.event_name == 'push') && !cancelled()
     runs-on: ubuntu-latest
-    needs: backend-test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -227,9 +262,10 @@ jobs:
   # ── Frontend Coverage ────────────────────────────────────────────────────
   frontend-coverage:
     name: "Frontend: Coverage"
+    needs: [changes, frontend-test]
+    if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
     runs-on: ubuntu-latest
     continue-on-error: true
-    needs: frontend-test
     defaults:
       run:
         working-directory: frontend
@@ -246,9 +282,9 @@ jobs:
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
     name: "Backend: Diff Coverage"
+    needs: [changes, backend-coverage]
+    if: github.event_name == 'pull_request' && needs.changes.outputs.backend == 'true' && !cancelled()
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs: backend-coverage
     steps:
       - uses: actions/checkout@v4
         with:
@@ -316,8 +352,9 @@ jobs:
   # ── OpenAPI Diff ──────────────────────────────────────────────────────────
   openapi-diff:
     name: "OpenAPI: Schema Validation"
+    needs: [changes]
+    if: github.event_name == 'pull_request' && needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     services:
       redis:
         image: redis:7-alpine
@@ -384,6 +421,8 @@ jobs:
   # ── Integration Tests ────────────────────────────────────────────────────
   integration:
     name: "Integration (${{ matrix.auth_mode }})"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -448,6 +487,8 @@ jobs:
   # ── E2E Smoke Tests ─────────────────────────────────────────────────────
   frontend-e2e:
     name: "Frontend: E2E Smoke"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -532,6 +573,8 @@ jobs:
   # ── Requirement Coverage ─────────────────────────────────────────────────
   requirement-coverage:
     name: "Backend: Requirement Coverage"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -551,6 +594,8 @@ jobs:
   # ── Flaky Tests ──────────────────────────────────────────────────────────
   flaky-check:
     name: "Backend: Flaky Tests"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -587,6 +632,8 @@ jobs:
   # ── Load Tests ─────────────────────────────────────────────────────────────
   load-test:
     name: "Backend: Load Test"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -663,6 +710,7 @@ jobs:
     name: "CI Passed"
     if: always()
     needs:
+      - changes
       - frontend-lint
       - frontend-test
       - frontend-build
@@ -682,36 +730,48 @@ jobs:
     steps:
       - name: Check all jobs
         run: |
-          if [[ "${{ needs.frontend-lint.result }}" != "success" ]] ||
-             [[ "${{ needs.frontend-test.result }}" != "success" ]] ||
-             [[ "${{ needs.frontend-build.result }}" != "success" ]] ||
-             [[ "${{ needs.secrets-scan.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-lint.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-security.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-test.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-coverage.result }}" != "success" ]] ||
-             [[ "${{ needs.frontend-coverage.result }}" != "success" ]] ||
-             [[ "${{ needs.integration.result }}" != "success" ]] ||
-             [[ "${{ needs.docs-check.result }}" != "success" ]]; then
-            echo "❌ One or more required jobs failed"
-            exit 1
-          fi
-          # diff-coverage only runs on PRs, skip if skipped
+          # Helper: job is OK if success or skipped (path-filtered)
+          is_ok() {
+            [[ "$1" == "success" || "$1" == "skipped" ]]
+          }
+
+          failed=0
+
+          # Required jobs — must be success or skipped
+          for job in frontend-lint frontend-test frontend-build backend-lint \
+                     backend-security backend-test backend-coverage frontend-coverage \
+                     integration docs-check secrets-scan; do
+            result="${{ needs[job].result }}"
+            if ! is_ok "$result"; then
+              echo "❌ $job: $result"
+              failed=1
+            fi
+          done
+
+          # diff-coverage — only fails if failure (not skipped)
           if [[ "${{ needs.diff-coverage.result }}" == "failure" ]]; then
             echo "❌ Diff coverage check failed"
-            exit 1
+            failed=1
           fi
-          # openapi-diff validates OpenAPI schema, not breaking changes
+
+          # openapi-diff — only fails if failure (not skipped)
           if [[ "${{ needs.openapi-diff.result }}" == "failure" ]]; then
             echo "❌ OpenAPI schema validation failed"
-            exit 1
+            failed=1
           fi
-          # container-scan is advisory (continue-on-error)
+
+          # Advisory (continue-on-error) — warn only
           if [[ "${{ needs.container-scan.result }}" == "failure" ]]; then
             echo "⚠️  Container scan found issues (advisory only)"
           fi
-          # flaky-check is advisory (continue-on-error)
           if [[ "${{ needs.flaky-check.result }}" == "failure" ]]; then
             echo "⚠️  Flaky test check found issues (advisory only)"
+          fi
+          if [[ "${{ needs.load-test.result }}" == "failure" ]]; then
+            echo "⚠️  Load test failed (advisory only)"
+          fi
+
+          if [[ "$failed" -eq 1 ]]; then
+            exit 1
           fi
           echo "✅ All CI checks passed"

@@ -152,7 +152,7 @@ async def stream_llm_response(
             if response.status_code != 200:
                 body_text = await response.aread()
                 error_body = body_text.decode(errors="replace")[:1000]
-                print(f"\n[DEEPSEEK ERROR] status={response.status_code} body={error_body}\n", flush=True)
+                logger.error("LLM API error: status=%d body=%s", response.status_code, error_body)
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line or not line.startswith("data: "):

@@ -18,9 +18,9 @@ from backend.observability.startup_guard import mark_starting
 
 mark_starting()
 
-from backend.core.app_lifespan import shutdown, startup  # noqa: E402
-from backend.core.infra.logging_config import get_logger  # noqa: E402
-from backend.routers import (  # noqa: E402
+from backend.core.app_lifespan import shutdown, startup
+from backend.core.infra.logging_config import get_logger
+from backend.routers import (
     admin,
     agent_test_handler,
     agents,
@@ -94,13 +94,13 @@ app = FastAPI(
 
 
 # ── Debug routes ───────────────────────────────────────────────────────────
-from backend.observability import router as debug_router  # noqa: E402
+from backend.observability import router as debug_router
 
 app.include_router(debug_router)
 
 
 # ── Middleware (order matters — outermost first) ────────────────────────────
-from backend.core.infra.rate_limit import RateLimitMiddleware  # noqa: E402
+from backend.core.infra.rate_limit import RateLimitMiddleware
 
 app.add_middleware(
     RateLimitMiddleware,
@@ -108,11 +108,11 @@ app.add_middleware(
     window_seconds=int(os.environ.get("RATE_LIMIT_WINDOW", "60")),
 )
 
-from backend.auth import AuthMiddleware  # noqa: E402
+from backend.auth import AuthMiddleware
 
 app.add_middleware(AuthMiddleware)
 
-from backend.core.infra.request_logger import RequestLogMiddleware  # noqa: E402
+from backend.core.infra.request_logger import RequestLogMiddleware
 
 app.add_middleware(RequestLogMiddleware)
 
@@ -139,7 +139,7 @@ app.add_middleware(
 )
 
 # ── CSP (Content-Security-Policy) ─────────────────────────────────────────
-from backend.core.infra.csp_middleware import CSPMiddleware  # noqa: E402
+from backend.core.infra.csp_middleware import CSPMiddleware
 
 app.add_middleware(CSPMiddleware)
 
