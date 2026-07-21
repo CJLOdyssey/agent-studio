@@ -163,11 +163,9 @@ jobs:
 
   # ── Backend Tests ────────────────────────────────────────────────────────
   backend-test:
-    name: "Backend: Tests + Coverage"
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     name: "Backend: Tests (${{ matrix.shard }})"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         shard: [routers, core]
