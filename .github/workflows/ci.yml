@@ -391,7 +391,7 @@ jobs:
             --simple-output \
             --runner "python3 -m pytest $TEST_ARGS -q --tb=short -x" 2>&1 | tee /tmp/mutmut.log
           # mutmut uses \r to overwrite progress lines; split them first
-          tr '\r' '\n' < /tmp/mutmut.log | grep -E 'killed|survived|suspicious|timeout|skipped' | tail -1 > /tmp/mutmut_score.txt
+          tr '\r' '\n' < /tmp/mutmut.log | grep -E '^[[:space:]]*[0-9]+/[0-9]+' | tail -1 > /tmp/mutmut_score.txt
       - name: Show mutation score
         if: always()
         run: mutmut results
@@ -408,18 +408,18 @@ jobs:
             } catch (e) {}
 
             const files = '${{ steps.diff.outputs.files }}';
-            const body = `## Mutation Test Results
+            const body = `## 变异测试结果
 
-            **Files**: \`${files}\`
-            **Result**: \`${scoreLine}\`
+            **变更文件**: \`${files}\`
+            **结果**: \`${scoreLine}\`
 
-            | Symbol | Meaning |
-            |--------|---------|
-            | killed | test caught the mutation |
-            | survived | test did NOT detect the change |
-            | suspicious | test took longer than expected |
-            | timeout | test suite timed out |
-            | skipped | mutation was skipped |`;
+            | 状态 | 含义 |
+            |------|------|
+            | killed | 变异被测试消灭 |
+            | survived | 变异存活（测试未覆盖） |
+            | suspicious | 测试耗时异常 |
+            | timeout | 测试套件超时 |
+            | skipped | 已跳过 |`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
