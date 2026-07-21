@@ -169,7 +169,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [routers, repository, core-infra, core-services]
+        shard: [routers, repository, core-infra, services-tasks]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -183,8 +183,8 @@ jobs:
           case "${{ matrix.shard }}" in
             routers)     DIRS="tests/routers/" ;;
             repository)  DIRS="tests/repository/ tests/orm/" ;;
-            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/streaming/ --ignore=tests/tasks/" ;;
-            core-services) DIRS="tests/services/ tests/streaming/ tests/tasks/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/tasks/" ;;
+            services-tasks) DIRS="tests/services/ tests/tasks/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
           esac
           PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
 
@@ -543,10 +543,8 @@ jobs:
       - name: Run tests with requirement markers
         run: |
           PYTHONPATH=. python3 -m pytest tests/routers/ tests/repository/ tests/services/ \
-            --ignore=tests/test_requirement_markers.py \
             --ignore=tests/broker/ \
             --ignore=tests/e2e/ \
-            --error-for-skips=no \
             -q --tb=short
 
   # ── Flaky Tests ──────────────────────────────────────────────────────────
