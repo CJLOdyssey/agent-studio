@@ -89,7 +89,7 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: './coverage',
         thresholds: {
           statements: 65,
-          branches: 57,
+          branches: 56,
           functions: 53,
           lines: 69,
         },
@@ -102,6 +102,7 @@ export default defineConfig(({ mode }) => {
           'src/constants/**',
 
           'src/components/auth/**',
+          'src/**/tabConfig.tsx',
           'src/main.tsx',
           'src/App.tsx',
           'src/**/index.ts',

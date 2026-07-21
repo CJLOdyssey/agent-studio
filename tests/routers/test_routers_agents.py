@@ -209,7 +209,7 @@ class TestAgents:
     # ── Exception handler paths ──
 
     def test_list_agents_exception(self, client):
-        with patch("backend.routers.agents.get_agent_configs", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("backend.routers.agents.get_cached_agent_configs", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.get("/api/agents")
             assert resp.status_code == 500
 
@@ -225,7 +225,7 @@ class TestAgents:
             "name": "bad-json", "role_identifier": "bad_json_role", "system_prompt": "test",
         })
         agent_id = resp.json()["id"]
-        with patch("backend.routers.agents.get_agent_configs", new_callable=AsyncMock) as mock_configs:
+        with patch("backend.routers.agents.get_cached_agent_configs", new_callable=AsyncMock) as mock_configs:
             c = MagicMock()
             c.id = agent_id
             c.name = "bad-json"

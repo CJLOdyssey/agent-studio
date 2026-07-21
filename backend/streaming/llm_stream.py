@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -18,6 +19,11 @@ from langchain_core.messages import (
 
 from backend.core.infra.circuit_breaker import CircuitBreakerOpenError, llm_circuit
 from backend.core.infra.logging_config import get_logger
+from backend.core.infra.metrics import (
+    llm_request_duration_seconds,
+    llm_requests_total,
+    llm_tokens_total,
+)
 
 logger = get_logger(__name__)
 
@@ -128,6 +134,8 @@ async def stream_llm_response(
     _pending_content: list[str] = []
     _tool_calls_seen = False
     usage_info: dict[str, Any] = {}
+    _start_time = time.time()
+    _model_name = body.get("model", "unknown")
 
     # Circuit breaker guard — rejects the call if LLM API is in failure state
     try:
@@ -203,6 +211,7 @@ async def stream_llm_response(
 
     except httpx.HTTPError:
         logging.getLogger(__name__).error("Raw LLM stream failed", exc_info=True)
+        llm_requests_total.labels(model=_model_name, status="error").inc()
         await llm_circuit._on_failure()
         raise
     else:
@@ -214,5 +223,20 @@ async def stream_llm_response(
             if stream_cb:
                 await stream_cb({"event": "on_custom_token", "data": {"content": chunk}})
     _pending_content.clear()
+
+    # Record application-level metrics
+    _elapsed = time.time() - _start_time
+    if finish_reason == "stop":
+        llm_requests_total.labels(model=_model_name, status="success").inc()
+    else:
+        llm_requests_total.labels(model=_model_name, status=finish_reason or "unknown").inc()
+    llm_request_duration_seconds.labels(model=_model_name).observe(_elapsed)
+    if usage_info:
+        prompt_tokens = usage_info.get("prompt_tokens", 0)
+        completion_tokens = usage_info.get("completion_tokens", 0)
+        if prompt_tokens:
+            llm_tokens_total.labels(model=_model_name, type="prompt").inc(prompt_tokens)
+        if completion_tokens:
+            llm_tokens_total.labels(model=_model_name, type="completion").inc(completion_tokens)
 
     return content_chunks, thinking_chunks, tool_calls_map, finish_reason, usage_info

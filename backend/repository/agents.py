@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
+from backend.core.infra.cache import get_cache
 from backend.core.infra.database import (
     AgentConfigDB,
     get_session_factory,
@@ -136,6 +137,7 @@ async def create_agent_config(
     async with factory() as session:
         session.add(config)
         await session.commit()
+        await _invalidate_agent_cache()
         await session.refresh(config)
     return config
 
@@ -208,6 +210,7 @@ async def update_agent_config(
         config.updated_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(config)
+        await _invalidate_agent_cache()
     return config
 
 
@@ -220,4 +223,67 @@ async def delete_agent_config(id: str) -> bool:
             return False
         await session.delete(config)
         await session.commit()
+        await _invalidate_agent_cache()
         return True
+
+
+async def _invalidate_agent_cache() -> None:
+    """Invalidate the agent config cache after mutations."""
+    cache = get_cache()
+    await cache.delete("agents:all")
+
+
+async def get_cached_agent_configs() -> list[AgentConfigDB]:
+    """Return all agent configs, using Redis cache with 5-min TTL.
+
+    Falls through to DB on cache miss; mutations invalidate the cache.
+    """
+    cache = get_cache()
+    cached = await cache.get("agents:all")
+    if cached is not None:
+        return [_agent_from_dict(d) for d in cached]
+
+    result = await get_agent_configs()
+    serialized = [_agent_to_dict(a) for a in result]
+    await cache.set("agents:all", serialized)
+    return result
+
+
+def _agent_to_dict(a: AgentConfigDB) -> dict[str, object]:
+    return {
+        "id": a.id,
+        "name": a.name,
+        "role_identifier": a.role_identifier,
+        "system_prompt": a.system_prompt,
+        "output_constraints": a.output_constraints,
+        "tools": a.tools,
+        "mcp": a.mcp,
+        "skills": a.skills,
+        "model": a.model,
+        "temperature": a.temperature,
+        "order": a.order,
+        "is_active": a.is_active,
+        "is_approver": a.is_approver,
+        "icon": a.icon,
+        "owner_id": a.owner_id,
+    }
+
+
+def _agent_from_dict(d: dict[str, object]) -> AgentConfigDB:
+    return AgentConfigDB(
+        id=str(d["id"]),
+        name=str(d["name"]),
+        role_identifier=str(d["role_identifier"]),
+        system_prompt=str(d["system_prompt"]),
+        output_constraints=str(d.get("output_constraints") or ""),
+        tools=str(d.get("tools") or ""),
+        mcp=str(d.get("mcp") or ""),
+        skills=str(d.get("skills") or ""),
+        model=str(d.get("model") or ""),
+        temperature=float(str(d.get("temperature") or 0.0)),
+        order=int(str(d.get("order") or 0)),
+        is_active=bool(d.get("is_active")),
+        is_approver=bool(d.get("is_approver", False)),
+        icon=str(d.get("icon") or "🤖"),
+        owner_id=str(d["owner_id"]) if d.get("owner_id") else None,
+    )

@@ -129,15 +129,23 @@ app.py (FastAPI lifespan, middleware: RateLimit → Auth → RequestLog → CORS
 
 ## Database
 
-19 tables (18 models in `database.py` + `checkpoints` in `checkpoint.py`).
+25 tables (24 models in `backend/orm/` + `agent_checkpoints` in `backend/checkpoint/models.py`).  
+Full ERD at [docs/database-erd.md](./docs/database-erd.md).
 
 Key FK chains:
 ```
 sessions (1) → project_runs (N) → chat_messages (N)
-sessions (1) → memory_entries (N) → checkpoints (N)
+sessions (1) → memory_entries (N) ─┐
+sessions (1) → agent_checkpoints (N)┘   (parallel children of sessions)
 agent_configs (1) → team_agents (N) ← teams (1)
+teams (1) → workflow_configs (1) → workflow_nodes (N) → workflow_edges (N)
 user_api_keys (1) → key_usage_logs (N)
 users (1) → user_roles (N) ← roles (1)
+sessions (1) → command_logs (N)
+sessions (1) → attachments (N)
+agent_configs (1) → sessions (N)
+agent_configs (1) → workflow_nodes (N)
+users (1) → refresh_tokens (N)
 ```
 
 Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
@@ -184,6 +192,17 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
 - **Pre-push** (`.githooks/pre-push`): Blocks direct pushes to `main`. Activate: `git config core.hooksPath .githooks`.
 - **Pre-commit** (`.husky/pre-commit`): `lint-staged` on frontend `*.{ts,tsx,css}` (ESLint fix + Prettier).
+
+## Architecture Decision Records
+
+Key technology choices are documented as ADRs in [`docs/adr/`](./docs/adr/):
+
+| # | ADR | Topic |
+|---|-----|-------|
+| 001 | [LangGraph Dual Engine](./docs/adr/001-langgraph-dual-engine.md) | Why LangGraph for both single-agent and multi-team |
+| 002 | [Celery Async Tasks](./docs/adr/002-celery-async-tasks.md) | Why Celery for background agent execution |
+| 003 | [SQLite Observability](./docs/adr/003-sqlite-observability.md) | Why SQLite for the EventStore |
+| 004 | [Fernet Key Vault](./docs/adr/004-fernet-key-vault.md) | Why Fernet encryption for API key storage |
 
 ## Key constraints
 

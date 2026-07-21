@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { VirtuosoMockContext } from 'react-virtuoso';
 import LogAudit from '../LogAudit';
 import { fetchCommandLogs } from '../../../../../api/client/admin';
 import { t } from '../locales';
@@ -24,16 +25,23 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const renderWithVirtuoso = (ui: React.ReactElement) =>
+  render(
+    <VirtuosoMockContext.Provider value={{ viewportHeight: 800, itemHeight: 50 }}>
+      {ui}
+    </VirtuosoMockContext.Provider>,
+  );
+
 describe('LogAudit', () => {
   it('renders loading skeleton initially', () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
   it('renders empty state when no logs returned', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
@@ -42,7 +50,7 @@ describe('LogAudit', () => {
 
   it('renders log entries in table', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
@@ -54,7 +62,7 @@ describe('LogAudit', () => {
 
   it('renders table column headers', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
@@ -69,7 +77,7 @@ describe('LogAudit', () => {
 
   it('renders toolbar with search input', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
@@ -78,7 +86,7 @@ describe('LogAudit', () => {
 
   it('handles API error gracefully by showing empty state', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network'));
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
@@ -87,7 +95,7 @@ describe('LogAudit', () => {
 
   it('shows details and IP columns for log entries', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
-    render(<LogAudit />);
+    renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
