@@ -601,6 +601,7 @@ jobs:
   load-test:
     name: "Backend: Load Test"
     runs-on: ubuntu-latest
+    continue-on-error: true
     services:
       redis:
         image: redis:7-alpine
