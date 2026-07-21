@@ -160,8 +160,11 @@ jobs:
 
   # ── Backend Tests ────────────────────────────────────────────────────────
   backend-test:
-    name: "Backend: Tests"
+    name: "Backend: Tests (${{ matrix.shard }})"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [routers, core]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -172,13 +175,12 @@ jobs:
       - run: pip install -r requirements-lock.txt --quiet
       - name: Run unit tests
         run: |
-          PYTHONPATH=. python3 -m pytest tests/ \
-            -q --tb=short \
-            --ignore=tests/e2e/ \
-            -m 'not integration' \
-            --ignore=tests/broker/ \
-            --ignore=tests/test_requirement_markers.py \
-            --ignore=tests/routers/auth/test_auth_routers.py
+          if [ "${{ matrix.shard }}" = "routers" ]; then
+            DIRS="tests/routers/ tests/repository/ tests/orm/"
+          else
+            DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py"
+          fi
+          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
 
   # ── Backend Coverage ──────────────────────────────────────────────────────
   backend-coverage:
