@@ -251,7 +251,7 @@ class TestAdminStatsRepo:
 
     async def test_get_command_logs_empty(self, db_engine):
         logs = await get_command_logs(limit=10)
-        assert logs == []
+        assert logs["items"] == []
 
 
 # ── Command Logs Tests ─────────────────────────────────────────────────
@@ -267,8 +267,8 @@ class TestCommandLogsRepo:
             result="success",
         )
         logs = await get_command_logs(limit=10)
-        assert len(logs) == 1
-        assert logs[0]["command"] == "generate_code"
+        assert len(logs["items"]) == 1
+        assert logs["items"][0]["command"] == "generate_code"
 
     async def test_multiple_command_logs(self, db_engine):
         sid = str(uuid.uuid4())
@@ -279,7 +279,7 @@ class TestCommandLogsRepo:
                 payload="{}", result="ok",
             )
         logs = await get_command_logs(limit=10)
-        assert len(logs) >= 3
+        assert len(logs["items"]) >= 3
 
 
 # ── Core Tests ─────────────────────────────────────────────────────────

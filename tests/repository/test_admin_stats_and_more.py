@@ -79,7 +79,7 @@ class TestAdminStats:
 
     async def test_get_command_logs_empty(self, db_engine):
         logs = await get_command_logs(limit=10)
-        assert logs == []
+        assert logs["items"] == []
 
     async def test_get_command_logs_with_data(self, db_engine):
         factory = get_session_factory()
@@ -93,12 +93,12 @@ class TestAdminStats:
             await session.commit()
 
         logs = await get_command_logs(limit=10)
-        assert len(logs) == 1
-        assert logs[0]["command"] == "gen"
-        assert logs[0]["payload"] == '{"lang":"py"}'
-        assert logs[0]["result"] == "done"
-        assert logs[0]["id"] is not None
-        assert logs[0]["timestamp"] != ""
+        assert len(logs["items"]) == 1
+        assert logs["items"][0]["command"] == "gen"
+        assert logs["items"][0]["payload"] == '{"lang":"py"}'
+        assert logs["items"][0]["result"] == "done"
+        assert logs["items"][0]["id"] is not None
+        assert logs["items"][0]["timestamp"] != ""
 
     async def test_get_command_logs_pagination(self, db_engine):
         factory = get_session_factory()
@@ -113,9 +113,9 @@ class TestAdminStats:
             await session.commit()
 
         logs = await get_command_logs(limit=2, offset=0)
-        assert len(logs) == 2
+        assert len(logs["items"]) == 2
         logs2 = await get_command_logs(limit=2, offset=2)
-        assert len(logs2) == 2
+        assert len(logs2["items"]) == 2
 
     async def test_get_command_logs_all_fields(self, db_engine):
         """Verify all returned fields from get_command_logs."""
@@ -130,8 +130,8 @@ class TestAdminStats:
             await session.commit()
 
         logs = await get_command_logs(limit=10)
-        assert len(logs) == 1
-        log = logs[0]
+        assert len(logs["items"]) == 1
+        log = logs["items"][0]
         assert log["id"] == "test-log-id"
         assert log["command"] == "test_cmd"
         assert log["payload"] == '{"key": "val"}'
@@ -175,8 +175,8 @@ class TestCommandLogs:
             result="success",
         )
         logs = await get_command_logs(limit=10)
-        assert len(logs) == 1
-        assert logs[0]["command"] == "generate_code"
+        assert len(logs["items"]) == 1
+        assert logs["items"][0]["command"] == "generate_code"
 
     async def test_multiple_command_logs(self, db_engine):
         sid = str(uuid.uuid4())
@@ -187,7 +187,7 @@ class TestCommandLogs:
                 payload="{}", result="ok",
             )
         logs = await get_command_logs(limit=10)
-        assert len(logs) >= 3
+        assert len(logs["items"]) >= 3
 
 
 # ── Core ─────────────────────────────────────────────────────────────────
