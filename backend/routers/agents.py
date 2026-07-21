@@ -15,7 +15,8 @@ from backend.repository import (
     delete_agent_config,
     get_agent_config,
     get_agent_config_by_role,
-    get_agent_configs,
+    get_agent_config_count,
+    get_cached_agent_configs,
     update_agent_config,
 )
 
@@ -58,7 +59,7 @@ class AgentUpdateRequest(BaseModel):
 async def list_agents() -> Any:
     """List all agent configurations."""
     try:
-        configs = await get_agent_configs()
+        configs = await get_cached_agent_configs()
         return [
             {
                 "id": c.id,
@@ -87,7 +88,7 @@ async def list_agents() -> Any:
 @router.get("/api/agents/{agent_id}")
 async def get_agent(agent_id: str) -> Any:
     """Get a single agent configuration by ID."""
-    configs = await get_agent_configs()
+    configs = await get_cached_agent_configs()
     c = next((x for x in configs if x.id == agent_id), None)
     if not c:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
@@ -211,7 +212,7 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
     if not target:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
     if target.is_approver:
-        configs = await get_agent_configs()
+        configs = await get_cached_agent_configs()
         approvers = [c for c in configs if c.is_approver and c.id != agent_id]
         if not approvers:
             raise error_response(ErrorCode.AGENT_LAST_APPROVER, detail="不能删除唯一的审批者，请先设置其他审批者")
@@ -226,7 +227,7 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
 @router.put("/api/agents/{agent_id}/toggle")
 async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:  # noqa: B008
     """Toggle an agent's active/inactive status."""
-    configs = await get_agent_configs()
+    configs = await get_cached_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)
     if not target:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")

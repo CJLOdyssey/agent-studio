@@ -138,6 +138,11 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-User-ID", "X-Requested-With", "Accept"],
 )
 
+# ── CSP (Content-Security-Policy) ─────────────────────────────────────────
+from backend.core.infra.csp_middleware import CSPMiddleware  # noqa: E402
+
+app.add_middleware(CSPMiddleware)
+
 
 # ── Routers ─────────────────────────────────────────────────────────────────
 routers = [auth, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
