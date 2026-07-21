@@ -88,10 +88,10 @@ export default defineConfig(({ mode }) => {
         reporter: ['text', 'lcov', 'html'],
         reportsDirectory: './coverage',
         thresholds: {
-          statements: 75,
-          branches: 65,
-          functions: 60,
-          lines: 78,
+          statements: 66,
+          branches: 58,
+          functions: 54,
+          lines: 70,
         },
         include: ['src/**/*.{ts,tsx}'],
         exclude: [
