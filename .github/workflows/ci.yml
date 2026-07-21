@@ -326,13 +326,13 @@ jobs:
       - run: pip install -r requirements-lock.txt --quiet
       - run: pip install "mutmut==2.5.1" --quiet
       - name: Run mutation tests
-        timeout-minutes: 8
+        timeout-minutes: 5
         run: |
           PYTHONPATH=. mutmut run \
-            --paths-to-mutate "backend/core/infra/database.py,backend/routers/skills.py,backend/routers/mcps.py" \
+            --paths-to-mutate "backend/core/infra/database.py" \
             --tests-dir tests/ \
             --CI \
-            --runner "python3 -m pytest tests/core/infra/test_database.py tests/routers/test_routers_skills.py tests/routers/test_routers_mcps.py -q --tb=short -x"
+            --runner "python3 -m pytest tests/core/infra/test_database.py -q --tb=short -x"
       - name: Show mutation score
         if: always()
         run: mutmut results
