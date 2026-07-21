@@ -61,6 +61,7 @@ class TeamAgentDB(Base):
         String(36),
         ForeignKey("agent_configs.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     role: Mapped[str] = mapped_column(String(64), default="待配置角色")

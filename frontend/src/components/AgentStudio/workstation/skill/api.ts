@@ -79,4 +79,6 @@ const realImpl: SkillAPIService = {
   },
 };
 
-export const skillAPI: SkillAPIService = realImpl;
+export let skillAPI: SkillAPIService = realImpl;
+
+export function setSkillAPI(api: SkillAPIService): void { skillAPI = api; }

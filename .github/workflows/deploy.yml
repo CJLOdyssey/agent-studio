@@ -114,9 +114,6 @@ jobs:
           port: ${{ env.REMOTE_SSH_PORT }}
           username: ${{ env.REMOTE_SSH_USER }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
-          host: ${{ env.REMOTE_HOST }}
-          username: root
-          password: ${{ secrets.SERVER_PASSWORD }}
           # Rollback: change the sha tag in docker compose and re-deploy
           # docker compose -f docker/compose.prod.yml up -d --force-recreate
           script: |
