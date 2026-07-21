@@ -388,9 +388,10 @@ jobs:
             --paths-to-mutate "${{ steps.diff.outputs.files }}" \
             --tests-dir tests/ \
             --CI \
+            --simple-output \
             --runner "python3 -m pytest $TEST_ARGS -q --tb=short -x" 2>&1 | tee /tmp/mutmut.log
-          # Extract final score line: "52/52  🎉 1  ⏰ 0  🤔 23  🙁 28  🔇 0"
-          grep '🎉\|Survived\|killed\|Killed' /tmp/mutmut.log | tail -1 > /tmp/mutmut_score.txt
+          # mutmut uses \r to overwrite progress lines; split them first
+          tr '\r' '\n' < /tmp/mutmut.log | grep -E 'killed|survived|suspicious|timeout|skipped' | tail -1 > /tmp/mutmut_score.txt
       - name: Show mutation score
         if: always()
         run: mutmut results
@@ -401,18 +402,24 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            let scoreLine = 'No score captured';
+            let scoreLine = 'N/A';
             try {
               scoreLine = fs.readFileSync('/tmp/mutmut_score.txt', 'utf-8').trim();
             } catch (e) {}
 
             const files = '${{ steps.diff.outputs.files }}';
-            const body = `## 🧬 Mutation Test Results
+            const body = `## Mutation Test Results
 
-            **Mutated files**: \`${files}\`
-            **Score**: \`${scoreLine}\`
+            **Files**: \`${files}\`
+            **Result**: \`${scoreLine}\`
 
-            💡 🎉=killed 🙁=survived 🤔=suspicious ⏰=timeout 🔇=skipped`;
+            | Symbol | Meaning |
+            |--------|---------|
+            | killed | test caught the mutation |
+            | survived | test did NOT detect the change |
+            | suspicious | test took longer than expected |
+            | timeout | test suite timed out |
+            | skipped | mutation was skipped |`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
