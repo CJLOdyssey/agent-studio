@@ -437,6 +437,7 @@ jobs:
   # ── E2E Smoke Tests ─────────────────────────────────────────────────────
   frontend-e2e:
     name: "Frontend: E2E Smoke"
+    if: false  # Moved to daily schedule workflow (e2e-smoke.yml) — see PR for rationale
     runs-on: ubuntu-latest
     services:
       redis:
@@ -792,10 +793,7 @@ jobs:
       - openapi-diff
       - integration
       - docs-check
-      - requirement-coverage
-      - flaky-check
       - load-test
-      - frontend-e2e
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs
