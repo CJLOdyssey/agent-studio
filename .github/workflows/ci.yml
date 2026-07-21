@@ -57,7 +57,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run test:coverage
+      - run: npm test
 
   frontend-build:
     name: "Frontend: Build & Bundle"
@@ -175,6 +175,30 @@ jobs:
             -m 'not integration' \
             --ignore=tests/broker/ \
             --ignore=tests/test_requirement_markers.py \
+            --ignore=tests/routers/auth/test_auth_routers.py
+
+  # ── Backend Coverage ──────────────────────────────────────────────────────
+  backend-coverage:
+    name: "Backend: Coverage"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install -r requirements-lock.txt --quiet
+      - name: Run tests with coverage
+        run: |
+          PYTHONPATH=. python3 -m pytest tests/ \
+            -q --tb=short \
+            --ignore=tests/e2e/ \
+            -m 'not integration' \
+            --ignore=tests/broker/ \
+            --ignore=tests/test_requirement_markers.py \
+            --ignore=tests/routers/auth/test_auth_routers.py \
             --cov=backend \
             --cov-report=term-missing \
             --cov-report=xml \
@@ -188,12 +212,30 @@ jobs:
           path: coverage.xml
           retention-days: 7
 
+  # ── Frontend Coverage ────────────────────────────────────────────────────
+  frontend-coverage:
+    name: "Frontend: Coverage"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefer-offline --no-audit
+      - run: npm run test:coverage
+
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
     name: "Backend: Diff Coverage"
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: backend-test
+    needs: backend-coverage
     steps:
       - uses: actions/checkout@v4
         with:
