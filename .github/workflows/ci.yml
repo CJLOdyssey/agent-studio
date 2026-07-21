@@ -346,11 +346,38 @@ jobs:
       - name: Run mutation tests
         timeout-minutes: 5
         run: |
+          # Build test runner args: map source paths to their test files
+          IFS=',' read -ra FILES <<< "${{ steps.diff.outputs.files }}"
+          TEST_ARGS=""
+          for f in "${FILES[@]}"; do
+            case "$f" in
+              backend/core/infra/database.py) TEST_ARGS+=" tests/core/infra/test_database.py" ;;
+              backend/routers/skills.py)      TEST_ARGS+=" tests/routers/test_routers_skills.py" ;;
+              backend/routers/mcps.py)        TEST_ARGS+=" tests/routers/test_routers_mcps.py" ;;
+              backend/routers/tools.py)       TEST_ARGS+=" tests/routers/test_routers_tools.py" ;;
+              backend/routers/teams.py)       TEST_ARGS+=" tests/routers/test_routers_teams.py" ;;
+              backend/routers/versions.py)    TEST_ARGS+=" tests/routers/test_routers_versions.py" ;;
+              backend/routers/prompts.py)     TEST_ARGS+=" tests/routers/test_routers_prompts.py" ;;
+              backend/routers/sessions.py)    TEST_ARGS+=" tests/routers/test_routers_sessions.py" ;;
+              backend/routers/runs.py)        TEST_ARGS+=" tests/routers/test_routers_runs.py" ;;
+              backend/routers/agents.py)      TEST_ARGS+=" tests/routers/test_routers_agents.py" ;;
+              backend/routers/providers.py)   TEST_ARGS+=" tests/routers/test_provider_routes.py" ;;
+              backend/repository/teams.py)    TEST_ARGS+=" tests/routers/test_routers_teams.py" ;;
+              backend/repository/versions.py) TEST_ARGS+=" tests/routers/test_routers_versions.py" ;;
+              backend/repository/tools.py)    TEST_ARGS+=" tests/routers/test_routers_tools.py" ;;
+              backend/repository/skills.py)   TEST_ARGS+=" tests/routers/test_routers_skills.py" ;;
+            esac
+          done
+          if [ -z "$TEST_ARGS" ]; then
+            echo "No test mapping for changed files, using full suite"
+            TEST_ARGS="tests/ -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
+          fi
+          echo "Test args: $TEST_ARGS"
           PYTHONPATH=. mutmut run \
             --paths-to-mutate "${{ steps.diff.outputs.files }}" \
             --tests-dir tests/ \
             --CI \
-            --runner "python3 -m pytest tests/ -q --tb=short -x -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py"
+            --runner "python3 -m pytest $TEST_ARGS -q --tb=short -x"
       - name: Show mutation score
         if: always()
         run: mutmut results
