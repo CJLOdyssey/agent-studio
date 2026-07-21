@@ -1,3 +1,9 @@
+[project]
+name = "agent-studio"
+version = "0.1.0"
+description = "AI Agent management platform"
+requires-python = ">=3.11"
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"
@@ -14,7 +20,7 @@ ignore = ["E402"]
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
-python_version = "3.11"
+python_version = "3.12"
 warn_unused_ignores = true
 exclude = ["tests/"]
 
@@ -50,9 +56,7 @@ omit = [
     "backend/main.py",
     "backend/checkpoint/*",
     "backend/rag/rag_store.py",
-    "backend/graph/__init__.py",
     "backend/graph/agent_graph.py",
-    "backend/graph/graph_state.py",
 ]
 
 [tool.bandit]

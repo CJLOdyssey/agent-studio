@@ -24,13 +24,39 @@ permissions:
   actions: read
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
   NODE_VERSION: "22"
 
 jobs:
+  # ── Path Filter ───────────────────────────────────────────────────────────
+  changes:
+    name: "Detect Changes"
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+              - 'requirements-lock.txt'
+              - 'alembic/**'
+
   # ── Frontend ──────────────────────────────────────────────────────────────
   frontend-lint:
     name: "Frontend: Lint & Typecheck"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -49,6 +75,8 @@ jobs:
 
   frontend-test:
     name: "Frontend: Test"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -66,6 +94,8 @@ jobs:
 
   frontend-build:
     name: "Frontend: Build & Bundle"
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -146,6 +176,12 @@ jobs:
       - run: pip install -r requirements-lock.txt --quiet
       - run: ruff check backend/
       - run: mypy backend/ --strict --no-error-summary
+      - name: Check .env.example for insecure defaults
+        run: |
+          if grep -qE 'change-me|example-secret' .env.example; then
+            echo '❌ .env.example contains insecure defaults'
+            exit 1
+          fi
 
   backend-security:
     name: "Backend: Security"
@@ -227,9 +263,10 @@ jobs:
   # ── Frontend Coverage ────────────────────────────────────────────────────
   frontend-coverage:
     name: "Frontend: Coverage"
+    needs: [changes, frontend-test]
+    if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
     runs-on: ubuntu-latest
     continue-on-error: true
-    needs: frontend-test
     defaults:
       run:
         working-directory: frontend
@@ -647,7 +684,7 @@ jobs:
               @task
               def models(self): self.client.get("/api/models")
           PYEOF
-          locust --headless --users 5 --spawn-rate 1 --run-time 10s \
+          locust --headless --users 20 --spawn-rate 5 --run-time 30s \
             --host http://localhost:8080 --exit-code-on-error 0 \
             -f /tmp/smoke_locust.py 2>&1 | tail -5
           echo "✅ Load test completed"
@@ -663,6 +700,7 @@ jobs:
     name: "CI Passed"
     if: always()
     needs:
+      - changes
       - frontend-lint
       - frontend-test
       - frontend-build
@@ -682,29 +720,42 @@ jobs:
     steps:
       - name: Check all jobs
         run: |
-          if [[ "${{ needs.frontend-lint.result }}" != "success" ]] ||
-             [[ "${{ needs.frontend-test.result }}" != "success" ]] ||
-             [[ "${{ needs.frontend-build.result }}" != "success" ]] ||
-             [[ "${{ needs.secrets-scan.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-lint.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-security.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-test.result }}" != "success" ]] ||
-             [[ "${{ needs.backend-coverage.result }}" != "success" ]] ||
-             [[ "${{ needs.frontend-coverage.result }}" != "success" ]] ||
-             [[ "${{ needs.integration.result }}" != "success" ]] ||
-             [[ "${{ needs.docs-check.result }}" != "success" ]]; then
-            echo "❌ One or more required jobs failed"
-            exit 1
-          fi
+          # Frontend jobs may be skipped on backend-only changes — treat success OR skipped as passing
+          check() {
+            local name="$1"
+            local result="$2"
+            if [[ "$result" == "success" ]] || [[ "$result" == "skipped" ]]; then
+              echo "✅ $name: $result"
+              return 0
+            else
+              echo "❌ $name: $result"
+              return 1
+            fi
+          }
+
+          FAIL=0
+          check "frontend-lint" "${{ needs.frontend-lint.result }}" || FAIL=1
+          check "frontend-test" "${{ needs.frontend-test.result }}" || FAIL=1
+          check "frontend-build" "${{ needs.frontend-build.result }}" || FAIL=1
+          check "secrets-scan" "${{ needs.secrets-scan.result }}" || FAIL=1
+          check "backend-lint" "${{ needs.backend-lint.result }}" || FAIL=1
+          check "backend-security" "${{ needs.backend-security.result }}" || FAIL=1
+          check "backend-test" "${{ needs.backend-test.result }}" || FAIL=1
+          check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
+          check "frontend-coverage" "${{ needs.frontend-coverage.result }}" || FAIL=1
+          check "integration" "${{ needs.integration.result }}" || FAIL=1
+          check "docs-check" "${{ needs.docs-check.result }}" || FAIL=1
+          check "load-test" "${{ needs.load-test.result }}" || FAIL=1
+
           # diff-coverage only runs on PRs, skip if skipped
           if [[ "${{ needs.diff-coverage.result }}" == "failure" ]]; then
             echo "❌ Diff coverage check failed"
-            exit 1
+            FAIL=1
           fi
           # openapi-diff validates OpenAPI schema, not breaking changes
           if [[ "${{ needs.openapi-diff.result }}" == "failure" ]]; then
             echo "❌ OpenAPI schema validation failed"
-            exit 1
+            FAIL=1
           fi
           # container-scan is advisory (continue-on-error)
           if [[ "${{ needs.container-scan.result }}" == "failure" ]]; then
@@ -713,5 +764,10 @@ jobs:
           # flaky-check is advisory (continue-on-error)
           if [[ "${{ needs.flaky-check.result }}" == "failure" ]]; then
             echo "⚠️  Flaky test check found issues (advisory only)"
+          fi
+
+          if [[ "$FAIL" -ne 0 ]]; then
+            echo "❌ One or more required jobs failed"
+            exit 1
           fi
           echo "✅ All CI checks passed"
