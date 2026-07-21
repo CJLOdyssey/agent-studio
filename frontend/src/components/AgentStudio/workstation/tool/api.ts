@@ -65,4 +65,6 @@ const realImpl: ToolAPIService = {
   },
 };
 
-export const toolAPI: ToolAPIService = realImpl;
+export let toolAPI: ToolAPIService = realImpl;
+
+export function setToolAPI(api: ToolAPIService): void { toolAPI = api; }

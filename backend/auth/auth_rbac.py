@@ -22,6 +22,18 @@ logger = get_logger(__name__)
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "0") == "1"
 AUTH_MODE = os.environ.get("AUTH_MODE", "legacy")
 
+# Validate AUTH_SECRET at import time for RBAC mode
+if AUTH_MODE == "rbac" and AUTH_ENABLED and AUTH_SECRET == "":
+    raise RuntimeError(
+        "AUTH_MODE=rbac and AUTH_ENABLED=1 requires AUTH_SECRET to be set "
+        "(minimum 32 characters). Set it via environment variable."
+    )
+if AUTH_MODE == "rbac" and AUTH_ENABLED and len(AUTH_SECRET) < 32:
+    raise RuntimeError(
+        "AUTH_SECRET must be at least 32 characters for RBAC mode. "
+        f"Current length: {len(AUTH_SECRET)}"
+    )
+
 
 # ── RBAC Data Types ──────────────────────────────────────────────────────────
 

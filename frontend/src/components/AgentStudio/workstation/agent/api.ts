@@ -54,7 +54,7 @@ const realImpl: AgentAPIService = {
       name: data.name,
       role_identifier:
         'agent_' +
-        (crypto.randomUUID()?.slice(0, 8) || Date.now().toString(36)),
+        (crypto.randomUUID?.()?.slice(0, 8) || Date.now().toString(36)),
       system_prompt,
       output_constraints: JSON.stringify({
         description: data.description,
