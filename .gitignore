@@ -69,7 +69,6 @@ uploads/
 
 # ── Project-specific ───────────────────────────────────────────────────────
 skills-lock.json
-requirements-lock.txt
 .sisyphus/
 prototypes/
 scripts/deploy_prod.py
