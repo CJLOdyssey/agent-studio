@@ -1,6 +1,6 @@
 # AgentStudio
 
-> AI Agent 协作系统 — 通过配置多种 AI Agent 组建虚拟团队，完成复杂软件项目。
+> AI Agent 编排平台 — 支持单 Agent 对话和多 Agent DAG 工作流，可自定义角色、提示词、工具。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
@@ -29,7 +29,7 @@
 
 ## 概述
 
-AgentStudio 是一个基于 AI Agent 的智能协作平台。用户可以通过配置不同角色的 AI Agent（产品经理、前端工程师、后端工程师、测试工程师），让它们协同完成软件项目。
+AgentStudio 是一个 AI Agent 编排平台。用户可以创建和配置 AI Agent，自定义角色、提示词、工具，支持单 Agent 对话和多 Agent DAG 工作流。
 
 **核心能力：**
 
