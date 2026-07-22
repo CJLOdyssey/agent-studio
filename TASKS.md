@@ -32,30 +32,30 @@
 
 | # | 文件 | 行 | 当前写法 | 修复方式 | 状态 |
 |---|------|----|---------|---------|------|
-| 8 | `TabRenderer.tsx` | 107 | `editingToolItem as unknown as Record<string, unknown>` | 给 ItemEditor 加泛型参数 | ❌ |
-| 9 | `TabRenderer.tsx` | 153 | `editingMcpItem as unknown as Record<string, unknown>` | 同上 | ❌ |
-| 10 | `TabRenderer.tsx` | 165 | `form.forms.mcp.data as unknown as Parameters<...>` | 具体类型约束 | ❌ |
-| 11 | `TabRenderer.tsx` | 201 | `editingSkillItem as unknown as Record<string, unknown>` | 同 8 | ❌ |
-| 12 | `TabRenderer.tsx` | 213 | `form.forms.skill.data as unknown as Parameters<...>` | 同 10 | ❌ |
-| 13 | `SkillsTab.tsx` | 38 | `editingItem as unknown as SkillEntry` | 改 Props 类型 | ❌ |
-| 14 | `MCPTab.tsx` | 38 | `editingItem as unknown as MCPEntry` | 改 Props 类型 | ❌ |
-| 15 | `AgentConfigModal.tsx` | 101 | `(item as unknown as Record<string, string>).parameters` | 定义具体接口 | ❌ |
-| 16 | `AgentConfigModal.tsx` | 181 | `item as unknown as AgentTool` | 类型守卫或接口对齐 | ❌ |
-| 17 | `AgentConfigModal.tsx` | 187 | `item as unknown as AgentMCP` | 同上 | ❌ |
-| 18 | `AgentConfigModal.tsx` | 201 | `item as unknown as AgentSkill` | 同上 | ❌ |
-| 19 | `useWorkstationState.ts` | 138 | `m as unknown as Record<string, string>` | 类型守卫 | ❌ |
-| 20 | `useWorkstationState.ts` | 139 | `m as unknown as Record<string, string>` | 同上 | ❌ |
-| 21 | `useTeamData.ts` (hooks/) | 28 | `a as unknown as Record<string, unknown>` | 接口对齐 | ❌ |
+| 8 | `TabRenderer.tsx` | 107 | `editingToolItem as unknown as Record<string, unknown>` | ✅ `toRecord()` 助手 | ✅ |
+| 9 | `TabRenderer.tsx` | 153 | `editingMcpItem as unknown as Record<string, unknown>` | ✅ 同上 | ✅ |
+| 10 | `TabRenderer.tsx` | 165 | `form.forms.mcp.data as unknown as Parameters<...>` | ✅ `as MCPFormData` | ✅ |
+| 11 | `TabRenderer.tsx` | 201 | `editingSkillItem as unknown as Record<string, unknown>` | ✅ `toRecord()` 助手 | ✅ |
+| 12 | `TabRenderer.tsx` | 213 | `form.forms.skill.data as unknown as Parameters<...>` | ✅ `as SkillFormData` | ✅ |
+| 13 | `SkillsTab.tsx` | 38 | `editingItem as unknown as SkillEntry` | ✅ 导入 SkillEntry 类型 | ✅ |
+| 14 | `MCPTab.tsx` | 38 | `editingItem as unknown as MCPEntry` | ✅ 导入 MCPEntry 类型 | ✅ |
+| 15 | `AgentConfigModal.tsx` | 101 | `(item as unknown as Record<string, string>).parameters` | ✅ `String()` + 单层 as | ✅ |
+| 16 | `AgentConfigModal.tsx` | 181 | `item as unknown as AgentTool` | ✅ `toRec<AgentTool>()` | ✅ |
+| 17 | `AgentConfigModal.tsx` | 187 | `item as unknown as AgentMCP` | ✅ `toRec<AgentMCP>()` | ✅ |
+| 18 | `AgentConfigModal.tsx` | 201 | `item as unknown as AgentSkill` | ✅ `toRec<AgentSkill>()` | ✅ |
+| 19 | `useWorkstationState.ts` | 138 | `m as unknown as Record<string, string>` | ✅ `Reflect.get()` | ✅ |
+| 20 | `useWorkstationState.ts` | 139 | `m as unknown as Record<string, string>` | ✅ 同上 | ✅ |
+| 21 | `hooks/useTeamData.ts` | 28 | `a as unknown as Record<string, unknown>` | ✅ `Reflect.get()` | ✅ |
 | 22 | `resultHandler.ts` | 93 | `RunResult` 硬构造 | ✅ 工厂函数 `makeRunResult()` | ✅ |
 
 ### 2.2 消除全部 # type: ignore
 
 | # | 文件 | 行数 | 原因 | 修复方式 | 状态 |
 |---|------|------|------|---------|------|
-| 23 | `routers/sessions.py` | 7 处 | `request: Request = None` 不符合签名 | 重新设计依赖注入 | ❌ |
-| 24 | `redis_sentinel.py` | 2 处 | `Sentinel()` 和 `master_for()` 无类型 | 加 stub 或 `cast()` | ❌ |
-| 25 | `broker/__init__.py` | 1 处 | `Celery import-untyped` | `types-celery` 或 `cast()` | ❌ |
-| 26 | `core/app.py` | 3 处 | `sentry_sdk import-not-found` | 条件类型导出声明 | ❌ |
+| — | `routers/sessions.py` | 7 → 0 | `request` 移至首参 + `-> Any` 返回注解 | ✅ 全部清零 |
+| 24 | `redis_sentinel.py` | 2 处 | `Sentinel()` 和 `master_for()` 无类型 | 第三方库 stub 缺失，保留 | ❌ |
+| 25 | `broker/__init__.py` | 1 处 | `Celery import-untyped` | types-celery 不存在，保留 | ❌ |
+| 26 | `core/app.py` | 3 处 | `sentry_sdk import-not-found` | sentry 可选依赖，保留 | ❌ |
 | — | `repository/teams.py` | 1 处 | ~~`return-value`~~ | ✅ 已用 `cast()` 替代 | ✅ |
 | — | `repository/prompts.py` | 1 处 | ~~`return-value`~~ | ✅ 已用 `cast()` 替代 | ✅ |
 
