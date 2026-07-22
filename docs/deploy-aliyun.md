@@ -51,12 +51,12 @@ docker --version && docker compose version
 ### 1.4 克隆项目
 
 ```bash
-mkdir -p /opt/virtual-team && cd /opt/virtual-team
+mkdir -p /opt/agent-studio && cd /opt/agent-studio
 # 方式一：git clone（推荐）
 git clone <你的仓库地址> .
 
 # 方式二：scp 上传（如无仓库）
-scp -r /path/to/项目\ 7：AgentStudio/* root@<ECS_IP>:/opt/virtual-team/
+scp -r /path/to/项目\ 7：AgentStudio/* root@<ECS_IP>:/opt/agent-studio/
 ```
 
 ---
@@ -104,7 +104,7 @@ python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().
 ### 3.1 构建并启动
 
 ```bash
-cd /opt/virtual-team
+cd /opt/agent-studio
 docker compose -f docker-compose.local.yml up -d --build
 ```
 
@@ -121,11 +121,11 @@ docker compose -f docker-compose.local.yml up -d --build
 docker ps --format "table {{.Names}}\t{{.Status}}"
 
 # 预期输出
-# virtual-team-frontend   Up (healthy)
-# virtual-team-api        Up (healthy)
-# virtual-team-worker     Up (healthy)
-# virtual-team-redis      Up (healthy)
-# virtual-team-db         Up (healthy)
+# agent-studio-frontend   Up (healthy)
+# agent-studio-api        Up (healthy)
+# agent-studio-worker     Up (healthy)
+# agent-studio-redis      Up (healthy)
+# agent-studio-db         Up (healthy)
 
 # 测试后端 API
 curl -s http://localhost:8080/api/models
@@ -140,13 +140,13 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:5173
 
 ```bash
 # API 日志
-docker logs virtual-team-api -f
+docker logs agent-studio-api -f
 
 # Worker 日志
-docker logs virtual-team-worker -f
+docker logs agent-studio-worker -f
 
 # 前端日志
-docker logs virtual-team-frontend -f
+docker logs agent-studio-frontend -f
 ```
 
 ---
@@ -159,7 +159,7 @@ docker logs virtual-team-frontend -f
 
 ```bash
 apt install -y nginx
-vim /etc/nginx/sites-available/virtual-team
+vim /etc/nginx/sites-available/agent-studio
 ```
 
 ```nginx
@@ -207,17 +207,17 @@ certbot --nginx -d your-domain.com
 mkdir -p /opt/backups
 
 # 备份 PostgreSQL
-docker exec virtual-team-db pg_dump -U postgres virtual_team > /opt/backups/db_$(date +%Y%m%d).sql
+docker exec agent-studio-db pg_dump -U postgres agent_studio > /opt/backups/db_$(date +%Y%m%d).sql
 
 # 定期备份（crontab）
-# 0 3 * * * docker exec virtual-team-db pg_dump -U postgres virtual_team > /opt/backups/db_$(date +\%Y\%m\%d).sql
+# 0 3 * * * docker exec agent-studio-db pg_dump -U postgres agent_studio > /opt/backups/db_$(date +\%Y\%m\%d).sql
 ```
 
 ### 5.2 数据卷备份
 
 ```bash
 # 备份 Docker 数据卷
-tar czf /opt/backups/volumes_$(date +%Y%m%d).tar.gz /var/lib/docker/volumes/virtual-team_*
+tar czf /opt/backups/volumes_$(date +%Y%m%d).tar.gz /var/lib/docker/volumes/agent-studio_*
 ```
 
 ---
@@ -242,8 +242,8 @@ docker compose -f docker-compose.local.yml down
 docker image prune -a
 
 # 进入容器调试
-docker exec -it virtual-team-api bash
-docker exec -it virtual-team-db psql -U postgres -d virtual_team
+docker exec -it agent-studio-api bash
+docker exec -it agent-studio-db psql -U postgres -d agent_studio
 ```
 
 ---
