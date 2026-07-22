@@ -58,7 +58,7 @@
 │       ├── styles/                         # 15 个 CSS 文件（tokens + 模块化）
 │       ├── types/                          # 全局类型
 │       └── utils/                          # 工具函数（logger, errorHandler, sanitize...）
-├── virtual_team/                # Python FastAPI + SQLAlchemy 2.0 async + Celery
+├── backend/                # Python FastAPI + SQLAlchemy 2.0 async + Celery
 │   ├── app.py                   # FastAPI 入口（中间件: Auth → RateLimit → CORS）
 │   ├── database.py              # ORM 模型（20 张表）
 │   ├── models.py                # Pydantic 业务模型
@@ -271,7 +271,7 @@ npm run format           # Prettier 格式化
 ### 后端
 ```bash
 cd .
-PYTHONPATH=. python3 -m uvicorn virtual_team.core.app:app --reload  # 启动 FastAPI
+PYTHONPATH=. python3 -m uvicorn backend.core.app:app --reload  # 启动 FastAPI
 PYTHONPATH=. python3 -m pytest tests/                              # 运行测试
 ```
 

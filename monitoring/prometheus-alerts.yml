@@ -1,16 +1,16 @@
 # Virtual Team — Prometheus Alerting Rules
 # Deploy to your Prometheus server's rules directory.
-# Example: /etc/prometheus/rules/virtual-team.yml
+# Example: /etc/prometheus/rules/agent-studio.yml
 
 groups:
-  - name: virtual-team
+  - name: agent-studio
     interval: 30s
     rules:
 
       # ── Availability ────────────────────────────────────────────────────
 
       - alert: BackendDown
-        expr: up{job="virtual-team-backend"} == 0
+        expr: up{job="agent-studio-backend"} == 0
         for: 1m
         labels:
           severity: critical
@@ -73,7 +73,7 @@ groups:
       # Uncomment if you have those exporters configured.
 
       # - alert: HighCPUUsage
-      #   expr: rate(container_cpu_usage_seconds_total{name=~"virtual-team.*"}[5m]) > 0.8
+      #   expr: rate(container_cpu_usage_seconds_total{name=~"agent-studio.*"}[5m]) > 0.8
       #   for: 10m
       #   labels:
       #     severity: warning
@@ -82,7 +82,7 @@ groups:
       #     description: "Container {{ $labels.name }} CPU: {{ $value | humanizePercentage }}"
 
       # - alert: HighMemoryUsage
-      #   expr: container_memory_usage_bytes{name=~"virtual-team.*"} / container_spec_memory_limit_bytes{name=~"virtual-team.*"} > 0.9
+      #   expr: container_memory_usage_bytes{name=~"agent-studio.*"} / container_spec_memory_limit_bytes{name=~"agent-studio.*"} > 0.9
       #   for: 10m
       #   labels:
       #     severity: warning

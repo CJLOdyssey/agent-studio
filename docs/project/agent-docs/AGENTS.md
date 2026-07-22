@@ -1,6 +1,6 @@
 # AGENTS.md — AgentStudio
 
-Multi-repo: `frontend/` (React 18 + Vite 6 + Tailwind 3) + `virtual_team/` (FastAPI + SQLAlchemy async).  
+Multi-repo: `frontend/` (React 18 + Vite 6 + Tailwind 3) + `backend/` (FastAPI + SQLAlchemy async).  
 Three startup methods, each uses different ports (see [QUICKSTART.md](./QUICKSTART.md) for details).  
 Frontend Vite proxy defaults to `http://localhost:8080`; override via `VITE_API_BASE_URL` for other methods.
 
@@ -19,12 +19,12 @@ docker compose -f docker/compose.local.yml up -d
 # 🔀 Method 2 — 混合模式 (Docker PG/Redis, local hot-reload)
 # ① infra: docker compose -f docker/compose.local.yml up -d postgres redis
 # ② backend (explicit DATABASE_URL overrides shell env if already set):
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/virtual_team PYTHONPATH=. uvicorn virtual_team.app:app --reload --port 8081  # → :8081
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. uvicorn backend.app:app --reload --port 8081  # → :8081
 # ③ frontend:
 cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 5174  # → :5174
 
 # CLI single run (needs DB + Redis)
-PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
+PYTHONPATH=. python3 -m backend.main "<需求描述>"
 ```
 
 **Always `PYTHONPATH=.`** for backend commands — project is not installed as a package.
@@ -34,8 +34,8 @@ PYTHONPATH=. python3 -m virtual_team.main "<需求描述>"
 | Action | Frontend (`frontend/`) | Backend (root) |
 |--------|----------------------|----------------|
 | Build | `npm run build` (`tsc -b && vite build`) | — |
-| Typecheck | `npm run typecheck` | `mypy virtual_team/ --strict` |
-| Lint | `npm run lint` (ESLint) | `ruff check virtual_team/` |
+| Typecheck | `npm run typecheck` | `mypy backend/ --strict` |
+| Lint | `npm run lint` (ESLint) | `ruff check backend/` |
 | Format | `npm run format` (Prettier) | — (ruff handles) |
 | Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest tests/ -v --tb=short` |
 | E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short` |

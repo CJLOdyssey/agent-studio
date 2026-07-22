@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "virtual-team.fullname" . }}-postgres
+  name: {{ include "agent-studio.fullname" . }}-postgres
   labels:
-    {{- include "virtual-team.labels" . | nindent 4 }}
+    {{- include "agent-studio.labels" . | nindent 4 }}
 spec:
   accessModes:
     - ReadWriteOnce

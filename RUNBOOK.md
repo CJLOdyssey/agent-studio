@@ -50,9 +50,9 @@
 |-----------|------|------|-------|
 | **postgres** | Primary DB (pgvector) | 5432 | `pgvector/pgvector:pg16` |
 | **redis** | Cache, pub/sub stream, Celery broker | 6379 | `redis:7-alpine` |
-| **backend** | FastAPI HTTP + WebSocket server | 8080 | `virtual-team/backend` |
-| **celery** | Async task worker (graph execution) | — | `virtual-team/backend` (same image) |
-| **frontend** | nginx + React SPA | 80 | `virtual-team/frontend` |
+| **backend** | FastAPI HTTP + WebSocket server | 8080 | `agent-studio/backend` |
+| **celery** | Async task worker (graph execution) | — | `agent-studio/backend` (same image) |
+| **frontend** | nginx + React SPA | 80 | `agent-studio/frontend` |
 
 ### Data Flow
 
@@ -85,7 +85,7 @@ Push to `main` triggers `.github/workflows/deploy.yml`:
 Push to `staging` triggers `.github/workflows/deploy-staging.yml`:
 
 1. Build & push images tagged `staging` (isolated from production `latest` tags)
-2. Deploy to staging server at `/opt/virtual-team-staging`
+2. Deploy to staging server at `/opt/agent-studio-staging`
 3. Wait for health check (up to 60s)
 4. Run E2E smoke tests against staging
 5. If all pass, the branch is safe to merge into `main` for production deployment
@@ -106,13 +106,13 @@ Push to `staging` triggers `.github/workflows/deploy-staging.yml`:
 | `REMOTE_SSH_PORT` | SSH port (default: 22) |
 | `REMOTE_SSH_USER` | SSH username (default: `deploy`) |
 | `REMOTE_SSH_KEY` | SSH private key (Ed25519 recommended) |
-| `REMOTE_DIR` | (Optional) Deployment directory on server (default: `/opt/virtual-team`) |
+| `REMOTE_DIR` | (Optional) Deployment directory on server (default: `/opt/agent-studio`) |
 
 ### Manual Deploy
 
 ```bash
 # On the production server
-cd /opt/virtual-team
+cd /opt/agent-studio
 
 # Pull latest images
 docker compose -f docker/compose.prod.yml pull
@@ -128,8 +128,8 @@ docker compose -f docker/compose.prod.yml ps
 
 ```bash
 # 1. Clone repo on server
-git clone <repo-url> /opt/virtual-team
-cd /opt/virtual-team
+git clone <repo-url> /opt/agent-studio
+cd /opt/agent-studio
 
 # 2. Create .env from example
 cp .env.example .env
@@ -185,7 +185,7 @@ See `.env.example` for the full list with comments.
 
 ```bash
 # Inside the container
-docker exec -it virtual-team-db-prod psql -U postgres -d backend
+docker exec -it agent-studio-db-prod psql -U postgres -d backend
 
 # From host (if port exposed)
 psql -h localhost -U postgres -d backend
@@ -244,12 +244,12 @@ Migrations run **automatically** on container startup via `scripts/docker-entryp
 
 ```bash
 # Full backup (daily recommended)
-docker exec virtual-team-db-prod pg_dump -U postgres -d backend \
-  | gzip > /backups/virtual-team-$(date +%Y%m%d-%H%M%S).sql.gz
+docker exec agent-studio-db-prod pg_dump -U postgres -d backend \
+  | gzip > /backups/agent-studio-$(date +%Y%m%d-%H%M%S).sql.gz
 
 # Restore from backup
-gunzip -c /backups/virtual-team-20260401-120000.sql.gz | \
-  docker exec -i virtual-team-db-prod psql -U postgres -d backend
+gunzip -c /backups/agent-studio-20260401-120000.sql.gz | \
+  docker exec -i agent-studio-db-prod psql -U postgres -d backend
 ```
 
 For Alibaba Cloud RDS or similar managed Postgres, use the cloud provider's native snapshot/backup mechanism.
@@ -258,7 +258,7 @@ For Alibaba Cloud RDS or similar managed Postgres, use the cloud provider's nati
 
 ```bash
 # Trigger BGSAVE manually
-docker exec virtual-team-redis-prod redis-cli BGSAVE
+docker exec agent-studio-redis-prod redis-cli BGSAVE
 
 # Redis dump location (mounted volume)
 # /data/dump.rdb
@@ -270,7 +270,7 @@ Redis data is ephemeral — it caches session state and pub/sub messages. Loss o
 
 ```bash
 # Checkpoint data lives in the backend's Docker volume
-docker run --rm -v virtual-team-prod_checkpoint_data:/data -v /backups:/backups \
+docker run --rm -v agent-studio-prod_checkpoint_data:/data -v /backups:/backups \
   alpine tar czf /backups/checkpoints-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
@@ -402,13 +402,13 @@ The architecture supports horizontal scaling with a shared Postgres + Redis:
 docker compose logs backend
 
 # Verify Postgres connectivity
-docker exec virtual-team-api-prod pg_isready -h postgres -U postgres
+docker exec agent-studio-api-prod pg_isready -h postgres -U postgres
 
 # Check migration status
-docker exec virtual-team-api-prod alembic current
+docker exec agent-studio-api-prod alembic current
 
 # Force re-run migrations
-docker exec virtual-team-api-prod alembic upgrade head
+docker exec agent-studio-api-prod alembic upgrade head
 ```
 
 #### API returns 502 / upstream timeout
@@ -419,14 +419,14 @@ docker exec virtual-team-api-prod alembic upgrade head
 # Increase proxy_read_timeout in frontend/nginx.conf if needed
 
 # Check if celery worker is alive
-docker exec virtual-team-worker-prod celery -A backend.broker.celery_app inspect ping
+docker exec agent-studio-worker-prod celery -A backend.broker.celery_app inspect ping
 ```
 
 #### Celery tasks not executing
 
 ```bash
 # Check Redis connectivity
-docker exec virtual-team-redis-prod redis-cli ping
+docker exec agent-studio-redis-prod redis-cli ping
 
 # Check celery worker logs
 docker compose logs celery
@@ -483,8 +483,8 @@ curl http://localhost:8080/api/debug/errors
 
 ```bash
 # Pull a specific tagged version
-docker pull crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/backend:<tag>
-docker pull crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/frontend:<tag>
+docker pull crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio/backend:<tag>
+docker pull crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio/frontend:<tag>
 
 # Update compose file to use the tag, then recreate
 export BACKEND_TAG=<tag>
@@ -522,7 +522,7 @@ PYTHONPATH=. alembic downgrade <revision_id>
 
 - Backend containers **do not expose ports** in production (`expose` only, no `ports`)
 - Only frontend nginx binds to host port 5173
-- Internal Docker network `virtual-team-prod` with dedicated subnet `172.28.0.0/16`
+- Internal Docker network `agent-studio-prod` with dedicated subnet `172.28.0.0/16`
 - Postgres and Redis not exposed to host in production
 
 ### CI/CD Security Checks

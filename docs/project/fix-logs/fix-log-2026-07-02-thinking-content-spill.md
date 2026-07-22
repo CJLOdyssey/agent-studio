@@ -17,7 +17,7 @@
 
 ## 影响范围
 
-- `virtual_team/agent_graph.py` — `_raw_llm_stream()`
+- `backend/agent_graph.py` — `_raw_llm_stream()`
 - `frontend/src/components/agentstudio/TeamMessage.tsx`
 - 所有使用 DeepSeek 流式 API 的对话
 

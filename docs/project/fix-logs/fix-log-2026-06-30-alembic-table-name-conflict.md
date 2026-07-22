@@ -13,7 +13,7 @@
 | 关联缺陷 | — |
 | 日期 | 2026-06-30 |
 | 作者 | Sisyphus |
-| 涉及模块 | `virtual_team/checkpoint.py`、`alembic/versions/d3e1f2a3b4c5_rename_checkpoints_to_agent_checkpoints.py` |
+| 涉及模块 | `backend/checkpoint.py`、`alembic/versions/d3e1f2a3b4c5_rename_checkpoints_to_agent_checkpoints.py` |
 | 影响范围 | 数据库迁移、checkpoint 持久化 |
 | 触发条件 | 使用 `AsyncPostgresSaver` 或 `AsyncSqliteSaver` 时，langgraph 内部创建同名 `checkpoints` 表 |
 
@@ -60,7 +60,7 @@ AsyncPostgresSaver.setup()
 
 | # | 文件 | 变更说明 |
 |---|------|---------|
-| 1 | `virtual_team/checkpoint.py` | `CheckpointDB.__tablename__` 改为 `"agent_checkpoints"` |
+| 1 | `backend/checkpoint.py` | `CheckpointDB.__tablename__` 改为 `"agent_checkpoints"` |
 | 2 | `alembic/versions/d3e1f2a3b4c5_rename_checkpoints_to_agent_checkpoints.py` | 新增迁移：RENAME TABLE checkpoints → agent_checkpoints |
 
 ---

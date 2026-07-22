@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "virtual-team.fullname" . }}-celery
+  name: {{ include "agent-studio.fullname" . }}-celery
   labels:
-    {{- include "virtual-team.labels" . | nindent 4 }}
+    {{- include "agent-studio.labels" . | nindent 4 }}
     component: celery
 spec:
   replicas: {{ .Values.celery.replicas }}
   selector:
     matchLabels:
-      {{- include "virtual-team.selectorLabels" . | nindent 6 }}
+      {{- include "agent-studio.selectorLabels" . | nindent 6 }}
       component: celery
   strategy:
     type: RollingUpdate
@@ -19,18 +19,18 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "virtual-team.selectorLabels" . | nindent 8 }}
+        {{- include "agent-studio.selectorLabels" . | nindent 8 }}
         component: celery
     spec:
       {{- if .Values.checkpoints.persistence.enabled }}
       volumes:
         - name: checkpoints
           persistentVolumeClaim:
-            claimName: {{ include "virtual-team.fullname" . }}-checkpoints
+            claimName: {{ include "agent-studio.fullname" . }}-checkpoints
       {{- end }}
       containers:
         - name: celery
-          image: {{ include "virtual-team.backend.image" . }}
+          image: {{ include "agent-studio.backend.image" . }}
           imagePullPolicy: {{ .Values.backend.image.pullPolicy | default "IfNotPresent" }}
           command:
             - celery
@@ -42,9 +42,9 @@ spec:
             - --pool=threads
           envFrom:
             - configMapRef:
-                name: {{ include "virtual-team.fullname" . }}-config
+                name: {{ include "agent-studio.fullname" . }}-config
             - secretRef:
-                name: {{ include "virtual-team.fullname" . }}-secret
+                name: {{ include "agent-studio.fullname" . }}-secret
           {{- if .Values.checkpoints.persistence.enabled }}
           volumeMounts:
             - name: checkpoints

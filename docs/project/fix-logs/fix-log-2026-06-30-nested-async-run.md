@@ -13,7 +13,7 @@
 | 关联缺陷 | FIX-20260630-002（引入 async checkpointer 时暴露此问题） |
 | 日期 | 2026-06-30 |
 | 作者 | Sisyphus |
-| 涉及模块 | `virtual_team/checkpoint.py`、`virtual_team/agent_graph.py`、`virtual_team/team_graph.py`、`virtual_team/tasks.py`、`virtual_team/main.py` |
+| 涉及模块 | `backend/checkpoint.py`、`backend/agent_graph.py`、`backend/team_graph.py`、`backend/tasks.py`、`backend/main.py` |
 | 影响范围 | Celery worker 执行 LangGraph pipeline、CLI 运行 |
 | 触发条件 | Celery worker 调用 `create_checkpointer()`（内有 `asyncio.run()`）时，已有运行中的事件循环 |
 
@@ -73,11 +73,11 @@ Celery worker 线程：
 
 | # | 文件 | 变更说明 |
 |---|------|---------|
-| 1 | `virtual_team/checkpoint.py` | 新增 `async create_checkpointer_async()` 和 `_create_checkpointer_async()`；重构 `create_checkpointer()` 为同步包装器 |
-| 2 | `virtual_team/agent_graph.py` | `SingleAgentGraph.__init__` 新增 `checkpointer` 参数；导入 `BaseCheckpointSaver` |
-| 3 | `virtual_team/team_graph.py` | `TeamGraph.__init__` 新增 `checkpointer` 参数 |
-| 4 | `virtual_team/tasks.py` | `_run_agent_pipeline` 中改用 `await create_checkpointer_async()` 并传入 `graph` |
-| 5 | `virtual_team/main.py` | `_run_cli_async` 中改用 `await create_checkpointer_async()` 并传入 `graph` |
+| 1 | `backend/checkpoint.py` | 新增 `async create_checkpointer_async()` 和 `_create_checkpointer_async()`；重构 `create_checkpointer()` 为同步包装器 |
+| 2 | `backend/agent_graph.py` | `SingleAgentGraph.__init__` 新增 `checkpointer` 参数；导入 `BaseCheckpointSaver` |
+| 3 | `backend/team_graph.py` | `TeamGraph.__init__` 新增 `checkpointer` 参数 |
+| 4 | `backend/tasks.py` | `_run_agent_pipeline` 中改用 `await create_checkpointer_async()` 并传入 `graph` |
+| 5 | `backend/main.py` | `_run_cli_async` 中改用 `await create_checkpointer_async()` 并传入 `graph` |
 
 ### 3.3 关键代码 diff
 

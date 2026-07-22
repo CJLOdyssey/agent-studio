@@ -77,19 +77,19 @@ Build & Deploy
 
 | 文件路径 | 说明 |
 |----------|------|
-| `virtual_team/checkpoint.py` | Async 检查点工厂（`create_checkpointer` + `create_checkpointer_async`） |
-| `virtual_team/agent_graph.py` | Agent Graph 引擎（接受 injectable checkpointer） |
-| `virtual_team/tasks.py` | Celery 任务（使用 `await create_checkpointer_async()`） |
-| `virtual_team/tests/test_checkpoint_persistence.py` | 修复后的 async checkpoint 测试 |
+| `backend/checkpoint.py` | Async 检查点工厂（`create_checkpointer` + `create_checkpointer_async`） |
+| `backend/agent_graph.py` | Agent Graph 引擎（接受 injectable checkpointer） |
+| `backend/tasks.py` | Celery 任务（使用 `await create_checkpointer_async()`） |
+| `backend/tests/test_checkpoint_persistence.py` | 修复后的 async checkpoint 测试 |
 | `docker/compose.local.yml` | 本地 Docker Compose（与生产对齐） |
 | `docker/compose.prod.yml` | 生产 Docker Compose（celery 用 backend 镜像） |
 | `.github/workflows/deploy.yml` | 部署工作流（含 SSH 安全警告） |
 | `docs/project/fix-logs/` | 本次 6 份修复日志 |line 解析 agent 配置绑定工具） |
-| `virtual_team/routers/agents.py` | Agent API 路由（含 _parse_json 修复） |
-| `virtual_team/repository/agents.py` | Agent 数据访问层 |
-| `virtual_team/repository/tools.py` | 注册工具 CRUD（含 get_tools） |
-| `virtual_team/repository/mcps.py` | MCP CRUD（含 get_mcps） |
-| `virtual_team/repository/skills.py` | Skills CRUD（含 get_skills） |
+| `backend/routers/agents.py` | Agent API 路由（含 _parse_json 修复） |
+| `backend/repository/agents.py` | Agent 数据访问层 |
+| `backend/repository/tools.py` | 注册工具 CRUD（含 get_tools） |
+| `backend/repository/mcps.py` | MCP CRUD（含 get_mcps） |
+| `backend/repository/skills.py` | Skills CRUD（含 get_skills） |
 | `frontend/src/components/devagents/` | 前端工作站模块 |
 | `scripts/fix_playwright_libs.sh` | Playwright 系统库修复脚本 |
 

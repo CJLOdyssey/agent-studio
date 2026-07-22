@@ -13,7 +13,7 @@
 | 关联缺陷 | — |
 | 日期 | 2026-06-30 |
 | 作者 | Sisyphus |
-| 涉及模块 | `virtual_team/checkpoint.py`、`virtual_team/agent_graph.py`、`virtual_team/team_graph.py`、`requirements.txt` |
+| 涉及模块 | `backend/checkpoint.py`、`backend/agent_graph.py`、`backend/team_graph.py`、`requirements.txt` |
 | 影响范围 | 所有使用 LangGraph 的对话/Agent 运行（Celery 任务、CLI） |
 | 触发条件 | 发送聊天消息触发 Celery worker 执行 LangGraph pipeline |
 
@@ -67,7 +67,7 @@ LangGraph 2.0+ 支持同步（`.invoke()`）和异步（`.ainvoke()`、`.astream
 
 | # | 文件 | 变更说明 |
 |---|------|---------|
-| 1 | `virtual_team/checkpoint.py` | 使用 `AsyncSqliteSaver` 替代 `SqliteSaver`，`AsyncPostgresSaver` 替代 `PostgresSaver` |
+| 1 | `backend/checkpoint.py` | 使用 `AsyncSqliteSaver` 替代 `SqliteSaver`，`AsyncPostgresSaver` 替代 `PostgresSaver` |
 | 2 | `requirements.txt` | 新增 `aiosqlite>=0.20.0`、`langgraph-checkpoint-sqlite>=3.0.0`、`langgraph-checkpoint-postgres>=3.1.0` |
 
 ### 3.3 关键代码 diff
