@@ -21,7 +21,7 @@
 |---|------|------|---------|------|
 | 4 | `frontend/.../workstation/logs/` | 检查是否遵循 9-10 文件约定 | ✅ display-only 模块，无需 CRUD 模板 | ✅ |
 | 5 | `frontend/.../workstation/monitor/` | 同上 | ✅ display-only 模块，无需 CRUD 模板 | ✅ |
-| 6 | `frontend/.../modals/AgentConfigModal.tsx` | ~350 行，props 过载（~25 props） | ⚠️ 已审计：表单状态已在 useAgentConfigForm，工具MCP/Skill CRUD差异过大不适合泛化 |
+| 6 | `frontend/.../modals/AgentConfigModal.tsx` | ~350 行 → 210行，props/CRUD提取 | ✅ useConfigItemEdit + useAgentConfigForm 已拆分 |
 | 7 | `frontend/.../TabRenderer.tsx` | ~250 行，switch-case 渲染 5 个子 Tab | ✅ renderItemTab<T> 泛型函数，251→150行 |
 
 ---
