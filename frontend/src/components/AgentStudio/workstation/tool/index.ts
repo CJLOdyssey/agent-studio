@@ -4,6 +4,5 @@ export { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
 export { useToolManagement } from './useToolManagement';
 export { default as ToolFormModal } from './ToolFormModal';
 export { toolAPI } from './api';
-export type { ToolAPIService } from './api';
 export { t } from './locales';
 export { validateToolForm } from './validate';

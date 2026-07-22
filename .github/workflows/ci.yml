@@ -111,7 +111,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
       - run: npm run build
-      - name: Check bundle size
+      - name: Check total bundle size
         run: |
           total=$(du -sb dist/ | cut -f1)
           max=$((10 * 1024 * 1024))
@@ -121,6 +121,8 @@ jobs:
             exit 1
           fi
           echo "✅ Bundle size OK"
+      - name: Check per-chunk size limit
+        run: npm run size
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist

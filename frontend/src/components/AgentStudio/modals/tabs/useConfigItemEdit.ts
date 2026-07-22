@@ -72,7 +72,8 @@ export function useConfigItemEdit(
 
   function saveFormItem(kind: 'tool' | 'mcp' | 'skill') {
     const f = form.forms[kind];
-    if (!('name' in f.data) || !(f.data as { name: string }).name.trim()) {
+    const fdata = f.data as Record<string, unknown>;
+    if (typeof fdata.name !== 'string' || !fdata.name.trim()) {
       form.setFormErrors(kind, [t('workstation.nameRequired')]);
       return;
     }

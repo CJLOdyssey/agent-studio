@@ -4,6 +4,5 @@ export { MCP_STATUS_LABEL, MCP_TYPE_OPTIONS } from './mcp.constants';
 export { useMcpManagement } from './useMCPManagement';
 export { default as MCPFormModal } from './MCPFormModal';
 export { mcpAPI } from './api';
-export type { MCPAPIService } from './api';
 export { t } from './locales';
 export { validateMCPForm } from './validate';

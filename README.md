@@ -68,6 +68,53 @@ docker compose -f docker/compose.local.yml up -d
 
 ---
 
+## 🏗 项目架构
+
+```mermaid
+graph TB
+    subgraph Frontend["前端 (React 18 + Vite 6)"]
+        WS[WebSocket Client]
+        UI[WorkstationPage<br/>10-Module UI]
+        API[API Client<br/>Axios + TanStack Query]
+    end
+
+    subgraph Backend["后端 (FastAPI + SQLAlchemy async)"]
+        RTR[routers/ <br/>19 个路由模块]
+        REP[repository/ <br/>25 个仓储模块]
+        ORM[(ORM Models<br/>24 张表)]
+        AUTH[Auth<br/>JWT + RBAC]
+        OBS[Observability<br/>EventStore + Trace]
+    end
+
+    subgraph Engines["Agent 引擎 (LangGraph)"]
+        SA[SingleAgentGraph<br/>ReAct + Tool Calling]
+        DT[DynamicTeamGraph<br/>DAG 多 Agent 并行]
+    end
+
+    subgraph Infra["基础设施"]
+        PG[(PostgreSQL<br/>pgvector)]
+        RD[(Redis<br/>Pub/Sub + Cache)]
+        CL(Celery Workers<br/>异步任务)
+        KV[Key Vault<br/>Fernet 加密]
+    end
+
+    UI --> API
+    UI --> WS
+    API --> RTR
+    RTR --> REP --> ORM
+    RTR --> AUTH
+    RTR --> Engines
+    Engines --> CL
+    Engines --> RD
+    SA -.->|StreamEmitter| RD
+    DT -.->|StreamEmitter| RD
+    RD -.->|Redis Pub/Sub| WS
+    REP --> KV
+    OBS -.->|SQLite| OBS_DB[(event_store.db)]
+```
+
+---
+
 ## 🛳 部署
 
 | 方式 | 说明 |
@@ -93,7 +140,7 @@ docker compose -f docker/compose.local.yml up -d
 ## 💬 支持
 
 - GitHub Issues: https://github.com/CJLOdyssey/agent-studio/issues
-- 文档: [QUICKSTART.md](QUICKSTART.md) | [AGENTS.md](AGENTS.md) | [RUNBOOK.md](RUNBOOK.md)
+- 文档: [QUICKSTART.md](QUICKSTART.md) | [AGENTS.md](AGENTS.md) | [RUNBOOK.md](RUNBOOK.md) | [API 示例](docs/api/README.md)
 
 ---
 

@@ -67,9 +67,8 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
-            utils: ['axios', 'zustand', 'crypto-js'],
+            utils: ['axios', 'zustand'],
             sentry: ['@sentry/react', '@sentry/browser'],
-            syntax: ['react-syntax-highlighter'],
           },
         },
       },

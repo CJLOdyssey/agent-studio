@@ -61,18 +61,19 @@ interface TabRendererProps {
 
 type TabKind = 'tool' | 'mcp' | 'skill';
 
-interface TabConfig<T> {
+interface TabConfig<T, F> {
   kind: TabKind;
+  showForm: boolean;
   editingItem: unknown;
   list: ItemListShape<T>;
-  formData: ToolFormData | MCPFormData | SkillFormData;
+  formData: F;
   formErrors: string[];
   onEditFull: (item: Record<string, unknown>) => void;
   onCustomize: () => void;
   onPickerOpen: () => void;
   defaultItem: T;
   renderTab: (ctx: {
-    items: T[]; editingId: string | null; formData: ToolFormData | MCPFormData | SkillFormData;
+    items: T[]; editingId: string | null; showForm: boolean; formData: F;
     formErrors: string[]; editingItem: null;
     onToggle: (id: string) => void; onAdd: () => void;
     onUpdate: (id: string, name: string, desc: string) => void;
@@ -85,8 +86,7 @@ interface TabConfig<T> {
   }) => ReactNode;
 }
 
-function renderItemTab<T extends { id: string }>(cfg: TabConfig<T>) {
-  const f = (cfg.kind === 'tool' ? 'tool' : cfg.kind === 'mcp' ? 'mcp' : 'skill') as TabKind;
+function renderItemTab<T extends { id: string }, F>(cfg: TabConfig<T, F>) {
   return (
     <ItemEditor
       kind={cfg.kind}
@@ -99,12 +99,13 @@ function renderItemTab<T extends { id: string }>(cfg: TabConfig<T>) {
       {cfg.renderTab({
         items: cfg.list.items,
         editingId: cfg.list.editingId,
+        showForm: cfg.showForm,
         formData: cfg.formData,
         formErrors: cfg.formErrors,
         editingItem: null,
         onToggle: cfg.list.toggle,
         onAdd: () => cfg.list.addCustom(() => ({ ...cfg.defaultItem, id: `custom-${Date.now()}` }) as unknown as T),
-        onUpdate: (id, name, desc) => cfg.list.update(id, { name, description: desc } as Partial<T>),
+        onUpdate: (id, name, desc) => cfg.list.update(id, { name, description: desc } as unknown as Partial<T>),
         onRemove: cfg.list.remove,
         onStartEdit: cfg.list.setEditingId,
         onFinishEdit: () => cfg.list.setEditingId(null),
@@ -125,7 +126,6 @@ export default function TabRenderer(props: TabRendererProps) {
     outputConstraints, onOutputConstraintsChange,
     tools, mcp, skills, form,
     editingToolItem, editingMcpItem, editingSkillItem,
-    onSaveFormItem, onFormClose, onSetEditingMcpItem, onSetEditingSkillItem,
     onEditTool, onEditMcp, onEditSkill, onPickerOpen,
   } = props;
 
@@ -145,8 +145,8 @@ export default function TabRenderer(props: TabRendererProps) {
         />
       );
     case 'tools':
-      return renderItemTab<AgentTool>({
-        kind: 'tool', editingItem: editingToolItem, list: tools,
+      return renderItemTab<AgentTool, ToolFormData>({
+        kind: 'tool', showForm: form.forms.tool.show, editingItem: editingToolItem, list: tools,
         formData: form.forms.tool.data, formErrors: form.forms.tool.errors,
         defaultItem: { name: '新工具', description: '', enabled: true, parameters: '' } as AgentTool,
         onEditFull: onEditTool,
@@ -155,8 +155,8 @@ export default function TabRenderer(props: TabRendererProps) {
         renderTab: (ctx) => <ToolsTab {...ctx} />,
       });
     case 'mcp':
-      return renderItemTab<AgentMCP>({
-        kind: 'mcp', editingItem: editingMcpItem, list: mcp,
+      return renderItemTab<AgentMCP, MCPFormData>({
+        kind: 'mcp', showForm: form.forms.mcp.show, editingItem: editingMcpItem, list: mcp,
         formData: form.forms.mcp.data, formErrors: form.forms.mcp.errors,
         defaultItem: { name: '新 MCP', description: '', enabled: true } as AgentMCP,
         onEditFull: onEditMcp,
@@ -165,8 +165,8 @@ export default function TabRenderer(props: TabRendererProps) {
         renderTab: (ctx) => <MCPTab {...ctx} />,
       });
     case 'skills':
-      return renderItemTab<AgentSkill>({
-        kind: 'skill', editingItem: editingSkillItem, list: skills,
+      return renderItemTab<AgentSkill, SkillFormData>({
+        kind: 'skill', showForm: form.forms.skill.show, editingItem: editingSkillItem, list: skills,
         formData: form.forms.skill.data, formErrors: form.forms.skill.errors,
         defaultItem: { name: '新 Skill', description: '', enabled: true } as AgentSkill,
         onEditFull: onEditSkill,

@@ -3,7 +3,6 @@ export type { OutputEntry, OutputFormData, OutputCategory, OutputSortField } fro
 export { OUTPUT_CATEGORIES, OUTPUT_STATUS_LABEL } from './output.constants';
 export { MOCK_OUTPUTS } from '@/mocks/output';
 export { outputAPI } from './api';
-export type { OutputAPIService } from './api';
 export { useOutputManagement } from './useOutputManagement';
 export type { OutputData } from './useOutputManagement';
 export { default as OutputFormModal } from './OutputFormModal';

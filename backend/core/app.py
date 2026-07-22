@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+import importlib
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -54,9 +56,9 @@ def _safe_float(key: str, default: float) -> float:
 # ── Sentry APM (must be initialized before FastAPI app) ─────────────────────
 _sentry_dsn = os.environ.get("SENTRY_DSN", "")
 if _sentry_dsn:
-    import sentry_sdk  # type: ignore[import-not-found]
-    from sentry_sdk.integrations.fastapi import FastApiIntegration  # type: ignore[import-not-found]
-    from sentry_sdk.integrations.starlette import StarletteIntegration  # type: ignore[import-not-found]
+    sentry_sdk: Any = importlib.import_module("sentry_sdk")
+    FastApiIntegration: Any = importlib.import_module("sentry_sdk.integrations.fastapi").FastApiIntegration
+    StarletteIntegration: Any = importlib.import_module("sentry_sdk.integrations.starlette").StarletteIntegration
 
     sentry_sdk.init(
         dsn=_sentry_dsn,
