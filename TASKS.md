@@ -11,7 +11,7 @@
 
 | # | 位置 | 问题 | 修复方式 | 状态 |
 |---|------|------|---------|------|
-| 1 | `backend/repository/admin_stats.py` | 可能直连 ORM | 验证并仓库化 | ❌ |
+| 1 | `backend/repository/admin_stats.py` | 可能直连 ORM | ✅ 已仓库化（继承标准 repository 模式） | ✅ |
 | 2 | `backend/core/infra/database.py:init_db()` | 直接创建所有表和种子数据 | 抽取种子逻辑到独立 seeder | ❌ |
 | 3 | `backend/core/app.py` health check | 直连 `get_session_factory()` | ✅ 移至 `repository/health.py` | ✅ |
 
@@ -63,8 +63,8 @@
 
 | # | 项目 | 状态 |
 |---|------|------|
-| 27 | 确认 `tsconfig.json` 中 `strict: true` 对所有文件生效 | ❌ |
-| 28 | 在新代码门禁中加入 `no-explicit-any` ESLint 规则 | ❌ |
+| 27 | 确认 `tsconfig.json` 中 `strict: true` 对所有文件生效 | ✅ 已存在 |
+| 28 | 在新代码门禁中加入 `no-explicit-any` ESLint 规则 | ✅ 已存在 |
 | 29 | 补齐 backend mypy --strict 剩余 type:ignore（13→0） | ❌ |
 
 ---
