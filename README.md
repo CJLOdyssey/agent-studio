@@ -24,7 +24,6 @@
 - [功能特性](#-功能特性)
 - [架构](#-架构)
 - [部署](#-部署)
-- [开发](#-开发)
 - [License](#-license)
 
 </details>
@@ -122,46 +121,6 @@ helm install agent-studio ./helm
 | `REDIS_URL` | 是 | Redis 连接串 |
 | `AUTH_SECRET` | 是 | JWT 签名密钥（≥32字符） |
 | `KEY_VAULT_SECRET` | 是 | Fernet 加密密钥（≥32字符） |
-
----
-
-## ⌨️ 开发
-
-### 环境要求
-
-- Node.js ≥ 20 / Python ≥ 3.12
-- PostgreSQL ≥ 16 / Redis ≥ 7.2
-
-### 启动
-
-```bash
-# 前端
-cd frontend && npm install && npm run dev
-
-# 后端
-pip install -r requirements.txt
-PYTHONPATH=. python3 -m uvicorn backend.core.app:app --reload --port 8080
-```
-
-### 测试
-
-```bash
-# 前端（1143 测试）
-cd frontend && npm test
-
-# 后端（1837 测试）
-PYTHONPATH=. python3 -m pytest tests/ -v --ignore=tests/e2e/
-```
-
-### 代码质量
-
-```bash
-# 前端
-npm run lint && npm run typecheck
-
-# 后端
-ruff check backend/ && mypy backend/ --strict
-```
 
 ---
 
