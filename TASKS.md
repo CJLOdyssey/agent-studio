@@ -141,7 +141,7 @@
 | 54 | CSP 策略加固（评估是否需要更严格） | ⚠️ 已审计：`default-src 'self'` 对 API 后端已足够 |
 | 55 | 检查所有 user_id / X-User-ID 是否被记录到日志（PII 泄露风险） | ⚠️ 已审计：rate_limit.py 记录 user_id，但格式为 UUID（低 PII 风险） |
 | 56 | 在 `.env.example` 中标注安全变量生产建议值 | ✅ |
-| 57 | 检查前端 API client 中的 token 存储方式（localStorage → XSS 可窃取） | ❌ 需架构迁移（2d） |
+| 57 | 检查前端 API client 中的 token 存储方式（localStorage → XSS 可窃取） | ✅ httpOnly cookie（access_token）+ localStorage（refresh_token） |
 | 58 | 检查 refresh token 轮换策略 | ✅ 已实现：family_id 轮换 + replay 检测 + 全族吊销 |
 
 ---

@@ -3,6 +3,7 @@
 import secrets
 
 from fastapi import Request
+from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
 from redis.asyncio import Redis as AsyncRedis
 
@@ -143,6 +144,39 @@ async def _build_user_response(user_id: str, email: str, username: str | None) -
 
 
 ACCESS_TOKEN_TTL = 900  # 15 minutes — matches create_token default aligns with short-lived token best practice
+
+
+def _set_access_token_cookie(response: Response, access_token: str) -> None:
+    """Set the access token as an httpOnly cookie (prevents XSS theft).
+
+    The cookie is httpOnly (inaccessible to JS), SameSite=Lax (CSRF-safe
+    for top-level navigations), and secure only when not in dev mode.
+    The path is scoped to ``/api`` so the token is only sent to API
+    endpoints, not static assets or unrelated routes.
+    """
+    import os
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=os.environ.get("DEV_MODE", "") != "1",
+        max_age=ACCESS_TOKEN_TTL,
+        path="/api",
+    )
+
+
+def _clear_access_token_cookie(response: Response) -> None:
+    """Clear the access_token httpOnly cookie on logout."""
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        samesite="lax",
+        max_age=0,
+        path="/api",
+    )
 
 
 async def _create_auth_response(

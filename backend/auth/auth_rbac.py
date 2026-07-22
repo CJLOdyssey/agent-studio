@@ -64,10 +64,18 @@ async def get_current_user(request: Request) -> CurrentUser:
     # Try middleware-decoded user_id first (set by AuthMiddleware for non-auth routes)
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
-        # AuthMiddleware skips /api/auth/* routes, so decode the JWT here
+        # AuthMiddleware skips /api/auth/* routes, so decode the JWT here.
+        # Priority: Authorization Bearer header (legacy) → access_token httpOnly cookie.
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             payload = decode_jwt(auth_header[7:], AUTH_SECRET)
+            if payload:
+                user_id = payload.get("sub", "")
+    if not user_id:
+        # Fallback to httpOnly cookie (set by login/register/verify/refresh endpoints)
+        token = request.cookies.get("access_token")
+        if token:
+            payload = decode_jwt(token, AUTH_SECRET)
             if payload:
                 user_id = payload.get("sub", "")
     if not user_id:
