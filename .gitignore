@@ -74,3 +74,4 @@ requirements-lock.txt
 prototypes/
 scripts/deploy_prod.py
 scripts/ask_credentials.py
+.omo/
