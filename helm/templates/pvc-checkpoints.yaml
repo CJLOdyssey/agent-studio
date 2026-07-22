@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "virtual-team.fullname" . }}-checkpoints
+  name: {{ include "agent-studio.fullname" . }}-checkpoints
   labels:
-    {{- include "virtual-team.labels" . | nindent 4 }}
+    {{- include "agent-studio.labels" . | nindent 4 }}
 spec:
   accessModes:
     - {{ .Values.checkpoints.persistence.accessMode }}

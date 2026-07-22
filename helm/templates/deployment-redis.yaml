@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "virtual-team.redis.fullname" . }}
+  name: {{ include "agent-studio.redis.fullname" . }}
   labels:
-    {{- include "virtual-team.labels" . | nindent 4 }}
+    {{- include "agent-studio.labels" . | nindent 4 }}
     component: redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "virtual-team.selectorLabels" . | nindent 6 }}
+      {{- include "agent-studio.selectorLabels" . | nindent 6 }}
       component: redis
   template:
     metadata:
       labels:
-        {{- include "virtual-team.selectorLabels" . | nindent 8 }}
+        {{- include "agent-studio.selectorLabels" . | nindent 8 }}
         component: redis
     spec:
       containers:

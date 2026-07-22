@@ -12,7 +12,7 @@ fullnameOverride: ""
 
 global:
   # Alibaba Cloud Container Registry base path
-  acrRegistry: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team
+  acrRegistry: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio
 
 # ── Postgres ───────────────────────────────────────────────────────────────────
 postgres:

@@ -1,7 +1,7 @@
 {
   "title": "Virtual Team — Backend Overview",
-  "uid": "virtual-team-backend",
-  "tags": ["virtual-team", "fastapi"],
+  "uid": "agent-studio-backend",
+  "tags": ["agent-studio", "fastapi"],
   "timezone": "browser",
   "schemaVersion": 38,
   "version": 1,

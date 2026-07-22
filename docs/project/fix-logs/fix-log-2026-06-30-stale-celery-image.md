@@ -72,7 +72,7 @@ GitHub Actions Build & Deploy:
 |---|------|---------|
 | 1 | `docker/compose.prod.yml` | celery 服务 `image:` 改为指向 `backend:latest` |
 | 2 | `docker/compose.local.yml` | 同上对齐 |
-| 3 | 服务器手动执行 | `docker rm -f virtual-team-worker-prod` + `docker compose up -d` |
+| 3 | 服务器手动执行 | `docker rm -f agent-studio-worker-prod` + `docker compose up -d` |
 
 ### 3.3 关键代码 diff
 

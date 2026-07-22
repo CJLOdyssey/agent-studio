@@ -76,7 +76,7 @@ class TestDefaults:
 
     def test_service_default(self, monkeypatch):
         monkeypatch.delenv("REDIS_SENTINEL_SERVICE", raising=False)
-        assert _reload(monkeypatch).SERVICE_NAME == "virtual-team-redis"
+        assert _reload(monkeypatch).SERVICE_NAME == "agent-studio-redis"
 
     def test_service_custom(self, monkeypatch):
         assert _reload(monkeypatch, REDIS_SENTINEL_SERVICE="my").SERVICE_NAME == "my"

@@ -240,4 +240,4 @@
 |----|------|------|------|
 | 25 | 后端单元测试 | `PYTHONPATH=. python3 -m pytest tests/ -v --tb=short --ignore=tests/e2e/ --ignore=tests/repository/` | 全部非集成测试 |
 | 26 | 前端单元测试 | `cd frontend && npm test -- --run` | 225 passed, 31 files |
-| 27 | Ruff 检查 | `ruff check virtual_team/` | 无新增 error |
+| 27 | Ruff 检查 | `ruff check backend/` | 无新增 error |

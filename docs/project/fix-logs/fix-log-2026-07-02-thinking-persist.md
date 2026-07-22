@@ -28,11 +28,11 @@
 
 | 文件 | 改动 |
 |------|------|
-| `virtual_team/database.py` | `ChatMessage` 加 `thinking: Mapped[str \| None]` 列 |
-| `virtual_team/models.py` | `MessageItem` 加 `thinking: str \| None = None` |
-| `virtual_team/repository/core.py` | `save_message()` 加 `thinking` 参数 |
-| `virtual_team/streaming.py` | `_flush_buffers()` 和 `_emit()` 把 `thinking` 传给 `save_message` |
-| `virtual_team/routers/runs.py` | `get_run_detail` 消息返回 `thinking` 字段 |
+| `backend/database.py` | `ChatMessage` 加 `thinking: Mapped[str \| None]` 列 |
+| `backend/models.py` | `MessageItem` 加 `thinking: str \| None = None` |
+| `backend/repository/core.py` | `save_message()` 加 `thinking` 参数 |
+| `backend/streaming.py` | `_flush_buffers()` 和 `_emit()` 把 `thinking` 传给 `save_message` |
+| `backend/routers/runs.py` | `get_run_detail` 消息返回 `thinking` 字段 |
 | `alembic/versions/b590d3515bc9_*.py` | 新迁移：加 `thinking` 列 + 删废弃 `nodes` 列 |
 
 ## 验证方法

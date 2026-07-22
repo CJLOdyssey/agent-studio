@@ -85,7 +85,7 @@ test:
 - @pytest.fixture
 + @pytest.fixture
 + async def checkpointer_sqlite(checkpoint_db_path):
-+     from virtual_team.checkpoint import create_checkpointer_async
++     from backend.checkpoint import create_checkpointer_async
 +     cp = await create_checkpointer_async()
 +     yield cp
 +     conn = getattr(cp, "conn", None)
