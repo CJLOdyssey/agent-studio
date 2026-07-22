@@ -57,20 +57,22 @@ _rate_limiter = RateLimiter()
 
 def _extract_client_ip(scope: dict[str, Any]) -> str:
     for header_name, header_value in scope.get("headers", []):
-        if header_name == b"x-forwarded-for":
-            return header_value.decode("utf-8").split(",")[0].strip()
-        if header_name == b"x-real-ip":
-            return header_value.decode("utf-8")
+        if isinstance(header_name, bytes) and isinstance(header_value, bytes):
+            if header_name == b"x-forwarded-for":
+                return header_value.decode("utf-8").split(",")[0].strip()
+            if header_name == b"x-real-ip":
+                return header_value.decode("utf-8")
     return str(scope.get("client", ("unknown", 0))[0])
 
 
 def _extract_user_id(scope: dict[str, Any]) -> str | None:
     """Extract user ID from the X-User-ID header if present."""
     for header_name, header_value in scope.get("headers", []):
-        if header_name == b"x-user-id":
-            uid = header_value.decode("utf-8").strip()
-            if uid and uid != "anonymous":
-                return uid
+        if isinstance(header_name, bytes) and isinstance(header_value, bytes):
+            if header_name == b"x-user-id":
+                uid = header_value.decode("utf-8").strip()
+                if uid and uid != "anonymous":
+                    return uid
     return None
 
 
