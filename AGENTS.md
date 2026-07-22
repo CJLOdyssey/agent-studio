@@ -179,7 +179,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
 - **Frontend**: jsdom via Vitest. `TestProviders` wrapper for component tests.
 - **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
-- **E2E** (`test_e2e_full_flow.py`): Requires Docker (`virtual-team-redis` container). Runs against `localhost:8080`.
+- **E2E** (`test_e2e_full_flow.py`): Requires Docker (`agent-studio-redis` container). Runs against `localhost:8080`.
 - **Coverage System**: 4 types of coverage tracking:
   1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **65% threshold** (CI gate)
   2. **Diff Coverage** (PR gate): `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` - Only checks coverage on changed lines

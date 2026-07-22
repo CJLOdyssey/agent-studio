@@ -164,7 +164,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
 - **Frontend**: jsdom via Vitest. `TestProviders` wrapper for component tests.
 - **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
-- **E2E** (`test_e2e_full_flow.py`): Requires Docker (`virtual-team-redis` container). Runs against `localhost:8080`.
+- **E2E** (`test_e2e_full_flow.py`): Requires Docker (`agent-studio-redis` container). Runs against `localhost:8080`.
 
 ## Git & Hooks
 
