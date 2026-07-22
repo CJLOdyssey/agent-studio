@@ -1,0 +1,84 @@
+/* Utility classes */
+.text-emerald-500 {
+  color: var(--da-accent-emerald);
+}
+.text-amber-500 {
+  color: var(--da-accent-amber);
+}
+.text-cyan-400 {
+  color: var(--da-accent-cyan);
+}
+.text-red-500 {
+  color: var(--icon-status-error);
+}
+.text-green-500 {
+  color: var(--da-accent-emerald);
+}
+
+/* WebSocket reconnection banner */
+.agentstudio-ws-banner {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--da-accent-amber);
+  color: var(--da-text-on-accent);
+  text-align: center;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.agentstudio-ws-banner--error {
+  background: var(--da-accent-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+.agentstudio-retry-btn {
+  background: var(--da-bg-primary);
+  color: var(--da-accent-red);
+  border: none;
+  padding: 1px 12px;
+  border-radius: 4px;
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  font-weight: 600;
+  line-height: var(--da-line-height);
+}
+
+.agentstudio-retry-btn:hover {
+  opacity: 0.8;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentstudio-input-wrapper {
+    transition: none;
+  }
+
+  .agentstudio-tool-btn,
+  .agentstudio-tool-btn-text,
+  .agentstudio-send-btn,
+  .agentstudio-process-header,
+  .agentstudio-artifact-card,
+  .agentstudio-artifact-review,
+  .agentstudio-agent-card,
+  .agentstudio-pagination-btn,
+  .agentstudio-sample-btn,
+  .agentstudio-welcome-close,
+  .typing-cursor {
+    transition: none;
+  }
+
+  .animate-spin {
+    animation: none;
+  }
+
+  .typing-cursor {
+    animation: none;
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,111 @@
+@media (max-width: 768px) {
+  .modal-content {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .settings-modal,
+  .api-modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .settings-sidebar {
+    display: none;
+  }
+
+  .settings-content {
+    padding: var(--sp-4);
+  }
+
+  .modal-body {
+    padding: var(--sp-4);
+  }
+
+  .modal-header {
+    padding: var(--sp-3) var(--sp-4);
+  }
+
+  .modal-footer {
+    padding: var(--sp-3) var(--sp-4);
+  }
+
+  .api-edit-modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .api-edit-form {
+    padding: var(--sp-4);
+  }
+
+  .agent-config-modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .agent-config-tabs {
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+
+  .agent-config-tab {
+    font-size: var(--da-font-size-xs);
+    padding: var(--sp-1) var(--sp-2);
+  }
+
+  .settings-profile {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .settings-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
+
+  .settings-select {
+    min-width: 100%;
+  }
+
+  .settings-input {
+    min-width: 100%;
+  }
+
+  .settings-range {
+    width: 80px;
+  }
+
+  .api-usage-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .api-provider-header {
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  .api-key-row {
+    flex-direction: column;
+    gap: var(--sp-1);
+    align-items: flex-start;
+  }
+
+  .api-key-row label {
+    width: auto;
+  }
+}

@@ -1,0 +1,113 @@
+/* Error Boundary */
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: var(--sp-4);
+  padding: var(--sp-8);
+  text-align: center;
+  color: var(--da-text-muted);
+}
+
+.error-boundary h2 {
+  font-size: var(--da-font-size-xl);
+  color: var(--da-text-primary);
+  margin: 0;
+}
+
+.error-boundary p {
+  font-size: var(--da-font-size-sm);
+  margin: 0;
+  max-width: 400px;
+}
+
+/* Empty state (inline) */
+.empty-state-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  color: var(--da-text-muted);
+  text-align: center;
+}
+
+.empty-state-inline .empty-state-icon {
+  margin-bottom: var(--sp-2);
+  opacity: 0.5;
+}
+
+.empty-state-inline .empty-state-title-sm {
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-secondary);
+}
+
+.empty-state-inline .empty-state-desc-sm {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin-top: var(--sp-1);
+}
+
+/* Form examples */
+.form-examples {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--da-bg-surface);
+  border-radius: 6px;
+}
+
+.form-examples-label {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  display: block;
+  margin-bottom: var(--sp-2);
+}
+
+.form-examples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.form-example-btn {
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--da-bg-primary);
+  border: 1px solid var(--da-border);
+  border-radius: 4px;
+  color: var(--da-text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.form-example-btn:hover {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+  border-color: var(--da-accent-indigo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-ghost,
+  .form-input,
+  .form-textarea,
+  .form-example-btn,
+  .toggle-slider,
+  .toggle-slider::before,
+  .agentstudio-file-item,
+  .toast {
+    transition: none;
+  }
+
+  .toast {
+    animation: none;
+  }
+}

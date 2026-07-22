@@ -1,0 +1,200 @@
+/* ============================================================
+   Workstation System Settings - 系统设置样式
+   职责: 设置布局、分节卡片、表单域、Toggle 开关
+   ============================================================ */
+
+/* ── Page Container ── */
+.wsta-settings {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.wsta-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.wsta-settings-header .btn svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.wsta-settings-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+.wsta-settings-title svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* ── Toast ── */
+.wsta-settings-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2-5) var(--sp-4);
+  margin-bottom: var(--sp-4);
+  background: var(--da-status-active);
+  color: var(--da-text-on-accent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  animation: wsta-toast-in 0.25s ease-out;
+}
+
+.wsta-settings-toast svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes wsta-toast-in {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Section Card ── */
+.wsta-settings-section {
+  background: var(--da-bg-card);
+  border: 0.0625rem solid var(--da-border-subtle);
+  border-radius: 0.625rem;
+  margin-bottom: var(--sp-4);
+  overflow: hidden;
+}
+
+.wsta-settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2-5) var(--sp-4);
+  border-bottom: 0.0625rem solid var(--da-border-subtle);
+  color: var(--da-text-secondary);
+}
+
+.wsta-settings-section-header svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.wsta-settings-section-header h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+/* ── Fields ── */
+.wsta-settings-fields {
+  padding: var(--sp-2) var(--sp-4);
+}
+
+.wsta-settings-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) 0;
+  gap: var(--sp-4);
+}
+
+.wsta-settings-field + .wsta-settings-field {
+  border-top: 0.0625rem solid var(--da-border-subtle);
+}
+
+.wsta-settings-field-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--da-text-primary);
+  flex-shrink: 0;
+}
+
+.wsta-settings-field-control {
+  flex-shrink: 0;
+}
+
+.wsta-settings-field-control .wsta-input,
+.wsta-settings-field-control .wsta-select {
+  min-width: min(13.75rem, 100%);
+  width: auto;
+}
+
+/* number 类型输入框与 text 保持一致，去掉浏览器默认的 stepper */
+.wsta-settings-field-control input[type="number"] {
+  -moz-appearance: textfield;
+  min-width: min(6.25rem, 50%);
+  max-width: min(7.5rem, 50%);
+}
+.wsta-settings-field-control input[type="number"]::-webkit-outer-spin-button,
+.wsta-settings-field-control input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ── Toggle Switch ── */
+.wsta-toggle-wrap {
+  position: relative;
+  display: inline-block;
+  width: 2.5rem;
+  height: 1.375rem;
+  cursor: pointer;
+}
+
+.wsta-toggle-wrap input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.wsta-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--da-border-strong);
+  border-radius: 0.6875rem;
+  transition: background 0.2s;
+}
+
+.wsta-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 1.125rem;
+  height: 1.125rem;
+  left: 0.125rem;
+  bottom: 0.125rem;
+  background: var(--da-bg-primary);
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 0.0625rem 0.1875rem rgba(0,0,0,0.15);
+}
+
+.wsta-toggle-wrap input:checked + .wsta-toggle-slider {
+  background: var(--da-accent);
+}
+
+.wsta-toggle-wrap input:checked + .wsta-toggle-slider::before {
+  transform: translateX(1.125rem);
+}
+
+.wsta-toggle-wrap input:focus-visible + .wsta-toggle-slider {
+  outline: 0.125rem solid var(--da-accent);
+  outline-offset: 0.125rem;
+}
+
+/* ── Footer ── */
+.wsta-settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--sp-2);
+}

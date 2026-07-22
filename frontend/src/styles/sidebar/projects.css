@@ -1,0 +1,23 @@
+.agentstudio-projects-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agentstudio-project-item {
+  font-size: var(--da-font-size-sm);
+  padding: var(--sp-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.agentstudio-project-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-project-item.active {
+  color: var(--da-accent-indigo);
+}
+
+/* User menu */

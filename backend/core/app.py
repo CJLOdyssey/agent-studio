@@ -1,0 +1,225 @@
+"""FastAPI application entry point: app factory, middleware, router registration, and error handling."""
+
+import os
+import sys
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# ── Startup guard (must be first — catches pre-init crashes) ──────────────
+from backend.observability.startup_guard import mark_starting
+
+mark_starting()
+
+from backend.core.app_lifespan import shutdown, startup
+from backend.core.infra.logging_config import get_logger
+from backend.routers import (
+    admin,
+    agent_test_handler,
+    agents,
+    attachments,
+    auth,
+    commands,
+    keys,
+    mcps,
+    models,
+    prompts,
+    providers,
+    run_continue,
+    runs,
+    sessions,
+    skills,
+    teams,
+    tools,
+    versions,
+    workflows,
+)
+
+logger = get_logger(__name__)
+
+def _safe_float(key: str, default: float) -> float:
+    try:
+        return float(os.environ[key])
+    except (KeyError, ValueError, TypeError):
+        return default
+
+
+# ── Sentry APM (must be initialized before FastAPI app) ─────────────────────
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    import sentry_sdk  # type: ignore[import-not-found]
+    from sentry_sdk.integrations.fastapi import FastApiIntegration  # type: ignore[import-not-found]
+    from sentry_sdk.integrations.starlette import StarletteIntegration  # type: ignore[import-not-found]
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
+        integrations=[
+            StarletteIntegration(),
+            FastApiIntegration(),
+        ],
+        traces_sample_rate=_safe_float("SENTRY_TRACES_SAMPLE_RATE", 0.1),
+        profiles_sample_rate=_safe_float("SENTRY_PROFILES_SAMPLE_RATE", 0.1),
+        send_default_pii=False,
+    )
+    logger.info("Sentry initialized (environment=%s)", os.environ.get("SENTRY_ENVIRONMENT", "development"))
+else:
+    logger.info("Sentry DSN not configured — error tracking disabled")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Application lifespan manager — runs startup and shutdown hooks."""
+    await startup(app)
+    yield
+    await shutdown(app)
+
+
+app = FastAPI(
+    title="AgentStudio API",
+    description="AI Agent 管理平台 API — 支持 Agent 配置、Prompt 管理、工具集成、MCP 协议、技能系统、团队协作",
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    lifespan=lifespan,
+)
+
+
+# ── Debug routes ───────────────────────────────────────────────────────────
+from backend.observability import router as debug_router
+
+app.include_router(debug_router)
+
+
+# ── Middleware (order matters — outermost first) ────────────────────────────
+from backend.core.infra.rate_limit import RateLimitMiddleware
+
+app.add_middleware(
+    RateLimitMiddleware,
+    rate=int(os.environ.get("RATE_LIMIT", "60")),
+    window_seconds=int(os.environ.get("RATE_LIMIT_WINDOW", "60")),
+)
+
+from backend.auth import AuthMiddleware
+
+app.add_middleware(AuthMiddleware)
+
+from backend.core.infra.request_logger import RequestLogMiddleware
+
+app.add_middleware(RequestLogMiddleware)
+
+_cors_origins_raw = os.environ.get("CORS_ORIGINS", "")
+if _cors_origins_raw:
+    _cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+else:
+    # Development defaults only when CORS_ORIGINS is not explicitly set
+    _cors_origins = [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8080",
+    ]
+    _prod_origin = os.environ.get("CORS_ORIGIN")
+    if _prod_origin:
+        _cors_origins.append(_prod_origin)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-User-ID", "X-Requested-With", "Accept"],
+)
+
+# ── CSP (Content-Security-Policy) ─────────────────────────────────────────
+from backend.core.infra.csp_middleware import CSPMiddleware
+
+app.add_middleware(CSPMiddleware)
+
+
+# ── Routers ─────────────────────────────────────────────────────────────────
+routers = [auth, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
+           teams, tools, skills, prompts, mcps, admin, providers, versions,
+           workflows]
+for r in routers:
+    app.include_router(r.router)
+
+
+# ── Exception handler ──────────────────────────────────────────────────────
+@app.exception_handler(Exception)
+def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Handle uncaught exceptions — log and return 500 JSON response."""
+    logger.error(
+        "Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True
+    )
+    if isinstance(exc, HTTPException):
+        raise exc
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "服务器内部错误，请查看日志了解详情"},
+    )
+
+
+# ── Health / Metrics / Version ─────────────────────────────────────────────
+@app.get("/api/metrics")
+def metrics() -> Any:
+    """Prometheus metrics endpoint."""
+    from backend.core.infra.metrics import metrics_endpoint
+    return metrics_endpoint()
+
+
+@app.get("/api/health")
+async def health() -> Any:
+    """Deep health check — verifies DB and Redis connectivity."""
+    checks: dict[str, str] = {}
+    healthy = True
+
+    # DB check
+    try:
+        from sqlalchemy import text
+
+        from backend.core.infra.database import get_session_factory
+        factory = get_session_factory()
+        async with factory() as session:
+            await session.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = str(e)
+        healthy = False
+
+    # Redis check
+    try:
+        from backend.broker import get_redis
+        r = get_redis()
+        await r.ping()
+        checks["redis"] = "ok"
+    except Exception as e:
+        checks["redis"] = str(e)
+        healthy = False
+
+    status_code = 200 if healthy else 503
+    return JSONResponse(
+        content={"status": "healthy" if healthy else "degraded", "checks": checks},
+        status_code=status_code,
+    )
+
+
+@app.get("/api/version")
+def version() -> Any:
+    """Application version endpoint."""
+    return {"version": "0.1.0"}
+
+
+# ── Main ───────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", "8080"))
+    logger.info("Starting uvicorn on 0.0.0.0:%d", port)
+    uvicorn.run("backend.core.app:app", host="0.0.0.0", port=port, reload=True)

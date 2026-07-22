@@ -1,0 +1,491 @@
+/* ───────────────────────────────────────────
+ * Agent Config Modal — Figma/Notion Design
+ *
+ * Radius system (intentional):
+ *   16px — modal container (outermost)
+ *   12px — visual elements (avatar)
+ *   10px — inner containers (tab bar)
+ *    8px — interactive elements (inputs, buttons, items)
+ *    6px — small accents (chips, badges)
+ * ─────────────────────────────────────────── */
+
+.agent-config-modal {
+  width: min(80vw, var(--modal-m, 760px));
+  height: min(80vh, 640px);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+
+.agent-config-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.agent-config-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.agent-config-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px; /* slightly larger than avatar for glow envelope */
+  background: inherit;
+  opacity: 0.15;
+  filter: blur(4px);
+  z-index: -1;
+}
+
+.agent-config-title {
+  font-size: var(--da-font-size-lg, 16px);
+  font-weight: 600;
+  color: var(--da-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.agent-config-subtitle {
+  font-size: var(--da-font-size-xs, 12px);
+  color: var(--da-text-muted);
+  margin: 2px 0 0;
+  line-height: 1.4;
+}
+
+.agent-config-subtitle strong {
+  color: var(--da-text-secondary);
+  font-weight: 500;
+}
+
+/* ── Fixed fields (name + description) ── */
+
+.agent-config-fields {
+  padding: 0 var(--sp-6, 24px);
+}
+
+.agent-config-field + .agent-config-field {
+  margin-top: 14px;
+}
+
+.agent-config-field .form-label {
+  display: block;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-secondary);
+  margin-bottom: 6px;
+}
+
+.agent-config-field .form-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--da-bg-elevated);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-base);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  outline: none;
+}
+
+.agent-config-field .form-input::placeholder {
+  color: var(--da-text-muted);
+  opacity: 0.5;
+}
+
+.agent-config-field .form-input:focus {
+  border-color: var(--da-accent-indigo);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+}
+
+.agent-config-fields .form-hint {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin-top: 6px;
+}
+
+/* ── Tab bar ── */
+
+.agent-config-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 16px 24px 0;
+  padding: 4px;
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 10px;
+}
+
+.agent-config-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--da-text-muted);
+  font-size: var(--da-font-size-sm);
+  font-weight: 450;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.agent-config-tab:hover {
+  color: var(--da-text-secondary);
+  background: color-mix(in srgb, var(--da-text-primary) 4%, transparent);
+}
+
+.agent-config-tab:active {
+  transform: scale(0.97);
+}
+
+.agent-config-tab.active {
+  background: var(--da-bg-elevated);
+  color: var(--da-text-primary);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  font-weight: 500;
+}
+
+.agent-config-tab svg {
+  opacity: 0.6;
+}
+
+.agent-config-tab.active svg {
+  opacity: 1;
+  color: var(--da-accent-indigo);
+}
+
+/* ── Tab content area ── */
+
+.agent-config-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+  animation: agentTabFadeIn 0.2s ease;
+}
+
+@keyframes agentTabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Form elements inside content ── */
+
+.agent-config-content .form-group {
+  margin-bottom: 0;
+}
+
+.agent-config-content .form-label {
+  display: block;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-secondary);
+  margin-bottom: 8px;
+}
+
+.agent-config-content .form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--da-bg-elevated);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-base);
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  outline: none;
+}
+
+.agent-config-content .form-textarea::placeholder {
+  color: var(--da-text-muted);
+  opacity: 0.4;
+}
+
+.agent-config-content .form-textarea:focus {
+  border-color: var(--da-accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.agent-config-content .form-hint {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin-top: 8px;
+}
+
+.agent-config-char-count {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  text-align: right;
+  margin-top: 4px;
+  opacity: 0.6;
+}
+
+/* ── List header bar (添加 | title | 自定义) ── */
+
+.agent-config-list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.agent-config-list-bar-title {
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  color: var(--da-text-secondary);
+}
+
+.agent-config-list-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  background: var(--da-bg-surface);
+  color: var(--da-text-muted);
+  font-size: var(--da-font-size-xs);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.2s ease,
+    color 0.15s ease;
+}
+
+.agent-config-list-bar-btn:hover {
+  background: var(--da-bg-hover);
+  border-color: var(--da-accent-indigo);
+  color: var(--da-text-primary);
+}
+
+.agent-config-list-bar-btn svg {
+  opacity: 0.6;
+}
+
+.agent-config-list-bar-btn:hover svg {
+  opacity: 1;
+}
+
+/* ── Config item list overrides ── */
+
+.agent-config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.agent-config-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.agent-config-item.enabled {
+  background: color-mix(in srgb, var(--da-accent-indigo) 8%, transparent);
+  border-color: color-mix(in srgb, var(--da-accent-indigo) 20%, transparent);
+}
+
+/* ── Footer ── */
+
+.agent-config-modal .modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--da-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.agent-config-modal .modal-footer .btn-primary {
+  padding: 8px 20px;
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+  border: none;
+  border-radius: 8px;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.agent-config-modal .modal-footer .btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--da-accent-indigo), var(--da-blend-dark));
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--da-accent-indigo) 30%, transparent);
+}
+
+.agent-config-modal .modal-footer .btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.agent-config-modal .modal-footer .btn-primary:disabled {
+  background: var(--da-bg-hover);
+  color: var(--da-text-muted);
+  cursor: not-allowed;
+}
+
+.agent-config-modal .modal-footer .btn-ghost {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--da-text-muted);
+  border: none;
+  border-radius: 8px;
+  font-size: var(--da-font-size-sm);
+  font-weight: 450;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.agent-config-modal .modal-footer .btn-ghost:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* ── Modal base override for this specific modal ── */
+
+.agent-config-modal .modal-header {
+  padding: 20px 24px 0;
+  border-bottom: none;
+}
+
+.agent-config-modal .modal-close:active {
+  transform: scale(0.92);
+}
+
+/* ───────────────────────────────────────────
+ * Agent Form Modal — Create/Edit Agent
+ * ─────────────────────────────────────────── */
+
+.agent-form-animate {
+  animation: agentFormIn 0.25s ease-out;
+}
+
+@keyframes agentFormIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.agent-form-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-accent-indigo);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ── Chip group (selected resource tags) ── */
+.wsta-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wsta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 450;
+  color: var(--da-text-secondary);
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 6%);
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 5px;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wsta-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wsta-chip-remove:hover {
+  background: color-mix(in srgb, var(--da-status-error) 20%, transparent);
+  color: var(--da-status-error);
+}
+
+/* ───────────────────────────────────────────
+ * Team Form Modal — Create/Edit Team
+ * ─────────────────────────────────────────── */
+
+.team-form-animate {
+  animation: agentFormIn 0.25s ease-out;
+}
+
+.team-form-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-accent-cyan);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}

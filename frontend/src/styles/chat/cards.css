@@ -1,0 +1,67 @@
+/* Agent cards */
+.agentstudio-agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-8);
+  width: 100%;
+}
+
+.agentstudio-agent-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--da-bg-surface);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.agentstudio-agent-card:hover {
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-agent-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.agentstudio-agent-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentstudio-agent-card-info h4 {
+  font-size: var(--da-font-size-base);
+  font-weight: 600;
+  color: var(--da-text-primary);
+  margin: 0 0 var(--sp-1);
+}
+
+.agentstudio-agent-card-role {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin: 0 0 var(--sp-2);
+}
+
+.agentstudio-agent-card-preview {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agentstudio-agent-card-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}

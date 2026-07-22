@@ -1,0 +1,57 @@
+const langs: Record<string, [zh: string, en: string]> = {
+  'output.new': ['新建输出约束', 'New Output Constraint'],
+  'output.edit': ['编辑', 'Edit'],
+  'output.copy': ['复制', 'Copy'],
+  'output.delete': ['删除', 'Delete'],
+  'output.batch_delete': ['批量删除 ({n})', 'Batch Delete ({n})'],
+  'output.search_placeholder': ['搜索名称、内容...', 'Search name, content...'],
+  'output.all_categories': ['全部分类', 'All Categories'],
+  'output.col_name': ['名称', 'Name'],
+  'output.col_content': ['内容', 'Content'],
+  'output.col_category': ['分类', 'Category'],
+  'output.col_status': ['状态', 'Status'],
+  'output.col_actions': ['操作', 'Actions'],
+  'output.select_all': ['全选本页', 'Select All'],
+  'output.select_item': ['选择 {n}', 'Select {n}'],
+  'output.more_actions': ['更多操作', 'More'],
+  'output.empty_title': ['暂无输出约束{extra}', 'No output constraints{extra}'],
+  'output.empty_desc_search': ['尝试修改搜索关键词', 'Try different keywords'],
+  'output.empty_desc_general': ['点击右上角「新建输出约束」创建第一个约束', 'Click "New" to create one'],
+  'output.pagination': ['共 {n} 条', '{n} total'],
+  'output.page_prev': ['上一页', 'Previous'],
+  'output.page_next': ['下一页', 'Next'],
+  'output.page_num': ['第 {n} 页', 'Page {n}'],
+  'output.toast_created': ['输出约束已创建', 'Output constraint created'],
+  'output.toast_updated': ['输出约束已更新', 'Output constraint updated'],
+  'output.toast_deleted': ['输出约束已删除', 'Output constraint deleted'],
+  'output.toast_copied': ['输出约束已复制', 'Output constraint copied'],
+  'output.toast_batch_deleted': ['已删除 {n} 个输出约束', '{n} deleted'],
+  'output.form_title_new': ['新建输出约束', 'New Output Constraint'],
+  'output.form_title_edit': ['编辑输出约束', 'Edit Output Constraint'],
+  'output.form_name': ['约束名称', 'Name'],
+  'output.form_name_placeholder': ['2-50 个字符', '2-50 characters'],
+  'output.form_category': ['分类', 'Category'],
+  'output.form_model': ['适用模型', 'Model'],
+  'output.form_status': ['状态', 'Status'],
+  'output.form_version': ['版本', 'Version'],
+  'output.form_version_placeholder': ['v1.0.0', 'v1.0.0'],
+  'output.form_content': ['约束内容', 'Content'],
+  'output.form_content_placeholder': ['请输入输出约束内容...', 'Enter constraint content...'],
+  'output.form_cancel': ['取消', 'Cancel'],
+  'output.form_save_edit': ['保存修改', 'Save Changes'],
+  'output.form_save_create': ['创建', 'Create'],
+  'output.error_render': ['模块出错了，请刷新页面重试', 'Module error, please refresh'],
+  'output.error_retry': ['重试', 'Retry'],
+  'output.loading': ['加载中...', 'Loading...'],
+  'output.status_active': ['已启用', 'Active'],
+  'output.status_draft': ['草稿', 'Draft'],
+  'output.status_archived': ['已归档', 'Archived'],
+};
+
+const lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';
+
+export function t(key: string, ...args: string[]): string {
+  let v = (langs[key] ?? ['', ''])[lang === 'zh' ? 0 : 1] || key;
+  args.forEach((a) => { v = v.replace(/\{[^}]+\}/, a); });
+  return v;
+}

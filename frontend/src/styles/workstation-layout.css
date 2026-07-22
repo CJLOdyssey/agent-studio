@@ -1,0 +1,110 @@
+/* ============================================================
+   Workstation Layout - 布局容器
+   职责: 页面容器、侧边导航、内容区域
+   ============================================================ */
+
+/* ── Page Container ── */
+.agentstudio-workstation-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--da-bg-primary);
+  color: var(--da-text-primary);
+}
+
+/* ── Body (左右分栏) ── */
+.agentstudio-workstation-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.agentstudio-workstation-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  padding: var(--sp-4) var(--sp-3);
+  border-right: 1px solid var(--da-border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
+  overflow-y: auto;
+  background: var(--da-bg-surface);
+}
+
+.agentstudio-workstation-sidebar::before {
+  content: '';
+  display: block;
+  padding-bottom: var(--sp-4);
+  margin: 0 var(--sp-1) var(--sp-3);
+  border-bottom: 1px solid var(--da-border);
+  font-size: var(--da-font-size-sm);
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+.agentstudio-workstation-sidebar:empty {
+  display: none;
+}
+
+.agentstudio-workstation-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  text-align: left;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.agentstudio-workstation-tab:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.agentstudio-workstation-tab.active {
+  background: var(--da-bg-hover);
+  color: var(--da-accent);
+  font-weight: 500;
+}
+
+.agentstudio-workstation-tab .tab-icon {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.agentstudio-workstation-tab.active .tab-icon {
+  opacity: 1;
+}
+
+/* ── Content ── */
+.agentstudio-workstation-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* ── Module panel ── */
+.wsta-panel,
+.wsta-agent-mgmt,
+.wsta-settings,
+.wsta-monitor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}

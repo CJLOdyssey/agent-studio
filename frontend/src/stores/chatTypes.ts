@@ -1,0 +1,44 @@
+import type { AgentConfig, AppStatus, ChatMessage, RunResult } from '../types';
+
+export type WsConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
+
+export interface ChatState {
+  currentRunId: string | null;
+  currentSessionId: string | null;
+  currentConvId: string | null;
+  messages: ChatMessage[];
+  status: AppStatus;
+  result: RunResult | null;
+  currentRole: string | null;
+  error: string | null;
+  streamingId: string | null;
+  lastAbandonedRunId: string | null;
+  interruptedMessageId: string | null;
+  continuingId: string | null;
+  skipThinking: boolean;
+  pendingVersions: string[] | null;
+  pendingThinkingVersions: string[] | null;
+  switchVersion: (msgId: string, direction: 'prev' | 'next') => void;
+  setThumbsFeedback: (msgId: string, value: 'up' | 'down' | null) => void;
+  agents: AgentConfig[];
+  agentsLoaded: boolean;
+  wsStatus: WsConnectionStatus;
+  /** Conversation ID at submission time */
+  submissionConvId: string | null;
+  /** Active team for multi-agent workflow */
+  activeTeamId: string | null;
+  selectedAgentId: string | null;
+
+  setActiveTeam: (teamId: string | null) => void;
+  restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
+  loadConversation: (messages: ChatMessage[], convId?: string | null, sessionId?: string | null) => void;
+  cancelRun: () => void;
+  addMessage: (msg: import('../types').WsMessage & { id?: string }) => void;
+  setStatus: (status: AppStatus) => void;
+  setResult: (result: RunResult | null) => void;
+  setError: (error: string | null) => void;
+  setWsStatus: (wsStatus: WsConnectionStatus) => void;
+  reset: () => void;
+  loadAgents: () => Promise<void>;
+  selectAgent: (agentId: string) => void;
+}

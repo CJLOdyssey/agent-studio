@@ -1,0 +1,66 @@
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: 6px;
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  border: none;
+}
+
+.btn-sm {
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--da-font-size-xs);
+}
+
+.btn-primary {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.btn-primary:hover {
+  background: var(--da-bg-elevated);
+}
+
+.btn-primary:disabled {
+  background: var(--da-bg-hover);
+  color: var(--da-text-muted);
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--da-bg-surface);
+  color: var(--da-text-secondary);
+}
+
+.btn-secondary:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.btn-danger {
+  background: color-mix(in srgb, var(--icon-status-error) 15%, transparent);
+  color: var(--icon-status-error);
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--icon-status-error) 25%, transparent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--da-text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-accent-indigo);
+}
+

@@ -1,0 +1,187 @@
+name: virtual-team-prod
+
+x-common-env: &common-env
+  PYTHONPATH: /app
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/backend
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+  OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.deepseek.com}
+  OPENAI_MODEL: ${OPENAI_MODEL:-deepseek-v4-flash}
+  KEY_VAULT_SECRET: ${KEY_VAULT_SECRET:-}
+  MAX_ROUNDS: ${MAX_ROUNDS:-5}
+  TEMPERATURE: ${TEMPERATURE:-0.7}
+  TIMEOUT: ${TIMEOUT:-120}
+  MAX_RETRIES: ${MAX_RETRIES:-3}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  HTTP_PROXY: ${HTTP_PROXY:-}
+  HTTPS_PROXY: ${HTTPS_PROXY:-}
+  NO_PROXY: localhost,127.0.0.1,postgres,redis,backend,.local
+  BAIDU_QIANFAN_API_KEY: ${BAIDU_QIANFAN_API_KEY:-}
+  CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:80}
+  CHECKPOINTER_BACKEND: ${CHECKPOINTER_BACKEND:-postgres}
+  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/backend}
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-restart-policy: &restart-policy
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: virtual-team-db-prod
+    <<: *restart-policy
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: backend
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env for production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  # ── Redis (single-instance) ─────────────────────────────────────────────
+  #
+  # To switch to Redis Sentinel High-Availability:
+  #   1. Replace this entire `redis:` service block with the sentinel stack.
+  #   2. Add `-f docker/compose.redis-ha.yml` to the `docker compose` invocation,
+  #      e.g.:
+  #        docker compose -f docker/compose.prod.yml -f docker/compose.redis-ha.yml up -d
+  #      The HA compose replaces the service name `redis` with `redis-master`,
+  #      `redis-slave`, `sentinel-1`, `sentinel-2`, and `sentinel-3`.
+  #   3. Add these env vars to the `x-common-env` block ABOVE:
+  #        REDIS_SENTINEL_ENABLED: "1"
+  #        REDIS_SENTINEL_HOSTS: sentinel-1:26379,sentinel-2:26379,sentinel-3:26379
+  #        REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+  #   4. Update `depends_on` in backend/celery: change `redis` condition to
+  #      `redis-master` and `redis-slave`.
+  #   5. REDIS_URL and CELERY_BROKER_URL can remain pointing at redis:6379 as
+  #      a fallback — the app will use the Sentinel client when
+  #      REDIS_SENTINEL_ENABLED=1.
+  #   6. If REDIS_PASSWORD is set, also set it in the standalone redis below:
+  #      command: redis-server --requirepass ${REDIS_PASSWORD}
+  redis:
+    image: redis:7-alpine
+    container_name: virtual-team-redis-prod
+    <<: *restart-policy
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/backend:latest
+    container_name: virtual-team-api-prod
+    <<: *restart-policy
+    logging: *default-logging
+    expose:
+      - "8080"
+    environment:
+      <<: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import httpx; httpx.get('http://localhost:8080/api/models')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    mem_limit: 1g
+    mem_reservation: 512m
+    volumes:
+      - checkpoint_data:/app/data
+
+  celery:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    # Use backend image — both are built from the same Dockerfile, and
+    # backend is always rebuilt first, so this ensures celery always gets
+    # the freshest code even if the celery:latest tag is stale on ACR.
+    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/backend:latest
+    container_name: virtual-team-worker-prod
+    <<: *restart-policy
+    logging: *default-logging
+    command: celery -A backend.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
+    environment:
+      <<: *common-env
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.broker.celery_app inspect ping >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
+    mem_limit: 2g
+    mem_reservation: 1g
+    volumes:
+      - checkpoint_data:/app/data
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/virtual-team/frontend:latest
+    container_name: virtual-team-frontend-prod
+    <<: *restart-policy
+    logging: *default-logging
+    ports:
+      - "5173:8080"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    depends_on:
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:5173/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    mem_limit: 512m
+    mem_reservation: 256m
+
+networks:
+  default:
+    name: virtual-team-prod
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.28.0.0/16"
+
+volumes:
+  pgdata:
+    driver: local
+  checkpoint_data:
+    driver: local

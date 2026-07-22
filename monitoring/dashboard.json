@@ -1,0 +1,239 @@
+{
+  "title": "Virtual Team — Backend Overview",
+  "uid": "virtual-team-backend",
+  "tags": ["virtual-team", "fastapi"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "{{method}} {{endpoint}}",
+          "interval": "15s"
+        }
+      ],
+      "description": "HTTP request rate per second, broken down by method and endpoint",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rps",
+          "min": 0,
+          "decimals": 1,
+          "custom": { "lineInterpolation": "smooth" }
+        }
+      }
+    },
+    {
+      "title": "Request Latency (p95)",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, method, endpoint))",
+          "legendFormat": "{{method}} {{endpoint}}",
+          "interval": "30s"
+        }
+      ],
+      "description": "95th percentile request latency in seconds",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "decimals": 2,
+          "custom": { "lineInterpolation": "smooth" }
+        }
+      }
+    },
+    {
+      "title": "Error Rate (5xx)",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_errors_total[5m])",
+          "legendFormat": "{{method}} {{endpoint}}",
+          "interval": "30s"
+        }
+      ],
+      "description": "HTTP error rate per second (5xx responses)",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rps",
+          "min": 0,
+          "decimals": 2,
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "title": "Request Duration Buckets",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(http_request_duration_seconds_bucket[1m])",
+          "legendFormat": "le {{le}}",
+          "interval": "30s",
+          "format": "heatmap"
+        }
+      ],
+      "description": "Request latency distribution across histogram buckets",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 1
+        }
+      }
+    },
+    {
+      "title": "HTTP Status Breakdown",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[5m])) by (status)",
+          "legendFormat": "{{status}}",
+          "interval": "30s"
+        }
+      ],
+      "description": "Distribution of HTTP response status codes",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rps"
+        }
+      }
+    },
+    {
+      "title": "Request Rate by Endpoint",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(http_requests_total[5m])) by (endpoint))",
+          "legendFormat": "{{endpoint}}",
+          "interval": "60s",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "description": "Top 10 most requested endpoints",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rps",
+          "decimals": 2
+        }
+      }
+    },
+    {
+      "title": "Median Latency by Endpoint",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+          "legendFormat": "{{endpoint}}",
+          "interval": "60s",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "description": "Median (p50) latency by endpoint in seconds",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3
+        }
+      }
+    },
+    {
+      "title": "Total Requests Cumulative",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "http_requests_total",
+          "legendFormat": "total",
+          "interval": "60s",
+          "format": "time_series",
+          "instant": false
+        }
+      ],
+      "description": "Cumulative total HTTP requests since process start",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "title": "Current Error Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(http_errors_total[5m])",
+          "legendFormat": "errors/s",
+          "interval": "30s",
+          "format": "time_series",
+          "instant": false
+        }
+      ],
+      "description": "Current HTTP error rate (rolling 5 min average)",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rps",
+          "decimals": 2,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.1 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Peak Latency (p99)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 24 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "interval": "30s",
+          "format": "time_series",
+          "instant": false
+        }
+      ],
+      "description": "99th percentile latency across all endpoints",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

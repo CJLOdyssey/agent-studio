@@ -1,0 +1,70 @@
+/* ============================================================
+   Workstation Dropdown - 下拉菜单组件
+   职责: 三点菜单、操作菜单
+   ============================================================ */
+
+.wsta-dropdown-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.wsta-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: min(160px, max-content);
+  background: var(--da-bg-elevated);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+}
+
+.wsta-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.wsta-dropdown-item:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.wsta-dropdown-danger {
+  color: var(--icon-status-error);
+}
+
+.wsta-dropdown-danger:hover {
+  background: color-mix(in srgb, var(--icon-status-error) 12%, transparent);
+  color: var(--icon-status-error);
+}
+
+.wsta-dropdown-divider {
+  height: 1px;
+  background: var(--da-border);
+  margin: var(--sp-1) 0;
+}
+
+/* ── Portal dropdown (escapes overflow clipping) ── */
+.wsta-dropdown-portal {
+  background: var(--da-bg-elevated);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+  padding: var(--sp-1);
+}

@@ -1,0 +1,191 @@
+/* Input area */
+.agentstudio-input-container {
+  padding: var(--sp-4) var(--sp-6) var(--sp-5);
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.agentstudio-input-wrapper {
+  position: relative;
+  background: var(--da-bg-surface);
+  border: none;
+  border-radius: var(--da-input-radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  box-shadow: none;
+}
+
+/* Let popovers escape the wrapper's overflow clip */
+.agentstudio-input-wrapper:has(.agentstudio-command-popover) {
+  overflow: visible;
+}
+
+.agentstudio-input-wrapper:focus-within {
+  box-shadow: var(--da-focus-ring);
+}
+
+.agentstudio-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: var(--sp-5) var(--sp-6);
+  min-height: var(--da-input-height);
+  max-height: 200px;
+  field-sizing: content;
+  resize: none;
+  outline: none;
+  font-size: var(--da-font-size-lg);
+  font-weight: 400;
+  color: var(--da-text-primary);
+  line-height: 1.5;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.agentstudio-textarea:hover {
+  scrollbar-color: var(--da-border-subtle) transparent;
+}
+
+.agentstudio-textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.agentstudio-textarea::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.agentstudio-textarea:hover::-webkit-scrollbar-thumb {
+  background: var(--da-border-subtle);
+}
+
+.agentstudio-textarea::placeholder {
+  color: var(--da-text-muted);
+  font-weight: 400;
+}
+
+.agentstudio-input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--da-bg-surface);
+  border-top: none;
+  min-height: var(--da-toolbar-height);
+}
+
+.agentstudio-input-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.agentstudio-tool-btn {
+  padding: var(--sp-2);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agentstudio-tool-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Hide native file input — the paperclip button triggers it programmatically */
+.agentstudio-file-input {
+  display: none;
+}
+
+.agentstudio-tool-btn-text {
+  font-size: var(--da-font-size-xs);
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  border: 1px solid var(--da-border);
+  border-radius: 6px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+  font-weight: 500;
+}
+
+.agentstudio-tool-btn-text:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+  border-color: var(--da-border);
+}
+
+.agentstudio-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: 12px;
+  border: none;
+  font-size: var(--da-font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
+  min-height: 40px;
+}
+
+.agentstudio-send-btn.active {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.agentstudio-send-btn.active:hover {
+  background: var(--da-accent-indigo);
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.agentstudio-send-btn.active:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.agentstudio-send-btn.disabled {
+  background: var(--da-bg-hover);
+  color: var(--da-text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.agentstudio-send-btn.running {
+  background: var(--da-accent-indigo);
+  color: var(--da-text-on-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.agentstudio-send-btn.running:hover {
+  background: var(--da-accent-indigo);
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.agentstudio-send-btn.running:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}

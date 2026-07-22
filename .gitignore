@@ -1,0 +1,76 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.whl
+
+# ── Node / Frontend ───────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.obsidian/
+
+# ── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Secrets / Env ──────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Databases ──────────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+.sqlite3
+
+# ── Runtime / Logs ─────────────────────────────────────────────────────────
+*.log
+*.log.*
+
+# ── Coverage ───────────────────────────────────────────────────────────────
+.coverage
+.coverage.*
+coverage.xml
+coverage/
+
+# ── Virtual Env ────────────────────────────────────────────────────────────
+.venv/
+.venv-*/
+
+# ── Docker ──────────────────────────────────────────────────────────────────
+.docker/
+
+# ── Testing Tools ──────────────────────────────────────────────────────────
+.playwright-mcp/
+
+# ── AI Tool Directories ───────────────────────────────────────────────────
+.mimocode/
+.opencode/
+.agents/
+.claude/
+
+# ── Runtime Artifacts ─────────────────────────────────────────────────────
+checkpoints.db
+uploads/
+
+# ── Project-specific ───────────────────────────────────────────────────────
+skills-lock.json
+requirements-lock.txt
+.sisyphus/
+prototypes/
+scripts/deploy_prod.py
+scripts/ask_credentials.py

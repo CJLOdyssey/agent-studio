@@ -1,0 +1,6 @@
+apiVersion: v2
+name: virtual-team
+description: Helm chart for virtual-team multi-service application (FastAPI backend, Celery workers, Nginx SPA frontend, PostgreSQL, Redis)
+type: application
+version: 0.1.0
+appVersion: "latest"

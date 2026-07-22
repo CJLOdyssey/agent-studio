@@ -1,0 +1,60 @@
+# ── Release: Auto-changelog + GitHub Release ──────────────────────────────
+# Triggered by version tags (v*).  Uses GitHub's built-in changelog
+# generation so there is no separate changelog artifact to maintain.
+#
+#   Prerelease detection:
+#     v1.0.0          → full release   (draft: false, prerelease: false)
+#     v2.1.0-beta.1   → prerelease     (draft: false, prerelease: true)
+#     v2.1.0-alpha.1  → prerelease     (draft: false, prerelease: true)
+#     v2.1.0-rc.1     → prerelease     (draft: false, prerelease: true)
+# ────────────────────────────────────────────────────────────────────────────
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive release name
+        id: info
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          DATE="$(date -u +%Y-%m-%d)"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          echo "name=${TAG} — ${DATE}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine prerelease flag
+        id: prerelease
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          case "${TAG}" in
+            *-beta*|*-alpha*|*-rc*)
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "prerelease=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.info.outputs.tag }}
+          name: ${{ steps.info.outputs.name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ steps.prerelease.outputs.prerelease }}

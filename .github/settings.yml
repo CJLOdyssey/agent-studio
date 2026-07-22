@@ -1,0 +1,76 @@
+# Repository settings compatible with github/settings-action@v1
+# This is a desired-state document — not applied by a workflow.
+# If the team later adopts the settings-action, this config can be used directly.
+
+repository:
+  # Soft-glue to allow rebase merging but keep squash as default
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: true
+  delete_branch_on_merge: true
+
+branches:
+  - name: main
+    protection:
+      # Require status checks before merging
+      required_status_checks:
+        # NOTE: These check names must match the job names in CI exactly.
+        # If a job uses a matrix, include the full job name as rendered by GitHub.
+        status_checks:
+          # Backend checks
+          - "Backend Lint"
+          - "Backend Tests"
+          # Frontend checks
+          - "Frontend Lint & Typecheck"
+          - "Frontend Tests"
+          # CI summary — final gate that only passes when all previous jobs succeed
+          - "CI Summary"
+        # Require branches to be up-to-date before merging
+        strict: true
+
+      # Require pull request review before merging
+      required_pull_request_reviews:
+        # At least one approving review
+        required_approving_review_count: 1
+        # Dismiss reviews when new commits are pushed
+        dismiss_stale_reviews: true
+        # Do not require CODEOWNER approval by default
+        require_code_owner_reviews: false
+        # Optional: restrict who can dismiss reviews
+        # dismissal_restrictions: {}
+
+      # Apply branch protection rules to administrators too
+      enforce_admins: true
+
+      # Prevent deletion of the branch
+      required_linear_history: false
+
+      # Restrict push access — not set here, managed by team permissions
+      restrictions: null
+
+      # Prevent force pushes
+      allow_force_pushes: false
+      # Prevent deletion
+      allow_deletions: false
+
+# Labels used across the repository
+labels:
+  - name: bug
+    color: d73a4a
+    description: Something isn't working
+
+  - name: enhancement
+    color: a2eeef
+    description: New feature or request
+
+  - name: documentation
+    color: 0075ca
+    description: Improvements or additions to documentation
+
+  - name: dependencies
+    color: 0366d6
+    description: Pull requests that update a dependency file
+
+  - name: breaking-change
+    color: b60205
+    description: A change that breaks existing functionality

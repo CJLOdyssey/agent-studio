@@ -1,0 +1,131 @@
+name: virtual-team
+
+x-common-env: &common-env
+  PYTHONPATH: /app
+  DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/backend
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+  OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.deepseek.com}
+  OPENAI_MODEL: ${OPENAI_MODEL:-deepseek-v4-flash}
+  KEY_VAULT_SECRET: ${KEY_VAULT_SECRET:-}
+  MAX_ROUNDS: ${MAX_ROUNDS:-5}
+  TEMPERATURE: ${TEMPERATURE:-0.7}
+  TIMEOUT: ${TIMEOUT:-120}
+  MAX_RETRIES: ${MAX_RETRIES:-3}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  HTTP_PROXY: ${HTTP_PROXY:-}
+  HTTPS_PROXY: ${HTTPS_PROXY:-}
+  NO_PROXY: localhost,127.0.0.1,postgres,redis,backend,.local
+  BAIDU_QIANFAN_API_KEY: ${BAIDU_QIANFAN_API_KEY:-}
+  CHECKPOINTER_BACKEND: ${CHECKPOINTER_BACKEND:-postgres}
+  CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://postgres:postgres@postgres:5432/backend}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: virtual-team-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: backend
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  redis:
+    image: redis:7-alpine
+    container_name: virtual-team-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        - PIP_INDEX_URL
+        - PIP_TRUSTED_HOST
+    image: virtual-team/backend:latest
+    container_name: virtual-team-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 1g
+    mem_reservation: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - checkpoint_data:/app/data
+
+  celery:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        - PIP_INDEX_URL
+        - PIP_TRUSTED_HOST
+    image: virtual-team/backend:latest
+    container_name: virtual-team-worker
+    restart: unless-stopped
+    command: celery -A backend.broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
+    environment:
+      <<: *common-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    mem_limit: 2g
+    mem_reservation: 1g
+    volumes:
+      - checkpoint_data:/app/data
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        - NPM_REGISTRY
+    image: virtual-team/frontend:latest
+    container_name: virtual-team-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:8080"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 512m
+    mem_reservation: 256m
+
+volumes:
+  pgdata:
+  checkpoint_data:
