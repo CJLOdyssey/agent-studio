@@ -70,19 +70,23 @@ docker compose -f docker/compose.local.yml up -d
 
 ## 🛳 部署
 
-```bash
-# 本地开发
-docker compose -f docker/compose.local.yml up -d
+| 方式 | 说明 |
+|------|------|
+| Docker | `docker compose -f docker/compose.local.yml up -d` |
+| 混合模式 | Docker PG/Redis + 本地热重载 |
+| 生产部署 | `docker compose -f docker/compose.prod.yml up -d` |
+| Kubernetes | `helm install agent-studio ./helm` |
 
-# 生产部署
-docker compose -f docker/compose.prod.yml up -d
-```
+### 环境变量
 
 | 变量 | 必填 | 说明 |
 |------|------|------|
-| `DEEPSEEK_API_KEY` | 是 | DeepSeek API 密钥 |
 | `DATABASE_URL` | 是 | PostgreSQL 连接串 |
 | `REDIS_URL` | 是 | Redis 连接串 |
+| `AUTH_SECRET` | 是 | JWT 签名密钥（≥32字符） |
+| `KEY_VAULT_SECRET` | 是 | Fernet 加密密钥（≥32字符） |
+| `OPENAI_API_KEY` | 选一 | DeepSeek 或 OpenAI API 密钥 |
+| `OPENAI_BASE_URL` | 否 | 自定义 API 端点（默认 DeepSeek） |
 
 ---
 
