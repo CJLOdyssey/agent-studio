@@ -38,7 +38,7 @@ class SessionUpdateRequest(BaseModel):
 
 
 @router.get("/api/sessions", response_model=list[SessionSummary])
-async def list_sessions(limit: int = 50, agent_id: str | None = None, request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def list_sessions(request: Request, limit: int = 50, agent_id: str | None = None) -> Any:
     """List sessions for the current user."""
     try:
         user_id = get_user_id(request)
@@ -64,7 +64,7 @@ async def list_sessions(limit: int = 50, agent_id: str | None = None, request: R
 
 
 @router.post("/api/sessions", status_code=201)
-async def add_session(req: SessionCreateRequest, request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def add_session(request: Request, req: SessionCreateRequest) -> Any:
     """Create a new chat session."""
     try:
         user_id = get_user_id(request)
@@ -85,7 +85,7 @@ async def add_session(req: SessionCreateRequest, request: Request = None):  # ty
 
 
 @router.get("/api/sessions/{session_id}", response_model=SessionDetailResponse)
-async def get_session_detail(session_id: str, request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def get_session_detail(request: Request, session_id: str) -> Any:
     """Get full session detail including runs and memories."""
     try:
         user_id = get_user_id(request)
@@ -137,7 +137,7 @@ async def get_session_detail(session_id: str, request: Request = None):  # type:
 
 
 @router.put("/api/sessions/{session_id}")
-async def rename_session(session_id: str, req: SessionUpdateRequest, request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def rename_session(request: Request, session_id: str, req: SessionUpdateRequest) -> Any:
     """Rename a session's title."""
     try:
         user_id = get_user_id(request)
@@ -158,7 +158,7 @@ async def rename_session(session_id: str, req: SessionUpdateRequest, request: Re
 
 
 @router.delete("/api/sessions/{session_id}")
-async def remove_session(session_id: str, request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def remove_session(request: Request, session_id: str) -> Any:
     """Delete a session and its associated data."""
     try:
         user_id = get_user_id(request)
@@ -179,7 +179,7 @@ async def remove_session(session_id: str, request: Request = None):  # type: ign
 
 
 @router.get("/api/sessions/{session_id}/memories")
-async def list_session_memories(session_id: str, request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def list_session_memories(request: Request, session_id: str) -> Any:
     """List all memory entries for a session."""
     try:
         user_id = get_user_id(request)
@@ -223,7 +223,7 @@ async def delete_session_memory(memory_id: str) -> Any:
 
 
 @router.get("/api/sessions/{session_id}/memories/export")
-async def export_session_memories(session_id: str, format: str = "json", request: Request = None):  # type: ignore[assignment,no-untyped-def]
+async def export_session_memories(request: Request, session_id: str, format: str = "json") -> Any:
     """Export session memories as JSON or Markdown."""
     try:
         user_id = get_user_id(request)

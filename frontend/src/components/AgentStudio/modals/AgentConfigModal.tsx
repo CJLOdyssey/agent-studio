@@ -2,6 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from 'react';
 import { X, Wrench, Server, Sparkles } from 'lucide-react';
 import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/AgentStudio';
+
+function toRec<T>(v: Record<string, unknown>): T {
+  return v as unknown as T;
+}
 import { useItemList } from '../../../hooks/useItemList';
 import { useAutoSave } from '../../../hooks/useAutoSave';
 import { useAgentConfigForm } from './tabs/useAgentConfigForm';
@@ -98,7 +102,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
     setSystemPrompt,
     setOutputConstraints,
-    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, parameters: (item as unknown as Record<string, string>).parameters || '' }) as AgentTool),
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, parameters: String((item as Record<string, unknown>).parameters ?? '') }) as AgentTool),
     addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentMCP),
     addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentSkill),
   });
@@ -178,13 +182,13 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
 
   function handleEditTool(item: Record<string, unknown>) {
     const tool = itemsToFormData(item);
-    setEditingToolItem(item as unknown as AgentTool);
+    setEditingToolItem(toRec<AgentTool>(item));
     form.openForm('tool');
     form.updateFormData('tool', () => tool);
   }
 
   function handleEditMcp(item: Record<string, unknown>) {
-    setEditingMcpItem(item as unknown as AgentMCP);
+    setEditingMcpItem(toRec<AgentMCP>(item));
     form.openForm('mcp');
     form.updateFormData('mcp', () => ({
       name: item.name as string || '',
@@ -198,7 +202,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   }
 
   function handleEditSkill(item: Record<string, unknown>) {
-    setEditingSkillItem(item as unknown as AgentSkill);
+    setEditingSkillItem(toRec<AgentSkill>(item));
     form.openForm('skill');
     form.updateFormData('skill', () => ({
       name: item.name as string || '',

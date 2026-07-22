@@ -9,6 +9,10 @@ import type { ToolFormData } from '../../workstation/tool/tool.types';
 import type { MCPFormData } from '../../workstation/mcp/mcp.types';
 import type { SkillFormData } from '../../workstation/skill/skill.types';
 
+function toRecord(v: unknown): Record<string, unknown> {
+  return v as Record<string, unknown>;
+}
+
 interface ItemListShape<T> {
   items: T[];
   editingId: string | null;
@@ -104,7 +108,7 @@ export default function TabRenderer(props: TabRendererProps) {
         <ItemEditor
           kind="tool"
           form={form.forms.tool}
-          editingItem={editingToolItem as unknown as Record<string, unknown>}
+          editingItem={toRecord(editingToolItem)}
           onSave={() => onSaveFormItem('tool')}
           onClose={onFormClose}
           setFormData={(fn) => form.updateFormData('tool', fn as (d: unknown) => unknown)}
@@ -150,7 +154,7 @@ export default function TabRenderer(props: TabRendererProps) {
         <ItemEditor
           kind="mcp"
           form={form.forms.mcp}
-          editingItem={editingMcpItem as unknown as Record<string, unknown>}
+          editingItem={toRecord(editingMcpItem)}
           onSave={() => onSaveFormItem('mcp')}
           onClose={() => {
             form.closeForm('mcp');
@@ -162,7 +166,7 @@ export default function TabRenderer(props: TabRendererProps) {
             items={mcp.items}
             editingId={mcp.editingId}
             showForm={false}
-            formData={form.forms.mcp.data as unknown as Parameters<typeof MCPTab>[0]['formData']}
+            formData={form.forms.mcp.data as MCPFormData}
             formErrors={form.forms.mcp.errors}
             editingItem={null}
             onToggle={mcp.toggle}
@@ -198,7 +202,7 @@ export default function TabRenderer(props: TabRendererProps) {
         <ItemEditor
           kind="skill"
           form={form.forms.skill}
-          editingItem={editingSkillItem as unknown as Record<string, unknown>}
+          editingItem={toRecord(editingSkillItem)}
           onSave={() => onSaveFormItem('skill')}
           onClose={() => {
             form.closeForm('skill');
@@ -210,7 +214,7 @@ export default function TabRenderer(props: TabRendererProps) {
             items={skills.items}
             editingId={skills.editingId}
             showForm={false}
-            formData={form.forms.skill.data as unknown as Parameters<typeof SkillsTab>[0]['formData']}
+            formData={form.forms.skill.data as SkillFormData}
             formErrors={form.forms.skill.errors}
             editingItem={null}
             onToggle={skills.toggle}
