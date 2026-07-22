@@ -124,8 +124,8 @@
 | — | size-limit 配置 | ✅ `npm run size` |
 | 46 | 在 CI 中加入 bundle size 监控 | ⚠️ 已配置，需构建通过后生效 |
 | 47 | 在 CI 中加入 diff-cover PR 门禁 | ⚠️ 已存在，确认生效 |
-| 48 | 在 CI 中加入 mypy --strict 门禁（新房号制） | ❌ |
-| 49 | 用 deptry 检测未使用的依赖 | ❌ |
+| 48 | 在 CI 中加入 mypy --strict 门禁（新房号制） | ✅ 已存在：ci.yml:178 |
+| 49 | 用 deptry 检测未使用的依赖 | ❌ 系统限制 |
 | 50 | 在 CI 中加入后端性能回归测试 | ❌ |
 
 ---
@@ -138,11 +138,11 @@
 | 51 | 请求体大小限制中间件 | ✅ `RequestSizeLimitMiddleware` |
 | 52 | 全局异常日志脱敏（`exc_info=True` 可能泄露请求体） | ⚠️ 已审计：仅 log method+path+exc，不包含请求体。低风险保持现状 |
 | 53 | RateLimitMiddleware 单测 | ✅ 10 tests |
-| 54 | CSP 策略加固（评估是否需要更严格） | ❌ |
+| 54 | CSP 策略加固（评估是否需要更严格） | ⚠️ 已审计：`default-src 'self'` 对 API 后端已足够 |
 | 55 | 检查所有 user_id / X-User-ID 是否被记录到日志（PII 泄露风险） | ⚠️ 已审计：rate_limit.py 记录 user_id，但格式为 UUID（低 PII 风险） |
 | 56 | 在 `.env.example` 中标注安全变量生产建议值 | ✅ |
 | 57 | 检查前端 API client 中的 token 存储方式（localStorage → XSS 可窃取） | ❌ 需架构迁移（2d） |
-| 58 | 检查 refresh token 轮换策略 | ❌ |
+| 58 | 检查 refresh token 轮换策略 | ✅ 已实现：family_id 轮换 + replay 检测 + 全族吊销 |
 
 ---
 
@@ -182,7 +182,7 @@
 | # | 项目 | 状态 |
 |---|------|------|
 | 76 | `useWorkstationState.ts` MCP/skill 字段类型含 `@ts-ignore` 级别问题 | ❌ |
-| 77 | 检查 `mappers.ts` 中的 `JSON.parse` 是否安全处理非法字符串 | ❌ |
+| 77 | 检查 `mappers.ts` 中的 `JSON.parse` 是否安全处理非法字符串 | ✅ 已有 try/catch 保护 |
 | 78 | 检查所有 `vi.mock()` 模块是否在重命名后同步更新 | ❌ |
 | 79 | 确认 defineCrudModule Proxy 对所有 7 个 CRUD 模块生效 | ✅ |
 | 80 | 确认 `useOutputManagement.test.ts` 在 CI 中通过 | ✅ |
