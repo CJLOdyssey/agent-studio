@@ -1,0 +1,54 @@
+.agentstudio-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agentstudio-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--da-text-muted);
+  flex-shrink: 0;
+}
+
+.agentstudio-logo h1 {
+  font-size: var(--da-font-size-base);
+  font-weight: 600;
+  color: var(--da-text-primary);
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.agentstudio-logo p {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  margin: 2px 0 0;
+}
+
+.agentstudio-sprint-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agentstudio-sprint-btn:hover {
+  background: var(--da-bg-hover);
+  border-color: var(--da-border);
+}

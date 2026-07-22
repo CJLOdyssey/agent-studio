@@ -1,0 +1,59 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.tsbuildinfo
+
+# IDE / Project
+.sisyphus/
+.idea/
+.vscode/
+*.swp
+*.swo
+.opencode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Docker
+Dockerfile
+docker-compose*.yml
+frontend/Dockerfile
+frontend/nginx.conf
+
+# Git
+.git/
+.gitignore
+.githooks/
+
+# Build artifacts
+*.deb
+*.png
+*.jpg
+screenshot*
+verify_layout.py
+data/
+uploads/
+
+# Docs
+docs/
+*.md
+CHANGELOG.md
+CONTRIBUTING.md
+ANCHORED_SUMMARY.md

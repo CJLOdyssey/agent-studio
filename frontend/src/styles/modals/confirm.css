@@ -1,0 +1,20 @@
+/* Confirm Modal */
+.confirm-modal {
+  width: var(--modal-sm);
+  height: var(--modal-height);
+  overflow: hidden;
+}
+
+.confirm-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+}
+
+.confirm-body p {
+  margin: 0;
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-primary);
+  line-height: 1.5;
+}

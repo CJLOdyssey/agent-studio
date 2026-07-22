@@ -1,0 +1,217 @@
+:root {
+  color-scheme: dark;
+
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal-backdrop: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  --da-sidebar-width: 260px;
+  --da-sidebar-min: 220px;
+  --da-sidebar-max: 320px;
+  --da-workspace-width: 480px;
+  --da-workspace-min: 360px;
+  --da-workspace-max: 600px;
+  --da-header-height: 48px;
+  --da-input-height: 64px;
+  --da-input-min-lines: 1;
+  --da-input-max-lines: 8;
+  --da-input-radius: 20px;
+  --da-toolbar-height: 48px;
+
+  --modal-sm: 420px;
+  --modal-m:  560px;
+  --modal-l:  1100px;
+  --modal-height: 700px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  --da-font-size-base: 14px;
+  --da-font-size-sm: 13px;
+  --da-font-size-xs: 12px;
+  --da-font-size-lg: 16px;
+  --da-font-size-xl: 20px;
+  --da-font-size-2xl: 24px;
+
+  --da-bg-primary:    #000000;
+  --da-bg-secondary:  #000000;
+  --da-bg-surface:    #000000;
+  --da-bg-elevated:   #000000;
+  --da-bg-hover:      #000000;
+  --da-bg-pressed:    #000000;
+  --da-bg-card:       #000000;
+
+  --da-msg-user-bg: #000000;
+
+  --da-border-subtle: rgba(255,255,255,0.06);
+  --da-border:        rgba(255,255,255,0.08);
+  --da-border-strong: rgba(255,255,255,0.12);
+
+  --da-text-primary:    #ffffff;
+  --da-text-secondary:  #a0a0a0;
+  --da-text-tertiary:   #666666;
+  --da-text-muted:      #444444;
+  --da-text-on-accent:  #ffffff;
+  --da-blend-dark:      #000000;
+
+  --da-accent:         #666666;
+  --da-accent-indigo:  #666666;
+  --da-accent-cyan:    #888888;
+  --da-accent-pink:    #777777;
+  --da-accent-amber:   #999999;
+  --da-accent-emerald: #888888;
+  --da-accent-purple:  #777777;
+  --da-accent-red:     #ff4444;
+
+  --da-status-active:  #44cc44;
+  --da-status-error:   #ff4444;
+  --da-status-warning: #ccaa44;
+
+  --bg-primary:   var(--da-bg-primary);
+  --bg-secondary: var(--da-bg-secondary);
+  --bg-surface:   var(--da-bg-surface);
+  --bg-elevated:  var(--da-bg-elevated);
+  --bg-hover:     var(--da-bg-hover);
+  --bg-input:     var(--da-bg-secondary);
+  --border:       var(--da-border);
+  --border-light: var(--da-border-subtle);
+  --text-primary:    var(--da-text-primary);
+  --text-secondary:  var(--da-text-secondary);
+  --text-muted:      var(--da-text-tertiary);
+  --accent:          var(--da-accent);
+  --danger:          var(--da-accent-red);
+  --icon-status-success: var(--da-status-active);
+  --icon-status-warning: var(--da-status-warning);
+  --icon-status-error:   var(--da-status-error);
+
+  --icon-planning:        var(--da-accent);
+  --icon-design:          var(--da-accent-pink);
+  --icon-dev-frontend:    var(--da-accent-cyan);
+  --icon-dev-backend:     var(--da-accent-emerald);
+  --icon-dev-fullstack:   var(--da-accent-purple);
+  --icon-quality:         var(--da-accent-amber);
+  --icon-ops:             var(--da-text-secondary);
+  --icon-file:            var(--da-text-muted);
+  --icon-code:            var(--da-text-secondary);
+
+  --sidebar-width: 280px;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --syntax-blue-300: #888888;
+  --syntax-blue-400: #666666;
+  --syntax-cyan-200: #999999;
+  --syntax-red:       #ff4444;
+
+  --da-focus-ring: 0 0 0 2px var(--da-accent);
+
+  --da-overlay-bg: rgba(0,0,0,0.65);
+  --da-overlay-bg-light: rgba(0,0,0,0.45);
+
+  --da-shadow-sm: rgba(0,0,0,0.06);
+  --da-shadow-md: rgba(0,0,0,0.12);
+  --da-shadow-lg: rgba(0,0,0,0.20);
+  --da-shadow-xl: rgba(0,0,0,0.35);
+
+  --shadow-sm: 0 1px 2px rgba(255,255,255,0.10);
+  --shadow-md: 0 4px 8px -2px rgba(255,255,255,0.15);
+  --shadow-lg: 0 8px 16px -4px rgba(255,255,255,0.20);
+}
+
+:root:not(.dark) {
+  color-scheme: light;
+
+  --da-bg-primary:    #ffffff;
+  --da-bg-secondary:  #ffffff;
+  --da-bg-surface:    #ffffff;
+  --da-bg-elevated:   #ffffff;
+  --da-bg-hover:      #ffffff;
+  --da-bg-pressed:    #ffffff;
+  --da-bg-card:       #ffffff;
+
+  --da-msg-user-bg: #ffffff;
+
+  --da-border-subtle: rgba(0,0,0,0.06);
+  --da-border:        rgba(0,0,0,0.08);
+  --da-border-strong: rgba(0,0,0,0.12);
+
+  --da-text-primary:    #000000;
+  --da-text-secondary:  #555555;
+  --da-text-tertiary:   #999999;
+  --da-text-muted:      #cccccc;
+  --da-text-on-accent:  #ffffff;
+  --da-blend-dark:      #000000;
+
+  --da-accent:         #666666;
+  --da-accent-indigo:  #666666;
+  --da-accent-cyan:    #888888;
+  --da-accent-pink:    #777777;
+  --da-accent-amber:   #999999;
+  --da-accent-emerald: #888888;
+  --da-accent-purple:  #777777;
+  --da-accent-red:     #ff4444;
+
+  --da-status-active:  #44cc44;
+  --da-status-error:   #ff4444;
+  --da-status-warning: #ccaa44;
+
+  --bg-primary:   var(--da-bg-primary);
+  --bg-secondary: var(--da-bg-secondary);
+  --bg-surface:   var(--da-bg-surface);
+  --bg-elevated:  var(--da-bg-elevated);
+  --bg-hover:     var(--da-bg-hover);
+  --bg-input:     var(--da-bg-secondary);
+  --border:       var(--da-border);
+  --border-light: var(--da-border-subtle);
+  --text-primary:    var(--da-text-primary);
+  --text-secondary:  var(--da-text-secondary);
+  --text-muted:      var(--da-text-tertiary);
+  --accent:          var(--da-accent);
+  --danger:          var(--da-accent-red);
+  --icon-status-success: var(--da-status-active);
+  --icon-status-warning: var(--da-status-warning);
+  --icon-status-error:   var(--da-status-error);
+
+  --icon-planning:        var(--da-accent);
+  --icon-design:          var(--da-accent-pink);
+  --icon-dev-frontend:    var(--da-accent-cyan);
+  --icon-dev-backend:     var(--da-accent-emerald);
+  --icon-dev-fullstack:   var(--da-accent-purple);
+  --icon-quality:         var(--da-accent-amber);
+  --icon-ops:             var(--da-text-secondary);
+  --icon-file:            var(--da-text-muted);
+  --icon-code:            var(--da-text-secondary);
+
+  --syntax-blue-300: #888888;
+  --syntax-blue-400: #666666;
+  --syntax-cyan-200: #999999;
+  --syntax-red:       #ff4444;
+
+  --da-focus-ring: 0 0 0 2px var(--da-accent);
+
+  --da-overlay-bg: rgba(0,0,0,0.40);
+  --da-overlay-bg-light: rgba(0,0,0,0.20);
+
+  --da-shadow-sm: rgba(0,0,0,0.04);
+  --da-shadow-md: rgba(0,0,0,0.08);
+  --da-shadow-lg: rgba(0,0,0,0.12);
+  --da-shadow-xl: rgba(0,0,0,0.20);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.10);
+}

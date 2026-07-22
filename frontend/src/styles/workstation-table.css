@@ -1,0 +1,739 @@
+/* ============================================================
+   Workstation Table - 表格组件
+   职责: 表格、标签、状态、版本、操作按钮
+   ============================================================ */
+
+/* ── Table wrapper ── */
+.wsta-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.wsta-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: var(--da-font-size-sm);
+}
+
+.wsta-table thead {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+}
+
+.wsta-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 500;
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-muted);
+  background: var(--da-bg-card);
+  border-bottom: 1px solid var(--da-border);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+
+.wsta-table td {
+  padding: 14px 16px;
+  color: var(--da-text-primary);
+  border-bottom: 1px solid var(--da-border-subtle);
+  vertical-align: middle;
+  font-size: var(--da-font-size-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wsta-table tbody tr:nth-child(even) {
+  background: var(--da-bg-surface);
+}
+
+.wsta-table tbody tr:hover {
+  background: var(--da-bg-hover);
+}
+
+.wsta-empty-cell {
+  text-align: center;
+  padding: var(--sp-12) var(--sp-4);
+  color: var(--da-text-muted);
+}
+
+.wsta-empty-cell span {
+  display: block;
+  margin-top: var(--sp-2);
+}
+
+.wsta-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-16) var(--sp-4);
+  text-align: center;
+}
+
+.wsta-empty-state-icon {
+  color: var(--da-text-muted);
+  opacity: 0.5;
+}
+
+.wsta-empty-state-title {
+  font-size: var(--da-font-size-lg);
+  font-weight: 600;
+  color: var(--da-text-secondary);
+}
+
+.wsta-empty-state-desc {
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.wsta-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-16) var(--sp-4);
+  text-align: center;
+}
+
+.wsta-error-state-msg {
+  font-size: var(--da-font-size-sm);
+  color: var(--icon-status-error);
+}
+
+.wsta-error-state-icon { opacity: 0.5; color: var(--icon-status-error); }
+.wsta-error-state-title { font-size: var(--da-font-size-lg); font-weight: 600; color: var(--da-text-primary); }
+.wsta-error-state-desc { font-size: var(--da-font-size-sm); color: var(--da-text-muted); max-width: 320px; line-height: 1.5; }
+
+.wsta-skeleton-wrap {
+  padding: var(--sp-4);
+  animation: wsta-skeleton-fade 0.3s ease-in;
+}
+
+.wsta-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--da-border-subtle);
+  animation: wsta-skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: var(--sk-delay, 0s);
+}
+
+.wsta-skeleton-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--da-bg-hover);
+  flex-shrink: 0;
+}
+
+.wsta-skeleton-cell {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--da-bg-hover);
+  flex: 1;
+}
+
+.wsta-skeleton-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-6);
+  animation: wsta-skeleton-fade 0.3s ease-in;
+}
+
+@media (max-width: 1024px) {
+  .wsta-skeleton-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .wsta-skeleton-card-grid { grid-template-columns: 1fr; }
+}
+
+.wsta-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--da-border-subtle);
+  border-radius: 10px;
+  animation: wsta-skeleton-pulse 1.5s ease-in-out infinite;
+  animation-delay: var(--sk-delay, 0s);
+}
+
+.wsta-skeleton-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--da-bg-hover);
+  flex-shrink: 0;
+}
+
+.wsta-skeleton-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.wsta-skeleton-text {
+  height: 12px;
+  border-radius: 4px;
+  background: var(--da-bg-hover);
+}
+
+.wsta-skeleton-text-short { width: 40%; }
+.wsta-skeleton-text-long { width: 70%; }
+
+.wsta-skeleton-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--sp-4);
+}
+
+@keyframes wsta-skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes wsta-skeleton-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.wsta-module-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-16) var(--sp-4);
+  text-align: center;
+}
+
+.wsta-module-error h3 {
+  font-size: var(--da-font-size-lg);
+  color: var(--icon-status-error);
+}
+
+.wsta-module-error p {
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-secondary);
+  max-width: 400px;
+}
+
+/* ── Agent name ── */
+.wsta-agent-name {
+  font-weight: 600;
+  color: var(--da-text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ── Tags ── */
+.wsta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--sp-2);
+  border-radius: 4px;
+  font-size: var(--da-font-size-xs);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.wsta-tag-team {
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
+}
+
+.wsta-tag-model {
+  background: color-mix(in srgb, var(--da-accent-cyan) 15%, transparent);
+  color: var(--da-accent-cyan);
+}
+
+/* ── Status ── */
+.wsta-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+}
+
+.wsta-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wsta-status-running .wsta-status-dot {
+  background: var(--da-accent-emerald);
+}
+
+.wsta-status-running {
+  color: var(--da-accent-emerald);
+}
+
+.wsta-status-stopped .wsta-status-dot {
+  background: var(--da-text-muted);
+}
+
+.wsta-status-stopped {
+  color: var(--da-text-muted);
+}
+
+.wsta-status-error .wsta-status-dot {
+  background: var(--icon-status-error);
+}
+
+.wsta-status-error {
+  color: var(--icon-status-error);
+}
+
+/* ── Version ── */
+.wsta-version {
+  font-family: var(--font-mono);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  background: var(--da-bg-surface);
+  padding: 1px var(--sp-2);
+  border-radius: 4px;
+}
+
+/* ── Action buttons ── */
+.wsta-action-group {
+  display: inline-flex;
+  gap: var(--sp-1);
+}
+
+.wsta-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wsta-action-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.wsta-action-btn-danger:hover {
+  background: color-mix(in srgb, var(--icon-status-error) 12%, transparent);
+  color: var(--icon-status-error);
+}
+
+/* ── Checkbox ── */
+.wsta-table .wsta-th-check,
+.wsta-table .wsta-td-check,
+.wsta-col-checkbox {
+  width: 40px;
+  text-align: center;
+  vertical-align: middle;
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.wsta-table .wsta-th-check input[type="checkbox"],
+.wsta-table .wsta-td-check input[type="checkbox"],
+.wsta-col-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--da-accent-indigo);
+  vertical-align: middle;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Sort icons ── */
+.wsta-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.wsta-sortable:hover {
+  color: var(--da-text-primary);
+}
+
+.wsta-sort-icon-inactive {
+  color: var(--da-text-muted);
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.wsta-sort-icon-active {
+  color: var(--da-accent-indigo);
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.wsta-row-selected {
+  background: var(--da-bg-surface);
+}
+
+/* ── Agent name link ── */
+.wsta-name-link {
+  font-weight: 600;
+  color: var(--da-text-primary);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.wsta-name-link:hover {
+  color: var(--da-accent-indigo);
+}
+
+/* ── Code/mono text ── */
+.wsta-code {
+  font-family: var(--font-mono);
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  background: var(--da-bg-surface);
+  padding: 1px var(--sp-2);
+  border-radius: 4px;
+}
+
+/* ── Prompt name ── */
+.wsta-prompt-name {
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-secondary);
+}
+
+/* ── Status badge ── */
+.wsta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px var(--sp-2);
+  border-radius: 4px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+}
+
+.wsta-badge-green {
+  background: color-mix(in srgb, var(--da-accent-emerald) 15%, transparent);
+  color: var(--da-accent-emerald);
+}
+
+.wsta-badge-gray {
+  background: color-mix(in srgb, var(--da-text-muted) 15%, transparent);
+  color: var(--da-text-muted);
+}
+
+.wsta-badge-red {
+  background: color-mix(in srgb, var(--icon-status-error) 15%, transparent);
+  color: var(--icon-status-error);
+}
+
+/* ── Actions column ── */
+.wsta-th-actions,
+.wsta-col-actions {
+  width: 60px;
+  text-align: right;
+}
+
+.wsta-td-actions,
+.wsta-col-actions {
+  text-align: right;
+  white-space: nowrap;
+  position: relative;
+  overflow: visible;
+}
+
+.wsta-col-actions .wsta-action-group,
+.wsta-td-actions .wsta-action-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+}
+
+/* ── Empty state ── */
+.wsta-empty {
+  text-align: center;
+  padding: var(--sp-12) var(--sp-4);
+  color: var(--da-text-muted);
+}
+
+/* ── Error banner ── */
+.wsta-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--icon-status-error) 30%, transparent);
+  border-radius: 8px;
+  color: var(--icon-status-error);
+  font-size: var(--da-font-size-sm);
+  margin-bottom: var(--sp-4);
+}
+
+.wsta-error-banner-close { background: none; border: none; color: inherit; cursor: pointer; margin-left: auto; padding: 2px; opacity: 0.7; line-height: 1; }
+.wsta-error-banner-close:hover { opacity: 1; }
+
+/* ── Sort icons ── */
+.wsta-sort-icon {
+  display: inline-block;
+  margin-left: 2px;
+  font-size: var(--da-font-size-xs);
+}
+
+.wsta-sort-off {
+  color: var(--da-text-muted);
+}
+
+/* ── Search box (alias for toolbar) ── */
+.wsta-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 360px;
+}
+
+.wsta-search-box svg {
+  position: absolute;
+  left: var(--sp-3);
+  color: var(--da-text-muted);
+  pointer-events: none;
+}
+
+.wsta-search-box input {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-8);
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wsta-search-box input::placeholder {
+  color: var(--da-text-muted);
+}
+
+.wsta-search-box input:focus {
+  border-color: var(--da-accent-indigo);
+  box-shadow: var(--da-focus-ring);
+}
+
+/* ── Expand column ── */
+.wsta-col-expand {
+  width: 32px;
+  text-align: center;
+  padding: var(--sp-1) 0;
+}
+
+.wsta-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wsta-expand-btn:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* ── Expanded row ── */
+.wsta-expanded-row td {
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--da-bg-surface);
+}
+
+.wsta-empty-members {
+  text-align: center;
+  padding: var(--sp-6);
+  color: var(--da-text-muted);
+  font-size: var(--da-font-size-sm);
+}
+
+/* ── Member circle badge ── */
+.wsta-member-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--da-bg-surface);
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-secondary);
+}
+
+/* ── Status badge with dot ── */
+.wsta-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+}
+
+.wsta-status-active {
+  background: color-mix(in srgb, var(--da-accent-emerald) 15%, transparent);
+  color: var(--da-accent-emerald);
+}
+
+.wsta-status-inactive {
+  background: color-mix(in srgb, var(--da-text-muted) 12%, transparent);
+  color: var(--da-text-muted);
+}
+
+.wsta-status-dot-green {
+  background: var(--da-accent-emerald);
+}
+
+.wsta-status-dot-gray {
+  background: var(--da-text-muted);
+}
+
+/* ── Date cell ── */
+.wsta-date-cell {
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-muted);
+}
+
+/* ── Category badge ── */
+.wsta-category-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+}
+
+.wsta-category-dev {
+  background: rgba(99,102,241,0.08);
+  color: var(--da-accent-indigo);
+}
+
+.wsta-category-ops {
+  background: rgba(34,197,94,0.12);
+  color: var(--da-accent-emerald);
+}
+
+/* ── Member icon ── */
+.wsta-member-icon {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 4px;
+  color: var(--da-text-muted);
+}
+
+/* ── Sub table (expanded members) ── */
+.wsta-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--da-font-size-xs);
+}
+
+.wsta-sub-table th {
+  padding: var(--sp-1) var(--sp-2);
+  text-align: left;
+  font-weight: 600;
+  color: var(--da-text-secondary);
+  border-bottom: 1px solid var(--da-border);
+  font-size: var(--da-font-size-xs);
+}
+
+.wsta-sub-table td {
+  padding: var(--sp-1) var(--sp-2);
+  border-bottom: 1px solid var(--da-border-subtle);
+  background: transparent;
+}
+
+.wsta-sub-table tbody tr:hover {
+  background: var(--da-bg-hover);
+}
+
+/* ── Badge blue (for linked config) ── */
+.wsta-badge-blue {
+  background: color-mix(in srgb, var(--da-accent-indigo) 15%, transparent);
+  color: var(--da-accent-indigo);
+}
+
+/* ── Theme-aware status badges ── */
+.wsta-badge-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+}
+.wsta-badge-dot-green { background: color-mix(in srgb, var(--da-accent-emerald) 15%, transparent); color: var(--da-accent-emerald); }
+.wsta-badge-dot-gray  { background: color-mix(in srgb, var(--da-text-muted) 12%, transparent); color: var(--da-text-muted); }
+.wsta-badge-dot-red   { background: color-mix(in srgb, var(--da-status-error) 15%, transparent); color: var(--da-status-error); }
+.wsta-badge-dot-amber { background: color-mix(in srgb, var(--da-status-warning) 15%, transparent); color: var(--da-status-warning); }
+.wsta-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.wsta-dot-green  { background: var(--da-accent-emerald); }
+.wsta-dot-gray   { background: var(--da-text-muted); }
+.wsta-dot-red    { background: var(--da-status-error); }
+.wsta-dot-amber  { background: var(--da-status-warning); }
+
+/* ── Theme-aware category/type badges ── */
+.wsta-tag-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 500;
+}
+.wsta-tag-indigo { background: color-mix(in srgb, var(--da-accent-indigo) 8%, transparent); color: var(--da-accent-indigo); }
+.wsta-tag-green  { background: color-mix(in srgb, var(--da-accent-emerald) 15%, transparent); color: var(--da-accent-emerald); }
+.wsta-tag-amber  { background: color-mix(in srgb, var(--da-status-warning) 15%, transparent); color: var(--da-status-warning); }
+
+/* ── Theme-aware member circle ── */
+.wsta-member-circle-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--da-bg-surface);
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-secondary);
+}
+
+/* ── Date / Mono text ── */
+.wsta-mono-text { font-family: var(--font-mono); font-size: var(--da-font-size-xs); color: var(--da-text-muted); }
+.wsta-secondary-text { font-size: var(--da-font-size-sm); color: var(--da-text-secondary); }
+.wsta-truncate { display: block; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

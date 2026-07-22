@@ -1,0 +1,30 @@
+/* Scrollbar */
+.agentstudio-sidebar-content::-webkit-scrollbar,
+.agentstudio-messages::-webkit-scrollbar,
+.agentstudio-workspace-content::-webkit-scrollbar,
+.agentstudio-file-tree::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.agentstudio-sidebar-content::-webkit-scrollbar-track,
+.agentstudio-messages::-webkit-scrollbar-track,
+.agentstudio-workspace-content::-webkit-scrollbar-track,
+.agentstudio-file-tree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.agentstudio-sidebar-content::-webkit-scrollbar-thumb,
+.agentstudio-messages::-webkit-scrollbar-thumb,
+.agentstudio-workspace-content::-webkit-scrollbar-thumb,
+.agentstudio-file-tree::-webkit-scrollbar-thumb {
+  background: var(--da-border);
+  border-radius: 3px;
+}
+
+.agentstudio-sidebar-content::-webkit-scrollbar-thumb:hover,
+.agentstudio-messages::-webkit-scrollbar-thumb:hover,
+.agentstudio-workspace-content::-webkit-scrollbar-thumb:hover,
+.agentstudio-file-tree::-webkit-scrollbar-thumb:hover {
+  background: var(--da-text-muted);
+}

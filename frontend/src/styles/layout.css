@@ -1,0 +1,948 @@
+/* ============================================
+   AgentStudio - Layout System
+   参考设计: Shadcn/UI Dark Theme
+   ============================================ */
+
+/* --- Design Tokens (仅非颜色变量，颜色统一在 tokens.css) --- */
+:root {
+  --da-sidebar-width: 16rem;
+  --da-sidebar-min: 16rem;
+  --da-sidebar-max: 20rem;
+  --da-font-size-base: 14px;
+  --da-radius: 0.5rem;
+  --z-sticky: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+}
+
+/* ===== 全局布局 ===== */
+
+.agentstudio-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background: var(--da-bg-primary);
+  color: var(--da-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--da-font-size-base);
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Header (全宽置顶) ===== */
+
+.agentstudio-global-header {
+  height: 3.5rem;
+  background: var(--da-bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-4);
+  flex-shrink: 0;
+  z-index: var(--z-overlay);
+}
+
+.agentstudio-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.agentstudio-header-mobile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  cursor: pointer;
+}
+
+.agentstudio-header-mobile-btn:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+/* 桌面端隐藏移动菜单按钮, md: */
+@media (min-width: 768px) {
+  .agentstudio-header-mobile-btn {
+    display: none;
+  }
+}
+
+.agentstudio-header-logo {
+  width: 32px;
+  height: 32px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 8%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon-planning);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.agentstudio-header-title {
+  font-weight: 600;
+  font-size: var(--da-font-size-base);
+  color: var(--da-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.agentstudio-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.agentstudio-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s, background 0.15s;
+}
+
+.agentstudio-header-btn:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-header-notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--icon-status-error);
+  border-radius: 50%;
+  border: 2px solid var(--da-bg-card);
+}
+
+/* ===== 主体容器 ===== */
+
+.agentstudio-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ===== 右侧区域 (Header + Main) ===== */
+
+.agentstudio-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ===== Sidebar ===== */
+
+.agentstudio-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  flex-shrink: 0;
+}
+
+.agentstudio-sidebar {
+  width: var(--da-sidebar-width);
+  min-width: var(--da-sidebar-min);
+  max-width: var(--da-sidebar-max);
+  height: 100%;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 4%);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--z-overlay);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease-out;
+}
+
+.agentstudio-sidebar.open {
+  transform: translateX(0);
+}
+
+/* 桌面端 sidebar 始终显示 */
+@media (min-width: 768px) {
+  .agentstudio-sidebar {
+    position: relative;
+    transform: translateX(0);
+  }
+  .agentstudio-sidebar.collapsed {
+    position: absolute;
+    transform: translateX(-100%);
+  }
+}
+
+/* Sidebar Header (新建对话按钮) */
+.agentstudio-sidebar-new-chat {
+  padding: 0 12px 12px;
+  flex-shrink: 0;
+}
+
+.agentstudio-sprint-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  font-size: var(--da-font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agentstudio-sprint-btn:hover {
+  background: var(--da-bg-hover);
+}
+
+/* Sidebar 导航区域 (可滚动) */
+.agentstudio-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.agentstudio-sidebar-nav > div + div {
+  padding-top: 16px;
+}
+
+.agentstudio-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.agentstudio-sidebar-nav::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.agentstudio-sidebar-nav:hover::-webkit-scrollbar-thumb {
+  background: var(--da-border);
+}
+
+/* Section 标题 — 实际定义在 sidebar/teams.css */
+
+/* 菜单项列表 */
+.agentstudio-sidebar-menu {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agentstudio-sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.agentstudio-sidebar-menu-item:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-sidebar-menu-item.active {
+  color: var(--da-text-primary);
+  background: var(--da-bg-surface);
+  font-weight: 500;
+}
+
+.agentstudio-sidebar-menu-item .lucide-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* 团队折叠列表 — 实际定义在 sidebar/teams.css */
+
+.agentstudio-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dropdown);
+}
+
+.agentstudio-agent-dropdown {
+  position: fixed;
+  min-width: 140px;
+  background: var(--da-bg-card);
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: calc(var(--z-dropdown) + 1);
+  padding: 4px;
+  animation: slideUp 0.12s ease-out;
+}
+
+.agentstudio-agent-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  text-align: left;
+}
+
+.agentstudio-agent-dropdown-item:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.agentstudio-agent-dropdown-item.danger {
+  color: var(--icon-status-error);
+}
+
+.agentstudio-agent-dropdown-item.danger:hover {
+  background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
+}
+
+/* ──────────────────────────────────────────────
+   Enterprise Modal (Ant Design Style)
+   ────────────────────────────────────────────── */
+
+.agentstudio-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--da-overlay-bg);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: antModalFadeIn 0.2s ease-out;
+  padding: var(--sp-4);
+}
+
+@keyframes antModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes antModalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.agentstudio-modal {
+  background: var(--da-bg-elevated);
+  border: none;
+  border-radius: 10px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 0 30px rgba(0, 0, 0, 0.12);
+  max-width: 400px; /* Slightly narrower */
+  width: 100%;
+  animation: antModalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); /* Slight overshoot */
+  overflow: hidden;
+}
+
+.agentstudio-modal--workstation {
+  width: var(--modal-l);
+  max-width: var(--modal-l);
+  height: var(--modal-height);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header - Refined spacing */
+.agentstudio-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--da-border-subtle);
+  flex-shrink: 0;
+}
+
+.agentstudio-modal-header h3 {
+  margin: 0;
+  font-size: var(--da-font-size-base);
+  font-weight: 600;
+  color: var(--da-text-primary);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.agentstudio-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  cursor: pointer;
+  font-size: var(--da-font-size-lg);
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.agentstudio-modal-close:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+/* Content - Optimized padding */
+.agentstudio-modal-content {
+  padding: 16px 20px;
+}
+
+.agentstudio-modal-content p {
+  margin: 0;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-base);
+  line-height: 1.5;
+}
+
+/* Confirm dialog with icon layout - Fine-tuned alignment */
+.agentstudio-confirm-body {
+  display: flex;
+  align-items: center; /* Perfect vertical center */
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.agentstudio-confirm-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agentstudio-confirm-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.agentstudio-confirm-icon.warning {
+  color: var(--icon-status-warning);
+}
+
+.agentstudio-confirm-icon.danger {
+  color: var(--da-accent-red);
+}
+
+.agentstudio-confirm-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentstudio-confirm-text p {
+  margin: 0;
+  color: var(--da-text-secondary);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* Action items (for lists) */
+.agentstudio-modal-action {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-base);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.agentstudio-modal-action:hover {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.agentstudio-modal-action.danger {
+  color: var(--da-accent-red);
+}
+
+.agentstudio-modal-action.danger:hover {
+  background: color-mix(in srgb, var(--da-accent-red) 8%, transparent);
+  color: var(--da-accent-red);
+}
+
+/* Footer buttons - Refined spacing and alignment */
+.agentstudio-modal-actions {
+  display: flex;
+  gap: 10px; /* Slightly tighter gap */
+  margin-top: 20px;
+  padding: 14px 20px 16px; /* Reduced padding */
+  justify-content: flex-end;
+  border-top: 1px solid var(--da-border-subtle);
+}
+
+/* Button styles - Polished appearance */
+.agentstudio-modal-btn {
+  min-width: 68px;
+  height: 34px; /* Slightly shorter */
+  padding: 0 15px;
+  background: transparent;
+  border: 1px solid var(--da-border);
+  border-radius: 6px; /* Slightly rounder */
+  color: var(--da-text-secondary);
+  font-size: 13.5px; /* Smaller font */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.agentstudio-modal-btn:hover {
+  border-color: var(--da-accent-indigo);
+  color: var(--da-accent-indigo);
+  background: color-mix(in srgb, var(--da-accent-indigo) 4%, transparent);
+}
+
+.agentstudio-modal-btn:active {
+  transform: scale(0.97); /* Less aggressive press effect */
+}
+
+/* Primary/Danger button - Refined red tone */
+.agentstudio-modal-btn.danger {
+  background: var(--da-accent-red);
+  border-color: var(--da-accent-red);
+  color: var(--da-text-on-accent);
+  font-weight: 500;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--da-accent-red) 15%, transparent);
+}
+
+.agentstudio-modal-btn.danger:hover {
+  background: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
+  border-color: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--da-accent-red) 25%, transparent);
+  color: var(--da-text-on-accent);
+}
+
+.agentstudio-modal-btn.danger:active {
+  background: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
+  border-color: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
+}
+
+/* 最近对话列表 */
+.agentstudio-sidebar-chats {
+  padding: 0;
+}
+
+.agentstudio-chat-group-label {
+  padding: 0 4px;
+  margin-bottom: 4px;
+  font-size: var(--da-font-size-xs);
+  font-weight: 600;
+  color: var(--da-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.agentstudio-chat-group {
+  margin-bottom: 8px;
+}
+
+.agentstudio-chat-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agentstudio-chat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agentstudio-chat-item:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-chat-item.pinned {
+  color: var(--da-text-primary);
+  font-weight: 500;
+  padding-left: 24px;
+}
+
+.agentstudio-chat-item.pinned:hover {
+  background: var(--da-bg-hover);
+}
+
+/* ===== 底部用户菜单 ===== */
+
+.agentstudio-sidebar-footer {
+  flex-shrink: 0;
+  padding: 12px;
+  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 4%);
+  border-top: none;
+  position: relative;
+}
+
+.agentstudio-user-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--da-text-primary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agentstudio-user-trigger:hover {
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-user-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.agentstudio-user-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--da-bg-primary);
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.agentstudio-user-avatar .lucide-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--da-text-secondary);
+}
+
+.agentstudio-user-info {
+  overflow: hidden;
+  text-align: left;
+}
+
+.agentstudio-user-name {
+  font-size: var(--da-font-size-sm);
+  font-weight: 600;
+  color: var(--da-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agentstudio-user-status {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.agentstudio-user-online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--icon-status-success);
+}
+
+.agentstudio-user-trigger-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--da-text-secondary);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* 用户菜单 Popover */
+.agentstudio-user-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 12px;
+  right: 12px;
+  background: var(--da-bg-card);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  transform-origin: bottom;
+  animation: popoverScaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverScaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.agentstudio-user-popover-header {
+  padding: var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: 2px;
+}
+
+.agentstudio-popover-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--da-bg-surface);
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.agentstudio-popover-avatar .lucide-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--da-text-secondary);
+}
+
+.agentstudio-popover-user-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.agentstudio-popover-user-name {
+  font-size: var(--da-font-size-sm);
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+.agentstudio-popover-user-email {
+  font-size: var(--da-font-size-xs);
+  color: var(--da-text-secondary);
+}
+
+.agentstudio-popover-divider {
+  height: 1px;
+  background: var(--da-border-subtle);
+  margin: 4px 0;
+}
+
+.agentstudio-popover-section-label {
+  padding: 6px var(--sp-2) 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--da-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agentstudio-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.agentstudio-popover-item:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+}
+
+.agentstudio-popover-item .lucide-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.agentstudio-popover-item.danger:hover {
+  color: var(--icon-status-error);
+  background: color-mix(in srgb, var(--icon-status-error) 10%, transparent);
+}
+
+.agentstudio-popover-item-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.agentstudio-popover-item-disabled:hover {
+  color: var(--da-text-secondary);
+  background: transparent;
+}
+
+.agentstudio-popover-item-highlight {
+  color: var(--da-accent);
+  font-weight: 600;
+  border-bottom: 1px solid var(--da-border);
+  margin-bottom: 4px;
+  border-radius: 0;
+}
+.agentstudio-popover-item-highlight:hover {
+  color: var(--da-accent-hover);
+  background: var(--da-bg-hover);
+}
+
+/* ===== 移动端遮罩 ===== */
+
+.agentstudio-mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--da-overlay-bg);
+  z-index: calc(var(--z-overlay) - 1);
+  animation: overlayFadeIn 0.15s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 767px) {
+  .agentstudio-mobile-overlay.visible {
+    display: block;
+  }
+}
+
+/* ===== 主内容区 ===== */
+
+.agentstudio-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  background: var(--da-bg-primary);
+}
+
+.agentstudio-main-bottom {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ===== 响应式固定布局 ===== */
+@media (max-width: 767px) {
+  .agentstudio-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Workstation responsive */
+@media (max-width: 1400px) {
+  .agentstudio-modal--workstation {
+    width: 95vw;
+    max-width: 95vw;
+  }
+}
+
+@media (max-width: 767px) {
+  .agentstudio-modal--workstation {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .agentstudio-modal--workstation {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+}

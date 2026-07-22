@@ -1,0 +1,44 @@
+/* Sample buttons */
+.agentstudio-samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+  margin-bottom: var(--sp-6);
+  width: 100%;
+  max-width: 520px;
+}
+
+.agentstudio-sample-btn {
+  font-size: var(--da-font-size-xs);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--da-bg-surface);
+  border: 1px solid var(--da-border);
+  border-radius: 8px;
+  color: var(--da-text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+
+.agentstudio-sample-btn:hover {
+  background: var(--da-bg-hover);
+  border-color: var(--da-text-muted);
+  color: var(--da-text-primary);
+}
+
+@media (max-width: 480px) {
+  .agentstudio-samples {
+    max-width: 100%;
+  }
+  .agentstudio-sample-btn {
+    width: 100%;
+    white-space: normal;
+    text-align: left;
+    font-size: var(--da-font-size-sm);
+    padding: var(--sp-3);
+  }
+}

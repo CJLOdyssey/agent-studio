@@ -1,0 +1,290 @@
+/* ============================================================
+   Workstation Monitor Center - 监控中心样式
+   职责: 统计卡片、活动时间线、系统健康度
+   ============================================================ */
+
+/* ── Page Container ── */
+.wsta-monitor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.wsta-monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 0.0625rem solid var(--da-border-subtle);
+}
+
+.wsta-monitor-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--da-text-primary);
+}
+
+.wsta-monitor-title svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.wsta-monitor-time {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1-5);
+  font-size: 0.8125rem;
+  color: var(--da-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wsta-monitor-time svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* ── Stat Card Grid ── */
+.wsta-monitor-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+@media (max-width: 40rem) {
+  .wsta-monitor-stats { grid-template-columns: 1fr; }
+}
+
+.wsta-monitor-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--da-bg-card);
+  border: 0.0625rem solid var(--da-border-subtle);
+  border-radius: 0.625rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.wsta-monitor-card:hover {
+  border-color: var(--da-border-strong);
+  box-shadow: 0 0.0625rem 0.375rem rgba(0, 0, 0, 0.06);
+}
+
+.wsta-monitor-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.625rem;
+  flex-shrink: 0;
+}
+
+.wsta-monitor-card-icon svg {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.wsta-monitor-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.wsta-monitor-card-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--da-text-secondary);
+}
+
+.wsta-monitor-card-value {
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--da-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.wsta-monitor-card-change {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ── Delta Badge ── */
+.wsta-monitor-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1875rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.0625rem;
+}
+
+.wsta-monitor-delta svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.wsta-monitor-delta-up { color: var(--da-status-active); }
+.wsta-monitor-delta-down { color: var(--da-status-error); }
+.wsta-monitor-delta-zero { color: var(--da-text-muted); }
+
+/* ── Bottom Grid (activity + health) ── */
+.wsta-monitor-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+
+@media (max-width: 64rem) {
+  .wsta-monitor-grid { grid-template-columns: 1fr; }
+}
+
+.wsta-monitor-section {
+  background: var(--da-bg-card);
+  border: 0.0625rem solid var(--da-border-subtle);
+  border-radius: 0.625rem;
+  overflow: hidden;
+}
+
+.wsta-monitor-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--da-text-primary);
+  border-bottom: 0.0625rem solid var(--da-border-subtle);
+}
+
+.wsta-monitor-section-title svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── Timeline ── */
+.wsta-monitor-timeline {
+  padding: var(--sp-2) 0;
+}
+
+.wsta-timeline-item {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-2-5) var(--sp-4);
+  transition: background 0.12s;
+}
+
+.wsta-timeline-item:hover {
+  background: var(--da-bg-hover);
+}
+
+.wsta-timeline-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  margin-top: 0.3125rem;
+  flex-shrink: 0;
+}
+
+.wsta-timeline-dot-success { background: var(--da-status-active); }
+.wsta-timeline-dot-warning { background: var(--da-status-warning); }
+.wsta-timeline-dot-info { background: var(--da-text-muted); }
+
+.wsta-timeline-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.wsta-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.wsta-timeline-time {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--da-text-muted);
+}
+
+.wsta-timeline-user {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--da-accent);
+}
+
+.wsta-timeline-action {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--da-text-primary);
+}
+
+.wsta-timeline-target {
+  font-size: 0.75rem;
+  color: var(--da-text-muted);
+}
+
+/* ── System Health ── */
+.wsta-health-list {
+  padding: var(--sp-2) var(--sp-4);
+}
+
+.wsta-health-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) 0;
+}
+
+.wsta-health-item + .wsta-health-item {
+  border-top: 0.0625rem solid var(--da-border-subtle);
+}
+
+.wsta-health-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2-5);
+}
+
+.wsta-health-status {
+  display: flex;
+  align-items: center;
+  color: var(--da-text-muted);
+}
+
+.wsta-health-status svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.wsta-health-status-normal { color: var(--da-status-active); }
+.wsta-health-status-warning { color: var(--da-status-warning); }
+
+.wsta-health-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--da-text-primary);
+}
+
+.wsta-health-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--da-text-primary);
+}

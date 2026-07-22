@@ -1,0 +1,162 @@
+name: virtual-team-redis-ha
+
+# ── Redis High-Availability stack ──────────────────────────────────────────────
+# Usage (standalone):
+#   docker compose -f docker/compose.redis-ha.yml up -d
+#
+# Integration with main compose (see docker/compose.prod.yml comment block):
+#   1. Remove the single `redis:` service from the main compose file.
+#   2. Add `docker/compose.redis-ha.yml` to the `-f` list, e.g.:
+#        docker compose -f docker/compose.prod.yml -f docker/compose.redis-ha.yml up -d
+#   3. Set env vars in the main compose common-env block:
+#        REDIS_SENTINEL_ENABLED: "1"
+#        REDIS_SENTINEL_HOSTS: sentinel-1:26379,sentinel-2:26379,sentinel-3:26379
+#        REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+services:
+  # ── Redis master ────────────────────────────────────────────────────────────
+  redis-master:
+    image: redis:7-alpine
+    container_name: virtual-team-redis-master
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_master_data:/data
+      - ./redis/redis-master.conf:/etc/redis/redis.conf:ro
+      - ./redis/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      REDIS_MODE: server
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    entrypoint: /bin/sh
+    command: /entrypoint.sh
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  # ── Redis slave (replica) ───────────────────────────────────────────────────
+  redis-slave:
+    image: redis:7-alpine
+    container_name: virtual-team-redis-slave
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_slave_data:/data
+      - ./redis/redis-slave.conf:/etc/redis/redis.conf:ro
+      - ./redis/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      REDIS_MODE: server
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    entrypoint: /bin/sh
+    command: /entrypoint.sh
+    depends_on:
+      redis-master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  # ── Sentinels (3-node quorum) ───────────────────────────────────────────────
+  sentinel-1:
+    image: redis:7-alpine
+    container_name: virtual-team-sentinel-1
+    restart: unless-stopped
+    ports:
+      - "26379:26379"
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/redis.conf:ro
+      - ./redis/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      REDIS_MODE: sentinel
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    entrypoint: /bin/sh
+    command: /entrypoint.sh --port 26379
+    depends_on:
+      redis-master:
+        condition: service_healthy
+      redis-slave:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 128m
+    mem_reservation: 64m
+
+  sentinel-2:
+    image: redis:7-alpine
+    container_name: virtual-team-sentinel-2
+    restart: unless-stopped
+    ports:
+      - "26380:26379"
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/redis.conf:ro
+      - ./redis/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      REDIS_MODE: sentinel
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    entrypoint: /bin/sh
+    command: /entrypoint.sh --port 26379
+    depends_on:
+      redis-master:
+        condition: service_healthy
+      redis-slave:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 128m
+    mem_reservation: 64m
+
+  sentinel-3:
+    image: redis:7-alpine
+    container_name: virtual-team-sentinel-3
+    restart: unless-stopped
+    ports:
+      - "26381:26379"
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/redis.conf:ro
+      - ./redis/entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      REDIS_MODE: sentinel
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    entrypoint: /bin/sh
+    command: /entrypoint.sh --port 26379
+    depends_on:
+      redis-master:
+        condition: service_healthy
+      redis-slave:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: 128m
+    mem_reservation: 64m
+
+volumes:
+  redis_master_data:
+  redis_slave_data:
+
+networks:
+  default:
+    name: virtual-team-redis-ha
+    driver: bridge

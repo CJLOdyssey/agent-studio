@@ -1,0 +1,47 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version/tag to rollback to'
+        required: true
+        default: 'latest'
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version }}
+
+      - name: Log in to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Deploy specified version
+        env:
+          REGISTRY: ${{ secrets.REGISTRY }}
+          NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
+          REMOTE_SSH_HOST: ${{ secrets.REMOTE_SSH_HOST || secrets.REMOTE_HOST }}
+          REMOTE_SSH_PORT: ${{ secrets.REMOTE_SSH_PORT || '22' }}
+          REMOTE_SSH_USER: ${{ secrets.REMOTE_SSH_USER || 'deploy' }}
+          REMOTE_DIR: ${{ secrets.REMOTE_DIR }}
+        run: |
+          TAG="${{ github.event.inputs.version }}"
+          echo "Rolling back to $TAG..."
+
+          # Set up SSH key from secret
+          mkdir -p ~/.ssh
+          echo "${{ secrets.REMOTE_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            -p "${REMOTE_SSH_PORT}" "${REMOTE_SSH_USER}@${REMOTE_SSH_HOST}" << 'EOF'
+            cd $REMOTE_DIR
+            export BACKEND_TAG=$TAG
+            docker compose -f docker/compose.prod.yml up -d --force-recreate
+          EOF

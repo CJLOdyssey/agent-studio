@@ -1,0 +1,94 @@
+[project]
+name = "agent-studio"
+version = "0.1.0"
+description = "AI Agent management platform"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = ["E402"]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/routers/*.py" = ["B008"]
+"backend/auth/auth_rbac.py" = ["F401"]
+"tests/*.py" = ["E501", "SIM117", "N806"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+python_version = "3.12"
+warn_unused_ignores = true
+exclude = ["tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-n", "auto", "--dist", "loadfile"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "env: marks tests that need specific environment variables",
+    "integration: marks tests that require a running backend + Docker stack (deselect with '-m \"not integration\"')",
+    "requirement(req_id): mark test as covering a specific requirement",
+    "unit: marks unit tests (fast, no external dependencies)",
+    "flaky: marks tests as flaky (retried automatically via pytest-rerunfailures)",
+    "xdist_group: marks tests that must run in the same xdist worker (e.g. shared state, ordering)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:langchain.*",
+    "ignore::DeprecationWarning:langgraph.*",
+    "ignore::DeprecationWarning:langevals_*",
+    "ignore::UserWarning:langchain.*",
+    "ignore::ImportWarning:langgraph.*",
+
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "tests/*",
+    "backend/thinking_tree/*",
+    "backend/system_team/*",
+    "backend/main.py",
+    "backend/checkpoint/*",
+    "backend/rag/rag_store.py",
+    "backend/graph/agent_graph.py",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", ".opencode"]
+skips = [
+    "B101",  # assert — tests/ is already excluded; remaining asserts are intentional defensive checks
+    "B102",  # exec — sandboxed tool code validator runs with empty __builtins__ (no arbitrary code execution)
+    "B104",  # 0.0.0.0 — required for Docker container networking; not exposed to public internet
+    "B608",  # SQL injection — false positive: all SQL uses parameterized text() with params= bound variables
+]
+
+[tool.bandit.asserts]
+
+
+[tool.coverage.report]
+fail_under = 89
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+[tool.mutmut]
+paths_to_mutate = ["backend/"]
+exclude_paths = [
+    "backend/system_team/",
+    "backend/thinking_tree/",
+    "backend/checkpoint/",
+    "backend/graph/",
+]
+test_runner = "PYTHONPATH=. python3 -m pytest -x --no-header -q"
+score_threshold = 60
+

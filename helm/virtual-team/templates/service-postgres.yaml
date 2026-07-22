@@ -1,0 +1,19 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "virtual-team.postgres.fullname" . }}
+  labels:
+    {{- include "virtual-team.labels" . | nindent 4 }}
+    component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.postgres.port }}
+      targetPort: postgresql
+      protocol: TCP
+      name: postgresql
+  selector:
+    {{- include "virtual-team.selectorLabels" . | nindent 4 }}
+    component: postgres
+{{- end }}

@@ -1,0 +1,38 @@
+/* Pagination */
+.agentstudio-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-6);
+}
+
+.agentstudio-pagination-btn {
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--da-bg-surface);
+  border: none;
+  border-radius: 6px;
+  color: var(--da-text-secondary);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.agentstudio-pagination-btn:hover:not(:disabled) {
+  background: var(--da-bg-hover);
+  color: var(--da-text-primary);
+}
+
+.agentstudio-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.agentstudio-pagination-info {
+  font-size: var(--da-font-size-sm);
+  color: var(--da-text-muted);
+  min-width: 50px;
+  text-align: center;
+}

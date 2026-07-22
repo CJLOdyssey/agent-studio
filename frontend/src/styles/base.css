@@ -1,0 +1,137 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--da-font-size-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+}
+
+a {
+  color: var(--accent-pm);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--da-accent, var(--accent-pm));
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@supports not selector(:focus-visible) {
+  :focus {
+    outline: 2px solid var(--da-accent, var(--accent-pm));
+    outline-offset: 2px;
+  }
+}
+
+/* Smooth theme transition — enterprise standard */
+* {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none;
+  }
+}
+
+/* Global scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg-secondary);
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 8px;
+  z-index: var(--z-tooltip);
+  padding: 8px 16px;
+  background: var(--accent);
+  color: var(--da-text-on-accent);
+  border-radius: 0 0 6px 6px;
+  font-size: var(--da-font-size-base);
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}

@@ -1,0 +1,143 @@
+/* Home page */
+.agentstudio-home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.agentstudio-home-centered {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--sp-6);
+}
+
+.agentstudio-home-centered.has-messages {
+  justify-content: flex-start;
+  flex: 1;
+  overflow-y: auto;
+  padding-top: var(--sp-6);
+  padding-bottom: var(--sp-6);
+}
+
+.agentstudio-home-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.agentstudio-home-hero {
+  text-align: center;
+  margin-bottom: var(--sp-8);
+}
+
+.agentstudio-home-logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto var(--sp-6);
+  background: var(--da-bg-surface);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agentstudio-home-logo-icon {
+  color: var(--icon-planning);
+}
+
+.agentstudio-home-greeting {
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  color: var(--da-text-primary);
+  margin: 0 0 var(--sp-2);
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  text-wrap: balance;
+}
+
+.agentstudio-home-subtitle {
+  font-size: var(--da-font-size-base);
+  color: var(--da-text-muted);
+  margin: 0;
+}
+
+.agentstudio-home-messages {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.agentstudio-home-chat-messages {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+/* Typing cursor */
+.typing-cursor {
+  display: inline-block;
+  color: var(--da-text-muted);
+  font-weight: 300;
+  animation: blink 0.8s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.agentstudio-input-features {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.agentstudio-feature-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3);
+  background: transparent;
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius);
+  color: var(--da-text-muted);
+  font-size: var(--da-font-size-sm);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.agentstudio-feature-btn:hover {
+  color: var(--da-text-primary);
+  background: var(--da-bg-hover);
+  border-color: var(--da-border-strong);
+}
+
+.agentstudio-feature-btn .lucide-icon {
+  width: 14px;
+  height: 14px;
+}
