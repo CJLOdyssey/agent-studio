@@ -183,7 +183,7 @@
 |---|------|------|
 | 76 | `useWorkstationState.ts` MCP/skill 字段类型含 `@ts-ignore` 级别问题 | ❌ |
 | 77 | 检查 `mappers.ts` 中的 `JSON.parse` 是否安全处理非法字符串 | ✅ 已有 try/catch 保护 |
-| 78 | 检查所有 `vi.mock()` 模块是否在重命名后同步更新 | ❌ |
+| 78 | 检查所有 `vi.mock()` 模块是否在重命名后同步更新 | ✅ 无存量问题 |
 | 79 | 确认 defineCrudModule Proxy 对所有 7 个 CRUD 模块生效 | ✅ |
 | 80 | 确认 `useOutputManagement.test.ts` 在 CI 中通过 | ✅ |
 
