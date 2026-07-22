@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useTeamData } from '../useTeamData';
+import { useTeamManagement } from '../useTeamManagement';
 
 interface MockEntry {
   id: string;
@@ -45,9 +45,9 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useTeamData', () => {
+describe('useTeamManagement', () => {
   it('starts loading and loads teams on mount', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.processed.length).toBeGreaterThan(0);
@@ -55,7 +55,7 @@ describe('useTeamData', () => {
   });
 
   it('adds a team to the list', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.addTeam({ name: 'Test Team', description: 'Test', status: 'active', category: 'dev' }); });
@@ -63,7 +63,7 @@ describe('useTeamData', () => {
   });
 
   it('removes a team from the list', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.deleteTeam(id); });
@@ -71,7 +71,7 @@ describe('useTeamData', () => {
   });
 
   it('copies a team', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.copyTeam(result.current.processed[0]); });
@@ -79,7 +79,7 @@ describe('useTeamData', () => {
   });
 
   it('handles search', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setSearch('__nonexistent__'); });
     expect(result.current.processed.length).toBe(0);
@@ -88,7 +88,7 @@ describe('useTeamData', () => {
   });
 
   it('handles category filter', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setCategoryFilter('dev'); });
     expect(result.current.processed.every((t) => t.category === 'dev')).toBe(true);
@@ -96,14 +96,14 @@ describe('useTeamData', () => {
   });
 
   it('handles status filter', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setStatusFilter('active'); });
     expect(result.current.processed.every((t) => t.status === 'active')).toBe(true);
   });
 
   it('handles sort', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => result.current.handleSort('status' as keyof import('../team.types').TeamEntry));
     const names = result.current.processed.map((t: import('../team.types').TeamEntry) => t.name);
@@ -111,7 +111,7 @@ describe('useTeamData', () => {
   });
 
   it('handles selection', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.toggleSelect(id); });
@@ -121,7 +121,7 @@ describe('useTeamData', () => {
   });
 
   it('handles batch delete', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.toggleSelect(id); });
@@ -130,7 +130,7 @@ describe('useTeamData', () => {
   });
 
   it('retry reloads data', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.retry(); });
     expect(result.current.isLoading).toBe(true);
@@ -139,7 +139,7 @@ describe('useTeamData', () => {
   });
 
   it('clear error resets error state', async () => {
-    const { result } = renderHook(() => useTeamData());
+    const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.clearError(); });
     expect(result.current.error).toBeNull();

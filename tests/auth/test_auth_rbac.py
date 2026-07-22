@@ -148,30 +148,16 @@ class TestGetCurrentUserRbac:
 
         mock_user = _make_user_row("u1", "alice", "alice@test.com")
         mock_session = AsyncMock()
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_user
-        mock_session.execute = AsyncMock(return_value=mock_result)
-
-        # Second execute returns roles
-        mock_role_result = MagicMock()
-        mock_role_result.all.return_value = [("admin",)]
-        call_count = 0
-
-        async def side_effect(stmt):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                return mock_result
-            return mock_role_result
-
-        mock_session.execute = AsyncMock(side_effect=side_effect)
+        mock_session.get = AsyncMock(return_value=mock_user)
         mock_factory = MagicMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
-            request = _make_request(user_id="u1")
-            result = await get_current_user(request)
+        get_session_factory_patch = "backend.repository.auth.get_session_factory"
+        with patch(get_session_factory_patch, return_value=mock_factory):
+            with patch("backend.repository.auth.get_user_roles", return_value=["admin"]):
+                request = _make_request(user_id="u1")
+                result = await get_current_user(request)
 
         assert result.id == "u1"
         assert result.username == "alice"
@@ -187,24 +173,14 @@ class TestGetCurrentUserRbac:
         mock_role_result = MagicMock()
         mock_role_result.all.return_value = [("member",)]
 
-        call_count = 0
-
-        async def side_effect(stmt):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                result = MagicMock()
-                result.scalar_one_or_none.return_value = mock_user
-                return result
-            return mock_role_result
-
-        mock_session.execute = AsyncMock(side_effect=side_effect)
+        mock_session.execute = AsyncMock(return_value=mock_role_result)
+        mock_session.get = AsyncMock(return_value=mock_user)
         mock_factory = MagicMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
         with patch("backend.auth.auth_rbac.decode_jwt", return_value={"sub": "u2"}), \
-             patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+             patch("backend.repository.auth.get_session_factory", return_value=mock_factory):
             request = _make_request(user_id=None, auth_header="Bearer fake.jwt.token")
             result = await get_current_user(request)
 
@@ -254,11 +230,12 @@ class TestGetCurrentUserRbac:
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.get = AsyncMock(return_value=None)
         mock_factory = MagicMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+        with patch("backend.repository.auth.get_session_factory", return_value=mock_factory):
             request = _make_request(user_id="nonexistent")
             with pytest.raises(HTTPException) as exc_info:
                 await get_current_user(request)
@@ -273,7 +250,7 @@ class TestGetCurrentUserRbac:
         mock_factory.return_value.__aenter__ = AsyncMock(side_effect=Exception("DB down"))
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+        with patch("backend.repository.auth.get_session_factory", return_value=mock_factory):
             request = _make_request(user_id="u1")
             with pytest.raises(HTTPException) as exc_info:
                 await get_current_user(request)
@@ -289,23 +266,13 @@ class TestGetCurrentUserRbac:
         mock_role_result = MagicMock()
         mock_role_result.all.return_value = []
 
-        call_count = 0
-
-        async def side_effect(stmt):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                result = MagicMock()
-                result.scalar_one_or_none.return_value = mock_user
-                return result
-            return mock_role_result
-
-        mock_session.execute = AsyncMock(side_effect=side_effect)
+        mock_session.execute = AsyncMock(return_value=mock_role_result)
+        mock_session.get = AsyncMock(return_value=mock_user)
         mock_factory = MagicMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+        with patch("backend.repository.auth.get_session_factory", return_value=mock_factory):
             request = _make_request(user_id="u3")
             result = await get_current_user(request)
 
@@ -322,23 +289,13 @@ class TestGetCurrentUserRbac:
         mock_role_result = MagicMock()
         mock_role_result.all.return_value = [("admin",)]
 
-        call_count = 0
-
-        async def side_effect(stmt):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                result = MagicMock()
-                result.scalar_one_or_none.return_value = mock_user
-                return result
-            return mock_role_result
-
-        mock_session.execute = AsyncMock(side_effect=side_effect)
+        mock_session.execute = AsyncMock(return_value=mock_role_result)
+        mock_session.get = AsyncMock(return_value=mock_user)
         mock_factory = MagicMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         mock_factory.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+        with patch("backend.repository.auth.get_session_factory", return_value=mock_factory):
             request = _make_request(user_id="u4")
             request.client = None
             result = await get_current_user(request)

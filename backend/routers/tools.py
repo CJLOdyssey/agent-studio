@@ -104,7 +104,7 @@ async def list_tools() -> Any:
     try:
         return await repo_get_tools_as_dicts()
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 async def _snapshot_tool(resource_id: str, session: AsyncSession | None = None) -> Any:
@@ -167,7 +167,7 @@ async def test_tool_endpoint(tool_id: str) -> Any:
     except HTTPException:
         raise
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.post("/api/tools", status_code=201)
@@ -184,7 +184,7 @@ async def add_tool(req: ToolCreate) -> Any:
             "created_at": t.created_at.isoformat() if t.created_at else None,
         }
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.put("/api/tools/{tool_id}")
@@ -201,7 +201,7 @@ async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
     except HTTPException:
         raise
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.delete("/api/tools/{tool_id}", status_code=204)
@@ -217,4 +217,4 @@ async def remove_tool(tool_id: str) -> None:
     except HTTPException:
         raise
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

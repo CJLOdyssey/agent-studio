@@ -7,19 +7,9 @@ import {
 } from '../../../../api/client/agents';
 import { listTeams } from '../../../../api/client/teams';
 import { backendToEntry, resolveLists } from './mappers';
+import { CrudAPIService, defineCrudModule } from '../shared/api-base';
 
-export interface AgentAPIService {
-  fetchAll(): Promise<AgentEntry[]>;
-  create(data: AgentFormData): Promise<AgentEntry>;
-  update(id: string, data: Partial<AgentEntry>): Promise<void>;
-  remove(id: string): Promise<void>;
-  clone(item: AgentEntry): Promise<AgentEntry>;
-  removeBatch(ids: Set<string>): Promise<void>;
-}
-
-
-
-const realImpl: AgentAPIService = {
+const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
   fetchAll: async () => {
     const [items, teamItems] = await Promise.all([
       listAgents(),
@@ -81,7 +71,7 @@ const realImpl: AgentAPIService = {
   },
 
   update: async (id, raw) => {
-    const d = raw as unknown as AgentFormData;
+    const d = raw as AgentFormData;
 
     const { system_prompt, tools, mcp, skills } = await resolveLists(
       d.systemPromptId,
@@ -131,8 +121,6 @@ const realImpl: AgentAPIService = {
   },
 };
 
-export let agentAPI: AgentAPIService = realImpl;
-
-export function setAgentAPI(api: AgentAPIService): void {
-  agentAPI = api;
-}
+const { bind, setAPI } = defineCrudModule<AgentEntry, AgentFormData>(realImpl);
+export const agentAPI = bind;
+export { setAPI as setAgentAPI };

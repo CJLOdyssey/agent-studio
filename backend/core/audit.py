@@ -8,8 +8,7 @@ Usage:
     await log_audit("create", "agent", "my-agent", "创建成功")
 """
 
-from backend.core.infra.database import get_session_factory
-from backend.orm import AuditLogDB
+from backend.repository.audit import create_audit_entry
 
 
 async def log_audit(
@@ -18,13 +17,9 @@ async def log_audit(
     entity_name: str = "",
     detail: str = "",
 ) -> None:
-    entry = AuditLogDB(
+    await create_audit_entry(
         action=action,
         entity_type=entity_type,
         entity_name=entity_name,
         detail=detail,
     )
-    factory = get_session_factory()
-    async with factory() as session:
-        session.add(entry)
-        await session.commit()

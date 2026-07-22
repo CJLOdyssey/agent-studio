@@ -71,7 +71,7 @@ async def list_teams(request: Request) -> Any:
         ]
     except Exception as e:
         logger.error("Error listing teams: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 async def _snapshot_team(resource_id: str, session: AsyncSession | None = None) -> Any:
@@ -118,7 +118,7 @@ async def add_team(req: TeamCreateRequest) -> Any:
         raise
     except Exception as e:
         logger.error("Error creating team: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.get("/api/teams/{team_id}")
@@ -157,7 +157,7 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest) -> Any:
         raise
     except Exception as e:
         logger.error("Error updating team: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.delete("/api/teams/{team_id}")
@@ -176,7 +176,7 @@ async def delete_team_endpoint(team_id: str) -> Any:
         raise
     except Exception as e:
         logger.error("Error deleting team: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.post("/api/teams/{team_id}/members", status_code=201)
@@ -196,7 +196,7 @@ async def add_member(team_id: str, req: MemberAddRequest) -> Any:
         raise
     except Exception as e:
         logger.error("Error adding member: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.delete("/api/teams/{team_id}/members/{member_id}")
@@ -211,7 +211,7 @@ async def remove_member(team_id: str, member_id: str) -> Any:
         raise
     except Exception as e:
         logger.error("Error removing member: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.put("/api/teams/{team_id}/members/reorder")
@@ -222,7 +222,7 @@ async def reorder_members(team_id: str, req: ReorderRequest) -> Any:
         return {"ok": True}
     except Exception as e:
         logger.error("Error reordering members: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 class LinkAgentRequest(BaseModel):
@@ -241,4 +241,4 @@ async def link_agent(team_id: str, member_id: str, req: LinkAgentRequest) -> Any
         raise
     except Exception as e:
         logger.error("Error linking agent: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

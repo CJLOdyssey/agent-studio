@@ -142,16 +142,19 @@ async def _build_user_response(user_id: str, email: str, username: str | None) -
     )
 
 
+ACCESS_TOKEN_TTL = 900  # 15 minutes — matches create_token default aligns with short-lived token best practice
+
+
 async def _create_auth_response(
     user_id: str, email: str, username: str | None, remember_me: bool = False
 ) -> AuthResponse:
-    access_token = create_token(user_id, AUTH_SECRET)
+    access_token = create_token(user_id, AUTH_SECRET, ttl=ACCESS_TOKEN_TTL)
     ttl_days = 30 if remember_me else 7
     refresh_token_raw, _ = await create_refresh_token(user_id, ttl_days=ttl_days)
     user_resp = await _build_user_response(user_id, email, username)
     return AuthResponse(
         access_token=access_token,
         refresh_token=refresh_token_raw,
-        expires_in=900,
+        expires_in=ACCESS_TOKEN_TTL,
         user=user_resp,
     )

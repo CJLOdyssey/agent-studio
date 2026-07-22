@@ -4,7 +4,7 @@ import { toolAPI } from './api';
 import { useGenericCrud } from '../shared/useGenericCrud';
 import { EMPTY_FORM, validateToolForm } from './validate';
 
-export function useToolData(): ToolData {
+export function useToolManagement(): ToolData {
   const crud = useGenericCrud<ToolEntry, ToolFormData>({
     api: toolAPI,
     emptyForm: EMPTY_FORM,

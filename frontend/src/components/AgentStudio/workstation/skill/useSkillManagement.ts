@@ -24,7 +24,7 @@ export interface SkillData extends GenericCrudReturn<SkillEntry, SkillFormData> 
   removeMultiple: (ids: Set<string>) => void;
 }
 
-export function useSkillData(): SkillData {
+export function useSkillManagement(): SkillData {
   const crud = useGenericCrud<SkillEntry, SkillFormData>({
     api: skillAPI,
     emptyForm: {

@@ -3,8 +3,7 @@ import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, FileText } from 'lucide-react';
 import { OUTPUT_CATEGORIES } from './output.constants';
 import type { OutputEntry } from './output.types';
-import { useOutputData } from './useOutputData';
-import { useOutputUI } from './useOutputUI';
+import { useOutputManagement } from './useOutputManagement';
 import OutputFormModal from './OutputFormModal';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
@@ -13,13 +12,12 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
 export default function OutputConstraintManagement() {
-  const d = useOutputData();
-  const ui = useOutputUI();
+  const d = useOutputManagement();
   const { toast } = useToast();
 
   function handleSave() {
-    const ok = ui.handleSave({ addItem: d.addItem, updateItem: d.updateItem, editingId: ui.editingId });
-    if (ok) toast(ui.editingId ? t('output.toast_updated') : t('output.toast_created'), 'success');
+    const ok = d.handleSave();
+    if (ok) toast(d.editingId ? t('output.toast_updated') : t('output.toast_created'), 'success');
   }
   function handleRemove(id: string) { d.removeItem(id); toast(t('output.toast_deleted'), 'success'); }
   function handleBatchRemove() { d.removeMultiple(d.selectedIds); toast(t('output.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
@@ -31,7 +29,7 @@ export default function OutputConstraintManagement() {
 
   function makeMenuItems(item: OutputEntry): MenuProps['items'] {
     return [
-      { key: 'edit', icon: <Edit3 size={14} />, label: t('output.edit'), onClick: () => ui.openEdit(item) },
+      { key: 'edit', icon: <Edit3 size={14} />, label: t('output.edit'), onClick: () => d.openEdit(item) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('output.delete'), onClick: () => handleRemove(item.id), danger: true },
     ];
@@ -52,7 +50,7 @@ export default function OutputConstraintManagement() {
         </div>
         <div className="wsta-toolbar-right">
           {d.selectedIds.size > 0 && <Button danger icon={<Trash2 size={16} />} onClick={handleBatchRemove}>{t('output.batch_delete', String(d.selectedIds.size))}</Button>}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={ui.openCreate}>{t('output.new')}</Button>
+          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>{t('output.new')}</Button>
         </div>
       </div>
 
@@ -105,7 +103,7 @@ export default function OutputConstraintManagement() {
         onChange={(p) => d.setPage(p)}
       />
 
-      {ui.isFormOpen && <OutputFormModal editingItem={ui.editingItem} formData={ui.formData} setFormData={ui.setFormData} onSave={handleSave} onClose={ui.closeForm} formErrors={ui.formErrors} />}
+      {d.isFormOpen && <OutputFormModal editingItem={d.editingItem} formData={d.formData} setFormData={d.setFormData} onSave={handleSave} onClose={d.closeForm} formErrors={d.formErrors} />}
     </div>
     </ErrorBoundary>
   );

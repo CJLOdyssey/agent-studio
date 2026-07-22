@@ -1,14 +1,6 @@
 import type { MCPEntry, MCPFormData } from './mcp.types';
+import { defineCrudModule } from '../shared/api-base';
 import { listMCPs, createMCP, updateMCP, deleteMCP } from '../../../../api/client/mcps';
-
-export interface MCPAPIService {
-  fetchAll(): Promise<MCPEntry[]>;
-  create(data: MCPFormData): Promise<MCPEntry>;
-  update(id: string, data: Partial<MCPEntry>): Promise<void>;
-  remove(id: string): Promise<void>;
-  clone(item: MCPEntry): Promise<MCPEntry>;
-  removeBatch(ids: Set<string>): Promise<void>;
-}
 
 function parseConfig(raw: string | Record<string, unknown> | null): Record<string, unknown> {
   if (!raw) return {};
@@ -33,16 +25,11 @@ function toEntry(item: { id: string; name: string; type: string; endpoint: strin
   };
 }
 
-/** Real API implementation — persists changes to the backend. */
-const realImpl: MCPAPIService = {
-  fetchAll: async () => {
-    const items = await listMCPs();
-    return items.map(toEntry);
-  },
+const { bind: mcpAPI, setAPI: setMCPAPI } = defineCrudModule<MCPEntry, MCPFormData>({
+  fetchAll: async () => { const items = await listMCPs(); return items.map(toEntry); },
   create: async (data) => {
     const item = await createMCP({
-      name: data.name,
-      type: data.type,
+      name: data.name, type: data.type,
       endpoint: data.type === 'stdio' ? data.command : data.url,
       config: JSON.stringify({ description: data.description, version: data.version }),
     });
@@ -57,7 +44,6 @@ const realImpl: MCPAPIService = {
     } else if (data.type === 'sse' && data.url !== undefined) {
       patch.endpoint = data.url;
     } else if (data.type === undefined) {
-      // type unchanged — pick endpoint based on existing command/url
       if (data.command !== undefined) patch.endpoint = data.command;
       if (data.url !== undefined) patch.endpoint = data.url;
     }
@@ -69,18 +55,13 @@ const realImpl: MCPAPIService = {
   remove: async (id) => { await deleteMCP(id); },
   clone: async (item) => {
     const created = await createMCP({
-      name: `${item.name.slice(0, 48)} (副本)`,
-      type: item.type,
+      name: `${item.name.slice(0, 48)} (副本)`, type: item.type,
       endpoint: item.type === 'stdio' ? item.command : item.url,
       config: JSON.stringify({ description: item.description, version: item.version }),
     });
     return toEntry(created);
   },
-  removeBatch: async (ids) => {
-    await Promise.all(Array.from(ids).map(deleteMCP));
-  },
-};
+  removeBatch: async (ids) => { await Promise.all(Array.from(ids).map(deleteMCP)); },
+});
 
-export let mcpAPI: MCPAPIService = realImpl;
-
-export function setMCPAPI(api: MCPAPIService): void { mcpAPI = api; }
+export { mcpAPI, setMCPAPI };

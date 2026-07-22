@@ -3,7 +3,7 @@ import { promptAPI } from './api';
 import { validatePromptForm } from './validate';
 import { useGenericCrud } from '../shared/useGenericCrud';
 
-export function usePromptData(): PromptData {
+export function usePromptManagement(): PromptData {
   const crud = useGenericCrud<PromptEntry, PromptFormData>({
     api: promptAPI,
     emptyForm: { name: '', content: '', category: '系统提示词' as PromptCategory, model: 'GPT-4o', status: 'draft' as const, version: 'v1.0.0' },

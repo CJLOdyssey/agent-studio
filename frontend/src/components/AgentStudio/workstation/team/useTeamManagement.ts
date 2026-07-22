@@ -4,7 +4,7 @@ import { teamAPI } from './api';
 import { useGenericCrud } from '../shared/useGenericCrud';
 import { EMPTY_FORM, validateTeamForm } from './validate';
 
-export function useTeamData(): TeamData {
+export function useTeamManagement(): TeamData {
   const crud = useGenericCrud<TeamEntry, TeamFormData>({
     api: teamAPI,
     emptyForm: EMPTY_FORM,

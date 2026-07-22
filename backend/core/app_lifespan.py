@@ -55,7 +55,11 @@ def _startup_report() -> list[str]:
         os.getpid(),
     )
     _add(lines, "auth: mode=%s | enabled=%s", _env("AUTH_MODE", "legacy"), _env("AUTH_ENABLED", "0"))
-    _add(lines, "rate_limit: %s req/%ss", _env("RATE_LIMIT", "60"), _env("RATE_LIMIT_WINDOW", "60"))
+    _user_rate = _env("RATE_LIMIT_USER", "none")
+    _add(
+        lines, "rate_limit: %s req/%ss | user=%s",
+        _env("RATE_LIMIT", "60"), _env("RATE_LIMIT_WINDOW", "60"), _user_rate,
+    )
     _add(lines, "cors_origin: %s", _env("CORS_ORIGIN", "not set (dev defaults)"))
     _add(
         lines, "model: %s | base_url: %s", _env("OPENAI_MODEL", "deepseek-v4-flash"), _env("OPENAI_BASE_URL", "not set")

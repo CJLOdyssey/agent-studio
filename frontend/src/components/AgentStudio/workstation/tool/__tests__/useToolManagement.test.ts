@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useToolData } from '../useToolData';
+import { useToolManagement } from '../useToolManagement';
 
 const STORE = [
   { id: 't1', name: '文件搜索', description: '搜索文件', category: '内置工具', model: '内置', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
@@ -34,9 +34,9 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useToolData', () => {
+describe('useToolManagement', () => {
   it('starts loading and loads data on mount', async () => {
-    const { result } = renderHook(() => useToolData());
+    const { result } = renderHook(() => useToolManagement());
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.processed.length).toBeGreaterThan(0);
@@ -44,7 +44,7 @@ describe('useToolData', () => {
   });
 
   it('adds a tool to the list', async () => {
-    const { result } = renderHook(() => useToolData());
+    const { result } = renderHook(() => useToolManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.addTool({ name: 'Test Tool', description: 'Test', category: '内置工具', model: '内置', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' }); });
@@ -52,7 +52,7 @@ describe('useToolData', () => {
   });
 
   it('removes a tool from the list', async () => {
-    const { result } = renderHook(() => useToolData());
+    const { result } = renderHook(() => useToolManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.removeTool(id); });
@@ -60,7 +60,7 @@ describe('useToolData', () => {
   });
 
   it('copies a tool item', async () => {
-    const { result } = renderHook(() => useToolData());
+    const { result } = renderHook(() => useToolManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.copyTool(result.current.processed[0]); });
@@ -68,7 +68,7 @@ describe('useToolData', () => {
   });
 
   it('searches by name', async () => {
-    const { result } = renderHook(() => useToolData());
+    const { result } = renderHook(() => useToolManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setSearch('__nonexistent__'); });
     expect(result.current.processed.length).toBe(0);
@@ -77,7 +77,7 @@ describe('useToolData', () => {
   });
 
   it('retry reloads data', async () => {
-    const { result } = renderHook(() => useToolData());
+    const { result } = renderHook(() => useToolManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.retry(); });
     expect(result.current.isLoading).toBe(true);

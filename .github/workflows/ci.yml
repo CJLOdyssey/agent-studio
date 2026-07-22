@@ -72,6 +72,7 @@ jobs:
       - run: npm ci --prefer-offline --no-audit
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm audit --audit-level=high
 
   frontend-test:
     name: "Frontend: Test"
@@ -143,18 +144,17 @@ jobs:
   container-scan:
     name: "Security: Container Scan"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Scan docker/Dockerfile
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd
         with:
           scan-type: config
           scan-ref: docker/Dockerfile
           severity: CRITICAL,HIGH
           exit-code: 0
       - name: Scan frontend/Dockerfile
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd
         with:
           scan-type: config
           scan-ref: frontend/Dockerfile
@@ -266,7 +266,6 @@ jobs:
     needs: [changes, frontend-test]
     if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: frontend
@@ -589,7 +588,6 @@ jobs:
   flaky-check:
     name: "Backend: Flaky Tests"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -619,7 +617,7 @@ jobs:
         if: always()
         run: |
           echo "Flaky tests collected: ${{ steps.collect.outputs.count }}"
-          echo "Note: flaky-check is advisory (continue-on-error)"
+          echo "Note: flaky-check is now a hard gate"
 
   # ── Load Tests ─────────────────────────────────────────────────────────────
   load-test:
@@ -757,13 +755,15 @@ jobs:
             echo "❌ OpenAPI schema validation failed"
             FAIL=1
           fi
-          # container-scan is advisory (continue-on-error)
+          # container-scan is now a hard gate
           if [[ "${{ needs.container-scan.result }}" == "failure" ]]; then
-            echo "⚠️  Container scan found issues (advisory only)"
+            echo "❌ Container scan failed"
+            FAIL=1
           fi
-          # flaky-check is advisory (continue-on-error)
+          # flaky-check is now a hard gate
           if [[ "${{ needs.flaky-check.result }}" == "failure" ]]; then
-            echo "⚠️  Flaky test check found issues (advisory only)"
+            echo "❌ Flaky test check failed"
+            FAIL=1
           fi
 
           if [[ "$FAIL" -ne 0 ]]; then

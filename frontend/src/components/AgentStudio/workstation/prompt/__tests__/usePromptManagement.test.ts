@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { usePromptData } from '../usePromptData';
+import { usePromptManagement } from '../usePromptManagement';
 
 const STORE = [
   { id: 'p1', name: '系统提示', content: '你是一个助手', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
@@ -35,9 +35,9 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('usePromptData', () => {
+describe('usePromptManagement', () => {
   it('starts loading and loads on mount', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     expect(result.current.isLoading).toBe(true);
 
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
@@ -45,7 +45,7 @@ describe('usePromptData', () => {
   });
 
   it('adds a prompt to the list', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.addPrompt({ name: '新提示', content: '内容', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0' }); });
@@ -53,7 +53,7 @@ describe('usePromptData', () => {
   });
 
   it('removes a prompt from the list', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.removePrompt(id); });
@@ -61,7 +61,7 @@ describe('usePromptData', () => {
   });
 
   it('copies a prompt item', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.copyPrompt(result.current.processed[0]); });
@@ -69,7 +69,7 @@ describe('usePromptData', () => {
   });
 
   it('handles search', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setSearch('__nonexistent__'); });
     expect(result.current.processed.length).toBe(0);
@@ -78,7 +78,7 @@ describe('usePromptData', () => {
   });
 
   it('handles category filter', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setCategoryFilter('nonexistent'); });
     expect(result.current.processed.length).toBe(0);
@@ -87,7 +87,7 @@ describe('usePromptData', () => {
   });
 
   it('handles selection and batch delete', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.toggleSelect(id); });
@@ -97,7 +97,7 @@ describe('usePromptData', () => {
   });
 
   it('handles UI state toggles', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.isFormOpen).toBe(false);
     act(() => { result.current.openCreate(); });
@@ -114,7 +114,7 @@ describe('usePromptData', () => {
   });
 
   it('provides getAllItems for export', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const all = result.current.getAllItems();
     expect(Array.isArray(all)).toBe(true);
@@ -122,7 +122,7 @@ describe('usePromptData', () => {
   });
 
   it('addItems batch-adds items to local state', async () => {
-    const { result } = renderHook(() => usePromptData());
+    const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     const newItem = { id: 'new-1', name: 'Batch', content: 'batch content', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' };

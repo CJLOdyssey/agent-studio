@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useSkillData } from '../useSkillData';
+import { useSkillManagement } from '../useSkillManagement';
 
 /** Shared mutable store so create/remove/clone reflect in fetchAll. */
 const STORE = [
@@ -35,9 +35,9 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useSkillData', () => {
+describe('useSkillManagement', () => {
   it('starts loading and loads data on mount', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.processed.length).toBeGreaterThan(0);
@@ -45,7 +45,7 @@ describe('useSkillData', () => {
   });
 
   it('adds a skill to the list', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.addSkill({ name: 'Test Skill', description: 'Test', category: '前端开发', status: 'installed', version: 'v1.0.0', author: 'me', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' }); });
@@ -53,7 +53,7 @@ describe('useSkillData', () => {
   });
 
   it('removes a skill from the list', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.removeSkill(id); });
@@ -61,7 +61,7 @@ describe('useSkillData', () => {
   });
 
   it('copies a skill item', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.copySkill(result.current.processed[0]); });
@@ -69,7 +69,7 @@ describe('useSkillData', () => {
   });
 
   it('filters by search term', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.setSearch('__nonexistent__'); });
@@ -79,7 +79,7 @@ describe('useSkillData', () => {
   });
 
   it('handles category filtering', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setCategoryFilter('nonexistent'); });
     expect(result.current.processed.length).toBe(0);
@@ -88,14 +88,14 @@ describe('useSkillData', () => {
   });
 
   it('ignores sort for invalid field', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.handleSort('description' as never); });
     expect(result.current.sortField).toBeNull();
   });
 
   it('handles sorting', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.handleSort('name'); });
     const sortedAsc = result.current.processed.map((m) => m.name);
@@ -107,7 +107,7 @@ describe('useSkillData', () => {
   });
 
   it('handles pagination', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.page).toBe(1);
     expect(result.current.totalPages).toBeGreaterThanOrEqual(1);
@@ -118,7 +118,7 @@ describe('useSkillData', () => {
   });
 
   it('handles selection', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     if (result.current.processed.length < 1) return;
     const id = result.current.processed[0].id;
@@ -129,7 +129,7 @@ describe('useSkillData', () => {
   });
 
   it('handles UI state toggles', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.isFormOpen).toBe(false);
     act(() => { result.current.openCreate(); });
@@ -148,7 +148,7 @@ describe('useSkillData', () => {
   });
 
   it('handles batch delete', async () => {
-    const { result } = renderHook(() => useSkillData());
+    const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.toggleSelect(result.current.processed[0].id); });

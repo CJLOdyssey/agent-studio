@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { ToastProvider } from './utils/useToast';
 import { AuthProvider, useAuth, LoginModal } from './components/auth';
 import AgentStudioWorkstation from './components/AgentStudio/AgentStudioWorkstation';
-import { useChatStore } from './stores/chatStore';
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';
 
@@ -46,15 +45,10 @@ const loadingScreenStyle: React.CSSProperties = {
 
 function AppInit() {
   const queryClient = useQueryClient();
-  const loadAgents = useChatStore((s) => s.loadAgents);
-  const agentsLoaded = useChatStore((s) => s.agentsLoaded);
 
   useEffect(() => {
-    if (!agentsLoaded) {
-      loadAgents();
-      prefetchAgents(queryClient);
-    }
-  }, [agentsLoaded, loadAgents, queryClient]);
+    prefetchAgents(queryClient);
+  }, [queryClient]);
   return null;
 }
 

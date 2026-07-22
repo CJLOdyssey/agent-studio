@@ -99,7 +99,7 @@ async def list_keys(request: Request) -> Any:
         ]
     except Exception as e:
         logger.error("Error listing keys for user %s: %s", user_id, e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.post("/api/keys", status_code=201, response_model=KeyResponse)
@@ -268,4 +268,4 @@ async def key_usage(request: Request) -> Any:
         return stats
     except Exception as e:
         logger.error("Error fetching usage for user %s: %s", user_id, e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

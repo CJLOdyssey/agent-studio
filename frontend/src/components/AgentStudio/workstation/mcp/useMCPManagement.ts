@@ -4,7 +4,7 @@ import { mcpAPI } from './api';
 import { useGenericCrud } from '../shared/useGenericCrud';
 import { EMPTY_FORM, validateMCPForm } from './validate';
 
-export function useMCPData(): MCPData {
+export function useMcpManagement(): MCPData {
   const crud = useGenericCrud<MCPEntry, MCPFormData>({
     api: mcpAPI,
     emptyForm: EMPTY_FORM,

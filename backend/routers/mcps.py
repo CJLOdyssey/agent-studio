@@ -38,7 +38,7 @@ async def list_mcps() -> Any:
         return await get_mcps_as_dicts()
     except Exception as e:
         logger.error("Error listing MCPs: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 async def _snapshot_mcp(resource_id: str, session: AsyncSession | None = None) -> Any:
@@ -94,7 +94,7 @@ async def add_mcp(req: MCPCreate) -> Any:
         }
     except Exception as e:
         logger.error("Error creating MCP: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.put("/api/mcps/{mcp_id}")
@@ -119,7 +119,7 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
         raise
     except Exception as e:
         logger.error("Error updating MCP: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
@@ -137,7 +137,7 @@ async def remove_mcp(mcp_id: str) -> None:
         raise
     except Exception as e:
         logger.error("Error deleting MCP: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 class MCPTestResult(BaseModel):

@@ -74,7 +74,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 **TypeScript**: `strict: true`, `noUnusedLocals`, `noUnusedParameters`. No `as any` / `@ts-ignore` / `@ts-expect-error`.
 
-**Coverage thresholds** (Vitest enforced): statements 88%, branches 74%, functions 90%, lines 89%.
+**Coverage thresholds** (Vitest enforced): statements 65%, branches 56%, functions 53%, lines 69%.
 
 **Test setup** (`src/test/setup.tsx`): `TestProviders` wrapping QueryClient + SettingsProvider + ToastProvider. `scrollIntoView` / `scrollTo` / `matchMedia` mocked globally.
 
@@ -181,7 +181,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
 - **E2E** (`test_e2e_full_flow.py`): Requires Docker (`agent-studio-redis` container). Runs against `localhost:8080`.
 - **Coverage System**: 4 types of coverage tracking:
-  1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **65% threshold** (CI gate)
+  1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **89% threshold** (CI gate)
   2. **Diff Coverage** (PR gate): `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` - Only checks coverage on changed lines
   3. **Requirement Coverage**: `@pytest.mark.requirement("REQ-XXX")` markers + `tests/REQUIREMENTS.md` traceability matrix
   4. **Mutation Coverage** (optional): Use mutmut for critical modules only

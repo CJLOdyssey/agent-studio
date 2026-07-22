@@ -52,8 +52,6 @@ const initialState = {
   skipThinking: false,
   pendingVersions: null as string[] | null,
   pendingThinkingVersions: null as string[] | null,
-  agents: [],
-  agentsLoaded: false,
   wsStatus: 'disconnected' as const,
   submissionConvId: null as string | null,
   activeTeamId: null as string | null,

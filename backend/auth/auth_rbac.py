@@ -78,34 +78,22 @@ async def get_current_user(request: Request) -> CurrentUser:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未提供认证令牌")
 
     try:
-        from sqlalchemy import select
+        from backend.repository.auth import get_user_by_id, get_user_roles
 
-        from backend.core.infra.database import RoleDB, UserDB, UserRoleDB, get_session_factory
-
-        factory = get_session_factory()
-        async with factory() as session:
-            stmt = select(UserDB).where(UserDB.id == user_id)
-            result = await session.execute(stmt)
-            user = result.scalar_one_or_none()
-            if user is not None:
-                role_stmt = (
-                    select(RoleDB.name)
-                    .join(UserRoleDB, RoleDB.id == UserRoleDB.role_id)
-                    .where(UserRoleDB.user_id == user.id)
-                )
-                role_result = await session.execute(role_stmt)
-                roles = [row[0] for row in role_result.all()]
-                logger.info(
-                    "Auth login success | user=%s | roles=%s | client=%s",
-                    user.username, roles,
-                    request.client.host if request.client else "?",
-                )
-                return CurrentUser(
-                    id=user.id,
-                    username=user.username,
-                    email=user.email,
-                    roles=roles or ["member"],
-                )
+        user = await get_user_by_id(user_id)
+        if user is not None:
+            roles = await get_user_roles(user.id)
+            logger.info(
+                "Auth login success | user=%s | roles=%s | client=%s",
+                user.username, roles,
+                request.client.host if request.client else "?",
+            )
+            return CurrentUser(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                roles=roles or ["member"],
+            )
         logger.warning(
             "Auth user not found | user_id=%s", user_id,
         )

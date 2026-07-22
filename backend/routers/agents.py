@@ -81,7 +81,7 @@ async def list_agents() -> Any:
         ]
     except Exception as e:
         logger.error("Error listing agents: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.get("/api/agents/{agent_id}")
@@ -148,7 +148,7 @@ async def add_agent(req: AgentCreateRequest, current_user: CurrentUser = Depends
         return {"id": created.id, "status": "created"}
     except Exception as e:
         logger.error("Error creating agent: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 async def _snapshot_agent(agent_id: str, current_user: CurrentUser) -> Any:

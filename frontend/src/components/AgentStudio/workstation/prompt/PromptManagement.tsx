@@ -1,7 +1,7 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, MessageSquare } from 'lucide-react';
-import { usePromptData, PROMPT_CATEGORIES, t } from './index';
+import { usePromptManagement, PROMPT_CATEGORIES, t } from './index';
 import PromptFormModal from './PromptFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -12,7 +12,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 
 export default function PromptManagement() {
-  const d = usePromptData();
+  const d = usePromptManagement();
   const { toast } = useToast();
 
   function handleSaveWrapper() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('prompt.toast_updated') : t('prompt.toast_created'), 'success'); }

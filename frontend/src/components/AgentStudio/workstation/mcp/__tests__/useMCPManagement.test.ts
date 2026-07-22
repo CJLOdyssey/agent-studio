@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useMCPData } from '../useMCPData';
+import { useMcpManagement } from '../useMCPManagement';
 
 interface MockEntry {
   id: string;
@@ -46,9 +46,9 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useMCPData', () => {
+describe('useMcpManagement', () => {
   it('starts loading and loads data on mount', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     expect(result.current.processed.length).toBeGreaterThan(0);
@@ -56,7 +56,7 @@ describe('useMCPData', () => {
   });
 
   it('adds an MCP to the list', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.addMCP({ name: 'Test MCP', description: 'Test', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: 'test', url: '' }); });
@@ -64,7 +64,7 @@ describe('useMCPData', () => {
   });
 
   it('removes an MCP from the list', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.removeMCP(id); });
@@ -72,7 +72,7 @@ describe('useMCPData', () => {
   });
 
   it('copies an MCP item', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
     act(() => { result.current.copyMCP(result.current.processed[0]); });
@@ -80,7 +80,7 @@ describe('useMCPData', () => {
   });
 
   it('handles search', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setSearch('__nonexistent__'); });
     expect(result.current.processed.length).toBe(0);
@@ -89,7 +89,7 @@ describe('useMCPData', () => {
   });
 
   it('handles status filter', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setStatusFilter('connected'); });
     expect(result.current.processed.every((m) => m.status === 'connected')).toBe(true);
@@ -97,7 +97,7 @@ describe('useMCPData', () => {
   });
 
   it('handles selection', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const id = result.current.processed[0].id;
     act(() => { result.current.toggleSelect(id); });
@@ -107,7 +107,7 @@ describe('useMCPData', () => {
   });
 
   it('retry reloads data', async () => {
-    const { result } = renderHook(() => useMCPData());
+    const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.retry(); });
     expect(result.current.isLoading).toBe(true);

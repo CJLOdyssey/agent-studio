@@ -46,4 +46,4 @@ async def create_complete_run(req: CompleteRunRequest, request: Request) -> Any:
         raise
     except Exception as e:
         logger.exception("Complete pipeline failed for run")
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

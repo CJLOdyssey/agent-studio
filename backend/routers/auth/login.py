@@ -19,6 +19,7 @@ from backend.repository.auth import (
 )
 
 from .schemas import (
+    ACCESS_TOKEN_TTL,
     AuthResponse,
     LoginRequest,
     LogoutRequest,
@@ -89,13 +90,13 @@ async def refresh(body: RefreshRequest) -> Any:
     new_refresh_token_raw, _ = await create_refresh_token(
         user.id, family_id=family_id, ttl_days=7
     )
-    access_token = create_token(user.id, AUTH_SECRET)
+    access_token = create_token(user.id, AUTH_SECRET, ttl=ACCESS_TOKEN_TTL)
     user_resp = await _build_user_response(user.id, user.email, user.username)
 
     return AuthResponse(
         access_token=access_token,
         refresh_token=new_refresh_token_raw,
-        expires_in=900,
+        expires_in=ACCESS_TOKEN_TTL,
         user=user_resp,
     )
 

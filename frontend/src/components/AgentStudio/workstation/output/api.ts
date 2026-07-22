@@ -1,14 +1,6 @@
 import type { OutputEntry, OutputFormData, OutputCategory } from './output.types';
+import { defineCrudModule } from '../shared/api-base';
 import { listPrompts, createPrompt, updatePrompt, deletePrompt } from '../../../../api/client/prompts';
-
-export interface OutputAPIService {
-  fetchAll(): Promise<OutputEntry[]>;
-  create(data: OutputFormData): Promise<OutputEntry>;
-  update(id: string, data: Partial<OutputEntry>): Promise<void>;
-  remove(id: string): Promise<void>;
-  clone(item: OutputEntry): Promise<OutputEntry>;
-  removeBatch(ids: Set<string>): Promise<void>;
-}
 
 interface PromptRow {
   id: string; name: string; content: string; category: string;
@@ -20,7 +12,6 @@ function toEntry(item: PromptRow): OutputEntry {
     id: item.id,
     name: item.name,
     content: item.content,
-    // visual category stored in model field; fallback to category for backward compat
     category: (item.model || item.category) as OutputCategory,
     model: '',
     status: 'active',
@@ -34,16 +25,11 @@ async function fetchConstraints(): Promise<PromptRow[]> {
   return all.filter(p => p.category === 'output_constraint');
 }
 
-const realImpl: OutputAPIService = {
+const { bind: outputAPI, setAPI: setOutputAPI } = defineCrudModule<OutputEntry, OutputFormData>({
   fetchAll: async () => { const items = await fetchConstraints(); return items.map(toEntry); },
   create: async (data) => {
-    const item = await createPrompt({
-      name: data.name,
-      category: 'output_constraint',
-      content: data.content,
-      model: data.category,
-    });
-    return toEntry(item as unknown as PromptRow);
+    const item = await createPrompt({ name: data.name, category: 'output_constraint', content: data.content, model: data.category });
+    return toEntry(item as PromptRow);
   },
   update: async (id, data) => {
     await updatePrompt(id, {
@@ -54,17 +40,10 @@ const realImpl: OutputAPIService = {
   },
   remove: async (id) => { await deletePrompt(id); },
   clone: async (item) => {
-    const c = await createPrompt({
-      name: `${item.name.slice(0, 48)} (副本)`,
-      category: 'output_constraint',
-      content: item.content,
-      model: item.category,
-    });
-    return toEntry(c as unknown as PromptRow);
+    const c = await createPrompt({ name: `${item.name.slice(0, 48)} (副本)`, category: 'output_constraint', content: item.content, model: item.category });
+    return toEntry(c as PromptRow);
   },
   removeBatch: async (ids) => { await Promise.all(Array.from(ids).map(deletePrompt)); },
-};
+});
 
-export let outputAPI: OutputAPIService = realImpl;
-
-export function setOutputAPI(api: OutputAPIService): void { outputAPI = api; }
+export { outputAPI, setOutputAPI };
