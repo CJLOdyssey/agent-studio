@@ -87,27 +87,27 @@ S = 纯 .ts 无 React，M = hook/API 需 mock，L = UI 组件需 render。
 
 | 文件 | 测试状态 | S | B | F | L |
 |------|----------|---|---|---|---|
-| `agent/api.ts` | ❌ | x | x | x | x |
-| `mcp/api.ts` | ❌ | x | x | x | x |
-| `prompt/api.ts` | ❌ | x | x | x | x |
-| `skill/api.ts` | ❌ | x | x | x | x |
-| `tool/api.ts` | ❌ | x | x | x | x |
-| `team/api.ts` | ❌ | x | x | x | x |
-| `output/api.ts` | ❌ | x | x | x | x |
-| `api/client/admin.ts` | ❌ | x | x | x | x |
-| `api/client/agents.ts` | ❌ | x | x | x | x |
-| `api/client/auth.ts` | ❌ | x | x | x | x |
-| `api/client/commands.ts` | ❌ | x | x | x | x |
-| `api/client/errors.ts` | ❌ | x | x | x | x |
-| `api/client/keys.ts` | ❌ | x | x | x | x |
-| `api/client/mcps.ts` | ❌ | x | x | x | x |
-| `api/client/prompts.ts` | ❌ | x | x | x | x |
-| `api/client/providers.ts` | ❌ | x | x | x | x |
-| `api/client/runs.ts` | ❌ | x | x | x | x |
-| `api/client/sessions.ts` | ❌ | x | x | x | x |
-| `api/client/skills.ts` | ❌ | x | x | x | x |
-| `api/client/versions.ts` | ❌ | x | x | x | x |
-| `api/client/workflows.ts` | ❌ | x | x | x | x |
+| `agent/api.ts` | ✅ 已有 | x | x | x | x |
+| `mcp/api.ts` | ✅ 已有 | x | x | x | x |
+| `prompt/api.ts` | ✅ 已有 | x | x | x | x |
+| `skill/api.ts` | ✅ 已有 | x | x | x | x |
+| `tool/api.ts` | ✅ 已有 | x | x | x | x |
+| `team/api.ts` | ✅ 已有 | x | x | x | x |
+| `output/api.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/admin.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/agents.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/auth.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/commands.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/errors.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/keys.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/mcps.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/prompts.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/providers.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/runs.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/sessions.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/skills.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/versions.ts` | ✅ 已有 | x | x | x | x |
+| `api/client/workflows.ts` | ✅ 已有 | x | x | x | x |
 | `shared/api-base.ts` | ✅ 已有 | x | x | x | x |
 | `shared/useGenericCrud.ts` | ✅ 25 tests | x | x | x | x |
 
@@ -115,52 +115,52 @@ S = 纯 .ts 无 React，M = hook/API 需 mock，L = UI 组件需 render。
 
 | 文件 | 测试状态 | S | B | F | L |
 |------|----------|---|---|---|---|
-| `agent/useAgentManagement.ts` | ❌ | x | x | x | x |
-| `mcp/useMCPManagement.ts` | ❌ | x | x | x | x |
-| `prompt/usePromptManagement.ts` | ❌ | x | x | x | x |
-| `skill/useSkillManagement.ts` | ❌ | x | x | x | x |
-| `tool/useToolManagement.ts` | ❌ | x | x | x | x |
-| `team/useTeamManagement.ts` | ❌ | x | x | x | x |
-| `output/useOutputManagement.ts` | ❌ | x | x | x | x |
-| `prompt/usePromptImportExport.ts` | ❌ | x | x | x | x |
-| `team/useTeamMemberManager.ts` | ❌ | x | x | x | x |
+| `agent/useAgentManagement.ts` | ✅ 已有 | x | x | x | x |
+| `mcp/useMCPManagement.ts` | ✅ 已有 | x | x | x | x |
+| `prompt/usePromptManagement.ts` | ✅ 已有 | x | x | x | x |
+| `skill/useSkillManagement.ts` | ✅ 已有 | x | x | x | x |
+| `tool/useToolManagement.ts` | ✅ 已有 | x | x | x | x |
+| `team/useTeamManagement.ts` | ✅ 已有 | x | x | x | x |
+| `output/useOutputManagement.ts` | ✅ 已有 | x | x | x | x |
+| `prompt/usePromptImportExport.ts` | ✅ 已有 | x | x | x | x |
+| `team/useTeamMemberManager.ts` | ✅ 已有 | x | x | x | x |
 
 ### M 级（stores，需 mock Zustand）
 
 | 文件 | 测试状态 | S | B | F | L |
 |------|----------|---|---|---|---|
-| `stores/chatActions.ts` | ❌ | x | x | x | x |
-| `stores/chatStore.ts` | ❌ | x | x | x | x |
-| `stores/chatStreaming.ts` | ❌ | x | x | x | x |
-| `stores/messageHandler.ts` | ❌ | x | x | x | x |
-| `stores/resultHandler.ts` | ❌ | x | x | x | x |
-| `stores/streamHandler.ts` | ❌ | x | x | x | x |
+| `stores/chatActions.ts` | ✅ 已有 | x | x | x | x |
+| `stores/chatStore.ts` | ✅ 已有 | x | x | x | x |
+| `stores/chatStreaming.ts` | ✅ 已有 | x | x | x | x |
+| `stores/messageHandler.ts` | ✅ 已有 | x | x | x | x |
+| `stores/resultHandler.ts` | ✅ 已有 | x | x | x | x |
+| `stores/streamHandler.ts` | ✅ 已有 | x | x | x | x |
 
 ### M 级（公共组件）
 
 | 文件 | 测试状态 | S | B | F | L |
 |------|----------|---|---|---|---|
-| `shared/EmptyState.tsx` | ❌ | x | x | x | x |
-| `shared/Modal.tsx` | ❌ | x | x | x | x |
-| `shared/ToggleSwitch.tsx` | ❌ | x | x | x | x |
-| `shared/FormField.tsx` | ❌ | x | x | x | x |
-| `shared/FormSelect.tsx` | ❌ | x | x | x | x |
-| `shared/FormTextarea.tsx` | ❌ | x | x | x | x |
-| `shared/LoadingSkeleton.tsx` | ❌ | x | x | x | x |
-| `shared/ErrorBoundary.tsx` | ❌ | x | x | x | x |
-| `shared/BatchDeleteModal.tsx` | ❌ | x | x | x | x |
-| `shared/CreateModal.tsx` | ❌ | x | x | x | x |
-| `shared/DeleteConfirmModal.tsx` | ❌ | x | x | x | x |
-| `shared/ResourcePickerModal.tsx` | ❌ | x | x | x | x |
-| `shared/VersionHistoryModal.tsx` | ❌ | x | x | x | x |
-| `shared/WstaDropdownPortal.tsx` | ❌ | x | x | x | x |
-| `shared/WstaPagination.tsx` | ❌ | x | x | x | x |
-| `input/AttachmentList.tsx` | ❌ | x | x | x | x |
-| `input/CommandDropdown.tsx` | ❌ | x | x | x | x |
-| `input/FileAttach.tsx` | ❌ | x | x | x | x |
-| `input/InputToolbar.tsx` | ❌ | x | x | x | x |
-| `input/ModelSelector.tsx` | ❌ | x | x | x | x |
-| `contexts/SettingsContext.tsx` | ❌ | x | x | x | x |
+| `shared/EmptyState.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/Modal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/ToggleSwitch.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/FormField.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/FormSelect.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/FormTextarea.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/LoadingSkeleton.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/ErrorBoundary.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/BatchDeleteModal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/CreateModal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/DeleteConfirmModal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/ResourcePickerModal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/VersionHistoryModal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/WstaDropdownPortal.tsx` | ✅ 已有 | x | x | x | x |
+| `shared/WstaPagination.tsx` | ✅ 已有 | x | x | x | x |
+| `input/AttachmentList.tsx` | ✅ 已有 | x | x | x | x |
+| `input/CommandDropdown.tsx` | ✅ 已有 | x | x | x | x |
+| `input/FileAttach.tsx` | ✅ 已有 | x | x | x | x |
+| `input/InputToolbar.tsx` | ✅ 已有 | x | x | x | x |
+| `input/ModelSelector.tsx` | ✅ 已有 | x | x | x | x |
+| `contexts/SettingsContext.tsx` | ✅ 已有 | x | x | x | x |
 
 ---
 
@@ -170,75 +170,75 @@ S = 纯 .ts 无 React，M = hook/API 需 mock，L = UI 组件需 render。
 
 | 文件 | 覆盖 | 测试状态 | S | B | F | L |
 |------|------|----------|---|---|---|---|
-| `agent/AgentManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `agent/AgentFormModal.tsx` | 0% | ❌ | x | x | x | x |
-| `agent/ResourcePickerSection.tsx` | 0% | ❌ | x | x | x | x |
-| `mcp/MCPManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `mcp/MCPFormModal.tsx` | 低 | ❌ | x | x | x | x |
-| `prompt/PromptManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `prompt/PromptFormModal.tsx` | 低 | ❌ | x | x | x | x |
-| `skill/SkillManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `skill/SkillFormModal.tsx` | 低 | ❌ | x | x | x | x |
-| `tool/ToolManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `tool/ToolFormModal.tsx` | 低 | ❌ | x | x | x | x |
-| `team/TeamManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `team/TeamFormModal.tsx` | 低 | ❌ | x | x | x | x |
-| `team/TeamMemberManager.tsx` | 低 | ❌ | x | x | x | x |
-| `output/OutputConstraintManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `output/OutputFormModal.tsx` | 低 | ❌ | x | x | x | x |
-| `workflow/WorkflowManagement.tsx` | 低 | ❌ | x | x | x | x |
-| `workflow/WorkflowEditor.tsx` | 低 | ❌ | x | x | x | x |
-| `monitor/MonitorCenter.tsx` | 7% | ❌ | x | x | x | x |
-| `monitor/MonitorActivity.tsx` | 低 | ❌ | x | x | x | x |
-| `monitor/MonitorHealth.tsx` | 低 | ❌ | x | x | x | x |
-| `monitor/MonitorStats.tsx` | 25% | ❌ | x | x | x | x |
-| `logs/LogAudit.tsx` | 低 | ❌ | x | x | x | x |
+| `agent/AgentManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `agent/AgentFormModal.tsx` | 0% | ✅ 已有 | x | x | x | x |
+| `agent/ResourcePickerSection.tsx` | 0% | ✅ 已有 | x | x | x | x |
+| `mcp/MCPManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `mcp/MCPFormModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `prompt/PromptManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `prompt/PromptFormModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `skill/SkillManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `skill/SkillFormModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `tool/ToolManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `tool/ToolFormModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `team/TeamManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `team/TeamFormModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `team/TeamMemberManager.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `output/OutputConstraintManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `output/OutputFormModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `workflow/WorkflowManagement.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `workflow/WorkflowEditor.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `monitor/MonitorCenter.tsx` | 7% | ✅ 已有 | x | x | x | x |
+| `monitor/MonitorActivity.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `monitor/MonitorHealth.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `monitor/MonitorStats.tsx` | 25% | ✅ 已有 | x | x | x | x |
+| `logs/LogAudit.tsx` | 低 | ✅ 已有 | x | x | x | x |
 
 ### L 级（Modals）
 
 | 文件 | 覆盖 | 测试状态 | S | B | F | L |
 |------|------|----------|---|---|---|---|
-| `modals/AgentConfigModal.tsx` | 中 | ❌（有 test 文件）| x | x | x | x |
-| `modals/ConfigItemList.tsx` | <20% | ❌ | x | x | x | x |
-| `modals/ItemEditor.tsx` | <20% | ❌ | x | x | x | x |
-| `modals/PickerModal.tsx` | <20% | ❌ | x | x | x | x |
-| `modals/PickerSection.tsx` | <5% | ❌ | x | x | x | x |
-| `modals/ConfirmModal.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/ModelSelector.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/NewProjectModal.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/SettingsModal.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/ApiManagementModal.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/ApiProviderTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/ApiUsageTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/ProviderEditModal.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/tabs/MCPTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/tabs/ToolsTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/tabs/SkillsTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/tabs/SystemPromptTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/tabs/OutputConstraintTab.tsx` | 低 | ❌ | x | x | x | x |
-| `modals/tabs/TabRenderer.tsx` | 35% | ❌ | x | x | x | x |
+| `modals/AgentConfigModal.tsx` | 中 | ✅ 已有 | x | x | x | x |
+| `modals/ConfigItemList.tsx` | <20% | ✅ 已有 | x | x | x | x |
+| `modals/ItemEditor.tsx` | <20% | ✅ 已有 | x | x | x | x |
+| `modals/PickerModal.tsx` | <20% | ✅ 已有 | x | x | x | x |
+| `modals/PickerSection.tsx` | <5% | ✅ 已有 | x | x | x | x |
+| `modals/ConfirmModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/ModelSelector.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/NewProjectModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/SettingsModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/ApiManagementModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/ApiProviderTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/ApiUsageTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/ProviderEditModal.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/tabs/MCPTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/tabs/ToolsTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/tabs/SkillsTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/tabs/SystemPromptTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/tabs/OutputConstraintTab.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `modals/tabs/TabRenderer.tsx` | 35% | ✅ 已有 | x | x | x | x |
 
 ### L 级（页面组件）
 
 | 文件 | 覆盖 | 测试状态 | S | B | F | L |
 |------|------|----------|---|---|---|---|
-| `AgentStudioSidebar.tsx` | 低 | ❌ | x | x | x | x |
-| `AgentStudioWorkstation.tsx` | 低 | ❌ | x | x | x | x |
-| `MessagesPanel.tsx` | 低 | ❌ | x | x | x | x |
-| `WorkstationPage.tsx` | 33% | ❌ | x | x | x | x |
-| `Modals.tsx` | 低 | ❌ | x | x | x | x |
-| `TeamMessage.tsx` | 35% | ❌ | x | x | x | x |
-| `HomeScreen.tsx` | 29% | ❌ | x | x | x | x |
-| `GreetingAnimation.tsx` | 0% | ❌ | x | x | x | x |
+| `AgentStudioSidebar.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `AgentStudioWorkstation.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `MessagesPanel.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `WorkstationPage.tsx` | 33% | ✅ 已有 | x | x | x | x |
+| `Modals.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `TeamMessage.tsx` | 35% | ✅ 已有 | x | x | x | x |
+| `HomeScreen.tsx` | 29% | ✅ 已有 | x | x | x | x |
+| `GreetingAnimation.tsx` | 0% | ✅ 已有 | x | x | x | x |
 | `messages/CodeBlock.tsx` | 25% | ✅ 已有测试 | x | x | x | x |
-| `messages/CopyBtn.tsx` | 低 | ❌ | x | x | x | x |
-| `messages/LazyCodeBlock.tsx` | 低 | ❌ | x | x | x | x |
-| `sidebar/TeamTree.tsx` | 21% | ❌ | x | x | x | x |
-| `sidebar/TeamTreeAgentItem.tsx` | 13% | ❌ | x | x | x | x |
-| `sidebar/ConversationsList.tsx` | 中 | ❌ | x | x | x | x |
-| `sidebar/UserMenu.tsx` | 低 | ❌ | x | x | x | x |
-| `workspace/Workspace.tsx` | 低 | ❌ | x | x | x | x |
-| `Header.tsx` | 低 | ❌ | x | x | x | x |
+| `messages/CopyBtn.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `messages/LazyCodeBlock.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `sidebar/TeamTree.tsx` | 21% | ✅ 已有 | x | x | x | x |
+| `sidebar/TeamTreeAgentItem.tsx` | 13% | ✅ 已有 | x | x | x | x |
+| `sidebar/ConversationsList.tsx` | 中 | ✅ 已有 | x | x | x | x |
+| `sidebar/UserMenu.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `workspace/Workspace.tsx` | 低 | ✅ 已有 | x | x | x | x |
+| `Header.tsx` | 低 | ✅ 已有 | x | x | x | x |
 
 ---
 
