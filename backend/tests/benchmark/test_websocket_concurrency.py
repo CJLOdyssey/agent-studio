@@ -9,7 +9,7 @@ import time
 import pytest
 import websockets
 
-from tests.conftest import Api
+from backend.tests.conftest import Api
 
 def _clear_limits():
     import subprocess

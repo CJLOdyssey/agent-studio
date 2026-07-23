@@ -3,7 +3,7 @@ pytestmark = pytest.mark.integration
 
 """E2E Test: Skill CRUD operations."""
 
-from tests.conftest import Api, _cleanup
+from backend.tests.conftest import Api, _cleanup
 
 
 class TestSkillCRUD:

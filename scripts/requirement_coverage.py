@@ -140,10 +140,10 @@ def main() -> int:
     parser.add_argument("--threshold", type=int, default=80,
                         help="Coverage threshold percentage (default: 80)")
     parser.add_argument("--requirements-file", type=str,
-                        default="tests/REQUIREMENTS.md",
+                        default="backend/tests/REQUIREMENTS.md",
                         help="Path to requirements file")
     parser.add_argument("--test-dir", type=str,
-                        default="tests/",
+                        default="backend/tests/",
                         help="Path to test directory")
 
     args = parser.parse_args()

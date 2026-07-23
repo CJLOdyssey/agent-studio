@@ -47,10 +47,10 @@ jobs:
               - 'frontend/**'
             backend:
               - 'backend/**'
-              - 'tests/**'
+              - 'backend/backend/tests/**'
               - 'pyproject.toml'
               - 'requirements-lock.txt'
-              - 'alembic/**'
+              - 'backend/alembic/**'
 
   # ── Frontend ──────────────────────────────────────────────────────────────
   frontend-lint:
@@ -245,15 +245,15 @@ jobs:
       - name: Run unit tests (${{ matrix.shard }})
         run: |
           case "${{ matrix.shard }}" in
-            routers)     DIRS="tests/routers/" ;;
-            repository)  DIRS="tests/repository/ tests/orm/" ;;
-            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/benchmark/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/tasks/" ;;
-            services)    DIRS="tests/services/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-            tasks-1a)    DIRS="tests/tasks/test_agent_pipeline.py tests/tasks/test_complete_pipeline.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-            tasks-1b)    DIRS="tests/tasks/test_mcp_executor.py tests/tasks/test_pipeline_complete.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-            tasks-2)     DIRS="tests/tasks/test_pipeline_utils.py tests/tasks/test_prefix_completion.py tests/tasks/test_registry.py tests/tasks/test_team_pipeline.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            routers)     DIRS="backend/tests/routers/" ;;
+            repository)  DIRS="backend/tests/repository/ backend/tests/orm/" ;;
+            core-infra)  DIRS="backend/tests/ --ignore=backend/tests/routers/ --ignore=backend/tests/repository/ --ignore=backend/tests/orm/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/benchmark/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py --ignore=backend/tests/services/ --ignore=backend/tests/tasks/" ;;
+            services)    DIRS="backend/tests/services/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
+            tasks-1a)    DIRS="backend/tests/tasks/test_agent_pipeline.py backend/tests/tasks/test_complete_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
+            tasks-1b)    DIRS="backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
+            tasks-2)     DIRS="backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
           esac
-          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
+          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
 
   # ── Backend Coverage (from core-infra shard, ~2min) ──────────────────────
   backend-coverage:
@@ -270,14 +270,14 @@ jobs:
       - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run coverage
         run: |
-          PYTHONPATH=. python3 -m pytest tests/ \
+          PYTHONPATH=. python3 -m pytest backend/tests/ \
             -q --tb=short \
-            --ignore=tests/e2e/ \
-            --ignore=tests/benchmark/ \
+            --ignore=backend/tests/e2e/ \
+            --ignore=backend/tests/benchmark/ \
             -m 'not integration' \
-            --ignore=tests/broker/ \
-            --ignore=tests/test_requirement_markers.py \
-            --ignore=tests/routers/auth/test_auth_routers.py \
+            --ignore=backend/tests/broker/ \
+            --ignore=backend/tests/test_requirement_markers.py \
+            --ignore=backend/tests/routers/auth/test_auth_routers.py \
             --cov=backend \
             --cov-report=term \
             --cov-report=xml \
@@ -551,7 +551,7 @@ jobs:
             sleep 1
           done
       - name: Run E2E tests
-        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
+        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest backend/tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
       - name: Stop backend
         if: always()
         run: kill $BACKEND_PID 2>/dev/null || true
@@ -657,9 +657,9 @@ jobs:
       - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run tests with requirement markers
         run: |
-          PYTHONPATH=. python3 -m pytest tests/routers/ tests/repository/ tests/services/ \
-            --ignore=tests/broker/ \
-            --ignore=tests/e2e/ \
+          PYTHONPATH=. python3 -m pytest backend/tests/routers/ backend/tests/repository/ backend/tests/services/ \
+            --ignore=backend/tests/broker/ \
+            --ignore=backend/tests/e2e/ \
             -q --tb=short
 
   # ── Flaky Tests ──────────────────────────────────────────────────────────
@@ -677,20 +677,20 @@ jobs:
       - name: Collect flaky tests
         id: collect
         run: |
-          COUNT=$(PYTHONPATH=. python3 -m pytest tests/ --collect-only -m flaky -q 2>/dev/null | tail -1 | grep -oP '^\d+' || echo "0")
+          COUNT=$(PYTHONPATH=. python3 -m pytest backend/tests/ --collect-only -m flaky -q 2>/dev/null | tail -1 | grep -oP '^\d+' || echo "0")
           echo "count=$COUNT" >> $GITHUB_OUTPUT
           echo "Collected $COUNT flaky test(s)"
       - name: Run flaky tests
         if: steps.collect.outputs.count != '0'
         run: |
-          PYTHONPATH=. python3 -m pytest tests/ \
+          PYTHONPATH=. python3 -m pytest backend/tests/ \
             -m flaky \
             -q --tb=short \
             --reruns 3 \
             --reruns-delay 5 \
-            --ignore=tests/e2e/ \
-            --ignore=tests/broker/ \
-            --ignore=tests/test_requirement_markers.py
+            --ignore=backend/tests/e2e/ \
+            --ignore=backend/tests/broker/ \
+            --ignore=backend/tests/test_requirement_markers.py
       - name: Report flaky count
         if: always()
         run: |

@@ -5,7 +5,7 @@ pytestmark = pytest.mark.integration
 
 import uuid
 
-from tests.conftest import (
+from backend.tests.conftest import (
     TEST_EMAIL,
     TEST_PASSWORD,
     Api,

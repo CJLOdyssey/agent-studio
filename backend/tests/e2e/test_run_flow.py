@@ -3,7 +3,7 @@ pytestmark = pytest.mark.integration
 
 """E2E Test: Run operations — create, status, history."""
 
-from tests.conftest import Api, _cleanup, _rid
+from backend.tests.conftest import Api, _cleanup, _rid
 
 
 class TestRunFlow:
