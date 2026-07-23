@@ -87,8 +87,9 @@ vi.mock('../../../api/hooks', () => ({
   useCommands: () => ({ data: [] }),
 }));
 
+let commandCalledWith: string | null = null;
 vi.mock('../../../api/client', () => ({
-  executeCommand: mockExecuteCommand,
+  get executeCommand() { return (...args: unknown[]) => { commandCalledWith = args[0] as string; return Promise.resolve(); }; },
 }));
 
 vi.mock('../../../hooks/useAgentCommands', () => ({
@@ -468,6 +469,26 @@ describe('useWorkstationState', () => {
       mockStore.abandonedRunId = 'run-123';
       renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
       expect(mockToast).toHaveBeenCalledWith('toast.requestAbandoned', 'info');
+    });
+  });
+
+  describe('handleExecuteCommand', () => {
+    it('calls executeCommand with command id', async () => {
+      mockStore.currentSessionId = 'sess-1';
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      await act(async () => { await result.current.handleExecuteCommand('cmd-1'); });
+      expect(commandCalledWith).toBe('cmd-1');
+    });
+  });
+
+  describe('setConfirmDialog and handleCloseConfirm', () => {
+    it('sets and clears confirmDialog', () => {
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const dialog = { title: '确认删除', message: '确定要删除吗？', onConfirm: vi.fn() };
+      act(() => { result.current.setConfirmDialog(dialog); });
+      expect(result.current.confirmDialog).toEqual(dialog);
+      act(() => { result.current.handleCloseConfirm(); });
+      expect(result.current.confirmDialog).toBeNull();
     });
   });
 });

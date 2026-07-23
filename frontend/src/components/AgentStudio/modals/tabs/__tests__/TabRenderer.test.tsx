@@ -22,25 +22,31 @@ vi.mock('../OutputConstraintTab', () => ({
 }));
 
 vi.mock('../ToolsTab', () => ({
-  ToolsTab: vi.fn(({ items }) => (
+  ToolsTab: vi.fn(({ items, onEditFull, onCustomize }: any) => (
     <div data-testid="tools-tab">
       {items.map((item: any) => <span key={item.id} data-testid="tool-item">{item.name}</span>)}
+      {onEditFull && <button data-testid="tool-edit-full" onClick={() => onEditFull({ id: 't1' })}>Edit Full</button>}
+      {onCustomize && <button data-testid="tool-customize" onClick={onCustomize}>Customize</button>}
     </div>
   )),
 }));
 
 vi.mock('../MCPTab', () => ({
-  MCPTab: vi.fn(({ items }) => (
+  MCPTab: vi.fn(({ items, onEditFull, onCustomize }: any) => (
     <div data-testid="mcp-tab">
       {items.map((item: any) => <span key={item.id} data-testid="mcp-item">{item.name}</span>)}
+      {onEditFull && <button data-testid="mcp-edit-full" onClick={() => onEditFull({ id: 'm1' })}>Edit Full</button>}
+      {onCustomize && <button data-testid="mcp-customize" onClick={onCustomize}>Customize</button>}
     </div>
   )),
 }));
 
 vi.mock('../SkillsTab', () => ({
-  SkillsTab: vi.fn(({ items }) => (
+  SkillsTab: vi.fn(({ items, onEditFull, onCustomize }: any) => (
     <div data-testid="skills-tab">
       {items.map((item: any) => <span key={item.id} data-testid="skill-item">{item.name}</span>)}
+      {onEditFull && <button data-testid="skill-edit-full" onClick={() => onEditFull({ id: 's1' })}>Edit Full</button>}
+      {onCustomize && <button data-testid="skill-customize" onClick={onCustomize}>Customize</button>}
     </div>
   )),
 }));
@@ -185,5 +191,38 @@ describe('TabRenderer', () => {
   it('renders null for empty activeTab', () => {
     const { container } = render(<TabRenderer {...baseProps({ activeTab: '' as any })} />);
     expect(container.innerHTML).toBe('');
+  });
+
+  it('calls onEditTool when tool edit full clicked', () => {
+    const onEditTool = vi.fn();
+    const tools = makeListShape<AgentTool>([{ id: 't1', name: 'Tool 1', description: '', enabled: true, parameters: '' }]);
+    render(<TabRenderer {...baseProps({ activeTab: 'tools', tools, onEditTool })} />);
+    fireEvent.click(screen.getByTestId('tool-edit-full'));
+    expect(onEditTool).toHaveBeenCalledWith({ id: 't1' });
+  });
+
+  it('calls onEditMcp when mcp edit full clicked', () => {
+    const onEditMcp = vi.fn();
+    const mcp = makeListShape<AgentMCP>([{ id: 'm1', name: 'MCP 1', description: '', enabled: true }]);
+    render(<TabRenderer {...baseProps({ activeTab: 'mcp', mcp, onEditMcp })} />);
+    fireEvent.click(screen.getByTestId('mcp-edit-full'));
+    expect(onEditMcp).toHaveBeenCalledWith({ id: 'm1' });
+  });
+
+  it('calls onEditSkill when skill edit full clicked', () => {
+    const onEditSkill = vi.fn();
+    const skills = makeListShape<AgentSkill>([{ id: 's1', name: 'Skill 1', description: '', enabled: true }]);
+    render(<TabRenderer {...baseProps({ activeTab: 'skills', skills, onEditSkill })} />);
+    fireEvent.click(screen.getByTestId('skill-edit-full'));
+    expect(onEditSkill).toHaveBeenCalledWith({ id: 's1' });
+  });
+
+  it('calls openForm when tool customize clicked', () => {
+    const openForm = vi.fn();
+    const form = { ...defaultForm, openForm };
+    const tools = makeListShape<AgentTool>([{ id: 't1', name: 'Tool 1', description: '', enabled: true, parameters: '' }]);
+    render(<TabRenderer {...baseProps({ activeTab: 'tools', tools, form })} />);
+    fireEvent.click(screen.getByTestId('tool-customize'));
+    expect(openForm).toHaveBeenCalledWith('tool');
   });
 });

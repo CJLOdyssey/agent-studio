@@ -163,4 +163,46 @@ describe('InputToolbar', () => {
     const clipboardData = { files: [file], getData: vi.fn() };
     fireEvent.paste(textarea, { clipboardData });
   });
+
+  it('send button is disabled when hasContent is false', () => {
+    mockComposerHasContent = false;
+    render(<InputToolbar {...defaultProps} />);
+    const sendBtn = screen.getByText('home.send').closest('button');
+    expect(sendBtn).toBeDisabled();
+  });
+
+  it('send button is enabled when hasContent is true', () => {
+    mockComposerHasContent = true;
+    render(<InputToolbar {...defaultProps} />);
+    const sendBtn = screen.getByText('home.send').closest('button');
+    expect(sendBtn).not.toBeDisabled();
+  });
+
+  it('textarea has correct maxLength', () => {
+    render(<InputToolbar {...defaultProps} maxLength={5000} />);
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    expect(textarea).toHaveAttribute('maxLength', '5000');
+  });
+
+  it('textarea has aria-label', () => {
+    render(<InputToolbar {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    expect(textarea).toHaveAttribute('aria-label', 'Type a message...');
+  });
+
+  it('shows file count in FileAttach when files added via ref', () => {
+    const ref = createRef<InputToolbarHandle>();
+    render(<InputToolbar {...defaultProps} ref={ref} />);
+    act(() => { ref.current?.addFiles([new File(['a'], 'a.txt')]); });
+    act(() => { ref.current?.addFiles([new File(['b'], 'b.txt')]); });
+  });
+
+  it('triggers toast when more than 5 files attached', () => {
+    const ref = createRef<InputToolbarHandle>();
+    render(<InputToolbar {...defaultProps} ref={ref} />);
+    const files = Array.from({ length: 6 }, (_, i) => new File([`content${i}`], `file${i}.txt`));
+    act(() => { ref.current?.addFiles(files); });
+    expect(mockToast).toHaveBeenCalled();
+  });
+
 });

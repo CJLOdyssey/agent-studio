@@ -69,4 +69,27 @@ describe('ToolManagement', () => {
       expect(screen.getByText('Search Tool')).toBeInTheDocument();
     });
   });
+
+  it('shows loading skeleton while fetching', () => {
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+    const { container } = render(<ToolManagement />, { wrapper: TestProviders });
+    expect(container.querySelector('.wsta-agent-mgmt')).toBeInTheDocument();
+  });
+
+  it('selects a row checkbox', async () => {
+    mockFetchAll.mockResolvedValue([makeTool(), makeTool({ id: '2', name: 'Write Tool' })]);
+    render(<ToolManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('Search Tool')).toBeInTheDocument(); });
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(checkboxes[1]);
+  });
+
+  it('renders category badge', async () => {
+    mockFetchAll.mockResolvedValue([makeTool()]);
+    render(<ToolManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('内置工具')).toBeInTheDocument();
+    });
+  });
 });

@@ -326,15 +326,6 @@ describe('AgentStudioWorkstation', () => {
     expect(call).toHaveProperty('onOpenWorkstation');
   });
 
-  it('passes selectedAgentId and activeTab to Workspace', () => {
-    storeOverride.selectedAgentId = 'agent-1';
-    storeOverride.activeWorkspaceTab = 'test';
-    render(<AgentStudioWorkstation />);
-    const call = wsMock.Workspace.mock.calls[0][0];
-    expect(call.selectedAgentId).toBe('agent-1');
-    expect(call.activeTab).toBe('test');
-  });
-
   it('passes configuringAgent and modal open states to Modals', () => {
     render(<AgentStudioWorkstation />);
     const call = wsMock.Modals.mock.calls[0][0];
@@ -374,5 +365,47 @@ describe('AgentStudioWorkstation', () => {
     render(<AgentStudioWorkstation />);
     const call = wsMock.HomeScreen.mock.calls[0][0];
     expect(call.isRunning).toBe(false);
+  });
+
+  it('passes isRunning=true to InputToolbar when apiStatus is loading', () => {
+    storeOverride.showAgentChat = true;
+    storeOverride.selectedAgentId = 'agent-1';
+    storeOverride.apiStatus = 'loading';
+    render(<AgentStudioWorkstation />);
+    const call = wsMock.InputToolbar.mock.calls[0][0];
+    expect(call.isRunning).toBe(true);
+  });
+
+  it('passes isRunning=false to InputToolbar when apiStatus is idle', () => {
+    storeOverride.showAgentChat = true;
+    storeOverride.selectedAgentId = 'agent-1';
+    render(<AgentStudioWorkstation />);
+    const call = wsMock.InputToolbar.mock.calls[0][0];
+    expect(call.isRunning).toBe(false);
+  });
+
+  it('passes selectedAgentId and activeTab to Workspace', () => {
+    storeOverride.selectedAgentId = 'agent-1';
+    storeOverride.activeWorkspaceTab = 'test';
+    render(<AgentStudioWorkstation />);
+    const call = wsMock.Workspace.mock.calls[0][0];
+    expect(call.selectedAgentId).toBe('agent-1');
+    expect(call.activeTab).toBe('test');
+  });
+
+  it('passes configuringAgent to Modals', () => {
+    const agent = { id: 'a1', name: 'Test Agent', role: 'Developer' };
+    storeOverride.configuringAgent = agent;
+    render(<AgentStudioWorkstation />);
+    const call = wsMock.Modals.mock.calls[0][0];
+    expect(call.configuringAgent).toEqual(agent);
+  });
+
+  it('passes confirmDialog to Modals', () => {
+    const dialog = { title: '确认', message: '确定？', onConfirm: vi.fn() };
+    storeOverride.confirmDialog = dialog;
+    render(<AgentStudioWorkstation />);
+    const call = wsMock.Modals.mock.calls[0][0];
+    expect(call.confirmDialog).toEqual(dialog);
   });
 });

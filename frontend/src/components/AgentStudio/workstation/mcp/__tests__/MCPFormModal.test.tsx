@@ -117,4 +117,32 @@ describe('MCPFormModal', () => {
     renderModal({ editingItem: { id: 'm1', ...baseFormData, createdAt: '2026-01-01' } });
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
   });
+
+  it('switches from url to command input when type changed to stdio', () => {
+    const { props } = renderModal({ formData: { ...baseFormData, type: 'sse' } });
+    expect(screen.getByPlaceholderText('https://mcp.example.com/v1')).toBeInTheDocument();
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.change(selects[0], { target: { value: 'stdio' } });
+    expect(props.setFormData).toHaveBeenCalled();
+  });
+
+  it('calls setFormData when status select changes', () => {
+    const { props } = renderModal();
+    const selects = screen.getAllByRole('combobox');
+    fireEvent.change(selects[1], { target: { value: 'connected' } });
+    expect(props.setFormData).toHaveBeenCalled();
+  });
+
+  it('calls setFormData when version input changes', () => {
+    const { props } = renderModal();
+    const input = screen.getByPlaceholderText('v1.0.0');
+    fireEvent.change(input, { target: { value: 'v2.0.0' } });
+    expect(props.setFormData).toHaveBeenCalled();
+  });
+
+  it('renders url input for sse and command input for stdio', () => {
+    const { rerender } = renderModal({ formData: { ...baseFormData, type: 'sse' } });
+    expect(screen.getByPlaceholderText('https://mcp.example.com/v1')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('npx @modelcontextprotocol/server-...')).not.toBeInTheDocument();
+  });
 });

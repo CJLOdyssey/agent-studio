@@ -170,6 +170,23 @@ describe('retry', () => {
     );
     expect(connectRun).toHaveBeenCalled();
   });
+
+  it('handles retry API failure', async () => {
+    mockSubmitReq.mockRejectedValueOnce(new Error('API Error'));
+    const msg1 = makeMsg({ id: 'u1', role: 'user', content: 'question' });
+    const msg2 = makeMsg({ id: 'a1', role: 'agent', content: 'answer' });
+    useChatStore.setState({
+      messages: [msg1, msg2],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    await retry();
+
+    const state = useChatStore.getState();
+    expect(state.status).toBe('error');
+    expect(state.error).toBe('API Error');
+  });
 });
 
 describe('continueGeneration', () => {
