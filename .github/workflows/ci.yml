@@ -175,14 +175,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Scan docker/Dockerfile
-        uses: aquasecurity/trivy-action@ed142fd
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: docker/Dockerfile
           severity: CRITICAL,HIGH
           exit-code: 0
       - name: Scan frontend/Dockerfile
-        uses: aquasecurity/trivy-action@ed142fd
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: frontend/Dockerfile
