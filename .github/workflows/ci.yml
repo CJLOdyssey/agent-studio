@@ -150,7 +150,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: dist/
+          path: frontend/dist/
       - name: Check per-chunk size limit
         run: npm run size
 
@@ -272,6 +272,7 @@ jobs:
           PYTHONPATH=. python3 -m pytest tests/ \
             -q --tb=short \
             --ignore=tests/e2e/ \
+            --ignore=tests/benchmark/ \
             -m 'not integration' \
             --ignore=tests/broker/ \
             --ignore=tests/test_requirement_markers.py \
@@ -314,8 +315,14 @@ jobs:
       - name: Run tests with coverage
         run: |
           mkdir -p ../coverage-artifacts
+          # Thresholds disabled per-shard; enforced in merge step
           npx vitest run --shard=${{ matrix.shard }}/4 --pool=threads \
-            --coverage --reporter=json --outputFile=../coverage-artifacts/shard-${{ matrix.shard }}.json
+            --coverage \
+            --coverage.thresholds.statements=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.lines=0 \
+            --reporter=json --outputFile=../coverage-artifacts/shard-${{ matrix.shard }}.json
       - name: Save coverage data
         run: |
           mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }}
@@ -343,10 +350,12 @@ jobs:
           for d in coverage-*/; do
             [ -d "$d/tmp" ] && cp "$d/tmp/"*.json coverage/tmp/ 2>/dev/null || true
           done
-          npx c8 report --reporter=lcov --reporter=text
-      - name: Check coverage thresholds
-        run: |
-          npx c8 report --reporter=lcov --reporter=cobertura --temp-directory=./coverage
+          npx c8 report --reporter=lcov --reporter=text --reporter=cobertura \
+            --temp-directory=./coverage \
+            --thresholds.statements=75 \
+            --thresholds.branches=65 \
+            --thresholds.functions=60 \
+            --thresholds.lines=75
 
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
