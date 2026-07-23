@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+
     "@size-limit/preset-app": "^12.1.0",
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/dom": "^10.4.1",
@@ -68,13 +69,15 @@
     "@types/react-dom": "18.3.7",
     "@types/react-syntax-highlighter": "^15.5.0",
     "@vitejs/plugin-react": "4.7.0",
-    "@vitest/coverage-v8": "^4.1.8",
+
+    "axe-core": "^4.10.0",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.6",
+    "path-browserify": "^1.0.1",
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
     "rollup-plugin-visualizer": "^7.0.1",
@@ -84,8 +87,7 @@
     "typescript-eslint": "^8.60.0",
     "vite": "^6.0.0",
     "vitest": "^4.1.7",
-    "vitest-axe": "^0.1.0",
-    "axe-core": "^4.10.0"
+    "vitest-axe": "^0.1.0"
   },
   "size-limit": [
     {
@@ -102,8 +104,12 @@
       "src/components/AgentStudio/workstation/*/index.ts",
       "src/components/AgentStudio/workstation/shared/index.ts"
     ],
-    "project": ["src/**/*.{ts,tsx}"],
-    "ignoreDependencies": ["tailwindcss"]
+    "project": [
+      "src/**/*.{ts,tsx}"
+    ],
+    "ignoreDependencies": [
+      "tailwindcss"
+    ]
   },
   "overrides": {
     "refractor": {
