@@ -203,7 +203,7 @@ jobs:
           cache-dependency-path: requirements-lock.txt
       - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: ruff check backend/
-      - run: mypy backend/ --strict --no-error-summary
+      - run: mypy backend/ --strict --no-error-summary || (echo "=== mypy exit code $? ==="; mypy backend/ --strict --no-error-summary 2>&1 | head -20; exit 1)
       - name: Check .env.example for insecure defaults
         run: |
           if grep -qE 'change-me|example-secret' .env.example; then
