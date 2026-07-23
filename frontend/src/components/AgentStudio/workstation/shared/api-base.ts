@@ -38,7 +38,7 @@ export function defineCrudModule<TEntry, TForm = Partial<TEntry>>(
       {} as CrudAPIService<TEntry, TForm>,
       {
         get(_target, prop: string | symbol) {
-          const val = (current as unknown as Record<string | symbol, unknown>)[prop];
+          const val = Reflect.get(current, prop);
           return typeof val === 'function' ? val.bind(current) : val;
         },
       },

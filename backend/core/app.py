@@ -1,13 +1,12 @@
 """FastAPI application entry point: app factory, middleware, router registration, and error handling."""
 
+import importlib
 import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
-
-import importlib
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware

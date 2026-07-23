@@ -86,7 +86,7 @@ interface TabConfig<T, F> {
   }) => ReactNode;
 }
 
-function renderItemTab<T extends { id: string }, F>(cfg: TabConfig<T, F>) {
+function renderItemTab<T extends { id: string; name?: string; description?: string }, F>(cfg: TabConfig<T, F>) {
   return (
     <ItemEditor
       kind={cfg.kind}
@@ -104,8 +104,8 @@ function renderItemTab<T extends { id: string }, F>(cfg: TabConfig<T, F>) {
         formErrors: cfg.formErrors,
         editingItem: null,
         onToggle: cfg.list.toggle,
-        onAdd: () => cfg.list.addCustom(() => ({ ...cfg.defaultItem, id: `custom-${Date.now()}` }) as unknown as T),
-        onUpdate: (id, name, desc) => cfg.list.update(id, { name, description: desc } as unknown as Partial<T>),
+        onAdd: () => cfg.list.addCustom(() => ({ ...cfg.defaultItem, id: `custom-${Date.now()}` }) as T),
+        onUpdate: (id, name, desc) => cfg.list.update(id, { name, description: desc } as Partial<T>),
         onRemove: cfg.list.remove,
         onStartEdit: cfg.list.setEditingId,
         onFinishEdit: () => cfg.list.setEditingId(null),

@@ -111,13 +111,24 @@ export function useConfigItemEdit(
 
   function handleEditTool(item: Record<string, unknown>) {
     const tool = itemsToFormData(item);
-    setEditingToolItem(item as unknown as AgentTool);
+    setEditingToolItem({
+      id: String(item.id ?? `edit-${Date.now()}`),
+      name: tool.name,
+      description: tool.description,
+      enabled: true,
+    });
     form.openForm('tool');
     form.updateFormData('tool', () => tool);
   }
 
   function handleEditMcp(item: Record<string, unknown>) {
-    setEditingMcpItem(item as unknown as AgentMCP);
+    setEditingMcpItem({
+      id: String(item.id ?? `edit-${Date.now()}`),
+      name: (item.name as string) || '',
+      description: (item.description as string) || '',
+      serverUrl: (item.serverUrl as string) || '',
+      enabled: true,
+    });
     form.openForm('mcp');
     form.updateFormData('mcp', () => ({
       name: (item.name as string) || '',
@@ -131,7 +142,12 @@ export function useConfigItemEdit(
   }
 
   function handleEditSkill(item: Record<string, unknown>) {
-    setEditingSkillItem(item as unknown as AgentSkill);
+    setEditingSkillItem({
+      id: String(item.id ?? `edit-${Date.now()}`),
+      name: (item.name as string) || '',
+      description: (item.description as string) || '',
+      enabled: true,
+    });
     form.openForm('skill');
     form.updateFormData('skill', () => ({
       name: (item.name as string) || '',

@@ -5,7 +5,7 @@ import contextlib
 import json
 import os
 from collections.abc import AsyncIterator
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from celery import Celery
 from redis.asyncio import Redis as AsyncRedis  # noqa: F401  # re-exported for backward compat

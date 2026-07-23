@@ -68,11 +68,10 @@ def _extract_client_ip(scope: dict[str, Any]) -> str:
 def _extract_user_id(scope: dict[str, Any]) -> str | None:
     """Extract user ID from the X-User-ID header if present."""
     for header_name, header_value in scope.get("headers", []):
-        if isinstance(header_name, bytes) and isinstance(header_value, bytes):
-            if header_name == b"x-user-id":
-                uid = header_value.decode("utf-8").strip()
-                if uid and uid != "anonymous":
-                    return uid
+        if isinstance(header_name, bytes) and isinstance(header_value, bytes) and header_name == b"x-user-id":
+            uid = header_value.decode("utf-8").strip()
+            if uid and uid != "anonymous":
+                return uid
     return None
 
 

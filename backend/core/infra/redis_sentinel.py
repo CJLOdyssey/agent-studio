@@ -7,7 +7,7 @@ the current master.  Otherwise falls back to a direct REDIS_URL connection.
 from __future__ import annotations
 
 import os
-from typing import Any, cast
+from typing import Any
 
 from redis.asyncio import Redis as AsyncRedis
 from redis.asyncio.sentinel import Sentinel
