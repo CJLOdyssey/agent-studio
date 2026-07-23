@@ -336,15 +336,14 @@ jobs:
     needs: [frontend-coverage]
     if: always()
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/download-artifact@v4
         with:
           pattern: coverage-artifacts-*
           merge-multiple: true
+          path: coverage-all
       - name: Merge coverage from all shards
+        working-directory: coverage-all
         run: |
           mkdir -p coverage/tmp
           for d in coverage-*/; do
