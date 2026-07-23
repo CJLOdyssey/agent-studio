@@ -145,4 +145,137 @@ describe('useConfigItemEdit', () => {
     act(() => result.current.saveFormItem('tool'));
     expect(tools.addCustom).toHaveBeenCalled();
   });
+
+  it('saveFormItem with existing tool calls update', () => {
+    const tools = makeItemList<AgentTool>();
+    const form = makeForm();
+    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' };
+    const { result } = renderHook(() => useConfigItemEdit(
+      tools,
+      makeItemList<AgentMCP>(),
+      makeItemList<AgentSkill>(),
+      form,
+    ));
+    act(() => result.current.setEditingToolItem({ id: 'edit-1', name: 'Old', description: 'old', enabled: true } as AgentTool));
+    act(() => result.current.saveFormItem('tool'));
+    expect(tools.update).toHaveBeenCalledWith('edit-1', expect.any(Object));
+    expect(result.current.editingToolItem).toBeNull();
+  });
+
+  it('saveFormItem with valid name creates mcp via addCustom', () => {
+    const mcp = makeItemList<AgentMCP>();
+    const form = makeForm();
+    form.forms.mcp.data = { name: 'NewMCP', description: 'mcp desc', type: 'stdio', command: 'npx start', url: '' };
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      mcp,
+      makeItemList<AgentSkill>(),
+      form,
+    ));
+    act(() => result.current.saveFormItem('mcp'));
+    expect(mcp.addCustom).toHaveBeenCalled();
+  });
+
+  it('saveFormItem with existing mcp calls update', () => {
+    const mcp = makeItemList<AgentMCP>();
+    const form = makeForm();
+    form.forms.mcp.data = { name: 'UpdatedMCP', description: 'updated', type: 'stdio', command: 'npx', url: '' };
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      mcp,
+      makeItemList<AgentSkill>(),
+      form,
+    ));
+    act(() => result.current.setEditingMcpItem({ id: 'mcp-1', name: 'Old', description: 'old', enabled: true } as AgentMCP));
+    act(() => result.current.saveFormItem('mcp'));
+    expect(mcp.update).toHaveBeenCalledWith('mcp-1', expect.any(Object));
+    expect(result.current.editingMcpItem).toBeNull();
+  });
+
+  it('saveFormItem with valid name creates skill via addCustom', () => {
+    const skills = makeItemList<AgentSkill>();
+    const form = makeForm();
+    form.forms.skill.data = { name: 'NewSkill', description: 'skill desc', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' };
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      makeItemList<AgentMCP>(),
+      skills,
+      form,
+    ));
+    act(() => result.current.saveFormItem('skill'));
+    expect(skills.addCustom).toHaveBeenCalled();
+  });
+
+  it('saveFormItem with existing skill calls update', () => {
+    const skills = makeItemList<AgentSkill>();
+    const form = makeForm();
+    form.forms.skill.data = { name: 'UpdatedSkill', description: 'updated', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' };
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      makeItemList<AgentMCP>(),
+      skills,
+      form,
+    ));
+    act(() => result.current.setEditingSkillItem({ id: 'skill-1', name: 'Old', description: 'old', enabled: true } as AgentSkill));
+    act(() => result.current.saveFormItem('skill'));
+    expect(skills.update).toHaveBeenCalledWith('skill-1', expect.any(Object));
+    expect(result.current.editingSkillItem).toBeNull();
+  });
+
+  it('saveFormItem with empty name for mcp sets errors', () => {
+    const form = makeForm();
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      makeItemList<AgentMCP>(),
+      makeItemList<AgentSkill>(),
+      form,
+    ));
+    act(() => result.current.saveFormItem('mcp'));
+    expect(form.setFormErrors).toHaveBeenCalledWith('mcp', expect.any(Array));
+  });
+
+  it('saveFormItem with empty name for skill sets errors', () => {
+    const form = makeForm();
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      makeItemList<AgentMCP>(),
+      makeItemList<AgentSkill>(),
+      form,
+    ));
+    act(() => result.current.saveFormItem('skill'));
+    expect(form.setFormErrors).toHaveBeenCalledWith('skill', expect.any(Array));
+  });
+
+  it('handleFormClose clears all editing states', () => {
+    const form = makeForm();
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      makeItemList<AgentMCP>(),
+      makeItemList<AgentSkill>(),
+      form,
+    ));
+    act(() => result.current.setEditingToolItem({ id: 't1' } as AgentTool));
+    act(() => result.current.setEditingMcpItem({ id: 'm1' } as AgentMCP));
+    act(() => result.current.setEditingSkillItem({ id: 's1' } as AgentSkill));
+    act(() => result.current.handleFormClose());
+    expect(result.current.editingToolItem).toBeNull();
+    expect(result.current.editingMcpItem).toBeNull();
+    expect(result.current.editingSkillItem).toBeNull();
+    expect(form.closeForm).toHaveBeenCalled();
+  });
+
+  it('itemsToFormData handles missing fields', () => {
+    const { result } = renderHook(() => useConfigItemEdit(
+      makeItemList<AgentTool>(),
+      makeItemList<AgentMCP>(),
+      makeItemList<AgentSkill>(),
+      makeForm(),
+    ));
+    const fd = result.current.itemsToFormData({});
+    expect(fd.name).toBe('');
+    expect(fd.category).toBe('自定义工具');
+    expect(fd.model).toBe('GPT-4o');
+    expect(fd.status).toBe('active');
+    expect(fd.version).toBe('v1.0.0');
+  });
 });

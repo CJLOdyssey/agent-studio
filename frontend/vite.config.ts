@@ -116,6 +116,7 @@ export default defineConfig(({ mode }) => {
           'src/api/client/tools.ts',
           'src/vite-env.d.ts',
           'src/vite-env.d.ts',
+          'src/components/AgentStudio/workstation/output/useOutputUI.ts',
         ],
       },
     },

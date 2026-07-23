@@ -1,31 +1,68 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createRef } from 'react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
 
+const { mockComposerSetValue, mockComposerSubmit, mockComposerHandleKeyDown } = vi.hoisted(() => ({
+  mockComposerSetValue: vi.fn(),
+  mockComposerSubmit: vi.fn(),
+  mockComposerHandleKeyDown: vi.fn(),
+}));
+
+let mockComposerHasContent = false;
+
 vi.mock('../../../hooks/useMessageComposer', () => ({
-  useMessageComposer: () => ({ value: '', setValue: vi.fn(), submit: vi.fn(), handleKeyDown: vi.fn(), hasContent: false, charCount: 0, maxLength: 2000 }),
+  useMessageComposer: () => ({
+    value: '',
+    setValue: mockComposerSetValue,
+    submit: mockComposerSubmit,
+    handleKeyDown: mockComposerHandleKeyDown,
+    get hasContent() { return mockComposerHasContent; },
+    charCount: 0,
+    maxLength: 2000,
+  }),
+}));
+
+const { mockPaletteFiltered, mockPaletteUpdateFromValue, mockPaletteHandleKeyDown, mockPaletteOpen } = vi.hoisted(() => ({
+  mockPaletteFiltered: [] as Array<{ id: string; label: string; source: string }>,
+  mockPaletteUpdateFromValue: vi.fn(),
+  mockPaletteHandleKeyDown: vi.fn(() => false),
+  mockPaletteOpen: false,
 }));
 
 vi.mock('../../../hooks/useCommandPalette', () => ({
-  useCommandPalette: () => ({ filteredCommands: [], activeIndex: -1, updateFromValue: vi.fn(), handleKeyDown: vi.fn(), selectCommand: vi.fn() }),
+  useCommandPalette: () => ({
+    filtered: mockPaletteFiltered,
+    filteredCommands: [],
+    activeIndex: -1,
+    open: mockPaletteOpen,
+    updateFromValue: mockPaletteUpdateFromValue,
+    handleKeyDown: mockPaletteHandleKeyDown,
+    selectCommand: vi.fn(),
+    setActiveIndex: vi.fn(),
+    close: vi.fn(),
+  }),
 }));
 
+const { mockToast } = vi.hoisted(() => ({ mockToast: vi.fn() }));
+
 vi.mock('../../../utils/useToast', () => ({
-  useToast: () => ({ toast: vi.fn() }),
+  useToast: () => ({ toast: mockToast }),
 }));
 
 vi.mock('../../../contexts/SettingsContext', () => ({
-  useSettings: () => ({ settings: { sendOnEnter: true }, updateSettings: vi.fn() }),
+  useSettings: () => ({ settings: { sendOnEnter: true, sendMode: 'enter' }, updateSettings: vi.fn() }),
 }));
 
-vi.mock('./ModelSelector', () => ({ default: () => <div data-testid="model-selector" /> }));
-vi.mock('./FileAttach', () => ({ default: () => <div data-testid="file-attach" /> }));
-vi.mock('./CommandDropdown', () => ({ default: () => <div data-testid="command-dropdown" /> }));
+vi.mock('../ModelSelector', () => ({ default: ({ models }: { models: unknown[] }) => (models?.length ? <div data-testid="model-selector" /> : null) }));
+vi.mock('../FileAttach', () => ({ default: () => <div data-testid="file-attach" /> }));
+vi.mock('../CommandDropdown', () => ({ default: () => <div data-testid="command-dropdown" /> }));
 
 import InputToolbar from '../InputToolbar';
+import type { InputToolbarHandle } from '../InputToolbar';
 
 const defaultProps = {
   onSend: vi.fn(),
@@ -37,6 +74,10 @@ const defaultProps = {
 };
 
 describe('InputToolbar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders basic elements', () => {
     render(<InputToolbar {...defaultProps} />);
     expect(screen.getByPlaceholderText('Type a message...')).toBeDefined();
@@ -59,6 +100,11 @@ describe('InputToolbar', () => {
     expect(screen.queryByTestId('model-selector')).toBeNull();
   });
 
+  it('renders model selector when models are provided', () => {
+    render(<InputToolbar {...defaultProps} models={[{ id: 'gpt-4', name: 'GPT-4' }]} />);
+    expect(screen.getByTestId('model-selector')).toBeInTheDocument();
+  });
+
   it('renders textarea with placeholder', () => {
     render(<InputToolbar {...defaultProps} />);
     expect(screen.getByPlaceholderText('Type a message...')).toBeDefined();
@@ -67,5 +113,54 @@ describe('InputToolbar', () => {
   it('renders without crashing when isRunning=true', () => {
     render(<InputToolbar {...defaultProps} isRunning={true} onStop={vi.fn()} />);
     expect(screen.getByPlaceholderText('Type a message...')).toBeDefined();
+  });
+
+  it('renders file attach component', () => {
+    render(<InputToolbar {...defaultProps} />);
+    expect(screen.getByTestId('file-attach')).toBeInTheDocument();
+  });
+
+  it('calls mockComposerSubmit when send button clicked with content', () => {
+    mockComposerHasContent = true;
+    render(<InputToolbar {...defaultProps} />);
+    fireEvent.click(screen.getByText('home.send'));
+    expect(mockComposerSubmit).toHaveBeenCalled();
+  });
+
+  it('calls onStop when stop button clicked during running', () => {
+    const onStop = vi.fn();
+    render(<InputToolbar {...defaultProps} isRunning={true} onStop={onStop} />);
+    fireEvent.click(screen.getByText('home.stop'));
+    expect(onStop).toHaveBeenCalledOnce();
+  });
+
+  it('calls setValue on textarea change', () => {
+    render(<InputToolbar {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: 'hello' } });
+    expect(mockComposerSetValue).toHaveBeenCalled();
+  });
+
+  it('calls palette updateFromValue on textarea change', () => {
+    render(<InputToolbar {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    fireEvent.change(textarea, { target: { value: '/' } });
+    expect(mockPaletteUpdateFromValue).toHaveBeenCalled();
+  });
+
+  it('addFiles via ref does not crash', () => {
+    const ref = createRef<InputToolbarHandle>();
+    render(<InputToolbar {...defaultProps} ref={ref} />);
+    act(() => {
+      ref.current?.addFiles([new File(['content'], 'test.txt')]);
+    });
+  });
+
+  it('paste event with files calls preventDefault', () => {
+    render(<InputToolbar {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText('Type a message...');
+    const file = new File(['content'], 'pasted.txt');
+    const clipboardData = { files: [file], getData: vi.fn() };
+    fireEvent.paste(textarea, { clipboardData });
   });
 });
