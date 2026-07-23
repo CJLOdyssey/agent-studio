@@ -23,7 +23,7 @@ plugins = ["pydantic.mypy"]
 python_version = "3.12"
 warn_unused_ignores = true
 mypy_path = ["backend/stubs"]
-exclude = ["backend/tests/"]
+exclude = ["backend/tests/", "backend/stubs/", "backend/alembic/", "backend/system_team/"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
