@@ -243,6 +243,8 @@ jobs:
           cache-dependency-path: requirements-lock.txt
       - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run unit tests (${{ matrix.shard }})
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.shard }}
         run: |
           case "${{ matrix.shard }}" in
             routers)     DIRS="backend/tests/routers/" ;;
@@ -253,9 +255,15 @@ jobs:
             tasks-1b)    DIRS="backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
             tasks-2)     DIRS="backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
           esac
-          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
+          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --cov=backend --cov-report= --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ matrix.shard }}
+          path: .coverage.${{ matrix.shard }}
+          include-hidden-files: true
+          retention-days: 1
 
-  # ── Backend Coverage (from core-infra shard, ~2min) ──────────────────────
+  # ── Backend Coverage (merge from shards, no full re-run) ────────────────
   backend-coverage:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
@@ -268,22 +276,15 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-lock.txt
       - run: pip install --no-compile -r requirements-lock.txt --quiet
-      - name: Run coverage
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: backend-coverage-*
+          merge-multiple: true
+      - name: Combine coverage and report
         run: |
-          PYTHONPATH=. python3 -m pytest backend/tests/ \
-            -q --tb=short \
-            --ignore=backend/tests/e2e/ \
-            --ignore=backend/tests/benchmark/ \
-            -m 'not integration' \
-            --ignore=backend/tests/broker/ \
-            --ignore=backend/tests/test_requirement_markers.py \
-            --ignore=backend/tests/routers/auth/test_auth_routers.py \
-            --cov=backend \
-            --cov-report=term \
-            --cov-report=xml \
-            --cov-fail-under=89 \
-            --reruns 2 \
-            --reruns-delay 5
+          python3 -m coverage combine --keep
+          python3 -m coverage report --fail-under=89
+          python3 -m coverage xml -o coverage.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
