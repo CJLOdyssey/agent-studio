@@ -1,2 +1,2 @@
 export { CopyBtn } from './CopyBtn';
-export { CodeBlock } from './CodeBlock';
+export { default as CodeBlock } from './LazyCodeBlock';

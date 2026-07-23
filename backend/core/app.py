@@ -1,5 +1,6 @@
 """FastAPI application entry point: app factory, middleware, router registration, and error handling."""
 
+import importlib
 import os
 import sys
 from collections.abc import AsyncIterator
@@ -54,9 +55,9 @@ def _safe_float(key: str, default: float) -> float:
 # ── Sentry APM (must be initialized before FastAPI app) ─────────────────────
 _sentry_dsn = os.environ.get("SENTRY_DSN", "")
 if _sentry_dsn:
-    import sentry_sdk  # type: ignore[import-not-found]
-    from sentry_sdk.integrations.fastapi import FastApiIntegration  # type: ignore[import-not-found]
-    from sentry_sdk.integrations.starlette import StarletteIntegration  # type: ignore[import-not-found]
+    sentry_sdk: Any = importlib.import_module("sentry_sdk")
+    FastApiIntegration: Any = importlib.import_module("sentry_sdk.integrations.fastapi").FastApiIntegration
+    StarletteIntegration: Any = importlib.import_module("sentry_sdk.integrations.starlette").StarletteIntegration
 
     sentry_sdk.init(
         dsn=_sentry_dsn,
@@ -102,10 +103,12 @@ app.include_router(debug_router)
 # ── Middleware (order matters — outermost first) ────────────────────────────
 from backend.core.infra.rate_limit import RateLimitMiddleware
 
+_rate_limit_user_raw = os.environ.get("RATE_LIMIT_USER")
 app.add_middleware(
     RateLimitMiddleware,
     rate=int(os.environ.get("RATE_LIMIT", "60")),
     window_seconds=int(os.environ.get("RATE_LIMIT_WINDOW", "60")),
+    user_rate=int(_rate_limit_user_raw) if _rate_limit_user_raw else None,
 )
 
 from backend.auth import AuthMiddleware
@@ -143,6 +146,16 @@ from backend.core.infra.csp_middleware import CSPMiddleware
 
 app.add_middleware(CSPMiddleware)
 
+# ── Security headers (X-Content-Type-Options, X-Frame-Options, HSTS) ─────
+from backend.core.infra.security_headers_middleware import SecurityHeadersMiddleware
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# ── Request body size limit ──────────────────────────────────────────────
+from backend.core.infra.request_size_middleware import RequestSizeLimitMiddleware
+
+app.add_middleware(RequestSizeLimitMiddleware)
+
 
 # ── Routers ─────────────────────────────────────────────────────────────────
 routers = [auth, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
@@ -178,32 +191,12 @@ def metrics() -> Any:
 @app.get("/api/health")
 async def health() -> Any:
     """Deep health check — verifies DB and Redis connectivity."""
-    checks: dict[str, str] = {}
-    healthy = True
+    from backend.repository.health import check_database, check_redis
 
-    # DB check
-    try:
-        from sqlalchemy import text
-
-        from backend.core.infra.database import get_session_factory
-        factory = get_session_factory()
-        async with factory() as session:
-            await session.execute(text("SELECT 1"))
-        checks["database"] = "ok"
-    except Exception as e:
-        checks["database"] = str(e)
-        healthy = False
-
-    # Redis check
-    try:
-        from backend.broker import get_redis
-        r = get_redis()
-        await r.ping()
-        checks["redis"] = "ok"
-    except Exception as e:
-        checks["redis"] = str(e)
-        healthy = False
-
+    db_status = await check_database()
+    redis_status = await check_redis()
+    checks: dict[str, str] = {"database": db_status, "redis": redis_status}
+    healthy = db_status == "ok" and redis_status == "ok"
     status_code = 200 if healthy else 503
     return JSONResponse(
         content={"status": "healthy" if healthy else "degraded", "checks": checks},

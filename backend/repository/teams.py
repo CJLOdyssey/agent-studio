@@ -7,7 +7,35 @@ from sqlalchemy import select
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
+from backend.core.infra.cache import get_cache
 from backend.core.infra.database import TeamAgentDB, TeamDB, get_session_factory
+
+CACHE_KEY_TEAMS = "teams:all"
+DEFAULT_TTL = 300
+
+
+async def _invalidate_teams_cache() -> None:
+    """Invalidate the team list cache after mutations."""
+    cache = get_cache()
+    await cache.delete(CACHE_KEY_TEAMS)
+
+
+async def get_cached_teams() -> list[dict[str, Any]]:
+    """Return all teams as dicts, using Redis cache with 5-min TTL.
+
+    Falls through to DB on cache miss; mutations invalidate the cache.
+    Note: cached variant omits user_id filtering (most deployments have no user filter).
+    """
+    cache = get_cache()
+    cached = await cache.get(CACHE_KEY_TEAMS)
+    if cached is not None:
+        # SAFETY: cached value was stored by `get_teams()` which returns list[dict]
+        from typing import cast
+        return cast(list[dict[str, Any]], cached)
+
+    result = await get_teams()
+    await cache.set(CACHE_KEY_TEAMS, result)
+    return result
 
 
 async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:
@@ -138,6 +166,7 @@ async def create_team(
         session.add(team)
         await session.commit()
         await session.refresh(team)
+        await _invalidate_teams_cache()
         return team
 
 
@@ -173,6 +202,7 @@ async def update_team(
             team.is_expanded = is_expanded
         await session.commit()
         await session.refresh(team)
+        await _invalidate_teams_cache()
         return team
 
 
@@ -186,6 +216,7 @@ async def delete_team(team_id: str) -> bool:
             return False
         await session.delete(team)
         await session.commit()
+        await _invalidate_teams_cache()
         return True
 
 
@@ -224,6 +255,7 @@ async def add_team_member(
         session.add(member)
         await session.commit()
         await session.refresh(member)
+        await _invalidate_teams_cache()
         return {
             "id": member.id,
             "name": member.name,
@@ -245,6 +277,7 @@ async def remove_team_member(team_id: str, member_id: str) -> bool:
             return False
         await session.delete(member)
         await session.commit()
+        await _invalidate_teams_cache()
         return True
 
 
@@ -259,6 +292,7 @@ async def reorder_team_members(team_id: str, member_ids: list[str]) -> None:
                 .values(order=idx)
             )
         await session.commit()
+        await _invalidate_teams_cache()
 
 
 async def link_agent_config(member_id: str, agent_config_id: str) -> bool:
@@ -271,4 +305,5 @@ async def link_agent_config(member_id: str, agent_config_id: str) -> bool:
             return False
         member.agent_config_id = agent_config_id
         await session.commit()
+        await _invalidate_teams_cache()
         return True

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, UserCog, Trash2, X, Users, RefreshCw } from 'lucide-react';
-import { useTeamData } from './useTeamData';
+import { useTeamManagement } from './useTeamManagement';
 import { TEAM_STATUS_LABEL } from './team.constants';
 import TeamFormModal from './TeamFormModal';
 import TeamMemberManager from './TeamMemberManager';
@@ -19,7 +19,7 @@ const CATEGORY_CLASS: Record<string, string> = { dev: 'wsta-tag-indigo', ops: 'w
 const CATEGORY_LABEL: Record<string, string> = { dev: t('team.category_dev'), ops: t('team.category_ops'), test: t('team.category_test') };
 
 export default function TeamManagement() {
-  const d = useTeamData();
+  const d = useTeamManagement();
   const { toast } = useToast();
   const [memberMgmtTeam, setMemberMgmtTeam] = useState<TeamEntry | null>(null);
 

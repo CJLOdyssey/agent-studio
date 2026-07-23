@@ -1,0 +1,3 @@
+#!/bin/sh
+# .husky/pre-commit — run lint-staged before every commit
+npx --no-install lint-staged --allow-empty

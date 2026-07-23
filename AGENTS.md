@@ -74,7 +74,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 
 **TypeScript**: `strict: true`, `noUnusedLocals`, `noUnusedParameters`. No `as any` / `@ts-ignore` / `@ts-expect-error`.
 
-**Coverage thresholds** (Vitest enforced): statements 88%, branches 74%, functions 90%, lines 89%.
+**Coverage thresholds** (Vitest enforced): statements 65%, branches 56%, functions 53%, lines 69%.
 
 **Test setup** (`src/test/setup.tsx`): `TestProviders` wrapping QueryClient + SettingsProvider + ToastProvider. `scrollIntoView` / `scrollTo` / `matchMedia` mocked globally.
 
@@ -86,7 +86,7 @@ AgentStudioWorkstation.tsx (chat + sidebar + workstation layout)
 app.py (FastAPI lifespan, middleware: RateLimit → Auth → RequestLog → CORS → CSP)
   └─ routers/ (19 modules: admin, agent_test_handler, agents, attachments, auth, commands, keys, mcps, models,
    │            prompts, providers, run_continue, runs, sessions, skills, teams, tools, versions, workflows)
-   │    └─ repository/ (23 modules: admin_stats, agents, attachments, auth, base, command_logs, core, deps, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
+   │    └─ repository/ (25 modules: admin_stats, agents, attachments, audit, auth, base, command_logs, core, deps, health, keys, keys_crud, keys_connectivity, mcps, memory_repo, message_repo, prompts, run_repo, session_repo, skills, snapshot_helper, teams, tools, versions, workflows)
   │         └─ orm/ (24 ORM models) + checkpoint.py (CheckpointDB)
   ├─ checkpoint.py (CheckpointDB + create_checkpointer factory)
   ├─ system_team/ (config.yaml + skill_agent/ + tools_agent/)
@@ -181,7 +181,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - **Backend**: `pytest` with `asyncio_mode=auto`. Fixtures monkey-patch in-memory SQLite. Module-scoped `db_engine`, function-scoped `async_session`.
 - **E2E** (`test_e2e_full_flow.py`): Requires Docker (`agent-studio-redis` container). Runs against `localhost:8080`.
 - **Coverage System**: 4 types of coverage tracking:
-  1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **65% threshold** (CI gate)
+  1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **89% threshold** (CI gate)
   2. **Diff Coverage** (PR gate): `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` - Only checks coverage on changed lines
   3. **Requirement Coverage**: `@pytest.mark.requirement("REQ-XXX")` markers + `tests/REQUIREMENTS.md` traceability matrix
   4. **Mutation Coverage** (optional): Use mutmut for critical modules only

@@ -86,10 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Skip /me call if no tokens exist — avoids 401 console noise for guests
-        const at = localStorage.getItem('agentstudio_access_token');
+        // Skip /me call if no refresh token exists — avoids 401 console noise for guests
         const rt = localStorage.getItem('agentstudio_refresh_token');
-        if (!at && !rt) {
+        if (!rt) {
           setLoading(false);
           return;
         }

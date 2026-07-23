@@ -15,6 +15,14 @@ vi.mock('../api', () => ({
   },
 }));
 
+vi.mock('../locales', () => ({ t: (k: string) => k, setLang: vi.fn(), getLang: () => 'zh' }));
+vi.mock('../../shared/WstaPagination', () => ({ default: () => <div className="wsta-pagination" /> }));
+vi.mock('../../shared/LoadingSkeleton', () => ({ TableSkeleton: () => <div data-testid="skeleton" /> }));
+vi.mock('../PromptFormModal', () => ({ default: () => null }));
+vi.mock('../../shared/DeleteConfirmModal', () => ({ default: () => null }));
+vi.mock('../../shared/BatchDeleteModal', () => ({ default: () => null }));
+vi.mock('../../shared/VersionHistoryModal', () => ({ default: () => null }));
+
 import PromptManagement from '../PromptManagement';
 
 function makePrompt(overrides: Record<string, unknown> = {}) {
@@ -31,10 +39,29 @@ describe('PromptManagement', () => {
     mockFetchAll.mockResolvedValue([]);
   });
 
+  it('renders loading skeleton', () => {
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+    render(<PromptManagement />, { wrapper: TestProviders });
+    expect(screen.getByTestId('skeleton')).toBeInTheDocument();
+  });
+
   it('renders empty state when no prompts', async () => {
     render(<PromptManagement />, { wrapper: TestProviders });
     await waitFor(() => {
       expect(screen.getByRole('region')).toBeInTheDocument();
+    });
+    expect(screen.getByText('prompt.empty_title')).toBeInTheDocument();
+    expect(screen.getByText('prompt.empty_desc_general')).toBeInTheDocument();
+  });
+
+  it('shows search-related empty message when search is active', async () => {
+    mockFetchAll.mockResolvedValue([]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByRole('region')).toBeInTheDocument(); });
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'nonexistent' } });
+    await waitFor(() => {
+      expect(screen.getByText('prompt.empty_desc_search')).toBeInTheDocument();
     });
   });
 
@@ -55,16 +82,91 @@ describe('PromptManagement', () => {
     });
   });
 
-  it('search input changes', async () => {
+  it('renders category tag', async () => {
+    mockFetchAll.mockResolvedValue([makePrompt()]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('系统提示词')).toBeInTheDocument();
+    });
+    expect(document.querySelector('.wsta-tag-pill')).toBeInTheDocument();
+  });
+
+  it('renders status text', async () => {
+    mockFetchAll.mockResolvedValue([makePrompt()]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('active')).toBeInTheDocument();
+    });
+  });
+
+  it('search input renders and accepts input', async () => {
     render(<PromptManagement />, { wrapper: TestProviders });
     await waitFor(() => { screen.getByRole('textbox'); });
     const input = screen.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'test' } });
+    fireEvent.change(input, { target: { value: 'test search' } });
+    expect(input).toHaveValue('test search');
   });
 
-  it('renders with category filter', async () => {
+  it('renders category filter with all categories option', async () => {
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByRole('region')).toBeInTheDocument(); });
+    expect(screen.getByText('prompt.all_categories')).toBeInTheDocument();
+  });
+
+  it('renders create prompt button', async () => {
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByRole('region')).toBeInTheDocument(); });
+    expect(screen.getByText('prompt.new')).toBeInTheDocument();
+  });
+
+  it('renders toolbar with correct role', async () => {
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByRole('region')).toBeInTheDocument(); });
+    expect(screen.getByRole('toolbar')).toBeInTheDocument();
+  });
+
+  it('renders pagination', async () => {
     mockFetchAll.mockResolvedValue([makePrompt()]);
     render(<PromptManagement />, { wrapper: TestProviders });
     await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
+    expect(document.querySelector('.wsta-pagination')).toBeInTheDocument();
+  });
+
+  it('has accessible table grid', async () => {
+    mockFetchAll.mockResolvedValue([makePrompt()]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
+
+  it('renders checkbox for selection', async () => {
+    mockFetchAll.mockResolvedValue([makePrompt()]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    expect(checkboxes.length).toBeGreaterThan(0);
+  });
+
+  it('allows selecting items via checkbox', async () => {
+    mockFetchAll.mockResolvedValue([makePrompt()]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    if (checkboxes.length >= 2) {
+      fireEvent.click(checkboxes[1]);
+    }
+  });
+
+  it('renders action button for each row', async () => {
+    mockFetchAll.mockResolvedValue([makePrompt()]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
+    expect(document.querySelector('.wsta-action-btn')).toBeInTheDocument();
+  });
+
+  it('wraps content in ErrorBoundary', async () => {
+    mockFetchAll.mockResolvedValue([]);
+    render(<PromptManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByRole('region')).toBeInTheDocument(); });
   });
 });

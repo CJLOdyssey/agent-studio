@@ -192,4 +192,105 @@ describe('WorkflowEditor', () => {
     expect(deleteWorkflow).toHaveBeenCalledWith('wf-1');
     vi.restoreAllMocks();
   });
+
+  it('selects node on click and shows delete hint', () => {
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByTestId('node-Writer'));
+    expect(screen.getByText(/Delete/)).toBeInTheDocument();
+  });
+
+  it('deselects node on pane click', () => {
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByTestId('node-Writer'));
+    expect(screen.getByText(/Delete/)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('pane'));
+    expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
+  });
+
+  it('shows saving text while saving', async () => {
+    vi.mocked(saveWorkflow).mockImplementation(() => new Promise(() => {}));
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByText('保存工作流'));
+    expect(screen.getByText('保存中...')).toBeInTheDocument();
+  });
+
+  it('selects edge on click and shows delete hint', () => {
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [
+        { id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 },
+      ],
+      edges: [{ id: 'e1', fromNodeId: 'Writer', toNodeId: 'Reviewer', isDefault: true, priority: 0 }],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByTestId('edge-e1'));
+    expect(screen.getByText(/Delete/)).toBeInTheDocument();
+  });
+
+  it('deselects edge on pane click', () => {
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [
+        { id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 },
+      ],
+      edges: [{ id: 'e1', fromNodeId: 'Writer', toNodeId: 'Reviewer', isDefault: true, priority: 0 }],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByTestId('edge-e1'));
+    expect(screen.getByText(/Delete/)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('pane'));
+    expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
+  });
+
+  it('removes node on Delete key', () => {
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByTestId('node-Writer'));
+    expect(screen.getByText(/Delete/)).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Delete' });
+    expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
+  });
+
+  it('removes node on Backspace key', () => {
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByTestId('node-Writer'));
+    expect(screen.getByText(/Delete/)).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Backspace' });
+    expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
+  });
+
+  it('cancels delete when confirm returns false', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<WorkflowEditor
+      teamId="team-1" agents={defaultAgents}
+      existingConfig={{ id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3, nodes: [], edges: [] }}
+    />);
+    fireEvent.click(screen.getByText('删除工作流'));
+    expect(deleteWorkflow).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
 });

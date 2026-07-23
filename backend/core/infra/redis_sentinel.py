@@ -36,11 +36,11 @@ def _get_sentinel() -> Sentinel:
         }
         if REDIS_PASSWORD:
             kwargs["password"] = REDIS_PASSWORD
-        _sentinel = Sentinel(hosts, **kwargs)  # type: ignore[no-untyped-call]
+        _sentinel = Sentinel(hosts, **kwargs)
     return _sentinel
 
 
-def create_redis() -> AsyncRedis:
+def create_redis() -> Any:
     """Create an AsyncRedis connection.
 
     Uses Sentinel discovery when REDIS_SENTINEL_ENABLED is set; otherwise
@@ -48,6 +48,7 @@ def create_redis() -> AsyncRedis:
     """
     if SENTINEL_ENABLED:
         sentinel = _get_sentinel()
+        max_connections = int(os.environ.get("REDIS_POOL_SIZE", "20"))
         kwargs: dict[str, Any] = {
             "db": SENTINEL_DB,
             "decode_responses": True,
@@ -55,15 +56,18 @@ def create_redis() -> AsyncRedis:
             "socket_connect_timeout": 10,
             "health_check_interval": 30,
             "retry_on_timeout": True,
+            "max_connections": max_connections,
         }
         if REDIS_PASSWORD:
             kwargs["password"] = REDIS_PASSWORD
-        return sentinel.master_for(SERVICE_NAME, **kwargs)  # type: ignore[no-any-return]
+        return sentinel.master_for(SERVICE_NAME, **kwargs)
 
     # Direct connection — read REDIS_URL from env to avoid circular imports
     url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    max_connections = int(os.environ.get("REDIS_POOL_SIZE", "20"))
     return AsyncRedis.from_url(
         url,
+        max_connections=max_connections,
         decode_responses=True,
         socket_keepalive=True,
         socket_connect_timeout=10,

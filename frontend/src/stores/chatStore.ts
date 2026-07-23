@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import type { AgentConfig, AppStatus, ChatMessage, RunResult } from '../types';
+import type { AppStatus, ChatMessage, RunResult } from '../types';
 import { disconnectRun } from '../api/websocket';
-import { listAgents } from '../api/client';
 import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
@@ -24,8 +23,6 @@ const INITIAL_STATE = {
   skipThinking: false,
   pendingVersions: null,
   pendingThinkingVersions: null,
-  agents: [] as AgentConfig[],
-  agentsLoaded: false,
   wsStatus: 'disconnected' as ChatState['wsStatus'],
   submissionConvId: null,
   activeTeamId: null,
@@ -88,17 +85,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setThumbsFeedback: (msgId, value) => {
     set((s) => ({ messages: s.messages.map((m) => m.id === msgId ? { ...m, thumbs: value } : m) }));
-  },
-
-  loadAgents: async () => {
-    try {
-      set({ agentsLoaded: false });
-      const agents = await listAgents();
-      set({ agents, agentsLoaded: true });
-    } catch (err) {
-      Logger.error('[chat] loadAgents failed:', err);
-      set({ agentsLoaded: true });
-    }
   },
 
   selectAgent: (_agentId) => {

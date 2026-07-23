@@ -22,6 +22,10 @@ from backend.repository.attachments import (
     list_attachments_by_session,
 )
 
+from backend.repository.health import check_database, check_redis
+
+from backend.repository.audit import create_audit_entry
+
 from backend.repository.auth import (
     consume_refresh_token,
     create_refresh_token,
@@ -81,6 +85,7 @@ from backend.repository.message_repo import (
 from backend.repository.prompts import (
     create_prompt,
     delete_prompt,
+    get_cached_prompts_as_dicts,
     get_prompt,
     get_prompts,
     get_prompts_as_dicts,
@@ -117,6 +122,7 @@ from backend.repository.teams import (
     add_team_member,
     create_team,
     delete_team,
+    get_cached_teams,
     get_team,
     get_teams,
     link_agent_config,
@@ -145,10 +151,13 @@ from backend.repository.workflows import (
 __all__ = [
     "add_team_member",
     "apply_owner_filter",
+    "check_database",
+    "check_redis",
     "clear_session_memories",
     "consume_refresh_token",
     "create_api_key",
     "create_attachment",
+    "create_audit_entry",
     "create_agent_config",
     "create_mcp",
     "create_memory_entry",
@@ -177,6 +186,8 @@ __all__ = [
     "get_agent_config_count",
     "get_agent_configs",
     "get_cached_agent_configs",
+    "get_cached_prompts_as_dicts",
+    "get_cached_teams",
     "get_api_key_for_use",
     "get_api_keys",
     "get_attachment_by_id",

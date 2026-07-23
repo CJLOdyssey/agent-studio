@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from backend.auth import AUTH_SECRET, CurrentUser, create_token, get_current_user
 from backend.broker import get_redis
@@ -19,15 +19,18 @@ from backend.repository.auth import (
 )
 
 from .schemas import (
+    ACCESS_TOKEN_TTL,
     AuthResponse,
     LoginRequest,
     LogoutRequest,
     RefreshRequest,
     _build_user_response,
     _check_rate_limit,
+    _clear_access_token_cookie,
     _client_ip,
     _create_auth_response,
     _mask_email,
+    _set_access_token_cookie,
 )
 
 logger = get_logger(__name__)
@@ -36,7 +39,7 @@ router = APIRouter(tags=["auth"])
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(body: LoginRequest, request: Request) -> Any:
+async def login(body: LoginRequest, request: Request, response: Response) -> Any:
     """Authenticate a user with email and password."""
     email = body.email.lower().strip()
     password = body.password
@@ -76,11 +79,13 @@ async def login(body: LoginRequest, request: Request) -> Any:
     await reset_failed_logins(email)
     logger.info("User logged in: %s", _mask_email(email))
 
-    return await _create_auth_response(user.id, user.email, user.username, body.remember_me)
+    auth_resp = await _create_auth_response(user.id, user.email, user.username, body.remember_me)
+    _set_access_token_cookie(response, auth_resp.access_token)
+    return auth_resp
 
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh(body: RefreshRequest) -> Any:
+async def refresh(body: RefreshRequest, response: Response) -> Any:
     """Exchange a refresh token for new access and refresh tokens."""
     user, family_id = await consume_refresh_token(body.refresh_token)
     if user is None:
@@ -89,18 +94,20 @@ async def refresh(body: RefreshRequest) -> Any:
     new_refresh_token_raw, _ = await create_refresh_token(
         user.id, family_id=family_id, ttl_days=7
     )
-    access_token = create_token(user.id, AUTH_SECRET)
+    access_token = create_token(user.id, AUTH_SECRET, ttl=ACCESS_TOKEN_TTL)
     user_resp = await _build_user_response(user.id, user.email, user.username)
 
+    _set_access_token_cookie(response, access_token)
     return AuthResponse(
-        access_token=access_token,
+        access_token="",
         refresh_token=new_refresh_token_raw,
-        expires_in=900,
+        expires_in=ACCESS_TOKEN_TTL,
         user=user_resp,
     )
 
 
 @router.post("/logout", status_code=204)
-async def logout(body: LogoutRequest, _user: CurrentUser = Depends(get_current_user)) -> None:
-    """Invalidate a refresh token to log the user out."""
+async def logout(body: LogoutRequest, response: Response, _user: CurrentUser = Depends(get_current_user)) -> None:
+    """Invalidate a refresh token to log the user out and clear the access_token cookie."""
     await consume_refresh_token(body.refresh_token)
+    _clear_access_token_cookie(response)

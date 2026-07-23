@@ -1,7 +1,7 @@
 import { Plus, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SkillFormModal from '../../workstation/skill/SkillFormModal';
-import type { SkillFormData } from '../../workstation/skill/skill.types';
+import type { SkillEntry, SkillFormData } from '../../workstation/skill/skill.types';
 import ConfigItemList from '../ConfigItemList';
 
 interface SkillsTabProps {
@@ -35,7 +35,7 @@ export function SkillsTab({
   if (showForm) {
     return (
       <SkillFormModal
-        editingSkill={editingItem as unknown as import('../../workstation/skill/skill.types').SkillEntry | null}
+        editingSkill={editingItem as SkillEntry | null}
         formData={formData}
         setFormData={setFormData}
         onSave={onFormSave}

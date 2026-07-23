@@ -86,7 +86,7 @@ async def get_run_detail(run_id: str) -> Any:
         raise
     except Exception as e:
         logger.error("Error fetching run %s: %s", run_id, e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.get("/api/runs", response_model=list[RunSummary])
@@ -96,7 +96,7 @@ async def list_runs(limit: int = 20) -> Any:
         return await run_service.list_runs(limit=limit)
     except Exception as e:
         logger.error("Error listing runs: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.websocket("/ws/runs/{run_id}")
