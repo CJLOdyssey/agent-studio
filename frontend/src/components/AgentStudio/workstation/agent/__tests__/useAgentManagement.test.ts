@@ -159,7 +159,7 @@ describe('useAgentManagement', () => {
     expect(result.current.isHistoryOpen).toBe(true);
   });
 
-  it('setIs\* modal closers', async () => {
+  it('setIs modal closers', async () => {
     const { result } = renderHook(() => useAgentManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setIsFormOpen(false); });

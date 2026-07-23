@@ -17,6 +17,14 @@ export default tseslint.config(
     },
   },
   {
+    // Test files: any/unused-vars relaxed (mocks & test patterns)
+    files: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/*.spec.ts', 'src/**/*.spec.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+    },
+  },
+  {
     ignores: ['dist/', 'node_modules/', '*.js', 'scripts/'],
   },
   prettier,

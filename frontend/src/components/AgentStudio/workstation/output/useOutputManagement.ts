@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { OutputEntry, OutputFormData, OutputCategory } from './output.types';
 import { outputAPI } from './api';
 import { useGenericCrud } from '../shared/useGenericCrud';
@@ -51,7 +51,7 @@ export function useOutputManagement(): OutputData {
   });
 
   const itemsRef = useRef(crud.items);
-  itemsRef.current = crud.items;
+  useEffect(() => { itemsRef.current = crud.items; });
 
   const getAllItems = useCallback(() => itemsRef.current, []);
   const addItems = useCallback((newItems: OutputEntry[]) => { crud.batchAdd(newItems); }, [crud]);

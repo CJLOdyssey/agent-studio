@@ -5,7 +5,13 @@ import secrets
 from fastapi import Request
 from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
-from redis.asyncio import Redis as AsyncRedis
+from typing import TYPE_CHECKING, Any
+from redis.asyncio import Redis as _AsyncRedis
+
+if TYPE_CHECKING:
+    AsyncRedis = _AsyncRedis[Any]
+else:
+    AsyncRedis = _AsyncRedis
 
 from backend.auth import AUTH_SECRET, create_token
 from backend.repository.auth import create_refresh_token, get_user_by_id, get_user_roles
