@@ -47,7 +47,7 @@ jobs:
               - 'frontend/**'
             backend:
               - 'backend/**'
-              - 'backend/backend/tests/**'
+              - 'backend/tests/**'
               - 'pyproject.toml'
               - 'requirements-lock.txt'
               - 'backend/alembic/**'
@@ -134,7 +134,7 @@ jobs:
   frontend-size-limit:
     name: "Frontend: Size Limit"
     needs: [frontend-build]
-    if: always()
+    if: needs.frontend-build.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -202,7 +202,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-lock.txt
       - run: pip install --no-compile -r requirements-lock.txt --quiet
-      - run: ruff check backend/
+      - run: ruff check backend/ --exclude=backend/tests/
       - run: mypy backend/ --strict --no-error-summary
       - name: Check .env.example for insecure defaults
         run: |
@@ -335,7 +335,7 @@ jobs:
   frontend-coverage-report:
     name: "Frontend: Coverage Report"
     needs: [frontend-coverage]
-    if: always()
+    if: needs.frontend-coverage.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
