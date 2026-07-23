@@ -22,7 +22,7 @@ backend/routers/auth.py (67%): 行 45-48, 行 72-75, ...
 **使用方法：**
 ```bash
 # 本地运行
-PYTHONPATH=. python3 -m pytest tests/ --cov=backend --cov-report=xml
+PYTHONPATH=. python3 -m pytest backend/tests/ --cov=backend --cov-report=xml
 diff-cover coverage.xml --compare-branch=origin/main --fail-under=70
 ```
 
@@ -31,9 +31,9 @@ diff-cover coverage.xml --compare-branch=origin/main --fail-under=70
 ### 2. 需求覆盖率 - 逐步建立 ⭐⭐⭐⭐
 
 **实施内容：**
-- 创建 `tests/REQUIREMENTS.md` 追溯矩阵（52 个需求，覆盖 10 个模块）
-- 创建 `tests/requirement_coverage.py` pytest 插件
-- 创建 `tests/test_requirement_markers.py` 示例测试
+- 创建 `backend/tests/REQUIREMENTS.md` 追溯矩阵（52 个需求，覆盖 10 个模块）
+- 创建 `backend/tests/requirement_coverage.py` pytest 插件
+- 创建 `backend/tests/test_requirement_markers.py` 示例测试
 - 在 `pyproject.toml` 中注册 `requirement` marker
 - 在 CI 中添加 `requirement-coverage` job
 
@@ -60,7 +60,7 @@ async def test_login_success():
     ...
 
 # 运行需求覆盖率报告
-PYTHONPATH=. python3 -m pytest tests/ --requirement-coverage
+PYTHONPATH=. python3 -m pytest backend/tests/ --requirement-coverage
 
 # 或使用独立脚本
 python3 scripts/requirement_coverage.py --check --threshold 80
@@ -95,9 +95,9 @@ python3 scripts/requirement_coverage.py --check --threshold 80
 
 | 文件 | 说明 |
 |------|------|
-| `tests/REQUIREMENTS.md` | 需求追溯矩阵（52 个需求） |
-| `tests/requirement_coverage.py` | pytest 插件，收集 requirement markers |
-| `tests/test_requirement_markers.py` | 示例测试，展示如何使用 marker |
+| `backend/tests/REQUIREMENTS.md` | 需求追溯矩阵（52 个需求） |
+| `backend/tests/requirement_coverage.py` | pytest 插件，收集 requirement markers |
+| `backend/tests/test_requirement_markers.py` | 示例测试，展示如何使用 marker |
 | `scripts/requirement_coverage.py` | 独立脚本，生成需求覆盖率报告 |
 
 ## 修改文件

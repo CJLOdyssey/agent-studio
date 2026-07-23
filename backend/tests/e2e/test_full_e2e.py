@@ -5,7 +5,7 @@ pytestmark = pytest.mark.integration
 
 import contextlib
 
-from tests.conftest import Api, _clear_rate_limits, _rid
+from backend.tests.conftest import Api, _clear_rate_limits, _rid
 
 
 class TestFullE2EFlow:

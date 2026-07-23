@@ -25,7 +25,7 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     rsmod.SENTINEL_ENABLED = False
     rsmod._sentinel = None
 
-    from tests.conftest import _original_create_redis
+    from backend.tests.conftest import _original_create_redis
 
     _real_create_redis = _original_create_redis
 

@@ -7,7 +7,7 @@ import json
 import pytest
 import websockets
 
-from tests.conftest import Api, _clear_rate_limits, _rid
+from backend.tests.conftest import Api, _clear_rate_limits, _rid
 
 WS_BASE = "ws://localhost:8080"
 

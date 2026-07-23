@@ -7,11 +7,11 @@ def test_alembic_ini_exists():
 
 
 def test_alembic_env_exists():
-    assert Path("alembic/env.py").exists(), "alembic/env.py not found"
+    assert Path("backend/alembic/env.py").exists(), "backend/alembic/env.py not found"
 
 
 def test_migrations_dir_exists():
-    assert Path("alembic/versions").is_dir(), "alembic/versions/ not found"
+    assert Path("backend/alembic/versions").is_dir(), "backend/alembic/versions/ not found"
 
 
 def test_alembic_ini_has_sqlalchemy_url():

@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from tests.conftest import Api, _clear_rate_limits, _rid
+from backend.tests.conftest import Api, _clear_rate_limits, _rid
 
 pytestmark = pytest.mark.integration
 

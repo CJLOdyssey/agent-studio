@@ -6,7 +6,7 @@ This module provides:
   - ``pytest_collection_modifyitems``: skips ``@pytest.mark.flaky`` tests by default.
 
 Usage in test files:
-  from tests.conftest_flaky import flaky_test
+  from backend.tests.conftest_flaky import flaky_test
 
   @flaky_test(max_runs=5, min_passes=2)
   def test_something():

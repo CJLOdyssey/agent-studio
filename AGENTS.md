@@ -37,9 +37,9 @@ PYTHONPATH=. python3 -m backend.main "<需求描述>"
 | Typecheck | `npm run typecheck` | `mypy backend/ --strict` |
 | Lint | `npm run lint` (ESLint) | `ruff check backend/` |
 | Format | `npm run format` (Prettier) | — (ruff handles) |
-| Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest tests/ -v --tb=short` |
-| E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest tests/e2e/test_e2e_full_flow.py -v --tb=short` |
-| Coverage | `npm run test:coverage` | `PYTHONPATH=. python3 -m pytest tests/ --cov=backend --cov-report=html` |
+| Test | `npm test` (Vitest) | `PYTHONPATH=. python3 -m pytest backend/tests/ -v --tb=short` |
+| E2E test | — | `PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory python3 -m pytest backend/tests/e2e/test_e2e_full_flow.py -v --tb=short` |
+| Coverage | `npm run test:coverage` | `PYTHONPATH=. python3 -m pytest backend/tests/ --cov=backend --cov-report=html` |
 | Diff Coverage | — | `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` |
 | Requirement Coverage | — | `python3 scripts/requirement_coverage.py --check --threshold 80` |
 | DB migrate | — | `PYTHONPATH=. alembic upgrade head` |
@@ -148,7 +148,7 @@ agent_configs (1) → workflow_nodes (N)
 users (1) → refresh_tokens (N)
 ```
 
-Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
+Migrations: Alembic in `backend/alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 
 ## Docker
 
@@ -183,7 +183,7 @@ Migrations: Alembic in `alembic/`. Run `PYTHONPATH=. alembic upgrade head`.
 - **Coverage System**: 4 types of coverage tracking:
   1. **Code Coverage** (existing): `pytest --cov=backend --cov-report=html` with **89% threshold** (CI gate)
   2. **Diff Coverage** (PR gate): `diff-cover coverage.xml --compare-branch=origin/main --fail-under=70` - Only checks coverage on changed lines
-  3. **Requirement Coverage**: `@pytest.mark.requirement("REQ-XXX")` markers + `tests/REQUIREMENTS.md` traceability matrix
+  3. **Requirement Coverage**: `@pytest.mark.requirement("REQ-XXX")` markers + `backend/tests/REQUIREMENTS.md` traceability matrix
   4. **Mutation Coverage** (optional): Use mutmut for critical modules only
 - **Security**: bandit runs with `-ll` (medium+ severity) and **blocks CI on failure**
 - **CI runs ALL tests** except E2E — repository tests and auth API tests are no longer skipped

@@ -16,7 +16,7 @@ from backend.core.infra.redis_sentinel import (
 )
 
 # Register the requirement coverage plugin
-from tests.requirement_coverage import (  # noqa: F401
+from backend.tests.requirement_coverage import (  # noqa: F401
     pytest_addoption,
     pytest_collection_modifyitems,
     pytest_configure,
@@ -26,7 +26,7 @@ from tests.requirement_coverage import (  # noqa: F401
 
 # flaky_test may be unavailable in merge/test contexts — import gracefully
 try:
-    from tests.conftest_flaky import flaky_test  # noqa: F401
+    from backend.tests.conftest_flaky import flaky_test  # noqa: F401
 except (ImportError, SyntaxError):
     def flaky_test(**kwargs):  # type: ignore[no-redef]
         """No-op fallback when conftest_flaky is unavailable."""
@@ -285,7 +285,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 
 # ── Test data factories ──────────────────────────────────────────────────────
-from tests.factories import (  # noqa: E402
+from backend.tests.factories import (  # noqa: E402
     agent_factory,
     mcp_factory,
     prompt_factory,
