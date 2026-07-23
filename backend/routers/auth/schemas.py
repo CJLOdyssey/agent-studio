@@ -1,11 +1,11 @@
 """Shared Pydantic schemas and helpers for the auth sub-package."""
 
 import secrets
+from typing import TYPE_CHECKING, Any
 
 from fastapi import Request
 from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
-from typing import TYPE_CHECKING, Any
 from redis.asyncio import Redis as _AsyncRedis
 
 if TYPE_CHECKING:
