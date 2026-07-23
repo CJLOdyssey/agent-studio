@@ -9,7 +9,11 @@ import os
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-CSP_POLICY = os.environ.get("CSP_POLICY", "").strip()
+# Sensible default: self-only for API responses. Override via CSP_POLICY env var
+# for stricter rules (e.g. script-src, connect-src for frontend origins).
+# Set to empty string to disable.
+_DEFAULT_CSP = "default-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'"
+CSP_POLICY = os.environ.get("CSP_POLICY", _DEFAULT_CSP).strip()
 
 
 class CSPMiddleware:

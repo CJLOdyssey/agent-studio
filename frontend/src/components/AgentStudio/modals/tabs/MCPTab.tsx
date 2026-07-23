@@ -2,7 +2,7 @@ import { Plus, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ConfigItemList from '../ConfigItemList';
 import MCPFormModal from '../../workstation/mcp/MCPFormModal';
-import type { MCPFormData } from '../../workstation/mcp/mcp.types';
+import type { MCPEntry, MCPFormData } from '../../workstation/mcp/mcp.types';
 
 interface MCPTabProps {
   items: Array<{ id: string; name: string; description?: string; enabled: boolean }>;
@@ -35,7 +35,7 @@ export function MCPTab({
   if (showForm) {
     return (
       <MCPFormModal
-        editingItem={editingItem as unknown as import('../../workstation/mcp/mcp.types').MCPEntry | null}
+        editingItem={editingItem as MCPEntry | null}
         formData={formData}
         setFormData={setFormData}
         onSave={onFormSave}

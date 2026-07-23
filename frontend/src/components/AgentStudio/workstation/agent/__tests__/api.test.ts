@@ -125,7 +125,7 @@ describe('agent api', () => {
     const { agentAPI: origAPI, setAgentAPI } = await import('../api');
 
     const mockAPI = {
-      fetchAll: vi.fn(),
+      fetchAll: vi.fn().mockResolvedValue([]),
       create: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
@@ -135,8 +135,8 @@ describe('agent api', () => {
 
     setAgentAPI(mockAPI);
     const { agentAPI: newAPI } = await import('../api');
-    expect(newAPI).toBe(mockAPI);
-
-    setAgentAPI(origAPI);
+    const result = await newAPI.fetchAll();
+    expect(result).toEqual([]);
+    expect(mockAPI.fetchAll).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,6 +14,7 @@ from backend.core.config import load_config
 from backend.core.infra.database import DATABASE_URL, get_session_factory, init_db
 from backend.core.infra.events import Events, bus
 from backend.core.infra.logging_config import get_logger
+from backend.core.seed import seed_default_tools
 from backend.observability.startup_guard import mark_started, mark_stopped, record_crash
 
 if TYPE_CHECKING:
@@ -55,7 +56,11 @@ def _startup_report() -> list[str]:
         os.getpid(),
     )
     _add(lines, "auth: mode=%s | enabled=%s", _env("AUTH_MODE", "legacy"), _env("AUTH_ENABLED", "0"))
-    _add(lines, "rate_limit: %s req/%ss", _env("RATE_LIMIT", "60"), _env("RATE_LIMIT_WINDOW", "60"))
+    _user_rate = _env("RATE_LIMIT_USER", "none")
+    _add(
+        lines, "rate_limit: %s req/%ss | user=%s",
+        _env("RATE_LIMIT", "60"), _env("RATE_LIMIT_WINDOW", "60"), _user_rate,
+    )
     _add(lines, "cors_origin: %s", _env("CORS_ORIGIN", "not set (dev defaults)"))
     _add(
         lines, "model: %s | base_url: %s", _env("OPENAI_MODEL", "deepseek-v4-flash"), _env("OPENAI_BASE_URL", "not set")
@@ -107,44 +112,6 @@ async def _check_redis() -> None:
         logger.info("[LIFECYCLE] redis ping=%s", pong)
     except Exception as e:
         logger.warning("[LIFECYCLE] redis unavailable (pub/sub will fail): %s", e)
-
-
-async def seed_default_tools() -> None:
-    from sqlalchemy import select
-
-    from backend.core.infra.database import get_session_factory
-    from backend.orm import RegisteredToolDB
-
-    factory = get_session_factory()
-    async with factory() as session:
-        existing = await session.execute(select(RegisteredToolDB).limit(1))
-        if existing.scalar_one_or_none():
-            return
-
-        seed_data = [
-            {
-                "name": "web_search",
-                "category": "builtin",
-                "description": "Search the web for current information.",
-                "endpoint": "builtin://web_search",
-            },
-            {
-                "name": "calculator",
-                "category": "builtin",
-                "description": "Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.",
-                "endpoint": "builtin://calculator",
-            },
-            {
-                "name": "fetch_page",
-                "category": "builtin",
-                "description": "Fetch and read the content of a web page.",
-                "endpoint": "builtin://fetch_page",
-            },
-        ]
-        for data in seed_data:
-            session.add(RegisteredToolDB(**data))
-        await session.commit()
-        logger.info("[LIFECYCLE] seeded %d default tools", len(seed_data))
 
 
 # ── Lifespan ────────────────────────────────────────────────────────

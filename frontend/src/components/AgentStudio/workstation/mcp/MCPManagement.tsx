@@ -2,7 +2,7 @@ import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Play, Trash2, Server } from 'lucide-react';
 import { useState } from 'react';
-import { useMCPData } from './useMCPData';
+import { useMcpManagement } from './useMCPManagement';
 import { MCP_STATUS_LABEL } from './mcp.constants';
 import MCPFormModal from './MCPFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -15,7 +15,7 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
 export default function MCPManagement() {
-  const d = useMCPData();
+  const d = useMcpManagement();
   const { toast } = useToast();
   const [testingId, setTestingId] = useState<string | null>(null);
 

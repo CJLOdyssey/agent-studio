@@ -179,6 +179,11 @@ describe('normalizeError', () => {
     expect(() => normalizeError(err)).toThrow('plain error');
   });
 
+  it('uses default message when no error message on network error', () => {
+    const axiosErr = new AxiosError('', 'ERR_NETWORK');
+    expect(() => normalizeError(axiosErr)).toThrow('Network error');
+  });
+
   it('prefers detail over message in response data', () => {
     const axiosErr = new AxiosError('', 'ERR_BAD_RESPONSE', undefined, undefined, {
       status: 400, data: { detail: 'custom detail', message: 'custom message' },

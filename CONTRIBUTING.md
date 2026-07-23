@@ -17,6 +17,19 @@
 Fork → 创建分支 → 开发 → 测试 → 提交 → Push → Pull Request → Review → Merge
 ```
 
+### 提交信息
+
+提交信息遵循 `.gitmessage` 模板（项目根目录），格式为 `<type>: <简短描述>`。
+
+```text
+feat:    新功能          fix:     修复 Bug
+docs:    文档变更        test:    测试相关
+refactor:重构            chore:   构建/工具链
+perf:    性能优化        security:安全修复
+```
+
+启用模板：`git config commit.template .gitmessage`
+
 ### 分支命名
 
 ```text

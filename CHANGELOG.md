@@ -2,6 +2,12 @@
 
 本项目遵循 [语义化版本](https://semver.org/) 和 [Keep a Changelog](https://keepachangelog.com/) 格式。
 
+## 提交信息规范
+
+提交信息请遵循 `.gitmessage` 模板格式：
+`<type>: <简短描述>`。类型包括 feat / fix / refactor / docs / test / chore / perf / security。
+如果变更需要记录日志，请在下方 [未发布] 区块添加对应条目。
+
 ---
 
 ## [未发布]

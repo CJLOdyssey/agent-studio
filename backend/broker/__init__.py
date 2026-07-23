@@ -7,7 +7,7 @@ import os
 from collections.abc import AsyncIterator
 from typing import Any
 
-from celery import Celery  # type: ignore[import-untyped]
+from celery import Celery
 from redis.asyncio import Redis as AsyncRedis  # noqa: F401  # re-exported for backward compat
 
 from backend.core.infra.logging_config import get_logger

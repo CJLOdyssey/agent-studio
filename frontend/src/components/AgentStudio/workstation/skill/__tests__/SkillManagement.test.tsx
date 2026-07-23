@@ -70,4 +70,35 @@ describe('SkillManagement', () => {
       expect(screen.getByText('React Skill')).toBeInTheDocument();
     });
   });
+
+  it('shows loading skeleton while fetching', () => {
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+    const { container } = render(<SkillManagement />, { wrapper: TestProviders });
+    expect(container.querySelector('.wsta-agent-mgmt')).toBeInTheDocument();
+  });
+
+  it('selects a row checkbox', async () => {
+    mockFetchAll.mockResolvedValue([makeSkill(), makeSkill({ id: '2', name: 'Python Skill' })]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('React Skill')).toBeInTheDocument(); });
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(checkboxes[1]);
+  });
+
+  it('renders installed status badge', async () => {
+    mockFetchAll.mockResolvedValue([makeSkill()]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('已安装')).toBeInTheDocument();
+    });
+  });
+
+  it('renders category badge', async () => {
+    mockFetchAll.mockResolvedValue([makeSkill()]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('前端开发')).toBeInTheDocument();
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import type { AgentConfig, AppStatus, ChatMessage, RunResult } from '../types';
+import type { AppStatus, ChatMessage, RunResult } from '../types';
 
 export type WsConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -20,8 +20,6 @@ export interface ChatState {
   pendingThinkingVersions: string[] | null;
   switchVersion: (msgId: string, direction: 'prev' | 'next') => void;
   setThumbsFeedback: (msgId: string, value: 'up' | 'down' | null) => void;
-  agents: AgentConfig[];
-  agentsLoaded: boolean;
   wsStatus: WsConnectionStatus;
   /** Conversation ID at submission time */
   submissionConvId: string | null;
@@ -39,6 +37,5 @@ export interface ChatState {
   setError: (error: string | null) => void;
   setWsStatus: (wsStatus: WsConnectionStatus) => void;
   reset: () => void;
-  loadAgents: () => Promise<void>;
   selectAgent: (agentId: string) => void;
 }

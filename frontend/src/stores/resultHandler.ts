@@ -2,6 +2,10 @@ import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
 import type { ChatMessage, RunResult } from '../types';
+
+function makeRunResult(code: string): RunResult {
+  return { code, requirement: '', pm_document: '', review: '', approved: false, status: 'completed' };
+}
 import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent } from './wsEvents';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
@@ -74,7 +78,7 @@ export function handleResultEvent(
   msg: WsResultEvent,
 ): void {
   const runId = get().currentRunId;
-  const codeContent = msg.code ?? '';
+    const codeContent: string = msg.code ? String(msg.code) : '';
   set((_s) => {
     let msgs = _s.messages;
     if (_s.streamingId) {
@@ -90,7 +94,7 @@ export function handleResultEvent(
       messages: msgs,
       status: 'idle' as ChatState['status'],
       streamingId: null,
-      result: { code: codeContent, run_id: _s.currentRunId, requirement: '', pm_document: '', review: '', approved: false, status: 'completed' } as unknown as RunResult,
+      result: makeRunResult(codeContent),
       skipThinking: false,
     };
   });

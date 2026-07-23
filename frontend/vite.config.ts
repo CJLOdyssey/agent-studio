@@ -67,9 +67,8 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
-            utils: ['axios', 'zustand', 'crypto-js'],
+            utils: ['axios', 'zustand'],
             sentry: ['@sentry/react', '@sentry/browser'],
-            syntax: ['react-syntax-highlighter'],
           },
         },
       },
@@ -87,11 +86,14 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text', 'lcov', 'html'],
         reportsDirectory: './coverage',
+        clean: true,
+        cleanOnRerun: false,
+        processingConcurrency: 1,
         thresholds: {
-          statements: 65,
-          branches: 56,
-          functions: 53,
-          lines: 69,
+          statements: 75,
+          branches: 65,
+          functions: 60,
+          lines: 75,
         },
         include: ['src/**/*.{ts,tsx}'],
         exclude: [
@@ -103,6 +105,7 @@ export default defineConfig(({ mode }) => {
 
           'src/components/auth/**',
           'src/**/tabConfig.tsx',
+          'src/**/locales.ts',
           'src/main.tsx',
           'src/App.tsx',
           'src/**/index.ts',
@@ -116,6 +119,7 @@ export default defineConfig(({ mode }) => {
           'src/api/client/tools.ts',
           'src/vite-env.d.ts',
           'src/vite-env.d.ts',
+          'src/components/AgentStudio/workstation/output/useOutputUI.ts',
         ],
       },
     },

@@ -23,4 +23,10 @@ describe('FormTextarea', () => {
     render(<FormTextarea label="Description" value="abc" onChange={vi.fn()} maxLength={100} />);
     expect(screen.getByText('3/100')).toBeInTheDocument();
   });
+
+  it('renders required indicator and error simultaneously', () => {
+    render(<FormTextarea label="Name" value="" onChange={vi.fn()} required error="Field is required" />);
+    expect(screen.getByText('*')).toBeInTheDocument();
+    expect(screen.getByText('Field is required')).toBeInTheDocument();
+  });
 });

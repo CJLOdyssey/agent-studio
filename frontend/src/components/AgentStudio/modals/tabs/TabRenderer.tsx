@@ -8,6 +8,11 @@ import type { AgentTool, AgentMCP, AgentSkill } from '../../../../types/AgentStu
 import type { ToolFormData } from '../../workstation/tool/tool.types';
 import type { MCPFormData } from '../../workstation/mcp/mcp.types';
 import type { SkillFormData } from '../../workstation/skill/skill.types';
+import type { ReactNode } from 'react';
+
+function toRecord(v: unknown): Record<string, unknown> {
+  return v as Record<string, unknown>;
+}
 
 interface ItemListShape<T> {
   items: T[];
@@ -54,193 +59,121 @@ interface TabRendererProps {
   itemsToFormData: (item: Record<string, unknown>) => ToolFormData;
 }
 
+type TabKind = 'tool' | 'mcp' | 'skill';
+
+interface TabConfig<T, F> {
+  kind: TabKind;
+  showForm: boolean;
+  editingItem: unknown;
+  list: ItemListShape<T>;
+  formData: F;
+  formErrors: string[];
+  onEditFull: (item: Record<string, unknown>) => void;
+  onCustomize: () => void;
+  onPickerOpen: () => void;
+  defaultItem: T;
+  renderTab: (ctx: {
+    items: T[]; editingId: string | null; showForm: boolean; formData: F;
+    formErrors: string[]; editingItem: null;
+    onToggle: (id: string) => void; onAdd: () => void;
+    onUpdate: (id: string, name: string, desc: string) => void;
+    onRemove: (id: string) => void;
+    onStartEdit: (id: string) => void; onFinishEdit: () => void;
+    onPickerOpen: () => void; onCustomize: () => void;
+    onFormSave: () => void; onFormClose: () => void;
+    setFormData: () => void;
+    onEditFull: (item: Record<string, unknown>) => void;
+  }) => ReactNode;
+}
+
+function renderItemTab<T extends { id: string; name?: string; description?: string }, F>(cfg: TabConfig<T, F>) {
+  return (
+    <ItemEditor
+      kind={cfg.kind}
+      form={{ show: false, data: cfg.formData, errors: cfg.formErrors }}
+      editingItem={toRecord(cfg.editingItem)}
+      onSave={() => undefined}
+      onClose={() => undefined}
+      setFormData={() => undefined}
+    >
+      {cfg.renderTab({
+        items: cfg.list.items,
+        editingId: cfg.list.editingId,
+        showForm: cfg.showForm,
+        formData: cfg.formData,
+        formErrors: cfg.formErrors,
+        editingItem: null,
+        onToggle: cfg.list.toggle,
+        onAdd: () => cfg.list.addCustom(() => ({ ...cfg.defaultItem, id: `custom-${Date.now()}` }) as T),
+        onUpdate: (id, name, desc) => cfg.list.update(id, { name, description: desc } as Partial<T>),
+        onRemove: cfg.list.remove,
+        onStartEdit: cfg.list.setEditingId,
+        onFinishEdit: () => cfg.list.setEditingId(null),
+        onPickerOpen: cfg.onPickerOpen,
+        onCustomize: cfg.onCustomize,
+        onFormSave: () => undefined,
+        onFormClose: () => undefined,
+        setFormData: () => undefined,
+        onEditFull: cfg.onEditFull,
+      })}
+    </ItemEditor>
+  );
+}
+
 export default function TabRenderer(props: TabRendererProps) {
   const {
-    activeTab,
-    systemRef,
-    outputRef,
-    systemPrompt,
-    onSystemPromptChange,
-    outputConstraints,
-    onOutputConstraintsChange,
-    tools,
-    mcp,
-    skills,
-    form,
-    editingToolItem,
-    editingMcpItem,
-    editingSkillItem,
-    onSaveFormItem,
-    onFormClose,
-    onSetEditingMcpItem,
-    onSetEditingSkillItem,
-    onEditTool,
-    onEditMcp,
-    onEditSkill,
-    onPickerOpen,
+    activeTab, systemRef, outputRef, systemPrompt, onSystemPromptChange,
+    outputConstraints, onOutputConstraintsChange,
+    tools, mcp, skills, form,
+    editingToolItem, editingMcpItem, editingSkillItem,
+    onEditTool, onEditMcp, onEditSkill, onPickerOpen,
   } = props;
 
   switch (activeTab) {
     case 'system':
       return (
         <SystemPromptTab
-          ref={systemRef}
-          value={systemPrompt}
-          onChange={onSystemPromptChange}
+          ref={systemRef} value={systemPrompt} onChange={onSystemPromptChange}
           onAddFromWorkstation={() => onPickerOpen('system')}
         />
       );
     case 'output':
       return (
         <OutputConstraintTab
-          ref={outputRef}
-          value={outputConstraints}
-          onChange={onOutputConstraintsChange}
+          ref={outputRef} value={outputConstraints} onChange={onOutputConstraintsChange}
           onAddFromWorkstation={() => onPickerOpen('output')}
         />
       );
     case 'tools':
-      return (
-        <ItemEditor
-          kind="tool"
-          form={form.forms.tool}
-          editingItem={editingToolItem as unknown as Record<string, unknown>}
-          onSave={() => onSaveFormItem('tool')}
-          onClose={onFormClose}
-          setFormData={(fn) => form.updateFormData('tool', fn as (d: unknown) => unknown)}
-        >
-          <ToolsTab
-            items={tools.items}
-            editingId={tools.editingId}
-            showForm={false}
-            formData={form.forms.tool.data as Parameters<typeof ToolsTab>[0]['formData']}
-            formErrors={form.forms.tool.errors}
-            editingItem={null}
-            onToggle={tools.toggle}
-            onAdd={() =>
-              tools.addCustom(
-                () =>
-                  ({
-                    id: `custom-${Date.now()}`,
-                    name: '新工具',
-                    description: '',
-                    enabled: true,
-                    parameters: '',
-                  }) as AgentTool,
-              )
-            }
-            onUpdate={(id, name, desc) => tools.update(id, { name, description: desc } as Partial<AgentTool>)}
-            onRemove={tools.remove}
-            onStartEdit={tools.setEditingId}
-            onFinishEdit={() => tools.setEditingId(null)}
-            onPickerOpen={() => onPickerOpen('tools')}
-            onCustomize={() => {
-              tools.setEditingId(null);
-              form.openForm('tool');
-            }}
-            onFormSave={() => {}}
-            onFormClose={() => {}}
-            setFormData={() => {}}
-            onEditFull={(item) => onEditTool(item)}
-          />
-        </ItemEditor>
-      );
+      return renderItemTab<AgentTool, ToolFormData>({
+        kind: 'tool', showForm: form.forms.tool.show, editingItem: editingToolItem, list: tools,
+        formData: form.forms.tool.data, formErrors: form.forms.tool.errors,
+        defaultItem: { name: '新工具', description: '', enabled: true, parameters: '' } as AgentTool,
+        onEditFull: onEditTool,
+        onCustomize: () => { tools.setEditingId(null); form.openForm('tool'); },
+        onPickerOpen: () => onPickerOpen('tools'),
+        renderTab: (ctx) => <ToolsTab {...ctx} />,
+      });
     case 'mcp':
-      return (
-        <ItemEditor
-          kind="mcp"
-          form={form.forms.mcp}
-          editingItem={editingMcpItem as unknown as Record<string, unknown>}
-          onSave={() => onSaveFormItem('mcp')}
-          onClose={() => {
-            form.closeForm('mcp');
-            onSetEditingMcpItem(null);
-          }}
-          setFormData={(fn) => form.updateFormData('mcp', fn as (d: unknown) => unknown)}
-        >
-          <MCPTab
-            items={mcp.items}
-            editingId={mcp.editingId}
-            showForm={false}
-            formData={form.forms.mcp.data as unknown as Parameters<typeof MCPTab>[0]['formData']}
-            formErrors={form.forms.mcp.errors}
-            editingItem={null}
-            onToggle={mcp.toggle}
-            onAdd={() =>
-              mcp.addCustom(
-                () =>
-                  ({
-                    id: `custom-${Date.now()}`,
-                    name: '新 MCP',
-                    description: '',
-                    enabled: true,
-                  }) as AgentMCP,
-              )
-            }
-            onUpdate={(id, name, desc) => mcp.update(id, { name, description: desc } as Partial<AgentMCP>)}
-            onRemove={mcp.remove}
-            onStartEdit={mcp.setEditingId}
-            onFinishEdit={() => mcp.setEditingId(null)}
-            onPickerOpen={() => onPickerOpen('mcp')}
-            onCustomize={() => {
-              mcp.setEditingId(null);
-              form.openForm('mcp');
-            }}
-            onFormSave={() => {}}
-            onFormClose={() => {}}
-            setFormData={() => {}}
-            onEditFull={(item) => onEditMcp(item)}
-          />
-        </ItemEditor>
-      );
+      return renderItemTab<AgentMCP, MCPFormData>({
+        kind: 'mcp', showForm: form.forms.mcp.show, editingItem: editingMcpItem, list: mcp,
+        formData: form.forms.mcp.data, formErrors: form.forms.mcp.errors,
+        defaultItem: { name: '新 MCP', description: '', enabled: true } as AgentMCP,
+        onEditFull: onEditMcp,
+        onCustomize: () => { mcp.setEditingId(null); form.openForm('mcp'); },
+        onPickerOpen: () => onPickerOpen('mcp'),
+        renderTab: (ctx) => <MCPTab {...ctx} />,
+      });
     case 'skills':
-      return (
-        <ItemEditor
-          kind="skill"
-          form={form.forms.skill}
-          editingItem={editingSkillItem as unknown as Record<string, unknown>}
-          onSave={() => onSaveFormItem('skill')}
-          onClose={() => {
-            form.closeForm('skill');
-            onSetEditingSkillItem(null);
-          }}
-          setFormData={(fn) => form.updateFormData('skill', fn as (d: unknown) => unknown)}
-        >
-          <SkillsTab
-            items={skills.items}
-            editingId={skills.editingId}
-            showForm={false}
-            formData={form.forms.skill.data as unknown as Parameters<typeof SkillsTab>[0]['formData']}
-            formErrors={form.forms.skill.errors}
-            editingItem={null}
-            onToggle={skills.toggle}
-            onAdd={() =>
-              skills.addCustom(
-                () =>
-                  ({
-                    id: `custom-${Date.now()}`,
-                    name: '新 Skill',
-                    description: '',
-                    enabled: true,
-                  }) as AgentSkill,
-              )
-            }
-            onUpdate={(id, name, desc) => skills.update(id, { name, description: desc } as Partial<AgentSkill>)}
-            onRemove={skills.remove}
-            onStartEdit={skills.setEditingId}
-            onFinishEdit={() => skills.setEditingId(null)}
-            onPickerOpen={() => onPickerOpen('skills')}
-            onCustomize={() => {
-              skills.setEditingId(null);
-              form.openForm('skill');
-            }}
-            onFormSave={() => {}}
-            onFormClose={() => {}}
-            setFormData={() => {}}
-            onEditFull={(item) => onEditSkill(item)}
-          />
-        </ItemEditor>
-      );
+      return renderItemTab<AgentSkill, SkillFormData>({
+        kind: 'skill', showForm: form.forms.skill.show, editingItem: editingSkillItem, list: skills,
+        formData: form.forms.skill.data, formErrors: form.forms.skill.errors,
+        defaultItem: { name: '新 Skill', description: '', enabled: true } as AgentSkill,
+        onEditFull: onEditSkill,
+        onCustomize: () => { skills.setEditingId(null); form.openForm('skill'); },
+        onPickerOpen: () => onPickerOpen('skills'),
+        renderTab: (ctx) => <SkillsTab {...ctx} />,
+      });
     default:
       return null;
   }

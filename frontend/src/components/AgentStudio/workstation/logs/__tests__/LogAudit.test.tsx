@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import LogAudit from '../LogAudit';
 import { fetchCommandLogs } from '../../../../../api/client/admin';
@@ -102,5 +103,71 @@ describe('LogAudit', () => {
     expect(screen.getByText('success')).toBeInTheDocument();
     expect(screen.getByText('deleted')).toBeInTheDocument();
     expect(screen.getByText('done')).toBeInTheDocument();
+  });
+
+  it('filters logs by search text', async () => {
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    renderWithVirtuoso(<LogAudit />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('create agent')).toBeInTheDocument();
+    expect(screen.getByText('run tool')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText(t('logs.search_placeholder'));
+    fireEvent.change(searchInput, { target: { value: 'delete' } });
+
+    await waitFor(() => {
+      expect(screen.queryByText('create agent')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('delete prompt')).toBeInTheDocument();
+    expect(screen.queryByText('run tool')).not.toBeInTheDocument();
+  });
+
+  it('shows pagination controls when logs exceed page size', async () => {
+    const manyLogs = Array.from({ length: 30 }, (_, i) => ({
+      id: String(i + 1),
+      timestamp: `2025-01-01T10:${String(i).padStart(2, '0')}:00`,
+      command: `command ${i + 1}`,
+      payload: `payload${i + 1}`,
+      result: `result${i + 1}`,
+    }));
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(manyLogs);
+    renderWithVirtuoso(<LogAudit />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+    expect(document.querySelector('.wsta-pagination')).toBeInTheDocument();
+  });
+
+  it('renders level filter select', async () => {
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    renderWithVirtuoso(<LogAudit />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    const selects = document.querySelectorAll('.ant-select');
+    expect(selects.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders toolbar with toolbar role', async () => {
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    renderWithVirtuoso(<LogAudit />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('toolbar')).toBeInTheDocument();
+  });
+
+  it('renders region with aria-label', async () => {
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    const { container } = renderWithVirtuoso(<LogAudit />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+    const region = container.querySelector('[role="region"]');
+    expect(region).toBeInTheDocument();
   });
 });

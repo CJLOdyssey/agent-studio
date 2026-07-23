@@ -65,6 +65,8 @@ def get_async_engine() -> AsyncEngine:
             kwargs["poolclass"] = None
             kwargs["pool_size"] = pool_size
             kwargs["max_overflow"] = max_overflow
+            kwargs["pool_pre_ping"] = True
+            kwargs["pool_recycle"] = 3600
         _async_engine = create_async_engine(DATABASE_URL, **kwargs)
         _attach_slow_query_listeners(_async_engine)
     return _async_engine

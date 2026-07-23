@@ -40,7 +40,7 @@ async def list_prompts(category: str | None = None) -> Any:
         return prompts
     except Exception as e:
         logger.error("Error listing prompts: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 async def _snapshot_prompt(resource_id: str, session: AsyncSession | None = None) -> Any:
@@ -84,7 +84,7 @@ async def add_prompt(req: PromptCreate) -> Any:
         }
     except Exception as e:
         logger.error("Error creating prompt: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.put("/api/prompts/{prompt_id}")
@@ -106,7 +106,7 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
         raise
     except Exception as e:
         logger.error("Error updating prompt: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
@@ -125,4 +125,4 @@ async def remove_prompt(prompt_id: str) -> None:
         raise
     except Exception as e:
         logger.error("Error deleting prompt: %s", e, exc_info=True)
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

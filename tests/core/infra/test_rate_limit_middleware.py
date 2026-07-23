@@ -59,7 +59,7 @@ class TestIPExtraction:
             m.return_value = True
             scope = {"type": "http", "path": "/x", "headers": [(b"x-forwarded-for", b"1.1.1.1,2.2.2.2")]}
             await mw(scope, AsyncMock(), AsyncMock())
-            m.assert_called_with("1.1.1.1")
+            m.assert_called_with("ip:1.1.1.1")
 
     @pytest.mark.asyncio
     async def test_x_real_ip(self):
@@ -69,7 +69,7 @@ class TestIPExtraction:
             m.return_value = True
             scope = {"type": "http", "path": "/x", "headers": [(b"x-real-ip", b"5.6.7.8")]}
             await mw(scope, AsyncMock(), AsyncMock())
-            m.assert_called_with("5.6.7.8")
+            m.assert_called_with("ip:5.6.7.8")
 
     @pytest.mark.asyncio
     async def test_client_addr_fallback(self):
@@ -79,7 +79,7 @@ class TestIPExtraction:
             m.return_value = True
             scope = {"type": "http", "path": "/x", "headers": [], "client": ("9.9.9.9", 1)}
             await mw(scope, AsyncMock(), AsyncMock())
-            m.assert_called_with("9.9.9.9")
+            m.assert_called_with("ip:9.9.9.9")
 
     @pytest.mark.asyncio
     async def test_unknown_fallback(self):
@@ -89,7 +89,7 @@ class TestIPExtraction:
             m.return_value = True
             scope = {"type": "http", "path": "/x", "headers": []}
             await mw(scope, AsyncMock(), AsyncMock())
-            m.assert_called_with("unknown")
+            m.assert_called_with("ip:unknown")
 
     @pytest.mark.asyncio
     async def test_xff_priority_over_xri(self):
@@ -99,4 +99,4 @@ class TestIPExtraction:
             m.return_value = True
             scope = {"type": "http", "path": "/x", "headers": [(b"x-forwarded-for", b"a.a.a.a"), (b"x-real-ip", b"b.b.b.b")]}
             await mw(scope, AsyncMock(), AsyncMock())
-            m.assert_called_with("a.a.a.a")
+            m.assert_called_with("ip:a.a.a.a")

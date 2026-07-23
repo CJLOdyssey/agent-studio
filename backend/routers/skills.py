@@ -50,7 +50,7 @@ async def list_skills() -> Any:
     try:
         return await repo_get_skills_as_dicts()
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.get("/api/skills/{skill_id}")
@@ -79,7 +79,7 @@ async def get_skill(skill_id: str) -> Any:
     except HTTPException:
         raise
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 async def _snapshot_skill(resource_id: str, session: AsyncSession | None = None) -> Any:
@@ -127,7 +127,7 @@ async def add_skill(req: SkillCreate) -> Any:
             "created_at": s.created_at.isoformat() if s.created_at else None,
         }
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.put("/api/skills/{skill_id}")
@@ -154,7 +154,7 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
     except HTTPException:
         raise
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
 @router.delete("/api/skills/{skill_id}", status_code=204)
@@ -172,4 +172,4 @@ async def remove_skill(skill_id: str) -> None:
     except HTTPException:
         raise
     except Exception as e:
-        raise error_response(ErrorCode.INTERNAL_ERROR, detail=str(e)) from e
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

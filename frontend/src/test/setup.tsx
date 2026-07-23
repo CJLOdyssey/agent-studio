@@ -3,6 +3,19 @@ import * as axeMatchers from 'vitest-axe/matchers';
 import { vi, expect } from 'vitest';
 
 expect.extend(axeMatchers);
+
+// Suppress act(...) warnings from harmless async effects (useGenericCrud,
+// usePickerState, etc.). These are noisy but harmless when tests pass.
+const _origWarn = console.warn;
+const _origErr = console.error;
+console.warn = (...args: unknown[]) => {
+  if (typeof args[0] === 'string' && args[0].includes('not wrapped in act')) return;
+  _origWarn.call(console, ...args);
+};
+console.error = (...args: unknown[]) => {
+  if (typeof args[0] === 'string' && args[0].includes('not wrapped in act')) return;
+  _origErr.call(console, ...args);
+};
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { VirtuosoMockContext } from 'react-virtuoso';

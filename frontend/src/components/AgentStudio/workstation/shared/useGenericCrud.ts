@@ -17,6 +17,14 @@ import type { CrudAPI, GenericCrudConfig, GenericCrudReturn } from './useGeneric
 
 export type { CrudAPI, GenericCrudConfig, GenericCrudReturn };
 
+// ── Helpers for safe generic object access ───────────────────────
+function getField(obj: unknown, key: string): string {
+  return String(Reflect.get(Object(obj ?? {}), key) ?? '');
+}
+function asPartial<T>(data: unknown): Partial<T> {
+  return data as Partial<T>;
+}
+
 // ── Hook ─────────────────────────────────────────────────────────
 
 export function useGenericCrud<T extends { id: string }, F>(
@@ -90,8 +98,7 @@ export function useGenericCrud<T extends { id: string }, F>(
       for (const key of Object.keys(extraFilters)) {
         const val = extraFilterValues[key];
         if (val && val !== 'all') {
-          result = result.filter((item) =>
-            String((item as unknown as Record<string, unknown>)[key] ?? '') === val,
+          result = result.filter((item) => getField(item, key) === val,
           );
         }
       }
@@ -102,19 +109,17 @@ export function useGenericCrud<T extends { id: string }, F>(
       const q = search.toLowerCase();
       result = result.filter(
         (item) =>
-          String((item as unknown as Record<string, unknown>).name ?? '').toLowerCase().includes(q) ||
-          String((item as unknown as Record<string, unknown>).description ?? '').toLowerCase().includes(q),
+          getField(item, 'name').toLowerCase().includes(q) ||
+          getField(item, 'description').toLowerCase().includes(q),
       );
     }
 
     // Sort
     if (sortField) {
       result.sort((a, b) => {
-        const aRecord = a as unknown as Record<string, unknown>;
-        const bRecord = b as unknown as Record<string, unknown>;
         const field = sortField as string;
-        const aVal = String(aRecord[field] ?? '');
-        const bVal = String(bRecord[field] ?? '');
+        const aVal = getField(a, field);
+        const bVal = getField(b, field);
         return sortDir === 'asc' ? aVal.localeCompare(bVal, 'zh-CN') : bVal.localeCompare(aVal, 'zh-CN');
       });
     }
@@ -213,8 +218,11 @@ export function useGenericCrud<T extends { id: string }, F>(
       if (api.clone) {
         await api.clone(item);
       } else {
-        const { id: _id, createdAt: _createdAt, ...rest } = item as unknown as Record<string, unknown>;
-        await api.create(rest as unknown as F);
+        // Strip id/createdAt before passing as form data
+        const form = Object.fromEntries(
+          Object.entries(item).filter(([k]) => k !== 'id' && k !== 'createdAt'),
+        );
+        await api.create(form as F);
       }
       await fetchItems();
     },
@@ -247,8 +255,10 @@ export function useGenericCrud<T extends { id: string }, F>(
 
   const openEdit = useCallback((item: T) => {
     setEditingItem(item);
-    const { id: _id, createdAt: _createdAt, ...itemData } = item as unknown as Record<string, unknown>;
-    setFormData_(itemData as unknown as F);
+    const form = Object.fromEntries(
+      Object.entries(item).filter(([k]) => k !== 'id' && k !== 'createdAt'),
+    );
+    setFormData_(form as F);
     setFormErrors([]);
     setIsFormOpen(true);
   }, []);
@@ -310,7 +320,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     setFormErrors(errors);
     if (errors.length > 0) return;
     const action = editingItem
-      ? updateItem(editingItem.id, formData_ as unknown as Partial<T>)
+      ? updateItem(editingItem.id, asPartial(formData_))
       : createItem(formData_);
     action.then(() => {
       setIsFormOpen(false);

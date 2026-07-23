@@ -69,4 +69,43 @@ describe('MCPManagement', () => {
       expect(screen.getByText('File Server')).toBeInTheDocument();
     });
   });
+
+  it('shows loading skeleton while fetching', () => {
+    mockFetchAll.mockReturnValue(new Promise(() => {}));
+    const { container } = render(<MCPManagement />, { wrapper: TestProviders });
+    expect(container.querySelector('.wsta-agent-mgmt')).toBeInTheDocument();
+  });
+
+  it('selects a row checkbox', async () => {
+    mockFetchAll.mockResolvedValue([makeMCP(), makeMCP({ id: '2', name: 'DB Server' })]);
+    render(<MCPManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('File Server')).toBeInTheDocument(); });
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(checkboxes[1]);
+  });
+
+  it('renders connected status badge', async () => {
+    mockFetchAll.mockResolvedValue([makeMCP()]);
+    render(<MCPManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('已连接')).toBeInTheDocument();
+    });
+  });
+
+  it('renders disconnected status badge', async () => {
+    mockFetchAll.mockResolvedValue([makeMCP({ status: 'disconnected' })]);
+    render(<MCPManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('未连接')).toBeInTheDocument();
+    });
+  });
+
+  it('renders sse type badge', async () => {
+    mockFetchAll.mockResolvedValue([makeMCP()]);
+    render(<MCPManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('SSE')).toBeInTheDocument();
+    });
+  });
 });

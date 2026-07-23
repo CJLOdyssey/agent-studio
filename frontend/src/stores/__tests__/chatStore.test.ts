@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AgentConfig, AppStatus } from '../../types';
+import type { AppStatus } from '../../types';
 
 vi.mock('../../api/websocket', () => ({
   connectRun: vi.fn(() => vi.fn()),
@@ -8,7 +8,6 @@ vi.mock('../../api/websocket', () => ({
 
 vi.mock('../../api/client', () => ({
   submitRequirement: vi.fn(),
-  listAgents: vi.fn(),
   listKeys: vi.fn().mockResolvedValue([{ id: 'key-1', is_default: true, is_active: true, models: ['deepseek-chat'] }]),
 }));
 
@@ -20,8 +19,6 @@ const initialState = {
   result: null,
   currentRole: null,
   error: null,
-  agents: [],
-  agentsLoaded: false,
   wsStatus: 'disconnected' as const,
 };
 
@@ -41,8 +38,6 @@ describe('chatStore', () => {
     expect(state.result).toBeNull();
     expect(state.currentRole).toBeNull();
     expect(state.error).toBeNull();
-    expect(state.agents).toEqual([]);
-    expect(state.agentsLoaded).toBe(false);
     expect(state.wsStatus).toBe('disconnected');
   });
 
@@ -184,41 +179,6 @@ describe('chatStore', () => {
     expect(state.messages).toEqual([]);
     expect(state.result).toBeNull();
     expect(state.wsStatus).toBe('disconnected');
-  });
-
-  describe('loadAgents', () => {
-    it('成功加载代理列表', async () => {
-      const mockAgents: AgentConfig[] = [
-        {
-          id: '1',
-          name: 'PM',
-          role_identifier: 'pm',
-          system_prompt: 'prompt',
-          model: null,
-          temperature: null,
-          order: 1,
-          is_active: true,
-          is_approver: false,
-          icon: '📋',
-          created_at: null,
-        },
-      ];
-      const client = await import('../../api/client');
-      (client.listAgents as ReturnType<typeof vi.fn>).mockResolvedValue(mockAgents);
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().loadAgents();
-      const state = useChatStore.getState();
-      expect(state.agents).toEqual(mockAgents);
-      expect(state.agentsLoaded).toBe(true);
-    });
-
-    it('加载失败时 agentsLoaded 仍为 true', async () => {
-      const client = await import('../../api/client');
-      (client.listAgents as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('fail'));
-      const { useChatStore } = await import('../chatStore');
-      await useChatStore.getState().loadAgents();
-      expect(useChatStore.getState().agentsLoaded).toBe(true);
-    });
   });
 
   describe('submitRequirement', () => {

@@ -1,7 +1,7 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Wrench } from 'lucide-react';
-import { useToolData } from './useToolData';
+import { useToolManagement } from './useToolManagement';
 import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
 import ToolFormModal from './ToolFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -14,7 +14,7 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
 export default function ToolManagement() {
-  const d = useToolData();
+  const d = useToolManagement();
   const { toast } = useToast();
 
   function handleSave() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('tool.toast_updated') : t('tool.toast_created'), 'success'); }

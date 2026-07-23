@@ -12,20 +12,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
-const ACCESS_KEY = 'agentstudio_access_token';
 const REFRESH_KEY = 'agentstudio_refresh_token';
 
-let accessToken: string | null = localStorage.getItem(ACCESS_KEY);
 let refreshToken: string | null = localStorage.getItem(REFRESH_KEY);
 
-export function setTokens(access: string | null, refresh: string | null) {
-  accessToken = access;
+/** Store or clear the refresh_token only — access_token is an httpOnly cookie set by the server. */
+export function setTokens(_access: string | null, refresh: string | null) {
   refreshToken = refresh;
-  if (access) {
-    localStorage.setItem(ACCESS_KEY, access);
-  } else {
-    localStorage.removeItem(ACCESS_KEY);
-  }
   if (refresh) {
     localStorage.setItem(REFRESH_KEY, refresh);
   } else {
@@ -33,8 +26,9 @@ export function setTokens(access: string | null, refresh: string | null) {
   }
 }
 
-export function getAccessToken() {
-  return accessToken;
+/** Access token is now an httpOnly cookie — not readable from JS. Returns null. */
+export function getAccessToken(): string | null {
+  return null;
 }
 
 export function clearTokens() {
@@ -44,7 +38,6 @@ export function clearTokens() {
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e: StorageEvent) => {
     if (e.key === REFRESH_KEY && !e.newValue) {
-      accessToken = null;
       refreshToken = null;
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
@@ -59,13 +52,11 @@ interface RetryConfig extends InternalAxiosRequestConfig {
 }
 
 let isRefreshing = false;
-let pendingQueue: Array<(token: string) => void> = [];
+let pendingQueue: Array<() => void> = [];
 
 if (api.interceptors?.request) {
   api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
+    // Access token is in httpOnly cookie (auto-sent via withCredentials), no Authorization header needed
     let uid = localStorage.getItem('agentstudio_user_id');
     if (!uid) {
       uid = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
@@ -103,10 +94,7 @@ if (api.interceptors?.response) {
 
       if (isRefreshing) {
         return new Promise((resolve) => {
-          pendingQueue.push((token: string) => {
-            retryConfig.headers.Authorization = `Bearer ${token}`;
-            resolve(api(retryConfig));
-          });
+          pendingQueue.push(() => resolve(api(retryConfig)));
         });
       }
 
@@ -115,10 +103,10 @@ if (api.interceptors?.response) {
 
       try {
         const res = await refreshTokens(refreshToken);
-        setTokens(res.access_token, res.refresh_token);
-        pendingQueue.forEach((cb) => cb(res.access_token));
+        setTokens(null, res.refresh_token);
+        pendingQueue.forEach((cb) => cb());
         pendingQueue = [];
-        retryConfig.headers.Authorization = `Bearer ${res.access_token}`;
+        // New access_token was set as httpOnly cookie by server — auto-sent on retry
         return api(retryConfig);
       } catch {
         clearTokens();

@@ -63,7 +63,7 @@ class TestAppLifespan:
 
     @pytest.mark.asyncio
     async def test_seed_default_tools_when_empty(self):
-        from backend.core.app_lifespan import seed_default_tools
+        from backend.core.seed import seed_default_tools
 
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -80,14 +80,14 @@ class TestAppLifespan:
         mock_cm.__aenter__.return_value = mock_session
         mock_factory = MagicMock(return_value=mock_cm)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+        with patch("backend.core.seed.get_session_factory", return_value=mock_factory):
             await seed_default_tools()
             assert mock_session.add.call_count == 3
             mock_session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_seed_default_tools_skips_when_exists(self):
-        from backend.core.app_lifespan import seed_default_tools
+        from backend.core.seed import seed_default_tools
 
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = {"id": 1}
@@ -104,7 +104,7 @@ class TestAppLifespan:
         mock_cm.__aenter__.return_value = mock_session
         mock_factory = MagicMock(return_value=mock_cm)
 
-        with patch("backend.core.infra.database.get_session_factory", return_value=mock_factory):
+        with patch("backend.core.seed.get_session_factory", return_value=mock_factory):
             await seed_default_tools()
             mock_session.add.assert_not_called()
             mock_session.commit.assert_not_called()

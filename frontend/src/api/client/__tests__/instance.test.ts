@@ -43,7 +43,6 @@ vi.mock('../../utils/logger', () => ({
   error: vi.fn(),
 }));
 
-const ACCESS_KEY = 'agentstudio_access_token';
 const REFRESH_KEY = 'agentstudio_refresh_token';
 
 describe('instance', () => {
@@ -60,73 +59,50 @@ describe('instance', () => {
   });
 
   describe('setTokens', () => {
-    it('stores access and refresh tokens', async () => {
+    it('ignores access parameter and stores refresh token', async () => {
       const { setTokens } = await import('../instance');
-      setTokens('access-123', 'refresh-456');
+      setTokens('some-access', 'refresh-456');
 
-      expect(localStorage.getItem(ACCESS_KEY)).toBe('access-123');
       expect(localStorage.getItem(REFRESH_KEY)).toBe('refresh-456');
     });
 
-    it('removes tokens when null is passed', async () => {
-      localStorage.setItem(ACCESS_KEY, 'old-access');
+    it('removes refresh token when null is passed', async () => {
       localStorage.setItem(REFRESH_KEY, 'old-refresh');
 
       const { setTokens } = await import('../instance');
       setTokens(null, null);
 
-      expect(localStorage.getItem(ACCESS_KEY)).toBeNull();
       expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
     });
 
-    it('only stores access token when refresh is null', async () => {
-      const { setTokens } = await import('../instance');
-      setTokens('access-only', null);
-
-      expect(localStorage.getItem(ACCESS_KEY)).toBe('access-only');
-      expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
-    });
-
-    it('only stores refresh token when access is null', async () => {
+    it('only stores refresh token when passed', async () => {
       const { setTokens } = await import('../instance');
       setTokens(null, 'refresh-only');
 
-      expect(localStorage.getItem(ACCESS_KEY)).toBeNull();
       expect(localStorage.getItem(REFRESH_KEY)).toBe('refresh-only');
     });
   });
 
   describe('getAccessToken', () => {
-    it('returns the current access token', async () => {
-      localStorage.setItem(ACCESS_KEY, 'test-token');
-
-      const { getAccessToken } = await import('../instance');
-      expect(getAccessToken()).toBe('test-token');
-    });
-
-    it('returns null when no token is set', async () => {
+    it('returns null (access token is httpOnly cookie)', async () => {
       const { getAccessToken } = await import('../instance');
       expect(getAccessToken()).toBeNull();
     });
   });
 
   describe('clearTokens', () => {
-    it('removes both tokens', async () => {
-      localStorage.setItem(ACCESS_KEY, 'access');
+    it('removes refresh token', async () => {
       localStorage.setItem(REFRESH_KEY, 'refresh');
 
       const { clearTokens } = await import('../instance');
       clearTokens();
 
-      expect(localStorage.getItem(ACCESS_KEY)).toBeNull();
       expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
     });
   });
 
   describe('request interceptor', () => {
-    it('adds Authorization header when access token is present', async () => {
-      localStorage.setItem(ACCESS_KEY, 'my-access-token');
-
+    it('does not add Authorization header (access token is httpOnly cookie)', async () => {
       let capturedInterceptor: ((config: Record<string, unknown>) => Record<string, unknown>) | null = null;
       mockAxiosInstance.interceptors.request.use.mockImplementation((fn: (config: Record<string, unknown>) => Record<string, unknown>) => {
         capturedInterceptor = fn;
@@ -137,7 +113,7 @@ describe('instance', () => {
       const config = { headers: {} as Record<string, string> };
       const result = capturedInterceptor!(config);
 
-      expect(result.headers.Authorization).toBe('Bearer my-access-token');
+      expect(result.headers.Authorization).toBeUndefined();
     });
 
     it('adds X-User-ID header', async () => {
@@ -185,20 +161,6 @@ describe('instance', () => {
       const result = capturedInterceptor!(config);
 
       expect(result.headers['X-User-ID']).toBe('existing-uid');
-    });
-
-    it('does not add Authorization header when no access token', async () => {
-      let capturedInterceptor: ((config: Record<string, unknown>) => Record<string, unknown>) | null = null;
-      mockAxiosInstance.interceptors.request.use.mockImplementation((fn: (config: Record<string, unknown>) => Record<string, unknown>) => {
-        capturedInterceptor = fn;
-      });
-
-      await import('../instance');
-
-      const config = { headers: {} as Record<string, string> };
-      const result = capturedInterceptor!(config);
-
-      expect(result.headers.Authorization).toBeUndefined();
     });
   });
 

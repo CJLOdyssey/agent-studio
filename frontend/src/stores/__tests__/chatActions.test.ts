@@ -52,8 +52,6 @@ const initialState = {
   skipThinking: false,
   pendingVersions: null as string[] | null,
   pendingThinkingVersions: null as string[] | null,
-  agents: [],
-  agentsLoaded: false,
   wsStatus: 'disconnected' as const,
   submissionConvId: null as string | null,
   activeTeamId: null as string | null,
@@ -171,6 +169,23 @@ describe('retry', () => {
       'sess-1',
     );
     expect(connectRun).toHaveBeenCalled();
+  });
+
+  it('handles retry API failure', async () => {
+    mockSubmitReq.mockRejectedValueOnce(new Error('API Error'));
+    const msg1 = makeMsg({ id: 'u1', role: 'user', content: 'question' });
+    const msg2 = makeMsg({ id: 'a1', role: 'agent', content: 'answer' });
+    useChatStore.setState({
+      messages: [msg1, msg2],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    await retry();
+
+    const state = useChatStore.getState();
+    expect(state.status).toBe('error');
+    expect(state.error).toBe('API Error');
   });
 });
 

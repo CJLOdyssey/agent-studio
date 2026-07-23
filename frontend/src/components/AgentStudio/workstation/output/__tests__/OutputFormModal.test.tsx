@@ -161,4 +161,273 @@ describe('OutputFormModal', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('closes on overlay click', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    const overlay = container.querySelector('.modal-overlay');
+    expect(overlay).toBeDefined();
+    fireEvent.click(overlay!);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('does not close when clicking modal content', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    const modalContent = container.querySelector('.modal-content');
+    expect(modalContent).toBeDefined();
+    fireEvent.click(modalContent!);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('calls onClose on close X button click', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    const closeBtn = container.querySelector('.modal-close');
+    expect(closeBtn).toBeDefined();
+    fireEvent.click(closeBtn!);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('calls setFormData on content textarea change', () => {
+    const setFormData = vi.fn();
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={setFormData}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const textarea = screen.getByPlaceholderText('输入内容');
+    fireEvent.change(textarea, { target: { value: 'New content' } });
+    expect(setFormData).toHaveBeenCalled();
+  });
+
+  it('calls setFormData on category select change', () => {
+    const setFormData = vi.fn();
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={setFormData}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const selects = container.querySelectorAll('select');
+    expect(selects.length).toBeGreaterThanOrEqual(2);
+    const categorySelect = selects[0];
+    fireEvent.change(categorySelect, { target: { value: '长度约束' } });
+    expect(setFormData).toHaveBeenCalled();
+  });
+
+  it('calls setFormData on status select change', () => {
+    const setFormData = vi.fn();
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={setFormData}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const selects = container.querySelectorAll('select');
+    expect(selects.length).toBeGreaterThanOrEqual(2);
+    const statusSelect = selects[1];
+    fireEvent.change(statusSelect, { target: { value: 'archived' } });
+    expect(setFormData).toHaveBeenCalled();
+  });
+
+  it('enables save button when both name and content are filled', () => {
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={{ ...defaultFormData, name: 'Valid Name', content: 'Valid Content' }}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('创建')).not.toBeDisabled();
+  });
+
+  it('disables save button when only name is empty', () => {
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={{ ...defaultFormData, name: '', content: 'Some content' }}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('创建')).toBeDisabled();
+  });
+
+  it('disables save button when only content is empty', () => {
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={{ ...defaultFormData, name: 'Some name', content: '' }}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('创建')).toBeDisabled();
+  });
+
+  it('does not render error section when formErrors is undefined', () => {
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        formErrors={undefined}
+      />,
+    );
+
+    expect(container.querySelector('.wsta-form-errors')).toBeNull();
+  });
+
+  it('does not render error section when formErrors is empty array', () => {
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        formErrors={[]}
+      />,
+    );
+
+    expect(container.querySelector('.wsta-form-errors')).toBeNull();
+  });
+
+  it('renders category options correctly', () => {
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const selects = container.querySelectorAll('select');
+    const categorySelect = selects[0];
+    const options = Array.from(categorySelect.querySelectorAll('option')).map((o) => o.textContent);
+    expect(options).toContain('格式约束');
+    expect(options).toContain('内容约束');
+    expect(options).toContain('语言约束');
+    expect(options).toContain('长度约束');
+  });
+
+  it('renders status options correctly', () => {
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const selects = container.querySelectorAll('select');
+    const statusSelect = selects[1];
+    const options = Array.from(statusSelect.querySelectorAll('option')).map((o) => o.value);
+    expect(options).toContain('active');
+    expect(options).toContain('draft');
+    expect(options).toContain('archived');
+  });
+
+  it('sets maxLength on name input', () => {
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('输入名称');
+    expect(input.getAttribute('maxLength')).toBe('50');
+  });
+
+  it('renders aria-modal="true" for accessibility', () => {
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+  });
+
+  it('closes on non-Escape key without calling onClose', () => {
+    const onClose = vi.fn();
+    render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(document, { key: 'a' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

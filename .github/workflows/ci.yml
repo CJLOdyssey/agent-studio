@@ -72,13 +72,18 @@ jobs:
       - run: npm ci --prefer-offline --no-audit
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm audit --audit-level=high
 
   frontend-test:
-    name: "Frontend: Test"
+    name: "Frontend: Test (${{ matrix.shard }}/4)"
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     defaults:
       run:
         working-directory: frontend
@@ -90,7 +95,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm test -- --pool=threads
+      - run: npm test -- --shard=${{ matrix.shard }}/4 --pool=threads
 
   frontend-build:
     name: "Frontend: Build & Bundle"
@@ -110,7 +115,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
       - run: npm run build
-      - name: Check bundle size
+      - name: Check total bundle size
         run: |
           total=$(du -sb dist/ | cut -f1)
           max=$((10 * 1024 * 1024))
@@ -125,6 +130,30 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
           retention-days: 7
+
+  frontend-size-limit:
+    name: "Frontend: Size Limit"
+    needs: [frontend-build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+      - run: npm ci --prefer-offline --no-audit
+      - name: Check per-chunk size limit
+        run: npm run size
 
   # ── Secrets Scan ─────────────────────────────────────────────────────────
   secrets-scan:
@@ -143,18 +172,17 @@ jobs:
   container-scan:
     name: "Security: Container Scan"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Scan docker/Dockerfile
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: docker/Dockerfile
           severity: CRITICAL,HIGH
           exit-code: 0
       - name: Scan frontend/Dockerfile
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: frontend/Dockerfile
@@ -173,7 +201,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: ruff check backend/
       - run: mypy backend/ --strict --no-error-summary
       - name: Check .env.example for insecure defaults
@@ -193,7 +221,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
       - run: bandit -c pyproject.toml -r backend/ -ll
 
@@ -205,7 +233,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [routers, repository, core-infra, services, tasks]
+        shard: [routers, repository, core-infra, services, tasks-1a, tasks-1b, tasks-2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -213,15 +241,17 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run unit tests (${{ matrix.shard }})
         run: |
           case "${{ matrix.shard }}" in
             routers)     DIRS="tests/routers/" ;;
             repository)  DIRS="tests/repository/ tests/orm/" ;;
-            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/tasks/" ;;
+            core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/benchmark/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/tasks/" ;;
             services)    DIRS="tests/services/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-            tasks)       DIRS="tests/tasks/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            tasks-1a)    DIRS="tests/tasks/test_agent_pipeline.py tests/tasks/test_complete_pipeline.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            tasks-1b)    DIRS="tests/tasks/test_mcp_executor.py tests/tasks/test_pipeline_complete.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            tasks-2)     DIRS="tests/tasks/test_pipeline_utils.py tests/tasks/test_prefix_completion.py tests/tasks/test_registry.py tests/tasks/test_team_pipeline.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
           esac
           PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
 
@@ -237,12 +267,13 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run coverage
         run: |
           PYTHONPATH=. python3 -m pytest tests/ \
             -q --tb=short \
             --ignore=tests/e2e/ \
+            --ignore=tests/benchmark/ \
             -m 'not integration' \
             --ignore=tests/broker/ \
             --ignore=tests/test_requirement_markers.py \
@@ -260,13 +291,17 @@ jobs:
           path: coverage.xml
           retention-days: 7
 
-  # ── Frontend Coverage ────────────────────────────────────────────────────
+  # ── Frontend Coverage (sharded 3-way + merge) ───────────────────────────
   frontend-coverage:
-    name: "Frontend: Coverage"
+    name: "Frontend: Coverage (${{ matrix.shard }}/4)"
     needs: [changes, frontend-test]
     if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     defaults:
       run:
         working-directory: frontend
@@ -278,7 +313,49 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run test:coverage -- --pool=threads
+      - name: Run tests with coverage
+        run: |
+          mkdir -p ../coverage-artifacts
+          # Thresholds disabled per-shard; enforced in merge step
+          npx vitest run --shard=${{ matrix.shard }}/4 --pool=threads \
+            --coverage \
+            --coverage.thresholds.statements=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.lines=0 \
+            --reporter=json --outputFile=../coverage-artifacts/shard-${{ matrix.shard }}.json
+      - name: Save coverage data
+        run: |
+          mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-artifacts-${{ matrix.shard }}
+          path: coverage-artifacts/
+
+  frontend-coverage-report:
+    name: "Frontend: Coverage Report"
+    needs: [frontend-coverage]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-artifacts-*
+          merge-multiple: true
+          path: coverage-all
+      - name: Merge coverage from all shards
+        working-directory: coverage-all
+        run: |
+          mkdir -p coverage/tmp
+          for d in coverage-*/; do
+            [ -d "$d/tmp" ] && cp "$d/tmp/"*.json coverage/tmp/ 2>/dev/null || true
+          done
+          npx c8 report --reporter=lcov --reporter=text --reporter=cobertura \
+            --temp-directory=./coverage \
+            --thresholds.statements=75 \
+            --thresholds.branches=65 \
+            --thresholds.functions=60 \
+            --thresholds.lines=75
 
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
@@ -295,7 +372,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
@@ -385,7 +462,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
@@ -457,7 +534,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Preflight check
         run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. python3 scripts/preflight.py
       - name: Start backend
@@ -523,7 +600,7 @@ jobs:
           node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: pip install playwright --quiet
       - run: python3 -m playwright install chromium --with-deps
       - name: Start backend
@@ -577,7 +654,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run tests with requirement markers
         run: |
           PYTHONPATH=. python3 -m pytest tests/routers/ tests/repository/ tests/services/ \
@@ -589,7 +666,6 @@ jobs:
   flaky-check:
     name: "Backend: Flaky Tests"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -597,7 +673,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Collect flaky tests
         id: collect
         run: |
@@ -619,7 +695,7 @@ jobs:
         if: always()
         run: |
           echo "Flaky tests collected: ${{ steps.collect.outputs.count }}"
-          echo "Note: flaky-check is advisory (continue-on-error)"
+          echo "Note: flaky-check is now a hard gate"
 
   # ── Load Tests ─────────────────────────────────────────────────────────────
   load-test:
@@ -657,7 +733,7 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install -r requirements-lock.txt --quiet
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: pip install locust --quiet
       - name: Start backend
         run: |
@@ -710,7 +786,7 @@ jobs:
       - backend-security
       - backend-test
       - backend-coverage
-      - frontend-coverage
+      - frontend-coverage-report
       - diff-coverage
       - openapi-diff
       - integration
@@ -742,7 +818,7 @@ jobs:
           check "backend-security" "${{ needs.backend-security.result }}" || FAIL=1
           check "backend-test" "${{ needs.backend-test.result }}" || FAIL=1
           check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
-          check "frontend-coverage" "${{ needs.frontend-coverage.result }}" || FAIL=1
+          check "frontend-coverage-report" "${{ needs.frontend-coverage-report.result }}" || FAIL=1
           check "integration" "${{ needs.integration.result }}" || FAIL=1
           check "docs-check" "${{ needs.docs-check.result }}" || FAIL=1
           check "load-test" "${{ needs.load-test.result }}" || FAIL=1
@@ -757,13 +833,15 @@ jobs:
             echo "❌ OpenAPI schema validation failed"
             FAIL=1
           fi
-          # container-scan is advisory (continue-on-error)
+          # container-scan is now a hard gate
           if [[ "${{ needs.container-scan.result }}" == "failure" ]]; then
-            echo "⚠️  Container scan found issues (advisory only)"
+            echo "❌ Container scan failed"
+            FAIL=1
           fi
-          # flaky-check is advisory (continue-on-error)
+          # flaky-check is now a hard gate
           if [[ "${{ needs.flaky-check.result }}" == "failure" ]]; then
-            echo "⚠️  Flaky test check found issues (advisory only)"
+            echo "❌ Flaky test check failed"
+            FAIL=1
           fi
 
           if [[ "$FAIL" -ne 0 ]]; then

@@ -135,8 +135,8 @@ export function useWorkstationState(
       round_number: 0,
       created_at: m.timestamp
         ? new Date(m.timestamp).toISOString()
-        : (m as unknown as Record<string, string>).created_at
-          ? (m as unknown as Record<string, string>).created_at
+        : Reflect.get(m, 'created_at')
+          ? String(Reflect.get(m, 'created_at'))
           : found.createdAt && found.updatedAt && found.messages.length > 0
             ? new Date(
                 new Date(found.createdAt).getTime() +

@@ -1,15 +1,14 @@
-import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Wrench, Server, Sparkles } from 'lucide-react';
 import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/AgentStudio';
 import { useItemList } from '../../../hooks/useItemList';
 import { useAutoSave } from '../../../hooks/useAutoSave';
 import { useAgentConfigForm } from './tabs/useAgentConfigForm';
+import { useConfigItemEdit } from './tabs/useConfigItemEdit';
 import { usePickerState } from './tabs/usePickerState';
 import TabRenderer from './tabs/TabRenderer';
 import PickerSection from './PickerSection';
-import type { ToolFormData } from '../workstation/tool/tool.types';
-import { toolAPI } from '../workstation/tool/api';
 
 interface Props {
   agent: Agent;
@@ -80,9 +79,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   useAutoSave('agentstudio:agent:systemPrompt', systemPrompt);
   useAutoSave('agentstudio:agent:outputConstraints', outputConstraints);
   const [activeTab, setActiveTab] = useState('system');
-  const [editingToolItem, setEditingToolItem] = useState<AgentTool | null>(null);
-  const [editingMcpItem, setEditingMcpItem] = useState<AgentMCP | null>(null);
-  const [editingSkillItem, setEditingSkillItem] = useState<AgentSkill | null>(null);
+  const itemEdit = useConfigItemEdit(tools, mcp, skills, form);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +95,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
     setSystemPrompt,
     setOutputConstraints,
-    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, parameters: (item as unknown as Record<string, string>).parameters || '' }) as AgentTool),
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true } as AgentTool)),
     addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentMCP),
     addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentSkill),
   });
@@ -118,102 +115,6 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
     });
   };
 
-  function saveFormItem(kind: 'tool' | 'mcp' | 'skill') {
-    const f = form.forms[kind];
-    if (!('name' in f.data) || !(f.data as { name: string }).name.trim()) {
-      form.setFormErrors(kind, [t('workstation.nameRequired')]);
-      return;
-    }
-    const data = f.data as Record<string, string>;
-    switch (kind) {
-      case 'tool':
-        if (editingToolItem) {
-          tools.update(editingToolItem.id, { name: data.name, description: data.description || '', parameters: data.parameters || '' } as Partial<AgentTool>);
-          setEditingToolItem(null);
-        } else {
-          const id = `custom-${Date.now()}`;
-          tools.addCustom(() => ({ id, name: data.name, description: data.description || '', enabled: true, parameters: data.parameters || '' }) as AgentTool);
-          toolAPI.create({ name: data.name, description: data.description || '', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: data.endpoint || '', parameters: data.parameters || '' }).catch(() => {});
-        }
-        break;
-      case 'mcp':
-        if (editingMcpItem) {
-          mcp.update(editingMcpItem.id, { name: data.name, description: data.description || '' } as Partial<AgentMCP>);
-          setEditingMcpItem(null);
-        } else {
-          mcp.addCustom(() => ({ id: `custom-${Date.now()}`, name: data.name, description: data.description || '', enabled: true }) as AgentMCP);
-        }
-        break;
-      case 'skill':
-        if (editingSkillItem) {
-          skills.update(editingSkillItem.id, { name: data.name, description: data.description || '' } as Partial<AgentSkill>);
-          setEditingSkillItem(null);
-        } else {
-          skills.addCustom(() => ({ id: `custom-${Date.now()}`, name: data.name, description: data.description || '', enabled: true }) as AgentSkill);
-        }
-        break;
-    }
-    form.closeForm(kind);
-  }
-
-  function itemsToFormData(item: Record<string, unknown>): ToolFormData {
-    return {
-      name: item.name as string || '',
-      description: (item.description as string) || '',
-      category: (item.category as string) || '自定义工具',
-      model: (item.model as string) || 'GPT-4o',
-      status: 'active',
-      version: (item.version as string) || 'v1.0.0',
-      endpoint: (item.endpoint as string) || '',
-      parameters: (item.parameters as string) || '{"type":"object"}',
-    };
-  }
-
-  function handleFormClose() {
-    form.closeForm('tool');
-    setEditingToolItem(null);
-    setEditingMcpItem(null);
-    setEditingSkillItem(null);
-  }
-
-  function handleEditTool(item: Record<string, unknown>) {
-    const tool = itemsToFormData(item);
-    setEditingToolItem(item as unknown as AgentTool);
-    form.openForm('tool');
-    form.updateFormData('tool', () => tool);
-  }
-
-  function handleEditMcp(item: Record<string, unknown>) {
-    setEditingMcpItem(item as unknown as AgentMCP);
-    form.openForm('mcp');
-    form.updateFormData('mcp', () => ({
-      name: item.name as string || '',
-      description: (item.description as string) || '',
-      type: (item.type as string) || 'stdio',
-      status: (item.status as string) || 'disconnected',
-      version: (item.version as string) || 'v1.0.0',
-      command: (item.command as string) || '',
-      url: (item.url as string) || '',
-    }));
-  }
-
-  function handleEditSkill(item: Record<string, unknown>) {
-    setEditingSkillItem(item as unknown as AgentSkill);
-    form.openForm('skill');
-    form.updateFormData('skill', () => ({
-      name: item.name as string || '',
-      description: (item.description as string) || '',
-      category: (item.category as string) || 'AI/ML',
-      status: (item.status as string) || 'available',
-      version: (item.version as string) || 'v1.0.0',
-      author: (item.author as string) || '',
-      instructions: (item.instructions as string) || '',
-      prompt_id: (item.prompt_id as string) || '',
-      tool_names: (item.tool_names as string[]) || [],
-      output_constraint: (item.output_constraint as string) || '',
-    }));
-  }
-
   const renderTabContent = () => (
     <TabRenderer
       activeTab={activeTab}
@@ -227,18 +128,18 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
       mcp={mcp}
       skills={skills}
       form={form}
-      editingToolItem={editingToolItem}
-      editingMcpItem={editingMcpItem}
-      editingSkillItem={editingSkillItem}
-      onSaveFormItem={saveFormItem}
-      onFormClose={handleFormClose}
-      onSetEditingMcpItem={setEditingMcpItem}
-      onSetEditingSkillItem={setEditingSkillItem}
-      onEditTool={handleEditTool}
-      onEditMcp={handleEditMcp}
-      onEditSkill={handleEditSkill}
+      editingToolItem={itemEdit.editingToolItem}
+      editingMcpItem={itemEdit.editingMcpItem}
+      editingSkillItem={itemEdit.editingSkillItem}
+      onSaveFormItem={itemEdit.saveFormItem}
+      onFormClose={itemEdit.handleFormClose}
+      onSetEditingMcpItem={itemEdit.setEditingMcpItem}
+      onSetEditingSkillItem={itemEdit.setEditingSkillItem}
+      onEditTool={itemEdit.handleEditTool}
+      onEditMcp={itemEdit.handleEditMcp}
+      onEditSkill={itemEdit.handleEditSkill}
       onPickerOpen={setPickerTab}
-      itemsToFormData={itemsToFormData}
+      itemsToFormData={itemEdit.itemsToFormData}
     />
   );
 

@@ -1,7 +1,7 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap } from 'lucide-react';
-import { useSkillData } from './useSkillData';
+import { useSkillManagement } from './useSkillManagement';
 import { SKILL_CATEGORIES, SKILL_STATUS_LABEL } from './skill.constants';
 import SkillFormModal from './SkillFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -14,7 +14,7 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 
 export default function SkillManagement() {
-  const d = useSkillData();
+  const d = useSkillManagement();
   const { toast } = useToast();
 
   function handleSaveWrapper() {

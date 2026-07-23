@@ -37,33 +37,43 @@ const noopService = (overrides = {}) =>
   }) as unknown as PromptAPIService & OutputAPIService & ToolAPIService & MCPAPIService & SkillAPIService;
 
 describe('DI setters', () => {
-  it('promptAPI DI setter works', () => {
+  it('promptAPI DI setter works', async () => {
     const mock = noopService();
     setPromptAPI(mock);
-    expect(promptAPI).toBe(mock);
+    const result = await promptAPI.fetchAll();
+    expect(result).toEqual([]);
+    expect(mock.fetchAll).toHaveBeenCalledTimes(1);
   });
 
-  it('outputAPI DI setter works', () => {
+  it('outputAPI DI setter works', async () => {
     const mock = noopService();
     setOutputAPI(mock);
-    expect(outputAPI).toBe(mock);
+    const result = await outputAPI.fetchAll();
+    expect(result).toEqual([]);
+    expect(mock.fetchAll).toHaveBeenCalledTimes(1);
   });
 
-  it('toolAPI DI setter works', () => {
+  it('toolAPI DI setter works', async () => {
     const mock = noopService();
     setToolAPI(mock);
-    expect(toolAPI).toBe(mock);
+    const result = await toolAPI.fetchAll();
+    expect(result).toEqual([]);
+    expect(mock.fetchAll).toHaveBeenCalledTimes(1);
   });
 
-  it('mcpAPI DI setter works', () => {
+  it('mcpAPI DI setter works', async () => {
     const mock = noopService();
     setMCPAPI(mock);
-    expect(mcpAPI).toBe(mock);
+    const result = await mcpAPI.fetchAll();
+    expect(result).toEqual([]);
+    expect(mock.fetchAll).toHaveBeenCalledTimes(1);
   });
 
-  it('skillAPI DI setter works', () => {
+  it('skillAPI DI setter works', async () => {
     const mock = noopService();
     setSkillAPI(mock);
-    expect(skillAPI).toBe(mock);
+    const result = await skillAPI.fetchAll();
+    expect(result).toEqual([]);
+    expect(mock.fetchAll).toHaveBeenCalledTimes(1);
   });
 });

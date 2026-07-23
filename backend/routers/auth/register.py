@@ -3,7 +3,7 @@
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
 from backend.auth.password_policy import validate_password
 from backend.broker import get_redis
@@ -24,6 +24,7 @@ from .schemas import (
     _create_auth_response,
     _generate_code,
     _mask_email,
+    _set_access_token_cookie,
     _store_code_in_redis,
 )
 
@@ -67,7 +68,7 @@ async def send_register_code(body: SendRegisterCodeRequest, request: Request) ->
 
 
 @router.post("/register", status_code=201, response_model=AuthResponse)
-async def register(body: RegisterRequest, request: Request) -> Any:
+async def register(body: RegisterRequest, request: Request, response: Response) -> Any:
     """Register a new user account with email verification."""
     email = body.email.lower().strip()
     code = body.code.strip()
@@ -110,11 +111,13 @@ async def register(body: RegisterRequest, request: Request) -> Any:
     await r.delete(attempts_key)
 
     logger.info("User registered and verified: %s", _mask_email(email))
-    return await _create_auth_response(user.id, user.email, user.username)
+    auth_resp = await _create_auth_response(user.id, user.email, user.username)
+    _set_access_token_cookie(response, auth_resp.access_token)
+    return auth_resp
 
 
 @router.post("/verify", response_model=AuthResponse)
-async def verify(body: VerifyRequest, request: Request) -> Any:
+async def verify(body: VerifyRequest, request: Request, response: Response) -> Any:
     """Verify an email address with a verification code."""
     email = body.email.lower().strip()
     code = body.code.strip()
@@ -153,7 +156,9 @@ async def verify(body: VerifyRequest, request: Request) -> Any:
     await mark_user_verified(user.id)
     logger.info("Email verified: %s", _mask_email(email))
 
-    return await _create_auth_response(user.id, user.email, user.username)
+    auth_resp = await _create_auth_response(user.id, user.email, user.username)
+    _set_access_token_cookie(response, auth_resp.access_token)
+    return auth_resp
 
 
 @router.post("/resend-verification", response_model=MessageResponse)

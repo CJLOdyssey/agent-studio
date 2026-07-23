@@ -1,14 +1,6 @@
 import type { SkillEntry, SkillFormData } from './skill.types';
+import { defineCrudModule } from '../shared/api-base';
 import { listSkills, createSkill, updateSkill, deleteSkill } from '../../../../api/client/skills';
-
-export interface SkillAPIService {
-  fetchAll(): Promise<SkillEntry[]>;
-  create(data: SkillFormData): Promise<SkillEntry>;
-  update(id: string, data: Partial<SkillEntry>): Promise<void>;
-  remove(id: string): Promise<void>;
-  clone(item: SkillEntry): Promise<SkillEntry>;
-  removeBatch(ids: Set<string>): Promise<void>;
-}
 
 function toEntry(item: { id: string; name: string; description: string; category: string; version: string; status: string; author: string; instructions: string; prompt_id: string | null; tool_names: unknown; output_constraint: string; created_at: string }): SkillEntry {
   return {
@@ -27,23 +19,14 @@ function toEntry(item: { id: string; name: string; description: string; category
   };
 }
 
-const realImpl: SkillAPIService = {
-  fetchAll: async () => {
-    const items = await listSkills();
-    return items.map(toEntry);
-  },
+const { bind: skillAPI, setAPI: setSkillAPI } = defineCrudModule<SkillEntry, SkillFormData>({
+  fetchAll: async () => { const items = await listSkills(); return items.map(toEntry); },
   create: async (data) => {
     const item = await createSkill({
-      name: data.name,
-      description: data.description,
-      category: data.category,
-      version: data.version,
-      status: data.status,
-      author: data.author,
-      instructions: data.instructions || '',
-      prompt_id: data.prompt_id || undefined,
-      tool_names: data.tool_names,
-      output_constraint: data.output_constraint || '',
+      name: data.name, description: data.description, category: data.category,
+      version: data.version, status: data.status, author: data.author,
+      instructions: data.instructions || '', prompt_id: data.prompt_id || undefined,
+      tool_names: data.tool_names, output_constraint: data.output_constraint || '',
     });
     return toEntry(item);
   },
@@ -64,21 +47,13 @@ const realImpl: SkillAPIService = {
   remove: async (id) => { await deleteSkill(id); },
   clone: async (item) => {
     const created = await createSkill({
-      name: `${item.name.slice(0, 48)} (副本)`,
-      description: item.description,
-      category: item.category,
-      version: item.version,
-      status: item.status,
-      author: item.author,
-      instructions: item.instructions || '',
+      name: `${item.name.slice(0, 48)} (副本)`, description: item.description,
+      category: item.category, version: item.version, status: item.status,
+      author: item.author, instructions: item.instructions || '',
     });
     return toEntry(created);
   },
-  removeBatch: async (ids) => {
-    await Promise.all(Array.from(ids).map(deleteSkill));
-  },
-};
+  removeBatch: async (ids) => { await Promise.all(Array.from(ids).map(deleteSkill)); },
+});
 
-export let skillAPI: SkillAPIService = realImpl;
-
-export function setSkillAPI(api: SkillAPIService): void { skillAPI = api; }
+export { skillAPI, setSkillAPI };

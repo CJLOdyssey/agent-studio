@@ -80,6 +80,7 @@ class TestBrokerRedis:
         result = get_redis()
         mock_from_url.assert_called_once_with(
             REDIS_URL,
+            max_connections=20,
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,
@@ -185,6 +186,7 @@ class TestBrokerFull:
         result = get_redis()
         mock_from_url.assert_called_once_with(
             "redis://custom-host:7777/5",
+            max_connections=20,
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,
