@@ -102,6 +102,7 @@ export default defineConfig(({ mode }) => {
 
           'src/components/auth/**',
           'src/**/tabConfig.tsx',
+          'src/**/locales.ts',
           'src/main.tsx',
           'src/App.tsx',
           'src/**/index.ts',
