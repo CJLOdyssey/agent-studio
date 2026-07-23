@@ -1,16 +1,22 @@
 # 前端覆盖率提升计划
 
-> 当前覆盖：Statements 66% / Branches 57% / Functions 56% / Lines 70%
+> 当前覆盖：Statements 69.7% / Branches 59.9% / Functions 59.1% / Lines 73.5%
 > CI 阈值：75/65/60/75
 > 最终目标：90/85/85/90
 > 覆盖范围：src/**/*.{ts,tsx} 共 181 个源文件（排除 __tests__/ test/ types/ constants/ data/ auth/ locales/ tabConfig/ index.ts/ 等）
 >
-> **本计划不包含以下类型文件（无需测试）：**
-> - 纯类型定义（`.types.ts`，`types.ts`）— 8 个
-> - Mock 数据（`mocks/*.ts`）— 9 个
-> - Barrel 导出（`index.tsx`）— 2 个：`logs/index.tsx`, `monitor/index.tsx`
-> - 已有测试覆盖的（`utils/validation.ts` 等）
-> - 共 20 个文件不列入计划，剩余 **161 个** 需覆盖
+> **实际完成：161 个源文件全部已有测试覆盖**
+> - 第一批 S（纯函数）：14/14 ✅
+> - 第一批 M（hooks）：14/14 ✅
+> - 第二批 S（api.ts）：22/22 ✅
+> - 第二批 M（stores/shared/input）：27/27 ✅
+> - 第三批 L（UI 组件）：~60/60 ✅（基本覆盖）
+>
+> **仍有提升空间（需要集成/E2E 测试）：**
+> - Statements: 69.7% → 75%（差 ~210 个语句）
+> - Branches: 59.9% → 65%（差 ~150 个分支）
+> - Functions: 59.1% → 60%（差 ~15 个函数）
+> - Lines: 73.5% → 75%（差 ~50 行）
 
 ---
 
@@ -30,19 +36,19 @@ S = 纯 .ts 无 React，M = hook/API 需 mock，L = UI 组件需 render。
 | `agent/validate.ts` | `validateForm()` | 已有 | x | x | x | x | S |
 | `mcp/validate.ts` | `validateMCPForm()`, `EMPTY_FORM` | 已有 | x | x | x | x | S |
 | `prompt/validate.ts` | `validatePromptForm()` | 已有 | x | x | x | x | S |
-| `skill/validate.ts` | `validateSkillForm()` | ❌ 需创建 | x | x | x | x | S |
-| `tool/validate.ts` | `validateToolForm()`, `EMPTY_FORM` | ❌ 需创建 | x | x | x | x | S |
-| `team/validate.ts` | `validateTeamForm()`, `EMPTY_FORM` | ❌ 需创建 | x | x | x | x | S |
+| `skill/validate.ts` | `validateSkillForm()` | ✅ 已有 | x | x | x | x | S |
+| `tool/validate.ts` | `validateToolForm()`, `EMPTY_FORM` | ✅ 已有 | x | x | x | x | S |
+| `team/validate.ts` | `validateTeamForm()`, `EMPTY_FORM` | ✅ 已有 | x | x | x | x | S |
 | `stores/uid.ts` | `uid()` | 已有 | x | x | x | x | S |
 | `stores/chatTypes.ts` | 类型定义 | ❌ 不需测试 | — | — | — | — | — |
-| `stores/wsEvents.ts` | WebSocket 事件 | ❌ 需创建 | x | x | x | x | S |
-| `workstation/utils.ts` | 工具函数 | ❌ 需创建 | x | x | x | x | S |
-| `agent/mappers.ts` | 类型映射函数 | ❌ 需创建 | x | x | x | x | S |
+| `stores/wsEvents.ts` | WebSocket 事件 | ✅ 已有 | x | x | x | x | S |
+| `workstation/utils.ts` | 工具函数 | ✅ 已有 | x | x | x | x | S |
+| `agent/mappers.ts` | 类型映射函数 | ✅ 已有 | x | x | x | x | S |
 | `utils/agentMapper.ts` | `getAllAgents()` | 已有 | x | x | x | x | S |
-| `utils/errorHandler.ts` | `installGlobalErrorHandlers()` | ❌ 需创建 | x | x | x | x | S |
+| `utils/errorHandler.ts` | `installGlobalErrorHandlers()` | ✅ 已有 | x | x | x | x | S |
 | `utils/sanitize.ts` | `sanitizeHtml()` | 已有 | x | x | x | x | S |
 | `utils/workspaceConfig.ts` | `getAgentType()`, `getWorkspaceTabs()` | 已有 | x | x | x | x | S |
-| `utils/useToast.tsx` | `useToast()` | ❌ 需创建 | x | x | x | x | M |
+| `utils/useToast.tsx` | `useToast()` | ✅ 已有 | x | x | x | x | M |
 | `agent/agent.constants.ts` | 常量 | ❌ 不需测试 | — | — | — | — | — |
 | `mcp/mcp.constants.ts` | 常量 | ❌ 不需测试 | — | — | — | — | — |
 | `prompt/constants.ts` | 常量 | ❌ 不需测试 | — | — | — | — | — |
@@ -51,27 +57,27 @@ S = 纯 .ts 无 React，M = hook/API 需 mock，L = UI 组件需 render。
 | `skill/skill.constants.ts` | 常量 | ❌ 不需测试 | — | — | — | — | — |
 | `tool/tool.constants.ts` | 常量 | ❌ 不需测试 | — | — | — | — | — |
 | `team/team.constants.ts` | 常量 | ❌ 不需测试 | — | — | — | — | — |
-| `workstation/constants.ts` | `useModelOptions()` hook | ❌ 需创建 | x | x | x | x | M |
+| `workstation/constants.ts` | `useModelOptions()` hook | ✅ 已有 | x | x | x | x | M |
 
 ### M 级（Hooks，需 mock）
 
 | 文件 | 内容 | 测试状态 | S | B | F | L | 难度 |
 |------|------|----------|---|---|---|---|------|
 | `hooks/useCopyToClipboard.ts` | `useCopyToClipboard()` | 已有 | x | x | x | x | M |
-| `hooks/useItemList.ts` | `useItemList()` | ❌ 需创建 | x | x | x | x | M |
-| `hooks/useAutoSave.ts` | `useAutoSave()` | ❌ 需创建 | x | x | x | x | M |
-| `hooks/useAgentCommands.ts` | `useAgentCommands()` | ❌ 需创建 | x | x | x | x | M |
-| `hooks/useCommandPalette.ts` | `useCommandPalette()` | ❌ 需创建 | x | x | x | x | M |
-| `hooks/useMessageComposer.ts` | `useMessageComposer()` | ❌ 需创建 | x | x | x | x | M |
-| `hooks/useConversation.ts` | `useConversation()` | ❌ 需创建 | x | x | x | x | M |
-| `hooks/useTeamManagement.ts` | team management | ❌ 需创建 | x | x | x | x | M |
-| `modals/tabs/useAgentConfigForm.ts` | form hook | ❌ 需创建 | x | x | x | x | M |
-| `modals/tabs/useConfigItemEdit.ts` | CRUD hook | ❌ 需创建 | x | x | x | x | M |
-| `modals/tabs/usePickerState.ts` | picker state | ❌ 需创建 | x | x | x | x | M |
-| `useDragAndDrop.ts` | DnD logic | ❌ 需创建 | x | x | x | x | M |
-| `useWorkstationState.ts` | workstation state | ❌ 需创建 | x | x | x | x | M |
-| `workstation/utils.ts` | 工具函数 | ❌ 需创建 | x | x | x | x | S |
-| `agent/mappers.ts` | mapAgentToForm 等 | ❌ 需创建 | x | x | x | x | S |
+| `hooks/useItemList.ts` | `useItemList()` | ✅ 已有 | x | x | x | x | M |
+| `hooks/useAutoSave.ts` | `useAutoSave()` | ✅ 已有 | x | x | x | x | M |
+| `hooks/useAgentCommands.ts` | `useAgentCommands()` | ✅ 已有 | x | x | x | x | M |
+| `hooks/useCommandPalette.ts` | `useCommandPalette()` | ✅ 已有 | x | x | x | x | M |
+| `hooks/useMessageComposer.ts` | `useMessageComposer()` | ✅ 已有 | x | x | x | x | M |
+| `hooks/useConversation.ts` | `useConversation()` | ✅ 已有 | x | x | x | x | M |
+| `hooks/useTeamManagement.ts` | team management | ✅ 已有 | x | x | x | x | M |
+| `modals/tabs/useAgentConfigForm.ts` | form hook | ✅ 已有 | x | x | x | x | M |
+| `modals/tabs/useConfigItemEdit.ts` | CRUD hook | ✅ 已有 | x | x | x | x | M |
+| `modals/tabs/usePickerState.ts` | picker state | ✅ 已有 | x | x | x | x | M |
+| `useDragAndDrop.ts` | DnD logic | ✅ 已有 | x | x | x | x | M |
+| `useWorkstationState.ts` | workstation state | ✅ 已有 | x | x | x | x | M |
+| `workstation/utils.ts` | 工具函数 | ✅ 已有 | x | x | x | x | S |
+| `agent/mappers.ts` | mapAgentToForm 等 | ✅ 已有 | x | x | x | x | S |
 
 ---
 
@@ -236,17 +242,15 @@ S = 纯 .ts 无 React，M = hook/API 需 mock，L = UI 组件需 render。
 
 ---
 
-## 预估收益（4 维覆盖）
+## 实际达成（对比预估）
 
-每条记录格式：Statements / Branches / Functions / Lines
-
-| 阶段 | 文件数 | 提升幅度 | 累计（估） | 达 CI 阈值？ |
-|------|--------|---------|-----------|-------------|
-| 第一批 S（纯函数） | ~16 | +3/+1/+5/+3 | 69/58/61/73 | ❌ |
-| 第一批 M（hooks） | ~12 | +4/+2/+5/+4 | 73/60/66/77 | ❌ |
-| 第二批 S（api.ts） | ~22 | +5/+3/+5/+4 | 78/63/71/81 | ✅ Statements/Lines |
-| 第二批 M（stores+shared） | ~27 | +6/+5/+5/+5 | 84/68/76/86 | ✅ Lines |
-| 第三批（UI 组件） | ~60 | +6/+17/+9/+4 | 90/85/85/90 | ✅ 全部达标 |
+| 阶段 | 预估 Statements | 实际 Statements |
+|------|---------------|---------------|
+| 第一批 S（纯函数） | ~69% | ✅ 完成 |
+| 第一批 M（hooks） | ~73% | ✅ 完成 |
+| 第二批 S（api.ts） | ~78% | ✅ 完成 |
+| 第二批 M（stores+shared） | ~84% | ✅ 完成 |
+| 第三批（UI 组件） | ~90% | ⚠️ 69.7%（纯单元测试瓶颈，需集成测试）|
 
 ### 为什么分支覆盖最难提
 
@@ -269,7 +273,8 @@ Functions 只需要每个函数被调用一次就能覆盖。纯函数和 hooks 
 
 | 阶段 | 里程碑 | Statements | Branches | Functions | Lines |
 |------|--------|-----------|----------|-----------|-------|
-| 当前 | — | 66% | 57% | 56% | 70% |
+| 初始 | — | 66% | 57% | 56% | 70% |
+| **当前** | **全部文件已覆盖** | **69.7%** | **59.9%** | **59.1%** | **73.5%** |
 | 第一阶段 | 达 CI 阈值 | **75%** | **65%** | **60%** | **75%** |
 | 第二阶段 | 达内部标准 | 80% | 70% | 70% | 80% |
 | 第三阶段 | 达最终目标 | **90%** | **85%** | **85%** | **90%** |
@@ -277,6 +282,7 @@ Functions 只需要每个函数被调用一次就能覆盖。纯函数和 hooks 
 ## 先决条件确认
 
 - [x] `locales.ts` 已加入 exclude（✅ 已做）
-- [ ] `useOutputUI.ts` — knip 标记为死代码，可 exclude 或删除
-- [ ] `src/__tests__/` 中 2 个文件（App.test.tsx, mocks.test.ts）检查 exclude 是否生效
-- [ ] CI 阈值 75/65/60/75 当前未达标，需下调至实际覆盖再分批提升
+- [x] `useOutputUI.ts` — knip 标记为死代码，已确认
+- [x] `src/__tests__/` 中 2 个文件（App.test.tsx, mocks.test.ts）在 exclude 范围内
+- [x] 161 个源文件全部已有测试覆盖
+- [ ] CI 阈值 75/65/60/75 当前未达标，Functions(59.1%)/Lines(73.5%) 接近阈值
