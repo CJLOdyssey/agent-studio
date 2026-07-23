@@ -86,6 +86,9 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text', 'lcov', 'html'],
         reportsDirectory: './coverage',
+        clean: true,
+        cleanOnRerun: false,
+        processingConcurrency: 1,
         thresholds: {
           statements: 75,
           branches: 65,
