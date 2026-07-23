@@ -151,6 +151,7 @@ jobs:
         with:
           name: frontend-dist
           path: frontend/dist/
+      - run: npm ci --prefer-offline --no-audit
       - name: Check per-chunk size limit
         run: npm run size
 
