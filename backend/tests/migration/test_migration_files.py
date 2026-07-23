@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def test_migration_files_have_revision():
-    versions_dir = Path("alembic/versions")
+    versions_dir = Path("backend/alembic/versions")
     if not versions_dir.exists():
         return  # Skip if no migrations yet
 

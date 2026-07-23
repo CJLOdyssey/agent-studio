@@ -15,18 +15,18 @@ ignore = ["E402"]
 [tool.ruff.lint.per-file-ignores]
 "backend/routers/*.py" = ["B008"]
 "backend/auth/auth_rbac.py" = ["F401"]
-"tests/*.py" = ["E501", "SIM117", "N806"]
+"backend/tests/*.py" = ["E501", "SIM117", "N806"]
 
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
 warn_unused_ignores = true
-mypy_path = ["stubs"]
-exclude = ["tests/"]
+mypy_path = ["backend/stubs"]
+exclude = ["backend/tests/", "backend/stubs/", "backend/alembic/", "backend/system_team/"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["backend/tests"]
 pythonpath = ["."]
 addopts = ["-n", "auto", "--dist", "loadfile"]
 asyncio_mode = "auto"
@@ -52,7 +52,7 @@ filterwarnings = [
 [tool.coverage.run]
 source = ["backend"]
 omit = [
-    "tests/*",
+    "backend/tests/*",
     "backend/thinking_tree/*",
     "backend/system_team/*",
     "backend/main.py",
@@ -62,7 +62,7 @@ omit = [
 ]
 
 [tool.bandit]
-exclude_dirs = ["tests", ".venv", ".opencode"]
+exclude_dirs = ["backend/tests", ".venv", ".opencode"]
 skips = [
     "B101",  # assert — tests/ is already excluded; remaining asserts are intentional defensive checks
     "B102",  # exec — sandboxed tool code validator runs with empty __builtins__ (no arbitrary code execution)
