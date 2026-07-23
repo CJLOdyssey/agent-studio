@@ -75,11 +75,15 @@ jobs:
       - run: npm audit --audit-level=high
 
   frontend-test:
-    name: "Frontend: Test"
+    name: "Frontend: Test (${{ matrix.shard }}/3)"
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     defaults:
       run:
         working-directory: frontend
@@ -91,7 +95,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm test -- --pool=threads
+      - run: npm test -- --shard=${{ matrix.shard }}/3 --pool=threads
 
   frontend-build:
     name: "Frontend: Build & Bundle"
@@ -207,7 +211,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [routers, repository, core-infra, services, tasks]
+        shard: [routers, repository, core-infra, services, tasks-1, tasks-2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -223,7 +227,8 @@ jobs:
             repository)  DIRS="tests/repository/ tests/orm/" ;;
             core-infra)  DIRS="tests/ --ignore=tests/routers/ --ignore=tests/repository/ --ignore=tests/orm/ --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py --ignore=tests/services/ --ignore=tests/tasks/" ;;
             services)    DIRS="tests/services/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
-            tasks)       DIRS="tests/tasks/ --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            tasks-1)     DIRS="tests/tasks/test_agent_pipeline.py tests/tasks/test_complete_pipeline.py tests/tasks/test_mcp_executor.py tests/tasks/test_pipeline_complete.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
+            tasks-2)     DIRS="tests/tasks/test_pipeline_utils.py tests/tasks/test_prefix_completion.py tests/tasks/test_registry.py tests/tasks/test_team_pipeline.py --ignore=tests/e2e/ --ignore=tests/broker/" ;;
           esac
           PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --ignore=tests/e2e/ --ignore=tests/broker/ --ignore=tests/test_requirement_markers.py --ignore=tests/routers/auth/test_auth_routers.py
 
@@ -262,12 +267,17 @@ jobs:
           path: coverage.xml
           retention-days: 7
 
-  # ── Frontend Coverage ────────────────────────────────────────────────────
+  # ── Frontend Coverage (sharded 3-way + merge) ───────────────────────────
   frontend-coverage:
-    name: "Frontend: Coverage"
+    name: "Frontend: Coverage (${{ matrix.shard }}/3)"
     needs: [changes, frontend-test]
     if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     defaults:
       run:
         working-directory: frontend
@@ -279,7 +289,42 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run test:coverage -- --pool=threads
+      - name: Run tests with coverage
+        run: |
+          mkdir -p ../coverage-artifacts
+          npx vitest run --shard=${{ matrix.shard }}/3 --pool=threads \
+            --coverage --reporter=json --outputFile=../coverage-artifacts/shard-${{ matrix.shard }}.json
+      - name: Save coverage data
+        run: |
+          mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-artifacts-${{ matrix.shard }}
+          path: coverage-artifacts/
+
+  frontend-coverage-report:
+    name: "Frontend: Coverage Report"
+    needs: [frontend-coverage]
+    if: always()
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-artifacts-*
+          merge-multiple: true
+      - name: Merge coverage from all shards
+        run: |
+          mkdir -p coverage/tmp
+          for d in coverage-*/; do
+            [ -d "$d/tmp" ] && cp "$d/tmp/"*.json coverage/tmp/ 2>/dev/null || true
+          done
+          npx c8 report --reporter=lcov --reporter=text
+      - name: Check coverage thresholds
+        run: |
+          npx c8 report --reporter=lcov --reporter=cobertura --temp-directory=./coverage
 
   # ── Diff Coverage (Change Coverage) ──────────────────────────────────────
   diff-coverage:
@@ -710,7 +755,7 @@ jobs:
       - backend-security
       - backend-test
       - backend-coverage
-      - frontend-coverage
+      - frontend-coverage-report
       - diff-coverage
       - openapi-diff
       - integration
