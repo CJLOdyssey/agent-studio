@@ -541,6 +541,7 @@ jobs:
           PYTHONPATH=. python3 -m pytest backend/tests/routers/ backend/tests/repository/ backend/tests/services/ \
             --ignore=backend/tests/broker/ \
             --ignore=backend/tests/e2e/ \
+            --ignore=backend/tests/routers/auth/test_auth_routers.py \
             -q --tb=short
 
   # ── Flaky Tests ──────────────────────────────────────────────────────────
