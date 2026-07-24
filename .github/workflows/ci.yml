@@ -67,8 +67,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run typecheck
-      - run: npm run lint
+      - name: Typecheck & Lint (parallel)
+        run: |
+          npm run typecheck &
+          TC_PID=$!
+          npm run lint
+          LINT_EXIT=$?
+          wait $TC_PID
+          TC_EXIT=$?
+          exit $((TC_EXIT | LINT_EXIT))
       - run: npm audit --audit-level=high
 
   frontend-test:
@@ -124,7 +131,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run build
+      # vite build only (tsc already checked in lint:typecheck)
+      - run: npx vite build
       - name: Check total bundle size
         run: |
           total=$(du -sb dist/ | cut -f1)
@@ -187,7 +195,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
-      - run: mypy backend/ --strict --no-error-summary
+      # Use pre-warmed mypy cache from CI runner image
+      - run: MYPY_CACHE_DIR=/opt/mypy-cache mypy backend/ --strict --no-error-summary
       - name: Check .env.example for insecure defaults
         run: |
           if grep -qE 'change-me|example-secret' .env.example; then
