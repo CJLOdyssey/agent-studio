@@ -397,75 +397,6 @@ jobs:
               body: body
             });
 
-  # ── OpenAPI Diff ──────────────────────────────────────────────────────────
-  openapi-diff:
-    name: "OpenAPI: Schema Validation"
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/${{ github.repository }}/ci-runner:latest
-    if: github.event_name == 'pull_request'
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_DB: backend
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - name: Start backend
-        run: |
-          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
-          BACKEND_PID=$!
-          echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/api/models > /dev/null 2>&1; then
-              echo "✅ Backend ready"
-              break
-            fi
-            sleep 1
-          done
-      - name: Validate OpenAPI schema
-        run: |
-          curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; cat /tmp/backend.log; exit 1; }
-          curl -s http://localhost:8080/openapi.json | python3 -c "
-          import json, sys
-          schema = json.load(sys.stdin)
-          assert 'openapi' in schema, 'Missing openapi version'
-          assert 'paths' in schema, 'Missing paths'
-          paths = schema['paths']
-          assert '/api/health' in paths, 'Missing /api/health'
-          assert '/api/agents' in paths, 'Missing /api/agents'
-          assert '/api/tools' in paths, 'Missing /api/tools'
-          assert '/api/sessions' in paths, 'Missing /api/sessions'
-          print(f'✅ OpenAPI valid — {len(paths)} paths')
-          "
-      - name: Stop backend
-        if: always()
-        run: kill $BACKEND_PID 2>/dev/null || true
-
   # ── Integration Tests ────────────────────────────────────────────────────
   integration:
     name: "Integration (${{ matrix.auth_mode }})"
@@ -524,6 +455,21 @@ jobs:
           done
       - name: Run E2E tests
         run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest backend/tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
+      - name: Validate OpenAPI schema
+        run: |
+          curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; exit 1; }
+          curl -s http://localhost:8080/openapi.json | python3 -c "
+          import json, sys
+          schema = json.load(sys.stdin)
+          assert 'openapi' in schema, 'Missing openapi version'
+          assert 'paths' in schema, 'Missing paths'
+          paths = schema['paths']
+          assert '/api/health' in paths, 'Missing /api/health'
+          assert '/api/agents' in paths, 'Missing /api/agents'
+          assert '/api/tools' in paths, 'Missing /api/tools'
+          assert '/api/sessions' in paths, 'Missing /api/sessions'
+          print(f'✅ OpenAPI valid — {len(paths)} paths')
+          "
       - name: Stop backend
         if: always()
         run: kill $BACKEND_PID 2>/dev/null || true
@@ -760,7 +706,6 @@ jobs:
       - backend-coverage
       - frontend-coverage-report
       - diff-coverage
-      - openapi-diff
       - integration
       - docs-check
       - load-test
@@ -798,11 +743,6 @@ jobs:
           # diff-coverage only runs on PRs, skip if skipped
           if [[ "${{ needs.diff-coverage.result }}" == "failure" ]]; then
             echo "❌ Diff coverage check failed"
-            FAIL=1
-          fi
-          # openapi-diff validates OpenAPI schema, not breaking changes
-          if [[ "${{ needs.openapi-diff.result }}" == "failure" ]]; then
-            echo "❌ OpenAPI schema validation failed"
             FAIL=1
           fi
           # container-scan is now a hard gate
