@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: cjloddyssey/agent-studio/ci-runner
+  IMAGE_NAME: cjlodyssey/agent-studio/ci-runner
 
 permissions:
   contents: read
