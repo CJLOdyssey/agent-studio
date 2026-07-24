@@ -197,6 +197,8 @@ jobs:
   # ── Backend Lint & Security ──────────────────────────────────────────────
   backend-lint:
     name: "Backend: Lint & Typecheck"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
@@ -215,6 +217,8 @@ jobs:
 
   backend-security:
     name: "Backend: Security"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
@@ -226,6 +230,8 @@ jobs:
   # ── Backend Tests (sharded for speed, each ~60s) ─────────────────────────
   backend-test:
     name: "Backend: Tests (${{ matrix.shard }})"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
@@ -264,10 +270,11 @@ jobs:
   # ── Backend Coverage (merge from shards, no full re-run) ────────────────
   backend-coverage:
     name: "Backend: Coverage"
+    needs: [changes, backend-test]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
-    needs: backend-test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -321,8 +328,8 @@ jobs:
   diff-coverage:
     name: "Backend: Diff Coverage"
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs: backend-coverage
+    if: (needs.changes.outputs.backend == 'true' || github.event_name == 'push') && github.event_name == 'pull_request'
+    needs: [changes, backend-coverage]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -554,6 +561,8 @@ jobs:
   # ── Requirement Coverage ─────────────────────────────────────────────────
   requirement-coverage:
     name: "Backend: Requirement Coverage"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
@@ -570,6 +579,8 @@ jobs:
   # ── Flaky Tests ──────────────────────────────────────────────────────────
   flaky-check:
     name: "Backend: Flaky Tests"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
@@ -601,6 +612,8 @@ jobs:
   # ── Load Tests ─────────────────────────────────────────────────────────────
   load-test:
     name: "Backend: Load Test"
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
