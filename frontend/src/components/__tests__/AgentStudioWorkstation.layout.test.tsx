@@ -146,7 +146,7 @@ vi.mock('../../api/client', () => ({
   toggleAgent: vi.fn(),
 }));
 
-describe('AgentStudioWorkstation 布局测试', () => {
+describe('AgentStudioWorkstation 布局测试', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

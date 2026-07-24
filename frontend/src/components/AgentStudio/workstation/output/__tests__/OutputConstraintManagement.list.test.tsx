@@ -73,7 +73,7 @@ const makeItem = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-describe('OutputConstraintManagement', () => {
+describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseOutputMgmt.isLoading = false;

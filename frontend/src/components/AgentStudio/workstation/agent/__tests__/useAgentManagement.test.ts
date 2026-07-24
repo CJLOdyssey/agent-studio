@@ -21,7 +21,7 @@ const MOCK_AGENTS: any[] = [
   { id: '3', name: '测试 Agent', description: '自动化测试', team: '质量团队', model: 'Gemini 2.5 Pro', status: 'stopped', version: 'v1.5.0', systemPromptId: 'p3', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-20' },
 ];
 
-describe('useAgentManagement', () => {
+describe('useAgentManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (agentAPI.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([...MOCK_AGENTS]);

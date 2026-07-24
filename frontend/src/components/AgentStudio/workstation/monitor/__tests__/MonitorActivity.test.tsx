@@ -4,7 +4,7 @@ import MonitorActivity from '../MonitorActivity';
 
 vi.mock('../locales', () => ({ t: (k: string) => k }));
 
-describe('MonitorActivity', () => {
+describe('MonitorActivity', { tags: ['integration'] }, () => {
   it('renders empty message when no activities', () => {
     render(<MonitorActivity activities={[]} />);
     expect(screen.getByText('monitor.no_activity')).toBeInTheDocument();

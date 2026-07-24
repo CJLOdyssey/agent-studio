@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { getAgentInfo } from '@/types/index';
 import type { AgentConfig } from '@/types/index';
 
-describe('getAgentInfo', () => {
+describe('getAgentInfo', { tags: ['unit'] }, () => {
   const agents: AgentConfig[] = [
     {
       id: '1',

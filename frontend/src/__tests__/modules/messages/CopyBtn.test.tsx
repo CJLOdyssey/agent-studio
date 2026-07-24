@@ -16,7 +16,7 @@ vi.mock('react-i18next', () => ({
 
 import { CopyBtn } from '@/components/AgentStudio/messages/CopyBtn';
 
-describe('CopyBtn', () => {
+describe('CopyBtn', { tags: ['unit'] }, () => {
   it('renders copy button with label', () => {
     render(<CopyBtn text="hello" label="Copy code" />);
     expect(screen.getByTitle('Copy code')).toBeInTheDocument();

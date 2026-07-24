@@ -27,7 +27,7 @@ beforeEach(async () => {
   useChatStore.setState(initialState);
 });
 
-describe('chatStore', () => {
+describe('chatStore', { tags: ['unit'] }, () => {
   it('初始状态正确', async () => {
     const { useChatStore } = await import('../chatStore');
     const state = useChatStore.getState();

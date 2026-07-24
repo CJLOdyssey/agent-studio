@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { validateForm } from '../validate';
 import type { AgentEntry, AgentFormData } from '../agent.types';
 
-describe('validateForm', () => {
+describe('validateForm', { tags: ['unit'] }, () => {
   const baseData: AgentFormData = {
     name: 'TestAgent',
     description: '',

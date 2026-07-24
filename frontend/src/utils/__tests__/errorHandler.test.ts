@@ -13,7 +13,7 @@ vi.mock('../logger', () => mockLogger);
 
 import { installGlobalErrorHandlers } from '../errorHandler';
 
-describe('installGlobalErrorHandlers', () => {
+describe('installGlobalErrorHandlers', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetAllMocks();
     window.onerror = null;

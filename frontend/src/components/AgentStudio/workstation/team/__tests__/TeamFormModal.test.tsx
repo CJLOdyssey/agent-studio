@@ -22,7 +22,7 @@ function makeTeamEntry(overrides: Partial<TeamEntry> = {}): TeamEntry {
   };
 }
 
-describe('TeamFormModal', () => {
+describe('TeamFormModal', { tags: ['unit'] }, () => {
   it('renders without crashing', () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />

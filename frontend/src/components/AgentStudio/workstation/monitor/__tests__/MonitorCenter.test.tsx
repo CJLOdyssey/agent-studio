@@ -17,7 +17,7 @@ vi.mock('../MonitorStats', () => ({ default: () => <div data-testid="monitor-sta
 
 import MonitorCenter from '../MonitorCenter';
 
-describe('MonitorCenter', () => {
+describe('MonitorCenter', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

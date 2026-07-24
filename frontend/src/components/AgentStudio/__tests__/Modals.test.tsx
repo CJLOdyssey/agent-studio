@@ -25,7 +25,7 @@ vi.mock('../modals/NewProjectModal', () => ({
 
 import Modals from '../Modals';
 
-describe('Modals', () => {
+describe('Modals', { tags: ['integration'] }, () => {
   const baseProps = {
     configuringAgent: null,
     isSettingsOpen: false,

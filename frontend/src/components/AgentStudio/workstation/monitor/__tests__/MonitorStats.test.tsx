@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Bot } from 'lucide-react';
 import MonitorStats from '../MonitorStats';
 
-describe('MonitorStats', () => {
+describe('MonitorStats', { tags: ['integration'] }, () => {
   const statCards = [
     { key: 'agents' as const, icon: Bot, label: 'Agents', tab: 'agents' },
     { key: 'tools' as const, icon: Bot, label: 'Tools', tab: 'tools' },

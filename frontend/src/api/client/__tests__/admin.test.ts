@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('fetchDashboardStats', () => {
+describe('fetchDashboardStats', { tags: ['unit'] }, () => {
   it('calls GET /admin/stats and returns data', async () => {
     const mockStats = {
       agents: 5,
@@ -43,7 +43,7 @@ describe('fetchDashboardStats', () => {
   });
 });
 
-describe('fetchCommandLogs', () => {
+describe('fetchCommandLogs', { tags: ['unit'] }, () => {
   it('calls GET /admin/logs with default params', async () => {
     const mockLogs = [{ id: '1', timestamp: '2024-01-01', command: 'test', payload: '{}', result: 'ok' }];
     mockClient.get.mockResolvedValue({ data: mockLogs });
@@ -63,7 +63,7 @@ describe('fetchCommandLogs', () => {
   });
 });
 
-describe('fetchRecentActivity', () => {
+describe('fetchRecentActivity', { tags: ['unit'] }, () => {
   it('calls GET /admin/activity with default limit', async () => {
     const mockActivity = [{ id: '1', action: 'create', entity_type: 'agent', entity_name: 'Test Agent', detail: 'Created', timestamp: '2024-01-01' }];
     mockClient.get.mockResolvedValue({ data: mockActivity });
@@ -83,7 +83,7 @@ describe('fetchRecentActivity', () => {
   });
 });
 
-describe('fetchSystemHealth', () => {
+describe('fetchSystemHealth', { tags: ['unit'] }, () => {
   it('calls GET /health and returns data', async () => {
     const mockHealth = { status: 'healthy', database: 'connected', redis: 'connected' };
     mockClient.get.mockResolvedValue({ data: mockHealth });

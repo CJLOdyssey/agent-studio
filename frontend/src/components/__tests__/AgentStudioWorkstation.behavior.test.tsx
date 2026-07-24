@@ -194,7 +194,7 @@ vi.mock('../../hooks/useTeamManagement', () => {
   };
 });
 
-describe('AgentStudioWorkstation', () => {
+describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();

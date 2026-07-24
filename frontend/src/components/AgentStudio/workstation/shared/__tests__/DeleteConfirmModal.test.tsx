@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
 
 import DeleteConfirmModal from '../DeleteConfirmModal';
 
-describe('DeleteConfirmModal', () => {
+describe('DeleteConfirmModal', { tags: ['unit'] }, () => {
   it('renders with name and label', () => {
     render(<DeleteConfirmModal name="Test Item" label="Project" onConfirm={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Confirm Delete' })).toBeInTheDocument();

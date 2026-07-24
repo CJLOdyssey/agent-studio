@@ -12,7 +12,7 @@ vi.mock('./uid', () => ({ uid: vi.fn(() => 'test-uid') }));
 
 import { createStreamHandler } from '../chatStreaming';
 
-describe('chatStreaming', () => {
+describe('chatStreaming', { tags: ['unit'] }, () => {
   function makeBasicState() {
     return {
       currentRunId: 'run-1',

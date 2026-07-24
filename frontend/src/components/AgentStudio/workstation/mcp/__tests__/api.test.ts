@@ -13,7 +13,7 @@ vi.mock('../../../../../api/client/mcps', () => ({
   deleteMCP: mockDeleteMCP,
 }));
 
-describe('mcp api', () => {
+describe('mcp api', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

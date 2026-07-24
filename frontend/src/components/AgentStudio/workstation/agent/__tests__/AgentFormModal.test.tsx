@@ -67,7 +67,7 @@ const baseProps = {
   availableSkills: [],
 };
 
-describe('AgentFormModal', () => {
+describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('renders create mode', () => {
     const { container } = render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
     expect(container).toBeDefined();

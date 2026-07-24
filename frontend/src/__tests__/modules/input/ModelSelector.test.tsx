@@ -13,7 +13,7 @@ function makeModel(id: string, overrides: Partial<ModelOption> = {}): ModelOptio
   };
 }
 
-describe('ModelSelector', () => {
+describe('ModelSelector', { tags: ['unit'] }, () => {
   const onChange = vi.fn();
 
   beforeEach(() => {

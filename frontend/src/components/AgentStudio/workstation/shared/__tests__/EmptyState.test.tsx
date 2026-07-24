@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { FileCode } from 'lucide-react';
 import EmptyState from '../EmptyState';
 
-describe('EmptyState', () => {
+describe('EmptyState', { tags: ['unit'] }, () => {
   it('renders title and description', () => {
     render(
       <EmptyState icon={<FileCode size={24} />} title="No items" description="Add some items to get started" />,

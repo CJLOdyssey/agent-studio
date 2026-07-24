@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import EmptyState from '@/components/shared/EmptyState';
 
-describe('EmptyState', () => {
+describe('EmptyState', { tags: ['unit'] }, () => {
   it('renders icon and title', () => {
     render(<EmptyState icon={<span data-testid="icon">X</span>} title="No items found" />);
     expect(screen.getByTestId('icon')).toBeInTheDocument();

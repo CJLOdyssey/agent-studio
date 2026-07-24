@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import ToggleSwitch from '@/components/shared/ToggleSwitch';
 import { expectNoA11yViolations } from '@/test/a11y-setup';
 
-describe('ToggleSwitch', () => {
+describe('ToggleSwitch', { tags: ['unit'] }, () => {
   it('renders checkbox with checked state', () => {
     render(<ToggleSwitch checked={true} onChange={vi.fn()} />);
     const checkbox = screen.getByRole('checkbox');

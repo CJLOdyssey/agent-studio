@@ -10,7 +10,7 @@ vi.mock('../locales', () => ({
 
 import { validateTeamForm, EMPTY_FORM } from '../validate';
 
-describe('validateTeamForm', () => {
+describe('validateTeamForm', { tags: ['unit'] }, () => {
   it('returns no errors for valid data', () => {
     const errors = validateTeamForm({ name: 'My Team' });
     expect(errors).toEqual([]);
@@ -42,7 +42,7 @@ describe('validateTeamForm', () => {
   });
 });
 
-describe('EMPTY_FORM', () => {
+describe('EMPTY_FORM', { tags: ['unit'] }, () => {
   it('has expected default values', () => {
     expect(EMPTY_FORM.name).toBe('');
     expect(EMPTY_FORM.description).toBe('');

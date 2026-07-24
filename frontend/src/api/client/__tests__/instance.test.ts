@@ -45,7 +45,7 @@ vi.mock('../../utils/logger', () => ({
 
 const REFRESH_KEY = 'agentstudio_refresh_token';
 
-describe('instance', () => {
+describe('instance', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

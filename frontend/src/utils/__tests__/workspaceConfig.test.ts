@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAgentType, getWorkspaceTabs } from '../workspaceConfig';
 
-describe('getAgentType', () => {
+describe('getAgentType', { tags: ['unit'] }, () => {
   it('returns ui for ui agent id', () => {
     expect(getAgentType('ui')).toBe('ui');
   });
@@ -19,7 +19,7 @@ describe('getAgentType', () => {
   });
 });
 
-describe('getWorkspaceTabs', () => {
+describe('getWorkspaceTabs', { tags: ['unit'] }, () => {
   it('returns ui tabs for ui type', () => {
     const tabs = getWorkspaceTabs('ui');
     expect(tabs).toHaveLength(2);

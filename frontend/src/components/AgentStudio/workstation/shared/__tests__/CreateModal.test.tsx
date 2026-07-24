@@ -21,7 +21,7 @@ vi.mock('react-i18next', () => ({
 
 import CreateModal from '../CreateModal';
 
-describe('CreateModal', () => {
+describe('CreateModal', { tags: ['unit'] }, () => {
   it('renders with title and children', () => {
     render(<CreateModal title="Test Modal" onClose={vi.fn()} onSave={vi.fn()}><p>content</p></CreateModal>);
     expect(screen.getByText('Test Modal')).toBeInTheDocument();

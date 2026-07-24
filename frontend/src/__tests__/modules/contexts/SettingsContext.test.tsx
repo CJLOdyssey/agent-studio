@@ -16,7 +16,7 @@ function TestConsumer({ onRender }: { onRender?: (s: ReturnType<typeof useSettin
   );
 }
 
-describe('SettingsContext', () => {
+describe('SettingsContext', { tags: ['unit'] }, () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.classList.remove('dark');

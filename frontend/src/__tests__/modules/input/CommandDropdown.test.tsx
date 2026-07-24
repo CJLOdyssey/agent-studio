@@ -13,7 +13,7 @@ function makeCmd(id: string, overrides: Partial<CommandOption> = {}): CommandOpt
   };
 }
 
-describe('CommandDropdown', () => {
+describe('CommandDropdown', { tags: ['unit'] }, () => {
   const onSelect = vi.fn();
   const onHover = vi.fn();
   const onClose = vi.fn();

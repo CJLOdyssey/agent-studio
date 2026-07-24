@@ -17,7 +17,7 @@ async function loadLocale(lang: string): Promise<Record<string, unknown>> {
   return result;
 }
 
-describe('i18n', () => {
+describe('i18n', { tags: ['unit'] }, () => {
   it('zh-CN 和 en-US 的 key 集合一致', async () => {
     const zh = await loadLocale('zh-CN');
     const en = await loadLocale('en-US');

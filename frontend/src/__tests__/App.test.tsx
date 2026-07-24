@@ -7,7 +7,7 @@ vi.mock('../components/AgentStudio/AgentStudioWorkstation', () => ({
   default: () => <div data-testid="workstation">Workstation</div>,
 }));
 
-describe('App', () => {
+describe('App', { tags: ['unit'] }, () => {
   it('renders without crashing', async () => {
     render(
       <TestProviders>

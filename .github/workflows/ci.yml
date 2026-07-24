@@ -75,7 +75,7 @@ jobs:
       - run: npm audit --audit-level=high
 
   frontend-test:
-    name: "Frontend: Test (${{ matrix.shard }}/4)"
+    name: "Frontend: Test (${{ matrix.shard }}/2)"
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
     defaults:
       run:
         working-directory: frontend
@@ -95,7 +95,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm test -- --shard=${{ matrix.shard }}/4 --pool=threads
+      - name: Unit tests (sharded)
+        run: npx vitest run --coverage --shard=${{ matrix.shard }}/2 --tagsFilter '!integration'
+      - name: Integration tests (single run)
+        if: matrix.shard == 1
+        run: npx vitest run --tagsFilter 'integration'
 
   frontend-build:
     name: "Frontend: Build & Bundle"

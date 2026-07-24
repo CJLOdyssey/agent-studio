@@ -13,7 +13,7 @@ vi.mock('../../../../../api/client/skills', () => ({
   deleteSkill: mockDeleteSkill,
 }));
 
-describe('skill api', () => {
+describe('skill api', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

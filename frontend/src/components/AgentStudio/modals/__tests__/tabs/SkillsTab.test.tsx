@@ -37,7 +37,7 @@ function renderTab(overrides?: Record<string, unknown>) {
   return { ...render(<SkillsTab {...props} />), props };
 }
 
-describe('SkillsTab', () => {
+describe('SkillsTab', { tags: ['integration'] }, () => {
   it('renders Skills list with items', () => {
     renderTab();
     expect(screen.getByText('rag-skill')).toBeInTheDocument();

@@ -39,7 +39,7 @@ const baseProps = () => ({
   onTeamChat: undefined as ((teamId: string) => void) | undefined,
 });
 
-describe('TeamTree', () => {
+describe('TeamTree', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

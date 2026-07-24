@@ -9,7 +9,7 @@ vi.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({ oneDark: {} }
 
 const t = (key: string) => key;
 
-describe('CodeBlock', () => {
+describe('CodeBlock', { tags: ['unit'] }, () => {
   it('renders inline code when no language class', () => {
     render(<CodeBlock t={t}>hello</CodeBlock>);
     expect(screen.getByText('hello').tagName).toBe('CODE');

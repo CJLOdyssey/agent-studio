@@ -6,7 +6,7 @@ function makeForm(overrides: Partial<SkillFormData> = {}): SkillFormData {
   return { name: 'my-skill', version: 'v1.0.0', ...overrides };
 }
 
-describe('validateSkillForm', () => {
+describe('validateSkillForm', { tags: ['unit'] }, () => {
   it('returns no errors for valid data', () => {
     const errors = validateSkillForm(makeForm(), []);
     expect(errors).toEqual([]);

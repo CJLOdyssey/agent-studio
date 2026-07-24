@@ -73,7 +73,7 @@ const defaultProps = {
   maxLength: 2000,
 };
 
-describe('InputToolbar', () => {
+describe('InputToolbar', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -47,7 +47,7 @@ function makeState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('handleThinkingDone', () => {
+describe('handleThinkingDone', { tags: ['unit'] }, () => {
   it('returns empty object when no continuingId', () => {
     const s = makeState({ continuingId: null });
     const result = handleThinkingDone(s as never, { type: 'thinking_done', thinking: 'final thoughts' });
@@ -97,7 +97,7 @@ describe('handleThinkingDone', () => {
   });
 });
 
-describe('handleThinkingDoneEvent', () => {
+describe('handleThinkingDoneEvent', { tags: ['unit'] }, () => {
   it('marks thinkingDone on streaming message', () => {
     const s = makeState({
       streamingId: 'msg-1',
@@ -126,7 +126,7 @@ describe('handleThinkingDoneEvent', () => {
   });
 });
 
-describe('handleResultEvent', () => {
+describe('handleResultEvent', { tags: ['unit'] }, () => {
   it('sets status to idle and clears streamingId', () => {
     const s = makeState({
       streamingId: 'msg-1',
@@ -184,7 +184,7 @@ describe('handleResultEvent', () => {
   });
 });
 
-describe('handleTeamResultEvent', () => {
+describe('handleTeamResultEvent', { tags: ['unit'] }, () => {
   it('sets status to idle and marks thinkingDone', () => {
     const s = makeState({
       streamingId: 'msg-1',
@@ -216,7 +216,7 @@ describe('handleTeamResultEvent', () => {
   });
 });
 
-describe('handleThumbsEvent', () => {
+describe('handleThumbsEvent', { tags: ['unit'] }, () => {
   it('sets thumbs value on matching message', () => {
     const s = makeState({
       messages: [makeMsg('msg-1'), makeMsg('msg-2')],

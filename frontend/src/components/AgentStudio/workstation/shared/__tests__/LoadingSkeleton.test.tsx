@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TableSkeleton, CardSkeleton } from '../LoadingSkeleton';
 
-describe('TableSkeleton', () => {
+describe('TableSkeleton', { tags: ['unit'] }, () => {
   it('renders with default rows and cols', () => {
     const { container } = render(<TableSkeleton />);
     expect(screen.getByRole('status')).toBeInTheDocument();
@@ -15,7 +15,7 @@ describe('TableSkeleton', () => {
   });
 });
 
-describe('CardSkeleton', () => {
+describe('CardSkeleton', { tags: ['unit'] }, () => {
   it('renders with default count', () => {
     const { container } = render(<CardSkeleton />);
     expect(screen.getByRole('status')).toBeInTheDocument();

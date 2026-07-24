@@ -41,7 +41,7 @@ function makeForm() {
   };
 }
 
-describe('useConfigItemEdit', () => {
+describe('useConfigItemEdit', { tags: ['integration'] }, () => {
   it('returns editing state initialized to null', () => {
     const { result } = renderHook(() => useConfigItemEdit(
       makeItemList<AgentTool>(),

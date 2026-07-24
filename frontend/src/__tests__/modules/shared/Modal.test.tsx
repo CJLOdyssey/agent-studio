@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '@/test/setup';
 import Modal from '@/components/shared/Modal';
 
-describe('Modal', () => {
+describe('Modal', { tags: ['unit'] }, () => {
   const onClose = vi.fn();
 
   beforeEach(() => {

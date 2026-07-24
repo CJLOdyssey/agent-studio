@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { changeLanguage, getCurrentLanguage } from '@/i18n/index';
 
-describe('i18n runtime', () => {
+describe('i18n runtime', { tags: ['unit'] }, () => {
   beforeEach(() => {
     document.documentElement.lang = '';
   });

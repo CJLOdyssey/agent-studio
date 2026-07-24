@@ -22,7 +22,7 @@ const mockTeam = {
   created_at: '2024-01-01', description: null, status: null,
 };
 
-describe('listTeams', () => {
+describe('listTeams', { tags: ['unit'] }, () => {
   it('calls GET /teams', async () => {
     mockApi.get.mockResolvedValue({ data: [mockTeam] });
 
@@ -33,7 +33,7 @@ describe('listTeams', () => {
   });
 });
 
-describe('createTeam', () => {
+describe('createTeam', { tags: ['unit'] }, () => {
   it('calls POST /teams with payload', async () => {
     mockApi.post.mockResolvedValue({ data: mockTeam });
 
@@ -44,7 +44,7 @@ describe('createTeam', () => {
   });
 });
 
-describe('updateTeam', () => {
+describe('updateTeam', { tags: ['unit'] }, () => {
   it('calls PUT /teams/:id with payload', async () => {
     mockApi.put.mockResolvedValue({ data: { ...mockTeam, name: 'Updated' } });
 
@@ -55,7 +55,7 @@ describe('updateTeam', () => {
   });
 });
 
-describe('deleteTeam', () => {
+describe('deleteTeam', { tags: ['unit'] }, () => {
   it('calls DELETE /teams/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -65,7 +65,7 @@ describe('deleteTeam', () => {
   });
 });
 
-describe('addTeamMember', () => {
+describe('addTeamMember', { tags: ['unit'] }, () => {
   it('calls POST /teams/:id/members with payload', async () => {
     const member = { name: 'Agent1', role: 'developer' };
     mockApi.post.mockResolvedValue({ data: member });
@@ -77,7 +77,7 @@ describe('addTeamMember', () => {
   });
 });
 
-describe('removeTeamMember', () => {
+describe('removeTeamMember', { tags: ['unit'] }, () => {
   it('calls DELETE /teams/:teamId/members/:memberId', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -87,7 +87,7 @@ describe('removeTeamMember', () => {
   });
 });
 
-describe('linkAgentToMember', () => {
+describe('linkAgentToMember', { tags: ['unit'] }, () => {
   it('calls PUT with agent_config_id', async () => {
     mockApi.put.mockResolvedValue({});
 

@@ -21,7 +21,7 @@ function makeMsg(overrides: Partial<Message> = {}): Message {
   return { id: 'm1', role: 'agent', content: 'Hello', agentId: 'a1', ...overrides } as Message;
 }
 
-describe('TeamMessage', () => {
+describe('TeamMessage', { tags: ['unit'] }, () => {
   describe('user messages', () => {
     it('renders user message content', () => {
       const { container } = render(

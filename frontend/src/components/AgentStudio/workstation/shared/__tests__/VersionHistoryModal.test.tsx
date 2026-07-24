@@ -41,7 +41,7 @@ vi.mock('../../../../../api/client/versions', () => ({
   listVersions: vi.fn(() => Promise.resolve(mockVersions)),
 }));
 
-describe('VersionHistoryModal', () => {
+describe('VersionHistoryModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

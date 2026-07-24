@@ -35,7 +35,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useSkillManagement', () => {
+describe('useSkillManagement', { tags: ['unit'] }, () => {
   it('starts loading and loads data on mount', async () => {
     const { result } = renderHook(() => useSkillManagement());
     expect(result.current.isLoading).toBe(true);

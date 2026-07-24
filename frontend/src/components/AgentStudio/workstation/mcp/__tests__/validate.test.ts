@@ -6,7 +6,7 @@ function makeForm(overrides: Partial<MCPFormData> = {}): MCPFormData {
   return { name: 'my-mcp', version: 'v1.0.0', type: 'stdio', command: 'node server.js', url: '', ...overrides, description: '', status: 'disconnected' };
 }
 
-describe('validateMCPForm', () => {
+describe('validateMCPForm', { tags: ['unit'] }, () => {
   it('returns no errors for valid stdio data', () => {
     const errors = validateMCPForm(makeForm(), []);
     expect(errors).toEqual([]);
@@ -67,7 +67,7 @@ describe('validateMCPForm', () => {
   });
 });
 
-describe('EMPTY_FORM', () => {
+describe('EMPTY_FORM', { tags: ['unit'] }, () => {
   it('has expected default values', () => {
     expect(EMPTY_FORM.name).toBe('');
     expect(EMPTY_FORM.type).toBe('stdio');

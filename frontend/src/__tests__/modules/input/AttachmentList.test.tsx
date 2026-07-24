@@ -15,7 +15,7 @@ function makeFile(id: string, overrides: Partial<AttachedFile> = {}): AttachedFi
   };
 }
 
-describe('AttachmentList', () => {
+describe('AttachmentList', { tags: ['unit'] }, () => {
   it('renders nothing when files is empty', () => {
     const { container } = render(
       <TestProviders>

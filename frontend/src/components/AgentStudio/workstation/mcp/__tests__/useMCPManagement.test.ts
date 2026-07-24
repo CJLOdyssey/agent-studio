@@ -46,7 +46,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useMcpManagement', () => {
+describe('useMcpManagement', { tags: ['unit'] }, () => {
   it('starts loading and loads data on mount', async () => {
     const { result } = renderHook(() => useMcpManagement());
     expect(result.current.isLoading).toBe(true);

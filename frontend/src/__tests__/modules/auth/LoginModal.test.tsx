@@ -20,7 +20,7 @@ vi.mock('@/components/auth/AuthContext', () => ({
   useAuth: () => mockUseAuth,
 }));
 
-describe('LoginModal', () => {
+describe('LoginModal', { tags: ['unit'] }, () => {
   const onClose = vi.fn();
 
   beforeEach(() => {

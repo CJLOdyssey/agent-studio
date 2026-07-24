@@ -13,7 +13,7 @@ vi.mock('../../../../../api/client/prompts', () => ({
   deletePrompt: mockDeletePrompt,
 }));
 
-describe('prompt api', () => {
+describe('prompt api', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

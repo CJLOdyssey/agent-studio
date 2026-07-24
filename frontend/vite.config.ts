@@ -81,6 +81,7 @@ export default defineConfig(({ mode }) => {
       maxWorkers: 4,
       setupFiles: ['./src/test/global-mocks.tsx', './src/test/setup.tsx'],
       css: false,
+      tags: [{ name: 'unit' }, { name: 'integration' }],
       deps: {
         optimizer: {
           ssr: {

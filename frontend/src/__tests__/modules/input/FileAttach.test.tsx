@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '@/test/setup';
 import FileAttach from '@/components/input/FileAttach';
 
-describe('FileAttach', () => {
+describe('FileAttach', { tags: ['unit'] }, () => {
   const onAdd = vi.fn();
   const onReject = vi.fn();
 

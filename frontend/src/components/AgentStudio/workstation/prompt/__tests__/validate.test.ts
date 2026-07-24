@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { validatePromptForm } from '../validate';
 import type { PromptEntry, PromptFormData } from '../types';
 
-describe('validatePromptForm', () => {
+describe('validatePromptForm', { tags: ['unit'] }, () => {
   const baseData: PromptFormData = {
     name: 'TestPrompt',
     content: 'Hello world',

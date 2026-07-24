@@ -24,7 +24,7 @@ import { useTeamData, removeConversationsByAgentIds, teamMemberToAgent } from '.
 import { listTeams, updateTeam, deleteTeam } from '../../api/client/teams';
 import type { TeamMember } from '../../types/team';
 
-describe('removeConversationsByAgentIds', () => {
+describe('removeConversationsByAgentIds', { tags: ['unit'] }, () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -60,7 +60,7 @@ describe('removeConversationsByAgentIds', () => {
   });
 });
 
-describe('teamMemberToAgent', () => {
+describe('teamMemberToAgent', { tags: ['unit'] }, () => {
   it('converts team member to agent', () => {
     const member: TeamMember = {
       id: 'm1',
@@ -99,7 +99,7 @@ describe('teamMemberToAgent', () => {
   });
 });
 
-describe('useTeamData - sync operations', () => {
+describe('useTeamData - sync operations', { tags: ['unit'] }, () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
@@ -131,7 +131,7 @@ describe('useTeamData - sync operations', () => {
   });
 });
 
-describe('useTeamData - team operations (local state)', () => {
+describe('useTeamData - team operations (local state)', { tags: ['unit'] }, () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
@@ -274,7 +274,7 @@ describe('useTeamData - team operations (local state)', () => {
   });
 });
 
-describe('useTeamData - editing flow', () => {
+describe('useTeamData - editing flow', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (listTeams as ReturnType<typeof vi.fn>).mockResolvedValue([]);
