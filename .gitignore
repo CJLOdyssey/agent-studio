@@ -30,6 +30,7 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+.env.*
 
 # ── Databases ──────────────────────────────────────────────────────────────
 *.db
@@ -46,6 +47,7 @@ desktop.ini
 .coverage.*
 coverage.xml
 coverage/
+frontend/coverage/
 
 # ── Virtual Env ────────────────────────────────────────────────────────────
 .venv/
@@ -56,6 +58,15 @@ coverage/
 
 # ── Testing Tools ──────────────────────────────────────────────────────────
 .playwright-mcp/
+
+# ── Build Artifacts ───────────────────────────────────────────────────────
+frontend/lighthouse-report.json
+frontend/antd-migration-screenshot.png
+frontend/antd-snapshot.txt
+
+# ── Code Intelligence Caches ──────────────────────────────────────────────
+.codegraph/
+.superpowers/
 
 # ── AI Tool Directories ───────────────────────────────────────────────────
 .mimocode/
