@@ -92,14 +92,14 @@
 │   ├── system_team/             # AI 代理引擎（tool/skill 生成器）
 │   ├── tasks.py                 # Celery 异步任务
 │   └── tests/                   # pytest 测试（113 用例）
-├── .env.example                 # 环境变量模板（21 vars）
+├── .env.example                 # 环境变量模板
 ├── pyproject.toml               # ruff + mypy + pytest 配置
-├── requirements*.txt            # 分类: 运行时 / 开发 / 测试
-├── alembic/                     # 数据库迁移（RBAC 初始迁移）
-├── .github/workflows/ci.yml     # GitHub Actions 5-job 流水线
+├── requirements.txt             # Python 依赖（锁版本）
+├── .github/workflows/           # CI/CD workflows（7 个）
+├── .github/ci-image/            # 预构建 CI runner 镜像
 ├── .husky/pre-commit            # lint-staged 提交钩子
 ├── docs/                        # 设计规范
-└── .sisyphus/                   # 工作计划/草稿/笔记
+└── .superpowers/                # 工作计划/笔记
 ```
 
 ---
@@ -264,7 +264,7 @@ cd frontend
 npm run dev              # 启动开发服务器
 npm run build            # 生产构建 (tsc -b && vite build)
 npm run typecheck        # TypeScript 类型检查
-npm test                 # vitest 运行（216 用例 / 33 测试文件）
+npm test                 # vitest 运行（2071 用例）
 npm run lint             # ESLint 检查
 npm run format           # Prettier 格式化
 ```
@@ -273,7 +273,7 @@ npm run format           # Prettier 格式化
 ```bash
 cd .
 PYTHONPATH=. python3 -m uvicorn backend.core.app:app --reload  # 启动 FastAPI
-PYTHONPATH=. python3 -m pytest tests/                              # 运行测试
+PYTHONPATH=. python3 -m pytest backend/tests/                      # 运行测试
 ```
 
 ---
@@ -324,15 +324,18 @@ Agent Config tools → tasks.py bind_tools → ToolConfig
 | 2026-06-24 | **Enterprise Hardening 88→95+** — CI/CD + 后端测试 109 用例 + 持久化 checkpointer + RBAC（UserDB/RoleDB/Alembic）+ 工程化脚手架 |
 | 2026-06-24 | **Enterprise Improvement** — Playwright infra + Prometheus /metrics + Husky hooks + ErrorCode 体系 + ErrorBoundary 解耦 |
 | 2026-06-24 | **E2E 验证** — Chrome Playwright 全链路截图 + DeepSeek 工具调用修复（tool_calls=1 ✅）|
+| 2026-07-24 | **CI 极致优化** — 预构建 Runner 镜像，容器化 15 job，33/33 checks 全绿，总 wall-clock 5m |
+| 2026-07-24 | **企业级分支保护** — main + develop 规则集，PR 必走流程，AI token 受限 |
+| 2026-07-24 | **依赖清理** — requirements.txt 标准化，冗余文件移除 |
 
 ---
 
 ## 📝 会话记录
 
-每次会话结束时，自动调用 `neat-freak` skill 生成结构化总结，写入 `.sisyphus/sessions/YYYY-MM-DD-topic.md`。
+每次会话结束时，自动调用 `neat-freak` skill 生成结构化总结，写入 `.superpowers/sessions/YYYY-MM-DD-topic.md`。
 
 总结模板：Accomplished / Decisions / Patterns / Tech Debt / Next Steps。
 
 ### 跨会话引用
-- 新会话需要上下文时，先从 `.sisyphus/sessions/` 查找相关记录
+- 新会话需要上下文时，先从 `.superpowers/sessions/` 查找相关记录
 - 或在 `AGENTS.md` 中维护跨会话持久化知识
