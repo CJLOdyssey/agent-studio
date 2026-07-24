@@ -97,8 +97,23 @@ jobs:
           node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Unit tests (sharded)
-        run: npx vitest run --coverage --shard=${{ matrix.shard }}/2 --tagsFilter '!integration'
+      - name: Unit tests (sharded, with coverage)
+        run: |
+          npx vitest run --coverage --shard=${{ matrix.shard }}/2 --tagsFilter '!integration' \
+            --coverage.thresholds.statements=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.lines=0 \
+            --reporter=json --outputFile=../coverage-shard-${{ matrix.shard }}.json
+      - name: Save coverage data
+        run: |
+          mkdir -p ../coverage-artifacts
+          mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }} 2>/dev/null || true
+          mv ../coverage-shard-${{ matrix.shard }}.json ../coverage-artifacts/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-${{ matrix.shard }}
+          path: coverage-artifacts/
       - name: Integration tests (single run)
         if: matrix.shard == 1
         run: npx vitest run --tagsFilter 'integration'
@@ -304,63 +319,27 @@ jobs:
           path: coverage.xml
           retention-days: 7
 
-  # ── Frontend Coverage (sharded 3-way + merge) ───────────────────────────
-  frontend-coverage:
-    name: "Frontend: Coverage (${{ matrix.shard }}/4)"
-    needs: [changes, frontend-test]
-    if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
+  frontend-coverage-report:
+    name: "Frontend: Coverage Report"
+    needs: [frontend-test]
+    if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci --prefer-offline --no-audit
-      - name: Run tests with coverage
-        run: |
-          mkdir -p ../coverage-artifacts
-          # Thresholds disabled per-shard; enforced in merge step
-          npx vitest run --shard=${{ matrix.shard }}/4 --pool=threads \
-            --coverage \
-            --coverage.thresholds.statements=0 \
-            --coverage.thresholds.branches=0 \
-            --coverage.thresholds.functions=0 \
-            --coverage.thresholds.lines=0 \
-            --reporter=json --outputFile=../coverage-artifacts/shard-${{ matrix.shard }}.json
-      - name: Save coverage data
-        run: |
-          mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-artifacts-${{ matrix.shard }}
-          path: coverage-artifacts/
-
-  frontend-coverage-report:
-    name: "Frontend: Coverage Report"
-    needs: [frontend-coverage]
-    if: needs.frontend-coverage.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: coverage-artifacts-*
+          pattern: frontend-coverage-*
           merge-multiple: true
-          path: coverage-all
-      - name: Merge coverage from all shards
-        working-directory: coverage-all
+          path: coverage-artifacts
+      - name: Merge coverage
         run: |
           mkdir -p coverage/tmp
-          for d in coverage-*/; do
+          for d in coverage-artifacts/coverage-*/; do
             [ -d "$d/tmp" ] && cp "$d/tmp/"*.json coverage/tmp/ 2>/dev/null || true
           done
           npx c8 report --reporter=lcov --reporter=text --reporter=cobertura \
