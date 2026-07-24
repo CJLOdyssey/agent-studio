@@ -86,3 +86,4 @@ scripts/deploy_prod.py
 scripts/ask_credentials.py
 .omo/
 coverage.json
+docs/e2e-*.png
