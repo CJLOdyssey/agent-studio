@@ -21,8 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && npm --version && node --version
 
 # Pre-install Python dependencies
-COPY requirements-lock.txt /tmp/
-RUN pip install --no-compile -r /tmp/requirements-lock.txt --quiet
+COPY requirements.txt /tmp/
+RUN pip install --no-compile -r /tmp/requirements.txt --quiet
 RUN pip install --no-compile playwright locust --quiet
 
 # Pre-install Node dependencies
@@ -50,6 +50,6 @@ WORKDIR /
 RUN rm -rf /tmp/frontend-build
 
 # Cleanup
-RUN rm -rf /tmp/requirements-lock.txt /tmp/frontend
+RUN rm -rf /tmp/requirements.txt /tmp/frontend
 
 WORKDIR /workspace
