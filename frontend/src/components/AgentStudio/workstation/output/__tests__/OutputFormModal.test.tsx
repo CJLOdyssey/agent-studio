@@ -32,7 +32,7 @@ const defaultFormData = {
   status: 'active' as const,
 };
 
-describe('OutputFormModal', () => {
+describe('OutputFormModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useAgentCommands } from '../useAgentCommands';
 
-describe('useAgentCommands', () => {
+describe('useAgentCommands', { tags: ['unit'] }, () => {
   it('returns empty array for empty teams', () => {
     const { result } = renderHook(() => useAgentCommands([]));
     expect(result.current).toEqual([]);

@@ -13,7 +13,7 @@ vi.mock('../PickerModal', () => ({
   ),
 }));
 
-describe('PickerSection', () => {
+describe('PickerSection', { tags: ['integration'] }, () => {
   const items = {
     system: [{ id: '1', name: 'System Prompt', category: 'system' as const, content: 'test' }],
   };

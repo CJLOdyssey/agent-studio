@@ -76,7 +76,7 @@ vi.mock('../../shared/ToggleSwitch', () => ({
 
 import SettingsModal from '../SettingsModal';
 
-describe('SettingsModal', () => {
+describe('SettingsModal', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

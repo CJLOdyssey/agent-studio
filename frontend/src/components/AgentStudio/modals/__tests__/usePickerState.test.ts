@@ -43,7 +43,7 @@ vi.mock('../../workstation/skill/api', () => ({
   },
 }));
 
-describe('usePickerState', () => {
+describe('usePickerState', { tags: ['integration'] }, () => {
   const deps = {
     setSystemPrompt: vi.fn(),
     setOutputConstraints: vi.fn(),

@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
 
 import ConfirmModal from '../ConfirmModal';
 
-describe('ConfirmModal', () => {
+describe('ConfirmModal', { tags: ['integration'] }, () => {
   it('renders with title and message', () => {
     render(
       <ConfirmModal

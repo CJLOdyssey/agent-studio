@@ -28,7 +28,7 @@ function makeState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('handleMessageEvent', () => {
+describe('handleMessageEvent', { tags: ['unit'] }, () => {
   it('updates content and thinking when streamingId matches', () => {
     const set = vi.fn((fn: (s: ReturnType<typeof makeState>) => unknown) => {
       const s = makeState();
@@ -55,7 +55,7 @@ describe('handleMessageEvent', () => {
   });
 });
 
-describe('handleInfoEvent', () => {
+describe('handleInfoEvent', { tags: ['unit'] }, () => {
   it('appends info to streaming message', () => {
     const set = vi.fn((fn: (s: ReturnType<typeof makeState>) => unknown) => fn(makeState()));
 
@@ -84,7 +84,7 @@ describe('handleInfoEvent', () => {
   });
 });
 
-describe('handleErrorEvent', () => {
+describe('handleErrorEvent', { tags: ['unit'] }, () => {
   it('sets status to error with message', () => {
     const set = vi.fn((fn: (s: ReturnType<typeof makeState>) => unknown) => fn(makeState()));
 
@@ -105,7 +105,7 @@ describe('handleErrorEvent', () => {
   });
 });
 
-describe('handleBalanceWarningEvent', () => {
+describe('handleBalanceWarningEvent', { tags: ['unit'] }, () => {
   it('sets status to error with balance warning', () => {
     const set = vi.fn((fn: (s: ReturnType<typeof makeState>) => unknown) => fn(makeState()));
 
@@ -126,7 +126,7 @@ describe('handleBalanceWarningEvent', () => {
   });
 });
 
-describe('handleOpenUrlEvent', () => {
+describe('handleOpenUrlEvent', { tags: ['unit'] }, () => {
   it('opens URL in new tab', () => {
     const openMock = vi.fn();
     vi.stubGlobal('open', openMock);

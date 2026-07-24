@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { t, setLang, getLang } from '../locales';
 
-describe('team locales', () => {
+describe('team locales', { tags: ['unit'] }, () => {
   it('translates zh keys', () => {
     setLang('zh');
     expect(t('team.new')).toBe('新建团队');

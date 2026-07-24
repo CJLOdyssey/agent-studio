@@ -9,7 +9,7 @@ vi.mock('../../stores/chatStore', () => ({
 
 import { useConversation } from '../useConversation';
 
-describe('useConversation', () => {
+describe('useConversation', { tags: ['unit'] }, () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();

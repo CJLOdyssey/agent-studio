@@ -34,7 +34,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useToolManagement', () => {
+describe('useToolManagement', { tags: ['unit'] }, () => {
   it('starts loading and loads data on mount', async () => {
     const { result } = renderHook(() => useToolManagement());
     expect(result.current.isLoading).toBe(true);

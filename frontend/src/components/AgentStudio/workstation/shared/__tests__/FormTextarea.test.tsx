@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import FormTextarea from '../FormTextarea';
 
-describe('FormTextarea', () => {
+describe('FormTextarea', { tags: ['unit'] }, () => {
   it('renders label and textarea', () => {
     render(<FormTextarea label="Description" value="" onChange={vi.fn()} />);
     expect(screen.getByText('Description')).toBeInTheDocument();

@@ -16,7 +16,7 @@ vi.mock('react-i18next', () => ({
 
 import BatchDeleteModal from '../BatchDeleteModal';
 
-describe('BatchDeleteModal', () => {
+describe('BatchDeleteModal', { tags: ['unit'] }, () => {
   it('renders with count and label', () => {
     render(<BatchDeleteModal count={3} label="Agent" onConfirm={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText('Batch Delete')).toBeInTheDocument();

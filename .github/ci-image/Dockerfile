@@ -32,6 +32,9 @@ RUN cd /tmp/frontend && npm ci --prefer-offline --no-audit
 # Pre-install Playwright browsers
 RUN python3 -m playwright install chromium --with-deps
 
+# Pre-install c8 globally (used by coverage report job)
+RUN npm install -g c8
+
 # Pre-warm mypy cache for backend
 COPY backend/ /tmp/backend/
 COPY pyproject.toml /tmp/

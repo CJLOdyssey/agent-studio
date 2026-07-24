@@ -33,7 +33,7 @@ function makePrompt(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('PromptManagement', () => {
+describe('PromptManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchAll.mockResolvedValue([]);

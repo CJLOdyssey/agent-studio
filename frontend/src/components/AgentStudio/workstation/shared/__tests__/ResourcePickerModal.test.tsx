@@ -22,7 +22,7 @@ const options = [
   { id: '3', name: 'Cherry', desc: 'Fruit C' },
 ];
 
-describe('ResourcePickerModal', () => {
+describe('ResourcePickerModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

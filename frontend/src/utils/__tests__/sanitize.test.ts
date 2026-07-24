@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { sanitizeHtml } from '../sanitize';
 
-describe('sanitizeHtml', () => {
+describe('sanitizeHtml', { tags: ['unit'] }, () => {
   it('passes through safe HTML', () => {
     const result = sanitizeHtml('<b>hello</b>');
     expect(result).toContain('hello');

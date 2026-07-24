@@ -113,7 +113,7 @@ function baseProps(overrides: Partial<TabRendererProps> = {}): TabRendererProps 
   };
 }
 
-describe('TabRenderer', () => {
+describe('TabRenderer', { tags: ['integration'] }, () => {
   it('renders SystemPromptTab when activeTab is "system"', () => {
     render(<TabRenderer {...baseProps()} />);
     expect(screen.getByTestId('system-prompt-tab')).toBeInTheDocument();

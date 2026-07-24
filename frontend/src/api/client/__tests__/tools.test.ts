@@ -25,7 +25,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listTools', () => {
+describe('listTools', { tags: ['unit'] }, () => {
   it('calls GET /tools', async () => {
     const mockData = [{ id: '1', name: 'tool1', description: 'desc', category: 'cat', model: null, status: 'active', version: '1.0', endpoint: '/api/test', created_at: '2024-01-01' }];
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -37,7 +37,7 @@ describe('listTools', () => {
   });
 });
 
-describe('createTool', () => {
+describe('createTool', { tags: ['unit'] }, () => {
   it('calls POST /tools with payload', async () => {
     const payload = { name: 'tool1', description: 'desc', category: 'cat' };
     const mockData = { id: '1', name: 'tool1', description: 'desc', category: 'cat', model: null, status: 'active', version: '1.0', endpoint: '/test', created_at: '2024-01-01' };
@@ -50,7 +50,7 @@ describe('createTool', () => {
   });
 });
 
-describe('updateTool', () => {
+describe('updateTool', { tags: ['unit'] }, () => {
   it('calls PUT /tools/:id with payload', async () => {
     const mockData = { id: '1', name: 'updated', description: 'desc', category: 'cat', model: null, status: 'active', version: '1.0', endpoint: '/test', created_at: '2024-01-01' };
     mockApi.put.mockResolvedValue({ data: mockData });
@@ -62,7 +62,7 @@ describe('updateTool', () => {
   });
 });
 
-describe('deleteTool', () => {
+describe('deleteTool', { tags: ['unit'] }, () => {
   it('calls DELETE /tools/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -72,7 +72,7 @@ describe('deleteTool', () => {
   });
 });
 
-describe('validateTool', () => {
+describe('validateTool', { tags: ['unit'] }, () => {
   it('calls POST /tools/validate', async () => {
     const mockData = { is_valid: true, suggestions: [] };
     mockApi.post.mockResolvedValue({ data: mockData });
@@ -92,7 +92,7 @@ describe('validateTool', () => {
   });
 });
 
-describe('executeTool', () => {
+describe('executeTool', { tags: ['unit'] }, () => {
   it('calls POST /tools/execute', async () => {
     const mockData = { success: true, output: 'hello' };
     mockApi.post.mockResolvedValue({ data: mockData });
@@ -112,7 +112,7 @@ describe('executeTool', () => {
   });
 });
 
-describe('testTool', () => {
+describe('testTool', { tags: ['unit'] }, () => {
   it('calls POST /tools/:id/test and returns result', async () => {
     const mockData = { valid: true, result: 'ok' };
     mockApi.post.mockResolvedValue({ data: mockData });

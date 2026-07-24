@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
+vi.mock('@ant-design/icons', () => ({
+  CloseOutlined: () => null,
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
@@ -17,7 +21,7 @@ vi.mock('react-i18next', () => ({
 
 import CreateModal from '../CreateModal';
 
-describe('CreateModal', () => {
+describe('CreateModal', { tags: ['unit'] }, () => {
   it('renders with title and children', () => {
     render(<CreateModal title="Test Modal" onClose={vi.fn()} onSave={vi.fn()}><p>content</p></CreateModal>);
     expect(screen.getByText('Test Modal')).toBeInTheDocument();

@@ -37,7 +37,7 @@ const listAgentsMock = listAgents as ReturnType<typeof vi.fn>;
 const addTeamMemberMock = addTeamMember as ReturnType<typeof vi.fn>;
 const removeTeamMemberMock = removeTeamMember as ReturnType<typeof vi.fn>;
 
-describe('TeamMemberManager', () => {
+describe('TeamMemberManager', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

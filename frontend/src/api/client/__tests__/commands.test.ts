@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listModels', () => {
+describe('listModels', { tags: ['unit'] }, () => {
   it('calls GET /models', async () => {
     const mockData = [{ id: 'gpt-4', label: 'GPT-4', provider: 'openai' }];
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -29,7 +29,7 @@ describe('listModels', () => {
   });
 });
 
-describe('listCommands', () => {
+describe('listCommands', { tags: ['unit'] }, () => {
   it('calls GET /commands', async () => {
     const mockData = [{ id: 'cmd1', name: 'Run', description: 'Run a task' }];
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -41,7 +41,7 @@ describe('listCommands', () => {
   });
 });
 
-describe('executeCommand', () => {
+describe('executeCommand', { tags: ['unit'] }, () => {
   it('calls POST /commands/execute with required params', async () => {
     mockApi.post.mockResolvedValue({ data: { success: true, message: 'OK', data: {} } });
 

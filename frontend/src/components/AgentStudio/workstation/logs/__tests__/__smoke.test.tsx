@@ -12,7 +12,7 @@ vi.mock('../locales', () => ({
   getLang: () => 'en',
 }));
 
-describe('LogAudit (index export)', () => {
+describe('LogAudit (index export)', { tags: ['integration'] }, () => {
   it('module exports the component', async () => {
     const mod = await import('../index');
     expect(mod.LogAudit).toBeDefined();

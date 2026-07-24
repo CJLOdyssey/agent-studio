@@ -12,7 +12,7 @@ function makeItem(id: string, enabled = false): TestItem {
   return { id, enabled, name: `Item ${id}` };
 }
 
-describe('useItemList', () => {
+describe('useItemList', { tags: ['integration'] }, () => {
   it('initializes with empty items', () => {
     const { result } = renderHook(() => useItemList<TestItem>([]));
     expect(result.current.items).toEqual([]);

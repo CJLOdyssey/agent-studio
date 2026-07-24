@@ -74,7 +74,7 @@ function renderModal(overrides: { provider?: ApiProviderForm; saving?: boolean; 
   );
 }
 
-describe('ProviderEditModal', () => {
+describe('ProviderEditModal', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

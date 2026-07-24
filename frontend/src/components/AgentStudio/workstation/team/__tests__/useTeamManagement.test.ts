@@ -45,7 +45,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('useTeamManagement', () => {
+describe('useTeamManagement', { tags: ['unit'] }, () => {
   it('starts loading and loads teams on mount', async () => {
     const { result } = renderHook(() => useTeamManagement());
     expect(result.current.isLoading).toBe(true);

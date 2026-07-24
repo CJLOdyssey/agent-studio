@@ -51,7 +51,7 @@ function mockBoundingRect(el: HTMLElement, rect: DOMRectInit = {}) {
   };
 }
 
-describe('TeamTree', () => {
+describe('TeamTree', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

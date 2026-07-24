@@ -15,7 +15,7 @@ vi.mock('../../../auth', () => ({
 
 import UserMenu from '../UserMenu';
 
-describe('UserMenu', () => {
+describe('UserMenu', { tags: ['integration'] }, () => {
   const mockLogout = vi.fn();
   const mockOpenLoginModal = vi.fn();
   const mockSetIsUserMenuOpen = vi.fn();

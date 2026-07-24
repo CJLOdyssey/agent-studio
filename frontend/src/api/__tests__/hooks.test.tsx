@@ -27,7 +27,7 @@ function createWrapper() {
   };
 }
 
-describe('API hooks', () => {
+describe('API hooks', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

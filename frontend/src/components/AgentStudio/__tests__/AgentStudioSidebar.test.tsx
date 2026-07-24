@@ -35,7 +35,7 @@ const baseProps = {
   onRenameAgent: vi.fn(), onTogglePinTeam: vi.fn(), onAgentClick: vi.fn(),
 };
 
-describe('AgentStudioSidebar', () => {
+describe('AgentStudioSidebar', { tags: ['integration'] }, () => {
   it('renders without crashing', () => {
     const { container } = render(<AgentStudioSidebar {...baseProps} />);
     expect(container).toBeDefined();
@@ -91,7 +91,7 @@ function properBaseProps() {
   };
 }
 
-describe('AgentStudioSidebar — correct props', () => {
+describe('AgentStudioSidebar — correct props', { tags: ['integration'] }, () => {
   it('renders logo and brand text', () => {
     const props = properBaseProps();
     render(<AgentStudioSidebar {...props} />);
@@ -149,7 +149,7 @@ describe('AgentStudioSidebar — correct props', () => {
 // ============================================================
 // Tests that verify auth state is passed to TeamTree
 // ============================================================
-describe('AgentStudioSidebar — handler execution', () => {
+describe('AgentStudioSidebar — handler execution', { tags: ['integration'] }, () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   beforeEach(() => {
@@ -200,7 +200,7 @@ describe('AgentStudioSidebar — handler execution', () => {
   });
 });
 
-describe('AgentStudioSidebar — auth integration', () => {
+describe('AgentStudioSidebar — auth integration', { tags: ['integration'] }, () => {
   it('passes isAuthenticated=false when useAuth returns false', () => {
     const props = properBaseProps();
     const { container } = render(<AgentStudioSidebar {...props} />);

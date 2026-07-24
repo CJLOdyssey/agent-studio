@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import FormSelect from '../FormSelect';
 
-describe('FormSelect', () => {
+describe('FormSelect', { tags: ['unit'] }, () => {
   const options = [
     { value: 'opt1', label: 'Option 1' },
     { value: 'opt2', label: 'Option 2' },

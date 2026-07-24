@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('login', () => {
+describe('login', { tags: ['unit'] }, () => {
   it('calls POST /auth/login with email and password', async () => {
     const mockResponse = { data: { access_token: 'at', refresh_token: 'rt', token_type: 'bearer', expires_in: 3600, user: { id: 'u1', email: 'a@b.com', username: null, roles: [], is_verified: true } } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -51,7 +51,7 @@ describe('login', () => {
   });
 });
 
-describe('sendRegisterCode', () => {
+describe('sendRegisterCode', { tags: ['unit'] }, () => {
   it('calls POST /auth/send-register-code', async () => {
     const mockResponse = { data: { message: 'Code sent', email_hint: 'a***@b.com' } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -63,7 +63,7 @@ describe('sendRegisterCode', () => {
   });
 });
 
-describe('register', () => {
+describe('register', { tags: ['unit'] }, () => {
   it('calls POST /auth/register', async () => {
     const mockResponse = { data: { access_token: 'at', refresh_token: 'rt', token_type: 'bearer', expires_in: 3600, user: { id: 'u1', email: 'a@b.com', username: null, roles: [], is_verified: true } } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -75,7 +75,7 @@ describe('register', () => {
   });
 });
 
-describe('verify', () => {
+describe('verify', { tags: ['unit'] }, () => {
   it('calls POST /auth/verify', async () => {
     const mockResponse = { data: { access_token: 'at', refresh_token: 'rt', token_type: 'bearer', expires_in: 3600, user: { id: 'u1', email: 'a@b.com', username: null, roles: [], is_verified: true } } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -87,7 +87,7 @@ describe('verify', () => {
   });
 });
 
-describe('refreshTokens', () => {
+describe('refreshTokens', { tags: ['unit'] }, () => {
   it('calls POST /auth/refresh with refresh token', async () => {
     const mockResponse = { data: { access_token: 'new-at', refresh_token: 'new-rt', token_type: 'bearer', expires_in: 3600, user: { id: 'u1', email: 'a@b.com', username: null, roles: [], is_verified: true } } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -99,7 +99,7 @@ describe('refreshTokens', () => {
   });
 });
 
-describe('forgotPassword', () => {
+describe('forgotPassword', { tags: ['unit'] }, () => {
   it('calls POST /auth/forgot-password', async () => {
     const mockResponse = { data: { message: 'Email sent' } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -111,7 +111,7 @@ describe('forgotPassword', () => {
   });
 });
 
-describe('resetPassword', () => {
+describe('resetPassword', { tags: ['unit'] }, () => {
   it('calls POST /auth/reset-password', async () => {
     const mockResponse = { data: { message: 'Password reset' } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -123,7 +123,7 @@ describe('resetPassword', () => {
   });
 });
 
-describe('logout', () => {
+describe('logout', { tags: ['unit'] }, () => {
   it('calls POST /auth/logout', async () => {
     mockApi.post.mockResolvedValue({});
 
@@ -133,7 +133,7 @@ describe('logout', () => {
   });
 });
 
-describe('getMe', () => {
+describe('getMe', { tags: ['unit'] }, () => {
   it('calls GET /auth/me', async () => {
     const mockResponse = { data: { id: 'u1', email: 'a@b.com', username: 'test', roles: ['user'], is_verified: true } };
     mockApi.get.mockResolvedValue(mockResponse);
@@ -145,7 +145,7 @@ describe('getMe', () => {
   });
 });
 
-describe('getAuthConfig', () => {
+describe('getAuthConfig', { tags: ['unit'] }, () => {
   it('calls GET /auth/config', async () => {
     const mockResponse = { data: { enabled: true, mode: 'rbac' } };
     mockApi.get.mockResolvedValue(mockResponse);
@@ -157,7 +157,7 @@ describe('getAuthConfig', () => {
   });
 });
 
-describe('resendVerification', () => {
+describe('resendVerification', { tags: ['unit'] }, () => {
   it('calls POST /auth/resend-verification', async () => {
     const mockResponse = { data: { message: 'Verification resent' } };
     mockApi.post.mockResolvedValue(mockResponse);
@@ -169,7 +169,7 @@ describe('resendVerification', () => {
   });
 });
 
-describe('mergeGuestData', () => {
+describe('mergeGuestData', { tags: ['unit'] }, () => {
   it('calls POST /auth/merge', async () => {
     mockApi.post.mockResolvedValue({});
 

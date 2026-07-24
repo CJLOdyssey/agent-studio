@@ -161,7 +161,7 @@ vi.mock('../../api/client/instance', () => ({
   },
 }));
 
-describe('AgentStudioWorkstation 集成测试', () => {
+describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useChatStore.getState().reset();

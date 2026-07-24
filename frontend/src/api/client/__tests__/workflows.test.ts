@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('fetchWorkflow', () => {
+describe('fetchWorkflow', { tags: ['unit'] }, () => {
   it('calls GET /workflows/teams/:id and returns data', async () => {
     const mockData = { id: 'w1', teamId: 't1', team_id: 't1', name: 'test', maxRounds: 10, nodes: [], edges: [] };
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -45,7 +45,7 @@ describe('fetchWorkflow', () => {
   });
 });
 
-describe('saveWorkflow', () => {
+describe('saveWorkflow', { tags: ['unit'] }, () => {
   it('calls POST /workflows with config', async () => {
     const config = { teamId: 't1', team_id: 't1', name: 'test', maxRounds: 10, nodes: [], edges: [] };
     const mockData = { id: 'w1', teamId: 't1', team_id: 't1', name: 'test', maxRounds: 10, nodes: [], edges: [] };
@@ -58,7 +58,7 @@ describe('saveWorkflow', () => {
   });
 });
 
-describe('deleteWorkflow', () => {
+describe('deleteWorkflow', { tags: ['unit'] }, () => {
   it('calls DELETE /workflows/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -68,7 +68,7 @@ describe('deleteWorkflow', () => {
   });
 });
 
-describe('listWorkflows', () => {
+describe('listWorkflows', { tags: ['unit'] }, () => {
   it('calls GET /workflows', async () => {
     const mockData = [{ id: 'w1', teamId: 't1', team_id: 't1', name: 'test', maxRounds: 10, nodes: [], edges: [] }];
     mockApi.get.mockResolvedValue({ data: mockData });

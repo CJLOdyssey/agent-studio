@@ -37,7 +37,7 @@ vi.mock('../../../../../api/client/skills', () => ({
   listSkills: mockListSkills,
 }));
 
-describe('agent api', () => {
+describe('agent api', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
