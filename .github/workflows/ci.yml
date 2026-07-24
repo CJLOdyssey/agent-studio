@@ -370,6 +370,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+      options: --network host
     timeout-minutes: 20
     strategy:
       matrix:
@@ -445,6 +446,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+      options: --network host
     timeout-minutes: 20
     services:
       redis:
@@ -563,6 +565,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+      options: --network host
     timeout-minutes: 10
     services:
       redis:
