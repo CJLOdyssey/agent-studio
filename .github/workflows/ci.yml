@@ -710,6 +710,7 @@ jobs:
       - frontend-coverage-report
       - diff-coverage
       - integration
+      - frontend-e2e
       - docs-check
       - load-test
     runs-on: ubuntu-latest
@@ -740,6 +741,7 @@ jobs:
           check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
           check "frontend-coverage-report" "${{ needs.frontend-coverage-report.result }}" || FAIL=1
           check "integration" "${{ needs.integration.result }}" || FAIL=1
+          check "frontend-e2e" "${{ needs.frontend-e2e.result }}" || FAIL=1
           check "docs-check" "${{ needs.docs-check.result }}" || FAIL=1
           check "load-test" "${{ needs.load-test.result }}" || FAIL=1
 
