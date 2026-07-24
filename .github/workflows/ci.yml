@@ -237,7 +237,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [routers, repository, core-infra, services, tasks-1a, tasks-1b, tasks-2]
+        shard: [routers, repository, core-infra, services, tasks-1a-1, tasks-1a-2, tasks-1a-3, tasks-1a-4, tasks-1b, tasks-2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -250,15 +250,18 @@ jobs:
           COVERAGE_FILE: .coverage.${{ matrix.shard }}
         run: |
           case "${{ matrix.shard }}" in
-            routers)     DIRS="backend/tests/routers/" ;;
-            repository)  DIRS="backend/tests/repository/ backend/tests/orm/" ;;
-            core-infra)  DIRS="backend/tests/ --ignore=backend/tests/routers/ --ignore=backend/tests/repository/ --ignore=backend/tests/orm/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/benchmark/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py --ignore=backend/tests/services/ --ignore=backend/tests/tasks/" ;;
-            services)    DIRS="backend/tests/services/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
-            tasks-1a)    DIRS="backend/tests/tasks/test_agent_pipeline.py backend/tests/tasks/test_complete_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
-            tasks-1b)    DIRS="backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
-            tasks-2)     DIRS="backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
+            routers)     ARGS=(backend/tests/routers/) ;;
+            repository)  ARGS=(backend/tests/repository/ backend/tests/orm/) ;;
+            core-infra)  ARGS=(backend/tests/ --ignore=backend/tests/routers/ --ignore=backend/tests/repository/ --ignore=backend/tests/orm/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/benchmark/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py --ignore=backend/tests/services/ --ignore=backend/tests/tasks/) ;;
+            services)    ARGS=(backend/tests/services/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
+            tasks-1a-1)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_successful_result_with_messages or test_success or test_empty_messages_fallback_content or test_last_message_with_content_is_used or test_with_session_context or test_first_session_triggers_rag_ingest or test_no_session_no_messages or test_session_no_memories or test_session_no_rag or test_session_memories_load_exception or test_chat_history_load_exception or test_agent_config_load_exception or test_chat_history_user_and_agent_roles or test_get_agent_config_returns_none_still_succeeds") ;;
+            tasks-1a-2)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_output_constraints_appended or test_custom_model_from_agent_config or test_model_from_parameter_override or test_api_key_passed_to_graph or test_error_handling or test_no_agent_id or test_key_usage_logging or test_log_key_usage_exception_is_nonfatal or test_rag_ingest_failure_is_nonfatal or test_mcp_endpoint or test_mcp_config_as_dict or test_mcp_no_match or test_mcp_no_name_skipped or test_mcp_no_endpoint_non_stdio") ;;
+            tasks-1a-3)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_prepare_tools or test_prepare_skill or test_prepare_mcp or test_tool_params_invalid or test_tool_no_name_skipped or test_skill_no_name_skipped") ;;
+            tasks-1a-4)  ARGS=(backend/tests/tasks/test_complete_pipeline.py -k "test_success or test_http_error or test_general_error_in_stream or test_save_error or test_custom_model_and_base or test_proc_read_error or test_tracemalloc_starts_when_not_tracing") ;;
+            tasks-1b)    ARGS=(backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
+            tasks-2)     ARGS=(backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
           esac
-          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --cov=backend --cov-fail-under=0 --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
+          PYTHONPATH=. python3 -m pytest "${ARGS[@]}" -q --tb=short -m 'not integration' --cov=backend --cov-fail-under=0 --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
       - uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-${{ matrix.shard }}
