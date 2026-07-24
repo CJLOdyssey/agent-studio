@@ -66,6 +66,7 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - run: npm ci --prefer-offline --no-audit
       - run: npm run typecheck
       - run: npm run lint
       - run: npm audit --audit-level=high
@@ -87,6 +88,7 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - run: npm ci --prefer-offline --no-audit
       - name: Unit tests (sharded, with coverage)
         run: |
           npx vitest run --coverage --shard=${{ matrix.shard }}/2 --tagsFilter '!integration' \
@@ -121,6 +123,7 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - run: npm ci --prefer-offline --no-audit
       - run: npm run build
       - name: Check total bundle size
         run: |
@@ -477,10 +480,10 @@ jobs:
             if curl -sf http://localhost:8080/api/models > /dev/null 2>&1; then break; fi
             sleep 1
           done
-      - name: Start frontend preview server
+      - name: Start frontend dev server
         working-directory: frontend
         run: |
-          npx vite preview --port 5173 --host 0.0.0.0 &
+          npx vite --port 5173 --host 0.0.0.0 &
           echo "FRONTEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
             if curl -sf http://localhost:5173 > /dev/null 2>&1; then break; fi
