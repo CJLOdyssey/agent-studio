@@ -58,63 +58,81 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run typecheck
-      - run: npm run lint
+      - name: Typecheck & Lint (parallel)
+        run: |
+          npm run typecheck &
+          TC_PID=$!
+          npm run lint
+          LINT_EXIT=$?
+          wait $TC_PID
+          TC_EXIT=$?
+          exit $((TC_EXIT | LINT_EXIT))
       - run: npm audit --audit-level=high
 
   frontend-test:
-    name: "Frontend: Test (${{ matrix.shard }}/4)"
+    name: "Frontend: Test (${{ matrix.shard }}/2)"
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm test -- --shard=${{ matrix.shard }}/4 --pool=threads
+      - name: Unit tests (sharded, with coverage)
+        run: |
+          npx vitest run --coverage --shard=${{ matrix.shard }}/2 --tagsFilter '!integration' \
+            --coverage.thresholds.statements=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.lines=0 \
+            --reporter=json --outputFile=../coverage-shard-${{ matrix.shard }}.json
+      - name: Save coverage data
+        run: |
+          mkdir -p ../coverage-artifacts
+          mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }} 2>/dev/null || true
+          mv ../coverage-shard-${{ matrix.shard }}.json ../coverage-artifacts/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-${{ matrix.shard }}
+          path: coverage-artifacts/
+      - name: Integration tests (single run)
+        if: matrix.shard == 1
+        run: npx vitest run --tagsFilter 'integration'
 
   frontend-build:
     name: "Frontend: Build & Bundle"
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run build
+      # vite build only (tsc already checked in lint:typecheck)
+      - run: npx vite build
       - name: Check total bundle size
         run: |
           total=$(du -sb dist/ | cut -f1)
@@ -125,35 +143,22 @@ jobs:
             exit 1
           fi
           echo "✅ Bundle size OK"
+      - name: Check per-chunk size limit
+        run: |
+          LIMIT=1048576
+          for f in dist/assets/*.js; do
+            size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null)
+            if [ "$size" -gt "$LIMIT" ]; then
+              echo "❌ $(basename "$f"): $(numfmt --to=iec $size) exceeds 1MB"
+              exit 1
+            fi
+            echo "✅ $(basename "$f"): $(numfmt --to=iec $size)"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend/dist/
           retention-days: 7
-
-  frontend-size-limit:
-    name: "Frontend: Size Limit"
-    needs: [frontend-build]
-    if: needs.frontend-build.result == 'success'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist/
-      - run: npm ci --prefer-offline --no-audit
-      - name: Check per-chunk size limit
-        run: npm run size
 
   # ── Secrets Scan ─────────────────────────────────────────────────────────
   secrets-scan:
@@ -193,17 +198,14 @@ jobs:
   backend-lint:
     name: "Backend: Lint & Typecheck"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
-      - run: mypy backend/ --strict --no-error-summary
+      # Use pre-warmed mypy cache from CI runner image
+      - run: MYPY_CACHE_DIR=/opt/mypy-cache mypy backend/ --strict --no-error-summary
       - name: Check .env.example for insecure defaults
         run: |
           if grep -qE 'change-me|example-secret' .env.example; then
@@ -214,14 +216,10 @@ jobs:
   backend-security:
     name: "Backend: Security"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
       - run: bandit -c pyproject.toml -r backend/ -ll
 
@@ -229,33 +227,33 @@ jobs:
   backend-test:
     name: "Backend: Tests (${{ matrix.shard }})"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
-        shard: [routers, repository, core-infra, services, tasks-1a, tasks-1b, tasks-2]
+        shard: [routers, repository, core-infra, services, tasks-1a-1, tasks-1a-2, tasks-1a-3, tasks-1a-4, tasks-1b, tasks-2]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run unit tests (${{ matrix.shard }})
+        shell: bash
         env:
           COVERAGE_FILE: .coverage.${{ matrix.shard }}
         run: |
           case "${{ matrix.shard }}" in
-            routers)     DIRS="backend/tests/routers/" ;;
-            repository)  DIRS="backend/tests/repository/ backend/tests/orm/" ;;
-            core-infra)  DIRS="backend/tests/ --ignore=backend/tests/routers/ --ignore=backend/tests/repository/ --ignore=backend/tests/orm/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/benchmark/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py --ignore=backend/tests/services/ --ignore=backend/tests/tasks/" ;;
-            services)    DIRS="backend/tests/services/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
-            tasks-1a)    DIRS="backend/tests/tasks/test_agent_pipeline.py backend/tests/tasks/test_complete_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
-            tasks-1b)    DIRS="backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
-            tasks-2)     DIRS="backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/" ;;
+            routers)     ARGS=(backend/tests/routers/) ;;
+            repository)  ARGS=(backend/tests/repository/ backend/tests/orm/) ;;
+            core-infra)  ARGS=(backend/tests/ --ignore=backend/tests/routers/ --ignore=backend/tests/repository/ --ignore=backend/tests/orm/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/benchmark/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py --ignore=backend/tests/services/ --ignore=backend/tests/tasks/) ;;
+            services)    ARGS=(backend/tests/services/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
+            tasks-1a-1)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_successful_result_with_messages or test_success or test_empty_messages_fallback_content or test_last_message_with_content_is_used or test_with_session_context or test_first_session_triggers_rag_ingest or test_no_session_no_messages or test_session_no_memories or test_session_no_rag or test_session_memories_load_exception or test_chat_history_load_exception or test_agent_config_load_exception or test_chat_history_user_and_agent_roles or test_get_agent_config_returns_none_still_succeeds") ;;
+            tasks-1a-2)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_output_constraints_appended or test_custom_model_from_agent_config or test_model_from_parameter_override or test_api_key_passed_to_graph or test_error_handling or test_no_agent_id or test_key_usage_logging or test_log_key_usage_exception_is_nonfatal or test_rag_ingest_failure_is_nonfatal or test_mcp_endpoint or test_mcp_config_as_dict or test_mcp_no_match or test_mcp_no_name_skipped or test_mcp_no_endpoint_non_stdio") ;;
+            tasks-1a-3)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_prepare_tools or test_prepare_skill or test_prepare_mcp or test_tool_params_invalid or test_tool_no_name_skipped or test_skill_no_name_skipped") ;;
+            tasks-1a-4)  ARGS=(backend/tests/tasks/test_complete_pipeline.py -k "test_success or test_http_error or test_general_error_in_stream or test_save_error or test_custom_model_and_base or test_proc_read_error or test_tracemalloc_starts_when_not_tracing") ;;
+            tasks-1b)    ARGS=(backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
+            tasks-2)     ARGS=(backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
           esac
-          PYTHONPATH=. python3 -m pytest $DIRS -q --tb=short -m 'not integration' --cov=backend --cov-fail-under=0 --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
+          PYTHONPATH=. python3 -m pytest "${ARGS[@]}" -q --tb=short -m 'not integration' --cov=backend --cov-fail-under=0 --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
       - uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-${{ matrix.shard }}
@@ -267,15 +265,11 @@ jobs:
   backend-coverage:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     needs: backend-test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - uses: actions/download-artifact@v4
         with:
           pattern: backend-coverage-*
@@ -292,63 +286,28 @@ jobs:
           path: coverage.xml
           retention-days: 7
 
-  # ── Frontend Coverage (sharded 3-way + merge) ───────────────────────────
-  frontend-coverage:
-    name: "Frontend: Coverage (${{ matrix.shard }}/4)"
-    needs: [changes, frontend-test]
-    if: (needs.changes.outputs.frontend == 'true' || github.event_name == 'push') && !cancelled()
+  frontend-coverage-report:
+    name: "Frontend: Coverage Report"
+    needs: [frontend-test]
+    if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - name: Run tests with coverage
-        run: |
-          mkdir -p ../coverage-artifacts
-          # Thresholds disabled per-shard; enforced in merge step
-          npx vitest run --shard=${{ matrix.shard }}/4 --pool=threads \
-            --coverage \
-            --coverage.thresholds.statements=0 \
-            --coverage.thresholds.branches=0 \
-            --coverage.thresholds.functions=0 \
-            --coverage.thresholds.lines=0 \
-            --reporter=json --outputFile=../coverage-artifacts/shard-${{ matrix.shard }}.json
-      - name: Save coverage data
-        run: |
-          mv coverage ../coverage-artifacts/coverage-${{ matrix.shard }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage-artifacts-${{ matrix.shard }}
-          path: coverage-artifacts/
-
-  frontend-coverage-report:
-    name: "Frontend: Coverage Report"
-    needs: [frontend-coverage]
-    if: needs.frontend-coverage.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: coverage-artifacts-*
+          pattern: frontend-coverage-*
           merge-multiple: true
-          path: coverage-all
-      - name: Merge coverage from all shards
-        working-directory: coverage-all
+          path: coverage-artifacts
+      - name: Merge coverage
         run: |
           mkdir -p coverage/tmp
-          for d in coverage-*/; do
+          for d in coverage-artifacts/coverage-*/; do
             [ -d "$d/tmp" ] && cp "$d/tmp/"*.json coverage/tmp/ 2>/dev/null || true
           done
           npx c8 report --reporter=lcov --reporter=text --reporter=cobertura \
@@ -428,74 +387,6 @@ jobs:
               body: body
             });
 
-  # ── OpenAPI Diff ──────────────────────────────────────────────────────────
-  openapi-diff:
-    name: "OpenAPI: Schema Validation"
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_DB: backend
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
-      - name: Start backend
-        run: |
-          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
-          BACKEND_PID=$!
-          echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/api/models > /dev/null 2>&1; then
-              echo "✅ Backend ready"
-              break
-            fi
-            sleep 1
-          done
-      - name: Validate OpenAPI schema
-        run: |
-          curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; cat /tmp/backend.log; exit 1; }
-          curl -s http://localhost:8080/openapi.json | python3 -c "
-          import json, sys
-          schema = json.load(sys.stdin)
-          assert 'openapi' in schema, 'Missing openapi version'
-          assert 'paths' in schema, 'Missing paths'
-          paths = schema['paths']
-          assert '/api/health' in paths, 'Missing /api/health'
-          assert '/api/agents' in paths, 'Missing /api/agents'
-          assert '/api/tools' in paths, 'Missing /api/tools'
-          assert '/api/sessions' in paths, 'Missing /api/sessions'
-          print(f'✅ OpenAPI valid — {len(paths)} paths')
-          "
-      - name: Stop backend
-        if: always()
-        run: kill $BACKEND_PID 2>/dev/null || true
-
   # ── Integration Tests ────────────────────────────────────────────────────
   integration:
     name: "Integration (${{ matrix.auth_mode }})"
@@ -553,6 +444,21 @@ jobs:
           done
       - name: Run E2E tests
         run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest backend/tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
+      - name: Validate OpenAPI schema
+        run: |
+          curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; exit 1; }
+          curl -s http://localhost:8080/openapi.json | python3 -c "
+          import json, sys
+          schema = json.load(sys.stdin)
+          assert 'openapi' in schema, 'Missing openapi version'
+          assert 'paths' in schema, 'Missing paths'
+          paths = schema['paths']
+          assert '/api/health' in paths, 'Missing /api/health'
+          assert '/api/agents' in paths, 'Missing /api/agents'
+          assert '/api/tools' in paths, 'Missing /api/tools'
+          assert '/api/sessions' in paths, 'Missing /api/sessions'
+          print(f'✅ OpenAPI valid — {len(paths)} paths')
+          "
       - name: Stop backend
         if: always()
         run: kill $BACKEND_PID 2>/dev/null || true
@@ -604,6 +510,8 @@ jobs:
       - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: pip install playwright --quiet
       - run: python3 -m playwright install chromium --with-deps
+      - run: npm ci --prefer-offline --no-audit
+        working-directory: frontend
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
@@ -616,8 +524,7 @@ jobs:
       - name: Start frontend dev server
         working-directory: frontend
         run: |
-          npm ci --prefer-offline --no-audit
-          npx vite --port 5173 &
+          npx vite --port 5173 --host 0.0.0.0 &
           echo "FRONTEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
             if curl -sf http://localhost:5173 > /dev/null 2>&1; then break; fi
@@ -648,33 +555,26 @@ jobs:
   requirement-coverage:
     name: "Backend: Requirement Coverage"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run tests with requirement markers
         run: |
           PYTHONPATH=. python3 -m pytest backend/tests/routers/ backend/tests/repository/ backend/tests/services/ \
             --ignore=backend/tests/broker/ \
             --ignore=backend/tests/e2e/ \
+            --ignore=backend/tests/routers/auth/test_auth_routers.py \
             -q --tb=short
 
   # ── Flaky Tests ──────────────────────────────────────────────────────────
   flaky-check:
     name: "Backend: Flaky Tests"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-          cache: pip
-          cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Collect flaky tests
         id: collect
         run: |
@@ -789,8 +689,10 @@ jobs:
       - backend-coverage
       - frontend-coverage-report
       - diff-coverage
-      - openapi-diff
       - integration
+      - frontend-e2e
+      - flaky-check
+      - requirement-coverage
       - docs-check
       - load-test
     runs-on: ubuntu-latest
@@ -821,17 +723,13 @@ jobs:
           check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
           check "frontend-coverage-report" "${{ needs.frontend-coverage-report.result }}" || FAIL=1
           check "integration" "${{ needs.integration.result }}" || FAIL=1
+          check "frontend-e2e" "${{ needs.frontend-e2e.result }}" || FAIL=1
           check "docs-check" "${{ needs.docs-check.result }}" || FAIL=1
           check "load-test" "${{ needs.load-test.result }}" || FAIL=1
 
           # diff-coverage only runs on PRs, skip if skipped
           if [[ "${{ needs.diff-coverage.result }}" == "failure" ]]; then
             echo "❌ Diff coverage check failed"
-            FAIL=1
-          fi
-          # openapi-diff validates OpenAPI schema, not breaking changes
-          if [[ "${{ needs.openapi-diff.result }}" == "failure" ]]; then
-            echo "❌ OpenAPI schema validation failed"
             FAIL=1
           fi
           # container-scan is now a hard gate

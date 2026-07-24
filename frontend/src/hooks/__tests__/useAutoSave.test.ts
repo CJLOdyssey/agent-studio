@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { TestProviders } from '../../test/setup';
 import { useAutoSave } from '../useAutoSave';
 
-describe('useAutoSave', () => {
+describe('useAutoSave', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();

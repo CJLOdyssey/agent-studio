@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import Header from '../Header';
 import { expectNoA11yViolations } from '../../test/a11y-setup';
 
-describe('Header', () => {
+describe('Header', { tags: ['unit'] }, () => {
   it('renders sidebar toggle button', () => {
     render(<Header onToggleSidebar={vi.fn()} />);
     expect(screen.getByRole('button')).toBeInTheDocument();

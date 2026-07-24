@@ -18,7 +18,7 @@ const makeImpl = (): CrudAPIService<TestEntry, TestForm> => ({
   removeBatch: vi.fn<(ids: Set<string>) => Promise<void>>(),
 });
 
-describe('defineCrudModule', () => {
+describe('defineCrudModule', { tags: ['unit'] }, () => {
   it('returns bind and setAPI', () => {
     const impl = makeImpl();
     const result = defineCrudModule<TestEntry, TestForm>(impl);

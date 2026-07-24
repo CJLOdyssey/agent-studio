@@ -22,7 +22,7 @@ function makeConv(overrides: Partial<Conversation> = {}): Conversation {
 const now = new Date();
 const dayMs = 24 * 60 * 60 * 1000;
 
-describe('ConversationsList', () => {
+describe('ConversationsList', { tags: ['integration'] }, () => {
   const baseProps = {
     conversations: [] as Conversation[],
     activeConvId: null as string | null,

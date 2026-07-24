@@ -21,7 +21,7 @@ function makeEvent(key: string, overrides: Record<string, unknown> = {}): React.
   } as unknown as React.KeyboardEvent<HTMLTextAreaElement>;
 }
 
-describe('useCommandPalette', () => {
+describe('useCommandPalette', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

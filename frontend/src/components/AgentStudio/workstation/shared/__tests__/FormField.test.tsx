@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import FormField from '../FormField';
 
-describe('FormField', () => {
+describe('FormField', { tags: ['unit'] }, () => {
   it('renders label and input', () => {
     render(<FormField label="Name" value="" onChange={vi.fn()} />);
     expect(screen.getByText('Name')).toBeInTheDocument();

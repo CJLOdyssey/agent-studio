@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import WstaDropdownPortal from '../WstaDropdownPortal';
 
-describe('WstaDropdownPortal', () => {
+describe('WstaDropdownPortal', { tags: ['unit'] }, () => {
   const createAnchor = () => {
     const el = document.createElement('button');
     document.body.appendChild(el);

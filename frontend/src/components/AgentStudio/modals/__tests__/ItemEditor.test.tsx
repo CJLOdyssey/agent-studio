@@ -21,7 +21,7 @@ vi.mock('../../workstation/skill/SkillFormModal', () => ({
 
 import ItemEditor from '../ItemEditor';
 
-describe('ItemEditor', () => {
+describe('ItemEditor', { tags: ['integration'] }, () => {
   const defaultProps = {
     form: { show: true, data: {}, errors: [] },
     editingItem: null,

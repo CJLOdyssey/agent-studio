@@ -11,7 +11,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('Logger', () => {
+describe('Logger', { tags: ['unit'] }, () => {
   it('debug calls console.debug', () => {
     const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
     debug('test debug');

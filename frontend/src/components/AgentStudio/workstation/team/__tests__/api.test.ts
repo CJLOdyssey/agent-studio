@@ -13,7 +13,7 @@ vi.mock('../../../../../api/client/teams', () => ({
   deleteTeam: mockDeleteTeam,
 }));
 
-describe('team api', () => {
+describe('team api', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

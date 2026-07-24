@@ -8,7 +8,7 @@ const items = [
   { id: '3', name: 'Gamma API', description: 'Third API', source: 'Built-in' },
 ];
 
-describe('PickerModal', () => {
+describe('PickerModal', { tags: ['integration'] }, () => {
   it('renders title and all items', () => {
     render(<PickerModal title="Select Item" items={items} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText('Select Item')).toBeInTheDocument();

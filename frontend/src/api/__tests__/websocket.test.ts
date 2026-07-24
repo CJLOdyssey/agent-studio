@@ -54,7 +54,7 @@ function mockOpts(cb = vi.fn()) {
   return { onMessage: cb };
 }
 
-describe('WebSocket Module', () => {
+describe('WebSocket Module', { tags: ['unit'] }, () => {
   it('setMaxRetries 更改重试次数', async () => {
     const ws = await getWs();
     ws.setMaxRetries(5);

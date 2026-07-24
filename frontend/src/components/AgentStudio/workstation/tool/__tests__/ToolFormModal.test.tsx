@@ -26,7 +26,7 @@ const baseProps = {
   errors: [] as string[],
 };
 
-describe('ToolFormModal', () => {
+describe('ToolFormModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

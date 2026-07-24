@@ -41,7 +41,7 @@ const sampleItems: TestItem[] = [
   { id: '6', name: 'Zeta', description: 'Sixth item', category: 'B' },
 ];
 
-describe('useGenericCrud', () => {
+describe('useGenericCrud', { tags: ['unit'] }, () => {
   describe('initial state', () => {
     it('starts with isLoading=true before fetch resolves', () => {
       const config = makeConfig();

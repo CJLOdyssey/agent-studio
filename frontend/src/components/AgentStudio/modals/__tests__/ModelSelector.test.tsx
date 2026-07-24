@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
 
 import ModelSelector from '../ModelSelector';
 
-describe('ModelSelector', () => {
+describe('ModelSelector', { tags: ['integration'] }, () => {
   const models = [
     { model: 'gpt-4', keyId: 'key1' },
     { model: 'gpt-3.5', keyId: 'key2' },

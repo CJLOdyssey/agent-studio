@@ -6,7 +6,7 @@ function ThrowError({ message }: { message: string }) {
   throw new Error(message);
 }
 
-describe('ErrorBoundary', () => {
+describe('ErrorBoundary', { tags: ['unit'] }, () => {
   it('renders children when no error', () => {
     render(
       <ErrorBoundary>

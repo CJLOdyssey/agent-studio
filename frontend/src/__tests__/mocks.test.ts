@@ -9,7 +9,7 @@ import { MOCK_OUTPUTS } from '../mocks/output';
 import { MOCK_LOGS } from '../mocks/logs';
 import { MOCK_AGENTS } from '../mocks/agent';
 
-describe('mocks/tool', () => {
+describe('mocks/tool', { tags: ['unit'] }, () => {
   it('exports MOCK_TOOLS array', () => {
     expect(Array.isArray(MOCK_TOOLS)).toBe(true);
     expect(MOCK_TOOLS.length).toBeGreaterThan(0);
@@ -21,7 +21,7 @@ describe('mocks/tool', () => {
   });
 });
 
-describe('mocks/mcp', () => {
+describe('mocks/mcp', { tags: ['unit'] }, () => {
   it('exports MOCK_MCPS array', () => {
     expect(Array.isArray(MOCK_MCPS)).toBe(true);
     expect(MOCK_MCPS.length).toBeGreaterThan(0);
@@ -32,7 +32,7 @@ describe('mocks/mcp', () => {
   });
 });
 
-describe('mocks/prompt', () => {
+describe('mocks/prompt', { tags: ['unit'] }, () => {
   it('exports MOCK_PROMPTS array', () => {
     expect(Array.isArray(MOCK_PROMPTS)).toBe(true);
     expect(MOCK_PROMPTS.length).toBeGreaterThan(0);
@@ -43,7 +43,7 @@ describe('mocks/prompt', () => {
   });
 });
 
-describe('mocks/skill', () => {
+describe('mocks/skill', { tags: ['unit'] }, () => {
   it('exports MOCK_SKILLS array', () => {
     expect(Array.isArray(MOCK_SKILLS)).toBe(true);
     expect(MOCK_SKILLS.length).toBeGreaterThan(0);
@@ -54,7 +54,7 @@ describe('mocks/skill', () => {
   });
 });
 
-describe('mocks/team', () => {
+describe('mocks/team', { tags: ['unit'] }, () => {
   it('exports MOCK_TEAMS array', () => {
     expect(Array.isArray(MOCK_TEAMS)).toBe(true);
     expect(MOCK_TEAMS.length).toBeGreaterThan(0);
@@ -65,7 +65,7 @@ describe('mocks/team', () => {
   });
 });
 
-describe('mocks/monitor', () => {
+describe('mocks/monitor', { tags: ['unit'] }, () => {
   it('exports MOCK_STATS array', () => {
     expect(Array.isArray(MOCK_STATS)).toBe(true);
     expect(MOCK_STATS.length).toBeGreaterThan(0);
@@ -82,20 +82,20 @@ describe('mocks/monitor', () => {
   });
 });
 
-describe('mocks/output', () => {
+describe('mocks/output', { tags: ['unit'] }, () => {
   it('exports MOCK_OUTPUTS array', () => {
     expect(Array.isArray(MOCK_OUTPUTS)).toBe(true);
   });
 });
 
-describe('mocks/logs', () => {
+describe('mocks/logs', { tags: ['unit'] }, () => {
   it('exports MOCK_LOGS array', () => {
     expect(Array.isArray(MOCK_LOGS)).toBe(true);
     expect(MOCK_LOGS.length).toBeGreaterThan(0);
   });
 });
 
-describe('mocks/agent', () => {
+describe('mocks/agent', { tags: ['unit'] }, () => {
   it('exports MOCK_AGENTS array', () => {
     expect(Array.isArray(MOCK_AGENTS)).toBe(true);
     expect(MOCK_AGENTS.length).toBeGreaterThan(0);

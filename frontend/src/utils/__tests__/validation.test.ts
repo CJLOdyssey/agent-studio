@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { validateInput, sanitizeMessageContent, validateName, checkTeamLimit, checkAgentLimit } from '../validation';
 
-describe('validateInput', () => {
+describe('validateInput', { tags: ['unit'] }, () => {
   it('rejects empty input', () => {
     const result = validateInput('');
     expect(result.valid).toBe(false);
@@ -39,7 +39,7 @@ describe('validateInput', () => {
   });
 });
 
-describe('sanitizeMessageContent', () => {
+describe('sanitizeMessageContent', { tags: ['unit'] }, () => {
   it('passes through normal text', () => {
     expect(sanitizeMessageContent('hello world')).toBe('hello world');
   });
@@ -57,7 +57,7 @@ describe('sanitizeMessageContent', () => {
   });
 });
 
-describe('validateName', () => {
+describe('validateName', { tags: ['unit'] }, () => {
   it('returns valid for a standard name', () => {
     expect(validateName('TestAgent').valid).toBe(true);
   });
@@ -101,7 +101,7 @@ describe('validateName', () => {
   });
 });
 
-describe('checkTeamLimit', () => {
+describe('checkTeamLimit', { tags: ['unit'] }, () => {
   it('allows when under limit', () => {
     expect(checkTeamLimit(49).valid).toBe(true);
   });
@@ -113,7 +113,7 @@ describe('checkTeamLimit', () => {
   });
 });
 
-describe('checkAgentLimit', () => {
+describe('checkAgentLimit', { tags: ['unit'] }, () => {
   it('allows when under limit', () => {
     expect(checkAgentLimit(19).valid).toBe(true);
   });

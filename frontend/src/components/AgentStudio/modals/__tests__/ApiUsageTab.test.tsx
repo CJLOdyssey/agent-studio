@@ -18,7 +18,7 @@ vi.mock('react-i18next', () => ({
 
 import ApiUsageTab from '../ApiUsageTab';
 
-describe('ApiUsageTab', () => {
+describe('ApiUsageTab', { tags: ['integration'] }, () => {
   it('renders usage statistics', () => {
     render(
       <ApiUsageTab usage={{ today_requests: 10, today_tokens: 500, month_requests: 200, month_tokens: 10000 }} />,

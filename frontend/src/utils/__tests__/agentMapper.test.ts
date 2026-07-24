@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAllAgents } from '../agentMapper';
 
-describe('getAllAgents', () => {
+describe('getAllAgents', { tags: ['unit'] }, () => {
   it('returns empty array for no teams', () => {
     expect(getAllAgents([])).toEqual([]);
   });

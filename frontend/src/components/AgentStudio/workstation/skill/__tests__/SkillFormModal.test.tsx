@@ -26,7 +26,7 @@ const baseProps = {
   errors: [] as string[],
 };
 
-describe('SkillFormModal', () => {
+describe('SkillFormModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { uid } from '../uid';
 
-describe('uid', () => {
+describe('uid', { tags: ['unit'] }, () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });

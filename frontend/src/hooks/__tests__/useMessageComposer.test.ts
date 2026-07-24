@@ -10,7 +10,7 @@ vi.mock('../../utils/validation', () => ({
   },
 }));
 
-describe('useMessageComposer', () => {
+describe('useMessageComposer', { tags: ['unit'] }, () => {
   const onSend = vi.fn();
 
   beforeEach(() => {

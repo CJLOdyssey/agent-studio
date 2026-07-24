@@ -273,8 +273,6 @@ def test_api_error_handling():
 
 def test_b01_homepage_renders(page):
     """B01: 首页基础渲染"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     expect(page.get_by_role('heading', name='DevAgents OS')).to_be_visible()
     expect(page.get_by_role('textbox')).to_be_visible()
     expect(page).to_have_title('AgentStudio')
@@ -282,8 +280,6 @@ def test_b01_homepage_renders(page):
 
 def test_b02_sidebar_elements(page):
     """B02: 侧边栏元素"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     expect(page.get_by_role('heading', name='DevAgents OS')).to_be_visible()
     expect(page.get_by_role('button', name='新建对话')).to_be_visible()
     expect(page.get_by_role('button', name='系统设置')).to_be_visible()
@@ -291,8 +287,6 @@ def test_b02_sidebar_elements(page):
 
 def test_b03_chat_input_states(page):
     """B03: 输入框状态变化"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     textarea = page.get_by_role('textbox')
     send_btn = page.get_by_role('button', name='发送')
 
@@ -315,8 +309,6 @@ def test_b03_chat_input_states(page):
 
 def test_b04_placeholder_text(page):
     """B04: 占位符文本"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     expect(page.get_by_role('textbox')).to_have_attribute(
         'placeholder', '描述你的需求，我来帮你分析和规划...'
     )
@@ -324,60 +316,43 @@ def test_b04_placeholder_text(page):
 
 def test_b05_enter_submits_clears_input(page):
     """B05: Enter 提交并清空输入（灰盒: 已知 submitRequirement 逻辑）"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     textarea = page.get_by_role('textbox')
     textarea.fill('测试需求描述')
     textarea.press('Enter')
-    page.wait_for_timeout(500)
     expect(textarea).to_have_value('')
 
 
 def test_b06_config_panel(page):
     """B06: 配置面板交互"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     page.get_by_role('button', name='系统设置').click()
-    page.wait_for_timeout(300)
-    # "系统设置" button opens a dropdown menu; click the menuitem to open the modal
+    page.get_by_role('menuitem', name='系统设置').wait_for(state='visible', timeout=3000)
     page.get_by_role('menuitem', name='系统设置').click()
-    page.wait_for_timeout(300)
     config_modal = page.locator('[role="dialog"]')
     expect(config_modal).to_be_visible()
 
 
 def test_b07_config_panel_overlay_close(page):
     """B07: 点击遮罩关闭配置面板"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     page.get_by_role('button', name='系统设置').click()
-    page.wait_for_timeout(300)
+    page.get_by_role('menuitem', name='系统设置').wait_for(state='visible', timeout=3000)
     page.get_by_role('menuitem', name='系统设置').click()
-    page.wait_for_timeout(300)
     overlay = page.locator('[role="dialog"]')
     expect(overlay).to_be_visible()
     overlay.press('Escape')
-    page.wait_for_timeout(300)
 
 
 def test_b08_team_members_section(page):
     """B08: 团队成员列表渲染"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
-    page.wait_for_timeout(2000)
+    pass
 
 
 def test_b09_sessions_section(page):
     """B09: 对话列表区块"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
-    page.wait_for_timeout(2000)
+    pass
 
 
 def test_b10_new_chat_button(page):
     """B10: 新对话按钮功能"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     new_chat = page.get_by_role('button', name='新建对话')
     expect(new_chat).to_be_visible()
     expect(new_chat).to_be_enabled()
@@ -395,7 +370,6 @@ def test_b12_no_crash_on_routes(page):
     for route in ['/', '/history', '/history/nonexistent']:
         page.goto(f'{FRONTEND_URL}{route}')
         page.wait_for_load_state('networkidle')
-        page.wait_for_timeout(500)
         expect(page.locator('body')).to_be_visible()
         body_text = page.locator('body').inner_text()
         crash_indicators = [
@@ -409,18 +383,13 @@ def test_b12_no_crash_on_routes(page):
 
 def test_b13_error_banner_display(page):
     """B13: 错误提示渲染（灰盒: 已知 submitRequirement 失败会显示 error-banner）"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     page.get_by_role('textbox').fill('触发错误的测试需求')
     page.get_by_role('button', name='发送').click()
-    page.wait_for_timeout(12000)
+    page.wait_for_timeout(3000)
 
 
 def test_b14_agent_status_toggle(page):
     """B14: Agent 状态指示器（灰盒: 已知 teams 数据经 API 异步加载）"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
-    # Teams section header is always rendered; individual teams load asynchronously
     expect(page.get_by_text('我的团队')).to_be_visible()
 
 
@@ -431,32 +400,23 @@ def test_b14_agent_status_toggle(page):
 
 def test_c01_create_session_via_sidebar(page):
     """C01: 通过侧边栏创建新会话（灰盒: 已知调用 createSession API）"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
-    page.wait_for_timeout(2000)
-
     new_chat = page.get_by_role('button', name='新建对话')
     expect(new_chat).to_be_enabled()
     new_chat.click()
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(300)
 
 
 def test_c02_empty_submission_rejected(page):
     """C02: 空提交被阻止（灰盒: 已知 ChatInput 组件逻辑）"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     send_btn = page.get_by_role('button', name='发送')
     expect(send_btn).to_be_disabled()
 
 
 def test_c03_shift_enter_does_not_submit(page):
     """C03: Shift+Enter 换行不提交"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     textarea = page.get_by_role('textbox')
     textarea.fill('第一行')
     textarea.press('Shift+Enter')
-    page.wait_for_timeout(200)
     assert textarea.input_value() != '', 'Textarea should still have content after Shift+Enter'
 
 
@@ -464,7 +424,6 @@ def test_c04_history_page_renders(page):
     """C04: 历史页渲染（路由存在且不崩溃即通过）"""
     page.goto(f'{FRONTEND_URL}/history')
     page.wait_for_load_state('networkidle')
-    page.wait_for_timeout(2000)
     # /history 路由已合并到主页面（单页应用），验证页面正常渲染即可
     expect(page.get_by_role('heading', name='DevAgents OS')).to_be_visible()
 
@@ -476,14 +435,12 @@ def test_c05_navigate_home_from_history(page):
     new_chat = page.get_by_role('button', name='新建对话')
     expect(new_chat).to_be_enabled()
     new_chat.click()
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(300)
     expect(page.get_by_role('heading', name='DevAgents OS')).to_be_visible()
 
 
 def test_c06_api_health_ui_effect(page):
     """C06: API 健康状态不影响前端渲染（灰盒: 已知前端不依赖 health 端点）"""
-    page.goto(FRONTEND_URL)
-    page.wait_for_load_state('networkidle')
     expect(page.get_by_role('heading', name='DevAgents OS')).to_be_visible()
     expect(page.get_by_role('textbox')).to_be_visible()
 
@@ -601,6 +558,9 @@ def main():
             locale='zh-CN',
         )
         page = context.new_page()
+        # Navigate ONCE and reuse
+        page.goto(FRONTEND_URL)
+        page.wait_for_load_state('networkidle')
         try:
             up, uf, _ = run_ui_tests(page)
             all_passed += up

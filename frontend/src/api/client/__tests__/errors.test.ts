@@ -3,7 +3,7 @@ import { AxiosError, AxiosHeaders } from 'axios';
 
 import { ApiError, NetworkError, TimeoutError, normalizeError } from '../errors';
 
-describe('ApiError', () => {
+describe('ApiError', { tags: ['unit'] }, () => {
   it('constructs with name Apierror', () => {
     const err = new ApiError('msg', 400, 'BAD_REQUEST', { detail: 'x' });
     expect(err.name).toBe('ApiError');
@@ -14,7 +14,7 @@ describe('ApiError', () => {
   });
 });
 
-describe('NetworkError', () => {
+describe('NetworkError', { tags: ['unit'] }, () => {
   it('constructs with name NetworkError', () => {
     const err = new NetworkError('offline');
     expect(err.name).toBe('NetworkError');
@@ -22,7 +22,7 @@ describe('NetworkError', () => {
   });
 });
 
-describe('TimeoutError', () => {
+describe('TimeoutError', { tags: ['unit'] }, () => {
   it('constructs with name TimeoutError', () => {
     const err = new TimeoutError('timed out');
     expect(err.name).toBe('TimeoutError');
@@ -30,7 +30,7 @@ describe('TimeoutError', () => {
   });
 });
 
-describe('normalizeError', () => {
+describe('normalizeError', { tags: ['unit'] }, () => {
   it('throws TimeoutError for ECONNABORTED', () => {
     const axiosErr = new AxiosError('timeout', 'ECONNABORTED');
     expect(() => normalizeError(axiosErr)).toThrow(TimeoutError);

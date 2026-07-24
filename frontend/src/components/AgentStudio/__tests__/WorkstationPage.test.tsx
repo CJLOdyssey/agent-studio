@@ -31,7 +31,7 @@ vi.mock('lucide-react', () => ({
   RefreshCw: () => <span>Refresh</span>,
 }));
 
-describe('WorkstationPage', () => {
+describe('WorkstationPage', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

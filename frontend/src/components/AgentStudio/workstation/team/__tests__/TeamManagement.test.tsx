@@ -31,7 +31,7 @@ function makeTeam(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('TeamManagement', () => {
+describe('TeamManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchAll.mockResolvedValue([]);

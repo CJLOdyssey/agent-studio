@@ -31,7 +31,7 @@ const mockKeyItem = {
   is_default: false, last_used_at: null, created_at: '2024-01-01',
 };
 
-describe('listKeys', () => {
+describe('listKeys', { tags: ['unit'] }, () => {
   it('calls GET /keys', async () => {
     mockApi.get.mockResolvedValue({ data: [mockKeyItem] });
 
@@ -42,7 +42,7 @@ describe('listKeys', () => {
   });
 });
 
-describe('createKey', () => {
+describe('createKey', { tags: ['unit'] }, () => {
   it('calls POST /keys with config', async () => {
     const cfg = { provider: 'openai', label: 'My Key', api_key: 'sk-xxx' };
     mockApi.post.mockResolvedValue({ data: mockKeyItem });
@@ -54,7 +54,7 @@ describe('createKey', () => {
   });
 });
 
-describe('updateKey', () => {
+describe('updateKey', { tags: ['unit'] }, () => {
   it('calls PUT /keys/:id with config', async () => {
     const cfg = { label: 'Updated' };
     mockApi.put.mockResolvedValue({ data: { ...mockKeyItem, label: 'Updated' } });
@@ -66,7 +66,7 @@ describe('updateKey', () => {
   });
 });
 
-describe('deleteKey', () => {
+describe('deleteKey', { tags: ['unit'] }, () => {
   it('calls DELETE /keys/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -76,7 +76,7 @@ describe('deleteKey', () => {
   });
 });
 
-describe('testKeyConnection', () => {
+describe('testKeyConnection', { tags: ['unit'] }, () => {
   it('calls POST /keys/:id/test', async () => {
     mockApi.post.mockResolvedValue({ data: { success: true, message: 'OK' } });
 
@@ -87,7 +87,7 @@ describe('testKeyConnection', () => {
   });
 });
 
-describe('getKeyUsage', () => {
+describe('getKeyUsage', { tags: ['unit'] }, () => {
   it('calls GET /keys/usage', async () => {
     const usage = { today_requests: 10, today_tokens: 500, month_requests: 100, month_tokens: 5000 };
     mockApi.get.mockResolvedValue({ data: usage });
@@ -99,7 +99,7 @@ describe('getKeyUsage', () => {
   });
 });
 
-describe('fetchModelsFromProvider', () => {
+describe('fetchModelsFromProvider', { tags: ['unit'] }, () => {
   it('calls POST /keys/fetch-models', async () => {
     mockApi.post.mockResolvedValue({ data: { success: true, models: ['gpt-4', 'gpt-3.5'] } });
 

@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { validateToolForm, EMPTY_FORM } from '../validate';
 
-describe('validateToolForm', () => {
+describe('validateToolForm', { tags: ['unit'] }, () => {
   it('returns error for empty name', () => {
     const errors = validateToolForm({ ...EMPTY_FORM, name: '' }, []);
     expect(errors).toContain('工具名称不能为空');

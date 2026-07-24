@@ -141,7 +141,7 @@ function createRef() {
   return { current: null } as React.RefObject<HTMLDivElement | null>;
 }
 
-describe('useWorkstationState', () => {
+describe('useWorkstationState', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockStore.messages = [];

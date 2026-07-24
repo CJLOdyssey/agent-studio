@@ -35,7 +35,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-describe('usePromptManagement', () => {
+describe('usePromptManagement', { tags: ['unit'] }, () => {
   it('starts loading and loads on mount', async () => {
     const { result } = renderHook(() => usePromptManagement());
     expect(result.current.isLoading).toBe(true);

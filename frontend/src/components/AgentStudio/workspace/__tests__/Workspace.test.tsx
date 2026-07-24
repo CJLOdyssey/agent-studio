@@ -35,7 +35,7 @@ const baseProps = {
   workspaceRef: { current: null },
 };
 
-describe('Workspace', () => {
+describe('Workspace', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

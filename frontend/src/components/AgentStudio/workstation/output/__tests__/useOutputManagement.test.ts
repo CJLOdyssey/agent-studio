@@ -20,7 +20,7 @@ const MOCK_ITEMS = [
   { id: 'o2', name: 'Markdown格式', content: '以Markdown输出', category: '格式约束', model: '', status: 'active', version: 'v1.0.0', createdAt: '2024-01-01' },
 ];
 
-describe('useOutputManagement', () => {
+describe('useOutputManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (outputAPI.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([...MOCK_ITEMS]);

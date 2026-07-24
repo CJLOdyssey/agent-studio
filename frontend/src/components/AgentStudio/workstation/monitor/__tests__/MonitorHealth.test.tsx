@@ -4,7 +4,7 @@ import MonitorHealth from '../MonitorHealth';
 
 vi.mock('../locales', () => ({ t: (k: string) => k }));
 
-describe('MonitorHealth', () => {
+describe('MonitorHealth', { tags: ['integration'] }, () => {
   it('renders health section title', () => {
     const items = [
       { label: 'CPU', value: '45%', status: 'normal' as const },

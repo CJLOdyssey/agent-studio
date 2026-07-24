@@ -7,7 +7,7 @@ const mockEntry = (id: string): PromptEntry => ({
   id, name: `p${id}`, content: 'test', category: '系统提示词', model: 'GPT-4o', status: 'active', version: 'v1.0.0', createdAt: '2026-06-01',
 });
 
-describe('usePromptImportExport', () => {
+describe('usePromptImportExport', { tags: ['unit'] }, () => {
   it('export calls getAllItems and creates blob URL', () => {
     const items = [mockEntry('1'), mockEntry('2')];
     const getAll = vi.fn(() => items);

@@ -26,7 +26,7 @@ function makeSkill(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('SkillManagement', () => {
+describe('SkillManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchAll.mockResolvedValue([]);

@@ -36,7 +36,7 @@ const baseProps = {
   t: tFn,
 };
 
-describe('TeamTreeAgentItem', () => {
+describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
   it('renders agent name', () => {
     render(<TeamTreeAgentItem {...baseProps} />);
     expect(screen.getByText('Test Agent')).toBeDefined();

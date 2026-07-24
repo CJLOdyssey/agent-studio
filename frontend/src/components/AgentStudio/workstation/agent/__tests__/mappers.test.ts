@@ -37,7 +37,7 @@ function makeConfig(overrides: Partial<AgentConfig> = {}): AgentConfig {
   };
 }
 
-describe('backendToEntry', () => {
+describe('backendToEntry', { tags: ['unit'] }, () => {
   it('converts basic agent config', () => {
     const entry = backendToEntry(makeConfig());
     expect(entry.id).toBe('a1');
@@ -100,7 +100,7 @@ describe('backendToEntry', () => {
   });
 });
 
-describe('resolveLists', () => {
+describe('resolveLists', { tags: ['unit'] }, () => {
   it('resolves all lists in parallel', async () => {
     const { listPrompts } = await import('../../../../../api/client/prompts');
     const { listTools } = await import('../../../../../api/client/tools');

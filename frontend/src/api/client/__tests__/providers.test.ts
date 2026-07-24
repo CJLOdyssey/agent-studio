@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listProviders', () => {
+describe('listProviders', { tags: ['unit'] }, () => {
   it('calls GET /providers', async () => {
     const mockData = {
       openai: { name: 'openai', base_url: 'https://api.openai.com', capabilities: ['llm'], docs_url: null },

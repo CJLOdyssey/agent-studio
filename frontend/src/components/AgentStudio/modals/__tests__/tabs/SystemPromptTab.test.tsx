@@ -16,7 +16,7 @@ function renderTab(overrides?: Record<string, unknown>) {
   return { ...render(<SystemPromptTab {...props} />), props };
 }
 
-describe('SystemPromptTab', () => {
+describe('SystemPromptTab', { tags: ['integration'] }, () => {
   it('renders textarea with placeholder', () => {
     renderTab();
     expect(screen.getByPlaceholderText('workstation.systemPromptDesc')).toBeInTheDocument();

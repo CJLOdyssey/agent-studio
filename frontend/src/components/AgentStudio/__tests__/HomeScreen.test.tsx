@@ -23,7 +23,7 @@ const baseProps = {
   inputToolbarRef: { current: null } as any,
 };
 
-describe('HomeScreen', () => {
+describe('HomeScreen', { tags: ['integration'] }, () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('renders without crashing', () => {

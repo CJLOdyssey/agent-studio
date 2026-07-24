@@ -25,7 +25,7 @@ function renderList(overrides?: Record<string, unknown>) {
   return { ...render(<ConfigItemList {...props} />), props };
 }
 
-describe('ConfigItemList', () => {
+describe('ConfigItemList', { tags: ['integration'] }, () => {
   it('renders all items with names', () => {
     renderList();
     expect(screen.getByText('Tool A')).toBeInTheDocument();

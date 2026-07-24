@@ -21,7 +21,7 @@ const baseProps = {
   onRunCancel: vi.fn(),
 };
 
-describe('MessagesPanel', () => {
+describe('MessagesPanel', { tags: ['integration'] }, () => {
   it('renders empty state', () => {
     const { container } = render(<MessagesPanel {...baseProps} />);
     expect(container).toBeDefined();
@@ -99,7 +99,7 @@ function properBaseProps(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('MessagesPanel — correct props', () => {
+describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete (globalThis as any).__lastEditMessageFn;
@@ -298,7 +298,7 @@ describe('MessagesPanel — correct props', () => {
   });
 });
 
-describe('handler functions', () => {
+describe('handler functions', { tags: ['integration'] }, () => {
     it('provides onEditMessage to TeamMessage', () => {
       const msgs = [makeMsg('edit-1')];
       render(<MessagesPanel {...properBaseProps({

@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listAgents', () => {
+describe('listAgents', { tags: ['unit'] }, () => {
   it('calls GET /agents', async () => {
     const mockData = [{ id: 'a1', name: 'Agent 1', role_identifier: 'dev', system_prompt: 'You are...' }];
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -29,7 +29,7 @@ describe('listAgents', () => {
   });
 });
 
-describe('createAgent', () => {
+describe('createAgent', { tags: ['unit'] }, () => {
   it('calls POST /agents with config', async () => {
     const cfg = {
       name: 'Agent', role_identifier: 'dev', system_prompt: 'Hello', order: 1,
@@ -44,7 +44,7 @@ describe('createAgent', () => {
   });
 });
 
-describe('updateAgent', () => {
+describe('updateAgent', { tags: ['unit'] }, () => {
   it('calls PUT /agents/:id with config', async () => {
     mockApi.put.mockResolvedValue({});
 
@@ -54,7 +54,7 @@ describe('updateAgent', () => {
   });
 });
 
-describe('deleteAgent', () => {
+describe('deleteAgent', { tags: ['unit'] }, () => {
   it('calls DELETE /agents/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -64,7 +64,7 @@ describe('deleteAgent', () => {
   });
 });
 
-describe('toggleAgent', () => {
+describe('toggleAgent', { tags: ['unit'] }, () => {
   it('calls PUT /agents/:id/toggle', async () => {
     mockApi.put.mockResolvedValue({ data: { id: 'a1', is_active: false } });
 

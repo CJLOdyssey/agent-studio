@@ -38,7 +38,7 @@ function renderTab(overrides?: Record<string, unknown>) {
   return { ...render(<TestProviders><ToolsTab {...props} /></TestProviders>), props };
 }
 
-describe('ToolsTab', () => {
+describe('ToolsTab', { tags: ['integration'] }, () => {
   it('renders tool list with items', () => {
     renderTab();
     expect(screen.getByText('weather_query')).toBeInTheDocument();

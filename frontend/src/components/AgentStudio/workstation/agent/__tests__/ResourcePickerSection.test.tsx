@@ -37,7 +37,7 @@ function renderComponent(overrides: Record<string, any> = {}) {
   return render(<TestProviders><ResourcePickerSection {...props} /></TestProviders>);
 }
 
-describe('ResourcePickerSection', () => {
+describe('ResourcePickerSection', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

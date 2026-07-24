@@ -21,7 +21,7 @@ function renderModal(overrides?: Record<string, unknown>) {
   return { ...render(<MCPFormModal {...props} />), props };
 }
 
-describe('MCPFormModal', () => {
+describe('MCPFormModal', { tags: ['unit'] }, () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('renders create title when editingItem is null', () => {

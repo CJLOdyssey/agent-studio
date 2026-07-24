@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('submitRequirement', () => {
+describe('submitRequirement', { tags: ['unit'] }, () => {
   it('calls POST /runs with requirement only', async () => {
     mockApi.post.mockResolvedValue({ data: { run_id: 'r1', status: 'queued' } });
 
@@ -51,7 +51,7 @@ describe('submitRequirement', () => {
   });
 });
 
-describe('resumeRun', () => {
+describe('resumeRun', { tags: ['unit'] }, () => {
   it('calls POST /runs/complete with content', async () => {
     mockApi.post.mockResolvedValue({ data: { run_id: 'r2', status: 'completed' } });
 

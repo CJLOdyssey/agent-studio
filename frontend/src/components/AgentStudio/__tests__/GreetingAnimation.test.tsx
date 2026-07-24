@@ -18,7 +18,7 @@ function advanceTimersSequentially(ms: number): void {
   }
 }
 
-describe('GreetingAnimation', () => {
+describe('GreetingAnimation', { tags: ['integration'] }, () => {
   it('renders typing cursor initially', () => {
     vi.useFakeTimers();
     render(<GreetingAnimation />);

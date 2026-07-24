@@ -46,7 +46,7 @@ function makeState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('handleStreamStart', () => {
+describe('handleStreamStart', { tags: ['unit'] }, () => {
   it('creates new message with chunk when no continuingId', () => {
     const s = makeState();
     const msg = { type: 'stream' as const, content: '', agent_name: 'Bot' };
@@ -106,7 +106,7 @@ describe('handleStreamStart', () => {
   });
 });
 
-describe('handleStreamEvent', () => {
+describe('handleStreamEvent', { tags: ['unit'] }, () => {
   it('appends chunk to existing streaming message', () => {
     const s = makeState({
       streamingId: 'msg-1',
@@ -168,7 +168,7 @@ describe('handleStreamEvent', () => {
   });
 });
 
-describe('handleThinkingStreamNew', () => {
+describe('handleThinkingStreamNew', { tags: ['unit'] }, () => {
   it('creates new message with thinking chunk', () => {
     const s = makeState();
     const result = handleThinkingStreamNew(s as never, { type: 'thinking_stream', agent_name: 'Bot' }, 'think content');
@@ -204,7 +204,7 @@ describe('handleThinkingStreamNew', () => {
   });
 });
 
-describe('handleThinkingStreamEvent', () => {
+describe('handleThinkingStreamEvent', { tags: ['unit'] }, () => {
   it('appends to thinking on active stream', () => {
     const s = makeState({
       streamingId: 'msg-1',

@@ -25,7 +25,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('useDeleteAgent', () => {
+describe('useDeleteAgent', { tags: ['unit'] }, () => {
   it('calls deleteAgent and invalidates agents', async () => {
     mockAxiosInstance.delete.mockResolvedValue({});
     const { useDeleteAgent } = await import('../hooks');
@@ -38,7 +38,7 @@ describe('useDeleteAgent', () => {
   });
 });
 
-describe('useToggleAgent', () => {
+describe('useToggleAgent', { tags: ['unit'] }, () => {
   it('calls toggleAgent and invalidates agents', async () => {
     mockAxiosInstance.put.mockResolvedValue({ data: { id: 'a1', is_active: false } });
     const { useToggleAgent } = await import('../hooks');
@@ -51,7 +51,7 @@ describe('useToggleAgent', () => {
   });
 });
 
-describe('useCreateAgent', () => {
+describe('useCreateAgent', { tags: ['unit'] }, () => {
   it('calls createAgent and invalidates agents', async () => {
     mockAxiosInstance.post.mockResolvedValue({ data: { id: 'new' } });
     const { useCreateAgent } = await import('../hooks');
@@ -65,7 +65,7 @@ describe('useCreateAgent', () => {
   });
 });
 
-describe('useUpdateAgent', () => {
+describe('useUpdateAgent', { tags: ['unit'] }, () => {
   it('calls updateAgent and invalidates agents', async () => {
     mockAxiosInstance.put.mockResolvedValue({});
     const { useUpdateAgent } = await import('../hooks');
@@ -78,7 +78,7 @@ describe('useUpdateAgent', () => {
   });
 });
 
-describe('useCreateSession', () => {
+describe('useCreateSession', { tags: ['unit'] }, () => {
   it('calls createSession', async () => {
     mockAxiosInstance.post.mockResolvedValue({ data: { id: 's1', title: 'Chat' } });
     const { useCreateSession } = await import('../hooks');
@@ -91,7 +91,7 @@ describe('useCreateSession', () => {
   });
 });
 
-describe('useDeleteSession', () => {
+describe('useDeleteSession', { tags: ['unit'] }, () => {
   it('calls deleteSession', async () => {
     mockAxiosInstance.delete.mockResolvedValue({});
     const { useDeleteSession } = await import('../hooks');
@@ -104,7 +104,7 @@ describe('useDeleteSession', () => {
   });
 });
 
-describe('useSessionDetail', () => {
+describe('useSessionDetail', { tags: ['unit'] }, () => {
   it('fetches session detail', async () => {
     mockAxiosInstance.get.mockResolvedValue({ data: { id: 's1', title: 'Chat' } });
     const { useSessionDetail } = await import('../hooks');

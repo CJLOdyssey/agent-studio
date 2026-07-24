@@ -18,7 +18,7 @@ vi.mock('react-i18next', () => ({
 
 import NewProjectModal from '../NewProjectModal';
 
-describe('NewProjectModal', () => {
+describe('NewProjectModal', { tags: ['integration'] }, () => {
   it('renders modal with title and buttons', () => {
     render(<NewProjectModal onClose={vi.fn()} onCreateProject={vi.fn()} />);
     expect(screen.getByText('New Chat')).toBeInTheDocument();

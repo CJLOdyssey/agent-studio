@@ -58,6 +58,7 @@ async def _setup_db(db_engine):
         await conn.run_sync(Base.metadata.create_all)
 
     db._async_session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    db._read_session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
     yield
     # No teardown needed — next test's setup will drop everything anyway.
 

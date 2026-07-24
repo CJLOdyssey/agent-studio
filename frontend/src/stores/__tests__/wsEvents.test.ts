@@ -14,7 +14,7 @@ import type {
   WsEvent,
 } from '../wsEvents';
 
-describe('wsEvents types', () => {
+describe('wsEvents types', { tags: ['unit'] }, () => {
   it('creates a WsStreamEvent', () => {
     const event: WsStreamEvent = { type: 'stream', content: 'hello', thinking: 'thinking', agent_name: 'agent1' };
     expect(event.type).toBe('stream');

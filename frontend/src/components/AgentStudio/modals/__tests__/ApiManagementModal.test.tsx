@@ -50,7 +50,7 @@ vi.mock('../../../../api/client', () => ({
   getKeyUsage: vi.fn(() => Promise.resolve({ today_requests: 10, today_tokens: 500, month_requests: 100, month_tokens: 5000 })),
 }));
 
-describe('ApiManagementModal', () => {
+describe('ApiManagementModal', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();

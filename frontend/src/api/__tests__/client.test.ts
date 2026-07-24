@@ -18,7 +18,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('API Client', () => {
+describe('API Client', { tags: ['unit'] }, () => {
   describe('submitRequirement', () => {
     it('POST /api/runs 提交需求', async () => {
       mockAxiosInstance.post.mockResolvedValue({ data: { run_id: 'run-1', status: 'running' } });

@@ -36,7 +36,7 @@ const noopService = (overrides = {}) =>
     ...overrides,
   }) as unknown as PromptAPIService & OutputAPIService & ToolAPIService & MCPAPIService & SkillAPIService;
 
-describe('DI setters', () => {
+describe('DI setters', { tags: ['integration'] }, () => {
   it('promptAPI DI setter works', async () => {
     const mock = noopService();
     setPromptAPI(mock);

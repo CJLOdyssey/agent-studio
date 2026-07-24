@@ -51,7 +51,7 @@ const mockTeams = [
   },
 ];
 
-describe('WorkflowManagement', () => {
+describe('WorkflowManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(listTeams).mockResolvedValue(mockTeams as never);

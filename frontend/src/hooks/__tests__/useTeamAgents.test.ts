@@ -53,7 +53,7 @@ function makeAgent(id: string): Agent {
   };
 }
 
-describe('useTeamAgents', () => {
+describe('useTeamAgents', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

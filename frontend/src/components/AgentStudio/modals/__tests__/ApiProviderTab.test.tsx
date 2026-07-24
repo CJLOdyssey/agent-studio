@@ -63,7 +63,7 @@ function renderTab(overrides: Partial<typeof baseProps> = {}) {
   return render(<ApiProviderTab {...baseProps} {...overrides} />);
 }
 
-describe('ApiProviderTab', () => {
+describe('ApiProviderTab', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

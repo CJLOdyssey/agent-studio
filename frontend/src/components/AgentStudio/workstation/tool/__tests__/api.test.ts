@@ -13,7 +13,7 @@ vi.mock('../../../../../api/client/tools', () => ({
   deleteTool: mockDeleteTool,
 }));
 
-describe('tool api', () => {
+describe('tool api', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

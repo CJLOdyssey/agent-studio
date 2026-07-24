@@ -21,7 +21,7 @@ const mockTeam: TeamEntry = {
   createdAt: '', agentIds: [],
 } as TeamEntry;
 
-describe('useTeamMemberManager', () => {
+describe('useTeamMemberManager', { tags: ['unit'] }, () => {
   it('initializes with team members', () => {
     mockListAgents.mockResolvedValue([]);
     const teamWithAgents = { ...mockTeam, agents: [{ agentConfigId: 'a1', name: 'Agent 1' }] };

@@ -189,7 +189,7 @@ function resetStoreOverride() {
   }
 }
 
-describe('AgentStudioWorkstation', () => {
+describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetStoreOverride();

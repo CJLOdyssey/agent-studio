@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listVersions', () => {
+describe('listVersions', { tags: ['unit'] }, () => {
   it('calls GET /versions/:type/:id with default params', async () => {
     const mockData = [{ id: '1', resource_type: 'agent', resource_id: 'a1', version_num: 1, snapshot: {}, created_at: '2024-01-01' }];
     mockClient.get.mockResolvedValue({ data: mockData });
@@ -37,7 +37,7 @@ describe('listVersions', () => {
   });
 });
 
-describe('getVersion', () => {
+describe('getVersion', { tags: ['unit'] }, () => {
   it('calls GET /versions/detail/:id', async () => {
     const mockData = { id: 'v1', resource_type: 'agent', resource_id: 'a1', version_num: 1, snapshot: {}, created_at: '2024-01-01' };
     mockClient.get.mockResolvedValue({ data: mockData });
@@ -49,7 +49,7 @@ describe('getVersion', () => {
   });
 });
 
-describe('createVersion', () => {
+describe('createVersion', { tags: ['unit'] }, () => {
   it('calls POST /versions with payload', async () => {
     const snapshot = { name: 'test' };
     const mockData = { id: 'v1', resource_type: 'agent', resource_id: 'a1', version_num: 1, snapshot, created_at: '2024-01-01' };

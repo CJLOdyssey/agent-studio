@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { nextId, today } from '../utils';
 
-describe('nextId', () => {
+describe('nextId', { tags: ['integration'] }, () => {
   it('returns 1 for empty array', () => {
     expect(nextId([])).toBe('1');
   });
@@ -15,7 +15,7 @@ describe('nextId', () => {
   });
 });
 
-describe('today', () => {
+describe('today', { tags: ['integration'] }, () => {
   it('returns YYYY-MM-DD format', () => {
     const result = today();
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);

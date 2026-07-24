@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listMCPs', () => {
+describe('listMCPs', { tags: ['unit'] }, () => {
   it('calls GET /mcps', async () => {
     const mockData = [{ id: '1', name: 'mcp1', type: 'stdio', endpoint: '/api/mcp', config: null, status: 'active', created_at: '2024-01-01' }];
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -29,7 +29,7 @@ describe('listMCPs', () => {
   });
 });
 
-describe('createMCP', () => {
+describe('createMCP', { tags: ['unit'] }, () => {
   it('calls POST /mcps with payload', async () => {
     const payload = { name: 'mcp1', type: 'stdio' };
     const mockData = { id: '1', name: 'mcp1', type: 'stdio', endpoint: '/api/mcp', config: null, status: 'active', created_at: '2024-01-01' };
@@ -42,7 +42,7 @@ describe('createMCP', () => {
   });
 });
 
-describe('updateMCP', () => {
+describe('updateMCP', { tags: ['unit'] }, () => {
   it('calls PUT /mcps/:id with payload', async () => {
     const mockData = { id: '1', name: 'updated', type: 'stdio', endpoint: '/api/mcp', config: null, status: 'active', created_at: '2024-01-01' };
     mockApi.put.mockResolvedValue({ data: mockData });
@@ -54,7 +54,7 @@ describe('updateMCP', () => {
   });
 });
 
-describe('deleteMCP', () => {
+describe('deleteMCP', { tags: ['unit'] }, () => {
   it('calls DELETE /mcps/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 

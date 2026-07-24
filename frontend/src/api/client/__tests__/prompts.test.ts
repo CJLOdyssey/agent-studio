@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listPrompts', () => {
+describe('listPrompts', { tags: ['unit'] }, () => {
   it('calls GET /prompts', async () => {
     const mockData = [{ id: '1', name: 'prompt1', category: 'general', content: 'Hello', model: null, status: 'active', version: '1.0', created_at: '2024-01-01' }];
     mockApi.get.mockResolvedValue({ data: mockData });
@@ -36,7 +36,7 @@ describe('listPrompts', () => {
   });
 });
 
-describe('createPrompt', () => {
+describe('createPrompt', { tags: ['unit'] }, () => {
   it('calls POST /prompts with payload', async () => {
     const payload = { name: 'prompt1', category: 'general', content: 'Hello' };
     const mockData = { id: '1', name: 'prompt1', category: 'general', content: 'Hello', model: null, status: 'active', version: '1.0', created_at: '2024-01-01' };
@@ -49,7 +49,7 @@ describe('createPrompt', () => {
   });
 });
 
-describe('updatePrompt', () => {
+describe('updatePrompt', { tags: ['unit'] }, () => {
   it('calls PUT /prompts/:id with payload', async () => {
     const mockData = { id: '1', name: 'updated', category: 'general', content: 'Hello', model: null, status: 'active', version: '1.0', created_at: '2024-01-01' };
     mockApi.put.mockResolvedValue({ data: mockData });
@@ -61,7 +61,7 @@ describe('updatePrompt', () => {
   });
 });
 
-describe('deletePrompt', () => {
+describe('deletePrompt', { tags: ['unit'] }, () => {
   it('calls DELETE /prompts/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -71,7 +71,7 @@ describe('deletePrompt', () => {
   });
 });
 
-describe('generatePrompt', () => {
+describe('generatePrompt', { tags: ['unit'] }, () => {
   it('calls POST /prompts/generate with description and category', async () => {
     const mockData = { id: '1', name: 'gen-prompt', content: 'Generated content', category: 'general', is_valid: true };
     mockApi.post.mockResolvedValue({ data: mockData });
@@ -91,7 +91,7 @@ describe('generatePrompt', () => {
   });
 });
 
-describe('validatePrompt', () => {
+describe('validatePrompt', { tags: ['unit'] }, () => {
   it('calls POST /prompts/validate', async () => {
     const mockData = { is_valid: true, suggestions: [] };
     mockApi.post.mockResolvedValue({ data: mockData });

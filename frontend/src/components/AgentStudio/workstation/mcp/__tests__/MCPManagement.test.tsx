@@ -25,7 +25,7 @@ function makeMCP(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('MCPManagement', () => {
+describe('MCPManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchAll.mockResolvedValue([]);

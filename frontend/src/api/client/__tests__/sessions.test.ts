@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listSessions', () => {
+describe('listSessions', { tags: ['unit'] }, () => {
   it('calls GET /sessions with default params', async () => {
     mockApi.get.mockResolvedValue({ data: [] });
 
@@ -46,7 +46,7 @@ describe('listSessions', () => {
   });
 });
 
-describe('getSessionDetail', () => {
+describe('getSessionDetail', { tags: ['unit'] }, () => {
   it('calls GET /sessions/:id', async () => {
     mockApi.get.mockResolvedValue({ data: { id: 's1', title: 'Chat' } });
 
@@ -57,7 +57,7 @@ describe('getSessionDetail', () => {
   });
 });
 
-describe('createSession', () => {
+describe('createSession', { tags: ['unit'] }, () => {
   it('calls POST /sessions with default title', async () => {
     mockApi.post.mockResolvedValue({ data: { id: 's1', title: '新对话' } });
 
@@ -76,7 +76,7 @@ describe('createSession', () => {
   });
 });
 
-describe('renameSession', () => {
+describe('renameSession', { tags: ['unit'] }, () => {
   it('calls PUT /sessions/:id with title', async () => {
     mockApi.put.mockResolvedValue({});
 
@@ -86,7 +86,7 @@ describe('renameSession', () => {
   });
 });
 
-describe('deleteSession', () => {
+describe('deleteSession', { tags: ['unit'] }, () => {
   it('calls DELETE /sessions/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -96,7 +96,7 @@ describe('deleteSession', () => {
   });
 });
 
-describe('deleteMemory', () => {
+describe('deleteMemory', { tags: ['unit'] }, () => {
   it('calls DELETE /memories/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 
@@ -106,7 +106,7 @@ describe('deleteMemory', () => {
   });
 });
 
-describe('exportSessionMemories', () => {
+describe('exportSessionMemories', { tags: ['unit'] }, () => {
   it('calls GET /sessions/:id/memories/export with format param', async () => {
     const blob = new Blob(['test']);
     mockApi.get.mockResolvedValue({ data: blob });
@@ -126,7 +126,7 @@ describe('exportSessionMemories', () => {
   });
 });
 
-describe('getRun', () => {
+describe('getRun', { tags: ['unit'] }, () => {
   it('calls GET /runs/:id', async () => {
     mockApi.get.mockResolvedValue({ data: { id: 'r1', status: 'completed' } });
 
@@ -137,7 +137,7 @@ describe('getRun', () => {
   });
 });
 
-describe('listRuns', () => {
+describe('listRuns', { tags: ['unit'] }, () => {
   it('calls GET /runs with default params', async () => {
     mockApi.get.mockResolvedValue({ data: [] });
 
@@ -155,7 +155,7 @@ describe('listRuns', () => {
   });
 });
 
-describe('healthCheck', () => {
+describe('healthCheck', { tags: ['unit'] }, () => {
   it('calls GET /health', async () => {
     mockApi.get.mockResolvedValue({ data: { status: 'ok' } });
 

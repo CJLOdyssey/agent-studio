@@ -22,7 +22,7 @@ function renderModal(overrides?: Partial<Parameters<typeof renderModal>[0]>) {
   return { ...render(<TestProviders><PromptFormModal {...props} /></TestProviders>), props };
 }
 
-describe('PromptFormModal', () => {
+describe('PromptFormModal', { tags: ['unit'] }, () => {
   it('renders create title when editingItem is null', () => {
     renderModal();
     expect(screen.getByText('新建提示词')).toBeInTheDocument();

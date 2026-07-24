@@ -13,7 +13,7 @@ const presets: TestItem[] = [
   { id: 'preset-2', enabled: false, name: 'Preset 2' },
 ];
 
-describe('useItemList', () => {
+describe('useItemList', { tags: ['unit'] }, () => {
   it('initializes with empty items', () => {
     const { result } = renderHook(() => useItemList(presets));
     expect(result.current.items).toEqual([]);

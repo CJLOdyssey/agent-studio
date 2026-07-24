@@ -16,7 +16,7 @@ function renderTab(overrides?: Record<string, unknown>) {
   return { ...render(<OutputConstraintTab {...props} />), props };
 }
 
-describe('OutputConstraintTab', () => {
+describe('OutputConstraintTab', { tags: ['integration'] }, () => {
   it('renders textarea with placeholder', () => {
     renderTab();
     expect(screen.getByPlaceholderText('workstation.outputConstraintDesc')).toBeInTheDocument();

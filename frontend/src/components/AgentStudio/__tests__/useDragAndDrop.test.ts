@@ -4,7 +4,7 @@ import { useDragAndDrop } from '../useDragAndDrop';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-describe('useDragAndDrop', () => {
+describe('useDragAndDrop', { tags: ['unit'] }, () => {
   const createMockRef = () => ({ current: { addFiles: vi.fn() } }) as any;
 
   it('starts with isPageDragOver false', () => {

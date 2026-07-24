@@ -36,7 +36,7 @@ function renderTab(overrides?: Record<string, unknown>) {
   return { ...render(<MCPTab {...props} />), props };
 }
 
-describe('MCPTab', () => {
+describe('MCPTab', { tags: ['integration'] }, () => {
   it('renders MCP list with items', () => {
     renderTab();
     expect(screen.getByText('mcp-server')).toBeInTheDocument();

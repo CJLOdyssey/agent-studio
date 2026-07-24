@@ -33,7 +33,7 @@ const renderWithVirtuoso = (ui: React.ReactElement) =>
     </VirtuosoMockContext.Provider>,
   );
 
-describe('LogAudit', () => {
+describe('LogAudit', { tags: ['integration'] }, () => {
   it('renders loading skeleton initially', () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     renderWithVirtuoso(<LogAudit />);

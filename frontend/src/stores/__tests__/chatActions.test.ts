@@ -67,7 +67,7 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-describe('editMessage', () => {
+describe('editMessage', { tags: ['unit'] }, () => {
   it('updates content of message at given index', () => {
     const msg = makeMsg({ id: 'm1', content: 'old' });
     useChatStore.setState({ messages: [msg] });
@@ -92,7 +92,7 @@ describe('editMessage', () => {
   });
 });
 
-describe('regenerateMessage', () => {
+describe('regenerateMessage', { tags: ['unit'] }, () => {
   it('does nothing if msgIndex < 1', async () => {
     const msg = makeMsg({ id: 'm2', content: 'hello' });
     useChatStore.setState({ messages: [msg], currentSessionId: 'sess-1' });
@@ -137,7 +137,7 @@ describe('regenerateMessage', () => {
   });
 });
 
-describe('retry', () => {
+describe('retry', { tags: ['unit'] }, () => {
   it('sets error if no user message found', async () => {
     useChatStore.setState({ messages: [], currentSessionId: 'sess-1' });
 
@@ -189,7 +189,7 @@ describe('retry', () => {
   });
 });
 
-describe('continueGeneration', () => {
+describe('continueGeneration', { tags: ['unit'] }, () => {
   it('does nothing if interruptedMessageId is null', async () => {
     useChatStore.setState({ interruptedMessageId: null });
 

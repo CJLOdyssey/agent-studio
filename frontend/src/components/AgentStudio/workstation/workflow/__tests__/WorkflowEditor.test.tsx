@@ -61,7 +61,7 @@ const defaultAgents = [
   { id: 'a2', name: 'Reviewer', agentConfigId: 'ac2' },
 ];
 
-describe('WorkflowEditor', () => {
+describe('WorkflowEditor', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -112,7 +112,7 @@ function renderComponent() {
   return render(<TestProviders><AgentManagement /></TestProviders>);
 }
 
-describe('AgentManagement', () => {
+describe('AgentManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsLoading = false;

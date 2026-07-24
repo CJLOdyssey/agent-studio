@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCopyToClipboard } from '../useCopyToClipboard';
 
-describe('useCopyToClipboard', () => {
+describe('useCopyToClipboard', { tags: ['unit'] }, () => {
   beforeEach(() => {
     Object.assign(navigator, {
       clipboard: {

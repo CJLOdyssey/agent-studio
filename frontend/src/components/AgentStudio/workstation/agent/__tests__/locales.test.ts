@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { t, setLang } from '../locales';
 
-describe('agent locales', () => {
+describe('agent locales', { tags: ['unit'] }, () => {
   it('translates base keys', () => {
     setLang('zh');
     expect(t('agent.new')).toBe('创建 Agent');

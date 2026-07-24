@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe('listSkills', () => {
+describe('listSkills', { tags: ['unit'] }, () => {
   it('calls GET /skills', async () => {
     const mockData = [{
       id: '1', name: 'skill1', description: 'desc', category: 'cat', version: '1.0',
@@ -33,7 +33,7 @@ describe('listSkills', () => {
   });
 });
 
-describe('createSkill', () => {
+describe('createSkill', { tags: ['unit'] }, () => {
   it('calls POST /skills with payload', async () => {
     const payload = { name: 'skill1', description: 'desc', category: 'cat' };
     const mockData = {
@@ -50,7 +50,7 @@ describe('createSkill', () => {
   });
 });
 
-describe('updateSkill', () => {
+describe('updateSkill', { tags: ['unit'] }, () => {
   it('calls PUT /skills/:id with payload', async () => {
     const mockData = {
       id: '1', name: 'updated', description: 'desc', category: 'cat', version: '1.0',
@@ -66,7 +66,7 @@ describe('updateSkill', () => {
   });
 });
 
-describe('deleteSkill', () => {
+describe('deleteSkill', { tags: ['unit'] }, () => {
   it('calls DELETE /skills/:id', async () => {
     mockApi.delete.mockResolvedValue({});
 

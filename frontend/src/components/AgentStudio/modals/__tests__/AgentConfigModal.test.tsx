@@ -58,7 +58,7 @@ function renderModal(overrides?: Record<string, unknown>) {
   return { ...renderWithProviders(<AgentConfigModal {...props} />), props };
 }
 
-describe('AgentConfigModal', () => {
+describe('AgentConfigModal', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

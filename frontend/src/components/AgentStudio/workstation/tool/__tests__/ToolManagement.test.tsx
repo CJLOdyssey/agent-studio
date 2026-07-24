@@ -25,7 +25,7 @@ function makeTool(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe('ToolManagement', () => {
+describe('ToolManagement', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetchAll.mockResolvedValue([]);

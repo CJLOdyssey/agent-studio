@@ -77,8 +77,24 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'jsdom',
-      setupFiles: './src/test/setup.tsx',
-      css: true,
+      pool: 'vmThreads',
+      maxWorkers: 4,
+      setupFiles: ['./src/test/global-mocks.tsx', './src/test/setup.tsx'],
+      css: false,
+      tags: [{ name: 'unit' }, { name: 'integration' }],
+      deps: {
+        optimizer: {
+          ssr: {
+            include: [
+              'antd',
+              '@ant-design/icons',
+              'react-syntax-highlighter',
+              'reactflow',
+              '@ant-design/cssinjs',
+            ],
+          },
+        },
+      },
       testTimeout: 15000,
       hookTimeout: 15000,
       exclude: ['e2e/**', 'node_modules/**'],

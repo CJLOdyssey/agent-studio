@@ -9,13 +9,13 @@ vi.mock('../../../../api/hooks', () => ({
 
 import { MODEL_OPTIONS, PAGE_SIZE, useModelOptions } from '../constants';
 
-describe('PAGE_SIZE', () => {
+describe('PAGE_SIZE', { tags: ['integration'] }, () => {
   it('is 5', () => {
     expect(PAGE_SIZE).toBe(5);
   });
 });
 
-describe('MODEL_OPTIONS', () => {
+describe('MODEL_OPTIONS', { tags: ['integration'] }, () => {
   it('contains expected models', () => {
     expect(MODEL_OPTIONS).toContain('GPT-4o');
     expect(MODEL_OPTIONS).toContain('DeepSeek V3');
@@ -23,7 +23,7 @@ describe('MODEL_OPTIONS', () => {
   });
 });
 
-describe('useModelOptions', () => {
+describe('useModelOptions', { tags: ['integration'] }, () => {
   beforeEach(() => {
     mockUseAvailableModels.mockReset();
   });
