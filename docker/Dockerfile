@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Copy project
 COPY backend/ backend/
 COPY alembic.ini .
-COPY alembic/ alembic/
+COPY backend/alembic/ alembic/
 COPY scripts/ scripts/
 
 # PYTHONPATH so "from backend import ..." works
