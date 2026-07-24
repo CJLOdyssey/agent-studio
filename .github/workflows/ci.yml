@@ -298,6 +298,7 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - run: npm ci --prefer-offline --no-audit
       - uses: actions/download-artifact@v4
         with:
           pattern: frontend-coverage-*
