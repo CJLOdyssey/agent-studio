@@ -14,7 +14,10 @@ const api = axios.create({
 
 const REFRESH_KEY = 'agentstudio_refresh_token';
 
-let refreshToken: string | null = typeof localStorage !== 'undefined' ? localStorage.getItem(REFRESH_KEY) : null;
+function getRefreshToken(): string | null {
+  try { return localStorage.getItem(REFRESH_KEY); } catch { return null; }
+}
+let refreshToken: string | null = getRefreshToken();
 
 /** Store or clear the refresh_token only — access_token is an httpOnly cookie set by the server. */
 export function setTokens(_access: string | null, refresh: string | null) {
