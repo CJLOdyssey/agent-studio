@@ -302,14 +302,18 @@ jobs:
   diff-coverage:
     name: "Backend: Diff Coverage"
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     if: github.event_name == 'pull_request'
     needs: backend-coverage
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Full history for diff comparison
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
