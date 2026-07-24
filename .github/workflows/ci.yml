@@ -219,6 +219,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run unit tests (${{ matrix.shard }})
+        shell: bash
         env:
           COVERAGE_FILE: .coverage.${{ matrix.shard }}
         run: |
