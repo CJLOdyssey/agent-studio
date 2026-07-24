@@ -77,6 +77,8 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'jsdom',
+      pool: 'vmThreads',
+      maxWorkers: 4,
       setupFiles: './src/test/setup.tsx',
       css: true,
       testTimeout: 15000,

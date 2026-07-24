@@ -91,12 +91,12 @@ describe('installGlobalErrorHandlers', () => {
   });
 
   it('returns early when window is undefined (SSR guard)', () => {
+    const desc = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    if (!desc?.configurable) return;
     const origWindow = globalThis.window;
-    // @ts-expect-error intentional removal for SSR test
     delete globalThis.window;
     installGlobalErrorHandlers();
     globalThis.window = origWindow;
-    // Should not throw — the function returned early
   });
 
   it('returns false from onerror', () => {
