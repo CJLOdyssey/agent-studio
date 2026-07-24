@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { axe } from 'vitest-axe';
-import LoginModal from '../LoginModal';
-import { type AuthModalView } from '../AuthContext';
+import LoginModal from '@/components/auth/LoginModal';
+import { type AuthModalView } from '@/components/auth/AuthContext';
 
 const mockUseAuth = {
   loginModalView: 'login' as AuthModalView,
@@ -16,7 +16,7 @@ const mockUseAuth = {
   closeLoginModal: vi.fn(),
 };
 
-vi.mock('../AuthContext', () => ({
+vi.mock('@/components/auth/AuthContext', () => ({
   useAuth: () => mockUseAuth,
 }));
 

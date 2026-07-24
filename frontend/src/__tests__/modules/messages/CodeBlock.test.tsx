@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { CodeBlock } from '../CodeBlock';
+import { CodeBlock } from '@/components/AgentStudio/messages/CodeBlock';
 
 vi.mock('react-syntax-highlighter', () => ({
   Prism: ({ children }: { children: string }) => <pre data-testid="syntax">{children}</pre>,

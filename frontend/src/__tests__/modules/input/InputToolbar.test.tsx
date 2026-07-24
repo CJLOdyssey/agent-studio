@@ -14,7 +14,7 @@ const { mockComposerSetValue, mockComposerSubmit, mockComposerHandleKeyDown } = 
 
 let mockComposerHasContent = false;
 
-vi.mock('../../../hooks/useMessageComposer', () => ({
+vi.mock('@/hooks/useMessageComposer', () => ({
   useMessageComposer: () => ({
     value: '',
     setValue: mockComposerSetValue,
@@ -33,7 +33,7 @@ const { mockPaletteFiltered, mockPaletteUpdateFromValue, mockPaletteHandleKeyDow
   mockPaletteOpen: false,
 }));
 
-vi.mock('../../../hooks/useCommandPalette', () => ({
+vi.mock('@/hooks/useCommandPalette', () => ({
   useCommandPalette: () => ({
     filtered: mockPaletteFiltered,
     filteredCommands: [],
@@ -49,20 +49,20 @@ vi.mock('../../../hooks/useCommandPalette', () => ({
 
 const { mockToast } = vi.hoisted(() => ({ mockToast: vi.fn() }));
 
-vi.mock('../../../utils/useToast', () => ({
+vi.mock('@/utils/useToast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-vi.mock('../../../contexts/SettingsContext', () => ({
+vi.mock('@/contexts/SettingsContext', () => ({
   useSettings: () => ({ settings: { sendOnEnter: true, sendMode: 'enter' }, updateSettings: vi.fn() }),
 }));
 
-vi.mock('../ModelSelector', () => ({ default: ({ models }: { models: unknown[] }) => (models?.length ? <div data-testid="model-selector" /> : null) }));
-vi.mock('../FileAttach', () => ({ default: () => <div data-testid="file-attach" /> }));
-vi.mock('../CommandDropdown', () => ({ default: () => <div data-testid="command-dropdown" /> }));
+vi.mock('@/components/input/ModelSelector', () => ({ default: ({ models }: { models: unknown[] }) => (models?.length ? <div data-testid="model-selector" /> : null) }));
+vi.mock('@/components/input/FileAttach', () => ({ default: () => <div data-testid="file-attach" /> }));
+vi.mock('@/components/input/CommandDropdown', () => ({ default: () => <div data-testid="command-dropdown" /> }));
 
-import InputToolbar from '../InputToolbar';
-import type { InputToolbarHandle } from '../InputToolbar';
+import InputToolbar from '@/components/input/InputToolbar';
+import type { InputToolbarHandle } from '@/components/input/InputToolbar';
 
 const defaultProps = {
   onSend: vi.fn(),

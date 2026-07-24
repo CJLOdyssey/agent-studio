@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ToggleSwitch from '../ToggleSwitch';
-import { expectNoA11yViolations } from '../../../test/a11y-setup';
+import ToggleSwitch from '@/components/shared/ToggleSwitch';
+import { expectNoA11yViolations } from '@/test/a11y-setup';
 
 describe('ToggleSwitch', () => {
   it('renders checkbox with checked state', () => {

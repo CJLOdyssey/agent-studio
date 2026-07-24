@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TestProviders } from '../../../test/setup';
-import AttachmentList from '../AttachmentList';
-import type { AttachedFile } from '../../../types/input';
+import { TestProviders } from '@/test/setup';
+import AttachmentList from '@/components/input/AttachmentList';
+import type { AttachedFile } from '@/types/input';
 
 function makeFile(id: string, overrides: Partial<AttachedFile> = {}): AttachedFile {
   return {

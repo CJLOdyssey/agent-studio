@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import LazyCodeBlock from '../LazyCodeBlock';
+import LazyCodeBlock from '@/components/AgentStudio/messages/LazyCodeBlock';
 
 describe('LazyCodeBlock', () => {
   it('renders fallback code element while loading', () => {

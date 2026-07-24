@@ -11,7 +11,7 @@ async function loadLocale(lang: string): Promise<Record<string, unknown>> {
   const ns = ['common', 'sidebar', 'chat', 'workstation'];
   const result: Record<string, unknown> = {};
   for (const n of ns) {
-    const mod = await import(`../locales/${lang}/${n}.json`);
+    const mod = await import(`@/i18n/locales/${lang}/${n}.json`);
     Object.assign(result, mod.default);
   }
   return result;

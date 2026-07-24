@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getAgentInfo } from '../index';
-import type { AgentConfig } from '../index';
+import { getAgentInfo } from '@/types/index';
+import type { AgentConfig } from '@/types/index';
 
 describe('getAgentInfo', () => {
   const agents: AgentConfig[] = [

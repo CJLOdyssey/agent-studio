@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import PasswordStrengthIndicator from '../PasswordStrengthIndicator';
+import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator';
 
 describe('PasswordStrengthIndicator', () => {
   it('renders nothing when password is empty', () => {

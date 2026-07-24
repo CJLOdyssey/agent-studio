@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TestProviders } from '../../../test/setup';
-import FileAttach from '../FileAttach';
+import { TestProviders } from '@/test/setup';
+import FileAttach from '@/components/input/FileAttach';
 
 describe('FileAttach', () => {
   const onAdd = vi.fn();

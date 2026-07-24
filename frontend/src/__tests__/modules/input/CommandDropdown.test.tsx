@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TestProviders } from '../../../test/setup';
-import CommandDropdown from '../CommandDropdown';
-import type { CommandOption } from '../../../types/input';
+import { TestProviders } from '@/test/setup';
+import CommandDropdown from '@/components/input/CommandDropdown';
+import type { CommandOption } from '@/types/input';
 
 function makeCmd(id: string, overrides: Partial<CommandOption> = {}): CommandOption {
   return {

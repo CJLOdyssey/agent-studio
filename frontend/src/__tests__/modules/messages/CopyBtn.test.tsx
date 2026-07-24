@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('../../../hooks/useCopyToClipboard', () => ({
+vi.mock('@/hooks/useCopyToClipboard', () => ({
   useCopyToClipboard: () => ({
     copy: vi.fn(),
     isCopied: vi.fn(() => false),
@@ -14,7 +14,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-import { CopyBtn } from '../CopyBtn';
+import { CopyBtn } from '@/components/AgentStudio/messages/CopyBtn';
 
 describe('CopyBtn', () => {
   it('renders copy button with label', () => {

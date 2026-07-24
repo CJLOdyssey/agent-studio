@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TestProviders } from '../../../test/setup';
-import ModelSelector from '../ModelSelector';
-import type { ModelOption } from '../../../types/input';
+import { TestProviders } from '@/test/setup';
+import ModelSelector from '@/components/input/ModelSelector';
+import type { ModelOption } from '@/types/input';
 
 function makeModel(id: string, overrides: Partial<ModelOption> = {}): ModelOption {
   return {

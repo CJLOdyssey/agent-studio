@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import { SettingsProvider, useSettings, useNotificationSound } from '../SettingsContext';
+import { SettingsProvider, useSettings, useNotificationSound } from '@/contexts/SettingsContext';
 
 function TestConsumer({ onRender }: { onRender?: (s: ReturnType<typeof useSettings>) => void }) {
   const settings = useSettings();
