@@ -368,9 +368,6 @@ jobs:
   integration:
     name: "Integration (${{ matrix.auth_mode }})"
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
-      options: --network host
     timeout-minutes: 20
     strategy:
       matrix:
@@ -401,6 +398,12 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Preflight check
         run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. python3 scripts/preflight.py
       - name: Start backend
@@ -444,9 +447,6 @@ jobs:
   frontend-e2e:
     name: "Frontend: E2E Smoke"
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
-      options: --network host
     timeout-minutes: 20
     services:
       redis:
@@ -474,6 +474,21 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
+      - run: pip install playwright --quiet
+      - run: python3 -m playwright install chromium --with-deps
+      - run: npm ci --prefer-offline --no-audit
+        working-directory: frontend
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
@@ -563,9 +578,6 @@ jobs:
   load-test:
     name: "Backend: Load Test"
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
-      options: --network host
     timeout-minutes: 10
     services:
       redis:
@@ -593,6 +605,13 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ env.PYTHON_VERSION }}"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+      - run: pip install --no-compile -r requirements-lock.txt --quiet
+      - run: pip install locust --quiet
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
