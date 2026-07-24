@@ -58,7 +58,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: frontend
@@ -69,7 +71,6 @@ jobs:
           node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci --prefer-offline --no-audit
       - run: npm run typecheck
       - run: npm run lint
       - run: npm audit --audit-level=high
@@ -79,7 +80,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +97,6 @@ jobs:
           node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci --prefer-offline --no-audit
       - name: Unit tests (sharded)
         run: npx vitest run --coverage --shard=${{ matrix.shard }}/2 --tagsFilter '!integration'
       - name: Integration tests (single run)
@@ -106,7 +108,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: frontend
@@ -117,7 +121,6 @@ jobs:
           node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci --prefer-offline --no-audit
       - run: npm run build
       - name: Check total bundle size
         run: |
@@ -140,7 +143,9 @@ jobs:
     needs: [frontend-build]
     if: needs.frontend-build.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: frontend
@@ -155,7 +160,6 @@ jobs:
         with:
           name: frontend-dist
           path: frontend/dist/
-      - run: npm ci --prefer-offline --no-audit
       - name: Check per-chunk size limit
         run: npm run size
 
@@ -197,7 +201,9 @@ jobs:
   backend-lint:
     name: "Backend: Lint & Typecheck"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -205,7 +211,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
       - run: mypy backend/ --strict --no-error-summary
       - name: Check .env.example for insecure defaults
@@ -218,6 +223,8 @@ jobs:
   backend-security:
     name: "Backend: Security"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -225,7 +232,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
       - run: bandit -c pyproject.toml -r backend/ -ll
 
@@ -233,7 +239,9 @@ jobs:
   backend-test:
     name: "Backend: Tests (${{ matrix.shard }})"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+    timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
@@ -245,7 +253,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run unit tests (${{ matrix.shard }})
         env:
           COVERAGE_FILE: .coverage.${{ matrix.shard }}
@@ -271,6 +278,8 @@ jobs:
   backend-coverage:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     needs: backend-test
     steps:
       - uses: actions/checkout@v4
@@ -279,7 +288,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - uses: actions/download-artifact@v4
         with:
           pattern: backend-coverage-*
@@ -366,6 +374,8 @@ jobs:
   diff-coverage:
     name: "Backend: Diff Coverage"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     if: github.event_name == 'pull_request'
     needs: backend-coverage
     steps:
@@ -377,7 +387,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
@@ -436,6 +445,8 @@ jobs:
   openapi-diff:
     name: "OpenAPI: Schema Validation"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     if: github.event_name == 'pull_request'
     services:
       redis:
@@ -467,7 +478,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
@@ -504,6 +514,8 @@ jobs:
   integration:
     name: "Integration (${{ matrix.auth_mode }})"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     timeout-minutes: 20
     strategy:
       matrix:
@@ -539,7 +551,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Preflight check
         run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. python3 scripts/preflight.py
       - name: Start backend
@@ -568,6 +579,8 @@ jobs:
   frontend-e2e:
     name: "Frontend: E2E Smoke"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     timeout-minutes: 20
     services:
       redis:
@@ -605,9 +618,6 @@ jobs:
           node-version: "${{ env.NODE_VERSION }}"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
-      - run: pip install playwright --quiet
-      - run: python3 -m playwright install chromium --with-deps
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
@@ -620,7 +630,6 @@ jobs:
       - name: Start frontend dev server
         working-directory: frontend
         run: |
-          npm ci --prefer-offline --no-audit
           npx vite --port 5173 &
           echo "FRONTEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
@@ -652,6 +661,8 @@ jobs:
   requirement-coverage:
     name: "Backend: Requirement Coverage"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -659,7 +670,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Run tests with requirement markers
         run: |
           PYTHONPATH=. python3 -m pytest backend/tests/routers/ backend/tests/repository/ backend/tests/services/ \
@@ -671,6 +681,8 @@ jobs:
   flaky-check:
     name: "Backend: Flaky Tests"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -678,7 +690,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
       - name: Collect flaky tests
         id: collect
         run: |
@@ -706,6 +717,8 @@ jobs:
   load-test:
     name: "Backend: Load Test"
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/ci-runner:latest
     timeout-minutes: 10
     services:
       redis:
@@ -738,8 +751,6 @@ jobs:
           python-version: "${{ env.PYTHON_VERSION }}"
           cache: pip
           cache-dependency-path: requirements-lock.txt
-      - run: pip install --no-compile -r requirements-lock.txt --quiet
-      - run: pip install locust --quiet
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
