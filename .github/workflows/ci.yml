@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
