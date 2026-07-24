@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 # Python deps (layer cached independently of source code)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+COPY requirements-lock.txt .
+RUN pip install --no-cache-dir -r requirements-lock.txt \
     --index-url ${PIP_INDEX_URL} \
     --trusted-host ${PIP_TRUSTED_HOST}
 
