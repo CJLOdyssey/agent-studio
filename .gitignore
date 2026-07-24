@@ -88,3 +88,20 @@ scripts/ask_credentials.py
 coverage.json
 docs/e2e-*.png
 docs/
+
+# Internal docs (not for public repo)
+AGENTS.md
+CLAUDE.md
+RUNBOOK.md
+start.sh
+.secrets.baseline
+monitoring/
+.github/workflows/deploy*.yml
+.github/workflows/rollback.yml
+.github/workflows/sync-docs.yml
+docker/compose.redis-ha.yml
+scripts/ci-debug.sh
+scripts/sync-docs.sh
+scripts/run_mutmut.sh
+scripts/test_tools_in_ai_response.py
+scripts/test_tools_verified.py
