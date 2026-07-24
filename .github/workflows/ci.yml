@@ -59,7 +59,7 @@ jobs:
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 5
     defaults:
       run:
@@ -76,7 +76,7 @@ jobs:
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -114,7 +114,7 @@ jobs:
     if: needs.changes.outputs.frontend == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 5
     defaults:
       run:
@@ -179,7 +179,7 @@ jobs:
     name: "Backend: Lint & Typecheck"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -196,7 +196,7 @@ jobs:
     name: "Backend: Security"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - run: pip-audit --strict --progress-spinner=off -r requirements-lock.txt
@@ -207,7 +207,7 @@ jobs:
     name: "Backend: Tests (${{ matrix.shard }})"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -244,7 +244,7 @@ jobs:
     name: "Backend: Coverage"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     needs: backend-test
     steps:
       - uses: actions/checkout@v4
@@ -270,7 +270,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     defaults:
       run:
         working-directory: frontend
@@ -299,7 +299,7 @@ jobs:
     name: "Backend: Diff Coverage"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     if: github.event_name == 'pull_request'
     needs: backend-coverage
     steps:
@@ -365,7 +365,7 @@ jobs:
     name: "Integration (${{ matrix.auth_mode }})"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 20
     strategy:
       matrix:
@@ -440,7 +440,7 @@ jobs:
     name: "Frontend: E2E Smoke"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 20
     services:
       redis:
@@ -512,7 +512,7 @@ jobs:
     name: "Backend: Requirement Coverage"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - name: Run tests with requirement markers
@@ -527,7 +527,7 @@ jobs:
     name: "Backend: Flaky Tests"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - name: Collect flaky tests
@@ -558,7 +558,7 @@ jobs:
     name: "Backend: Load Test"
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ lower(github.repository) }}/ci-runner:latest
+      image: ghcr.io/cjloddyssey/agent-studio/ci-runner:latest
     timeout-minutes: 10
     services:
       redis:

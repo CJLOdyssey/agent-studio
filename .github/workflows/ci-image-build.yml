@@ -13,8 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ lower(github.repository) }}/ci-runner
-  IMAGE_NAME: ${{ github.repository }}/ci-runner
+  IMAGE_NAME: cjloddyssey/agent-studio/ci-runner
 
 permissions:
   contents: read
