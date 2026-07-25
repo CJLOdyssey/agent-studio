@@ -134,7 +134,7 @@ const TeamMessage = memo(function TeamMessage({
               >
                 <Pencil size={12} />
               </button>
-              {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70 text-right" style={{ marginLeft: 0 }}>{time}</span>}
+              {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70 text-right ml-0">{time}</span>}
             </div>
           </div>
         </div>
@@ -252,7 +252,7 @@ const TeamMessage = memo(function TeamMessage({
                     </>
                   ) : showContinue ? (
                     <>
-                      <div className="inline-flex items-center gap-1.5 p-0 bg-none border-none cursor-pointer text-xs font-medium text-[var(--da-text-muted)] transition-colors duration-150 hover:text-[var(--da-text-primary)]" style={{ cursor: 'default' }}>
+                      <div className="inline-flex items-center gap-1.5 p-0 bg-none border-none cursor-default text-xs font-medium text-[var(--da-text-muted)] transition-colors duration-150 hover:text-[var(--da-text-primary)]">
                         <Sparkles size={14} className={agentInfo.color} />
                         <span>{t('teamMessage.thinkingStopped')}</span>
                       </div>
@@ -343,7 +343,7 @@ const TeamMessage = memo(function TeamMessage({
                     disabled={currentVersion === 0}
                     aria-label="Previous version"
                   >
-                    <ChevronRight size={12} style={{ transform: 'rotate(180deg)' }} />
+                    <ChevronRight size={12} className="rotate-180" />
                   </button>
                   <span className="text-xs text-[var(--da-text-muted)] min-w-7 text-center select-none">{currentVersion + 1}/{versions.length}</span>
                   <button
@@ -385,7 +385,7 @@ const TeamMessage = memo(function TeamMessage({
                   </button>
                 </>
               )}
-              {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70" style={{ marginLeft: 0 }}>{time}</span>}
+              {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70 ml-0">{time}</span>}
               {(showContinue || isContinuing) && (
                 <button
                   className={`flex items-center gap-[3px] px-2 py-0.5 bg-transparent border border-[var(--da-accent-indigo)] rounded-md text-[var(--da-accent-indigo)] cursor-pointer text-xs font-medium ml-auto transition-colors duration-150 hover:bg-[var(--da-accent-indigo)] hover:text-[var(--da-text-on-accent)]${isContinuing ? ' opacity-70 cursor-wait' : ''}`}
