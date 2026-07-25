@@ -320,36 +320,6 @@
   line-height: 1.55;
 }
 
-.agentstudio-modal-action {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  width: 100%;
-  padding: var(--sp-3);
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: var(--da-text-secondary);
-  font-size: var(--da-font-size-base);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-}
-
-.agentstudio-modal-action:hover {
-  background: var(--da-bg-hover);
-  color: var(--da-text-primary);
-}
-
-.agentstudio-modal-action.danger {
-  color: var(--da-accent-red);
-}
-
-.agentstudio-modal-action.danger:hover {
-  background: color-mix(in srgb, var(--da-accent-red) 8%, transparent);
-  color: var(--da-accent-red);
-}
-
 .agentstudio-modal-actions {
   display: flex;
   gap: 10px;
@@ -602,14 +572,4 @@
   }
 }
 
-/* ===== Main Content Area ===== */
 
-.agentstudio-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  position: relative;
-  background: var(--da-bg-primary);
-}
