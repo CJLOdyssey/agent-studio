@@ -39,7 +39,7 @@ const loadingScreenStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  height: '100vh',
+  height: '100dvh',
   background: 'var(--da-bg-primary, #0f1117)',
   color: 'var(--da-text-secondary, #888)',
   fontSize: 14,
