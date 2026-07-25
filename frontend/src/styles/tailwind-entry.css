@@ -42,14 +42,14 @@
   --color-surface-raised: #1c1e24;
   --color-surface-overlay: #24252d;
   --color-surface-elevated: #2a2c34;
-  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-surface-hover: rgba(255, 255, 255, 0.08);
   --color-surface-pressed: rgba(255, 255, 255, 0.08);
   --color-surface-card: #24252d;
 
   --color-text-primary: #f1f1f1;
   --color-text-secondary: #a0a5b0;
   --color-text-muted: #8b97a6;
-  --color-text-tertiary: #6b7280;
+  --color-text-tertiary: #9ca3af;
 
   --color-border: rgba(255, 255, 255, 0.12);
   --color-border-subtle: rgba(255, 255, 255, 0.08);

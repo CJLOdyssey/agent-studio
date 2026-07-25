@@ -21,10 +21,10 @@ function Fallback({ error, resetErrorBoundary }: FallbackProps) {
   Logger.error('React render error caught by ErrorBoundary', { error: error as Error });
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen gap-4 p-8 text-center text-[var(--da-text-muted)]" role="alert">
+    <div className="flex flex-col items-center justify-center h-screen gap-4 p-8 text-center text-[var(--color-text-muted)]" role="alert">
       <h2>应用出错了</h2>
       <p>{message}</p>
-      <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={resetErrorBoundary}>
+      <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={resetErrorBoundary}>
         重试
       </button>
     </div>
@@ -40,8 +40,8 @@ const loadingScreenStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   height: '100dvh',
-  background: 'var(--da-bg-primary, #0f1117)',
-  color: 'var(--da-text-secondary, #888)',
+  background: 'var(--color-surface, #0f1117)',
+  color: 'var(--color-text-secondary, #888)',
   fontSize: 14,
 };
 
