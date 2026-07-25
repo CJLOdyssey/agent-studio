@@ -23,8 +23,8 @@ export default function AgentStudioWorkstation() {
       {s.isWorkstationOpen ? (
         <WorkstationPage />
       ) : (
-        <div className="agentstudio-app">
-          <div className="agentstudio-body">
+          <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--da-bg-primary)] text-[var(--da-text-secondary)]">
+            <div className="flex flex-1 overflow-hidden relative">
             {s.isSidebarOpen && (
               <div className="agentstudio-mobile-overlay visible" onClick={() => s.setIsSidebarOpen(false)} />
             )}
@@ -64,14 +64,14 @@ export default function AgentStudioWorkstation() {
               onOpenWorkstation={() => { s.setIsWorkstationOpen(true); }}
             />
 
-            <div className="agentstudio-right">
-              <header className="agentstudio-global-header">
-                <div className="agentstudio-header-left">
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--da-bg-card)]">
+                  <div className="flex items-center gap-3">
                   <button className="agentstudio-header-btn" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
                     <PanelLeft size={18} />
                   </button>
                 </div>
-                <div className="agentstudio-header-right">
+                  <div className="flex items-center gap-2">
                   <button className="agentstudio-header-btn" onClick={() => s.updateSettings({ theme: s.isDarkMode ? 'light' : 'dark' })} aria-label="Toggle dark mode">
                     {s.isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                   </button>
@@ -82,9 +82,9 @@ export default function AgentStudioWorkstation() {
                 </div>
               </header>
 
-              <main className={`agentstudio-main ${s.isPageDragOver ? 'agentstudio-drag-over' : ''}`} id="main-content"
+                <main className={`flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[var(--da-bg-primary)] ${s.isPageDragOver ? 'agentstudio-drag-over' : ''}`} id="main-content"
                 onDragOver={s.handlePageDragOver} onDragLeave={s.handlePageDragLeave} onDrop={s.handlePageDrop}>
-                <div className="agentstudio-main-bottom">
+                  <div className="flex-1 flex flex-col overflow-hidden">
                   {s.isPageDragOver && (
                     <div className="agentstudio-page-drop-overlay">
                       <span>{s.t('fileAttach.dropHere')}</span>
@@ -104,7 +104,7 @@ export default function AgentStudioWorkstation() {
                     </div>
                   )}
 
-                  <div className="agentstudio-messages" ref={messagesContainerRef}>
+                    <div className="flex-1 overflow-y-auto flex flex-col bg-[var(--da-bg-primary)]" ref={messagesContainerRef}>
                     {s.showAgentChat || s.hasMessages ? (
                       <MessagesPanel
                         showAgentChat={s.showAgentChat}

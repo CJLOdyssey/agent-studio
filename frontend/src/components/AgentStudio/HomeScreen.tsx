@@ -34,8 +34,8 @@ export default function HomeScreen({
 }: Props) {
   const { t } = useTranslation();
   return (
-    <div className="agentstudio-home">
-      <div className="agentstudio-home-centered">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+        <div className="w-full max-w-[900px] flex flex-col items-center justify-center px-6">
         <div className="agentstudio-home-group">
           <div className="agentstudio-home-hero">
             <div className="agentstudio-home-logo" role="img" tabIndex={-1} aria-label="AgentStudio Logo">
