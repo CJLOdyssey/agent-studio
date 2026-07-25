@@ -14,14 +14,7 @@ export function CopyBtn({ text, label, className }: { text: string; label?: stri
       title={copied ? t('teamMessage.copied') : label}
       aria-label={copied ? t('teamMessage.copied') : label}
     >
-      {copied ? (
-        <>
-          <Check size={12} />
-          <span className="agentstudio-msg-copy-text">{t('teamMessage.copied')}</span>
-        </>
-      ) : (
-        <Copy size={12} />
-      )}
+      {copied ? <Check size={12} /> : <Copy size={12} />}
     </button>
   );
 }
