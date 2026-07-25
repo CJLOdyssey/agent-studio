@@ -110,8 +110,8 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
 
         {/* ── Footer ── */}
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('agent.form_cancel')}</button>
-          <button className="btn btn-primary" onClick={onSave}>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose}>{t('agent.form_cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={onSave}>
             {editingAgent ? t('agent.form_save_edit') : t('agent.form_save_create')}
           </button>
         </div>

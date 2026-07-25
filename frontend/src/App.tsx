@@ -21,10 +21,10 @@ function Fallback({ error, resetErrorBoundary }: FallbackProps) {
   Logger.error('React render error caught by ErrorBoundary', { error: error as Error });
 
   return (
-    <div className="error-boundary" role="alert">
+    <div className="flex flex-col items-center justify-center h-screen gap-4 p-8 text-center text-[var(--da-text-muted)]" role="alert">
       <h2>应用出错了</h2>
       <p>{message}</p>
-      <button className="btn btn-primary" onClick={resetErrorBoundary}>
+      <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={resetErrorBoundary}>
         重试
       </button>
     </div>

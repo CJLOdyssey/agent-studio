@@ -8,10 +8,10 @@ interface Props {
 
 export default function EmptyState({ icon, title, description }: Props) {
   return (
-    <div className="empty-state-inline">
-      <div className="empty-state-icon">{icon}</div>
-      <div className="empty-state-title-sm">{title}</div>
-      {description && <div className="empty-state-desc-sm">{description}</div>}
+    <div className="flex flex-col items-center justify-center p-6 text-[var(--da-text-muted)] text-center">
+      <div className="mb-2 opacity-50">{icon}</div>
+      <div className="text-sm font-medium text-[var(--da-text-secondary)]">{title}</div>
+      {description && <div className="text-xs text-[var(--da-text-muted)] mt-1">{description}</div>}
     </div>
   );
 }

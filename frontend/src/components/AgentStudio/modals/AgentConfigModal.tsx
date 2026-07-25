@@ -171,14 +171,14 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
 
         <div className="agent-config-fields">
           <div className="agent-config-field">
-            <label className="form-label">{t('workstation.agentName')}</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="form-input" />
+            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.agentName')}</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none" />
           </div>
           <div className="agent-config-field">
-            <label className="form-label">{t('workstation.agentDesc')}</label>
-            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="form-input" />
+            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.agentDesc')}</label>
+            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none" />
           </div>
-          <p className="form-hint">{t('workstation.agentPlaceholder')}</p>
+          <p className="text-xs text-[var(--da-text-muted)] mt-2">{t('workstation.agentPlaceholder')}</p>
         </div>
 
         <div className="agent-config-tabs">
@@ -199,8 +199,8 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={onClose}>{t('workstation.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={onClose}>{t('workstation.cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
         </div>
       </div>
 

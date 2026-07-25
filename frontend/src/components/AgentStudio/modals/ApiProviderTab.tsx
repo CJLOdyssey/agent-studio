@@ -54,7 +54,7 @@ export default function ApiProviderTab({
     <div className="api-providers-tab">
       <div className="api-section-header">
         <h4>API Key {t('api.manage')}</h4>
-        <button className="btn btn-sm btn-primary" onClick={onAdd}>
+        <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={onAdd}>
           <Plus size={14} />
           添加 Key
         </button>
@@ -120,17 +120,17 @@ export default function ApiProviderTab({
                     size="sm"
                     onChange={(v) => onToggleActive(key.id, v)}
                   />
-                  <button className="btn btn-sm btn-ghost" onClick={() => onEdit(key)}>
+                  <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={() => onEdit(key)}>
                     编辑
                   </button>
                   <button
-                    className="btn btn-sm btn-ghost"
+                    className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]"
                     onClick={() => onTest(key)}
                     disabled={testingId === key.id}
                   >
                     {testingId === key.id ? <Loader2 size={14} className="animate-spin" /> : t('api.test')}
                   </button>
-                  <button className="btn btn-sm btn-ghost" onClick={() => onDelete(key.id)}>
+                  <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={() => onDelete(key.id)}>
                     <Trash2 size={14} />
                   </button>
                 </div>

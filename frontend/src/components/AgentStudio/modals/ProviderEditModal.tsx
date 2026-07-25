@@ -121,16 +121,16 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
         <div className="api-edit-form">
           <div className="api-edit-row">
-            <div className="form-group" style={{ flex: 2 }}>
-              <label>{t('providerEdit.provider')}</label>
+            <div className="mb-4" style={{ flex: 2 }}>
+              <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.provider')}</label>
               <select value={providerType} onChange={(e) => setProviderType(e.target.value)}>
                 {Object.entries(providers).map(([key, info]) => (
                   <option key={key} value={key}>{info.name}</option>
                 ))}
               </select>
             </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>{t('workstation.capabilities')}</label>
+            <div className="mb-4" style={{ flex: 1 }}>
+              <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.capabilities')}</label>
               <div className="capability-badges" style={{ marginTop: 4 }}>
                 {caps.map((cap) => (
                   <span key={cap} className={`capability-badge capability-${cap}`}>{CAP_LABEL[cap] || cap}</span>
@@ -139,8 +139,8 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             </div>
           </div>
 
-          <div className="form-group">
-            <label>{t('workstation.purpose')}</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.purpose')}</label>
             {multipleCaps ? (
               <div className="usage-type-options">
                 {caps.map((cap) => (
@@ -166,26 +166,26 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             )}
           </div>
 
-          <div className="form-group">
-            <label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">
               {t('providerEdit.name')}
               <span style={{ fontWeight: 400, color: 'var(--da-text-muted)', fontSize: 'var(--da-font-size-xs)' }}>
                 ({t('providerEdit.nameOptional') || 'optional'})
               </span>
             </label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('providerEdit.placeholders.name')} />
-            <p className="form-hint" style={{ marginTop: 4 }}>
+            <p className="text-xs text-[var(--da-text-muted)] mt-2" style={{ marginTop: 4 }}>
               <Tag size={11} /> {t('providerEdit.nameHint') || '用于区分不同的 Key，不填则使用提供商名称'}
             </p>
           </div>
 
-          <div className="form-group">
-            <label>{t('providerEdit.baseUrl')}</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.baseUrl')}</label>
             <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={t('providerEdit.placeholders.baseUrl')} />
           </div>
 
-          <div className="form-group">
-            <label>{t('providerEdit.apiKey')}</label>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.apiKey')}</label>
             <div className="api-key-input">
               <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={t('providerEdit.placeholders.apiKey')} />
               <button className="api-key-toggle" onClick={() => setShowKey(!showKey)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
@@ -195,8 +195,8 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           </div>
 
           {showModels && (
-            <div className="form-group">
-              <label>{t('providerEdit.supportedModels')}</label>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.supportedModels')}</label>
               <div className="models-display">
                 {fetchingModels ? (
                   <div className="models-loading">
@@ -210,7 +210,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
                 ) : (
                   <div className="models-empty"><span>{t('workstation.enterApiKeyToFetch')}</span></div>
                 )}
-                <button type="button" className="btn btn-secondary btn-sm" onClick={handleFetchModels}
+                <button type="button" className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={handleFetchModels}
                   disabled={!apiKey.trim() || fetchingModels} title={t('workstation.fetchFromApi')}>
                   {fetchingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                 </button>
@@ -220,8 +220,8 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}
           </button>

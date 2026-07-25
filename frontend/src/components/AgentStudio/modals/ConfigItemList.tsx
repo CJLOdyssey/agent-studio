@@ -91,7 +91,7 @@ export default function ConfigItemList<T extends ListItem>({
           <span>
             {title} ({items.length})
           </span>
-          <button className="btn btn-sm btn-secondary" onClick={onAdd}>
+          <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onAdd}>
             <Plus size={14} /> {t('configItem.add')}
           </button>
         </div>

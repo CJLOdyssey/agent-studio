@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <AlertTriangle size={40} className="wsta-error-state-icon" />
           <div className="wsta-error-state-title">{t('workstation.renderError')}</div>
           <div className="wsta-error-state-desc">{this.state.error?.message || t('workstation.unknownError')}</div>
-          <button className="btn btn-outline" onClick={this.handleRetry}>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border border-[var(--da-border)] text-[var(--da-text-secondary)] bg-transparent transition-colors duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={this.handleRetry}>
             <RefreshCw size={14} /> {t('common.retry')}
           </button>
         </div>

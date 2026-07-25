@@ -14,7 +14,7 @@ export const OutputConstraintTab = forwardRef(function OutputConstraintTab(
 ) {
   const { t } = useTranslation();
   return (
-    <div className="form-group">
+    <div className="mb-4">
       <div className="agent-config-list-bar">
         <button className="agent-config-list-bar-btn" onClick={onAddFromWorkstation}>
           <Plus size={14} />
@@ -26,11 +26,11 @@ export const OutputConstraintTab = forwardRef(function OutputConstraintTab(
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t('workstation.outputConstraintDesc')}
-        className="form-textarea"
+        className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm resize-y font-[inherit] transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none"
         rows={6}
       />
       <div className="agent-config-char-count">{value.length} {t('workstation.chars')}</div>
-      <p className="form-hint">{t('workstation.outputConstraintDesc')}</p>
+      <p className="text-xs text-[var(--da-text-muted)] mt-2">{t('workstation.outputConstraintDesc')}</p>
     </div>
   );
 });
