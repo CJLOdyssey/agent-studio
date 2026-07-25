@@ -51,7 +51,7 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
             <Bot size={16} />
             {editingAgent ? t('agent.form_edit_title') : t('agent.form_create_title')}
           </div>
-          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={16} /></button>
         </div>
 
         {/* ── Body ── */}

@@ -85,7 +85,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
               <p style={{ margin: '1px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>{team.name}</p>
             </div>
           </div>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <button className="modal-close" onClick={onClose} aria-label="关闭"><X size={18} /></button>
         </div>
 
         <div className="modal-body" style={{ paddingTop: 0 }}>

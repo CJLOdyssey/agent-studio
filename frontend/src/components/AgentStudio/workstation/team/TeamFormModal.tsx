@@ -34,7 +34,7 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
               </p>
             </div>
           </div>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 
         <div className="modal-body">

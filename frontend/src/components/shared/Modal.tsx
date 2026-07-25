@@ -62,7 +62,7 @@ export default function Modal({ title, onClose, children, footer, className = ''
       >
         <div className="modal-header">
           {typeof title === 'string' ? <h3>{title}</h3> : title}
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="关闭">
             <X size={18} />
           </button>
         </div>

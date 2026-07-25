@@ -164,7 +164,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
               </p>
             </div>
           </div>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>

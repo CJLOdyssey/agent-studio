@@ -34,7 +34,7 @@ export default function PickerModal({ title, items, onSelect, onClose }: Props) 
       >
         <div className="picker-modal-header">
           <h3>{title}</h3>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="关闭">
             <X size={18} />
           </button>
         </div>

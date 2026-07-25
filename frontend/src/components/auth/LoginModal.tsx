@@ -147,9 +147,9 @@ export default function LoginModal({ onClose }: Props) {
           onClick={(e) => e.stopPropagation()}>
           <div className="modal-header" style={{ justifyContent: 'center', position: 'relative' }}>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>重置密码</h3>
-            <button className="modal-close" onClick={onClose} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
-              <X size={18} />
-            </button>
+<button className="modal-close" onClick={onClose} aria-label="关闭" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
+            <X size={18} />
+          </button>
           </div>
           <div className="modal-body" style={{ padding: 24 }}>
             <ForgotPasswordForm

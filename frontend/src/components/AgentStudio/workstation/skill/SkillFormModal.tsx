@@ -62,7 +62,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
       <div className="modal-content wsta-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
         <div className="modal-header">
           <h3>{editingSkill ? t('skill.form_title_edit') : t('skill.form_title_new')}</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
         <div className="modal-body wsta-modal-body">
           {errors.length > 0 && (

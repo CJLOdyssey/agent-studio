@@ -98,7 +98,7 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
                 <span>{compareMode ? '退出对比' : '版本对比'}</span>
               </button>
             )}
-            <button className="modal-close" onClick={onClose}><X size={18} /></button>
+            <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
           </div>
         </div>
 

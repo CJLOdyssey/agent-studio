@@ -68,7 +68,7 @@ export default function ResourcePickerModal<T>({
       <div className="modal-content wsta-modal wsta-modal-md" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{title}</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
         <div className="modal-body">
           <div className="wsta-picker-search">
