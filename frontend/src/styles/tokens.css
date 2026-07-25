@@ -124,18 +124,18 @@
 
   --da-text-primary:    #000000;
   --da-text-secondary:  #555555;
-  --da-text-tertiary:   #999999;
+  --da-text-tertiary:   #9ca3af;
   --da-text-muted:      #9ca3af;
   --da-text-on-accent:  #ffffff;
   --da-blend-dark:      #000000;
 
-  --da-accent:         #666666;
-  --da-accent-indigo:  #666666;
-  --da-accent-cyan:    #888888;
-  --da-accent-pink:    #777777;
-  --da-accent-amber:   #999999;
-  --da-accent-emerald: #888888;
-  --da-accent-purple:  #777777;
+  --da-accent:         #6366f1;
+  --da-accent-indigo:  #6366f1;
+  --da-accent-cyan:    #6366f1;
+  --da-accent-pink:    #6366f1;
+  --da-accent-amber:   #818cf8;
+  --da-accent-emerald: #6366f1;
+  --da-accent-purple:  #6366f1;
   --da-accent-red:     #ff4444;
 
   --da-status-active:  #44cc44;
