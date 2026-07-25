@@ -158,8 +158,8 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
               <agent.icon size={20} className={agent.color} />
             </div>
             <div>
-              <h3 className="text-[var(--da-font-size-lg)] font-semibold text-[var(--color-text-primary)] m-0 leading-[1.3]">{t('workstation.agentManage')}</h3>
-              <p className="text-[var(--da-font-size-xs)] text-[var(--color-text-muted)] mt-0.5 mb-0 leading-[1.4]">
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)] m-0 leading-[1.3]">{t('workstation.agentManage')}</h3>
+              <p className="text-xs text-[var(--color-text-muted)] mt-0.5 mb-0 leading-[1.4]">
                 设置 <strong className="text-[var(--color-text-secondary)] font-medium">{agent.name}</strong> 的能力和行为
               </p>
             </div>

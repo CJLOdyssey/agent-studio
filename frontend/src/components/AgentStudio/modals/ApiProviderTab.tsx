@@ -102,9 +102,9 @@ export default function ApiProviderTab({
             <div key={key.id} className={`bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-lg p-4 transition-[border-color] duration-150 ${key.is_active ? 'active' : ''}`}>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-[var(--da-font-size-base)] font-semibold text-[var(--color-text-primary)]">
+                  <div className="flex items-center gap-2 text-base font-semibold text-[var(--color-text-primary)]">
                     {key.label || key.provider}
-                    <span className={`inline-flex items-center px-[7px] py-px rounded text-[10px] font-medium leading-[1.5] tracking-[0.02em] uppercase ml-2 api-type-${key.usage_type || 'llm'}`}>
+                    <span className={`inline-flex items-center px-[7px] py-px rounded text-xs font-medium leading-[1.5] tracking-[0.02em] uppercase ml-2 api-type-${key.usage_type || 'llm'}`}>
                       {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
                     </span>
                     {key.is_active && <CheckCircle2 size={14} className="text-[var(--color-accent)]" />}

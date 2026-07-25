@@ -94,7 +94,7 @@ function LogAudit() {
           data={paged}
           components={{
             Table: forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>((props, ref) => (
-              <table ref={ref} className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('logs.empty')} {...props} />
+              <table ref={ref} className="w-full table-fixed border-collapse text-sm" role="grid" aria-label={t('logs.empty')} {...props} />
             )),
           }}
           fixedHeaderContent={() => (

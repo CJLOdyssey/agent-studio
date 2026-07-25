@@ -29,7 +29,7 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
             <div className="team-form-avatar"><Users size={20} /></div>
             <div>
               <h3 style={{ margin: 0 }}>{editingItem ? t('team.form_title_edit') : t('team.form_title_new')}</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
                 {editingItem ? editingItem.name : ''}
               </p>
             </div>

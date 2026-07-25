@@ -10,12 +10,12 @@
 
   /* ── 语义色（固定） ── */
   --color-danger: #ff4444;
-  --color-success: #44cc44;
-  --color-warning: #ccaa44;
+  --color-success: #34d399;
+  --color-warning: #f59e0b;
   --color-text-on-accent: #ffffff;
 
   /* ── 字号阶梯 ── */
-  --text-xs: 12px;
+  --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 14px;
   --text-lg: 16px;
@@ -37,23 +37,23 @@
 :root {
   color-scheme: dark;
 
-  --color-surface: #0d0d0d;
-  --color-surface-raised: #1a1a1a;
-  --color-surface-overlay: #242424;
-  --color-surface-elevated: #2a2a2a;
-  --color-surface-hover: #333333;
-  --color-surface-pressed: #333333;
-  --color-surface-card: #242424;
-  --color-surface-sidebar: #0d0d0d;
+  --color-surface: #0f1117;
+  --color-surface-sidebar: #111318;
+  --color-surface-raised: #1c1e24;
+  --color-surface-overlay: #24252d;
+  --color-surface-elevated: #2a2c34;
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+  --color-surface-pressed: rgba(255, 255, 255, 0.08);
+  --color-surface-card: #24252d;
 
   --color-text-primary: #f1f1f1;
-  --color-text-secondary: #a0a0a0;
-  --color-text-muted: #6b7280;
-  --color-text-tertiary: #4b5563;
+  --color-text-secondary: #a0a5b0;
+  --color-text-muted: #8b97a6;
+  --color-text-tertiary: #6b7280;
 
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.20);
   --color-border-light: rgba(0, 0, 0, 0.08);
 
   --color-overlay: rgba(0, 0, 0, 0.65);
@@ -69,11 +69,11 @@
   --z-tooltip: 600;
 
   /* ── 布局尺寸 ── */
-  --da-sidebar-width: clamp(15rem, 15vw, 17.5rem);
-  --da-sidebar-min: 15rem;
-  --da-sidebar-max: 17.5rem;
-  --da-input-height: 64px;
-  --da-input-radius: 20px;
+  --da-sidebar-width: clamp(16rem, 16vw, 18.5rem);
+  --da-sidebar-min: 16rem;
+  --da-sidebar-max: 18.5rem;
+  --da-input-height: 56px;
+  --da-input-radius: 16px;
   --da-toolbar-height: 48px;
 
   /* ── 弹窗尺寸 ── */
@@ -93,13 +93,6 @@
   --sp-10: 40px;
   --sp-12: 48px;
   --sp-16: 64px;
-
-  /* ── 字号 ── */
-  --da-font-size-base: 14px;
-  --da-font-size-sm: 13px;
-  --da-font-size-xs: 12px;
-  --da-font-size-lg: 16px;
-  --da-font-size-xl: 20px;
 
   /* ── 行高 / 圆角 ── */
   --da-line-height: 1.6;

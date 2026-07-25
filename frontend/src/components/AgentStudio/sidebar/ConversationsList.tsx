@@ -93,7 +93,7 @@ const ConversationsList = memo(function ConversationsList({
     return (
       <div
         key={conv.id}
-        className={`group flex items-center justify-between py-2 px-2 rounded-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] ${isActive ? 'bg-[var(--color-surface-elevated)]' : ''}`}
+        className={`group flex items-center justify-between py-2 px-2 rounded-r-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] ${isActive ? 'bg-[var(--color-accent)]/8 border-l-2 border-l-[var(--color-accent)]' : ''}`}
         onClick={() => onSelect(conv)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -121,7 +121,7 @@ const ConversationsList = memo(function ConversationsList({
               ? Array.from(conv.title).slice(0, 26).join('') + '...'
               : conv.title}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] mt-[2px] flex items-center gap-1">
+          <div className="text-xs text-[var(--color-text-tertiary)] mt-[2px] flex items-center gap-1">
             {isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
             )}
@@ -139,7 +139,7 @@ const ConversationsList = memo(function ConversationsList({
           </div>
         </div>
         <button
-          className="shrink-0 p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-opacity flex items-center justify-center group-hover:opacity-100 hover:text-[var(--color-danger)]"
+          className="shrink-0 p-1.5 rounded-md bg-transparent border border-transparent text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-all duration-150 flex items-center justify-center group-hover:opacity-80 hover:opacity-100 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:border-[var(--color-danger)]/20"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(conv.id);
@@ -155,11 +155,11 @@ const ConversationsList = memo(function ConversationsList({
   return (
     <div className="flex flex-col gap-2 mb-1">
       <Virtuoso
-        style={{ height: '300px' }}
+        style={{ height: '100%' }}
         data={flatItems}
         itemContent={(_index: number, item: (typeof flatItems)[number]) =>
           item.type === 'group' ? (
-            <div className="text-xs font-semibold text-[var(--color-text-muted)] py-1 px-2 flex items-center gap-1">{item.label}</div>
+            <div className="text-xs font-medium text-[var(--color-text-tertiary)] tracking-[0.03em] py-1.5 px-2">{item.label}</div>
           ) : (
             renderConversationItem(item.conv)
           )

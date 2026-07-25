@@ -82,7 +82,7 @@ export default function MCPManagement() {
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('mcp.empty_desc_search') : t('mcp.empty_desc_general')}</div>
           </div>
         ) : (
-        <table className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('mcp.col_name')}>
+        <table className="w-full table-fixed border-collapse text-sm" role="grid" aria-label={t('mcp.col_name')}>
           <thead><tr>
             <th className="w-10 text-center align-middle p-1 px-2" scope="col"><input type="checkbox" checked={d.allOnPageSelected} onChange={d.toggleSelectAll} aria-label={t('mcp.select_all')} /></th>
             <th scope="col">{t('mcp.col_name')}</th>

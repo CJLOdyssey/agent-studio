@@ -26,7 +26,7 @@ export default function WorkstationPage() {
         </div>
         {navGroups.map((group) => (
           <div key={group.label} className="mt-5">
-            <div className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.08em] px-2 pb-1.5">
+            <div className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-[0.08em] px-2 pb-1.5">
               {group.label}
             </div>
             {group.tabs.map((tab) => (
@@ -48,7 +48,7 @@ export default function WorkstationPage() {
       </nav>
       <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         <header className="flex items-center gap-2.5 px-6 py-[18px] border-b border-[var(--color-border)] flex-shrink-0">
-          {(() => { const tab = navGroups.flatMap(g => g.tabs).find(t => t.id === activeTab); return tab ? <><tab.icon size={20} className="text-[var(--color-accent)] flex-shrink-0" /><h2 className="text-[17px] font-semibold text-[var(--color-text-primary)] m-0 tracking-tight">{tab.label}</h2></> : null; })()}
+          {(() => { const tab = navGroups.flatMap(g => g.tabs).find(t => t.id === activeTab); return tab ? <><tab.icon size={20} className="text-[var(--color-accent)] flex-shrink-0" /><h2 className="text-lg font-semibold text-[var(--color-text-primary)] m-0 tracking-tight">{tab.label}</h2></> : null; })()}
         </header>
         <ErrorBoundary key={activeTab} FallbackComponent={ModuleFallback}>
           {TAB_RENDERERS[activeTab]({ onNavigate: (tab) => setActiveTab(tab as WorkstationTab) })}

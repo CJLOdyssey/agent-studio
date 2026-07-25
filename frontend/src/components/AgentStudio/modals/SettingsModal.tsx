@@ -216,7 +216,7 @@ export default function SettingsModal({ onClose }: Props) {
                     <div key={row.label} style={{
                       padding: '12px 16px',
                       background: 'var(--color-surface-raised)',
-                      fontSize: 'var(--da-font-size-sm)',
+                      fontSize: 13,
                       display: 'flex', flexDirection: 'column', gap: 2,
                     }}>
                       <span style={{ color: 'var(--color-text-muted)', fontSize: 11 }}>{row.label}</span>

@@ -102,7 +102,7 @@ export default function AgentManagement() {
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{mgmt.search ? t('agent.empty_desc_search') : t('agent.empty_desc_general')}</div>
           </div>
         ) : (
-        <table className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('agent.col_name')}>
+        <table className="w-full table-fixed border-collapse text-sm" role="grid" aria-label={t('agent.col_name')}>
           <thead><tr>
             <th className="w-10 text-center align-middle p-1 px-2" scope="col"><input type="checkbox" checked={mgmt.allOnPageSelected} onChange={mgmt.toggleSelectAll} aria-label={t('agent.select_all')} /></th>
             <th scope="col">{t('agent.col_name')}</th>

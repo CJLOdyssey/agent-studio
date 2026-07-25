@@ -12,7 +12,7 @@
 
 .workstation-modal.ant-modal .ant-modal-title {
   color: var(--color-text-primary);
-  font-size: var(--da-font-size-base);
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -66,7 +66,7 @@
 }
 
 .workstation-modal.ant-modal .ant-pro-card .ant-pro-card-title {
-  font-size: var(--da-font-size-xl);
+  font-size: 20px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -74,7 +74,7 @@
 .workstation-modal.ant-modal .ant-table {
   background: transparent;
   color: var(--color-text-primary);
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
 }
 
 .workstation-modal.ant-modal .ant-table table {
@@ -86,7 +86,7 @@
   background: var(--color-surface-card);
   color: var(--color-text-muted);
   border-bottom: 1px solid var(--color-border-subtle);
-  font-size: var(--da-font-size-xs);
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -212,7 +212,7 @@
 
 .workstation-modal .ant-pagination-item a {
   color: var(--color-text-secondary);
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -255,7 +255,7 @@
 .workstation-modal .ant-pagination-prev button,
 .workstation-modal .ant-pagination-next button {
   color: inherit;
-  font-size: var(--da-font-size-lg);
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -285,7 +285,7 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface-raised);
   color: var(--color-text-muted);
-  font-size: var(--da-font-size-base);
+  font-size: 14px;
   letter-spacing: 2px;
 }
 
@@ -300,7 +300,7 @@
 }
 
 .workstation-modal .ant-pagination-options-quick-jumper {
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
   color: var(--color-text-muted);
   margin-left: 8px;
 }
@@ -310,7 +310,7 @@
   border-color: var(--color-border);
   border-radius: 6px;
   color: var(--color-text-primary);
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
   width: 48px;
   height: 32px;
   padding: 0 8px;
@@ -328,7 +328,7 @@
 }
 
 .workstation-modal .ant-pagination-total-text {
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   margin-right: 12px;
@@ -390,7 +390,7 @@
   height: 36px;
   line-height: 36px;
   margin: 0;
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
   color: var(--color-text-secondary);
   border-radius: 0;
 }
@@ -422,7 +422,7 @@
 
 .workstation-modal.ant-modal .ant-badge-status-text {
   color: var(--color-text-primary);
-  font-size: var(--da-font-size-sm);
+  font-size: 13px;
 }
 
 /* ── Table row spacing ── */

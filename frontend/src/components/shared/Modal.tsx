@@ -62,7 +62,7 @@ export default function Modal({ title, onClose, children, footer, className = ''
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           {typeof title === 'string'
-            ? <h3 className="text-[var(--da-font-size-lg)] font-semibold text-[var(--color-text-primary)] m-0">{title}</h3>
+            ? <h3 className="text-lg font-semibold text-[var(--color-text-primary)] m-0">{title}</h3>
             : title}
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭">
             <X size={18} />

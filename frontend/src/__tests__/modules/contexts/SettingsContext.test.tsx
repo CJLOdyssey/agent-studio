@@ -20,7 +20,7 @@ describe('SettingsContext', { tags: ['unit'] }, () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.classList.remove('dark');
-    document.documentElement.style.removeProperty('--da-font-size-base');
+    document.documentElement.style.removeProperty('--body-font-size');
   });
 
   it('renders with default settings', () => {
@@ -51,7 +51,7 @@ describe('SettingsContext', { tags: ['unit'] }, () => {
         <TestConsumer />
       </SettingsProvider>,
     );
-    expect(document.documentElement.style.getPropertyValue('--da-font-size-base')).toBe('14px');
+    expect(document.documentElement.style.getPropertyValue('--body-font-size')).toBe('14px');
   });
 
   it('loads settings from localStorage', () => {

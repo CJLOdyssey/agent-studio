@@ -69,8 +69,8 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
               </svg>
             </span>
             <div>
-              <h3 className="m-0 text-[var(--da-font-size-base)] font-semibold">管理成员</h3>
-              <p className="mt-[1px] mb-0 text-[var(--da-font-size-xs)] text-[var(--color-text-muted)]">{team.name}</p>
+              <h3 className="m-0 text-base font-semibold">管理成员</h3>
+              <p className="mt-[1px] mb-0 text-xs text-[var(--color-text-muted)]">{team.name}</p>
             </div>
           </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
@@ -78,14 +78,14 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
 
         <div className="p-5 pt-0 overflow-y-auto flex-1 min-h-0 flex flex-col">
           {error && (
-            <div className="flex items-center gap-2 py-2 px-3 mb-3 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] rounded-lg text-[var(--da-font-size-sm)] text-[var(--color-danger)]">
+            <div className="flex items-center gap-2 py-2 px-3 mb-3 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] rounded-lg text-sm text-[var(--color-danger)]">
               <span className="flex-1">{error}</span>
               <button onClick={() => setError(null)} className="bg-transparent border-none cursor-pointer text-inherit p-0.5 flex"><X size={14} /></button>
             </div>
           )}
 
           <div className="mb-5">
-            <div className="flex items-center gap-2 mb-2.5 text-[var(--da-font-size-sm)] font-medium text-[var(--color-text-secondary)]">
+            <div className="flex items-center gap-2 mb-2.5 text-sm font-medium text-[var(--color-text-secondary)]">
               <span className="w-3.5 h-0.5 bg-[var(--color-border-strong)] rounded-[1px]" />
               添加成员
             </div>
@@ -95,11 +95,11 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                 value={agentSearch}
                 onChange={(e) => setAgentSearch(e.target.value)}
                 placeholder="搜索 Agent..."
-                className="border-none outline-none flex-1 text-[var(--da-font-size-sm)] bg-transparent text-[var(--color-text-primary)]"
+                className="border-none outline-none flex-1 text-sm bg-transparent text-[var(--color-text-primary)]"
               />
             </div>
             {filteredAgents.length === 0 ? (
-              <p className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)] py-3 text-center">
+              <p className="text-xs text-[var(--color-text-tertiary)] py-3 text-center">
                 {agentSearch ? '无匹配 Agent' : '所有 Agent 已是成员'}
               </p>
             ) : (
@@ -113,13 +113,13 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                     style={{ animation: idx < 3 ? 'fadeSlideIn 0.25s ease-out both' : 'none', animationDelay: `${idx * 30}ms` }}
                   >
                     <MemberAvatar name={agent.name} size={26} />
-                    <span className="flex-1 text-left text-[var(--da-font-size-sm)] text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span className="flex-1 text-left text-sm text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap">
                       {agent.name}
                     </span>
                     {addingId === agent.id ? (
                       <Loader2 size={14} className="animate-spin text-[var(--color-accent)] shrink-0" />
                     ) : (
-                      <span className="flex items-center gap-1 text-[var(--da-font-size-xs)] text-[var(--color-accent)] font-medium shrink-0">
+                      <span className="flex items-center gap-1 text-xs text-[var(--color-accent)] font-medium shrink-0">
                         <Plus size={12} />
                         添加
                       </span>
@@ -133,15 +133,15 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
           <div className="h-px bg-[var(--color-border)] mb-4" />
 
           <div>
-            <div className="flex items-center gap-2 mb-2.5 text-[var(--da-font-size-sm)] font-medium text-[var(--color-text-secondary)]">
+            <div className="flex items-center gap-2 mb-2.5 text-sm font-medium text-[var(--color-text-secondary)]">
               <span className="w-3.5 h-0.5 bg-[var(--color-border-strong)] rounded-[1px]" />
               当前成员
-              <span className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)] font-normal">
+              <span className="text-xs text-[var(--color-text-tertiary)] font-normal">
                 {members.length}
               </span>
             </div>
             {members.length === 0 ? (
-              <p className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)] py-4 text-center">
+              <p className="text-xs text-[var(--color-text-tertiary)] py-4 text-center">
                 暂无成员
               </p>
             ) : (
@@ -153,10 +153,10 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                   >
                     <MemberAvatar name={m.name} size={28} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--da-font-size-sm)] font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap">
+                      <div className="text-sm font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap">
                         {m.name}
                       </div>
-                      <div className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)]">
+                      <div className="text-xs text-[var(--color-text-tertiary)]">
                         {m.role}
                       </div>
                     </div>

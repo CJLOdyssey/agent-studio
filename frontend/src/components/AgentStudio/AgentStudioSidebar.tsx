@@ -95,15 +95,16 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
 
   return (
     <aside className={`flex flex-col h-full bg-[var(--color-surface-sidebar)] border-r border-r-[var(--color-border-subtle)] shrink-0 overflow-hidden transition-[width,min-width,opacity,border-width] duration-200 ease-in-out ${isSidebarOpen ? 'w-[var(--da-sidebar-width)] min-w-[var(--da-sidebar-width)] opacity-100' : 'w-0 min-w-0 opacity-0 pointer-events-none border-r-0'}`}>
-      <div className="flex items-center justify-between gap-[10px] p-3 shrink-0">
-        <div className="flex items-center gap-[10px]">
-          <div className="w-8 h-8 bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] rounded-lg flex items-center justify-center text-[var(--color-accent)] shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
-            <Bot size={18} />
+      {/* Header: logo + toggle */}
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] shrink-0">
+            <Bot size={20} />
           </div>
-          <span className="font-semibold text-[var(--da-font-size-base)] text-[var(--color-text-primary)] tracking-[-0.02em]">AgentStudio</span>
+          <span className="font-semibold text-base text-[var(--color-text-primary)] tracking-[-0.02em] truncate">AgentStudio</span>
         </div>
         <button
-          className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]"
+          className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-lg text-[var(--color-text-muted)] cursor-pointer transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] shrink-0"
           onClick={onToggleSidebar}
           aria-label="Collapse sidebar"
         >
@@ -111,69 +112,57 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
         </button>
       </div>
 
+      {/* New Chat - primary action */}
       <div className="px-3 pb-3 shrink-0">
-        <button className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-transparent border-none rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-[color,background] duration-200 hover:bg-[var(--color-surface-hover)]" onClick={onNewChat}>
-          <Sparkles size={16} />
+        <button className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-accent)]/40 active:scale-[0.98]" onClick={onNewChat}>
+          <Sparkles size={16} className="text-[var(--color-accent)]" />
           <span>{t('sidebar.newChat')}</span>
         </button>
       </div>
-        <div className="flex items-center gap-[10px] px-3 pb-3 shrink-0">
-          <div className="w-8 h-8 bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] rounded-lg flex items-center justify-center text-[var(--color-accent)] shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
-            <Bot size={18} />
-          </div>
-          <span className="font-semibold text-[var(--da-font-size-base)] text-[var(--color-text-primary)] tracking-[-0.02em]">AgentStudio</span>
-        </div>
 
-        <div className="px-3 pb-3 shrink-0">
-          <button className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-transparent border-none rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-[color,background] duration-200 hover:bg-[var(--color-surface-hover)]" onClick={onNewChat}>
-            <Sparkles size={16} />
-            <span>{t('sidebar.newChat')}</span>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-3 flex flex-col gap-4">
-          <TeamTree
-            teams={teams}
-            selectedAgentId={selectedAgentId}
-            isAuthenticated={isAuthenticated}
-            openLoginModal={openLoginModal}
-            toggleTeam={toggleTeam}
-            handleAddTeam={handleAddTeam}
-            handleAddAgent={handleAddAgent}
-            handleDeleteTeam={handleDeleteTeam}
-            handleDeleteAgent={handleDeleteAgent}
-            handleRenameTeam={handleRenameTeam}
-            handleRenameAgent={handleRenameAgent}
-            handleTogglePinTeam={handleTogglePinTeam}
-            handleAgentClick={handleAgentClick}
-            onEditAgent={onEditAgent}
-            onTeamChat={onTeamChat}
-          />
-
-          <div>
-            <div className="flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.5px]">
-              <MessageSquare size={14} /> {t('sidebar.recentConversations')}
-            </div>
-            <div className="p-0">
-              <ConversationsList
-                conversations={conversations}
-                activeConvId={activeConvId}
-                selectedAgentId={selectedAgentId}
-                agents={teams.flatMap((t) => t.agents)}
-                onSelect={handleConvSelect}
-                onDelete={handleConvDelete}
-              />
-            </div>
-          </div>
-        </div>
-
-        <UserMenu
-          isUserMenuOpen={isUserMenuOpen}
-          setIsUserMenuOpen={setIsUserMenuOpen}
-          setIsSettingsOpen={setIsSettingsOpen}
-          setIsApiOpen={setIsApiOpen}
-          onOpenWorkstation={onOpenWorkstation}
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-3 flex flex-col gap-4">
+        <TeamTree
+          teams={teams}
+          selectedAgentId={selectedAgentId}
+          isAuthenticated={isAuthenticated}
+          openLoginModal={openLoginModal}
+          toggleTeam={toggleTeam}
+          handleAddTeam={handleAddTeam}
+          handleAddAgent={handleAddAgent}
+          handleDeleteTeam={handleDeleteTeam}
+          handleDeleteAgent={handleDeleteAgent}
+          handleRenameTeam={handleRenameTeam}
+          handleRenameAgent={handleRenameAgent}
+          handleTogglePinTeam={handleTogglePinTeam}
+          handleAgentClick={handleAgentClick}
+          onEditAgent={onEditAgent}
+          onTeamChat={onTeamChat}
         />
+
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-tertiary)] tracking-[0.04em] mb-1.5">
+            <MessageSquare size={13} /> {t('sidebar.recentConversations')}
+          </div>
+          <ConversationsList
+            conversations={conversations}
+            activeConvId={activeConvId}
+            selectedAgentId={selectedAgentId}
+            agents={teams.flatMap((t) => t.agents)}
+            onSelect={handleConvSelect}
+            onDelete={handleConvDelete}
+          />
+        </div>
+      </div>
+
+      {/* User menu - bottom pinned */}
+      <UserMenu
+        isUserMenuOpen={isUserMenuOpen}
+        setIsUserMenuOpen={setIsUserMenuOpen}
+        setIsSettingsOpen={setIsSettingsOpen}
+        setIsApiOpen={setIsApiOpen}
+        onOpenWorkstation={onOpenWorkstation}
+      />
     </aside>
   );
 });

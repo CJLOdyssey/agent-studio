@@ -173,11 +173,11 @@ const TeamTree = memo(function TeamTree({
   return (
     <div>
       <div className="flex items-center justify-between pr-1 pb-[6px] min-h-[28px]">
-        <div className="flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.5px]">
+        <div className="flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] tracking-[0.04em]">
           <Users size={14} /> {t('sidebar.myTeams')}
         </div>
         <button
-          className={`bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-all duration-200 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
+          className={`bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-[color,background,opacity] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
           onClick={isAuthenticated ? handleAddTeam : () => openLoginModal()}
           title={isAuthenticated ? t('sidebar.createTeam') : '登录后解锁功能'}
         >
@@ -189,7 +189,7 @@ const TeamTree = memo(function TeamTree({
           <div key={team.id} className="mb-px rounded-md overflow-visible">
             <div className="group flex items-center gap-[6px] py-[6px] pl-[6px] pr-[32px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[32px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
-                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-all duration-200 flex-shrink-0 w-[18px] h-[18px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[18px] h-[18px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
                 <ChevronDown
                   size={14}
@@ -217,9 +217,9 @@ const TeamTree = memo(function TeamTree({
               ) : (
                 <>
                   <span className="text-sm font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
-                  <span className="text-[10px] text-[var(--color-text-muted)] flex-shrink-0 font-normal opacity-50 min-w-[12px] text-right">{team.agents.length}</span>
+                  <span className="text-xs text-[var(--color-text-tertiary)] flex-shrink-0 font-normal opacity-70 min-w-[14px] text-right">{team.agents.length}</span>
                   <button
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 z-10 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-[color,background,opacity] duration-150 z-10 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
                     onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
                     title={t('sidebar.moreOptions')}
                   >

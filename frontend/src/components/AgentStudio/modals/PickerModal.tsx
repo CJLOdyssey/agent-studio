@@ -33,7 +33,7 @@ export default function PickerModal({ title, items, onSelect, onClose }: Props) 
         aria-modal="true"
       >
         <div className="flex items-center justify-between pt-[18px] px-5">
-          <h3 className="text-[var(--da-font-size-base)] font-semibold text-[var(--color-text-primary)] m-0">{title}</h3>
+          <h3 className="text-base font-semibold text-[var(--color-text-primary)] m-0">{title}</h3>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭">
             <X size={18} />
           </button>

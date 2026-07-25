@@ -111,7 +111,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             </div>
             <div>
               <h3 style={{ margin: 0 }}>{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
                 {providers[providerType]?.base_url || ''}
               </p>
             </div>
@@ -161,7 +161,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
                 {caps.map((cap) => (
                   <span key={cap} className="inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]">{CAP_LABEL[cap] || cap}</span>
                 ))}
-                <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)', marginLeft: 8 }}>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 8 }}>
                   {t('workstation.purpose')}: {CAP_LABEL[caps[0]] || caps[0]}
                 </span>
               </div>
@@ -171,7 +171,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           <div className="mb-4">
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
               {t('providerEdit.name')}
-              <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 'var(--da-font-size-xs)' }}>
+              <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 11 }}>
                 ({t('providerEdit.nameOptional') || 'optional'})
               </span>
             </label>

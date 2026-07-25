@@ -67,7 +67,7 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
             type="button"
           >
             <span className="font-medium">/{opt.name}</span>
-            {opt.source === 'agent' && <span className="inline-block px-[5px] rounded text-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[9px] font-bold uppercase tracking-[0.5px] flex-shrink-0 ml-auto">Agent</span>}
+            {opt.source === 'agent' && <span className="inline-block px-[5px] rounded text-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-xs font-bold uppercase tracking-[0.5px] flex-shrink-0 ml-auto">Agent</span>}
             {opt.description && <span className="text-xs text-[var(--color-text-muted)]">{opt.description}</span>}
           </button>
         ))}

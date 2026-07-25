@@ -238,7 +238,7 @@ const TeamMessage = memo(function TeamMessage({
                       {isThinkingExpanded && (() => {
                         const nodes = (msg.thinking ?? '').split(/\n{2,}/).filter(Boolean);
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-[12.5px] text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                             {nodes.map((node, i) => (
                               <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
                                 <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
@@ -259,7 +259,7 @@ const TeamMessage = memo(function TeamMessage({
                       {msg.thinking && (() => {
                         const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-[12.5px] text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                             {nodes.map((node, i) => (
                               <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
                                 <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
@@ -286,7 +286,7 @@ const TeamMessage = memo(function TeamMessage({
                         {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                       {isThinkingExpanded && (
-                        <div className="relative mt-2 max-h-[420px] overflow-y-auto text-[12.5px] text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                        <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                           {msg.thinking ? (() => {
                             const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
                             return nodes.map((node, i) => (

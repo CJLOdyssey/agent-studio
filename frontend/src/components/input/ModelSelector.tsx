@@ -118,7 +118,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
           {providers.length > 1
             ? providers.map(([provider, list]) => (
                 <div key={provider} className="flex flex-col">
-                  <div className="px-3 py-1.5 text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">{provider}</div>
+                  <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">{provider}</div>
                   {list.map((m) => {
                     const globalIdx = allOptions.indexOf(m);
                     return (
@@ -133,10 +133,10 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       >
                         <span>{m.label}</span>
                         {m.status === 'deprecated' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
                         )}
                         {m.status === 'sunset' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>
                         )}
                       </button>
                     );
@@ -155,9 +155,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 >
                   <span>{m.label}</span>
                   {m.status === 'deprecated' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
                   )}
-                  {m.status === 'sunset' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>}
+                  {m.status === 'sunset' && <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>}
                 </button>
               ))}
         </div>

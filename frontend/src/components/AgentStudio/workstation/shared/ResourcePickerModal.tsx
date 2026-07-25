@@ -107,7 +107,7 @@ export default function ResourcePickerModal<T>({
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]" style={{ justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)' }}>
+          <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
             {multiple && tempSelected.size > 0 ? `${t('workstation.selectedCount')}: ${tempSelected.size}` : ''}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
