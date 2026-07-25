@@ -5,9 +5,9 @@
 
 /* --- Design Tokens (仅非颜色变量，颜色统一在 tokens.css) --- */
 :root {
-  --da-sidebar-width: 16rem;
+  --da-sidebar-width: clamp(16rem, 20vw, 24rem);
   --da-sidebar-min: 16rem;
-  --da-sidebar-max: 20rem;
+  --da-sidebar-max: 22rem;
   --da-font-size-base: 14px;
   --da-radius: 0.5rem;
   --z-sticky: 30;
@@ -170,7 +170,7 @@
   min-width: var(--da-sidebar-min);
   max-width: var(--da-sidebar-max);
   height: 100%;
-  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 4%);
+  background: var(--da-bg-sidebar);
   display: flex;
   flex-direction: column;
   z-index: var(--z-overlay);
@@ -652,7 +652,7 @@
 .agentstudio-sidebar-footer {
   flex-shrink: 0;
   padding: 12px;
-  background: color-mix(in srgb, var(--da-bg-primary), var(--da-text-primary) 4%);
+  background: var(--da-bg-sidebar);
   border-top: none;
   position: relative;
 }

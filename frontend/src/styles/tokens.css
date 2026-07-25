@@ -9,9 +9,9 @@
   --z-toast: 500;
   --z-tooltip: 600;
 
-  --da-sidebar-width: 260px;
-  --da-sidebar-min: 220px;
-  --da-sidebar-max: 320px;
+  --da-sidebar-width: clamp(16rem, 20vw, 24rem);
+  --da-sidebar-min: 16rem;
+  --da-sidebar-max: 22rem;
   --da-workspace-width: 480px;
   --da-workspace-min: 360px;
   --da-workspace-max: 600px;
@@ -52,6 +52,7 @@
   --da-bg-hover:      #000000;
   --da-bg-pressed:    #000000;
   --da-bg-card:       #000000;
+  --da-bg-sidebar:   color-mix(in srgb, #000000, #ffffff 4%);
 
   --da-msg-user-bg: #000000;
 
@@ -142,6 +143,7 @@
   --da-bg-hover:      #ffffff;
   --da-bg-pressed:    #ffffff;
   --da-bg-card:       #ffffff;
+  --da-bg-sidebar:   #F9FAFB;
 
   --da-msg-user-bg: #ffffff;
 
