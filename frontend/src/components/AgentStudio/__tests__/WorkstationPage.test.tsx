@@ -86,9 +86,8 @@ describe('WorkstationPage', { tags: ['integration'] }, () => {
 
     const teamsTabBtns = screen.getAllByText('团队管理');
     const sidebarBtn = teamsTabBtns[0].closest('button');
-    expect(sidebarBtn).toHaveStyle({
-      color: 'var(--da-accent)',
-    });
+    expect(sidebarBtn?.className).toContain('text-[var(--da-accent)]');
+    expect(sidebarBtn?.className).toContain('bg-[var(--da-bg-hover)]');
   });
 
   it('tab renderer receives onNavigate callback', () => {

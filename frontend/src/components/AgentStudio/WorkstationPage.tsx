@@ -5,10 +5,10 @@ import { navGroups, TAB_RENDERERS, type WorkstationTab } from './workstation/tab
 
 function ModuleFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '32px', textAlign: 'center' }} role="alert">
-      <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--da-text-primary)' }}>Module Error</h3>
-      <p style={{ fontSize: '13px', color: 'var(--da-text-muted)' }}>{(error as Error)?.message || 'Unknown error'}</p>
-      <button style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', background: 'var(--da-accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13px' }} onClick={resetErrorBoundary}><RefreshCw size={14} /> Retry</button>
+    <div className="flex flex-col items-center justify-center gap-3 p-8 text-center" role="alert">
+      <h3 className="text-base font-semibold text-[var(--da-text-primary)]">Module Error</h3>
+      <p className="text-sm text-[var(--da-text-muted)]">{(error as Error)?.message || 'Unknown error'}</p>
+      <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[var(--da-accent)] text-white border-none cursor-pointer text-sm hover:opacity-90" onClick={resetErrorBoundary}><RefreshCw size={14} /> Retry</button>
     </div>
   );
 }
@@ -19,41 +19,36 @@ export default function WorkstationPage() {
   const [activeTab, setActiveTab] = useState<WorkstationTab>('teams');
 
   return (
-    <div style={{ display: 'flex', flex: 1, flexDirection: 'row', minHeight: 0 }}>
-      <nav style={{ width: '180px', flexShrink: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', borderRight: '1px solid var(--da-border-subtle)', background: 'var(--da-bg-surface)', padding: '20px 12px' }}>
-        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--da-text-primary)', padding: '0 8px 16px', borderBottom: '1px solid var(--da-border)', marginBottom: '4px', letterSpacing: '-0.01em' }}>
+    <div className="flex flex-1 flex-row min-h-0">
+      <nav className="w-[180px] flex-shrink-0 flex flex-col overflow-y-auto border-r border-[var(--da-border-subtle)] bg-[var(--da-bg-surface)] p-5 px-3">
+        <div className="text-sm font-semibold text-[var(--da-text-primary)] px-2 pb-4 border-b border-[var(--da-border)] mb-1 tracking-tight">
           管理工作台
         </div>
         {navGroups.map((group) => (
-          <div key={group.label} style={{ marginTop: '20px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--da-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0 8px 6px' }}>
+          <div key={group.label} className="mt-5">
+            <div className="text-[10px] font-semibold text-[var(--da-text-muted)] uppercase tracking-[0.08em] px-2 pb-1.5">
               {group.label}
             </div>
             {group.tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 10px', marginBottom: '2px',
-                  borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '13px', textAlign: 'left',
-                  background: activeTab === tab.id ? 'var(--da-bg-hover)' : 'transparent',
-                  color: activeTab === tab.id ? 'var(--da-accent)' : 'var(--da-text-secondary)',
-                  fontWeight: activeTab === tab.id ? 500 : 400,
-                  transition: 'background 0.12s ease, color 0.12s ease',
-                }}
-                onMouseEnter={(e) => { if (activeTab !== tab.id) { e.currentTarget.style.background = 'var(--da-bg-hover)'; e.currentTarget.style.color = 'var(--da-text-primary)'; }}}
-                onMouseLeave={(e) => { if (activeTab !== tab.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--da-text-secondary)'; }}}
+                className={`flex items-center gap-2.5 w-full px-2.5 py-2 mb-0.5 rounded-md border-none cursor-pointer text-sm text-left transition-colors duration-100
+                  ${activeTab === tab.id
+                    ? 'bg-[var(--da-bg-hover)] text-[var(--da-accent)] font-medium'
+                    : 'bg-transparent text-[var(--da-text-secondary)] font-normal hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]'
+                  }`}
               >
-                <tab.icon size={16} style={{ flexShrink: 0, opacity: activeTab === tab.id ? 1 : 0.6 }} />
+                <tab.icon size={16} className={`flex-shrink-0 ${activeTab === tab.id ? 'opacity-100' : 'opacity-60'}`} />
                 <span>{tab.label}</span>
               </button>
             ))}
           </div>
         ))}
       </nav>
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-        <header style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '18px 24px', borderBottom: '1px solid var(--da-border-subtle)', flexShrink: 0 }}>
-          {(() => { const tab = navGroups.flatMap(g => g.tabs).find(t => t.id === activeTab); return tab ? <><tab.icon size={20} style={{ color: 'var(--da-accent)', flexShrink: 0 }} /><h2 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--da-text-primary)', margin: 0, letterSpacing: '-0.01em' }}>{tab.label}</h2></> : null; })()}
+      <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+        <header className="flex items-center gap-2.5 px-6 py-[18px] border-b border-[var(--da-border-subtle)] flex-shrink-0">
+          {(() => { const tab = navGroups.flatMap(g => g.tabs).find(t => t.id === activeTab); return tab ? <><tab.icon size={20} className="text-[var(--da-accent)] flex-shrink-0" /><h2 className="text-[17px] font-semibold text-[var(--da-text-primary)] m-0 tracking-tight">{tab.label}</h2></> : null; })()}
         </header>
         <ErrorBoundary key={activeTab} FallbackComponent={ModuleFallback}>
           {TAB_RENDERERS[activeTab]({ onNavigate: (tab) => setActiveTab(tab as WorkstationTab) })}
