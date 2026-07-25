@@ -44,7 +44,7 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
 
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
-      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] wsta-agent-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()}>
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
           <div className="modal-title">

@@ -74,7 +74,8 @@ describe('CreateModal', { tags: ['unit'] }, () => {
 
   it('renders with large class when large prop set', () => {
     render(<CreateModal title="Modal" onClose={vi.fn()} onSave={vi.fn()} large><p>content</p></CreateModal>);
-    expect(document.querySelector('.wsta-modal-lg')).toBeInTheDocument();
+    const dialog = document.querySelector('[role="dialog"]')!;
+    expect(dialog.className).toContain('max-w-[var(--modal-l)]');
   });
 
   it('does not render delete button when isEdit is false', () => {

@@ -47,8 +47,8 @@ describe('ResourcePickerModal', { tags: ['unit'] }, () => {
 
   it('shows selected item with check icon', () => {
     render(<ResourcePickerModal {...defaultProps} />);
-    const items = screen.getByText('Apple').closest('.wsta-picker-item')!;
-    expect(items).toHaveClass('selected');
+    const items = screen.getByText('Apple').closest('.cursor-pointer')!;
+    expect(items?.className).toContain('bg-[color-mix(in_srgb,var(--da-accent-indigo)_10%,transparent)]');
   });
 
   it('filters options when searching', () => {

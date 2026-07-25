@@ -123,20 +123,20 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
               <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[0]]?.version}</h5>
                 {diffResult.old.map((line, idx) => (
-                  <div key={idx} className={`wsta-diff-line wsta-diff-${line.type}`}>{line.text}</div>
+                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--da-accent-green)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--da-accent-red)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
               <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[1]]?.version}</h5>
                 {diffResult.new.map((line, idx) => (
-                  <div key={idx} className={`wsta-diff-line wsta-diff-${line.type}`}>{line.text}</div>
+                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--da-accent-green)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--da-accent-red)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
             </div>
           ) : (
             <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-list">
               {versions.map((v, i) => (
-                <div key={i} className={`wsta-version-item ${compareMode ? 'wsta-version-item-selectable' : ''} ${selectedIndices.includes(i) ? 'wsta-version-item-selected' : ''}`}
+                <div key={i} className={`p-2 bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-md transition-colors duration-150${compareMode ? ' cursor-pointer hover:border-[var(--da-accent-indigo)]' : ''}${selectedIndices.includes(i) ? ' border-[var(--da-accent-indigo)] bg-[color-mix(in_srgb,var(--da-accent-indigo)_8%,transparent)]' : ''}`}
                   onClick={() => compareMode && setSelectedIndices((prev) => {
                     if (prev.includes(i)) return prev.filter((x) => x !== i);
                     if (prev.length >= 2) return [prev[1], i];

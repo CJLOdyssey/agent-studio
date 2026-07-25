@@ -250,7 +250,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose when clicking modal content', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const modalContent = document.querySelector('.wsta-agent-form-modal');
+    const modalContent = document.querySelector('.bg-\\[var\\(--da-bg-secondary\\)\\]');
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -308,7 +308,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders modal with correct CSS class', () => {
     const { container } = render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(container.querySelector('.wsta-agent-form-modal')).toBeInTheDocument();
+    expect(container.querySelector('.modal-title')).toBeInTheDocument();
   });
 
   it('renders header with Bot icon', () => {

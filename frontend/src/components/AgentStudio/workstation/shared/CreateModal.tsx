@@ -25,7 +25,7 @@ export default function CreateModal({
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div
-        className={`bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] wsta-modal${large ? ' wsta-modal-lg' : ''}`}
+        className={`bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100vh/1.618)] overflow-hidden${large ? ' max-w-[var(--modal-l)]' : ''}`}
         role="dialog" aria-modal="true" aria-label={title}
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: width }}
