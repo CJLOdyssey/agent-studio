@@ -74,7 +74,7 @@ describe('SkillsTab', { tags: ['integration'] }, () => {
 
   it('calls onRemove when delete clicked in menu', () => {
     const { props } = renderTab();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     fireEvent.click(screen.getByText('删除'));
     expect(props.onRemove).toHaveBeenCalledWith('1');

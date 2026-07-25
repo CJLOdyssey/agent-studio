@@ -46,7 +46,7 @@ describe('Modal', { tags: ['unit'] }, () => {
         </Modal>
       </TestProviders>,
     );
-    const content = container.querySelector('.modal-content');
+    const content = container.querySelector('[role="dialog"]');
     expect(content).toHaveClass('extra-class');
     expect(content).toHaveAttribute('role', 'dialog');
     expect(content).toHaveAttribute('aria-modal', 'true');
@@ -96,7 +96,7 @@ describe('Modal', { tags: ['unit'] }, () => {
         </Modal>
       </TestProviders>,
     );
-    fireEvent.click(screen.getByText('Test').closest('.modal-overlay')!);
+    fireEvent.click(screen.getByText('Test').closest('[role="dialog"]')?.parentElement!);
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -143,7 +143,8 @@ describe('Modal', { tags: ['unit'] }, () => {
         </Modal>
       </TestProviders>,
     );
-    expect(container.querySelector('.modal-footer')).toBeNull();
+    // Footer div has border-t class; should not exist when footer is not provided
+    expect(container.querySelector('[role="dialog"] > [class*="border-t"]')).toBeNull();
   });
 
   it('applies custom className', () => {

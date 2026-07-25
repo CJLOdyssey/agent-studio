@@ -107,7 +107,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
       expect(screen.getByText('API 管理')).toBeInTheDocument();
     });
 
-    const closeBtn = document.querySelector('.modal-close');
+    const closeBtn = screen.getByRole('dialog').querySelector('button[aria-label]');
     expect(closeBtn).not.toBeNull();
     fireEvent.click(closeBtn!);
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -125,7 +125,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
       expect(screen.getByText('API 管理')).toBeInTheDocument();
     });
 
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = screen.getByRole('dialog').parentElement;
     expect(overlay).not.toBeNull();
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalledTimes(1);

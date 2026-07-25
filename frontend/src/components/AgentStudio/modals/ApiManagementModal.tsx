@@ -200,15 +200,15 @@ export default function ApiManagementModal({ onClose }: Props) {
 
   return (
     <Modal title="API 管理" onClose={onClose} className="api-modal">
-      <div className="settings-body">
-        <div className="settings-sidebar">
+      <div className="flex h-full min-h-0 overflow-hidden">
+        <div className="w-[160px] px-4 py-5 flex flex-col gap-1 overflow-hidden min-h-0">
           {TABS.map((tab) => {
             const Icon = TAB_ICONS[tab];
             const label = tab === 'providers' ? t('api.tab_provider') : tab === 'models' ? t('api.tab_model') : t('api.tab_usage');
             return (
               <button
                 key={tab}
-                className={`settings-tab ${activeTab === tab ? 'active' : ''}`}
+                className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)] ${activeTab === tab ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
                 <Icon size={16} />
@@ -217,7 +217,7 @@ export default function ApiManagementModal({ onClose }: Props) {
             );
           })}
         </div>
-        <div className="settings-content">
+        <div className="flex-1 px-6 py-5 overflow-y-auto min-h-0">
           {activeTab === 'providers' && (
             <ApiProviderTab
               keys={keys}

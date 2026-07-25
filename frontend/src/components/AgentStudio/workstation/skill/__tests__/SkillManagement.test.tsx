@@ -74,7 +74,8 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
   it('shows loading skeleton while fetching', () => {
     mockFetchAll.mockReturnValue(new Promise(() => {}));
     const { container } = render(<SkillManagement />, { wrapper: TestProviders });
-    expect(container.querySelector('.wsta-agent-mgmt')).toBeInTheDocument();
+    const statusElements = screen.getAllByRole('status');
+    expect(statusElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it('selects a row checkbox', async () => {

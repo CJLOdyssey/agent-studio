@@ -116,7 +116,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when X button clicked', () => {
     const onClose = vi.fn();
     render(<ToolFormModal {...baseProps} onClose={onClose} />);
-    const closeBtn = document.querySelector('.modal-close') as HTMLElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -124,7 +124,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when overlay clicked', () => {
     const onClose = vi.fn();
     render(<ToolFormModal {...baseProps} onClose={onClose} />);
-    const overlay = document.querySelector('.modal-overlay') as HTMLElement;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -132,7 +132,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose when modal content clicked', () => {
     const onClose = vi.fn();
     render(<ToolFormModal {...baseProps} onClose={onClose} />);
-    const modal = document.querySelector('.wsta-modal') as HTMLElement;
+    const modal = document.querySelector('.fixed.inset-0 > div') as HTMLElement;
     fireEvent.click(modal);
     expect(onClose).not.toHaveBeenCalled();
   });

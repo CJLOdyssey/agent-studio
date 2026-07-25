@@ -142,16 +142,16 @@ export default function LoginModal({ onClose }: Props) {
 
   if (view === 'forgot' || view === 'reset') {
     return (
-      <div className="modal-overlay" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
-        <div className="modal-content" style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
+      <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
+        <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
           onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header" style={{ justifyContent: 'center', position: 'relative' }}>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]" style={{ justifyContent: 'center', position: 'relative' }}>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>重置密码</h3>
-<button className="modal-close" onClick={onClose} aria-label="关闭" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
+<button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label="关闭" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
             <X size={18} />
           </button>
           </div>
-          <div className="modal-body" style={{ padding: 24 }}>
+          <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ padding: 24 }}>
             <ForgotPasswordForm
               onSendCode={async (email) => { await forgotPassword(email); setEmail(email); }}
               onReset={async (email, code, newPassword) => { await resetPassword(email, code, newPassword); switchView('login'); }}
@@ -167,9 +167,9 @@ export default function LoginModal({ onClose }: Props) {
   const isRegister = view === 'register';
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
+    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
       <div
-        className="modal-content"
+        className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]"
         style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -202,7 +202,7 @@ export default function LoginModal({ onClose }: Props) {
           ))}
         </div>
 
-        <div className="modal-body" style={{ padding: '20px 24px 24px' }}>
+        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ padding: '20px 24px 24px' }}>
           <form onSubmit={handleSubmit}>
             {isRegister ? (
               <>

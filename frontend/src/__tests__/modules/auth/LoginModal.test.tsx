@@ -55,14 +55,14 @@ describe('LoginModal', { tags: ['unit'] }, () => {
 
   it('calls onClose when clicking overlay', () => {
     render(<LoginModal onClose={onClose} />);
-    const overlay = document.querySelector('.modal-overlay')!;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });
 
   it('does not call onClose when clicking modal content', () => {
     render(<LoginModal onClose={onClose} />);
-    const content = document.querySelector('.modal-content')!;
+    const content = document.querySelector('.fixed.inset-0 > div')!;
     fireEvent.click(content);
     expect(onClose).not.toHaveBeenCalled();
   });

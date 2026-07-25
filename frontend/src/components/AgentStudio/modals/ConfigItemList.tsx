@@ -45,7 +45,7 @@ function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRenam
 
   return (
     <>
-      <button ref={btnRef} className="agent-config-item-action" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+      <button ref={btnRef} className="inline-flex items-center justify-center p-1 rounded border-none bg-transparent text-[var(--da-text-muted)] cursor-pointer hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
         <MoreVertical size={14} />
       </button>
       {open && createPortal(
@@ -96,23 +96,23 @@ export default function ConfigItemList<T extends ListItem>({
           </button>
         </div>
       )}
-      <div className="agent-config-items">
+      <div className="flex flex-col gap-2">
         {items.map((item) => (
-          <div key={item.id} className={`agent-config-item ${item.enabled ? 'enabled' : ''}`}>
-            <div className="agent-config-item-info">
+          <div key={item.id} className={`flex items-center justify-between px-3 py-[10px] bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-lg transition-[background] duration-150 hover:bg-[var(--da-bg-hover)] ${item.enabled ? '!bg-[color-mix(in_srgb,var(--da-accent-indigo)_8%,transparent)] !border-[color-mix(in_srgb,var(--da-accent-indigo)_20%,transparent)]' : ''}`}>
+            <div className="flex items-center gap-3">
               <input type="checkbox" checked={item.enabled} onChange={() => onToggle(item.id)} />
-              <div className="agent-config-item-details">
+              <div className="flex flex-col">
                 {editingId === item.id ? (
                   <ConfigItemEdit item={item} onUpdate={onUpdate} onFinishEdit={onFinishEdit} />
                 ) : (
                   <>
-                    <span className="agent-config-item-name">{item.name}</span>
-                    {item.description && <span className="agent-config-item-desc">{item.description}</span>}
+                    <span className="text-sm font-medium text-[var(--da-text-primary)]">{item.name}</span>
+                    {item.description && <span className="text-xs text-[var(--da-text-muted)]">{item.description}</span>}
                   </>
                 )}
               </div>
             </div>
-            <div className="agent-config-item-actions">
+            <div className="flex items-center gap-2">
               {editingId !== item.id && (
                 <ItemMenu
                   onEdit={onEditFull ? () => onEditFull(item) : undefined}
@@ -126,21 +126,21 @@ export default function ConfigItemList<T extends ListItem>({
         {presets
           .filter((p) => !items.some((i) => i.id === p.id))
           .map((p) => (
-            <div key={p.id} className="agent-config-item">
-              <div className="agent-config-item-info">
-                <div className="agent-config-item-details">
-                  <span className="agent-config-item-name">{p.name}</span>
-                  {p.description && <span className="agent-config-item-desc">{p.description}</span>}
+            <div key={p.id} className="flex items-center justify-between px-3 py-[10px] bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-lg transition-[background] duration-150 hover:bg-[var(--da-bg-hover)]">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-[var(--da-text-primary)]">{p.name}</span>
+                  {p.description && <span className="text-xs text-[var(--da-text-muted)]">{p.description}</span>}
                 </div>
               </div>
-              <div className="agent-config-item-actions">
-                <button className="agent-config-item-action" onClick={() => onToggle(p.id)}>
+              <div className="flex items-center gap-2">
+                <button className="inline-flex items-center justify-center p-1 rounded border-none bg-transparent text-[var(--da-text-muted)] cursor-pointer hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={() => onToggle(p.id)}>
                   <Plus size={14} />
                 </button>
               </div>
             </div>
           ))}
-        {items.length === 0 && presets.length === 0 && <div className="agent-config-empty">{emptyLabel}</div>}
+        {items.length === 0 && presets.length === 0 && <div className="text-center text-[var(--da-text-muted)] text-sm py-4">{emptyLabel}</div>}
       </div>
     </div>
   );
@@ -158,7 +158,7 @@ function ConfigItemEdit<T extends ListItem>({
   return (
     <>
       <input
-        className="agent-config-item-input"
+        className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm outline-none"
         value={item.name}
         autoFocus
         onChange={(e) => onUpdate(item.id, e.target.value, item.description || '')}
@@ -166,7 +166,7 @@ function ConfigItemEdit<T extends ListItem>({
         onKeyDown={(e) => e.key === 'Enter' && onFinishEdit()}
       />
       <input
-        className="agent-config-item-input"
+        className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm outline-none"
         value={item.description || ''}
         onChange={(e) => onUpdate(item.id, item.name, e.target.value)}
         onBlur={onFinishEdit}

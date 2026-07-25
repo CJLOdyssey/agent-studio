@@ -61,14 +61,14 @@ describe('CreateModal', { tags: ['unit'] }, () => {
   it('closes on Escape key', () => {
     const onClose = vi.fn();
     render(<CreateModal title="Modal" onClose={onClose} onSave={vi.fn()}><p>content</p></CreateModal>);
-    fireEvent.keyDown(document.querySelector('.modal-overlay')!, { key: 'Escape' });
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('does not close on non-Escape key', () => {
     const onClose = vi.fn();
     render(<CreateModal title="Modal" onClose={onClose} onSave={vi.fn()}><p>content</p></CreateModal>);
-    fireEvent.keyDown(document.querySelector('.modal-overlay')!, { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
   });
 

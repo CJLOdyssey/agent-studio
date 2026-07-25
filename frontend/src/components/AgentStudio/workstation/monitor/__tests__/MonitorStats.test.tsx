@@ -39,7 +39,7 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
     const { container } = render(
       <MonitorStats stats={{ agents: 5, prompts: 10, tools: 3, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }} statCards={[]} />,
     );
-    expect(container.querySelector('.wsta-monitor-stat-card')).toBeNull();
+    expect(screen.queryByText('Agents')).not.toBeInTheDocument();
   });
 
   it('calls onNavigate when stat card clicked', () => {
@@ -47,7 +47,7 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
     render(
       <MonitorStats stats={{ agents: 5, prompts: 10, tools: 3, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }} statCards={statCards} onNavigate={onNavigate} />,
     );
-    fireEvent.click(screen.getByText('Agents').closest('.wsta-monitor-stat-card')!);
+    fireEvent.click(screen.getByText('Agents').closest('[class*="flex items-center gap-3"]')!);
     expect(onNavigate).toHaveBeenCalledWith('agents');
   });
 
@@ -66,14 +66,14 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
     render(
       <MonitorStats stats={{ agents: 5, prompts: 10, tools: 3, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }} statCards={statCards} />,
     );
-    expect(() => fireEvent.click(screen.getByText('Agents').closest('.wsta-monitor-stat-card')!)).not.toThrow();
+    expect(() => fireEvent.click(screen.getByText('Agents').closest('[class*="flex items-center gap-3"]')!)).not.toThrow();
   });
 
   it('applies hover styles on mouse enter', () => {
     render(
       <MonitorStats stats={{ agents: 5, prompts: 10, tools: 3, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }} statCards={statCards} />,
     );
-    const card = screen.getByText('Agents').closest('.wsta-monitor-stat-card')! as HTMLElement;
+    const card = screen.getByText('Agents').closest('[class*="flex items-center gap-3"]')! as HTMLElement;
     fireEvent.mouseEnter(card);
     expect(card.style.transform).toBe('translateY(-2px)');
   });
@@ -82,7 +82,7 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
     render(
       <MonitorStats stats={{ agents: 5, prompts: 10, tools: 3, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }} statCards={statCards} />,
     );
-    const card = screen.getByText('Agents').closest('.wsta-monitor-stat-card')! as HTMLElement;
+    const card = screen.getByText('Agents').closest('[class*="flex items-center gap-3"]')! as HTMLElement;
     fireEvent.mouseEnter(card);
     expect(card.style.transform).toBe('translateY(-2px)');
     fireEvent.mouseLeave(card);

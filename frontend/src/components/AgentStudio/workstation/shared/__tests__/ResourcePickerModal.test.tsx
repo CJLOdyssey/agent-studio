@@ -108,7 +108,7 @@ describe('ResourcePickerModal', { tags: ['unit'] }, () => {
   it('closes on overlay click', () => {
     const onClose = vi.fn();
     render(<ResourcePickerModal {...defaultProps} onClose={onClose} />);
-    const overlay = screen.getByText('Pick Items').closest('.modal-overlay')!;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });

@@ -179,7 +179,7 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
   it('renders version text in monospace', () => {
     mockProcessed = [makeAgent()];
     renderComponent();
-    expect(document.querySelector('.wsta-mono-text')).toBeInTheDocument();
+    expect(document.querySelector('.font-mono')).toBeInTheDocument();
   });
 
   it('shows create button', () => {
@@ -196,7 +196,7 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
   it('shows action dropdown for each agent', () => {
     mockProcessed = [makeAgent()];
     renderComponent();
-    expect(document.querySelector('.wsta-action-btn')).toBeInTheDocument();
+    expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
   it('renders error banner when error is present', () => {

@@ -76,7 +76,7 @@ describe('ToolsTab', { tags: ['integration'] }, () => {
 
   it('opens three-dot menu with rename and delete options', () => {
     renderTab();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     expect(screen.getByText('重命名')).toBeInTheDocument();
     expect(screen.getByText('删除')).toBeInTheDocument();
@@ -85,14 +85,14 @@ describe('ToolsTab', { tags: ['integration'] }, () => {
   it('shows edit option when onEditFull is provided', () => {
     const onEditFull = vi.fn();
     renderTab({ onEditFull });
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     expect(screen.getByText('编辑')).toBeInTheDocument();
   });
 
   it('calls onRemove when delete clicked in menu', () => {
     const { props } = renderTab();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     fireEvent.click(screen.getByText('删除'));
     expect(props.onRemove).toHaveBeenCalledWith('1');

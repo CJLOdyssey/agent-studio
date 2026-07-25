@@ -138,7 +138,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
-    expect(document.querySelector('.wsta-pagination')).toBeInTheDocument();
+    expect(screen.getByText(/共 \d+ 条/)).toBeInTheDocument();
   });
 
   it('renders level filter select', async () => {

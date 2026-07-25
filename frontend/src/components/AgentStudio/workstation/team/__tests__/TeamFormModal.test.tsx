@@ -126,7 +126,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -136,7 +136,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(overlay!, { key: 'Tab' });
@@ -148,7 +148,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -158,7 +158,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const modalContent = document.querySelector('.modal-content');
+    const modalContent = document.querySelector('.fixed.inset-0 > div') as HTMLElement;
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -188,7 +188,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const closeBtn = document.querySelector('.modal-close') as HTMLButtonElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLButtonElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -238,15 +238,15 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(container.querySelector('.wsta-form-section-title')).toBeInTheDocument();
+    expect(container.querySelector('.text-sm.font-semibold')).toBeInTheDocument();
   });
 
   it('renders modal with correct CSS class', () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(container.querySelector('.wsta-modal')).toBeInTheDocument();
-    expect(container.querySelector('.wsta-modal-sm')).toBeInTheDocument();
+    expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument();
+    expect(container.querySelector('[class*="max-w-\\[var\\(--modal-sm\\)\\]"]')).toBeInTheDocument();
   });
 
   it('renders team avatar icon in header', () => {

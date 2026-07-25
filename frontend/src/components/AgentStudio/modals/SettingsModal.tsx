@@ -25,7 +25,7 @@ export default function SettingsModal({ onClose }: Props) {
     <Modal
       title={t('settings.title')}
       onClose={onClose}
-      className="settings-modal"
+      className="w-[970px] h-[600px] flex flex-col overflow-hidden"
       footer={
         <>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose}>
@@ -37,8 +37,8 @@ export default function SettingsModal({ onClose }: Props) {
         </>
       }
     >
-      <div className="settings-body">
-        <div className="settings-sidebar">
+      <div className="flex h-full min-h-0 overflow-hidden">
+        <div className="w-[160px] px-4 py-5 flex flex-col gap-1 overflow-hidden min-h-0">
           {(
             [
               ['general', Globe],
@@ -47,7 +47,7 @@ export default function SettingsModal({ onClose }: Props) {
           ).map(([tab, Icon]) => (
             <button
               key={tab}
-              className={`settings-tab ${activeTab === tab ? 'active' : ''}`}
+              className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)] ${activeTab === tab ? 'active' : ''}`}
               onClick={() => setActiveTab(tab as SettingsTab)}
             >
               <Icon size={16} />
@@ -56,18 +56,18 @@ export default function SettingsModal({ onClose }: Props) {
           ))}
         </div>
 
-        <div className="settings-content">
+        <div className="flex-1 px-6 py-5 overflow-y-auto min-h-0">
           {activeTab === 'general' && (
             <div className="settings-section">
               <h4>{t('settings.general')}</h4>
 
-              <div className="settings-item">
-                <div className="settings-item-info">
+              <div className="flex items-center justify-between py-4">
+                <div className="flex-1">
                   <label>{t('settings.language')}</label>
-                  <span className="settings-item-desc">{t('settings.languageDesc')}</span>
+                  <span className="text-xs text-[var(--da-text-muted)]">{t('settings.languageDesc')}</span>
                 </div>
                 <select
-                  className="settings-select"
+                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--da-accent-indigo)]"
                   value={i18n.language}
                   onChange={(e) => changeLanguage(e.target.value)}
                 >
@@ -76,15 +76,15 @@ export default function SettingsModal({ onClose }: Props) {
                 </select>
               </div>
 
-              <div className="settings-divider"></div>
+              <div className="h-px bg-[var(--da-border-subtle)] my-5"></div>
               <h4>{t('settings.appearance')}</h4>
-              <div className="settings-item">
-                <div className="settings-item-info">
+              <div className="flex items-center justify-between py-4">
+                <div className="flex-1">
                   <label>{t('settings.theme')}</label>
-                  <span className="settings-item-desc">{t('settings.themeDesc')}</span>
+                  <span className="text-xs text-[var(--da-text-muted)]">{t('settings.themeDesc')}</span>
                 </div>
                 <select
-                  className="settings-select"
+                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--da-accent-indigo)]"
                   value={settings.theme}
                   onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
                 >
@@ -93,10 +93,10 @@ export default function SettingsModal({ onClose }: Props) {
                   <option value="system">{t('settings.system')}</option>
                 </select>
               </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
+              <div className="flex items-center justify-between py-4">
+                <div className="flex-1">
                   <label>{t('settings.fontSize')}</label>
-                  <span className="settings-item-desc">{t('settings.fontSizeDesc')}</span>
+                  <span className="text-xs text-[var(--da-text-muted)]">{t('settings.fontSizeDesc')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -123,15 +123,15 @@ export default function SettingsModal({ onClose }: Props) {
                 </div>
               </div>
 
-              <div className="settings-divider"></div>
+              <div className="h-px bg-[var(--da-border-subtle)] my-5"></div>
               <h4>AI Chat</h4>
-              <div className="settings-item">
-                <div className="settings-item-info">
+              <div className="flex items-center justify-between py-4">
+                <div className="flex-1">
                   <label>{t('settings.sendMode')}</label>
-                  <span className="settings-item-desc">{t('settings.sendModeDesc')}</span>
+                  <span className="text-xs text-[var(--da-text-muted)]">{t('settings.sendModeDesc')}</span>
                 </div>
                 <select
-                  className="settings-select"
+                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--da-accent-indigo)]"
                   value={settings.sendMode}
                   onChange={(e) => updateSettings({ sendMode: e.target.value as 'enter' | 'ctrl-enter' })}
                 >
@@ -139,17 +139,17 @@ export default function SettingsModal({ onClose }: Props) {
                   <option value="ctrl-enter">Ctrl + Enter</option>
                 </select>
               </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
+              <div className="flex items-center justify-between py-4">
+                <div className="flex-1">
                   <label>{t('settings.autoSave')}</label>
-                  <span className="settings-item-desc">{t('settings.autoSaveDesc')}</span>
+                  <span className="text-xs text-[var(--da-text-muted)]">{t('settings.autoSaveDesc')}</span>
                 </div>
                 <ToggleSwitch checked={settings.autoSave} onChange={(v) => updateSettings({ autoSave: v })} />
               </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
+              <div className="flex items-center justify-between py-4">
+                <div className="flex-1">
                   <label>{t('settings.streamOutput')}</label>
-                  <span className="settings-item-desc">{t('settings.streamOutputDesc')}</span>
+                  <span className="text-xs text-[var(--da-text-muted)]">{t('settings.streamOutputDesc')}</span>
                 </div>
                 <ToggleSwitch checked={settings.streamOutput} onChange={(v) => updateSettings({ streamOutput: v })} />
               </div>
@@ -159,7 +159,7 @@ export default function SettingsModal({ onClose }: Props) {
           {activeTab === 'about' && (
             <div className="settings-section">
               <h4>{t('settings.about')}</h4>
-              <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0, padding: 0, border: 'none' }}>
+              <div className="flex items-center justify-between py-4" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0, padding: 0, border: 'none' }}>
 
                 {/* App identity */}
                 <div style={{

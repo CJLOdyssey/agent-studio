@@ -174,7 +174,7 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
       />,
     );
 
-    const overlay = container.querySelector('.modal-overlay');
+    const overlay = container.querySelector('[role="dialog"]')?.parentElement;
     expect(overlay).toBeDefined();
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalled();
@@ -192,7 +192,7 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
       />,
     );
 
-    const modalContent = container.querySelector('.modal-content');
+    const modalContent = container.querySelector('[role="dialog"]');
     expect(modalContent).toBeDefined();
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
@@ -210,7 +210,7 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
       />,
     );
 
-    const closeBtn = container.querySelector('.modal-close');
+    const closeBtn = container.querySelector('[role="dialog"] button[aria-label]');
     expect(closeBtn).toBeDefined();
     fireEvent.click(closeBtn!);
     expect(onClose).toHaveBeenCalled();

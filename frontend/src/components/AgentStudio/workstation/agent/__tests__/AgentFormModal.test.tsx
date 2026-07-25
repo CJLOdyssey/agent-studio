@@ -218,7 +218,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when clicking X button', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const closeBtn = document.querySelector('.modal-close') as HTMLButtonElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLButtonElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -242,7 +242,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when clicking overlay', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -258,7 +258,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('calls onClose on Escape key', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -266,7 +266,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose for non-Escape keys', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -296,8 +296,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders required asterisk on name field', () => {
     render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    const labels = document.querySelectorAll('.wsta-label');
-    const nameLabel = labels[0];
+    const nameLabel = screen.getByText((c) => c.startsWith('agent.form_name'));
     expect(nameLabel.textContent).toContain('*');
   });
 

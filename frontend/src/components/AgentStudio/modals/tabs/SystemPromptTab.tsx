@@ -15,8 +15,8 @@ export const SystemPromptTab = forwardRef(function SystemPromptTab(
   const { t } = useTranslation();
   return (
     <div className="mb-4">
-      <div className="agent-config-list-bar">
-        <button className="agent-config-list-bar-btn" onClick={onAddFromWorkstation}>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <button className="inline-flex items-center gap-[5px] px-[10px] py-[5px] border border-[var(--da-border)] rounded-md bg-[var(--da-bg-surface)] text-[var(--da-text-muted)] text-xs cursor-pointer transition-[background,border-color,color] duration-150 ease hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-accent-indigo)] hover:text-[var(--da-text-primary)] [&>svg]:opacity-60 hover:[&>svg]:opacity-100" onClick={onAddFromWorkstation}>
           <Plus size={14} />
           {t('workstation.add')}
         </button>
@@ -29,7 +29,7 @@ export const SystemPromptTab = forwardRef(function SystemPromptTab(
         className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm resize-y font-[inherit] transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none"
         rows={6}
       />
-      <div className="agent-config-char-count">{value.length} {t('workstation.chars')}</div>
+      <div className="text-xs text-[var(--da-text-muted)] text-right mt-1 opacity-60">{value.length} {t('workstation.chars')}</div>
       <p className="text-xs text-[var(--da-text-muted)] mt-2">{t('workstation.systemPromptDesc')}</p>
     </div>
   );

@@ -161,7 +161,7 @@ describe('PromptManagement', { tags: ['unit'] }, () => {
     mockFetchAll.mockResolvedValue([makePrompt()]);
     render(<PromptManagement />, { wrapper: TestProviders });
     await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
-    expect(document.querySelector('.wsta-action-btn')).toBeInTheDocument();
+    expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
   it('wraps content in ErrorBoundary', async () => {

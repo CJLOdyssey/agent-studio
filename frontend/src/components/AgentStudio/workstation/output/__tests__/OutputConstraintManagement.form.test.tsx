@@ -102,7 +102,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.formErrors = [];
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.modal-overlay')).toBeDefined();
+    expect(container.querySelector('[role="dialog"]')).toBeDefined();
   });
 
   it('does not render form modal when isFormOpen is false', () => {
@@ -113,7 +113,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.isFormOpen = false;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.modal-overlay')).toBeNull();
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('renders form modal with editingItem for edit mode', () => {

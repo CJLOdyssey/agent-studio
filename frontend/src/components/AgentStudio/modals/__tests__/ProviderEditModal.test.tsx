@@ -99,7 +99,7 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
   it('calls onClose when overlay is clicked', async () => {
     const onClose = vi.fn();
     renderModal({ onClose });
-    const overlay = document.querySelector('.modal-overlay')!;
+    const overlay = screen.getByRole('dialog').parentElement!;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });
@@ -144,7 +144,7 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
   it('stops propagation on modal content click', async () => {
     const onClose = vi.fn();
     renderModal({ onClose });
-    const content = document.querySelector('.modal-content')!;
+    const content = document.querySelector('[role="dialog"]')!;
     fireEvent.click(content);
     expect(onClose).not.toHaveBeenCalled();
   });

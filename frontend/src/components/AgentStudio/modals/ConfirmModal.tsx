@@ -25,7 +25,7 @@ export default function ConfirmModal({
     <Modal
       title={title}
       onClose={onCancel}
-      className="confirm-modal"
+      className="w-[var(--modal-sm)] h-[var(--modal-height)] overflow-hidden"
       footer={
         <>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onCancel}>
@@ -43,7 +43,7 @@ export default function ConfirmModal({
         </>
       }
     >
-      <div className="confirm-body">
+      <div className="flex items-start gap-4 p-6">
         {danger ? (
           <OctagonX size={24} className="text-[var(--icon-status-error)]" aria-label={t('confirm.danger')} />
         ) : (

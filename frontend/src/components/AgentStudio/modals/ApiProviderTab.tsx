@@ -51,8 +51,8 @@ export default function ApiProviderTab({
   };
 
   return (
-    <div className="api-providers-tab">
-      <div className="api-section-header">
+    <div className="">
+      <div className="flex items-center justify-between mb-4">
         <h4>API Key {t('api.manage')}</h4>
         <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={onAdd}>
           <Plus size={14} />
@@ -60,22 +60,22 @@ export default function ApiProviderTab({
         </button>
       </div>
       {error && (
-        <div className="api-error-banner">
-          <AlertCircle size={16} className="api-error-icon" />
-          <span className="api-error-text">{error}</span>
-          <button className="api-error-close" onClick={onDismissError}>
+        <div className="bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] border border-[color-mix(in_srgb,var(--da-accent-red)_30%,transparent)] rounded-lg py-2 px-3 mb-3 flex items-center gap-2">
+          <AlertCircle size={16} className="text-[var(--da-accent-red)] shrink-0" />
+          <span className="text-[var(--da-accent-red)] text-sm">{error}</span>
+          <button className="ml-auto bg-transparent border-none text-[var(--da-accent-red)] cursor-pointer px-1 py-0.5 text-base leading-none hover:text-[var(--da-text-on-accent)]" onClick={onDismissError}>
             ✕
           </button>
         </div>
       )}
-      <p className="api-hint-row">
+      <p className="flex items-center gap-1.5 mb-3">
         {t('api.encryptHint')}
       </p>
-      <div className="api-filter-bar">
+      <div className="flex gap-1.5 mb-4">
         {FILTERS.map((type) => (
           <button
             key={type}
-            className={`api-filter-btn ${usageTypeFilter === type ? 'active' : ''}`}
+            className={`px-3.5 py-[5px] border border-[var(--da-border)] rounded-md bg-transparent text-[var(--da-text-muted)] text-xs font-[450] cursor-pointer transition-all duration-150 hover:border-[var(--da-accent-indigo)] hover:text-[var(--da-text-primary)] ${usageTypeFilter === type ? 'active' : ''}`}
             onClick={() => onFilterChange(type)}
           >
             {typeLabel(type)}
@@ -83,12 +83,12 @@ export default function ApiProviderTab({
         ))}
       </div>
       {loading ? (
-        <div className="api-empty-state">
+        <div className="flex flex-col items-center justify-center py-8 text-[var(--da-text-muted)] text-center">
           <Loader2 size={32} className="animate-spin" />
           <p>{t('common.loading')}</p>
         </div>
       ) : keys.length === 0 ? (
-        <div className="api-empty-state">
+        <div className="flex flex-col items-center justify-center py-8 text-[var(--da-text-muted)] text-center">
           <Key size={32} />
           <p>
             {t('api.noKeys')}
@@ -97,24 +97,24 @@ export default function ApiProviderTab({
           </p>
         </div>
       ) : (
-        <div className="api-providers-list">
+        <div className="flex flex-col gap-3">
           {keys.filter((k) => usageTypeFilter === 'all' || k.usage_type === usageTypeFilter).map((key) => (
-            <div key={key.id} className={`api-provider-card ${key.is_active ? 'active' : ''}`}>
-              <div className="api-provider-header">
-                <div className="api-provider-info">
-                  <div className="api-provider-name">
+            <div key={key.id} className={`bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-lg p-4 transition-[border-color] duration-150 ${key.is_active ? 'active' : ''}`}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-[var(--da-font-size-base)] font-semibold text-[var(--da-text-primary)]">
                     {key.label || key.provider}
-                    <span className={`api-type-badge api-type-${key.usage_type || 'llm'}`}>
+                    <span className={`inline-flex items-center px-[7px] py-px rounded text-[10px] font-medium leading-[1.5] tracking-[0.02em] uppercase ml-2 api-type-${key.usage_type || 'llm'}`}>
                       {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
                     </span>
                     {key.is_active && <CheckCircle2 size={14} className="text-[var(--da-accent-emerald)]" />}
                     {!key.is_active && <AlertCircle size={14} className="text-[var(--icon-status-error)]" />}
                   </div>
-                  <div className="api-provider-url">
+                  <div className="text-xs text-[var(--da-text-muted)] mt-0.5 truncate">
                     {key.provider} {key.base_url ? `· ${key.base_url}` : ''}
                   </div>
                 </div>
-                <div className="api-provider-actions">
+                <div className="flex items-center gap-2 shrink-0">
                   <ToggleSwitch
                     checked={key.is_active}
                     size="sm"
@@ -135,12 +135,12 @@ export default function ApiProviderTab({
                   </button>
                 </div>
               </div>
-              <div className="api-key-row">
+              <div className="flex items-center gap-3">
                 <label>Key</label>
-                <div className="api-key-display">
+                <div className="flex items-center gap-2 [&>code]:text-sm [&>code]:text-[var(--da-text-primary)] [&>code]:bg-[var(--da-bg-elevated)] [&>code]:px-2 [&>code]:py-0.5 [&>code]:rounded">
                   <code>{key.key_masked}</code>
                   <button
-                    className="api-key-toggle"
+                    className="p-2 bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--da-text-primary)]"
                     onClick={() => onToggleVisibility(key.id)}
                     aria-label="Show full key hint"
                   >
@@ -149,7 +149,7 @@ export default function ApiProviderTab({
                 </div>
               </div>
               {key.last_used_at && (
-                <div className="api-key-meta">{t('api.lastUsed')}: {new Date(key.last_used_at).toLocaleString()}</div>
+                <div className="text-xs text-[var(--da-text-muted)] mt-2">{t('api.lastUsed')}: {new Date(key.last_used_at).toLocaleString()}</div>
               )}
             </div>
           ))}

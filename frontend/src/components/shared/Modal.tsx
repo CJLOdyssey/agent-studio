@@ -52,22 +52,24 @@ export default function Modal({ title, onClose, children, footer, className = ''
   }, [onClose]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div
-        className={`modal-content ${className}`}
+        className={`bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] ${className}`}
         onClick={(e) => e.stopPropagation()}
         ref={contentRef}
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-header">
-          {typeof title === 'string' ? <h3>{title}</h3> : title}
-          <button className="modal-close" onClick={onClose} aria-label="关闭">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
+          {typeof title === 'string'
+            ? <h3 className="text-[var(--da-font-size-lg)] font-semibold text-[var(--da-text-primary)] m-0">{title}</h3>
+            : title}
+          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label="关闭">
             <X size={18} />
           </button>
         </div>
-        <div className="modal-body">{children}</div>
-        {footer && <div className="modal-footer">{footer}</div>}
+        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">{children}</div>
+        {footer && <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">{footer}</div>}
       </div>
     </div>
   );

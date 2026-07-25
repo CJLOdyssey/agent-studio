@@ -11,14 +11,14 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Props
   const { t } = useTranslation();
 
   return (
-    <div className="api-models-tab">
-      <div className="api-section-header">
+    <div className="">
+      <div className="flex items-center justify-between mb-4">
         <h4>{t('api.defaultModel')}</h4>
       </div>
-      <p className="api-hint">{t('api.selectModel')}</p>
-      <div className="api-models-list">
+      <p className="text-sm text-[var(--da-text-muted)] m-0 mb-4">{t('api.selectModel')}</p>
+      <div className="flex flex-col gap-2">
         {models.map(({ model }) => (
-          <label key={model} className="api-model-item">
+          <label key={model} className="flex items-center gap-3 p-3 rounded-md cursor-pointer transition-[background] duration-150 hover:bg-[var(--da-bg-hover)]">
             <input
               type="radio"
               name="defaultModel"
@@ -26,13 +26,13 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Props
               checked={selectedModel === model}
               onChange={() => onSelect(model)}
             />
-            <div className="api-model-info">
-              <span className="api-model-name">{model}</span>
+            <div className="flex flex-col">
+              <span className="text-sm text-[var(--da-text-primary)] font-[var(--font-mono)]">{model}</span>
             </div>
           </label>
         ))}
         {models.length === 0 && (
-          <div className="api-empty-state">
+          <div className="flex flex-col items-center justify-center py-8 text-[var(--da-text-muted)] text-center">
             <AlertCircle size={32} />
             <p>请先在"提供商"标签页配置至少一个有效的 API Key</p>
           </div>

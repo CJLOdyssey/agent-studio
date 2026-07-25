@@ -73,14 +73,14 @@ describe('MCPTab', { tags: ['integration'] }, () => {
 
   it('opens three-dot menu with delete option', () => {
     renderTab();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     expect(screen.getByText('删除')).toBeInTheDocument();
   });
 
   it('calls onRemove when delete clicked', () => {
     const { props } = renderTab();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     fireEvent.click(screen.getByText('删除'));
     expect(props.onRemove).toHaveBeenCalledWith('1');

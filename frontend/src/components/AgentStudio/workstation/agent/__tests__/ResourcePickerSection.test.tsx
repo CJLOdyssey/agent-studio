@@ -106,12 +106,12 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('renders resource grid', () => {
     const { container } = renderComponent();
-    expect(container.querySelector('.wsta-resource-grid')).toBeInTheDocument();
+    expect(container.querySelector('.grid.grid-cols-2')).toBeInTheDocument();
   });
 
   it('renders form section wrapper', () => {
     const { container } = renderComponent();
-    expect(container.querySelector('.wsta-form-section')).toBeInTheDocument();
+    expect(container.querySelector('[class*="border-t border"]')).toBeInTheDocument();
   });
 
   it('renders chips when tools are selected', () => {
@@ -134,7 +134,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
     const setFormData = vi.fn();
     const formData = { ...baseFormData, toolIds: ['t1'] };
     renderComponent({ setFormData, formData, selectedTools: [{ id: 't1', name: 'Tool A' }] });
-    const removeBtns = document.querySelectorAll('.wsta-picker-chip-remove');
+    const removeBtns = document.querySelectorAll('button.cursor-pointer[class*="text-\\[var\\(--da-text-muted\\)\\]"]');
     expect(removeBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(removeBtns[0]);
     expect(setFormData).toHaveBeenCalled();

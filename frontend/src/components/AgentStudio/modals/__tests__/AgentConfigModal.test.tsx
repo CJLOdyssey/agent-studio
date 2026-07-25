@@ -157,7 +157,8 @@ describe('AgentConfigModal', { tags: ['integration'] }, () => {
 
   it('calls onClose when overlay clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('workstation.agentManage').closest('.modal-overlay')!);
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
+    fireEvent.click(overlay);
     expect(props.onClose).toHaveBeenCalled();
   });
 

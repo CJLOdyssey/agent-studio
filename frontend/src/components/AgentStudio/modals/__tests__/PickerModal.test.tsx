@@ -27,7 +27,7 @@ describe('PickerModal', { tags: ['integration'] }, () => {
   it('calls onClose when overlay is clicked', () => {
     const onClose = vi.fn();
     render(<PickerModal title="Select" items={items} onSelect={vi.fn()} onClose={onClose} />);
-    const overlay = document.querySelector('.modal-overlay')!;
+    const overlay = screen.getByRole('dialog').parentElement!;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });
