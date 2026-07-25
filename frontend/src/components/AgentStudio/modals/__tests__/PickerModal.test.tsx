@@ -35,7 +35,7 @@ describe('PickerModal', { tags: ['integration'] }, () => {
   it('calls onClose when X button is clicked', () => {
     const onClose = vi.fn();
     render(<PickerModal title="Select" items={items} onSelect={vi.fn()} onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: '' }));
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
     expect(onClose).toHaveBeenCalled();
   });
 
