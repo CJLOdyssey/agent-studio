@@ -6,6 +6,7 @@ import ProviderEditModal from './ProviderEditModal';
 import ApiProviderTab from './ApiProviderTab';
 import ApiUsageTab from './ApiUsageTab';
 import ModelSelector from './ModelSelector';
+import ConfirmModal from './ConfirmModal';
 import * as api from '../../../api/client';
 import type { KeyItem } from '../../../api/client';
 import Logger from '../../../utils/logger';
@@ -35,6 +36,7 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [usageTypeFilter, setUsageTypeFilter] = useState<'all' | 'llm' | 'embedding' | 'both'>('all');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadKeys = async () => {
     try {
@@ -139,17 +141,22 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   };
 
-  const handleDeleteKey = async (id: string) => {
-    if (!confirm('确定要删除此 API Key 吗？此操作不可撤销。')) return;
+  const handleDeleteKey = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDeleteId) return;
     setError(null);
     try {
-      await api.deleteKey(id);
+      await api.deleteKey(confirmDeleteId);
       await loadKeys();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.deleteFailed');
       setError(msg);
       Logger.error('Failed to delete API key', err);
     }
+    setConfirmDeleteId(null);
   };
 
   const handleTestConnection = async (key: KeyItem) => {
@@ -208,7 +215,7 @@ export default function ApiManagementModal({ onClose }: Props) {
             return (
               <button
                 key={tab}
-                className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] ${activeTab === tab ? 'active' : ''}`}
+                className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] ${activeTab === tab ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)]' : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
                 <Icon size={16} />
@@ -288,6 +295,15 @@ export default function ApiManagementModal({ onClose }: Props) {
           onClose={() => {
             if (!saving) setEditingKey(null);
           }}
+        />
+      )}
+      {confirmDeleteId && (
+        <ConfirmModal
+          title={t('confirm.title', '确认删除')}
+          message={t('api.deleteKeyConfirm', '确定要删除此 API Key 吗？此操作不可撤销。')}
+          onConfirm={confirmDeleteAction}
+          onCancel={() => setConfirmDeleteId(null)}
+          danger
         />
       )}
     </Modal>

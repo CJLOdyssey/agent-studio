@@ -47,7 +47,7 @@ export default function SettingsModal({ onClose }: Props) {
           ).map(([tab, Icon]) => (
             <button
               key={tab}
-              className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] ${activeTab === tab ? 'active' : ''}`}
+              className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] ${activeTab === tab ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)]' : ''}`}
               onClick={() => setActiveTab(tab as SettingsTab)}
             >
               <Icon size={16} />
@@ -109,15 +109,7 @@ export default function SettingsModal({ onClose }: Props) {
                     style={{
                       background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${fontPct}%, var(--color-surface-hover) ${fontPct}%, var(--color-surface-hover) 100%)`,
                     }}
-                    className="w-[120px] h-[6px] rounded-[3px] appearance-none cursor-pointer
-                      focus-visible:outline-none
-                      [&::-webkit-slider-runnable-track]:appearance-none [&::-webkit-slider-runnable-track]:h-[6px] [&::-webkit-slider-runnable-track]:bg-transparent
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--color-accent)] [&::-webkit-slider-thumb]:-mt-[5px] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:[box-shadow:0_1px_4px_rgba(0,0,0,0.3)]
-                      focus-visible:[&::-webkit-slider-thumb]:[box-shadow:0_0_0_2px_var(--color-accent),0_1px_4px_rgba(0,0,0,0.3)]
-                      [&::-moz-range-track]:h-[6px] [&::-moz-range-track]:rounded-[3px] [&::-moz-range-track]:border-none [&::-moz-range-track]:bg-[var(--color-surface-hover)]
-                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--color-accent)] [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer
-                      focus-visible:[&::-moz-range-thumb]:[box-shadow:0_0_0_2px_var(--color-accent)]
-                      [&::-moz-range-progress]:h-[6px] [&::-moz-range-progress]:rounded-[3px] [&::-moz-range-progress]:bg-[var(--color-accent)]"
+                    className="settings-font-slider"
                   />
                   <span className="text-sm font-semibold text-[var(--color-text-secondary)] min-w-[32px] text-right">{settings.fontSize}px</span>
                 </div>
