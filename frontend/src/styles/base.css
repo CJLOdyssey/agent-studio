@@ -1,25 +1,6 @@
-/* JetBrains Mono — self-hosted via woff2 */
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0Q.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0Q.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbX2o-flEEny0FZhsfKu5WU4xL1E_8.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* ============================================
+   Base Reset — 全局重置、滚动条、跳转链接、动画
+   ============================================ */
 
 *,
 *::before,
@@ -71,7 +52,7 @@ a:hover {
   }
 }
 
-/* Theme transition — applied to root-level semantic containers, not every element */
+/* Theme transition */
 .agentstudio-app,
 .agentstudio-sidebar,
 .agentstudio-global-header,
@@ -94,7 +75,8 @@ a:hover {
   }
 }
 
-/* Global scrollbar */
+/* ===== Scrollbar ===== */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -119,6 +101,8 @@ a:hover {
   scrollbar-color: var(--border) var(--bg-secondary);
 }
 
+/* ===== Skip Link ===== */
+
 .skip-link {
   position: absolute;
   top: -100%;
@@ -134,6 +118,8 @@ a:hover {
 .skip-link:focus {
   top: 0;
 }
+
+/* ===== Keyframes ===== */
 
 @keyframes fadeIn {
   from {

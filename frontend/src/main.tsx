@@ -23,6 +23,7 @@ import { installGlobalErrorHandlers } from './utils/errorHandler';
 import './i18n/index';
 import './styles/tokens.css';
 import './styles/tailwind-entry.css';
+import './styles/fonts.css';
 import './styles/base.css';
 import './styles/header.css';
 import './styles/chat/index.css';

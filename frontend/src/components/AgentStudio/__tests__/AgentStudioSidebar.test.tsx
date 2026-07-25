@@ -99,20 +99,20 @@ describe('AgentStudioSidebar — correct props', { tags: ['integration'] }, () =
     expect(screen.getByText('sidebar.newChat')).toBeInTheDocument();
   });
 
-  it('renders with sidebar open class when isSidebarOpen=true', () => {
+  it('renders with sidebar open when isSidebarOpen=true', () => {
     const props = properBaseProps();
     props.isSidebarOpen = true;
     const { container } = render(<AgentStudioSidebar {...props} />);
     const aside = container.querySelector('aside');
-    expect(aside?.className).toContain('open');
+    expect(aside?.className).toContain('w-[var(--da-sidebar-width)]');
   });
 
-  it('renders with sidebar collapsed class when isSidebarOpen=false', () => {
+  it('renders with sidebar collapsed when isSidebarOpen=false', () => {
     const props = properBaseProps();
     props.isSidebarOpen = false;
     const { container } = render(<AgentStudioSidebar {...props} />);
     const aside = container.querySelector('aside');
-    expect(aside?.className).toContain('collapsed');
+    expect(aside?.className).toContain('w-0');
   });
 
   it('calls onNewChat when new chat button clicked', async () => {
