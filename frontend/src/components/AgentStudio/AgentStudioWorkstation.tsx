@@ -25,9 +25,6 @@ export default function AgentStudioWorkstation() {
       ) : (
           <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
             <div className="flex flex-1 overflow-hidden relative">
-            {s.isSidebarOpen && (
-              <div className="fixed inset-0 bg-[var(--color-overlay)] z-[calc(var(--z-overlay)-1)] animate-[overlayFadeIn_0.15s_ease-out]" onClick={() => s.setIsSidebarOpen(false)} />
-            )}
 
             <AgentStudioSidebar
               teams={s.teamMgmt.teams}
@@ -61,16 +58,19 @@ export default function AgentStudioWorkstation() {
                 s.setSelectedAgentId(null);
               }}
               isSidebarOpen={s.isSidebarOpen}
+              onToggleSidebar={() => s.setIsSidebarOpen(false)}
               onOpenWorkstation={() => { s.setIsWorkstationOpen(true); }}
             />
 
               <div className="flex flex-col flex-1 overflow-hidden">
-                <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--color-surface-overlay)]">
+                <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--color-surface-overlay)] border-b border-b-[var(--color-border-subtle)]">
                   <div className="flex items-center gap-3">
-                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
-                    <PanelLeft size={18} />
-                  </button>
-                </div>
+                    {!s.isSidebarOpen && (
+                      <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" onClick={() => s.setIsSidebarOpen(true)} aria-label="Expand sidebar">
+                        <PanelLeft size={18} />
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
                   <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" onClick={() => s.updateSettings({ theme: s.isDarkMode ? 'light' : 'dark' })} aria-label="Toggle dark mode">
                     {s.isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
