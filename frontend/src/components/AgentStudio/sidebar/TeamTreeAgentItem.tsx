@@ -54,7 +54,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       {editingAgent === agent.id ? (
         <div className="agentstudio-agent-edit flex-1 min-w-0">
           <input
-            className="agentstudio-agent-edit-input w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm text-[var(--da-text-primary)] bg-transparent outline-none font-[inherit]"
+            className="agentstudio-agent-edit-input w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
             value={editAgentName}
             onChange={(e) => onAgentNameChange(e.target.value)}
             onBlur={handleAgentBlur}
@@ -67,13 +67,13 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       ) : (
         <>
           <button
-            className="agentstudio-team-agent-item flex items-center gap-[6px] py-[5px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent w-full min-h-[30px] text-[var(--da-text-secondary)] text-sm text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
+            className="agentstudio-team-agent-item flex items-center gap-[6px] py-[5px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent w-full min-h-[30px] text-[var(--color-text-secondary)] text-sm text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
             onClick={() => handleAgentClick(agent)}
           >
             <span className="text-sm font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{agent.name}</span>
           </button>
           <button
-            className="agentstudio-agent-menu-btn absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--da-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-50 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)] hover:opacity-100"
+            className="agentstudio-agent-menu-btn absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-50 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               toggleAgentMenu(agent.id, e);
@@ -84,11 +84,11 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
 
           {openAgentMenu === agent.id && createPortal(
             <div
-              className="agentstudio-agent-dropdown agentstudio-portal-dropdown bg-[var(--da-bg-card)] border border-[var(--da-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[9999] z-[99999]"
+              className="agentstudio-agent-dropdown agentstudio-portal-dropdown bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[9999] z-[99999]"
               style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
             >
               <button
-                className="agentstudio-agent-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-text-secondary)] text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
+                className="agentstudio-agent-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   if (onEditAgent) onEditAgent(agent);
@@ -100,7 +100,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 <span>{t('sidebar.edit')}</span>
               </button>
               <button
-                className="agentstudio-agent-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-text-secondary)] text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
+                className="agentstudio-agent-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   startEditAgent(agent);

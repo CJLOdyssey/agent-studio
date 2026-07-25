@@ -44,7 +44,7 @@ export default function Workspace({
 
         <div className="agentstudio-workspace-actions">
           <button
-            className="agentstudio-icon-btn-sm p-1 rounded bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer transition-colors flex items-center justify-center hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
+            className="agentstudio-icon-btn-sm p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer transition-colors flex items-center justify-center hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
             title={t('workspace.fullscreen')}
             onClick={toggleWorkspaceFullscreen}
           >
@@ -52,7 +52,7 @@ export default function Workspace({
           </button>
           <button
             onClick={() => setIsWorkspaceOpen(false)}
-            className="agentstudio-icon-btn-sm p-1 rounded bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer transition-colors flex items-center justify-center hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
+            className="agentstudio-icon-btn-sm p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer transition-colors flex items-center justify-center hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
             title={t('workspace.collapse')}
           >
             <PanelRightClose size={14} />
@@ -61,8 +61,8 @@ export default function Workspace({
       </header>
 
       <div className="agentstudio-workspace-content">
-        <div className="w-[200px] border-r border-[var(--da-border-subtle)] flex flex-col bg-[var(--da-bg-secondary)] flex-shrink-0">
-          <div className="flex items-center gap-2 p-3 text-xs font-semibold text-[var(--da-text-secondary)] border-b border-[var(--da-border-subtle)] uppercase tracking-[0.5px]">
+        <div className="w-[200px] border-r border-[var(--color-border)] flex flex-col bg-[var(--color-surface-raised)] flex-shrink-0">
+          <div className="flex items-center gap-2 p-3 text-xs font-semibold text-[var(--color-text-secondary)] border-b border-[var(--color-border)] uppercase tracking-[0.5px]">
             <FolderKanban size={14} />
             <span>{t('workspace.fileExplorer')}</span>
           </div>
@@ -76,7 +76,7 @@ export default function Workspace({
 
         <div className="flex-1 overflow-y-auto flex flex-col">
           {activeTab.includes('preview') ? (
-            <div className="h-full w-full flex items-center justify-center bg-[var(--da-bg-surface)] relative">
+            <div className="h-full w-full flex items-center justify-center bg-[var(--color-surface-raised)] relative">
               <div className="agentstudio-preview-empty">
                 <FileCode size={32} />
                 <p>{t('workspace.noPreview')}</p>
@@ -84,7 +84,7 @@ export default function Workspace({
             </div>
           ) : activeTab.includes('test') ? (
             <div className="p-4">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[var(--da-border-subtle)]">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[var(--color-border)]">
                 <FileCode size={14} />
                 <span>{t('workspace.testRunner')}</span>
               </div>
@@ -93,8 +93,8 @@ export default function Workspace({
               </div>
             </div>
           ) : (
-            <div className="font-mono text-sm p-4 text-[var(--da-text-primary)] leading-[1.6] overflow-x-auto">
-              <div className="flex items-center gap-2 text-xs text-[var(--da-text-muted)] mb-4">
+            <div className="font-mono text-sm p-4 text-[var(--color-text-primary)] leading-[1.6] overflow-x-auto">
+              <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mb-4">
                 <FileCode size={12} /> <span className="text-[var(--color-accent)]">Agent</span>{' '}
                 {t('workspace.committedJustNow')}
               </div>

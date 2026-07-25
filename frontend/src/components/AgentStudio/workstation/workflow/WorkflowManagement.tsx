@@ -44,7 +44,7 @@ export default function WorkflowManagement() {
   return (
     <div className="agentstudio-page h-[calc(100dvh-120px)]">
       <div className="flex gap-2 mb-3">
-        <select className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)}>
+        <select className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)}>
           <option value="">选择团队</option>
           {teams.map((team) => (
             <option key={team.id} value={team.id}>{team.name}</option>

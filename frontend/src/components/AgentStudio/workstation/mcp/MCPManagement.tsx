@@ -77,9 +77,9 @@ export default function MCPManagement() {
       <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {d.processed.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
-            <Server size={40} className="text-[var(--da-text-muted)] opacity-50" />
-            <div className="text-lg font-semibold text-[var(--da-text-secondary)]">{t('mcp.empty_title', d.search ? '' : '')}</div>
-            <div className="text-sm text-[var(--da-text-muted)] max-w-80 leading-relaxed">{d.search ? t('mcp.empty_desc_search') : t('mcp.empty_desc_general')}</div>
+            <Server size={40} className="text-[var(--color-text-muted)] opacity-50" />
+            <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('mcp.empty_title', d.search ? '' : '')}</div>
+            <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('mcp.empty_desc_search') : t('mcp.empty_desc_general')}</div>
           </div>
         ) : (
         <table className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('mcp.col_name')}>
@@ -96,8 +96,8 @@ export default function MCPManagement() {
             {d.paged.map((item) => (
               <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('mcp.select_item', item.name)} /></td>
-                <td><span className="font-semibold text-[var(--da-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
-                <td><span className="text-sm text-[var(--da-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
+                <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
                 <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/15 text-[var(--color-accent)]">{item.type.toUpperCase()}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
@@ -105,10 +105,10 @@ export default function MCPManagement() {
                     {MCP_STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="font-mono text-xs text-[var(--da-text-muted)]">{item.version}</span></td>
+                <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.version}</span></td>
                 <td className="w-[60px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
-                    <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--da-text-muted)] cursor-pointer transition-all hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"><MoreHorizontal size={14} /></button>
+                    <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
                   </Dropdown>
                 </td>
               </tr>

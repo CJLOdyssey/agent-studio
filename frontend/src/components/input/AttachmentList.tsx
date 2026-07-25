@@ -32,12 +32,12 @@ export default function AttachmentList({ files, onRemove }: Props) {
       {files.map((f) => {
         const Icon = getIcon(f.name);
         return (
-          <span key={f.id} className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-xs">
+          <span key={f.id} className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-xs">
             <Icon size={14} />
-            <span className="max-w-[120px] truncate text-[var(--da-text-primary)]">{f.name}</span>
-            <span className="text-[var(--da-text-muted)] text-[10px]">{fmtSize(f.size)}</span>
+            <span className="max-w-[120px] truncate text-[var(--color-text-primary)]">{f.name}</span>
+            <span className="text-[var(--color-text-muted)] text-[10px]">{fmtSize(f.size)}</span>
             <button
-              className="p-0.5 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]"
+              className="p-0.5 bg-transparent border-none rounded text-[var(--color-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]"
               onClick={() => onRemove(f.id)}
               type="button"
               aria-label={`Remove ${f.name}`}

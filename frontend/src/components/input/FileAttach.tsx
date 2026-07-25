@@ -103,7 +103,7 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
         aria-label={t('fileAttach.attach')}
       />
       <button
-        className="p-2 bg-transparent border-none rounded-lg text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 flex items-center justify-center hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)] relative"
+        className="p-2 bg-transparent border-none rounded-lg text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 flex items-center justify-center hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] relative"
         onClick={handleClick}
         title={fileCount > 0 ? `${fileCount} 个文件已选择` : t('fileAttach.attach')}
         type="button"

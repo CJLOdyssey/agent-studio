@@ -12,9 +12,9 @@ const inputBase: React.CSSProperties = {
   width: '100%',
   padding: '10px 40px 10px 36px',
   borderRadius: 8,
-  border: '1px solid var(--da-border)',
-  background: 'var(--da-bg-secondary)',
-  color: 'var(--da-text-primary)',
+  border: '1px solid var(--color-border)',
+  background: 'var(--color-surface-raised)',
+  color: 'var(--color-text-primary)',
   fontSize: 14,
   outline: 'none',
   boxSizing: 'border-box',
@@ -27,7 +27,7 @@ const iconBase: React.CSSProperties = {
   top: '50%',
   transform: 'translateY(-50%)',
   pointerEvents: 'none',
-  color: 'var(--da-text-tertiary)',
+  color: 'var(--color-text-tertiary)',
   width: 16,
   height: 16,
 };
@@ -135,19 +135,19 @@ export default function LoginModal({ onClose }: Props) {
   function inputStyle(field: string): React.CSSProperties {
     return {
       ...inputBase,
-      borderColor: focusedField === field ? 'var(--da-accent)' : 'var(--da-border)',
-      boxShadow: focusedField === field ? '0 0 0 2px color-mix(in srgb, var(--da-accent) 20%, transparent)' : 'none',
+      borderColor: focusedField === field ? 'var(--color-accent)' : 'var(--color-border)',
+      boxShadow: focusedField === field ? '0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'none',
     };
   }
 
   if (view === 'forgot' || view === 'reset') {
     return (
       <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
-        <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
+        <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
           onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]" style={{ justifyContent: 'center', position: 'relative' }}>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]" style={{ justifyContent: 'center', position: 'relative' }}>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>重置密码</h3>
-<button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label="关闭" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
+<button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
             <X size={18} />
           </button>
           </div>
@@ -169,12 +169,12 @@ export default function LoginModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
       <div
-        className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]"
+        className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]"
         style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ textAlign: 'center', paddingTop: 28, paddingBottom: 4 }}>
-          <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--da-text-primary)' }}>
+          <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
             ✦ AgentStudio
           </span>
         </div>
@@ -188,8 +188,8 @@ export default function LoginModal({ onClose }: Props) {
                 padding: '8px 0',
                 border: 'none',
                 borderRadius: 8,
-                background: view === t.key ? 'var(--da-bg-secondary)' : 'transparent',
-                color: view === t.key ? 'var(--da-text-primary)' : 'var(--da-text-tertiary)',
+                background: view === t.key ? 'var(--color-surface-raised)' : 'transparent',
+                color: view === t.key ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
                 fontWeight: view === t.key ? 600 : 400,
                 fontSize: 14,
                 cursor: 'pointer',
@@ -238,7 +238,7 @@ export default function LoginModal({ onClose }: Props) {
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
                         position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', color: 'var(--da-text-tertiary)',
+                        background: 'none', border: 'none', color: 'var(--color-text-tertiary)',
                         cursor: 'pointer', padding: 0, display: 'flex',
                       }}
                       tabIndex={-1}
@@ -247,7 +247,7 @@ export default function LoginModal({ onClose }: Props) {
                     </button>
                   </div>
                   {password && !passwordTouched && (
-                    <div style={{ fontSize: 11, color: 'var(--da-text-tertiary)', marginTop: 4, opacity: 0.6 }}>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 4, opacity: 0.6 }}>
                       至少8位 · 数字 · 小写 · 大写 · 特殊字符
                     </div>
                   )}
@@ -298,9 +298,9 @@ export default function LoginModal({ onClose }: Props) {
                       padding: '0 14px',
                       borderRadius: 8,
                       border: '1px solid',
-                      borderColor: codeCooldown > 0 ? 'var(--da-border)' : 'var(--da-accent)',
-                      background: codeCooldown > 0 ? 'var(--da-bg-secondary)' : 'transparent',
-                      color: codeCooldown > 0 ? 'var(--da-text-tertiary)' : 'var(--da-accent)',
+                      borderColor: codeCooldown > 0 ? 'var(--color-border)' : 'var(--color-accent)',
+                      background: codeCooldown > 0 ? 'var(--color-surface-raised)' : 'transparent',
+                      color: codeCooldown > 0 ? 'var(--color-text-tertiary)' : 'var(--color-accent)',
                       fontSize: 13,
                       fontWeight: 600,
                       cursor: codeCooldown > 0 ? 'default' : 'pointer',
@@ -346,7 +346,7 @@ export default function LoginModal({ onClose }: Props) {
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', color: 'var(--da-text-tertiary)',
+                      background: 'none', border: 'none', color: 'var(--color-text-tertiary)',
                       cursor: 'pointer', padding: 0, display: 'flex',
                     }}
                     tabIndex={-1}
@@ -379,8 +379,8 @@ export default function LoginModal({ onClose }: Props) {
                 padding: '11px 0',
                 borderRadius: 8,
                 border: 'none',
-                background: submitting ? 'var(--da-border)' : 'var(--da-accent)',
-                color: submitting ? 'var(--da-text-tertiary)' : '#fff',
+                background: submitting ? 'var(--color-border)' : 'var(--color-accent)',
+                color: submitting ? 'var(--color-text-tertiary)' : '#fff',
                 fontSize: 15,
                 fontWeight: 600,
                 cursor: submitting ? 'default' : 'pointer',
@@ -407,14 +407,14 @@ export default function LoginModal({ onClose }: Props) {
                 margin: '14px auto 0',
                 background: 'none',
                 border: 'none',
-                color: 'var(--da-text-tertiary)',
+                color: 'var(--color-text-tertiary)',
                 cursor: 'pointer',
                 fontSize: 13,
                 padding: 0,
                 transition: 'color 0.15s',
               }}
-              onMouseEnter={(e) => (e.target as HTMLElement).style.color = 'var(--da-accent)'}
-              onMouseLeave={(e) => (e.target as HTMLElement).style.color = 'var(--da-text-tertiary)'}
+              onMouseEnter={(e) => (e.target as HTMLElement).style.color = 'var(--color-accent)'}
+              onMouseLeave={(e) => (e.target as HTMLElement).style.color = 'var(--color-text-tertiary)'}
             >
               忘记密码？
             </button>
@@ -424,9 +424,9 @@ export default function LoginModal({ onClose }: Props) {
           {!isRegister && (
             <div style={{ marginTop: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--da-border)' }} />
-                <span style={{ fontSize: 12, color: 'var(--da-text-tertiary)', flexShrink: 0 }}>或</span>
-                <div style={{ flex: 1, height: 1, background: 'var(--da-border)' }} />
+                <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+                <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', flexShrink: 0 }}>或</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 14 }}>
                 {[
@@ -441,9 +441,9 @@ export default function LoginModal({ onClose }: Props) {
                       width: 44,
                       height: 44,
                       borderRadius: '50%',
-                      border: '1px solid var(--da-border)',
-                      background: 'var(--da-bg-secondary)',
-                      color: 'var(--da-text-tertiary)',
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-surface-raised)',
+                      color: 'var(--color-text-tertiary)',
                       fontSize: 12,
                       fontWeight: 600,
                       cursor: 'not-allowed',

@@ -45,17 +45,17 @@ function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRenam
 
   return (
     <>
-      <button ref={btnRef} className="inline-flex items-center justify-center p-1 rounded border-none bg-transparent text-[var(--da-text-muted)] cursor-pointer hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+      <button ref={btnRef} className="inline-flex items-center justify-center p-1 rounded border-none bg-transparent text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
         <MoreVertical size={14} />
       </button>
       {open && createPortal(
-        <div className="agentstudio-team-dropdown agentstudio-portal-dropdown bg-[var(--da-bg-card)] border border-[var(--da-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[9999] z-[99999]" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
+        <div className="agentstudio-team-dropdown agentstudio-portal-dropdown bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[9999] z-[99999]" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
           {onEdit && (
-            <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-text-secondary)] text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={() => { onEdit(); setOpen(false); }}>
+            <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onEdit(); setOpen(false); }}>
               <Pencil size={14} /><span>{t('workstation.edit')}</span>
             </button>
           )}
-          <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-text-secondary)] text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={() => { onRename(); setOpen(false); }}>
+          <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onRename(); setOpen(false); }}>
             <Pencil size={14} /><span>{t('workstation.rename')}</span>
           </button>
           <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-accent-red)] text-left hover:bg-[color-mix(in_srgb,var(--da-accent-red)_10%,transparent)]" onClick={() => { onDelete(); setOpen(false); }}>
@@ -91,14 +91,14 @@ export default function ConfigItemList<T extends ListItem>({
           <span>
             {title} ({items.length})
           </span>
-          <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onAdd}>
+          <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onAdd}>
             <Plus size={14} /> {t('configItem.add')}
           </button>
         </div>
       )}
       <div className="flex flex-col gap-2">
         {items.map((item) => (
-          <div key={item.id} className={`flex items-center justify-between px-3 py-[10px] bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-lg transition-[background] duration-150 hover:bg-[var(--da-bg-hover)] ${item.enabled ? '!bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] !border-[color-mix(in_srgb,var(--color-accent)_20%,transparent)]' : ''}`}>
+          <div key={item.id} className={`flex items-center justify-between px-3 py-[10px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-lg transition-[background] duration-150 hover:bg-[var(--color-surface-hover)] ${item.enabled ? '!bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] !border-[color-mix(in_srgb,var(--color-accent)_20%,transparent)]' : ''}`}>
             <div className="flex items-center gap-3">
               <input type="checkbox" checked={item.enabled} onChange={() => onToggle(item.id)} />
               <div className="flex flex-col">
@@ -106,8 +106,8 @@ export default function ConfigItemList<T extends ListItem>({
                   <ConfigItemEdit item={item} onUpdate={onUpdate} onFinishEdit={onFinishEdit} />
                 ) : (
                   <>
-                    <span className="text-sm font-medium text-[var(--da-text-primary)]">{item.name}</span>
-                    {item.description && <span className="text-xs text-[var(--da-text-muted)]">{item.description}</span>}
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">{item.name}</span>
+                    {item.description && <span className="text-xs text-[var(--color-text-muted)]">{item.description}</span>}
                   </>
                 )}
               </div>
@@ -126,21 +126,21 @@ export default function ConfigItemList<T extends ListItem>({
         {presets
           .filter((p) => !items.some((i) => i.id === p.id))
           .map((p) => (
-            <div key={p.id} className="flex items-center justify-between px-3 py-[10px] bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-lg transition-[background] duration-150 hover:bg-[var(--da-bg-hover)]">
+            <div key={p.id} className="flex items-center justify-between px-3 py-[10px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-lg transition-[background] duration-150 hover:bg-[var(--color-surface-hover)]">
               <div className="flex items-center gap-3">
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-[var(--da-text-primary)]">{p.name}</span>
-                  {p.description && <span className="text-xs text-[var(--da-text-muted)]">{p.description}</span>}
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">{p.name}</span>
+                  {p.description && <span className="text-xs text-[var(--color-text-muted)]">{p.description}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="inline-flex items-center justify-center p-1 rounded border-none bg-transparent text-[var(--da-text-muted)] cursor-pointer hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={() => onToggle(p.id)}>
+                <button className="inline-flex items-center justify-center p-1 rounded border-none bg-transparent text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => onToggle(p.id)}>
                   <Plus size={14} />
                 </button>
               </div>
             </div>
           ))}
-        {items.length === 0 && presets.length === 0 && <div className="text-center text-[var(--da-text-muted)] text-sm py-4">{emptyLabel}</div>}
+        {items.length === 0 && presets.length === 0 && <div className="text-center text-[var(--color-text-muted)] text-sm py-4">{emptyLabel}</div>}
       </div>
     </div>
   );
@@ -158,7 +158,7 @@ function ConfigItemEdit<T extends ListItem>({
   return (
     <>
       <input
-        className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm outline-none"
+        className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm outline-none"
         value={item.name}
         autoFocus
         onChange={(e) => onUpdate(item.id, e.target.value, item.description || '')}
@@ -166,7 +166,7 @@ function ConfigItemEdit<T extends ListItem>({
         onKeyDown={(e) => e.key === 'Enter' && onFinishEdit()}
       />
       <input
-        className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm outline-none"
+        className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm outline-none"
         value={item.description || ''}
         onChange={(e) => onUpdate(item.id, item.name, e.target.value)}
         onBlur={onFinishEdit}

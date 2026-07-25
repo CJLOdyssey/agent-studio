@@ -46,7 +46,7 @@ export default function PasswordStrengthIndicator({ password, validated }: Props
               flex: 1,
               height: 3,
               borderRadius: 2,
-              background: c.pass ? 'var(--da-success)' : 'var(--da-border)',
+              background: c.pass ? 'var(--da-success)' : 'var(--color-border)',
               transition: 'background 0.2s',
             }}
           />
@@ -54,7 +54,7 @@ export default function PasswordStrengthIndicator({ password, validated }: Props
       </div>
 
       {validated && failed.length > 0 && (
-        <div style={{ fontSize: 11, color: 'var(--da-text-tertiary)', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', lineHeight: 1.6 }}>
           {failed.map((c, i) => (
             <span key={i}>
               {i > 0 && ' · '}○ {c.label}

@@ -25,14 +25,14 @@ export default function CreateModal({
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div
-        className={`bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden${large ? ' max-w-[var(--modal-l)]' : ''}`}
+        className={`bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden${large ? ' max-w-[var(--modal-l)]' : ''}`}
         role="dialog" aria-modal="true" aria-label={title}
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: width }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <h3>{title}</h3>
-          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label={t('workstation.close')}>
+          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('workstation.close')}>
             <CloseOutlined className="anticon-lg" />
           </button>
         </div>
@@ -46,7 +46,7 @@ export default function CreateModal({
           {children}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
           {isEdit && onDelete && (
             <Button danger onClick={onDelete}>{t('workstation.delete')}</Button>
           )}

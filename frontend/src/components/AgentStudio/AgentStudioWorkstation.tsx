@@ -23,7 +23,7 @@ export default function AgentStudioWorkstation() {
       {s.isWorkstationOpen ? (
         <WorkstationPage />
       ) : (
-          <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--da-bg-primary)] text-[var(--da-text-secondary)]">
+          <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
             <div className="flex flex-1 overflow-hidden relative">
             {s.isSidebarOpen && (
               <div className="agentstudio-mobile-overlay visible" onClick={() => s.setIsSidebarOpen(false)} />
@@ -65,7 +65,7 @@ export default function AgentStudioWorkstation() {
             />
 
               <div className="flex flex-col flex-1 overflow-hidden">
-                <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--da-bg-card)]">
+                <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--color-surface-overlay)]">
                   <div className="flex items-center gap-3">
                   <button className="agentstudio-header-btn" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
                     <PanelLeft size={18} />
@@ -82,7 +82,7 @@ export default function AgentStudioWorkstation() {
                 </div>
               </header>
 
-                <main className={`flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[var(--da-bg-primary)] ${s.isPageDragOver ? 'agentstudio-drag-over' : ''}`} id="main-content"
+                <main className={`flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[var(--color-surface)] ${s.isPageDragOver ? 'agentstudio-drag-over' : ''}`} id="main-content"
                 onDragOver={s.handlePageDragOver} onDragLeave={s.handlePageDragLeave} onDrop={s.handlePageDrop}>
                   <div className="flex-1 flex flex-col overflow-hidden">
                   {s.isPageDragOver && (
@@ -98,13 +98,13 @@ export default function AgentStudioWorkstation() {
                   {s.apiStatus === 'error' && s.apiError && (
                     <div className="px-4 py-2 bg-[var(--da-accent-red)] text-[var(--da-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease] flex items-center justify-center gap-3" role="alert">
                       {s.apiError}
-                      <button className="bg-[var(--da-bg-primary)] text-[var(--da-accent-red)] border-none py-[1px] px-3 rounded text-sm cursor-pointer font-semibold leading-[var(--da-line-height)] hover:opacity-80" onClick={s.retryApi}>
+                      <button className="bg-[var(--color-surface)] text-[var(--da-accent-red)] border-none py-[1px] px-3 rounded text-sm cursor-pointer font-semibold leading-[var(--da-line-height)] hover:opacity-80" onClick={s.retryApi}>
                         {s.t('common.retry')}
                       </button>
                     </div>
                   )}
 
-                    <div className="flex-1 overflow-y-auto flex flex-col bg-[var(--da-bg-primary)]" ref={messagesContainerRef}>
+                    <div className="flex-1 overflow-y-auto flex flex-col bg-[var(--color-surface)]" ref={messagesContainerRef}>
                     {s.showAgentChat || s.hasMessages ? (
                       <MessagesPanel
                         showAgentChat={s.showAgentChat}

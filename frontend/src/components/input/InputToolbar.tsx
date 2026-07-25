@@ -162,7 +162,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div data-input-wrapper className="relative bg-[var(--da-bg-surface)] border-none rounded-[var(--da-input-radius)] overflow-hidden transition-shadow duration-200 shadow-none focus-within:shadow-[0 0 0 2px var(--color-accent)]">
+      <div data-input-wrapper className="relative bg-[var(--color-surface-raised)] border-none rounded-[var(--da-input-radius)] overflow-hidden transition-shadow duration-200 shadow-none focus-within:shadow-[0 0 0 2px var(--color-accent)]">
         {palette.open && (
           <CommandDropdown
             commands={palette.filtered}
@@ -174,7 +174,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         )}
 
         <textarea
-          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none outline-none text-lg font-normal text-[var(--da-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--da-border-subtle)] placeholder:text-[var(--da-text-muted)] placeholder:font-normal"
+          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none outline-none text-lg font-normal text-[var(--color-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--color-border)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal"
           placeholder={placeholder ?? t('home.placeholder')}
           value={composer.value}
           maxLength={maxLength}
@@ -184,7 +184,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onPaste={handlePaste}
         />
 
-        <div className="flex items-center justify-between px-4 py-3 bg-[var(--da-bg-surface)] border-t-0 min-h-[var(--da-toolbar-height)]">
+        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-raised)] border-t-0 min-h-[var(--da-toolbar-height)]">
           <div className="flex items-center gap-2">
             <ModelSelector
               models={models}
@@ -211,7 +211,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
               className={`flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 ${
                 composer.hasContent
                   ? 'bg-[var(--color-accent)] text-[var(--da-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm'
-                  : 'bg-[var(--da-bg-hover)] text-[var(--da-text-muted)] cursor-not-allowed opacity-70'
+                  : 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] cursor-not-allowed opacity-70'
               }`}
               aria-label={t('home.send')}
             >

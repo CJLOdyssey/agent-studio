@@ -54,9 +54,9 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
     width: '100%',
     padding: '10px 12px',
     borderRadius: 8,
-    border: '1px solid var(--da-border)',
-    background: 'var(--da-bg-secondary)',
-    color: 'var(--da-text-primary)',
+    border: '1px solid var(--color-border)',
+    background: 'var(--color-surface-raised)',
+    color: 'var(--color-text-primary)',
     fontSize: 14,
     outline: 'none',
     boxSizing: 'border-box',
@@ -68,7 +68,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
     padding: '10px 0',
     borderRadius: 8,
     border: 'none',
-    background: 'var(--da-accent)',
+    background: 'var(--color-accent)',
     color: '#fff',
     fontSize: 15,
     fontWeight: 600,
@@ -81,7 +81,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
         <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>密码已重置</p>
-        <p style={{ fontSize: 13, color: 'var(--da-text-tertiary)', margin: '0 0 20px' }}>
+        <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: '0 0 20px' }}>
           请使用新密码重新登录
         </p>
         <button onClick={onBack} style={btnStyle}>
@@ -94,7 +94,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
   if (step === 'code') {
     return (
       <form onSubmit={handleReset}>
-        <p style={{ fontSize: 13, color: 'var(--da-text-tertiary)', marginBottom: 16 }}>
+        <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginBottom: 16 }}>
           验证码已发送至 {email}
         </p>
         <input
@@ -131,7 +131,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
         </button>
         <button type="button" onClick={() => setStep('email')} style={{
           display: 'block', margin: '12px auto 0', background: 'none', border: 'none',
-          color: 'var(--da-text-tertiary)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline',
+          color: 'var(--color-text-tertiary)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline',
         }}>
           返回
         </button>
@@ -141,7 +141,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
 
   return (
     <form onSubmit={handleSendCode}>
-      <p style={{ fontSize: 13, color: 'var(--da-text-tertiary)', marginBottom: 16 }}>
+      <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginBottom: 16 }}>
         输入注册邮箱，我们将发送验证码
       </p>
       <input
@@ -162,7 +162,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
       </button>
       <button type="button" onClick={onBack} style={{
         display: 'block', margin: '12px auto 0', background: 'none', border: 'none',
-        color: 'var(--da-text-tertiary)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline',
+        color: 'var(--color-text-tertiary)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline',
       }}>
         返回登录
       </button>

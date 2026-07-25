@@ -52,7 +52,7 @@ export default function WstaDropdownPortal({ open, anchorEl, items, onClose }: W
   return createPortal(
     <div
       ref={menuRef}
-      className="bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-lg shadow-lg z-[var(--z-dropdown)] overflow-hidden p-1"
+      className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg shadow-lg z-[var(--z-dropdown)] overflow-hidden p-1"
       style={{
         position: 'fixed',
         top,
@@ -63,7 +63,7 @@ export default function WstaDropdownPortal({ open, anchorEl, items, onClose }: W
     >
       {items.map((item, i) =>
         item.divider ? (
-          <div key={i} className="h-px bg-[var(--da-border)] my-1" />
+          <div key={i} className="h-px bg-[var(--color-border)] my-1" />
         ) : (
           <button
             key={i}

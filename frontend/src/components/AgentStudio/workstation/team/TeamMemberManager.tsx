@@ -64,14 +64,14 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
+      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{
               width: 32, height: 32, borderRadius: 8,
-              background: 'color-mix(in srgb, var(--da-accent) 12%, transparent)',
+              background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--da-accent)', fontSize: 16,
+              color: 'var(--color-accent)', fontSize: 16,
             }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -82,10 +82,10 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
             </span>
             <div>
               <h3 style={{ margin: 0, fontSize: 'var(--da-font-size-base)', fontWeight: 600 }}>管理成员</h3>
-              <p style={{ margin: '1px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>{team.name}</p>
+              <p style={{ margin: '1px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)' }}>{team.name}</p>
             </div>
           </div>
-          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
+          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
         </div>
 
         <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ paddingTop: 0 }}>
@@ -112,21 +112,21 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
               display: 'flex', alignItems: 'center', gap: 8,
               marginBottom: 10,
               fontSize: 'var(--da-font-size-sm)', fontWeight: 500,
-              color: 'var(--da-text-secondary)',
+              color: 'var(--color-text-secondary)',
             }}>
-              <span style={{ width: 14, height: 2, background: 'var(--da-border-strong)', borderRadius: 1 }} />
+              <span style={{ width: 14, height: 2, background: 'var(--color-border-strong)', borderRadius: 1 }} />
               添加成员
             </div>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '8px 12px',
-              border: '1px solid var(--da-border)',
+              border: '1px solid var(--color-border)',
               borderRadius: 8,
-              background: 'var(--da-bg-surface)',
+              background: 'var(--color-surface-raised)',
               marginBottom: 6,
               transition: 'border-color 0.2s',
             }}>
-              <Search size={14} style={{ color: 'var(--da-text-tertiary)', flexShrink: 0 }} />
+              <Search size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
               <input
                 value={agentSearch}
                 onChange={(e) => setAgentSearch(e.target.value)}
@@ -135,14 +135,14 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                   border: 'none', outline: 'none', flex: 1,
                   fontSize: 'var(--da-font-size-sm)',
                   background: 'transparent',
-                  color: 'var(--da-text-primary)',
+                  color: 'var(--color-text-primary)',
                 }}
               />
             </div>
             {filteredAgents.length === 0 ? (
               <p style={{
                 fontSize: 'var(--da-font-size-xs)',
-                color: 'var(--da-text-tertiary)',
+                color: 'var(--color-text-tertiary)',
                 padding: '12px 0', textAlign: 'center',
               }}>
                 {agentSearch ? '无匹配 Agent' : '所有 Agent 已是成员'}
@@ -170,7 +170,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                       animationDelay: `${idx * 30}ms`,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'color-mix(in srgb, var(--da-text-primary) 4%, transparent)';
+                      e.currentTarget.style.background = 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent';
@@ -180,18 +180,18 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                     <span style={{
                       flex: 1, textAlign: 'left',
                       fontSize: 'var(--da-font-size-sm)',
-                      color: 'var(--da-text-primary)',
+                      color: 'var(--color-text-primary)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {agent.name}
                     </span>
                     {addingId === agent.id ? (
-                      <Loader2 size={14} className="animate-spin" style={{ color: 'var(--da-accent)', flexShrink: 0 }} />
+                      <Loader2 size={14} className="animate-spin" style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
                     ) : (
                       <span style={{
                         display: 'flex', alignItems: 'center', gap: 4,
                         fontSize: 'var(--da-font-size-xs)',
-                        color: 'var(--da-accent)',
+                        color: 'var(--color-accent)',
                         fontWeight: 500,
                         flexShrink: 0,
                       }}>
@@ -206,7 +206,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
           </div>
 
           <div style={{
-            height: 1, background: 'var(--da-border-subtle)',
+            height: 1, background: 'var(--color-border)',
             marginBottom: 16,
           }} />
 
@@ -215,13 +215,13 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
               display: 'flex', alignItems: 'center', gap: 8,
               marginBottom: 10,
               fontSize: 'var(--da-font-size-sm)', fontWeight: 500,
-              color: 'var(--da-text-secondary)',
+              color: 'var(--color-text-secondary)',
             }}>
-              <span style={{ width: 14, height: 2, background: 'var(--da-border-strong)', borderRadius: 1 }} />
+              <span style={{ width: 14, height: 2, background: 'var(--color-border-strong)', borderRadius: 1 }} />
               当前成员
               <span style={{
                 fontSize: 'var(--da-font-size-xs)',
-                color: 'var(--da-text-tertiary)',
+                color: 'var(--color-text-tertiary)',
                 fontWeight: 400,
               }}>
                 {members.length}
@@ -230,7 +230,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
             {members.length === 0 ? (
               <p style={{
                 fontSize: 'var(--da-font-size-xs)',
-                color: 'var(--da-text-tertiary)',
+                color: 'var(--color-text-tertiary)',
                 padding: '16px 0', textAlign: 'center',
               }}>
                 暂无成员
@@ -244,12 +244,12 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                 {members.map((m) => (
                   <div
                     key={m.id}
-                    className="transition-all hover:border-[var(--da-border)]"
+                    className="transition-all hover:border-[var(--color-border)]"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '8px 10px',
-                      background: 'var(--da-bg-surface)',
-                      border: '1px solid var(--da-border-subtle)',
+                      background: 'var(--color-surface-raised)',
+                      border: '1px solid var(--color-border)',
                       borderRadius: 8,
                       transition: 'all 0.15s',
                     }}
@@ -259,14 +259,14 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                       <div style={{
                         fontSize: 'var(--da-font-size-sm)',
                         fontWeight: 500,
-                        color: 'var(--da-text-primary)',
+                        color: 'var(--color-text-primary)',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {m.name}
                       </div>
                       <div style={{
                         fontSize: 'var(--da-font-size-xs)',
-                        color: 'var(--da-text-tertiary)',
+                        color: 'var(--color-text-tertiary)',
                       }}>
                         {m.role}
                       </div>
@@ -279,7 +279,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         border: 'none',
                         background: 'transparent',
-                        color: 'var(--da-text-tertiary)',
+                        color: 'var(--color-text-tertiary)',
                         cursor: 'pointer',
                         transition: 'all 0.15s',
                         flexShrink: 0,
@@ -290,7 +290,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--da-text-tertiary)';
+                        e.currentTarget.style.color = 'var(--color-text-tertiary)';
                       }}
                     >
                       {removingId === m.id

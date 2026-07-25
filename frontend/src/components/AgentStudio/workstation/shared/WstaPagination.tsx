@@ -21,8 +21,8 @@ export default function WstaPagination({
   ...rest
 }: WstaPaginationProps) {
   return (
-    <div className="flex items-center justify-between py-3 border-t border-[var(--da-border-subtle)] gap-4">
-      <span className="text-sm text-[var(--da-text-muted)] tabular-nums whitespace-nowrap">
+    <div className="flex items-center justify-between py-3 border-t border-[var(--color-border)] gap-4">
+      <span className="text-sm text-[var(--color-text-muted)] tabular-nums whitespace-nowrap">
         共 {total} 条
       </span>
       <Pagination

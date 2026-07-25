@@ -208,7 +208,7 @@ export default function ApiManagementModal({ onClose }: Props) {
             return (
               <button
                 key={tab}
-                className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)] ${activeTab === tab ? 'active' : ''}`}
+                className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] ${activeTab === tab ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
                 <Icon size={16} />

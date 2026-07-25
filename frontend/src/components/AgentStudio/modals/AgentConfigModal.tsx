@@ -146,7 +146,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div
-        className="bg-[var(--da-bg-secondary)] rounded-[16px] w-[min(80vw,760px)] h-[min(80vh,640px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
+        className="bg-[var(--color-surface-raised)] rounded-[16px] w-[min(80vw,760px)] h-[min(80vh,640px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         role="dialog"
@@ -158,34 +158,34 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
               <agent.icon size={20} className={agent.color} />
             </div>
             <div>
-              <h3 className="text-[var(--da-font-size-lg)] font-semibold text-[var(--da-text-primary)] m-0 leading-[1.3]">{t('workstation.agentManage')}</h3>
-              <p className="text-[var(--da-font-size-xs)] text-[var(--da-text-muted)] mt-0.5 mb-0 leading-[1.4]">
-                设置 <strong className="text-[var(--da-text-secondary)] font-medium">{agent.name}</strong> 的能力和行为
+              <h3 className="text-[var(--da-font-size-lg)] font-semibold text-[var(--color-text-primary)] m-0 leading-[1.3]">{t('workstation.agentManage')}</h3>
+              <p className="text-[var(--da-font-size-xs)] text-[var(--color-text-muted)] mt-0.5 mb-0 leading-[1.4]">
+                设置 <strong className="text-[var(--color-text-secondary)] font-medium">{agent.name}</strong> 的能力和行为
               </p>
             </div>
           </div>
-          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)] active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
+          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>
 
         <div className="px-6">
           <div className="mt-0">
-            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.agentName')}</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.agentName')}</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
           <div className="mt-[14px]">
-            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.agentDesc')}</label>
-            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.agentDesc')}</label>
+            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
-          <p className="text-xs text-[var(--da-text-muted)] mt-2">{t('workstation.agentPlaceholder')}</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-2">{t('workstation.agentPlaceholder')}</p>
         </div>
 
-        <div className="flex items-center gap-1 mx-6 mt-4 p-1 bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-[10px]">
+        <div className="flex items-center gap-1 mx-6 mt-4 p-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px]">
           {TABS.map((tab) => (
             <button
               key={tab.key}
-              className={`flex-1 flex items-center justify-center gap-[6px] py-[7px] px-3 border-none rounded-lg bg-transparent text-[var(--da-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--da-text-secondary)] hover:bg-[color-mix(in_srgb,var(--da-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--da-bg-elevated)] !text-[var(--da-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--color-accent)]' : ''}`}
+              className={`flex-1 flex items-center justify-center gap-[6px] py-[7px] px-3 border-none rounded-lg bg-transparent text-[var(--color-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--color-text-secondary)] hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--color-surface-elevated)] !text-[var(--color-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--color-accent)]' : ''}`}
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.icon && <tab.icon size={14} />}
@@ -198,9 +198,9 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
           {renderTabContent()}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-[14px] border-t border-[var(--da-border-subtle)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" onClick={onClose}>{t('workstation.cancel')}</button>
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
+        <div className="flex items-center justify-end gap-2 px-6 py-[14px] border-t border-[var(--color-border)]">
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)]" onClick={onClose}>{t('workstation.cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
         </div>
       </div>
 

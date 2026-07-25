@@ -103,26 +103,26 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[420px] max-h-[480px] max-w-[560px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
+      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[420px] max-h-[480px] max-w-[560px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--da-bg-primary),var(--da-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
+            <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
               {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
             </div>
             <div>
               <h3 style={{ margin: 0 }}>{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)' }}>
                 {providers[providerType]?.base_url || ''}
               </p>
             </div>
           </div>
-          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
+          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 
         <div className="flex-1 px-6 py-5 overflow-y-auto">
           <div className="flex gap-4">
             <div className="mb-4" style={{ flex: 2 }}>
-              <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.provider')}</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.provider')}</label>
               <select value={providerType} onChange={(e) => setProviderType(e.target.value)}>
                 {Object.entries(providers).map(([key, info]) => (
                   <option key={key} value={key}>{info.name}</option>
@@ -130,7 +130,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
               </select>
             </div>
             <div className="mb-4" style={{ flex: 1 }}>
-              <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.capabilities')}</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.capabilities')}</label>
               <div className="flex gap-2" style={{ marginTop: 4 }}>
                 {caps.map((cap) => (
                   <span key={cap} className={`inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_15%,transparent)] text-[var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})] border border-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_30%,transparent)]`}>{CAP_LABEL[cap] || cap}</span>
@@ -140,17 +140,17 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.purpose')}</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.purpose')}</label>
             {multipleCaps ? (
               <div className="flex gap-3">
                 {caps.map((cap) => (
-                  <label key={cap} className="flex items-center gap-2 p-2 px-3 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md cursor-pointer text-sm text-[var(--da-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
+                  <label key={cap} className="flex items-center gap-2 p-2 px-3 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md cursor-pointer text-sm text-[var(--color-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
                     <input type="radio" name="usage_type" checked={usageType === cap} onChange={() => setUsageType(cap)} />
                     <span>{CAP_LABEL[cap] || cap}</span>
                   </label>
                 ))}
                 {caps.includes('llm') && caps.includes('embedding') && (
-                  <label className="flex items-center gap-2 p-2 px-3 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md cursor-pointer text-sm text-[var(--da-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
+                  <label className="flex items-center gap-2 p-2 px-3 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md cursor-pointer text-sm text-[var(--color-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
                     <input type="radio" name="usage_type" checked={usageType === 'both'} onChange={() => setUsageType('both')} />
                     <span>{t('workstation.bothSupported')}</span>
                   </label>
@@ -161,7 +161,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
                 {caps.map((cap) => (
                   <span key={cap} className={`inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_15%,transparent)] text-[var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})] border border-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_30%,transparent)]`}>{CAP_LABEL[cap] || cap}</span>
                 ))}
-                <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)', marginLeft: 8 }}>
+                <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)', marginLeft: 8 }}>
                   {t('workstation.purpose')}: {CAP_LABEL[caps[0]] || caps[0]}
                 </span>
               </div>
@@ -169,28 +169,28 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
               {t('providerEdit.name')}
-              <span style={{ fontWeight: 400, color: 'var(--da-text-muted)', fontSize: 'var(--da-font-size-xs)' }}>
+              <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 'var(--da-font-size-xs)' }}>
                 ({t('providerEdit.nameOptional') || 'optional'})
               </span>
             </label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('providerEdit.placeholders.name')} />
-            <p className="text-xs text-[var(--da-text-muted)] mt-2" style={{ marginTop: 4 }}>
+            <p className="text-xs text-[var(--color-text-muted)] mt-2" style={{ marginTop: 4 }}>
               <Tag size={11} /> {t('providerEdit.nameHint') || '用于区分不同的 Key，不填则使用提供商名称'}
             </p>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.baseUrl')}</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.baseUrl')}</label>
             <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={t('providerEdit.placeholders.baseUrl')} />
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.apiKey')}</label>
-            <div className="flex-1 flex items-center bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md overflow-hidden">
-              <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={t('providerEdit.placeholders.apiKey')} className="flex-1 bg-transparent border-none px-3 py-2 text-sm text-[var(--da-text-primary)] outline-none [&::placeholder]:text-[var(--da-text-muted)]" />
-              <button className="p-2 bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--da-text-primary)]" onClick={() => setShowKey(!showKey)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.apiKey')}</label>
+            <div className="flex-1 flex items-center bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md overflow-hidden">
+              <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={t('providerEdit.placeholders.apiKey')} className="flex-1 bg-transparent border-none px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none [&::placeholder]:text-[var(--color-text-muted)]" />
+              <button className="p-2 bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--color-text-primary)]" onClick={() => setShowKey(!showKey)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
                 {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
@@ -198,21 +198,21 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
           {showModels && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('providerEdit.supportedModels')}</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.supportedModels')}</label>
               <div className="flex items-start gap-2">
                 {fetchingModels ? (
-                  <div className="flex-1 flex items-center gap-2 p-2 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md text-[var(--da-text-muted)] text-sm">
+                  <div className="flex-1 flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-text-muted)] text-sm">
                     <Loader2 size={14} className="animate-spin" />
                     <span>{t('workstation.fetchingModels')}</span>
                   </div>
                 ) : models.length > 0 ? (
-                  <div className="flex-1 flex flex-wrap gap-2 p-2 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md min-h-[36px]">
+                  <div className="flex-1 flex flex-wrap gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md min-h-[36px]">
                     {models.map((model) => <span key={model} className="inline-flex items-center px-2 py-0.5 bg-[var(--color-accent)] text-white rounded text-xs font-medium">{model}</span>)}
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center p-2 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md text-[var(--da-text-muted)] text-sm"><span>{t('workstation.enterApiKeyToFetch')}</span></div>
+                  <div className="flex-1 flex items-center p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-text-muted)] text-sm"><span>{t('workstation.enterApiKeyToFetch')}</span></div>
                 )}
-                <button type="button" className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={handleFetchModels}
+                <button type="button" className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={handleFetchModels}
                   disabled={!apiKey.trim() || fetchingModels} title={t('workstation.fetchFromApi')}>
                   {fetchingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                 </button>
@@ -221,9 +221,9 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}
           </button>

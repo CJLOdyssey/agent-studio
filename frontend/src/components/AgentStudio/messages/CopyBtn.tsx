@@ -9,7 +9,7 @@ export function CopyBtn({ text, label, className }: { text: string; label?: stri
   const copied = isCopied(key);
   return (
     <button
-      className={`${className || 'px-1 py-0.5 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer flex items-center transition-colors duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]'}${copied ? ' !text-[var(--color-accent)] hover:!text-[var(--color-accent)] hover:!bg-[var(--da-bg-hover)]' : ''}`}
+      className={`${className || 'px-1 py-0.5 bg-transparent border-none rounded text-[var(--color-text-muted)] cursor-pointer flex items-center transition-colors duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]'}${copied ? ' !text-[var(--color-accent)] hover:!text-[var(--color-accent)] hover:!bg-[var(--color-surface-hover)]' : ''}`}
       onClick={() => copy(text, key)}
       title={copied ? t('teamMessage.copied') : label}
       aria-label={copied ? t('teamMessage.copied') : label}

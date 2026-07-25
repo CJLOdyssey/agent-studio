@@ -93,7 +93,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   return (
     <div className="relative inline-flex items-center" ref={ref}>
       <button
-        className={`inline-flex items-center gap-1 px-2 py-1 border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] ${isEmpty ? 'border-[var(--color-accent-soft)] text-[var(--color-accent-soft)] hover:bg-[color-mix(in_srgb,var(--color-accent-soft)_10%,transparent)] hover:border-[var(--color-accent-soft)] hover:text-[var(--color-accent-soft)]' : 'border-[var(--da-border-subtle)] text-[var(--da-text-secondary)] hover:border-[var(--da-border)] hover:text-[var(--da-text-primary)]'}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] ${isEmpty ? 'border-[var(--color-accent-soft)] text-[var(--color-accent-soft)] hover:bg-[color-mix(in_srgb,var(--color-accent-soft)_10%,transparent)] hover:border-[var(--color-accent-soft)] hover:text-[var(--color-accent-soft)]' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)]'}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -110,11 +110,11 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
           {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
         </span>
-        <ChevronDown size={10} className={`flex-shrink-0 text-[var(--da-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && !isEmpty && (
-        <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
+        <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
           {providers.length > 1
             ? providers.map(([provider, list]) => (
                 <div key={provider} className="agentstudio-model-group">
@@ -125,7 +125,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       <button
                         key={m.id}
                         data-model-option
-                        className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${globalIdx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
+                        className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${globalIdx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
                         onClick={() => handleSelect(m.id)}
                         role="option"
                         aria-selected={m.id === selectedModel}
@@ -147,7 +147,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 <button
                   key={m.id}
                   data-model-option
-                  className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${idx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
+                  className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${idx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
                   onClick={() => handleSelect(m.id)}
                   role="option"
                   aria-selected={m.id === selectedModel}

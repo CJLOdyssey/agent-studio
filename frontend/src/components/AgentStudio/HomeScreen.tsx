@@ -40,11 +40,11 @@ export default function HomeScreen({
         <div className="w-full max-w-[900px] flex flex-col items-center justify-center px-6">
          <div className="flex flex-col items-center w-full">
           <div className="text-center mb-8">
-            <div className="w-[72px] h-[72px] mx-auto mb-6 bg-[var(--da-bg-surface)] rounded-xl flex items-center justify-center" role="img" tabIndex={-1} aria-label="AgentStudio Logo">
+            <div className="w-[72px] h-[72px] mx-auto mb-6 bg-[var(--color-surface-raised)] rounded-xl flex items-center justify-center" role="img" tabIndex={-1} aria-label="AgentStudio Logo">
               <Bot size={48} className="text-[var(--color-accent)]" />
             </div>
             <GreetingAnimation key={conversationKey} />
-            <p className="text-base text-[var(--da-text-muted)] m-0">{t('home.subtitle')}</p>
+            <p className="text-base text-[var(--color-text-muted)] m-0">{t('home.subtitle')}</p>
           </div>
           <InputToolbar
             ref={inputToolbarRef}
@@ -66,7 +66,7 @@ export default function HomeScreen({
              transition={{ delay: 0.3, duration: 0.4 }}
            >
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--da-border)] rounded-md text-[var(--da-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-border-strong)]"
+               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('search')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
@@ -76,7 +76,7 @@ export default function HomeScreen({
                <span>{t('features.search', '搜索')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--da-border)] rounded-md text-[var(--da-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-border-strong)]"
+               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('data')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
@@ -86,7 +86,7 @@ export default function HomeScreen({
                <span>{t('features.data', '数据')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--da-border)] rounded-md text-[var(--da-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-border-strong)]"
+               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('document')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ export default function HomeScreen({
                <span>{t('features.document', '文档')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--da-border)] rounded-md text-[var(--da-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-border-strong)]"
+               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('image')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
@@ -106,7 +106,7 @@ export default function HomeScreen({
                <span>{t('features.image', '图片')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--da-border)] rounded-md text-[var(--da-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-border-strong)]"
+               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('more')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}

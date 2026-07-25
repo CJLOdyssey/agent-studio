@@ -16,10 +16,10 @@ export function CodeBlock({
   const codeString = String(children).replace(/\n$/, '');
   if (match) {
     return (
-      <div className="my-3 rounded-lg overflow-hidden bg-[var(--da-bg-elevated)]">
-        <div className="flex items-center justify-between px-3 py-2 bg-[var(--da-bg-surface)]">
-          <span className="text-xs text-[var(--da-text-muted)] font-[var(--font-mono)]">{match[1]}</span>
-          <CopyBtn text={codeString} label={t('teamMessage.copy')} className="flex items-center gap-1 px-2 py-1 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer text-xs transition-all duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" />
+      <div className="my-3 rounded-lg overflow-hidden bg-[var(--color-surface-elevated)]">
+        <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-surface-raised)]">
+          <span className="text-xs text-[var(--color-text-muted)] font-[var(--font-mono)]">{match[1]}</span>
+          <CopyBtn text={codeString} label={t('teamMessage.copy')} className="flex items-center gap-1 px-2 py-1 bg-transparent border-none rounded text-[var(--color-text-muted)] cursor-pointer text-xs transition-all duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" />
         </div>
         <SyntaxHighlighter
           style={oneDark}

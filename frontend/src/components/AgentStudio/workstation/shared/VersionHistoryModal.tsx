@@ -88,17 +88,17 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
 
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden max-w-[420px]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
+      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden max-w-[420px]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <h3>{t('workstation.versionHistory')} - {title}</h3>
-          <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-compare-toolbar">
+          <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-toolbar">
             {hasContent && (
               <button className={`btn btn-sm ${compareMode ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setCompareMode(!compareMode); setSelectedIndices([]); }}>
                 <GitCompare size={14} />
                 <span>{compareMode ? '退出对比' : '版本对比'}</span>
               </button>
             )}
-            <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
+            <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
           </div>
         </div>
 
@@ -108,10 +108,10 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
           ) : versions.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 px-4 text-center"><p>暂无版本历史</p></div>
           ) : compareMode && (
-            <p className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-compare-hint">
+            <p className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-hint">
               点击选择两个版本进行对比
               {selectedIndices.length === 2 && (
-                <span className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-compare-selected">
+                <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-selected">
                   — 已选: {versions[selectedIndices[0]]?.version} vs {versions[selectedIndices[1]]?.version}
                 </span>
               )}
@@ -119,14 +119,14 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
           )}
 
           {diffResult ? (
-            <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-diff">
-              <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-diff-pane">
+            <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff">
+              <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[0]]?.version}</h5>
                 {diffResult.old.map((line, idx) => (
                   <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--da-accent-green)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--da-accent-red)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
-              <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-diff-pane">
+              <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[1]]?.version}</h5>
                 {diffResult.new.map((line, idx) => (
                   <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--da-accent-green)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--da-accent-red)_12%,transparent)]' : ''}`}>{line.text}</div>
@@ -134,22 +134,22 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
               </div>
             </div>
           ) : (
-            <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-list">
+            <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-list">
               {versions.map((v, i) => (
-                <div key={i} className={`p-2 bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-md transition-colors duration-150${compareMode ? ' cursor-pointer hover:border-[var(--color-accent)]' : ''}${selectedIndices.includes(i) ? ' border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]' : ''}`}
+                <div key={i} className={`p-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md transition-colors duration-150${compareMode ? ' cursor-pointer hover:border-[var(--color-accent)]' : ''}${selectedIndices.includes(i) ? ' border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]' : ''}`}
                   onClick={() => compareMode && setSelectedIndices((prev) => {
                     if (prev.includes(i)) return prev.filter((x) => x !== i);
                     if (prev.length >= 2) return [prev[1], i];
                     return [...prev, i];
                   })}>
-                  <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-header">
-                    <span className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-tag">{v.version}</span>
-                    <span className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-date">{v.date}</span>
-                    <span className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-author">{v.author}</span>
-                    {selectedIndices.includes(i) && <span className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-check">✓</span>}
+                  <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-header">
+                    <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-tag">{v.version}</span>
+                    <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-date">{v.date}</span>
+                    <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-author">{v.author}</span>
+                    {selectedIndices.includes(i) && <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-check">✓</span>}
                   </div>
-                  <p className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-changes">{v.changes}</p>
-                  {v.content && <p className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-content">{v.content.length > 120 ? v.content.slice(0, 120) + '…' : v.content}</p>}
+                  <p className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-changes">{v.changes}</p>
+                  {v.content && <p className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-content">{v.content.length > 120 ? v.content.slice(0, 120) + '…' : v.content}</p>}
                 </div>
               ))}
             </div>
