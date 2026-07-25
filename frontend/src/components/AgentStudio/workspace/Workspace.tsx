@@ -95,7 +95,7 @@ export default function Workspace({
           ) : (
             <div className="font-mono text-sm p-4 text-[var(--da-text-primary)] leading-[1.6] overflow-x-auto">
               <div className="flex items-center gap-2 text-xs text-[var(--da-text-muted)] mb-4">
-                <FileCode size={12} /> <span className="text-[var(--icon-code)]">Agent</span>{' '}
+                <FileCode size={12} /> <span className="text-[var(--color-accent)]">Agent</span>{' '}
                 {t('workspace.committedJustNow')}
               </div>
             </div>

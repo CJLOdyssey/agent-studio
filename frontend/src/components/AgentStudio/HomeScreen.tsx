@@ -41,7 +41,7 @@ export default function HomeScreen({
          <div className="flex flex-col items-center w-full">
           <div className="text-center mb-8">
             <div className="w-[72px] h-[72px] mx-auto mb-6 bg-[var(--da-bg-surface)] rounded-xl flex items-center justify-center" role="img" tabIndex={-1} aria-label="AgentStudio Logo">
-              <Bot size={48} className="text-[var(--icon-planning)]" />
+              <Bot size={48} className="text-[var(--color-accent)]" />
             </div>
             <GreetingAnimation key={conversationKey} />
             <p className="text-base text-[var(--da-text-muted)] m-0">{t('home.subtitle')}</p>

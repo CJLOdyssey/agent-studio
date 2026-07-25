@@ -73,14 +73,14 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
-            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name}
+            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--da-text-muted)]" value={formData.name}
               onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
               placeholder={t('skill.form_name_placeholder')} maxLength={50} />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_desc')}</label>
-            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.description}
+            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--da-text-muted)]" value={formData.description}
               onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('skill.form_desc_placeholder')} rows={2} maxLength={500} />
           </div>
@@ -88,14 +88,14 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_category')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.category}
+              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category}
                 onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}>
                 {SKILL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_status')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.status}
+              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status}
                 onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as SkillEntry['status'] }))}>
                 {Object.entries(SKILL_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
@@ -105,13 +105,13 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_version')} <span className="text-[var(--icon-status-error)]">*</span></label>
-              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.version}
+              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--da-text-muted)]" value={formData.version}
                 onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))}
                 placeholder={t('skill.form_version_placeholder')} />
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_author')}</label>
-              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.author}
+              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--da-text-muted)]" value={formData.author}
                 onChange={(e) => setFormData((f) => ({ ...f, author: e.target.value }))}
                 placeholder={t('skill.form_author_placeholder')} />
             </div>
@@ -119,7 +119,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_prompt')}</label>
-            <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.prompt_id || noPromptId}
+            <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.prompt_id || noPromptId}
               onChange={(e) => setFormData(f => ({ ...f, prompt_id: e.target.value === noPromptId ? '' : e.target.value }))}>
               <option value={noPromptId}>{noPromptLabel}</option>
               {prompts.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -141,14 +141,14 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_output_constraint')}</label>
-            <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value=""
+            <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value=""
               onChange={(e) => {
                 if (e.target.value) setFormData(f => ({ ...f, output_constraint: f.output_constraint + (f.output_constraint ? '\n' : '') + e.target.value }));
               }}>
               <option value="">{t('skill.form_pick_constraint')}</option>
               {constraints.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
             </select>
-            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.output_constraint}
+            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--da-text-muted)]" value={formData.output_constraint}
               onChange={(e) => setFormData((f) => ({ ...f, output_constraint: e.target.value }))}
               placeholder={t('skill.form_output_constraint_placeholder')} rows={2} maxLength={500}
               style={{ marginTop: 6 }} />
@@ -156,7 +156,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('skill.form_instructions')}</label>
-            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.instructions}
+            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--da-text-muted)]" value={formData.instructions}
               onChange={(e) => setFormData((f) => ({ ...f, instructions: e.target.value }))}
               placeholder={t('skill.form_instructions_placeholder')} rows={4} />
           </div>
