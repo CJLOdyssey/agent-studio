@@ -117,8 +117,8 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
           {providers.length > 1
             ? providers.map(([provider, list]) => (
-                <div key={provider} className="agentstudio-model-group">
-                  <div className="agentstudio-model-group-label">{provider}</div>
+                <div key={provider} className="flex flex-col">
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">{provider}</div>
                   {list.map((m) => {
                     const globalIdx = allOptions.indexOf(m);
                     return (
@@ -133,10 +133,10 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       >
                         <span>{m.label}</span>
                         {m.status === 'deprecated' && (
-                          <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusDeprecated')}</span>
                         )}
                         {m.status === 'sunset' && (
-                          <span className="agentstudio-model-status">{t('model.statusSunset')}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusSunset')}</span>
                         )}
                       </button>
                     );
@@ -155,9 +155,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 >
                   <span>{m.label}</span>
                   {m.status === 'deprecated' && (
-                    <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusDeprecated')}</span>
                   )}
-                  {m.status === 'sunset' && <span className="agentstudio-model-status">{t('model.statusSunset')}</span>}
+                  {m.status === 'sunset' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusSunset')}</span>}
                 </button>
               ))}
         </div>

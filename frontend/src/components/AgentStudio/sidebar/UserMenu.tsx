@@ -24,7 +24,7 @@ function PopoverItem({
 }) {
   return (
     <button
-      className={`agentstudio-popover-item${disabled ? ' agentstudio-popover-item-disabled' : ''}`}
+      className={`flex items-center gap-2 w-full px-3 py-2 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-all duration-200 text-left hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]${disabled ? ' opacity-40 cursor-not-allowed hover:text-[var(--color-text-secondary)] hover:bg-transparent' : ''}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       title={disabled ? '登录后可管理' : undefined}
@@ -70,44 +70,44 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
   };
 
   return (
-    <div className="agentstudio-sidebar-footer" ref={menuRef}>
+    <div className="shrink-0 p-3 bg-[var(--da-bg-sidebar)] relative" ref={menuRef}>
       {isUserMenuOpen && (
-        <div className="agentstudio-user-popover">
+        <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 bg-[var(--da-bg-card)] border-none rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[var(--z-modal)] flex flex-col p-1 origin-bottom animate-[popoverScaleIn_0.15s_cubic-bezier(0.16,1,0.3,1)]">
           <PopoverItem
-            icon={<Key size={16} className="lucide-icon" />}
+            icon={<Key size={16} className="w-4 h-4 mr-1" />}
             label="API Key"
             onClick={() => handleItemClick(() => setIsApiOpen(true))}
           />
           <PopoverItem
-            icon={<Settings size={16} className="lucide-icon" />}
+            icon={<Settings size={16} className="w-4 h-4 mr-1" />}
             label={t('sidebar.settings')}
             onClick={() => handleItemClick(() => setIsSettingsOpen(true))}
           />
           <PopoverItem
-            icon={isAuthenticated ? <LayoutDashboard size={16} className="lucide-icon" /> : <Lock size={16} className="lucide-icon" />}
+            icon={isAuthenticated ? <LayoutDashboard size={16} className="w-4 h-4 mr-1" /> : <Lock size={16} className="w-4 h-4 mr-1" />}
             label={t('sidebar.workstation')}
             disabled={!isAuthenticated}
             onClick={() => handleItemClick(onOpenWorkstation)}
           />
           <PopoverItem
-            icon={<HelpCircle size={16} className="lucide-icon" />}
+            icon={<HelpCircle size={16} className="w-4 h-4 mr-1" />}
             label={t('sidebar.help')}
             onClick={() => closeMenu()}
           />
 
-          <div className="agentstudio-popover-divider" />
+          <div className="h-px bg-[var(--da-border-subtle)] my-1" />
           {isAuthenticated ? (
             <PopoverItem
-              icon={<LogOut size={16} className="lucide-icon" />}
+              icon={<LogOut size={16} className="w-4 h-4 mr-1" />}
               label={t('sidebar.logout')}
               onClick={() => handleItemClick(logout)}
             />
           ) : (
             <button
-              className="agentstudio-popover-item agentstudio-popover-item-highlight"
+              className="flex items-center gap-2 w-full px-3 py-2 bg-transparent border-none rounded-md text-[var(--da-accent)] font-semibold text-sm cursor-pointer transition-all duration-200 text-left border-b border-b-[var(--da-border)] mb-1 rounded-0 hover:text-[var(--da-accent-hover)] hover:bg-[var(--da-bg-hover)]"
               onClick={() => handleItemClick(() => openLoginModal())}
             >
-              <LogIn size={16} className="lucide-icon" />
+              <LogIn size={16} className="w-4 h-4 mr-1" />
               <span>登录 / 注册</span>
             </button>
           )}
@@ -115,7 +115,7 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
       )}
 
       <button
-        className="agentstudio-user-trigger"
+        className="flex items-center justify-between w-full p-2 bg-transparent border border-transparent rounded-lg text-[var(--da-text-primary)] cursor-pointer transition-all duration-200 hover:bg-[var(--da-bg-hover)]"
         onClick={() => {
           if (isUserMenuOpen) {
             closeMenu();
@@ -126,16 +126,16 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
         aria-expanded={isUserMenuOpen}
         aria-haspopup="menu"
       >
-          <div className="agentstudio-user-trigger-left">
-            <div className="agentstudio-user-avatar">
-              <User size={16} className="lucide-icon" />
+          <div className="flex items-center gap-[10px] overflow-hidden">
+            <div className="w-8 h-8 bg-[var(--da-bg-primary)] rounded-full border-none flex items-center justify-center shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+              <User size={16} className="w-4 h-4 text-[var(--da-text-secondary)]" />
             </div>
-            <div className="agentstudio-user-info">
-              <div className="agentstudio-user-name">
+            <div className="overflow-hidden text-left">
+              <div className="text-[var(--da-font-size-sm)] font-semibold text-[var(--da-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis">
                 {isAuthenticated ? (user?.username || user?.email) : '游客'}
               </div>
-              <div className="agentstudio-user-status">
-                <span className="agentstudio-user-online-dot" />
+              <div className="text-[var(--da-font-size-xs)] text-[var(--da-text-secondary)] flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--icon-status-success)]" />
                 {isAuthenticated ? t('user.onlineStatus') : '未登录'}
               </div>
             </div>

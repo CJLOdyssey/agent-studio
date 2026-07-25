@@ -151,7 +151,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(handleRenameTeam).toHaveBeenCalledWith('t1', 'Team Alpha');
     restore();
@@ -166,7 +166,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
     expect(handleRenameTeam).toHaveBeenCalledWith('t1', 'Team Alpha');
@@ -182,7 +182,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
@@ -199,7 +199,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Bad<Name' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(handleRenameTeam).not.toHaveBeenCalled();
@@ -215,7 +215,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });

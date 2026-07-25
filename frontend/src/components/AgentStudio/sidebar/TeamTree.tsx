@@ -52,7 +52,6 @@ const TeamTree = memo(function TeamTree({
   const [editingAgent, setEditingAgent] = useState<string | null>(null);
   const [editAgentName, setEditAgentName] = useState('');
 
-  // 点击外部关闭菜单
   useEffect(() => {
     if (!openTeamMenu && !openAgentMenu) return;
     const handleClickOutside = () => {
@@ -75,7 +74,6 @@ const TeamTree = memo(function TeamTree({
       setValidationWarning({ message: t('sidebar.nameNotEmpty') });
       return;
     }
-    // 实时验证
     const existingNames = teams.filter((t) => t.id !== teamId).map((t) => t.name);
     const validation = validateName(name, existingNames);
     if (!validation.valid) {
@@ -87,13 +85,12 @@ const TeamTree = memo(function TeamTree({
     setEditName('');
   };
 
-  // 离开输入框时自动保存（显示警告弹窗）
   const handleTeamBlur = (teamId: string) => {
     setTimeout(() => {
-      if (editingTeam === teamId) { // 确保还在编辑模式
+      if (editingTeam === teamId) {
         saveTeamName(teamId);
       }
-    }, 100); // 延迟执行，确保点击事件优先处理
+    }, 100);
   };
 
   const onTeamNameChange = (value: string) => {
@@ -113,7 +110,6 @@ const TeamTree = memo(function TeamTree({
       return;
     }
     if (!editingAgent) return;
-    // 实时验证
     let existingNames: string[] = [];
     teams.forEach((team) => {
       if (team.agents.some((a) => a.id === editingAgent)) {
@@ -130,13 +126,12 @@ const TeamTree = memo(function TeamTree({
     setEditAgentName('');
   };
 
-  // 离开输入框时自动保存（显示警告弹窗）
   const handleAgentBlur = () => {
     setTimeout(() => {
-      if (editingAgent) { // 确保还在编辑模式
+      if (editingAgent) {
         saveAgentName();
       }
-    }, 100); // 延迟执行，确保点击事件优先处理
+    }, 100);
   };
 
   const onAgentNameChange = (value: string) => {
@@ -177,39 +172,39 @@ const TeamTree = memo(function TeamTree({
 
   return (
     <div>
-      <div className="agentstudio-sidebar-section-header flex items-center justify-between pr-1 pb-[6px] min-h-[28px]">
-        <div className="agentstudio-sidebar-section-label flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.5px]">
+      <div className="flex items-center justify-between pr-1 pb-[6px] min-h-[28px]">
+        <div className="flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.5px]">
           <Users size={14} /> {t('sidebar.myTeams')}
         </div>
-        <button 
-          className={`agentstudio-sidebar-section-action bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-all duration-200 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
+        <button
+          className={`bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-all duration-200 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
           onClick={isAuthenticated ? handleAddTeam : () => openLoginModal()}
           title={isAuthenticated ? t('sidebar.createTeam') : '登录后解锁功能'}
         >
           {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
         </button>
       </div>
-      <div className="agentstudio-sidebar-menu">
+      <div className="p-0 flex flex-col gap-0.5">
         {teams.map((team) => (
-          <div key={team.id} className="agentstudio-team-folder mb-px rounded-md overflow-visible">
-            <div className="agentstudio-team-folder-header group flex items-center gap-[6px] py-[6px] pl-[6px] pr-[32px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[32px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
+          <div key={team.id} className="mb-px rounded-md overflow-visible">
+            <div className="group flex items-center gap-[6px] py-[6px] pl-[6px] pr-[32px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[32px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
-                className="agentstudio-team-toggle bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-all duration-200 flex-shrink-0 w-[18px] h-[18px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-all duration-200 flex-shrink-0 w-[18px] h-[18px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
-                <ChevronDown 
-                  size={14} 
-                  className={`chevron-icon transition-transform duration-200 ${team.isExpanded ? '' : '-rotate-90'}`} 
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-200 ${team.isExpanded ? '' : '-rotate-90'}`}
                 />
               </button>
-              
+
               {team.isPinned && (
-                <Pin size={12} className="agentstudio-team-pin text-[var(--color-accent-soft)] flex-shrink-0 mr-[-2px]" />
+                <Pin size={12} className="text-[var(--color-accent-soft)] flex-shrink-0 mr-[-2px]" />
               )}
-              
+
               {editingTeam === team.id ? (
-                <div className="agentstudio-team-edit flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
                   <input
-                    className="agentstudio-team-edit-input w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
+                    className="w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
                     value={editName}
                     onChange={(e) => onTeamNameChange(e.target.value)}
                     onBlur={() => handleTeamBlur(team.id)}
@@ -221,10 +216,10 @@ const TeamTree = memo(function TeamTree({
                 </div>
               ) : (
                 <>
-                  <span className="agentstudio-team-name text-sm font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
-                  <span className="agentstudio-team-count text-[10px] text-[var(--color-text-muted)] flex-shrink-0 font-normal opacity-50 min-w-[12px] text-right">{team.agents.length}</span>
+                  <span className="text-sm font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
+                  <span className="text-[10px] text-[var(--color-text-muted)] flex-shrink-0 font-normal opacity-50 min-w-[12px] text-right">{team.agents.length}</span>
                   <button
-                    className="agentstudio-team-menu-btn absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 z-10 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 z-10 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
                     onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
                     title={t('sidebar.moreOptions')}
                   >
@@ -232,7 +227,7 @@ const TeamTree = memo(function TeamTree({
                   </button>
                   {onTeamChat && (
                     <button
-                      className="agentstudio-team-chat-btn absolute right-[30px] top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100"
+                      className="absolute right-[30px] top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100"
                       onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
                       title="团队对话"
                     >
@@ -245,11 +240,11 @@ const TeamTree = memo(function TeamTree({
 
             {openTeamMenu === team.id && createPortal(
               <div
-                className="agentstudio-team-dropdown agentstudio-portal-dropdown bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[9999] z-[99999]"
+                className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[99999]"
                 style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
               >
                 <button
-                  className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleAddAgent(team.id);
@@ -261,7 +256,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('sidebar.addAgent')}</span>
                 </button>
                 <button
-                  className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     startEditTeam(team);
@@ -272,7 +267,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('workstation.rename')}</span>
                 </button>
                 <button
-                  className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleTogglePinTeam(team.id);
@@ -284,7 +279,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                 </button>
                 <button
-                  className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-accent-red)] text-left hover:bg-[color-mix(in_srgb,var(--da-accent-red)_10%,transparent)]"
+                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--da-accent-red)] text-left hover:bg-[color-mix(in_srgb,var(--da-accent-red)_10%,transparent)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     setConfirmDelete({ type: 'team', teamId: team.id });
@@ -298,9 +293,9 @@ const TeamTree = memo(function TeamTree({
               </div>,
               document.body,
             )}
-            
+
             {team.isExpanded && (
-              <div className="agentstudio-team-agents py-px ml-[28px]">
+              <div className="py-px ml-[28px]">
                 {team.agents.map((agent) => (
                   <TeamTreeAgentItem
                     key={agent.id}
@@ -382,7 +377,6 @@ const TeamTree = memo(function TeamTree({
         document.body,
       )}
 
-      {/* 验证警告弹窗 */}
       {validationWarning && createPortal(
         <div className="agentstudio-modal-overlay" onClick={() => setValidationWarning(null)}>
           <div className="agentstudio-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">

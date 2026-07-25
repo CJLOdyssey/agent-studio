@@ -1,2 +1,1 @@
-/* sidebar/index.css — 全部已迁移到 Tailwind className */
-/* 保留空文件避免 import 报错 */
+/* sidebar/index.css — 全部使用 Tailwind className，无需 CSS */

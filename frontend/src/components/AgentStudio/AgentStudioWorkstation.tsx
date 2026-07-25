@@ -26,7 +26,7 @@ export default function AgentStudioWorkstation() {
           <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
             <div className="flex flex-1 overflow-hidden relative">
             {s.isSidebarOpen && (
-              <div className="agentstudio-mobile-overlay visible" onClick={() => s.setIsSidebarOpen(false)} />
+              <div className="fixed inset-0 bg-[var(--da-overlay-bg)] z-[calc(var(--z-overlay)-1)] animate-[overlayFadeIn_0.15s_ease-out]" onClick={() => s.setIsSidebarOpen(false)} />
             )}
 
             <AgentStudioSidebar
@@ -67,22 +67,22 @@ export default function AgentStudioWorkstation() {
               <div className="flex flex-col flex-1 overflow-hidden">
                 <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--color-surface-overlay)]">
                   <div className="flex items-center gap-3">
-                  <button className="agentstudio-header-btn" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
+                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
                     <PanelLeft size={18} />
                   </button>
                 </div>
                   <div className="flex items-center gap-2">
-                  <button className="agentstudio-header-btn" onClick={() => s.updateSettings({ theme: s.isDarkMode ? 'light' : 'dark' })} aria-label="Toggle dark mode">
+                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" onClick={() => s.updateSettings({ theme: s.isDarkMode ? 'light' : 'dark' })} aria-label="Toggle dark mode">
                     {s.isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                   </button>
-                  <button className="agentstudio-header-btn" aria-label="Notifications">
+                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" aria-label="Notifications">
                     <Bell size={16} />
-                    <span className="agentstudio-header-notif-dot" />
+                    <span className="absolute top-[6px] right-2 w-2 h-2 rounded-full bg-[var(--icon-status-error)] border-2 border-[var(--da-bg-card)]" />
                   </button>
                 </div>
               </header>
 
-                <main className={`flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[var(--color-surface)] ${s.isPageDragOver ? 'agentstudio-drag-over' : ''}`} id="main-content"
+                <main className={`flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[var(--color-surface)] ${s.isPageDragOver ? 'ring-2 ring-inset ring-[var(--color-accent)]' : ''}`} id="main-content"
                 onDragOver={s.handlePageDragOver} onDragLeave={s.handlePageDragLeave} onDrop={s.handlePageDrop}>
                   <div className="flex-1 flex flex-col overflow-hidden">
                   {s.isPageDragOver && (

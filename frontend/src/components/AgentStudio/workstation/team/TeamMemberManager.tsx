@@ -27,20 +27,13 @@ function MemberAvatar({ name, size = 28 }: { name: string; size?: number }) {
   const initial = (name || '?').charAt(0).toUpperCase();
   return (
     <span
-      className="rounded-full"
+      className="rounded-full flex items-center justify-center shrink-0 font-semibold leading-none"
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
         background: `color-mix(in srgb, ${hashColor(name)} 20%, transparent)`,
         color: hashColor(name),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         fontSize: size * 0.45,
-        fontWeight: 600,
-        flexShrink: 0,
-        lineHeight: 1,
       }}
     >
       {initial}
@@ -64,15 +57,10 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-w-[480px] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--color-accent)', fontSize: 16,
-            }}>
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] flex items-center justify-center text-[var(--color-accent)] text-base">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
@@ -81,120 +69,57 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
               </svg>
             </span>
             <div>
-              <h3 style={{ margin: 0, fontSize: 'var(--da-font-size-base)', fontWeight: 600 }}>管理成员</h3>
-              <p style={{ margin: '1px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)' }}>{team.name}</p>
+              <h3 className="m-0 text-[var(--da-font-size-base)] font-semibold">管理成员</h3>
+              <p className="mt-[1px] mb-0 text-[var(--da-font-size-xs)] text-[var(--color-text-muted)]">{team.name}</p>
             </div>
           </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
         </div>
 
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ paddingTop: 0 }}>
+        <div className="p-5 pt-0 overflow-y-auto flex-1 min-h-0 flex flex-col">
           {error && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 12px', marginBottom: 12,
-              background: 'color-mix(in srgb, var(--da-status-error) 10%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--da-status-error) 20%, transparent)',
-              borderRadius: 8,
-              fontSize: 'var(--da-font-size-sm)',
-              color: 'var(--da-status-error)',
-            }}>
-              <span style={{ flex: 1 }}>{error}</span>
-              <button onClick={() => setError(null)} style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'inherit', padding: 2, display: 'flex',
-              }}><X size={14} /></button>
+            <div className="flex items-center gap-2 py-2 px-3 mb-3 bg-[color-mix(in_srgb,var(--da-status-error)_10%,transparent)] border border-[color-mix(in_srgb,var(--da-status-error)_20%,transparent)] rounded-lg text-[var(--da-font-size-sm)] text-[var(--da-status-error)]">
+              <span className="flex-1">{error}</span>
+              <button onClick={() => setError(null)} className="bg-transparent border-none cursor-pointer text-inherit p-0.5 flex"><X size={14} /></button>
             </div>
           )}
 
-          <div style={{ marginBottom: 20 }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              marginBottom: 10,
-              fontSize: 'var(--da-font-size-sm)', fontWeight: 500,
-              color: 'var(--color-text-secondary)',
-            }}>
-              <span style={{ width: 14, height: 2, background: 'var(--color-border-strong)', borderRadius: 1 }} />
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-2.5 text-[var(--da-font-size-sm)] font-medium text-[var(--color-text-secondary)]">
+              <span className="w-3.5 h-0.5 bg-[var(--color-border-strong)] rounded-[1px]" />
               添加成员
             </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 12px',
-              border: '1px solid var(--color-border)',
-              borderRadius: 8,
-              background: 'var(--color-surface-raised)',
-              marginBottom: 6,
-              transition: 'border-color 0.2s',
-            }}>
-              <Search size={14} style={{ color: 'var(--color-text-tertiary)', flexShrink: 0 }} />
+            <div className="flex items-center gap-2 py-2 px-3 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface-raised)] mb-1.5 transition-[border-color] duration-200">
+              <Search size={14} className="text-[var(--color-text-tertiary)] shrink-0" />
               <input
                 value={agentSearch}
                 onChange={(e) => setAgentSearch(e.target.value)}
                 placeholder="搜索 Agent..."
-                style={{
-                  border: 'none', outline: 'none', flex: 1,
-                  fontSize: 'var(--da-font-size-sm)',
-                  background: 'transparent',
-                  color: 'var(--color-text-primary)',
-                }}
+                className="border-none outline-none flex-1 text-[var(--da-font-size-sm)] bg-transparent text-[var(--color-text-primary)]"
               />
             </div>
             {filteredAgents.length === 0 ? (
-              <p style={{
-                fontSize: 'var(--da-font-size-xs)',
-                color: 'var(--color-text-tertiary)',
-                padding: '12px 0', textAlign: 'center',
-              }}>
+              <p className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)] py-3 text-center">
                 {agentSearch ? '无匹配 Agent' : '所有 Agent 已是成员'}
               </p>
             ) : (
-              <div style={{
-                display: 'flex', flexDirection: 'column', gap: 1,
-                maxHeight: 180, overflowY: 'auto',
-                margin: '0 -4px', padding: '4px',
-              }}>
+              <div className="flex flex-col gap-px max-h-[180px] overflow-y-auto -mx-1 px-1">
                 {filteredAgents.map((agent, idx) => (
                   <button
                     key={agent.id}
                     onClick={() => handleAdd(agent)}
                     disabled={addingId === agent.id}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '7px 10px',
-                      border: 'none',
-                      borderRadius: 8,
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      animation: idx < 3 ? 'fadeSlideIn 0.25s ease-out both' : 'none',
-                      animationDelay: `${idx * 30}ms`,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
+                    className="flex items-center gap-2.5 py-[7px] px-2.5 border-none rounded-lg bg-transparent cursor-pointer transition-all duration-150 hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)]"
+                    style={{ animation: idx < 3 ? 'fadeSlideIn 0.25s ease-out both' : 'none', animationDelay: `${idx * 30}ms` }}
                   >
                     <MemberAvatar name={agent.name} size={26} />
-                    <span style={{
-                      flex: 1, textAlign: 'left',
-                      fontSize: 'var(--da-font-size-sm)',
-                      color: 'var(--color-text-primary)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
+                    <span className="flex-1 text-left text-[var(--da-font-size-sm)] text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap">
                       {agent.name}
                     </span>
                     {addingId === agent.id ? (
-                      <Loader2 size={14} className="animate-spin" style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+                      <Loader2 size={14} className="animate-spin text-[var(--color-accent)] shrink-0" />
                     ) : (
-                      <span style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        fontSize: 'var(--da-font-size-xs)',
-                        color: 'var(--color-accent)',
-                        fontWeight: 500,
-                        flexShrink: 0,
-                      }}>
+                      <span className="flex items-center gap-1 text-[var(--da-font-size-xs)] text-[var(--color-accent)] font-medium shrink-0">
                         <Plus size={12} />
                         添加
                       </span>
@@ -205,93 +130,40 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
             )}
           </div>
 
-          <div style={{
-            height: 1, background: 'var(--color-border)',
-            marginBottom: 16,
-          }} />
+          <div className="h-px bg-[var(--color-border)] mb-4" />
 
           <div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              marginBottom: 10,
-              fontSize: 'var(--da-font-size-sm)', fontWeight: 500,
-              color: 'var(--color-text-secondary)',
-            }}>
-              <span style={{ width: 14, height: 2, background: 'var(--color-border-strong)', borderRadius: 1 }} />
+            <div className="flex items-center gap-2 mb-2.5 text-[var(--da-font-size-sm)] font-medium text-[var(--color-text-secondary)]">
+              <span className="w-3.5 h-0.5 bg-[var(--color-border-strong)] rounded-[1px]" />
               当前成员
-              <span style={{
-                fontSize: 'var(--da-font-size-xs)',
-                color: 'var(--color-text-tertiary)',
-                fontWeight: 400,
-              }}>
+              <span className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)] font-normal">
                 {members.length}
               </span>
             </div>
             {members.length === 0 ? (
-              <p style={{
-                fontSize: 'var(--da-font-size-xs)',
-                color: 'var(--color-text-tertiary)',
-                padding: '16px 0', textAlign: 'center',
-              }}>
+              <p className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)] py-4 text-center">
                 暂无成员
               </p>
             ) : (
-              <div style={{
-                display: 'flex', flexDirection: 'column', gap: 4,
-                maxHeight: 240, overflowY: 'auto',
-                margin: '0 -4px', padding: '4px',
-              }}>
+              <div className="flex flex-col gap-1 max-h-[240px] overflow-y-auto -mx-1 px-1">
                 {members.map((m) => (
                   <div
                     key={m.id}
-                    className="transition-all hover:border-[var(--color-border)]"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '8px 10px',
-                      background: 'var(--color-surface-raised)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 8,
-                      transition: 'all 0.15s',
-                    }}
+                    className="flex items-center gap-2.5 py-2 px-2.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-lg transition-all duration-150 hover:border-[var(--color-border)]"
                   >
                     <MemberAvatar name={m.name} size={28} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: 'var(--da-font-size-sm)',
-                        fontWeight: 500,
-                        color: 'var(--color-text-primary)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[var(--da-font-size-sm)] font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap">
                         {m.name}
                       </div>
-                      <div style={{
-                        fontSize: 'var(--da-font-size-xs)',
-                        color: 'var(--color-text-tertiary)',
-                      }}>
+                      <div className="text-[var(--da-font-size-xs)] text-[var(--color-text-tertiary)]">
                         {m.role}
                       </div>
                     </div>
                     <button
                       onClick={() => handleRemove(m.id)}
                       disabled={removingId === m.id}
-                      style={{
-                        width: 28, height: 28, borderRadius: 6,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: 'none',
-                        background: 'transparent',
-                        color: 'var(--color-text-tertiary)',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'color-mix(in srgb, var(--da-status-error) 12%, transparent)';
-                        e.currentTarget.style.color = 'var(--da-status-error)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--color-text-tertiary)';
-                      }}
+                      className="w-7 h-7 rounded-md flex items-center justify-center border-none bg-transparent text-[var(--color-text-tertiary)] cursor-pointer transition-all duration-150 shrink-0 hover:bg-[color-mix(in_srgb,var(--da-status-error)_12%,transparent)] hover:text-[var(--da-status-error)]"
                     >
                       {removingId === m.id
                         ? <Loader2 size={14} className="animate-spin" />

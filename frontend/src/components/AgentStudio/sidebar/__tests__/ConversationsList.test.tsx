@@ -122,7 +122,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onSelect = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect });
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     if (item) fireEvent.click(item);
     expect(onSelect).toHaveBeenCalledWith(conversations[0]);
   });
@@ -131,7 +131,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onSelect = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect });
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     if (item) fireEvent.keyDown(item, { key: 'Enter' });
     expect(onSelect).toHaveBeenCalled();
   });
@@ -140,7 +140,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onSelect = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect });
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     if (item) fireEvent.keyDown(item, { key: ' ' });
     expect(onSelect).toHaveBeenCalled();
   });
@@ -149,7 +149,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onDelete = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onDelete });
-    const deleteBtn = document.querySelector('.agentstudio-conv-delete');
+    const deleteBtn = document.querySelector('button[aria-label="common.delete"]');
     if (deleteBtn) fireEvent.click(deleteBtn);
     expect(onDelete).toHaveBeenCalledWith('c1');
   });
@@ -159,7 +159,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onDelete = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect, onDelete });
-    const deleteBtn = document.querySelector('.agentstudio-conv-delete');
+    const deleteBtn = document.querySelector('button[aria-label="common.delete"]');
     if (deleteBtn) fireEvent.click(deleteBtn);
     expect(onSelect).not.toHaveBeenCalled();
     expect(onDelete).toHaveBeenCalled();
@@ -168,14 +168,14 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   it('has accessible delete button', () => {
     const conversations = [makeConv()];
     renderWithVirtuoso(conversations);
-    const deleteBtn = document.querySelector('.agentstudio-conv-delete');
+    const deleteBtn = document.querySelector('button[aria-label="common.delete"]');
     expect(deleteBtn).toBeInTheDocument();
   });
 
   it('has accessible conv item with tabIndex', () => {
     const conversations = [makeConv()];
     renderWithVirtuoso(conversations);
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     expect(item?.getAttribute('tabindex')).toBe('0');
   });
 

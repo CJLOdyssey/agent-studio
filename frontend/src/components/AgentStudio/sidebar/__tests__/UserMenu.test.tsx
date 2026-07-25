@@ -128,7 +128,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
   describe('interaction', () => {
     it('does not render when closed', () => {
       const { container } = render(<UserMenu {...defaultProps} isUserMenuOpen={false} />);
-      expect(container.querySelector('.agentstudio-user-popover')).not.toBeInTheDocument();
+      expect(screen.queryByText('API Key')).not.toBeInTheDocument();
     });
 
     it('Escape key closes menu', () => {
@@ -163,7 +163,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
     it('trigger button closes menu when open', () => {
       render(<UserMenu {...defaultProps} />);
-      const trigger = document.querySelector('.agentstudio-user-trigger') as HTMLButtonElement;
+      const trigger = document.querySelector('[aria-haspopup="menu"]') as HTMLButtonElement;
       fireEvent.click(trigger);
       expect(mockSetIsUserMenuOpen).toHaveBeenCalledWith(false);
     });
@@ -182,7 +182,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
     it('trigger has aria attributes', () => {
       render(<UserMenu {...defaultProps} />);
-      const trigger = document.querySelector('.agentstudio-user-trigger');
+      const trigger = document.querySelector('[aria-haspopup="menu"]');
       expect(trigger?.getAttribute('aria-expanded')).toBe('true');
       expect(trigger?.getAttribute('aria-haspopup')).toBe('menu');
     });

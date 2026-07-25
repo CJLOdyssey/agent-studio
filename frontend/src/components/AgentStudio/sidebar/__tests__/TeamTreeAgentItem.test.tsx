@@ -44,13 +44,13 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
 
   it('shows active class when selected', () => {
     render(<TeamTreeAgentItem {...baseProps} selectedAgentId="a1" />);
-    const wrapper = screen.getByText('Test Agent').closest('[class*="agentstudio-team-agent-item-wrapper"]');
+    const wrapper = screen.getByText('Test Agent').closest('[class*="group"][class*="relative"]');
     expect(wrapper?.className).toContain('active');
   });
 
   it('does not show active class when not selected', () => {
     render(<TeamTreeAgentItem {...baseProps} selectedAgentId="other" />);
-    const wrapper = screen.getByText('Test Agent').closest('[class*="agentstudio-team-agent-item-wrapper"]');
+    const wrapper = screen.getByText('Test Agent').closest('[class*="group"][class*="relative"]');
     expect(wrapper?.className).not.toContain('active');
   });
 
@@ -91,10 +91,6 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
 
   it('renders dropdown portal when menu is open', () => {
     render(<TeamTreeAgentItem {...baseProps} openAgentMenu="a1" menuPosition={{ top: 100, left: 200 }} />);
-    // Portal content goes to document.body
-    const dropdown = document.body.querySelector('.agentstudio-agent-dropdown');
-    expect(dropdown).toBeDefined();
-
     // Check items rendered
     expect(screen.getByText('sidebar.edit')).toBeDefined();
     expect(screen.getByText('sidebar.rename')).toBeDefined();
@@ -103,8 +99,7 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
 
   it('does not render dropdown when menu is closed', () => {
     render(<TeamTreeAgentItem {...baseProps} openAgentMenu={null} />);
-    const dropdown = document.body.querySelector('.agentstudio-agent-dropdown');
-    expect(dropdown).toBeNull();
+    expect(screen.queryByText('sidebar.edit')).toBeNull();
   });
 
   it('calls openLoginModal when not authenticated and edit clicked', () => {
@@ -211,11 +206,9 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
 
   it('shows Lock icon when not authenticated', () => {
     render(<TeamTreeAgentItem {...baseProps} isAuthenticated={false} openAgentMenu="a1" />);
-    // Lock icons should be present in the dropdown
-    const dropdown = document.body.querySelector('.agentstudio-agent-dropdown');
-    expect(dropdown?.textContent).toContain('sidebar.edit');
-    expect(dropdown?.textContent).toContain('sidebar.rename');
-    expect(dropdown?.textContent).toContain('sidebar.delete');
+    expect(screen.getByText('sidebar.edit')).toBeDefined();
+    expect(screen.getByText('sidebar.rename')).toBeDefined();
+    expect(screen.getByText('sidebar.delete')).toBeDefined();
   });
 
   it('has two buttons when not editing', () => {

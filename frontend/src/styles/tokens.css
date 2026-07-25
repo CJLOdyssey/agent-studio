@@ -4,16 +4,17 @@
   /* ── Z-index ── */
   --z-base: 1;
   --z-dropdown: 100;
-  --z-sticky: 200;
+  --z-sticky: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
   --z-modal-backdrop: 300;
-  --z-modal: 400;
   --z-toast: 500;
   --z-tooltip: 600;
 
   /* ── 布局尺寸 ── */
-  --da-sidebar-width: clamp(16rem, 20vw, 24rem);
-  --da-sidebar-min: 16rem;
-  --da-sidebar-max: 22rem;
+  --da-sidebar-width: clamp(15rem, 15vw, 17.5rem);
+  --da-sidebar-min: 15rem;
+  --da-sidebar-max: 17.5rem;
   --da-input-height: 64px;
   --da-input-radius: 20px;
   --da-toolbar-height: 48px;

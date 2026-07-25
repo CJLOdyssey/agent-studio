@@ -93,7 +93,7 @@ const ConversationsList = memo(function ConversationsList({
     return (
       <div
         key={conv.id}
-        className={`agentstudio-conv-item group flex items-center justify-between py-2 px-2 rounded-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] ${isActive ? 'bg-[var(--color-surface-elevated)]' : ''}`}
+        className={`group flex items-center justify-between py-2 px-2 rounded-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] ${isActive ? 'bg-[var(--color-surface-elevated)]' : ''}`}
         onClick={() => onSelect(conv)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -105,15 +105,15 @@ const ConversationsList = memo(function ConversationsList({
         role="button"
         aria-selected={isActive}
       >
-        <div className="agentstudio-conv-item-content flex-1 min-w-0">
-          <div className="agentstudio-conv-item-title text-sm text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1">
+        <div className="flex-1 min-w-0">
+          <div className="text-sm text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1">
             {isTeam && (
-              <span className="agentstudio-conv-item-agent-icon flex-shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
+              <span className="shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
                 <Users size={12} />
               </span>
             )}
             {agent && AgentIcon && !isTeam && (
-              <span className="agentstudio-conv-item-agent-icon flex-shrink-0 flex items-center" style={{ color: agent.color }}>
+              <span className="shrink-0 flex items-center" style={{ color: agent.color }}>
                 <AgentIcon size={12} />
               </span>
             )}
@@ -121,12 +121,12 @@ const ConversationsList = memo(function ConversationsList({
               ? Array.from(conv.title).slice(0, 26).join('') + '...'
               : conv.title}
           </div>
-          <div className="agentstudio-conv-item-meta text-xs text-[var(--color-text-muted)] mt-[2px] flex items-center gap-1">
+          <div className="text-xs text-[var(--color-text-muted)] mt-[2px] flex items-center gap-1">
             {isTeam && (
-              <span className="agentstudio-conv-item-agent-name text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
+              <span className="text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
             )}
             {agent && !isTeam && (
-              <span className="agentstudio-conv-item-agent-name text-[var(--color-text-secondary)] font-medium">{agent.name}</span>
+              <span className="text-[var(--color-text-secondary)] font-medium">{agent.name}</span>
             )}
             {conv.messages.filter((m) => m.role === 'agent').length > 0
               ? t('sidebar.replied')
@@ -139,7 +139,7 @@ const ConversationsList = memo(function ConversationsList({
           </div>
         </div>
         <button
-          className="agentstudio-conv-delete flex-shrink-0 p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-opacity flex items-center justify-center group-hover:opacity-100 hover:text-[var(--icon-status-error)]"
+          className="shrink-0 p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-opacity flex items-center justify-center group-hover:opacity-100 hover:text-[var(--icon-status-error)]"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(conv.id);
@@ -153,13 +153,13 @@ const ConversationsList = memo(function ConversationsList({
   };
 
   return (
-    <div className="agentstudio-conversations-list flex flex-col gap-2 mb-1">
+    <div className="flex flex-col gap-2 mb-1">
       <Virtuoso
         style={{ height: '300px' }}
         data={flatItems}
         itemContent={(_index: number, item: (typeof flatItems)[number]) =>
           item.type === 'group' ? (
-            <div className="agentstudio-conv-group-label text-xs font-semibold text-[var(--color-text-muted)] py-1 px-2 flex items-center gap-1">{item.label}</div>
+            <div className="text-xs font-semibold text-[var(--color-text-muted)] py-1 px-2 flex items-center gap-1">{item.label}</div>
           ) : (
             renderConversationItem(item.conv)
           )

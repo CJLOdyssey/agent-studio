@@ -71,7 +71,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const toggleTeam = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} toggleTeam={toggleTeam} />);
-    fireEvent.click(document.querySelector('.agentstudio-team-folder-header')!);
+    fireEvent.click(screen.getByText('Team Alpha'));
     expect(toggleTeam).toHaveBeenCalledWith('t1');
   });
 
@@ -81,7 +81,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const menuBtn = screen.getByTitle('sidebar.moreOptions');
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.getByText('sidebar.addAgent')).toBeDefined();
     restore();
   });
 
@@ -92,7 +92,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(menuBtn);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeNull();
+    expect(screen.queryByText('sidebar.addAgent')).toBeNull();
     restore();
   });
 
@@ -103,9 +103,9 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore1 = mockBoundingRect(buttons[0]);
     const restore2 = mockBoundingRect(buttons[1]);
     fireEvent.click(buttons[0]);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.getByText('sidebar.addAgent')).toBeDefined();
     fireEvent.click(buttons[1]);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.getByText('sidebar.addAgent')).toBeDefined();
     restore1();
     restore2();
   });
@@ -192,7 +192,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     expect(input).toBeDefined();
     expect(input.value).toBe('Team Alpha');
     restore();
@@ -261,14 +261,14 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const onTeamChat = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} onTeamChat={onTeamChat} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn');
+    const chatBtn = document.querySelector('[title="团队对话"]');
     expect(chatBtn).toBeDefined();
   });
 
   it('does not render team chat button when onTeamChat is undefined', () => {
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} onTeamChat={undefined} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn');
+    const chatBtn = document.querySelector('[title="团队对话"]');
     expect(chatBtn).toBeNull();
   });
 
@@ -276,7 +276,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const onTeamChat = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} onTeamChat={onTeamChat} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn')!;
+    const chatBtn = document.querySelector('[title="团队对话"]')!;
     fireEvent.click(chatBtn);
     expect(onTeamChat).toHaveBeenCalledWith('t1');
   });
@@ -286,7 +286,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const onTeamChat = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} toggleTeam={toggleTeam} onTeamChat={onTeamChat} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn')!;
+    const chatBtn = document.querySelector('[title="团队对话"]')!;
     fireEvent.click(chatBtn);
     expect(toggleTeam).not.toHaveBeenCalled();
   });
@@ -297,9 +297,9 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const menuBtn = screen.getByTitle('sidebar.moreOptions');
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.getByText('sidebar.addAgent')).toBeDefined();
     fireEvent.click(document);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeNull();
+    expect(screen.queryByText('sidebar.addAgent')).toBeNull();
     restore();
   });
 });

@@ -92,22 +92,22 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   );
 
   return (
-    <aside className={`agentstudio-sidebar ${isSidebarOpen ? 'open' : ' collapsed'}`}>
-      <div className="agentstudio-sidebar-logo">
-        <div className="agentstudio-header-logo">
+    <aside className={`flex flex-col h-full w-[var(--da-sidebar-width)] min-w-[var(--da-sidebar-width)] bg-[var(--da-bg-sidebar)] border-r border-r-[var(--da-border-subtle)] shrink-0 overflow-hidden transition-[width,min-width,opacity] duration-200 ${isSidebarOpen ? '' : 'w-0 min-w-0 opacity-0 pointer-events-none'}`}>
+      <div className="flex items-center gap-[10px] p-3 shrink-0">
+        <div className="w-8 h-8 bg-[color-mix(in_srgb,var(--da-bg-primary),var(--da-text-primary)_8%)] rounded-lg flex items-center justify-center text-[var(--icon-planning)] shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
           <Bot size={18} />
         </div>
-        <span className="agentstudio-header-title">AgentStudio</span>
+        <span className="font-semibold text-[var(--da-font-size-base)] text-[var(--da-text-primary)] tracking-[-0.02em]">AgentStudio</span>
       </div>
 
-      <div className="agentstudio-sidebar-new-chat">
-        <button className="agentstudio-sprint-btn w-full flex items-center justify-center gap-2 py-2 px-3 bg-transparent border-none rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-[var(--color-surface-hover)]" onClick={onNewChat}>
+      <div className="px-3 pb-3 shrink-0">
+        <button className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-transparent border-none rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-[var(--color-surface-hover)]" onClick={onNewChat}>
           <Sparkles size={16} />
           <span>{t('sidebar.newChat')}</span>
         </button>
       </div>
 
-      <div className="agentstudio-sidebar-nav">
+      <div className="flex-1 overflow-y-auto px-3 flex flex-col gap-4">
         <TeamTree
           teams={teams}
           selectedAgentId={selectedAgentId}
@@ -127,10 +127,10 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
         />
 
         <div>
-          <div className="agentstudio-sidebar-section-label">
+          <div className="flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-[0.5px]">
             <MessageSquare size={14} /> {t('sidebar.recentConversations')}
           </div>
-          <div className="agentstudio-sidebar-chats">
+          <div className="p-0">
             <ConversationsList
               conversations={conversations}
               activeConvId={activeConvId}
