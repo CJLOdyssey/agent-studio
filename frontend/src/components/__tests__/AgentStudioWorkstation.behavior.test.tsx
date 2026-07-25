@@ -299,7 +299,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
       await waitFor(() => {
-        const messagesArea = document.querySelector('.agentstudio-messages-inner');
+        const messagesArea = document.querySelector('[aria-live="polite"]');
         expect(messagesArea?.textContent).toContain('测试消息');
       });
     });

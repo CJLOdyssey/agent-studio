@@ -34,8 +34,8 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'test' })} allAgents={[]} />
       );
-      expect(container.querySelector('.agentstudio-msg-regenerate')).toBeNull();
-      expect(container.querySelector('.agentstudio-msg-thumb')).toBeNull();
+      expect(container.querySelector('[aria-label="teamMessage.regenerate"]')).toBeNull();
+      expect(container.querySelector('[aria-label="teamMessage.thumbsUp"]')).toBeNull();
     });
 
     it('shows edit button for user messages', () => {
@@ -69,14 +69,18 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'x', timestamp: ts })} allAgents={[]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeInTheDocument();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(true);
     });
 
     it('does not show time when timestamp is missing', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'x', timestamp: undefined })} allAgents={[]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeNull();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(false);
     });
 
     it('prefills edit textarea with current message content', async () => {
@@ -127,8 +131,8 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-version-pagination')).toBeInTheDocument();
-      expect(container.querySelector('.agentstudio-version-count')?.textContent).toBe('2/3');
+      expect(container.querySelector('[aria-label="Previous version"]')).toBeInTheDocument();
+      expect(container.textContent).toContain('2/3');
     });
 
     it('does not show version pagination with single version', () => {
@@ -138,7 +142,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-version-pagination')).toBeNull();
+      expect(container.querySelector('[aria-label="Previous version"]')).toBeNull();
     });
 
     it('disables prev button at first version', () => {
@@ -148,7 +152,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
+      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
       expect(btns[0]).toBeDisabled();
       expect(btns[1]).not.toBeDisabled();
     });
@@ -160,7 +164,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
+      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
       expect(btns[0]).not.toBeDisabled();
       expect(btns[1]).toBeDisabled();
     });
@@ -174,7 +178,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           onSwitchVersion={onSwitch}
         />
       );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
+      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
       await userEvent.click(btns[0]);
       expect(onSwitch).toHaveBeenCalledWith('m1', 'prev');
     });
@@ -188,7 +192,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           onSwitchVersion={onSwitch}
         />
       );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
+      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
       await userEvent.click(btns[1]);
       expect(onSwitch).toHaveBeenCalledWith('m1', 'next');
     });
@@ -206,7 +210,6 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue />
       );
-      expect(container.querySelector('.agentstudio-msg-interrupted')).toBeInTheDocument();
       expect(container.textContent).toContain('teamMessage.interrupted');
     });
 
@@ -215,7 +218,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue isContinuing />
       );
       expect(container.textContent).toContain('teamMessage.continuing');
-      const btn = container.querySelector('.agentstudio-msg-continue') as HTMLButtonElement;
+      const btn = container.querySelector('[aria-label="teamMessage.continuing"]') as HTMLButtonElement;
       expect(btn).toBeDisabled();
     });
 
@@ -223,7 +226,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue isContinuing />
       );
-      expect(container.querySelector('.agentstudio-msg-interrupted')).toBeNull();
+      expect(container.textContent).not.toContain('teamMessage.interrupted');
     });
 
     it('calls onContinue when continue button clicked', async () => {
@@ -231,7 +234,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue onContinue={onContinue} />
       );
-      const btn = container.querySelector('.agentstudio-msg-continue') as HTMLElement;
+      const btn = container.querySelector('[aria-label="teamMessage.continue"]') as HTMLElement;
       await userEvent.click(btn);
       expect(onContinue).toHaveBeenCalled();
     });
@@ -242,23 +245,23 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.agentstudio-msg-thumb')).toBeInTheDocument();
+      expect(container.querySelector('[aria-label="teamMessage.thumbsUp"]')).toBeInTheDocument();
     });
 
     it('adds active class when thumbsFeedback is up', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'up' })} allAgents={[mockAgent]} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
-      expect(thumbs[0].className).toContain('active');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
+      expect(thumbs[0].className).toContain('bg-[var(--da-accent-indigo)]');
     });
 
     it('adds active class when thumbsFeedback is down', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'down' })} allAgents={[mockAgent]} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
-      expect(thumbs[1].className).toContain('active');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
+      expect(thumbs[1].className).toContain('bg-[var(--da-accent-indigo)]');
     });
 
     it('calls onThumbsFeedback when thumbs up clicked', async () => {
@@ -266,7 +269,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} onThumbsFeedback={onThumbs} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
       await userEvent.click(thumbs[0]);
       expect(onThumbs).toHaveBeenCalledWith('m1', 'up');
     });
@@ -276,7 +279,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'up' })} allAgents={[mockAgent]} onThumbsFeedback={onThumbs} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
       await userEvent.click(thumbs[0]);
       expect(onThumbs).toHaveBeenCalledWith('m1', 'down');
     });
@@ -288,7 +291,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} onRegenerate={onRegen} />
       );
-      const btn = container.querySelector('.agentstudio-msg-regenerate') as HTMLElement;
+      const btn = container.querySelector('[aria-label="teamMessage.regenerate"]') as HTMLElement;
       await userEvent.click(btn);
       expect(onRegen).toHaveBeenCalledWith('m1');
     });

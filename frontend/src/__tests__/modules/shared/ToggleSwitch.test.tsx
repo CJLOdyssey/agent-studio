@@ -25,12 +25,14 @@ describe('ToggleSwitch', { tags: ['unit'] }, () => {
 
   it('renders with sm size', () => {
     const { container } = render(<ToggleSwitch checked={false} onChange={vi.fn()} size="sm" />);
-    expect(container.querySelector('.toggle-switch.sm')).toBeInTheDocument();
+    // sm size renders label with w-9 (20px) vs md w-10 (24px)
+    expect(container.querySelector('label[class*="w-9"]')).toBeInTheDocument();
   });
 
   it('renders with md size by default', () => {
     const { container } = render(<ToggleSwitch checked={false} onChange={vi.fn()} />);
-    expect(container.querySelector('.toggle-switch.md')).toBeInTheDocument();
+    // md size renders label with w-10 (24px) Tailwind class
+    expect(container.querySelector('label[class*="w-10"]')).toBeInTheDocument();
   });
 
   it('has no accessibility violations', async () => {

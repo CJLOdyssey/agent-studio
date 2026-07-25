@@ -166,9 +166,8 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
         showAgentChat: true,
         displayMessages: msgs,
       })} />);
-      const inner = container.querySelector('.agentstudio-messages-inner');
+      const inner = container.querySelector('[aria-live="polite"]');
       expect(inner).toBeDefined();
-      expect(inner?.getAttribute('aria-live')).toBe('polite');
       expect(screen.getByTestId('team-msg-1')).toBeInTheDocument();
       expect(screen.getByTestId('team-msg-2')).toBeInTheDocument();
     });

@@ -28,7 +28,7 @@ describe('CommandDropdown', { tags: ['unit'] }, () => {
         <CommandDropdown commands={[]} activeIndex={0} onSelect={onSelect} onHover={onHover} onClose={onClose} />
       </TestProviders>,
     );
-    expect(container.querySelector('.agentstudio-command-empty')).toBeTruthy();
+    expect(container.querySelector('[class*="text-center"]')).toBeTruthy();
   });
 
   it('renders command list', () => {
@@ -114,7 +114,7 @@ describe('CommandDropdown', { tags: ['unit'] }, () => {
         <CommandDropdown commands={cmds} activeIndex={0} onSelect={onSelect} onHover={onHover} onClose={onClose} />
       </TestProviders>,
     );
-    const popover = document.querySelector('.agentstudio-command-popover')!;
+    const popover = document.querySelector('[role="listbox"]')!;
     fireEvent.mouseDown(popover);
     expect(onClose).not.toHaveBeenCalled();
   });

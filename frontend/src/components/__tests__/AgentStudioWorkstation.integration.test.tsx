@@ -175,15 +175,15 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '请分析用户登录需求' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
       await waitFor(() => {
-        const messagesArea = document.querySelector('.agentstudio-messages-inner');
+        const messagesArea = document.querySelector('[aria-live="polite"]');
         expect(messagesArea?.textContent).toContain('请分析用户登录需求');
       });
-      const messages = document.querySelectorAll('.agentstudio-message-user, .agentstudio-message.user');
+      const messages = document.querySelectorAll('[class*="flex-row-reverse"]');
       expect(messages.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -194,12 +194,12 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '测试消息' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
       await waitFor(() => {
-        const messagesArea = document.querySelector('.agentstudio-messages-inner');
+        const messagesArea = document.querySelector('[aria-live="polite"]');
         expect(messagesArea?.textContent).toContain('测试消息');
       });
     });
@@ -249,7 +249,7 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '全体成员请注意' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
@@ -268,7 +268,7 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
@@ -282,7 +282,7 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
         </TestProviders>,
       );
 
-      const textarea = document.querySelector('.agentstudio-textarea') as HTMLTextAreaElement;
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
       fireEvent.change(textarea, { target: { value: '   ' } });
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
@@ -296,7 +296,7 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
         </TestProviders>,
       );
 
-      const sendBtn = document.querySelector('.agentstudio-send-btn') as HTMLButtonElement;
+      const sendBtn = screen.getByText('发送').closest('button') as HTMLButtonElement;
       expect(sendBtn.disabled).toBe(true);
     });
   });

@@ -51,7 +51,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-process-panel')).toBeNull();
+      expect(container.querySelector('#process-steps')).toBeNull();
     });
   });
 
@@ -73,7 +73,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-process-step')).toBeInTheDocument();
+      expect(container.querySelector('#process-steps')).toBeInTheDocument();
     });
 
     it('renders running step with spinner', () => {
@@ -83,7 +83,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-process-step')).toBeInTheDocument();
+      expect(container.querySelector('#process-steps')).toBeInTheDocument();
     });
 
     it('toggles plan expansion when header clicked', async () => {
@@ -93,7 +93,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      const header = container.querySelector('.agentstudio-process-header') as HTMLElement;
+      const header = container.querySelector('[role="button"][aria-controls="process-steps"]') as HTMLElement;
       expect(container.querySelector('#process-steps')).toBeInTheDocument();
       await userEvent.click(header);
       expect(container.querySelector('#process-steps')).toBeNull();
@@ -131,7 +131,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thinking: '' })} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.ds-thinking-block')).toBeNull();
+      expect(container.textContent).not.toContain('teamMessage.thinkingComplete');
     });
 
     it('renders thinking complete state with expand button', () => {
@@ -172,7 +172,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelectorAll('.ds-think-node').length).toBe(3);
+      expect(container.querySelectorAll('[class*="pl-5"][class*="mb-2.5"]').length).toBe(3);
     });
 
     it('toggles thinking expansion when header clicked', async () => {
@@ -182,10 +182,10 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      const header = container.querySelector('.ds-thinking-header') as HTMLElement;
-      expect(container.querySelector('.ds-thinking-body')).toBeInTheDocument();
+      const header = container.querySelector('button[aria-expanded]') as HTMLElement;
+      expect(container.querySelector('[class*="max-h-[420px]"]')).toBeInTheDocument();
       await userEvent.click(header);
-      expect(container.querySelector('.ds-thinking-body')).toBeNull();
+      expect(container.querySelector('[class*="max-h-[420px]"]')).toBeNull();
     });
 
     it('thinking stopped header is not clickable (no toggle)', () => {
@@ -196,8 +196,8 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           showContinue
         />
       );
-      const header = container.querySelector('.ds-thinking-header') as HTMLElement;
-      expect(header.style.cursor).toBe('default');
+      const header = container.querySelector('[class*="cursor-default"]') as HTMLElement;
+      expect(header).not.toBeNull();
     });
   });
 
@@ -219,14 +219,18 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ timestamp: ts })} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeInTheDocument();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(true);
     });
 
     it('does not show time when timestamp is missing', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ timestamp: undefined })} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeNull();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(false);
     });
   });
 });

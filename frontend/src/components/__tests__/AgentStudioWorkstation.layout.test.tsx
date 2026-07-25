@@ -167,7 +167,7 @@ describe('AgentStudioWorkstation 布局测试', { tags: ['integration'] }, () =>
           <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const textarea = document.querySelector('.agentstudio-textarea');
+      const textarea = screen.getByPlaceholderText(/描述你的需求/);
       expect(textarea).toBeInTheDocument();
     });
 
@@ -177,7 +177,7 @@ describe('AgentStudioWorkstation 布局测试', { tags: ['integration'] }, () =>
           <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const inputWrapper = document.querySelector('.agentstudio-input-wrapper');
+      const inputWrapper = document.querySelector('[data-input-wrapper]');
       expect(inputWrapper).toBeInTheDocument();
     });
 

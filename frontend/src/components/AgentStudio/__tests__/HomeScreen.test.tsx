@@ -38,7 +38,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders the Bot logo icon', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-logo-icon')).toBeInTheDocument();
+    expect(container.querySelector('[role="img"][aria-label="AgentStudio Logo"]')).toBeInTheDocument();
   });
 
   it('renders subtitle text', () => {
@@ -53,7 +53,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders all five feature buttons', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    const btns = container.querySelectorAll('.agentstudio-feature-btn');
+    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-1.5"]');
     expect(btns.length).toBe(5);
   });
 
@@ -99,7 +99,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('does not throw when feature button clicked without onExecuteCommand', async () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    const btns = container.querySelectorAll('.agentstudio-feature-btn');
+    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-1.5"]');
     await userEvent.click(btns[0] as HTMLElement);
     // should not crash
   });
@@ -159,11 +159,11 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders the home-centered layout', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-hero')).toBeInTheDocument();
+    expect(container.querySelector('[role="img"][aria-label="AgentStudio Logo"]')).toBeInTheDocument();
   });
 
   it('renders the home-hero section', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-hero')).toBeInTheDocument();
+    expect(container.textContent).toContain('home.subtitle');
   });
 });
