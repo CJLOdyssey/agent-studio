@@ -250,7 +250,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose when clicking modal content', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const modalContent = document.querySelector('.bg-\\[var\\(--da-bg-secondary\\)\\]');
+    const modalContent = document.querySelector('.bg-\\[var\\(--color-surface-raised\\)\\]');
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
   });

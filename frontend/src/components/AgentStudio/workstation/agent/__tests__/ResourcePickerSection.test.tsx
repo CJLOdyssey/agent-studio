@@ -134,7 +134,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
     const setFormData = vi.fn();
     const formData = { ...baseFormData, toolIds: ['t1'] };
     renderComponent({ setFormData, formData, selectedTools: [{ id: 't1', name: 'Tool A' }] });
-    const removeBtns = document.querySelectorAll('button.cursor-pointer[class*="text-\\[var\\(--da-text-muted\\)\\]"]');
+    const removeBtns = document.querySelectorAll('button.cursor-pointer[class*="text-\\[var\\(--color-text-muted\\)\\]"]');
     expect(removeBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(removeBtns[0]);
     expect(setFormData).toHaveBeenCalled();

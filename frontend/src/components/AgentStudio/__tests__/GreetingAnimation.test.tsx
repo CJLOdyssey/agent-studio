@@ -74,7 +74,7 @@ describe('GreetingAnimation', { tags: ['integration'] }, () => {
     vi.useFakeTimers();
     render(<GreetingAnimation />);
     const h1 = screen.getByRole('heading');
-    expect(h1.className).toContain('text-[var(--da-text-primary)]');
+    expect(h1.className).toContain('text-[var(--color-text-primary)]');
     expect(h1.className).toContain('font-bold');
     vi.useRealTimers();
   });
