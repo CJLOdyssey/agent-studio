@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
       visualizer({ open: false, filename: 'dist/stats.html', gzipSize: true }),
     ],
     server: {
-      port: 5173,
+      port: 5174,
       proxy: {
         '/api': {
           target: apiOrigin,
