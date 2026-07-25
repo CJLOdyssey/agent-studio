@@ -113,15 +113,15 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
       </div>
 
       {/* New Chat - primary action */}
-      <div className="px-3 pb-3 shrink-0">
-        <button className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-accent)]/40 active:scale-[0.98]" onClick={onNewChat}>
-          <Sparkles size={16} className="text-[var(--color-accent)]" />
+      <div className="px-4 pb-3 shrink-0">
+        <button className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-accent)]/40 active:scale-[0.98]" onClick={onNewChat}>
+          <Sparkles size={14} className="text-[var(--color-accent)]" />
           <span>{t('sidebar.newChat')}</span>
         </button>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-3 flex flex-col gap-4">
+      <div className="flex-1 px-3 flex flex-col gap-4">
         <TeamTree
           teams={teams}
           selectedAgentId={selectedAgentId}

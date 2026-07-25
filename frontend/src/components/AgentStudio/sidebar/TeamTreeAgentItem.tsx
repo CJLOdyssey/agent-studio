@@ -73,7 +73,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
             <span className="text-sm font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{agent.name}</span>
           </button>
           <button
-            className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-50 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+            className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-50 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
             onClick={(e) => {
               e.stopPropagation();
               toggleAgentMenu(agent.id, e);

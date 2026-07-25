@@ -185,11 +185,18 @@ const TeamTree = memo(function TeamTree({
         </button>
       </div>
       <div className="p-0 flex flex-col gap-0.5">
+        {teams.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <p className="text-xs text-[var(--color-text-muted)] m-0">
+              {t('sidebar.noTeams', '暂无团队，点击 + 创建')}
+            </p>
+          </div>
+        )}
         {teams.map((team) => (
           <div key={team.id} className="mb-px rounded-md overflow-visible">
-            <div className="group flex items-center gap-[6px] py-[6px] pl-[6px] pr-[32px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[32px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
+            <div className="group flex items-center gap-[6px] py-1.5 pl-2 pr-[32px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[32px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
-                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[18px] h-[18px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[22px] h-[22px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
                 <ChevronDown
                   size={14}
@@ -217,9 +224,9 @@ const TeamTree = memo(function TeamTree({
               ) : (
                 <>
                   <span className="text-sm font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)] flex-shrink-0 font-normal opacity-70 min-w-[14px] text-right">{team.agents.length}</span>
+                  <span className="text-xs text-[var(--color-text-tertiary)] flex-shrink-0 font-normal opacity-70 min-w-fit px-1 text-right">{team.agents.length}</span>
                   <button
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-[color,background,opacity] duration-150 z-10 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-[color,background,opacity] duration-150 z-10 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
                     onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
                     title={t('sidebar.moreOptions')}
                   >

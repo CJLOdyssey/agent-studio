@@ -25,7 +25,6 @@ const ConversationsList = memo(function ConversationsList({
 
   const groupedConversations = useMemo(() => {
     const groups = {
-      pinned: [] as Conversation[],
       today: [] as Conversation[],
       yesterday: [] as Conversation[],
       threeDays: [] as Conversation[],
@@ -93,7 +92,7 @@ const ConversationsList = memo(function ConversationsList({
     return (
       <div
         key={conv.id}
-        className={`group flex items-center justify-between py-2 px-2 rounded-r-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] ${isActive ? 'bg-[var(--color-accent)]/8 border-l-2 border-l-[var(--color-accent)]' : ''}`}
+        className={`group flex items-center justify-between py-1.5 px-2 rounded-r-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] border-l-2 border-l-transparent ${isActive ? 'bg-[var(--color-accent)]/8 !border-l-[var(--color-accent)]' : ''}`}
         onClick={() => onSelect(conv)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
