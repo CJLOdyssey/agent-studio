@@ -54,7 +54,7 @@ export default function TeamManagement() {
           {d.selectedIds.size > 0 && (
             <Button danger onClick={() => d.openBatchDelete()}><Trash2 size={14} /> {t('team.batch_delete', String(d.selectedIds.size))}</Button>
           )}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>
+          <Button type="primary" icon={<Plus size={16} />} onClick={d.openCreate}>
             {t('team.new')}
           </Button>
         </div>

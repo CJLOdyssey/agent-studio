@@ -71,7 +71,7 @@ export default function MCPManagement() {
         </div>
         <div className="flex items-center gap-3">
           {d.selectedIds.size > 0 && <Button danger icon={<Trash2 size={16} />} onClick={d.openBatchDelete}>{t('mcp.batch_delete', String(d.selectedIds.size))}</Button>}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>{t('mcp.new')}</Button>
+          <Button type="primary" icon={<Plus size={16} />} onClick={d.openCreate}>{t('mcp.new')}</Button>
         </div>
       </div>
       <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">

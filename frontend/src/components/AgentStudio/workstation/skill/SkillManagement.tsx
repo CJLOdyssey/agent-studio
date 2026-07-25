@@ -61,7 +61,7 @@ export default function SkillManagement() {
               {t('skill.batch_delete', String(d.selectedIds.size))}
             </Button>
           )}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>
+          <Button type="primary" icon={<Plus size={16} />} onClick={d.openCreate}>
             {t('skill.new')}
           </Button>
         </div>

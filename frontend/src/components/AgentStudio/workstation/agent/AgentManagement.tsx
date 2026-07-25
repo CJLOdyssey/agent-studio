@@ -88,7 +88,7 @@ export default function AgentManagement() {
               {t('agent.batch_delete', String(mgmt.selectedIds.size))}
             </Button>
           )}
-          <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={mgmt.openCreate}>
+          <Button type="primary" icon={<Plus size={16} />} onClick={mgmt.openCreate}>
             {t('agent.new')}
           </Button>
         </div>
