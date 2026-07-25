@@ -471,11 +471,11 @@
 @media (max-width: 768px) {
   .workstation-modal.ant-modal .ant-modal-content {
     width: 100%;
-    height: 100vh;
+    height: 100dvh;
     border-radius: 0;
   }
   
   .workstation-modal.ant-modal .ant-modal-body {
-    height: 100vh;
+    height: 100dvh;
   }
 }
