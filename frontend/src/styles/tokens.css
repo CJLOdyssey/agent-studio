@@ -19,7 +19,7 @@
   --modal-sm: 420px;
   --modal-m:  560px;
   --modal-l:  1100px;
-  --modal-height: 700px;
+  --modal-height: min(700px, 85vh);
 
   --sp-1: 4px;
   --sp-2: 8px;
@@ -38,34 +38,35 @@
   --da-font-size-lg: 16px;
   --da-font-size-xl: 20px;
 
-  --da-bg-primary:    #000000;
-  --da-bg-secondary:  #000000;
-  --da-bg-surface:    #000000;
-  --da-bg-elevated:   #000000;
-  --da-bg-hover:      #000000;
-  --da-bg-card:       #000000;
-  --da-bg-sidebar:   color-mix(in srgb, #000000, #ffffff 4%);
+  --da-bg-primary:    #0d0d0d;
+  --da-bg-secondary:  #1a1a1a;
+  --da-bg-surface:    #1a1a1a;
+  --da-bg-elevated:   #2a2a2a;
+  --da-bg-hover:      #333333;
+  --da-bg-pressed:    #333333;
+  --da-bg-card:       #242424;
+  --da-bg-sidebar:    #0d0d0d;
 
-  --da-msg-user-bg: #000000;
+  --da-msg-user-bg: #1a1a1a;
 
   --da-border-subtle: rgba(255,255,255,0.06);
   --da-border:        rgba(255,255,255,0.08);
   --da-border-strong: rgba(255,255,255,0.12);
 
-  --da-text-primary:    #ffffff;
+  --da-text-primary:    #f1f1f1;
   --da-text-secondary:  #a0a0a0;
-  --da-text-tertiary:   #666666;
-  --da-text-muted:      #444444;
+  --da-text-tertiary:   #4b5563;
+  --da-text-muted:      #6b7280;
   --da-text-on-accent:  #ffffff;
   --da-blend-dark:      #000000;
 
-  --da-accent:         #666666;
-  --da-accent-indigo:  #666666;
-  --da-accent-cyan:    #888888;
-  --da-accent-pink:    #777777;
-  --da-accent-amber:   #999999;
-  --da-accent-emerald: #888888;
-  --da-accent-purple:  #777777;
+  --da-accent:         #6366f1;
+  --da-accent-indigo:  #6366f1;
+  --da-accent-cyan:    #6366f1;
+  --da-accent-pink:    #6366f1;
+  --da-accent-amber:   #818cf8;
+  --da-accent-emerald: #6366f1;
+  --da-accent-purple:  #6366f1;
   --da-accent-red:     #ff4444;
 
   --da-status-active:  #44cc44;
@@ -107,10 +108,11 @@
   color-scheme: light;
 
   --da-bg-primary:    #ffffff;
-  --da-bg-secondary:  #ffffff;
-  --da-bg-surface:    #ffffff;
+  --da-bg-secondary:  #f9fafb;
+  --da-bg-surface:    #f9fafb;
   --da-bg-elevated:   #ffffff;
-  --da-bg-hover:      #ffffff;
+  --da-bg-hover:      #f3f4f6;
+  --da-bg-pressed:    #e5e7eb;
   --da-bg-card:       #ffffff;
   --da-bg-sidebar:   #F9FAFB;
 

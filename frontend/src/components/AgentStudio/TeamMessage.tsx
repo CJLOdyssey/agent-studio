@@ -159,7 +159,7 @@ const TeamMessage = memo(function TeamMessage({
 
   return (
     <div className="flex gap-3">
-      <div className="flex flex-col gap-1 items-start max-w-full">
+      <div className="flex flex-col gap-1 items-start max-w-full bg-[var(--color-surface)]/30 px-4 py-3 rounded-xl">
         {msg.isTyping ? (
           <div className="flex items-center gap-3 px-4 py-3 bg-[var(--color-surface-raised)] rounded-[12px_12px_12px_4px] w-fit">
             <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />

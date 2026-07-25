@@ -1,3 +1,26 @@
+/* JetBrains Mono — self-hosted via woff2 */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0Q.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0Q.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v20/tDbX2o-flEEny0FZhsfKu5WU4xL1E_8.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 *,
 *::before,
 *::after {
@@ -48,8 +71,17 @@ a:hover {
   }
 }
 
-/* Smooth theme transition — enterprise standard */
-* {
+/* Theme transition — applied to root-level semantic containers, not every element */
+.agentstudio-app,
+.agentstudio-sidebar,
+.agentstudio-global-header,
+.agentstudio-main,
+.agentstudio-home,
+.agentstudio-messages,
+.agentstudio-modal,
+.wsta-modal,
+.wsta-table,
+.wsta-toolbar {
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
