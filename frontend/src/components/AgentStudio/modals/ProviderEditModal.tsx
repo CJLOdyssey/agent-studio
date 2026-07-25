@@ -133,7 +133,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
               <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.capabilities')}</label>
               <div className="flex gap-2" style={{ marginTop: 4 }}>
                 {caps.map((cap) => (
-                  <span key={cap} className={`inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_15%,transparent)] text-[var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})] border border-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_30%,transparent)]`}>{CAP_LABEL[cap] || cap}</span>
+                  <span key={cap} className="inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]">{CAP_LABEL[cap] || cap}</span>
                 ))}
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             ) : (
               <div className="flex items-center gap-2 py-2" style={{ marginTop: 4 }}>
                 {caps.map((cap) => (
-                  <span key={cap} className={`inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_15%,transparent)] text-[var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})] border border-[color-mix(in_srgb,var(--da-accent-${cap === 'llm' ? 'indigo' : 'emerald'})_30%,transparent)]`}>{CAP_LABEL[cap] || cap}</span>
+                  <span key={cap} className="inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]">{CAP_LABEL[cap] || cap}</span>
                 ))}
                 <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--color-text-muted)', marginLeft: 8 }}>
                   {t('workstation.purpose')}: {CAP_LABEL[caps[0]] || caps[0]}
