@@ -24,7 +24,7 @@ function PopoverItem({
 }) {
   return (
     <button
-      className={`flex items-center gap-2 w-full px-3 py-2 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[color,background] duration-150 text-left hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]${disabled ? ' opacity-40 cursor-not-allowed hover:text-[var(--color-text-secondary)] hover:bg-transparent' : ''}`}
+      className={`flex items-center gap-3 w-full px-3 py-2.5 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-base cursor-pointer transition-[color,background] duration-150 text-left hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]${disabled ? ' opacity-40 cursor-not-allowed hover:text-[var(--color-text-secondary)] hover:bg-transparent' : ''}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       title={disabled ? '登录后可管理' : undefined}
@@ -70,9 +70,9 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
   };
 
   return (
-    <div className="shrink-0 p-3 relative" ref={menuRef}>
+    <div className="shrink-0 p-4 relative" ref={menuRef}>
       {isUserMenuOpen && (
-        <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[var(--z-modal)] flex flex-col p-1 origin-bottom animate-[popoverScaleIn_0.15s_cubic-bezier(0.16,1,0.3,1)]">
+        <div className="absolute bottom-[calc(100%+8px)] left-4 right-4 bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[var(--z-modal)] flex flex-col p-1 origin-bottom animate-[popoverScaleIn_0.15s_cubic-bezier(0.16,1,0.3,1)]">
           <PopoverItem
             icon={<Key size={16} className="w-4 h-4 mr-1" />}
             label="API Key"
@@ -104,7 +104,7 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
             />
           ) : (
             <button
-              className="flex items-center gap-2 w-full px-3 py-2 bg-transparent border-none rounded-md text-[var(--color-accent)] font-semibold text-sm cursor-pointer transition-[color,background] duration-150 text-left hover:text-[var(--color-accent-hover)] hover:bg-[var(--color-surface-hover)]"
+              className="flex items-center gap-3 w-full px-3 py-2.5 bg-transparent border-none rounded-md text-[var(--color-accent)] font-semibold text-base cursor-pointer transition-[color,background] duration-150 text-left hover:text-[var(--color-accent-hover)] hover:bg-[var(--color-surface-hover)]"
               onClick={() => handleItemClick(() => openLoginModal())}
             >
               <LogIn size={16} className="w-4 h-4 mr-1" />
@@ -115,7 +115,7 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
       )}
 
       <button
-        className="flex items-center justify-between w-full p-2 bg-transparent border border-transparent rounded-lg text-[var(--color-text-primary)] cursor-pointer transition-[color,background] duration-150 hover:bg-[var(--color-surface-hover)]"
+        className="flex items-center justify-between w-full p-2.5 bg-transparent border border-transparent rounded-lg text-[var(--color-text-primary)] cursor-pointer transition-[color,background] duration-150 hover:bg-[var(--color-surface-hover)]"
         onClick={() => {
           if (isUserMenuOpen) {
             closeMenu();
@@ -126,22 +126,22 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
         aria-expanded={isUserMenuOpen}
         aria-haspopup="menu"
       >
-          <div className="flex items-center gap-[10px] overflow-hidden">
-            <div className="w-8 h-8 bg-[var(--color-accent)]/15 rounded-full flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-9 h-9 bg-[var(--color-accent)]/15 rounded-full flex items-center justify-center shrink-0">
               {isAuthenticated && user?.username ? (
-                <span className="text-xs font-semibold text-[var(--color-accent)] leading-none">
+                <span className="text-sm font-semibold text-[var(--color-accent)] leading-none">
                   {user.username.charAt(0).toUpperCase()}
                 </span>
               ) : (
-                <User size={16} className="text-[var(--color-text-secondary)]" />
+                <User size={18} className="text-[var(--color-text-secondary)]" />
               )}
             </div>
             <div className="overflow-hidden text-left">
-              <div className="text-sm font-semibold text-[var(--color-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis">
+              <div className="text-base font-semibold text-[var(--color-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis">
                 {isAuthenticated ? (user?.username || user?.email) : '游客'}
               </div>
-              <div className="text-xs text-[var(--color-text-secondary)] flex items-center gap-1 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+              <div className="text-sm text-[var(--color-text-secondary)] flex items-center gap-1 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
                 {isAuthenticated ? t('user.onlineStatus') : '未登录'}
               </div>
             </div>

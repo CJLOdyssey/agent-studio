@@ -172,12 +172,12 @@ const TeamTree = memo(function TeamTree({
 
   return (
     <div>
-      <div className="flex items-center justify-between pr-1 pb-[6px] min-h-[28px]">
-        <div className="flex items-center gap-[6px] text-xs font-semibold text-[var(--color-text-tertiary)] tracking-[0.04em]">
-          <Users size={14} /> {t('sidebar.myTeams')}
+      <div className="flex items-center justify-between px-[10px] py-[2px]">
+        <div className="text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
+          {t('sidebar.myTeams')}
         </div>
         <button
-          className={`bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-[color,background,opacity] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
+          className={`bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-colors duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)]${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
           onClick={isAuthenticated ? handleAddTeam : () => openLoginModal()}
           title={isAuthenticated ? t('sidebar.createTeam') : '登录后解锁功能'}
         >
@@ -186,32 +186,32 @@ const TeamTree = memo(function TeamTree({
       </div>
       <div className="p-0 flex flex-col gap-0.5">
         {teams.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <p className="text-xs text-[var(--color-text-muted)] m-0">
+            <div className="flex flex-col items-center justify-center text-center py-8 px-4">
+            <p className="text-sm text-[var(--color-text-muted)] m-0">
               {t('sidebar.noTeams', '暂无团队，点击 + 创建')}
             </p>
           </div>
         )}
         {teams.map((team) => (
           <div key={team.id} className="mb-px rounded-md overflow-visible">
-            <div className="group flex items-center gap-[6px] py-1.5 pl-2 pr-[32px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[32px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
+            <div className="group flex items-center gap-[6px] py-2 pl-2 pr-[34px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
-                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[22px] h-[22px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[24px] h-[24px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
                 <ChevronDown
-                  size={14}
+                  size={15}
                   className={`transition-transform duration-200 ${team.isExpanded ? '' : '-rotate-90'}`}
                 />
               </button>
 
               {team.isPinned && (
-                <Pin size={12} className="text-[var(--color-accent-soft)] flex-shrink-0 mr-[-2px]" />
+                <Pin size={13} className="text-[var(--color-accent-soft)] flex-shrink-0 mr-[-2px]" />
               )}
 
               {editingTeam === team.id ? (
                 <div className="flex-1 min-w-0">
                   <input
-                    className="w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
+                    className="w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-base font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
                     value={editName}
                     onChange={(e) => onTeamNameChange(e.target.value)}
                     onBlur={() => handleTeamBlur(team.id)}
@@ -223,22 +223,22 @@ const TeamTree = memo(function TeamTree({
                 </div>
               ) : (
                 <>
-                  <span className="text-sm font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)] flex-shrink-0 font-normal opacity-70 min-w-fit px-1 text-right">{team.agents.length}</span>
+                  <span className="text-base font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
+                  <span className="text-sm text-[var(--color-text-tertiary)] flex-shrink-0 font-normal opacity-70 min-w-fit px-1 text-right">{team.agents.length}</span>
                   <button
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-[color,background,opacity] duration-150 z-10 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-[color,background,opacity] duration-150 z-10 flex items-center justify-center w-[26px] h-[26px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
                     onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
                     title={t('sidebar.moreOptions')}
                   >
-                    <MoreVertical size={14} />
+                    <MoreVertical size={15} />
                   </button>
                   {onTeamChat && (
                     <button
-                      className="absolute right-[30px] top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[22px] h-[22px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100"
+                      className="absolute right-[34px] top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100"
                       onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
                       title="团队对话"
                     >
-                      <Users size={14} />
+                      <Users size={15} />
                     </button>
                   )}
                 </>
@@ -251,7 +251,7 @@ const TeamTree = memo(function TeamTree({
                 style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
               >
                 <button
-                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleAddAgent(team.id);
@@ -259,22 +259,22 @@ const TeamTree = memo(function TeamTree({
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
+                  {isAuthenticated ? <Plus size={15} /> : <Lock size={15} />}
                   <span>{t('sidebar.addAgent')}</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     startEditTeam(team);
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? <Pencil size={14} /> : <Lock size={14} />}
+                  {isAuthenticated ? <Pencil size={15} /> : <Lock size={15} />}
                   <span>{t('workstation.rename')}</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleTogglePinTeam(team.id);
@@ -282,11 +282,11 @@ const TeamTree = memo(function TeamTree({
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? (team.isPinned ? <PinOff size={14} /> : <Pin size={14} />) : <Lock size={14} />}
+                  {isAuthenticated ? (team.isPinned ? <PinOff size={15} /> : <Pin size={15} />) : <Lock size={15} />}
                   <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
+                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     setConfirmDelete({ type: 'team', teamId: team.id });
@@ -294,7 +294,7 @@ const TeamTree = memo(function TeamTree({
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? <Trash2 size={14} /> : <Lock size={14} />}
+                  {isAuthenticated ? <Trash2 size={15} /> : <Lock size={15} />}
                   <span>{t('workstation.delete')}</span>
                 </button>
               </div>,

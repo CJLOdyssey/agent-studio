@@ -67,10 +67,10 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       ) : (
         <>
           <button
-            className="flex items-center gap-[6px] py-[5px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent w-full min-h-[30px] text-[var(--color-text-secondary)] text-sm text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+            className="flex items-center gap-[6px] py-[7px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent w-full min-h-[34px] text-[var(--color-text-secondary)] text-base text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
             onClick={() => handleAgentClick(agent)}
           >
-            <span className="text-sm font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{agent.name}</span>
+            <span className="text-base font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{agent.name}</span>
           </button>
           <button
             className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-50 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
@@ -79,7 +79,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
               toggleAgentMenu(agent.id, e);
             }}
           >
-            <MoreVertical size={14} />
+            <MoreVertical size={15} />
           </button>
 
           {openAgentMenu === agent.id && createPortal(
@@ -88,7 +88,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
               style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
             >
               <button
-                className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   if (onEditAgent) onEditAgent(agent);
@@ -96,22 +96,22 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 }}
                 title={!isAuthenticated ? '登录后解锁功能' : undefined}
               >
-                {isAuthenticated ? <Settings size={14} /> : <Lock size={14} />}
+                {isAuthenticated ? <Settings size={15} /> : <Lock size={15} />}
                 <span>{t('sidebar.edit')}</span>
               </button>
               <button
-                className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   startEditAgent(agent);
                 }}
                 title={!isAuthenticated ? '登录后解锁功能' : undefined}
               >
-                {isAuthenticated ? <Pencil size={14} /> : <Lock size={14} />}
+                {isAuthenticated ? <Pencil size={15} /> : <Lock size={15} />}
                 <span>{t('sidebar.rename')}</span>
               </button>
               <button
-                className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
+                className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   setConfirmDelete({ type: 'agent', teamId, agentId: agent.id });
@@ -119,7 +119,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 }}
                 title={!isAuthenticated ? '登录后解锁功能' : undefined}
               >
-                {isAuthenticated ? <Trash2 size={14} /> : <Lock size={14} />}
+                {isAuthenticated ? <Trash2 size={15} /> : <Lock size={15} />}
                 <span>{t('sidebar.delete')}</span>
               </button>
             </div>,

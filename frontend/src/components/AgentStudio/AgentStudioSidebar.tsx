@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Bot, Sparkles, MessageSquare, PanelLeft } from 'lucide-react';
+import { Bot, Sparkles, PanelLeft } from 'lucide-react';
 import type { Team, Agent, Conversation } from '../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import UserMenu from './sidebar/UserMenu';
@@ -96,32 +96,32 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   return (
     <aside className={`flex flex-col h-full bg-[var(--color-surface-sidebar)] border-r border-r-[var(--color-border-subtle)] shrink-0 overflow-hidden transition-[width,min-width,opacity,border-width] duration-200 ease-in-out ${isSidebarOpen ? 'w-[var(--da-sidebar-width)] min-w-[var(--da-sidebar-width)] opacity-100' : 'w-0 min-w-0 opacity-0 pointer-events-none border-r-0'}`}>
       {/* Header: logo + toggle */}
-      <div className="flex items-center justify-between gap-3 px-3 py-2.5 shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] shrink-0">
-            <Bot size={20} />
+      <div className="flex items-center justify-between gap-3 px-4 py-3 shrink-0 mb-6">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-accent)]/10 flex items-center justify-center text-[var(--color-accent)] shrink-0">
+            <Bot size={22} />
           </div>
-          <span className="font-semibold text-base text-[var(--color-text-primary)] tracking-[-0.02em] truncate">AgentStudio</span>
+          <span className="font-semibold text-lg text-[var(--color-text-primary)] tracking-[-0.02em] truncate">AgentStudio</span>
         </div>
         <button
-          className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-lg text-[var(--color-text-muted)] cursor-pointer transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] shrink-0"
+          className="flex items-center justify-center w-9 h-9 bg-transparent border-none rounded-lg text-[var(--color-text-muted)] cursor-pointer transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] shrink-0"
           onClick={onToggleSidebar}
           aria-label="Collapse sidebar"
         >
-          <PanelLeft size={18} />
+          <PanelLeft size={20} />
         </button>
       </div>
 
       {/* New Chat - primary action */}
-      <div className="px-4 pb-3 shrink-0">
-        <button className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-sm font-medium cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface-elevated)] hover:border-[var(--color-accent)]/40 active:scale-[0.98]" onClick={onNewChat}>
-          <Sparkles size={14} className="text-[var(--color-accent)]" />
+      <div className="px-4 shrink-0">
+        <button className="w-full flex items-center justify-center gap-2 h-10 px-4 bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-full text-sm font-medium text-[var(--color-text-primary)] cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface-hover)] active:scale-[0.98]" onClick={onNewChat}>
+          <Sparkles size={16} className="text-[var(--color-text-muted)]" />
           <span>{t('sidebar.newChat')}</span>
         </button>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 px-3 flex flex-col gap-4">
+      <div className="flex-1 pt-7 px-4 flex flex-col">
         <TeamTree
           teams={teams}
           selectedAgentId={selectedAgentId}
@@ -141,8 +141,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
         />
 
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-tertiary)] tracking-[0.04em] mb-1.5">
-            <MessageSquare size={13} /> {t('sidebar.recentConversations')}
+          <div className="px-[10px] py-[2px] text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
+            {t('sidebar.recentConversations')}
           </div>
           <ConversationsList
             conversations={conversations}

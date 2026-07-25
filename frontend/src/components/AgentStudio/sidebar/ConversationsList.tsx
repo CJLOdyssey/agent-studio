@@ -92,7 +92,7 @@ const ConversationsList = memo(function ConversationsList({
     return (
       <div
         key={conv.id}
-        className={`group flex items-center justify-between py-1.5 px-2 rounded-r-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] border-l-2 border-l-transparent ${isActive ? 'bg-[var(--color-accent)]/8 !border-l-[var(--color-accent)]' : ''}`}
+        className={`group flex items-center justify-between py-2 px-3 rounded-r-md cursor-pointer transition-colors duration-150 gap-2 hover:bg-[var(--color-surface-hover)] border-l-2 border-l-transparent ${isActive ? 'bg-[var(--color-accent)]/8 !border-l-[var(--color-accent)]' : ''}`}
         onClick={() => onSelect(conv)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -105,22 +105,22 @@ const ConversationsList = memo(function ConversationsList({
         aria-selected={isActive}
       >
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1">
+          <div className="text-base text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">
             {isTeam && (
               <span className="shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
-                <Users size={12} />
+                <Users size={14} />
               </span>
             )}
             {agent && AgentIcon && !isTeam && (
               <span className="shrink-0 flex items-center" style={{ color: agent.color }}>
-                <AgentIcon size={12} />
+                <AgentIcon size={14} />
               </span>
             )}
-            {Array.from(conv.title).length > 26
-              ? Array.from(conv.title).slice(0, 26).join('') + '...'
+            {Array.from(conv.title).length > 28
+              ? Array.from(conv.title).slice(0, 28).join('') + '...'
               : conv.title}
           </div>
-          <div className="text-xs text-[var(--color-text-tertiary)] mt-[2px] flex items-center gap-1">
+          <div className="text-sm text-[var(--color-text-tertiary)] mt-[4px] flex items-center gap-1">
             {isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
             )}
@@ -138,14 +138,14 @@ const ConversationsList = memo(function ConversationsList({
           </div>
         </div>
         <button
-          className="shrink-0 p-1.5 rounded-md bg-transparent border border-transparent text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-all duration-150 flex items-center justify-center group-hover:opacity-80 hover:opacity-100 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:border-[var(--color-danger)]/20"
+          className="shrink-0 p-[7px] rounded-md bg-transparent border border-transparent text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-all duration-150 flex items-center justify-center group-hover:opacity-80 hover:opacity-100 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:border-[var(--color-danger)]/20"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(conv.id);
           }}
           aria-label={t('common.delete')}
         >
-          <Trash2 size={14} />
+          <Trash2 size={15} />
         </button>
       </div>
     );
@@ -158,7 +158,7 @@ const ConversationsList = memo(function ConversationsList({
         data={flatItems}
         itemContent={(_index: number, item: (typeof flatItems)[number]) =>
           item.type === 'group' ? (
-            <div className="text-xs font-medium text-[var(--color-text-tertiary)] tracking-[0.03em] py-1.5 px-2">{item.label}</div>
+            <div className="text-sm font-medium text-[var(--color-text-tertiary)] tracking-[0.03em] py-2 px-3">{item.label}</div>
           ) : (
             renderConversationItem(item.conv)
           )

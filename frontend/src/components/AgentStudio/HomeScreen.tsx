@@ -66,53 +66,53 @@ export default function HomeScreen({
              transition={{ delay: 0.3, duration: 0.4 }}
            >
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('search')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.4, duration: 0.25 }}
              >
-               <Search size={14} />
+               <Search size={16} />
                <span>{t('features.search', '搜索')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('data')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.45, duration: 0.25 }}
              >
-               <BarChart3 size={14} />
+               <BarChart3 size={16} />
                <span>{t('features.data', '数据')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('document')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.5, duration: 0.25 }}
              >
-               <FileText size={14} />
+               <FileText size={16} />
                <span>{t('features.document', '文档')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('image')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.55, duration: 0.25 }}
              >
-               <Image size={14} />
+               <Image size={16} />
                <span>{t('features.image', '图片')}</span>
              </motion.button>
              <motion.button
-               className="inline-flex items-center gap-1.5 px-3 py-[7px] bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-xs cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-transparent border border-[var(--color-border)] rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-colors duration-150 whitespace-nowrap hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-border-strong)]"
                onClick={() => onExecuteCommand?.('more')}
                initial={reduce ? false : { opacity: 0, y: 8 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.6, duration: 0.25 }}
              >
-               <MoreHorizontal size={14} />
+               <MoreHorizontal size={16} />
                <span>{t('features.more', '更多')}</span>
              </motion.button>
            </motion.div>

@@ -174,7 +174,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         )}
 
         <textarea
-          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none outline-none text-lg font-normal text-[var(--color-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--color-border)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal"
+          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none text-lg font-normal text-[var(--color-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--color-border)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal" style={{ outline: 'none' }}
           placeholder={placeholder ?? t('home.placeholder')}
           value={composer.value}
           maxLength={maxLength}
