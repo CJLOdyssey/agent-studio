@@ -101,7 +101,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
       </div>
 
       <div className="agentstudio-sidebar-new-chat">
-        <button className="agentstudio-sprint-btn" onClick={onNewChat}>
+        <button className="agentstudio-sprint-btn w-full flex items-center justify-center gap-2 py-2 px-3 bg-transparent border-none rounded-lg text-[var(--da-text-primary)] text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-[var(--da-bg-hover)]" onClick={onNewChat}>
           <Sparkles size={16} />
           <span>{t('sidebar.newChat')}</span>
         </button>

@@ -1,7 +1,2 @@
-@import './logo.css';
-@import './headers.css';
-@import './teams.css';
-@import './conversations.css';
-@import './projects.css';
-@import './usermenu.css';
-@import './misc.css';
+/* sidebar/index.css — 全部已迁移到 Tailwind className */
+/* 保留空文件避免 import 报错 */

@@ -44,7 +44,7 @@ export default function Workspace({
 
         <div className="agentstudio-workspace-actions">
           <button
-            className="agentstudio-icon-btn-sm"
+            className="agentstudio-icon-btn-sm p-1 rounded bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer transition-colors flex items-center justify-center hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
             title={t('workspace.fullscreen')}
             onClick={toggleWorkspaceFullscreen}
           >
@@ -52,7 +52,7 @@ export default function Workspace({
           </button>
           <button
             onClick={() => setIsWorkspaceOpen(false)}
-            className="agentstudio-icon-btn-sm"
+            className="agentstudio-icon-btn-sm p-1 rounded bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer transition-colors flex items-center justify-center hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"
             title={t('workspace.collapse')}
           >
             <PanelRightClose size={14} />

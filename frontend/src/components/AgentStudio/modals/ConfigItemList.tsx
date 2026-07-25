@@ -49,16 +49,16 @@ function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRenam
         <MoreVertical size={14} />
       </button>
       {open && createPortal(
-        <div className="agentstudio-team-dropdown agentstudio-portal-dropdown" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
+        <div className="agentstudio-team-dropdown agentstudio-portal-dropdown bg-[var(--da-bg-card)] border border-[var(--da-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[9999] z-[99999]" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
           {onEdit && (
-            <button className="agentstudio-team-dropdown-item" onClick={() => { onEdit(); setOpen(false); }}>
+            <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-text-secondary)] text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={() => { onEdit(); setOpen(false); }}>
               <Pencil size={14} /><span>{t('workstation.edit')}</span>
             </button>
           )}
-          <button className="agentstudio-team-dropdown-item" onClick={() => { onRename(); setOpen(false); }}>
+          <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-text-secondary)] text-left hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={() => { onRename(); setOpen(false); }}>
             <Pencil size={14} /><span>{t('workstation.rename')}</span>
           </button>
-          <button className="agentstudio-team-dropdown-item danger" onClick={() => { onDelete(); setOpen(false); }}>
+          <button className="agentstudio-team-dropdown-item flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-[120ms] border-none bg-transparent w-full text-sm text-[var(--da-accent-red)] text-left hover:bg-[color-mix(in_srgb,var(--da-accent-red)_10%,transparent)]" onClick={() => { onDelete(); setOpen(false); }}>
             <Trash2 size={14} /><span>{t('workstation.delete')}</span>
           </button>
         </div>,
