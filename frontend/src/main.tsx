@@ -22,11 +22,7 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { installGlobalErrorHandlers } from './utils/errorHandler';
 import './i18n/index';
 import './styles/tailwind-entry.css';
-import './styles/fonts.css';
-import './styles/reset.css';
-import './styles/scrollbar.css';
-import './styles/transitions.css';
-import './styles/keyframes.css';
+import './styles/base/index.css';
 import './styles/modals/index.css';
 import './styles/workstation/index.css';
 
