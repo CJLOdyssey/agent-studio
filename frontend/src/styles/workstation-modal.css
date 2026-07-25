@@ -1,7 +1,0 @@
-/* workstation-modal.css — all classes migrated to Tailwind (Phase 4) */
-/* @keyframes retained — still referenced via inline animation in TeamMemberManager.tsx */
-
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
