@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { ConfigProvider, theme } from 'antd';
 import { ToastProvider } from './utils/useToast';
 import { AuthProvider, useAuth, LoginModal } from './components/auth';
 import AgentStudioWorkstation from './components/AgentStudio/AgentStudioWorkstation';
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';
+import { useSettings } from './contexts/SettingsContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,9 +69,23 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+function ThemedApp() {
+  const { settings } = useSettings();
+  const isDark = settings.theme === 'dark';
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#6366f1',
+          colorBgContainer: isDark ? '#1a1a1a' : '#ffffff',
+          colorBgElevated: isDark ? '#242424' : '#ffffff',
+          borderRadius: 6,
+          fontSize: 14,
+        },
+      }}
+    >
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ToastProvider>
@@ -89,6 +105,14 @@ export default function App() {
           </ToastProvider>
         </BrowserRouter>
       </AuthProvider>
+    </ConfigProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemedApp />
     </QueryClientProvider>
   );
 }

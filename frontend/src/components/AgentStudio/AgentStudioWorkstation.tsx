@@ -1,4 +1,3 @@
-import { ConfigProvider, theme } from 'antd';
 import { PanelLeft, Sun, Moon, Bell } from 'lucide-react';
 import AgentStudioSidebar from './AgentStudioSidebar';
 import Workspace from './workspace/Workspace';
@@ -179,11 +178,6 @@ export default function AgentStudioWorkstation() {
             onCloseNewProject={s.handleCloseNewProject}
           />
 
-          <ConfigProvider theme={{
-            algorithm: s.isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
-          }}>
-            <div />
-          </ConfigProvider>
         </div>
       )}
     </>
