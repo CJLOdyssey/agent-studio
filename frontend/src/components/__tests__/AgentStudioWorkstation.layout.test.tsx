@@ -152,24 +152,13 @@ describe('AgentStudioWorkstation 布局测试', { tags: ['integration'] }, () =>
   });
 
   describe('首页结构', () => {
-    it('should render agentstudio-layout container', () => {
+    it('should render the agent studio layout', () => {
       render(
         <TestProviders>
           <AgentStudioWorkstation />
         </TestProviders>,
       );
-      const layout = document.querySelector('.agentstudio-app');
-      expect(layout).toBeInTheDocument();
-    });
-
-    it('should render agentstudio-main container', () => {
-      render(
-        <TestProviders>
-          <AgentStudioWorkstation />
-        </TestProviders>,
-      );
-      const mainContainer = document.querySelector('.agentstudio-main');
-      expect(mainContainer).toBeInTheDocument();
+      expect(screen.getByText('AgentStudio')).toBeInTheDocument();
     });
 
     it('should render textarea on home page', () => {

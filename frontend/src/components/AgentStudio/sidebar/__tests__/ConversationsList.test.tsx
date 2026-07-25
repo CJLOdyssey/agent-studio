@@ -107,14 +107,14 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   it('marks active conversation', () => {
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { activeConvId: 'c1' });
-    const item = document.querySelector('.agentstudio-conv-item.active');
+    const item = document.querySelector('[aria-selected="true"]');
     expect(item).toBeInTheDocument();
   });
 
   it('does not mark inactive conversation', () => {
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { activeConvId: 'c2' });
-    const item = document.querySelector('.agentstudio-conv-item.active');
+    const item = document.querySelector('[aria-selected="true"]');
     expect(item).toBeNull();
   });
 

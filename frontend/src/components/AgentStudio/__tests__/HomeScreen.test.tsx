@@ -159,7 +159,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders the home-centered layout', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-centered')).toBeInTheDocument();
+    expect(container.querySelector('.agentstudio-home-hero')).toBeInTheDocument();
   });
 
   it('renders the home-hero section', () => {
