@@ -25,7 +25,6 @@ import './styles/tokens.css';
 import './styles/tailwind-entry.css';
 import './styles/fonts.css';
 import './styles/base.css';
-import './styles/header.css';
 import './styles/chat/index.css';
 import './styles/modals/index.css';
 import './styles/workstation/index.css';
