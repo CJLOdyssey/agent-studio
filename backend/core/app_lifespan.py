@@ -189,7 +189,7 @@ async def shutdown(app: FastAPI) -> None:
         task = getattr(app.state, attr, None)
         if task:
             task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
+            with contextlib.suppress(asyncio.CancelledError, asyncio.TimeoutError):
+                await asyncio.wait_for(task, timeout=5)
     mark_stopped()
     logger.info("[LIFECYCLE] shutting down — app=%s | pid=%d", app.title, os.getpid())

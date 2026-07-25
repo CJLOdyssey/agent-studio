@@ -109,13 +109,14 @@ async def _run_agent_pipeline(
             logger.warning("Failed to load chat history for session %s", session_id)
 
     checkpointer = await create_checkpointer_async()
-    StreamEmitter(run_id)
+    emitter = StreamEmitter(run_id)
     graph = SingleAgentGraph(
         model=effective_model,
         api_key=effective_api_key or "",
         base_url=effective_api_base,
         checkpointer=checkpointer,
     )
+    graph.set_stream_callback(emitter)
 
     # Tools are created via frontend API — no hardcoded default tools
     tool_configs: list[ToolConfig] = []
