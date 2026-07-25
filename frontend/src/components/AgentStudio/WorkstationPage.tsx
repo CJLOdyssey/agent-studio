@@ -35,7 +35,7 @@ export default function WorkstationPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2.5 w-full px-2.5 py-2 mb-0.5 rounded-md border-none cursor-pointer text-sm text-left transition-colors duration-100
                   ${activeTab === tab.id
-                    ? 'bg-[var(--color-surface-hover)] text-[var(--color-accent)] font-medium'
+                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium'
                     : 'bg-transparent text-[var(--color-text-secondary)] font-normal hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]'
                   }`}
               >

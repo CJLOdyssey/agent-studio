@@ -27,14 +27,14 @@ export default function Workspace({
   if (!selectedAgentId || !isWorkspaceOpen) return null;
 
   return (
-    <aside className="w-[320px] flex flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0 overflow-hidden" ref={workspaceRef}>
+    <aside className="w-[clamp(280px,22vw,360px)] flex flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] flex-shrink-0 overflow-hidden" ref={workspaceRef}>
       <header className="flex items-center justify-between px-2 py-1.5 border-b border-[var(--color-border)] bg-[var(--color-surface-raised)] flex-shrink-0">
         <div className="flex items-center gap-0.5 overflow-x-auto">
           {getWorkspaceTabs(getAgentType(selectedAgentId)).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs cursor-pointer border-none transition-colors duration-150 whitespace-nowrap ${activeTab === tab.id ? 'bg-[var(--color-accent)] text-white' : 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]'}`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs cursor-pointer border-none transition-colors duration-150 whitespace-nowrap ${activeTab === tab.id ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium' : 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]'}`}
             >
               <tab.icon size={14} />
               {t(tab.labelKey)}
