@@ -61,12 +61,12 @@ export default function Workspace({
       </header>
 
       <div className="agentstudio-workspace-content">
-        <div className="agentstudio-file-explorer">
-          <div className="agentstudio-file-header">
+        <div className="w-[200px] border-r border-[var(--da-border-subtle)] flex flex-col bg-[var(--da-bg-secondary)] flex-shrink-0">
+          <div className="flex items-center gap-2 p-3 text-xs font-semibold text-[var(--da-text-secondary)] border-b border-[var(--da-border-subtle)] uppercase tracking-[0.5px]">
             <FolderKanban size={14} />
             <span>{t('workspace.fileExplorer')}</span>
           </div>
-          <div className="agentstudio-file-tree">
+          <div className="flex-1 overflow-y-auto py-2">
             <div className="agentstudio-empty-tree">
               <FileCode size={32} />
               <p>{t('workspace.emptyFiles')}</p>
@@ -74,27 +74,27 @@ export default function Workspace({
           </div>
         </div>
 
-        <div className="agentstudio-editor-area">
+        <div className="flex-1 overflow-y-auto flex flex-col">
           {activeTab.includes('preview') ? (
-            <div className="agentstudio-ui-preview">
+            <div className="h-full w-full flex items-center justify-center bg-[var(--da-bg-surface)] relative">
               <div className="agentstudio-preview-empty">
                 <FileCode size={32} />
                 <p>{t('workspace.noPreview')}</p>
               </div>
             </div>
           ) : activeTab.includes('test') ? (
-            <div className="agentstudio-test-panel">
-              <div className="agentstudio-test-header">
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[var(--da-border-subtle)]">
                 <FileCode size={14} />
                 <span>{t('workspace.testRunner')}</span>
               </div>
-              <div className="agentstudio-test-results">
+              <div className="flex flex-col gap-2">
                 <p className="agentstudio-empty-text">{t('workspace.noTests')}</p>
               </div>
             </div>
           ) : (
-            <div className="agentstudio-code-editor">
-              <div className="agentstudio-code-header">
+            <div className="font-mono text-sm p-4 text-[var(--da-text-primary)] leading-[1.6] overflow-x-auto">
+              <div className="flex items-center gap-2 text-xs text-[var(--da-text-muted)] mb-4">
                 <FileCode size={12} /> <span className="text-[var(--icon-code)]">Agent</span>{' '}
                 {t('workspace.committedJustNow')}
               </div>

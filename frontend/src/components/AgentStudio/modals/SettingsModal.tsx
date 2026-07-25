@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Globe, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../../contexts/SettingsContext';
@@ -19,14 +19,7 @@ export default function SettingsModal({ onClose }: Props) {
   const { t, i18n } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-  const rangeRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (rangeRef.current) {
-      const pct = ((settings.fontSize - 12) / 4) * 100;
-      rangeRef.current.style.setProperty('--pct', pct + '%');
-    }
-  }, [settings.fontSize]);
+  const fontPct = ((settings.fontSize - 12) / 4) * 100;
 
   return (
     <Modal
@@ -105,18 +98,28 @@ export default function SettingsModal({ onClose }: Props) {
                   <label>{t('settings.fontSize')}</label>
                   <span className="settings-item-desc">{t('settings.fontSizeDesc')}</span>
                 </div>
-                <div className="settings-range-wrapper">
+                <div className="flex items-center gap-2">
                   <input
-                    ref={rangeRef}
                     type="range"
                     min="12"
                     max="16"
                     step="1"
                     value={settings.fontSize}
                     onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
-                    className="settings-range"
+                    style={{
+                      background: `linear-gradient(to right, var(--da-accent-indigo) 0%, var(--da-accent-indigo) ${fontPct}%, var(--da-bg-hover) ${fontPct}%, var(--da-bg-hover) 100%)`,
+                    }}
+                    className="w-[120px] h-[6px] rounded-[3px] appearance-none cursor-pointer
+                      focus-visible:outline-none
+                      [&::-webkit-slider-runnable-track]:appearance-none [&::-webkit-slider-runnable-track]:h-[6px] [&::-webkit-slider-runnable-track]:bg-transparent
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--da-accent-indigo)] [&::-webkit-slider-thumb]:-mt-[5px] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:[box-shadow:0_1px_4px_rgba(0,0,0,0.3)]
+                      focus-visible:[&::-webkit-slider-thumb]:[box-shadow:0_0_0_2px_var(--da-accent-indigo),0_1px_4px_rgba(0,0,0,0.3)]
+                      [&::-moz-range-track]:h-[6px] [&::-moz-range-track]:rounded-[3px] [&::-moz-range-track]:border-none [&::-moz-range-track]:bg-[var(--da-bg-hover)]
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--da-accent-indigo)] [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer
+                      focus-visible:[&::-moz-range-thumb]:[box-shadow:0_0_0_2px_var(--da-accent-indigo)]
+                      [&::-moz-range-progress]:h-[6px] [&::-moz-range-progress]:rounded-[3px] [&::-moz-range-progress]:bg-[var(--da-accent-indigo)]"
                   />
-                  <span className="settings-range-value">{settings.fontSize}px</span>
+                  <span className="text-sm font-semibold text-[var(--da-text-secondary)] min-w-[32px] text-right">{settings.fontSize}px</span>
                 </div>
               </div>
 
