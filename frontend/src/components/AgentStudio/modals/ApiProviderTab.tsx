@@ -107,8 +107,8 @@ export default function ApiProviderTab({
                     <span className={`api-type-badge api-type-${key.usage_type || 'llm'}`}>
                       {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
                     </span>
-                    {key.is_active && <CheckCircle2 size={14} className="text-green-500" />}
-                    {!key.is_active && <AlertCircle size={14} className="text-red-500" />}
+                    {key.is_active && <CheckCircle2 size={14} className="text-[var(--da-accent-emerald)]" />}
+                    {!key.is_active && <AlertCircle size={14} className="text-[var(--icon-status-error)]" />}
                   </div>
                   <div className="api-provider-url">
                     {key.provider} {key.base_url ? `· ${key.base_url}` : ''}

@@ -168,9 +168,9 @@ const TeamMessage = memo(function TeamMessage({
         ) : (
           <>
             {msg.plan && (
-              <div className="agentstudio-process-panel">
+              <div className="bg-[var(--da-bg-surface)] rounded-lg overflow-hidden mt-1">
                 <div
-                  className="agentstudio-process-header"
+                  className="flex items-center justify-between px-3 py-2 cursor-pointer transition-colors duration-150 hover:bg-[var(--da-bg-hover)]"
                   onClick={() => setIsProcessExpanded(!isProcessExpanded)}
                   role="button"
                   tabIndex={0}
@@ -183,7 +183,7 @@ const TeamMessage = memo(function TeamMessage({
                     }
                   }}
                 >
-                  <div className="agentstudio-process-title">
+                  <div className="flex items-center gap-2 text-xs font-medium text-[var(--da-text-secondary)]">
                     <Terminal size={12} className={agentInfo.color} />
                     {t('teamMessage.executeTask', { count: String(msg.plan.length) })}
                   </div>
@@ -191,9 +191,9 @@ const TeamMessage = memo(function TeamMessage({
                 </div>
 
                 {isProcessExpanded && (
-                  <div className="agentstudio-process-steps" id="process-steps">
+                  <div className="p-3 flex flex-col gap-2" id="process-steps">
                     {msg.plan.map((step) => (
-                      <div key={step.step} className="agentstudio-process-step">
+                      <div key={step.step} className="flex items-center gap-2 text-xs text-[var(--da-text-secondary)]">
                         {step.status === 'completed' ? (
                           <CheckCircle2 size={14} className="text-[var(--icon-status-success)]" />
                         ) : (
@@ -208,7 +208,7 @@ const TeamMessage = memo(function TeamMessage({
             )}
 
             {msg.action && !msg.plan && (
-              <div className="agentstudio-message-action">
+              <div className="flex items-center gap-2 text-xs text-[var(--da-text-muted)]">
                 <CheckCircle2 size={12} className={agentInfo.color} />
                 {msg.action.label}
               </div>

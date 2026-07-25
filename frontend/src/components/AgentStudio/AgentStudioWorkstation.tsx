@@ -86,19 +86,19 @@ export default function AgentStudioWorkstation() {
                 onDragOver={s.handlePageDragOver} onDragLeave={s.handlePageDragLeave} onDrop={s.handlePageDrop}>
                   <div className="flex-1 flex flex-col overflow-hidden">
                   {s.isPageDragOver && (
-                    <div className="agentstudio-page-drop-overlay">
+                    <div className="fixed inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--da-accent-indigo)_8%,var(--da-overlay-bg))] border-[3px] border-dashed border-[var(--da-accent-indigo)] z-[900] text-xl font-bold text-[var(--da-accent-indigo)] pointer-events-none animate-[fadeIn_0.15s_ease]">
                       <span>{s.t('fileAttach.dropHere')}</span>
                     </div>
                   )}
                   {s.wsStatus === 'reconnecting' && (
-                    <div className="agentstudio-ws-banner" role="status" aria-live="polite">
+                    <div className="px-4 py-2 bg-[var(--da-accent-amber)] text-[var(--da-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease]" role="status" aria-live="polite">
                       {s.t('common.connecting')}...
                     </div>
                   )}
                   {s.apiStatus === 'error' && s.apiError && (
-                    <div className="agentstudio-ws-banner agentstudio-ws-banner--error" role="alert">
+                    <div className="px-4 py-2 bg-[var(--da-accent-red)] text-[var(--da-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease] flex items-center justify-center gap-3" role="alert">
                       {s.apiError}
-                      <button className="agentstudio-retry-btn" onClick={s.retryApi}>
+                      <button className="bg-[var(--da-bg-primary)] text-[var(--da-accent-red)] border-none py-[1px] px-3 rounded text-sm cursor-pointer font-semibold leading-[var(--da-line-height)] hover:opacity-80" onClick={s.retryApi}>
                         {s.t('common.retry')}
                       </button>
                     </div>

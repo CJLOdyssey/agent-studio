@@ -1,4 +1,4 @@
-/* Scrollbar */
+/* Global scrollbar styles — webkit pseudo-elements cannot be expressed as Tailwind utilities */
 .agentstudio-sidebar-content::-webkit-scrollbar,
 .agentstudio-messages::-webkit-scrollbar,
 .agentstudio-workspace-content::-webkit-scrollbar,
