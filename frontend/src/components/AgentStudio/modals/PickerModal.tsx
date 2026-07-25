@@ -25,7 +25,7 @@ export default function PickerModal({ title, items, onSelect, onClose }: Props) 
     : items;
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div
         className="w-[min(70vw,520px)] max-h-[min(70vh,560px)] bg-[var(--color-surface-raised)] rounded-[14px] flex flex-col shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}

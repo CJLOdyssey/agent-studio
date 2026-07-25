@@ -58,7 +58,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
   const noPromptId = '__none__';
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <h3>{editingSkill ? t('skill.form_title_edit') : t('skill.form_title_new')}</h3>
@@ -66,13 +66,13 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
         </div>
         <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
           {errors.length > 0 && (
-            <div className="p-3 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-md text-[var(--icon-status-error)] text-xs">
+            <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs">
               {errors.map((e, i) => <p key={i}>{e}</p>)}
             </div>
           )}
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_name')} <span className="text-[var(--color-danger)]">*</span></label>
             <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.name}
               onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
               placeholder={t('skill.form_name_placeholder')} maxLength={50} />
@@ -104,7 +104,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
 
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_version')} <span className="text-[var(--icon-status-error)]">*</span></label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_version')} <span className="text-[var(--color-danger)]">*</span></label>
               <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version}
                 onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))}
                 placeholder={t('skill.form_version_placeholder')} />
@@ -128,7 +128,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_tools')}</label>
-            <div style={{ maxHeight: 120, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px' }}>
+            <div style={{ maxHeight: 120, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 6, padding: '6px 10px' }}>
               {allTools.length === 0 && <span style={{ color: 'var(--muted)', fontSize: 13 }}>{t('skill.form_no_tools')}</span>}
               {allTools.map(t => (
                 <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0', fontSize: 13, cursor: 'pointer' }}>

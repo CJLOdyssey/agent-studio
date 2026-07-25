@@ -32,7 +32,7 @@ export default function ConfirmModal({
             {t('confirm.cancel')}
           </button>
           {danger ? (
-            <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[color-mix(in_srgb,var(--icon-status-error)_15%,transparent)] text-[var(--icon-status-error)] hover:bg-[color-mix(in_srgb,var(--icon-status-error)_25%,transparent)]" onClick={onConfirm}>
+            <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_25%,transparent)]" onClick={onConfirm}>
               {confirmLabel}
             </button>
           ) : (
@@ -45,7 +45,7 @@ export default function ConfirmModal({
     >
       <div className="flex items-start gap-4 p-6">
         {danger ? (
-          <OctagonX size={24} className="text-[var(--icon-status-error)]" aria-label={t('confirm.danger')} />
+          <OctagonX size={24} className="text-[var(--color-danger)]" aria-label={t('confirm.danger')} />
         ) : (
           <AlertTriangle size={24} className="text-[var(--color-accent-soft)]" aria-label={t('confirm.info')} />
         )}

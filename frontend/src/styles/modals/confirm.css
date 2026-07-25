@@ -25,11 +25,11 @@
 }
 
 .agentstudio-confirm-icon.warning {
-  color: var(--icon-status-warning);
+  color: var(--color-warning);
 }
 
 .agentstudio-confirm-icon.danger {
-  color: var(--da-accent-red);
+  color: var(--color-danger);
 }
 
 .agentstudio-confirm-text {
@@ -39,7 +39,7 @@
 
 .agentstudio-confirm-text p {
   margin: 0;
-  color: var(--da-text-secondary);
+  color: var(--color-text-secondary);
   font-size: 13.5px;
   line-height: 1.55;
 }

@@ -35,6 +35,8 @@
 
 /* 暗色主题（默认） */
 :root {
+  color-scheme: dark;
+
   --color-surface: #0d0d0d;
   --color-surface-raised: #1a1a1a;
   --color-surface-overlay: #242424;
@@ -55,10 +57,74 @@
   --color-border-light: rgba(0, 0, 0, 0.08);
 
   --color-overlay: rgba(0, 0, 0, 0.65);
+
+  /* ── Z-index ── */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-modal-backdrop: 300;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  /* ── 布局尺寸 ── */
+  --da-sidebar-width: clamp(15rem, 15vw, 17.5rem);
+  --da-sidebar-min: 15rem;
+  --da-sidebar-max: 17.5rem;
+  --da-input-height: 64px;
+  --da-input-radius: 20px;
+  --da-toolbar-height: 48px;
+
+  /* ── 弹窗尺寸 ── */
+  --modal-sm: 420px;
+  --modal-m:  560px;
+  --modal-l:  1100px;
+  --modal-height: min(700px, 85vh);
+
+  /* ── 间距 ── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ── 字号 ── */
+  --da-font-size-base: 14px;
+  --da-font-size-sm: 13px;
+  --da-font-size-xs: 12px;
+  --da-font-size-lg: 16px;
+  --da-font-size-xl: 20px;
+
+  /* ── 行高 / 圆角 ── */
+  --da-line-height: 1.6;
+  --da-radius: 0.5rem;
+
+  /* ── 字体 ── */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* ── 语法高亮 ── */
+  --syntax-blue-300: #888888;
+  --syntax-blue-400: #666666;
+  --syntax-cyan-200: #999999;
+  --syntax-red: #ff4444;
+
+  /* ── 阴影 ── */
+  --shadow-sm: 0 1px 2px rgba(255,255,255,0.10);
+  --shadow-md: 0 4px 8px -2px rgba(255,255,255,0.15);
+  --shadow-lg: 0 8px 16px -4px rgba(255,255,255,0.20);
 }
 
 /* 亮色主题（当 .dark class 不存在时） */
 :root:not(.dark) {
+  color-scheme: light;
+
   --color-surface: #ffffff;
   --color-surface-raised: #f9fafb;
   --color-surface-overlay: #f3f4f6;
@@ -79,4 +145,8 @@
   --color-border-light: rgba(0, 0, 0, 0.06);
 
   --color-overlay: rgba(0, 0, 0, 0.40);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.10);
 }

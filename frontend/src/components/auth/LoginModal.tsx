@@ -142,7 +142,7 @@ export default function LoginModal({ onClose }: Props) {
 
   if (view === 'forgot' || view === 'reset') {
     return (
-      <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
+      <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
         <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
           onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]" style={{ justifyContent: 'center', position: 'relative' }}>
@@ -167,7 +167,7 @@ export default function LoginModal({ onClose }: Props) {
   const isRegister = view === 'register';
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
       <div
         className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]"
         style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
@@ -178,7 +178,7 @@ export default function LoginModal({ onClose }: Props) {
             ✦ AgentStudio
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 4, margin: '16px 24px 0', background: 'var(--da-bg-tertiary)', borderRadius: 10, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 4, margin: '16px 24px 0', background: 'var(--color-surface-overlay)', borderRadius: 10, padding: 3 }}>
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -266,7 +266,7 @@ export default function LoginModal({ onClose }: Props) {
                     autoComplete="new-password"
                   />
                   {confirmPassword && passwordTouched && confirmPassword !== password && (
-                    <div style={{ fontSize: 11, color: 'var(--da-error)', marginTop: 4 }}>
+                    <div style={{ fontSize: 11, color: 'var(--color-danger)', marginTop: 4 }}>
                       ○ 与密码不一致
                     </div>
                   )}
@@ -361,8 +361,8 @@ export default function LoginModal({ onClose }: Props) {
               <div style={{
                 padding: '8px 12px',
                 borderRadius: 8,
-                background: 'color-mix(in srgb, var(--da-error) 10%, transparent)',
-                color: 'var(--da-error)',
+                background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                color: 'var(--color-danger)',
                 fontSize: 13,
                 marginBottom: 12,
                 lineHeight: 1.4,

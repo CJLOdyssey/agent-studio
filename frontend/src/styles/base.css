@@ -13,8 +13,8 @@
 html,
 body {
   height: 100%;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   font-family: var(--font-sans);
   font-size: var(--da-font-size-base);
   line-height: 1.6;
@@ -36,7 +36,7 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 2px solid var(--da-accent, var(--accent-pm));
+  outline: 2px solid var(--color-accent, var(--accent-pm));
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -47,7 +47,7 @@ a:hover {
 
 @supports not selector(:focus-visible) {
   :focus {
-    outline: 2px solid var(--da-accent, var(--accent-pm));
+    outline: 2px solid var(--color-accent, var(--accent-pm));
     outline-offset: 2px;
   }
 }
@@ -83,12 +83,12 @@ a:hover {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: var(--color-surface-raised);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--color-border);
   border-radius: 4px;
 }
 
@@ -98,7 +98,7 @@ a:hover {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) var(--bg-secondary);
+  scrollbar-color: var(--color-border) var(--color-surface-raised);
 }
 
 /* ===== Skip Link ===== */
@@ -109,8 +109,8 @@ a:hover {
   left: 8px;
   z-index: var(--z-tooltip);
   padding: 8px 16px;
-  background: var(--accent);
-  color: var(--da-text-on-accent);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
   border-radius: 0 0 6px 6px;
   font-size: var(--da-font-size-base);
   text-decoration: none;

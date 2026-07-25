@@ -22,7 +22,7 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => { if (e.key === 'Escape') onClose(); }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden max-w-[var(--modal-sm)] animate-[agentFormIn_0.25s_ease-out]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -38,12 +38,12 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
         </div>
 
         <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
-          {errors.length > 0 && <div className="p-3 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-md text-[var(--icon-status-error)] text-xs">{errors.map((e, i) => <p key={i}>{e}</p>)}</div>}
+          {errors.length > 0 && <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs">{errors.map((e, i) => <p key={i}>{e}</p>)}</div>}
 
           <div className="mt-5 pt-4 border-t border-[var(--color-border)]">
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)] mb-3"><Bot size={14} />基本信息</div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('team.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('team.form_name')} <span className="text-[var(--color-danger)]">*</span></label>
               <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('team.form_name_placeholder')} maxLength={50} autoFocus />
             </div>
             <div className="flex flex-col gap-1" style={{ marginTop: 14 }}>

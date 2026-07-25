@@ -71,8 +71,8 @@ export default function AgentManagement() {
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('agent.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label="Agent 管理">
-      {mgmt.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-lg text-[var(--icon-status-error)] text-sm mb-4"><span>{mgmt.error}</span><button onClick={mgmt.retry} aria-label={t('agent.error_retry')}><RefreshCw size={14} /></button><button onClick={mgmt.clearError}><X size={14} /></button></div>}
-      {mgmt.batchError && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-lg text-[var(--icon-status-error)] text-sm mb-4" role="alert"><span>{mgmt.batchError}</span></div>}
+      {mgmt.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-lg text-[var(--color-danger)] text-sm mb-4"><span>{mgmt.error}</span><button onClick={mgmt.retry} aria-label={t('agent.error_retry')}><RefreshCw size={14} /></button><button onClick={mgmt.clearError}><X size={14} /></button></div>}
+      {mgmt.batchError && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-lg text-[var(--color-danger)] text-sm mb-4" role="alert"><span>{mgmt.batchError}</span></div>}
 
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label={t('agent.col_name')}>
         <div className="flex items-center gap-3 flex-1">

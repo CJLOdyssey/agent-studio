@@ -133,10 +133,10 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       >
                         <span>{m.label}</span>
                         {m.status === 'deprecated' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusDeprecated')}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
                         )}
                         {m.status === 'sunset' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusSunset')}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>
                         )}
                       </button>
                     );
@@ -155,9 +155,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 >
                   <span>{m.label}</span>
                   {m.status === 'deprecated' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusDeprecated')}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
                   )}
-                  {m.status === 'sunset' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] text-[var(--da-accent-red)]">{t('model.statusSunset')}</span>}
+                  {m.status === 'sunset' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>}
                 </button>
               ))}
         </div>

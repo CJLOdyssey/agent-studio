@@ -23,7 +23,7 @@ export default function CreateModal({
   const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div
         className={`bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden${large ? ' max-w-[var(--modal-l)]' : ''}`}
         role="dialog" aria-modal="true" aria-label={title}
@@ -39,7 +39,7 @@ export default function CreateModal({
 
         <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
           {errors && errors.length > 0 && (
-            <div className="p-3 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-md text-[var(--icon-status-error)] text-xs" role="alert">
+            <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs" role="alert">
               {errors.map((e, i) => <p key={i}>{e}</p>)}
             </div>
           )}

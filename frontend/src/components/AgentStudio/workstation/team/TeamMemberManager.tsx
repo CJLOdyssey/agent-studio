@@ -56,7 +56,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
   } = useTeamMemberManager(team);
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-w-[480px] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2.5">
@@ -78,7 +78,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
 
         <div className="p-5 pt-0 overflow-y-auto flex-1 min-h-0 flex flex-col">
           {error && (
-            <div className="flex items-center gap-2 py-2 px-3 mb-3 bg-[color-mix(in_srgb,var(--da-status-error)_10%,transparent)] border border-[color-mix(in_srgb,var(--da-status-error)_20%,transparent)] rounded-lg text-[var(--da-font-size-sm)] text-[var(--da-status-error)]">
+            <div className="flex items-center gap-2 py-2 px-3 mb-3 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] rounded-lg text-[var(--da-font-size-sm)] text-[var(--color-danger)]">
               <span className="flex-1">{error}</span>
               <button onClick={() => setError(null)} className="bg-transparent border-none cursor-pointer text-inherit p-0.5 flex"><X size={14} /></button>
             </div>
@@ -163,7 +163,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                     <button
                       onClick={() => handleRemove(m.id)}
                       disabled={removingId === m.id}
-                      className="w-7 h-7 rounded-md flex items-center justify-center border-none bg-transparent text-[var(--color-text-tertiary)] cursor-pointer transition-all duration-150 shrink-0 hover:bg-[color-mix(in_srgb,var(--da-status-error)_12%,transparent)] hover:text-[var(--da-status-error)]"
+                      className="w-7 h-7 rounded-md flex items-center justify-center border-none bg-transparent text-[var(--color-text-tertiary)] cursor-pointer transition-all duration-150 shrink-0 hover:bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)] hover:text-[var(--color-danger)]"
                     >
                       {removingId === m.id
                         ? <Loader2 size={14} className="animate-spin" />

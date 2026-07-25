@@ -58,7 +58,7 @@ function ItemMenu({ onEdit, onRename, onDelete }: { onEdit?: () => void; onRenam
           <button className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onRename(); setOpen(false); }}>
             <Pencil size={14} /><span>{t('workstation.rename')}</span>
           </button>
-          <button className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--da-accent-red)] text-left hover:bg-[color-mix(in_srgb,var(--da-accent-red)_10%,transparent)]" onClick={() => { onDelete(); setOpen(false); }}>
+          <button className="flex items-center gap-2 py-[7px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]" onClick={() => { onDelete(); setOpen(false); }}>
             <Trash2 size={14} /><span>{t('workstation.delete')}</span>
           </button>
         </div>,

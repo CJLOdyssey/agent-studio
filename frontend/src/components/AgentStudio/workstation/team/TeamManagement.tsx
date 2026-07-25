@@ -32,7 +32,7 @@ export default function TeamManagement() {
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('team.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label={t('team.col_name')}>
-      {d.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-lg text-[var(--icon-status-error)] text-sm mb-4"><span>{d.error}</span><button onClick={d.retry} aria-label={t('team.error_retry')}><RefreshCw size={14} /></button><button onClick={d.clearError}><X size={14} /></button></div>}
+      {d.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-lg text-[var(--color-danger)] text-sm mb-4"><span>{d.error}</span><button onClick={d.retry} aria-label={t('team.error_retry')}><RefreshCw size={14} /></button><button onClick={d.clearError}><X size={14} /></button></div>}
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1" style={{ flexWrap: 'wrap' }}>
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('team.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />

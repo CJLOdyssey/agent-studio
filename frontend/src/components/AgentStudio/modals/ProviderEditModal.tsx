@@ -102,7 +102,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[420px] max-h-[480px] max-w-[560px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -92,12 +92,12 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   );
 
   return (
-    <aside className={`flex flex-col h-full w-[var(--da-sidebar-width)] min-w-[var(--da-sidebar-width)] bg-[var(--da-bg-sidebar)] border-r border-r-[var(--da-border-subtle)] shrink-0 overflow-hidden transition-[width,min-width,opacity] duration-200 ${isSidebarOpen ? '' : 'w-0 min-w-0 opacity-0 pointer-events-none'}`}>
+    <aside className={`flex flex-col h-full w-[var(--da-sidebar-width)] min-w-[var(--da-sidebar-width)] bg-[var(--color-surface-sidebar)] border-r border-r-[var(--color-border-subtle)] shrink-0 overflow-hidden transition-[width,min-width,opacity] duration-200 ${isSidebarOpen ? '' : 'w-0 min-w-0 opacity-0 pointer-events-none'}`}>
       <div className="flex items-center gap-[10px] p-3 shrink-0">
-        <div className="w-8 h-8 bg-[color-mix(in_srgb,var(--da-bg-primary),var(--da-text-primary)_8%)] rounded-lg flex items-center justify-center text-[var(--icon-planning)] shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
+        <div className="w-8 h-8 bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] rounded-lg flex items-center justify-center text-[var(--color-accent)] shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
           <Bot size={18} />
         </div>
-        <span className="font-semibold text-[var(--da-font-size-base)] text-[var(--da-text-primary)] tracking-[-0.02em]">AgentStudio</span>
+        <span className="font-semibold text-[var(--da-font-size-base)] text-[var(--color-text-primary)] tracking-[-0.02em]">AgentStudio</span>
       </div>
 
       <div className="px-3 pb-3 shrink-0">

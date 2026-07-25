@@ -60,10 +60,10 @@ export default function ApiProviderTab({
         </button>
       </div>
       {error && (
-        <div className="bg-[color-mix(in_srgb,var(--da-accent-red)_15%,transparent)] border border-[color-mix(in_srgb,var(--da-accent-red)_30%,transparent)] rounded-lg py-2 px-3 mb-3 flex items-center gap-2">
-          <AlertCircle size={16} className="text-[var(--da-accent-red)] shrink-0" />
-          <span className="text-[var(--da-accent-red)] text-sm">{error}</span>
-          <button className="ml-auto bg-transparent border-none text-[var(--da-accent-red)] cursor-pointer px-1 py-0.5 text-base leading-none hover:text-[var(--da-text-on-accent)]" onClick={onDismissError}>
+        <div className="bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] rounded-lg py-2 px-3 mb-3 flex items-center gap-2">
+          <AlertCircle size={16} className="text-[var(--color-danger)] shrink-0" />
+          <span className="text-[var(--color-danger)] text-sm">{error}</span>
+          <button className="ml-auto bg-transparent border-none text-[var(--color-danger)] cursor-pointer px-1 py-0.5 text-base leading-none hover:text-[var(--color-text-on-accent)]" onClick={onDismissError}>
             ✕
           </button>
         </div>
@@ -108,7 +108,7 @@ export default function ApiProviderTab({
                       {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
                     </span>
                     {key.is_active && <CheckCircle2 size={14} className="text-[var(--color-accent)]" />}
-                    {!key.is_active && <AlertCircle size={14} className="text-[var(--icon-status-error)]" />}
+                    {!key.is_active && <AlertCircle size={14} className="text-[var(--color-danger)]" />}
                   </div>
                   <div className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">
                     {key.provider} {key.base_url ? `· ${key.base_url}` : ''}

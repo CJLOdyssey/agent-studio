@@ -18,7 +18,7 @@
 .agentstudio-messages::-webkit-scrollbar-thumb,
 .agentstudio-workspace-content::-webkit-scrollbar-thumb,
 .agentstudio-file-tree::-webkit-scrollbar-thumb {
-  background: var(--da-border);
+  background: var(--color-border);
   border-radius: 3px;
 }
 
@@ -26,5 +26,5 @@
 .agentstudio-messages::-webkit-scrollbar-thumb:hover,
 .agentstudio-workspace-content::-webkit-scrollbar-thumb:hover,
 .agentstudio-file-tree::-webkit-scrollbar-thumb:hover {
-  background: var(--da-text-muted);
+  background: var(--color-text-muted);
 }

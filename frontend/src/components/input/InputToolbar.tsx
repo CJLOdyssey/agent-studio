@@ -198,7 +198,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           {isRunning ? (
             <button
               onClick={onStop}
-              className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 bg-red-500/20 text-[var(--da-accent-red)] shadow-sm hover:bg-red-500/30 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm"
+              className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 bg-red-500/20 text-[var(--color-danger)] shadow-sm hover:bg-red-500/30 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm"
               aria-label={t('home.stop', '停止')}
             >
               <Square size={14} fill="currentColor" />
@@ -210,7 +210,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
               disabled={!composer.hasContent}
               className={`flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 ${
                 composer.hasContent
-                  ? 'bg-[var(--color-accent)] text-[var(--da-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm'
+                  ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm'
                   : 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] cursor-not-allowed opacity-70'
               }`}
               aria-label={t('home.send')}

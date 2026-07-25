@@ -139,7 +139,7 @@ const ConversationsList = memo(function ConversationsList({
           </div>
         </div>
         <button
-          className="shrink-0 p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-opacity flex items-center justify-center group-hover:opacity-100 hover:text-[var(--icon-status-error)]"
+          className="shrink-0 p-1 rounded bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-opacity flex items-center justify-center group-hover:opacity-100 hover:text-[var(--color-danger)]"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(conv.id);

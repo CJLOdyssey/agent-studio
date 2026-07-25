@@ -5,24 +5,24 @@
 /* ── Antd component overrides for workstation modal ── */
 /* Modal header: dark bg, bottom border */
 .workstation-modal.ant-modal .ant-modal-header {
-  background: var(--da-bg-card);
-  border-bottom: 1px solid var(--da-border);
+  background: var(--color-surface-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 14px 20px;
 }
 
 .workstation-modal.ant-modal .ant-modal-title {
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
   font-size: var(--da-font-size-base);
   font-weight: 600;
 }
 
 .workstation-modal.ant-modal .ant-modal-close {
-  color: var(--da-text-muted);
+  color: var(--color-text-muted);
 }
 
 .workstation-modal.ant-modal .ant-modal-close:hover {
-  color: var(--da-text-primary);
-  background: var(--da-bg-hover);
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
 }
 
 /* Modal body: fixed height, flex column, no body-level overflow */
@@ -36,20 +36,20 @@
 
 /* Modal content: dark bg + no padding (handled by WorkstationPage) */
 .workstation-modal.ant-modal .ant-modal-content {
-  background: var(--da-bg-card);
+  background: var(--color-surface-card);
   overflow: hidden;
   padding: 0;
 }
 
 .workstation-modal.ant-modal .ant-modal-container {
-  background: var(--da-bg-card);
+  background: var(--color-surface-card);
   padding: 0;
 }
 
 /* ProCard: flat structural wrapper (not a visual card) */
 .workstation-modal.ant-modal .ant-pro-card {
   background: transparent;
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
   border: none;
   box-shadow: none;
   border-radius: 0;
@@ -60,7 +60,7 @@
 }
 
 .workstation-modal.ant-modal .ant-pro-card .ant-pro-card-header {
-  border-bottom: 1px solid var(--da-border);
+  border-bottom: 1px solid var(--color-border);
   padding: 24px 20px;
   background: transparent;
 }
@@ -68,12 +68,12 @@
 .workstation-modal.ant-modal .ant-pro-card .ant-pro-card-title {
   font-size: var(--da-font-size-xl);
   font-weight: 600;
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
 }
 
 .workstation-modal.ant-modal .ant-table {
   background: transparent;
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
   font-size: var(--da-font-size-sm);
 }
 
@@ -83,9 +83,9 @@
 }
 
 .workstation-modal.ant-modal .ant-table-thead > tr > th {
-  background: var(--da-bg-card);
-  color: var(--da-text-muted);
-  border-bottom: 1px solid var(--da-border-subtle);
+  background: var(--color-surface-card);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border-subtle);
   font-size: var(--da-font-size-xs);
   font-weight: 500;
   letter-spacing: 0.5px;
@@ -108,8 +108,8 @@
 
 .workstation-modal.ant-modal .ant-table-tbody > tr > td {
   background: transparent;
-  color: var(--da-text-primary);
-  border-bottom: 1px solid var(--da-border-subtle);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-subtle);
   padding-top: 12px;
   padding-bottom: 12px;
   padding-left: 24px;
@@ -125,7 +125,7 @@
 .workstation-modal.ant-modal .ant-table-tbody > tr:hover > td,
 .workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td,
 .workstation-modal.ant-modal .ant-table-tbody > tr > td.ant-table-cell-row-hover {
-  @apply bg-[var(--da-bg-hover)] text-[var(--da-text-primary)];
+  @apply bg-[var(--color-surface-hover)] text-[var(--color-text-primary)];
 }
 
 .workstation-modal.ant-modal .ant-table-tbody > tr:hover > td a,
@@ -138,61 +138,61 @@
 /* Prevent header text turning white on hover */
 .workstation-modal.ant-modal .ant-table-thead > tr > th:hover,
 .workstation-modal.ant-modal .ant-table-thead > tr.ant-table-row:hover > th {
-  @apply text-[var(--da-text-muted)];
+  @apply text-[var(--color-text-muted)];
 }
 
 .workstation-modal.ant-modal .ant-table-column-sorters:hover {
-  @apply text-[var(--da-text-muted)];
+  @apply text-[var(--color-text-muted)];
 }
 
 .workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row-selected > td {
-  background: color-mix(in srgb, var(--da-accent) 6%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
 }
 
 .workstation-modal.ant-modal .ant-btn-default {
-  background: var(--da-bg-surface);
-  color: var(--da-text-primary);
-  border-color: var(--da-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
 }
 
 .workstation-modal.ant-modal .ant-btn-default:hover {
-  background: var(--da-bg-hover);
-  border-color: var(--da-accent);
-  color: var(--da-text-primary);
+  background: var(--color-surface-hover);
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
 }
 
 .workstation-modal.ant-modal .ant-btn-primary {
-  background: var(--da-accent);
-  color: var(--da-text-on-accent);
-  border-color: var(--da-accent);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
 }
 
 .workstation-modal.ant-modal .ant-btn-primary:hover {
-  background: var(--da-bg-elevated);
-  border-color: var(--da-bg-elevated);
+  background: var(--color-surface-elevated);
+  border-color: var(--color-surface-elevated);
 }
 
 .workstation-modal.ant-modal .ant-btn-text {
-  color: var(--da-text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .workstation-modal.ant-modal .ant-btn-text:hover {
-  background: var(--da-bg-hover);
-  color: var(--da-text-primary);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
 .workstation-modal.ant-modal .ant-checkbox-inner {
-  background-color: var(--da-bg-surface);
-  border-color: var(--da-border);
+  background-color: var(--color-surface-raised);
+  border-color: var(--color-border);
 }
 
 .workstation-modal.ant-modal .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: var(--da-accent);
-  border-color: var(--da-accent);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .workstation-modal.ant-modal .ant-checkbox-wrapper {
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
 }
 
 .workstation-modal.ant-pagination,
@@ -201,8 +201,8 @@
 }
 
 .workstation-modal .ant-pagination-item {
-  background: var(--da-bg-surface);
-  border-color: var(--da-border);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
   border-radius: 6px;
   min-width: 32px;
   height: 32px;
@@ -211,26 +211,26 @@
 }
 
 .workstation-modal .ant-pagination-item a {
-  color: var(--da-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--da-font-size-sm);
   font-weight: 500;
 }
 
 .workstation-modal .ant-pagination-item:hover {
-  border-color: var(--da-accent);
+  border-color: var(--color-accent);
 }
 
 .workstation-modal .ant-pagination-item:hover a {
-  color: var(--da-accent);
+  color: var(--color-accent);
 }
 
 .workstation-modal .ant-pagination-item-active {
-  background: var(--da-accent);
-  border-color: var(--da-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .workstation-modal .ant-pagination-item-active a {
-  color: var(--da-text-on-accent);
+  color: var(--color-text-on-accent);
   font-weight: 600;
 }
 
@@ -240,16 +240,16 @@
   height: 32px;
   line-height: 32px;
   border-radius: 6px;
-  border: 1px solid var(--da-border);
-  background: var(--da-bg-surface);
-  color: var(--da-text-secondary);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-secondary);
   transition: all 0.15s ease;
 }
 
 .workstation-modal .ant-pagination-prev:hover,
 .workstation-modal .ant-pagination-next:hover {
-  border-color: var(--da-accent);
-  color: var(--da-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .workstation-modal .ant-pagination-prev button,
@@ -267,13 +267,13 @@
 
 .workstation-modal .ant-pagination-disabled .ant-pagination-item,
 .workstation-modal .ant-pagination-disabled:hover .ant-pagination-item {
-  border-color: var(--da-border);
-  background: var(--da-bg-surface);
+  border-color: var(--color-border);
+  background: var(--color-surface-raised);
 }
 
 .workstation-modal .ant-pagination-disabled .ant-pagination-item a,
 .workstation-modal .ant-pagination-disabled:hover .ant-pagination-item a {
-  color: var(--da-text-muted);
+  color: var(--color-text-muted);
 }
 
 .workstation-modal .ant-pagination-jump-prev,
@@ -282,17 +282,17 @@
   height: 32px;
   line-height: 32px;
   border-radius: 6px;
-  border: 1px solid var(--da-border);
-  background: var(--da-bg-surface);
-  color: var(--da-text-muted);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
   font-size: var(--da-font-size-base);
   letter-spacing: 2px;
 }
 
 .workstation-modal .ant-pagination-jump-prev:hover,
 .workstation-modal .ant-pagination-jump-next:hover {
-  border-color: var(--da-accent);
-  color: var(--da-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .workstation-modal .ant-pagination-options {
@@ -301,15 +301,15 @@
 
 .workstation-modal .ant-pagination-options-quick-jumper {
   font-size: var(--da-font-size-sm);
-  color: var(--da-text-muted);
+  color: var(--color-text-muted);
   margin-left: 8px;
 }
 
 .workstation-modal .ant-pagination-options-quick-jumper input {
-  background: var(--da-bg-surface);
-  border-color: var(--da-border);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
   border-radius: 6px;
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
   font-size: var(--da-font-size-sm);
   width: 48px;
   height: 32px;
@@ -318,18 +318,18 @@
 }
 
 .workstation-modal .ant-pagination-options-quick-jumper input:hover {
-  border-color: var(--da-accent);
+  border-color: var(--color-accent);
 }
 
 .workstation-modal .ant-pagination-options-quick-jumper input:focus {
-  border-color: var(--da-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent) 15%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
   outline: none;
 }
 
 .workstation-modal .ant-pagination-total-text {
   font-size: var(--da-font-size-sm);
-  color: var(--da-text-muted);
+  color: var(--color-text-muted);
   font-family: var(--font-mono);
   margin-right: 12px;
   height: 32px;
@@ -341,35 +341,35 @@
 }
 
 .workstation-modal.ant-modal .ant-empty-description {
-  color: var(--da-text-muted);
+  color: var(--color-text-muted);
 }
 
 .workstation-modal.ant-modal .ant-input,
 .workstation-modal.ant-modal .ant-input-affix-wrapper {
-  background: var(--da-bg-surface);
-  border-color: var(--da-border);
-  color: var(--da-text-primary);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .workstation-modal.ant-modal .ant-input::placeholder,
 .workstation-modal.ant-modal .ant-input-affix-wrapper input::placeholder {
-  color: var(--da-text-muted);
+  color: var(--color-text-muted);
 }
 
 .workstation-modal.ant-modal .ant-input-affix-wrapper:focus,
 .workstation-modal.ant-modal .ant-input-affix-wrapper-focused {
-  border-color: var(--da-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--da-accent) 15%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 .workstation-modal.ant-modal .ant-select-selector {
-  background: var(--da-bg-surface);
-  border-color: var(--da-border);
-  color: var(--da-text-primary);
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .workstation-modal.ant-modal .ant-select-selection-item {
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
 }
 
 /* ── Native element focus effects (used by tab components) ── */
@@ -377,8 +377,8 @@
 .workstation-modal.ant-modal input[type="search"]:focus,
 .workstation-modal.ant-modal select:focus {
   outline: none;
-  border-color: var(--da-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-accent) 12%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 /* ── WstaDropdownPortal (Ant Menu inside fixed container) ── */
@@ -391,27 +391,27 @@
   line-height: 36px;
   margin: 0;
   font-size: var(--da-font-size-sm);
-  color: var(--da-text-secondary);
+  color: var(--color-text-secondary);
   border-radius: 0;
 }
 
 .workstation-modal.ant-modal .ant-menu-item:hover {
-  background: color-mix(in srgb, var(--da-accent) 8%, transparent);
-  color: var(--da-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  color: var(--color-accent);
 }
 
 .workstation-modal.ant-modal .ant-menu-item-danger {
-  color: var(--da-status-error);
+  color: var(--color-danger);
 }
 
 .workstation-modal.ant-modal .ant-menu-item-danger:hover {
-  background: color-mix(in srgb, var(--da-status-error) 12%, transparent);
-  color: var(--da-status-error);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
 }
 
 .workstation-modal.ant-modal .ant-menu-item-divider {
   margin: 4px 0;
-  border-color: var(--da-border-subtle);
+  border-color: var(--color-border-subtle);
 }
 
 /* ── Status Badge (Ant Design) ── */
@@ -421,7 +421,7 @@
 }
 
 .workstation-modal.ant-modal .ant-badge-status-text {
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
   font-size: var(--da-font-size-sm);
 }
 

@@ -46,7 +46,7 @@ export default function PasswordStrengthIndicator({ password, validated }: Props
               flex: 1,
               height: 3,
               borderRadius: 2,
-              background: c.pass ? 'var(--da-success)' : 'var(--color-border)',
+              background: c.pass ? 'var(--color-success)' : 'var(--color-border)',
               transition: 'background 0.2s',
             }}
           />
@@ -64,7 +64,7 @@ export default function PasswordStrengthIndicator({ password, validated }: Props
       )}
 
       {validated && passed === total && (
-        <div style={{ fontSize: 11, color: 'var(--da-success)' }}>
+        <div style={{ fontSize: 11, color: 'var(--color-success)' }}>
           全部满足 ✓
         </div>
       )}

@@ -26,7 +26,7 @@ export default function AgentStudioWorkstation() {
           <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
             <div className="flex flex-1 overflow-hidden relative">
             {s.isSidebarOpen && (
-              <div className="fixed inset-0 bg-[var(--da-overlay-bg)] z-[calc(var(--z-overlay)-1)] animate-[overlayFadeIn_0.15s_ease-out]" onClick={() => s.setIsSidebarOpen(false)} />
+              <div className="fixed inset-0 bg-[var(--color-overlay)] z-[calc(var(--z-overlay)-1)] animate-[overlayFadeIn_0.15s_ease-out]" onClick={() => s.setIsSidebarOpen(false)} />
             )}
 
             <AgentStudioSidebar
@@ -67,17 +67,17 @@ export default function AgentStudioWorkstation() {
               <div className="flex flex-col flex-1 overflow-hidden">
                 <header className="h-14 flex items-center justify-between px-4 flex-shrink-0 z-40 bg-[var(--color-surface-overlay)]">
                   <div className="flex items-center gap-3">
-                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
+                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" onClick={() => s.setIsSidebarOpen(!s.isSidebarOpen)} aria-label="Toggle sidebar">
                     <PanelLeft size={18} />
                   </button>
                 </div>
                   <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" onClick={() => s.updateSettings({ theme: s.isDarkMode ? 'light' : 'dark' })} aria-label="Toggle dark mode">
+                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" onClick={() => s.updateSettings({ theme: s.isDarkMode ? 'light' : 'dark' })} aria-label="Toggle dark mode">
                     {s.isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
                   </button>
-                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--da-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" aria-label="Notifications">
+                  <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" aria-label="Notifications">
                     <Bell size={16} />
-                    <span className="absolute top-[6px] right-2 w-2 h-2 rounded-full bg-[var(--icon-status-error)] border-2 border-[var(--da-bg-card)]" />
+                    <span className="absolute top-[6px] right-2 w-2 h-2 rounded-full bg-[var(--color-danger)] border-2 border-[var(--color-surface-card)]" />
                   </button>
                 </div>
               </header>
@@ -86,19 +86,19 @@ export default function AgentStudioWorkstation() {
                 onDragOver={s.handlePageDragOver} onDragLeave={s.handlePageDragLeave} onDrop={s.handlePageDrop}>
                   <div className="flex-1 flex flex-col overflow-hidden">
                   {s.isPageDragOver && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-accent)_8%,var(--da-overlay-bg))] border-[3px] border-dashed border-[var(--color-accent)] z-[900] text-xl font-bold text-[var(--color-accent)] pointer-events-none animate-[fadeIn_0.15s_ease]">
+                    <div className="fixed inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-accent)_8%,var(--color-overlay))] border-[3px] border-dashed border-[var(--color-accent)] z-[900] text-xl font-bold text-[var(--color-accent)] pointer-events-none animate-[fadeIn_0.15s_ease]">
                       <span>{s.t('fileAttach.dropHere')}</span>
                     </div>
                   )}
                   {s.wsStatus === 'reconnecting' && (
-                    <div className="px-4 py-2 bg-[var(--color-accent-soft)] text-[var(--da-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease]" role="status" aria-live="polite">
+                    <div className="px-4 py-2 bg-[var(--color-accent-soft)] text-[var(--color-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease]" role="status" aria-live="polite">
                       {s.t('common.connecting')}...
                     </div>
                   )}
                   {s.apiStatus === 'error' && s.apiError && (
-                    <div className="px-4 py-2 bg-[var(--da-accent-red)] text-[var(--da-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease] flex items-center justify-center gap-3" role="alert">
+                    <div className="px-4 py-2 bg-[var(--color-danger)] text-[var(--color-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease] flex items-center justify-center gap-3" role="alert">
                       {s.apiError}
-                      <button className="bg-[var(--color-surface)] text-[var(--da-accent-red)] border-none py-[1px] px-3 rounded text-sm cursor-pointer font-semibold leading-[var(--da-line-height)] hover:opacity-80" onClick={s.retryApi}>
+                      <button className="bg-[var(--color-surface)] text-[var(--color-danger)] border-none py-[1px] px-3 rounded text-sm cursor-pointer font-semibold leading-[var(--da-line-height)] hover:opacity-80" onClick={s.retryApi}>
                         {s.t('common.retry')}
                       </button>
                     </div>

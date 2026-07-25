@@ -120,7 +120,7 @@ export function ResourcePickerSection({
         <div className="grid grid-cols-2 gap-4">
           {/* Prompt */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_prompt')} <span className="text-[var(--icon-status-error)]">*</span></label>
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_prompt')} <span className="text-[var(--color-danger)]">*</span></label>
             <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('prompt')}>
               {selectedPrompt ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

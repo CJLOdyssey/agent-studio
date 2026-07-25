@@ -8,7 +8,7 @@
   margin-top: 20px;
   padding: 14px 20px 16px;
   justify-content: flex-end;
-  border-top: 1px solid var(--da-border-subtle);
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 .agentstudio-modal-btn {
@@ -16,9 +16,9 @@
   height: 34px;
   padding: 0 15px;
   background: transparent;
-  border: 1px solid var(--da-border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  color: var(--da-text-secondary);
+  color: var(--color-text-secondary);
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
@@ -30,9 +30,9 @@
 }
 
 .agentstudio-modal-btn:hover {
-  border-color: var(--da-accent-indigo);
-  color: var(--da-accent-indigo);
-  background: color-mix(in srgb, var(--da-accent-indigo) 4%, transparent);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
 }
 
 .agentstudio-modal-btn:active {
@@ -40,21 +40,21 @@
 }
 
 .agentstudio-modal-btn.danger {
-  background: var(--da-accent-red);
-  border-color: var(--da-accent-red);
-  color: var(--da-text-on-accent);
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-text-on-accent);
   font-weight: 500;
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--da-accent-red) 15%, transparent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 
 .agentstudio-modal-btn.danger:hover {
-  background: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
-  border-color: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--da-accent-red) 25%, transparent);
-  color: var(--da-text-on-accent);
+  background: color-mix(in srgb, var(--color-danger), #000000);
+  border-color: color-mix(in srgb, var(--color-danger), #000000);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-danger) 25%, transparent);
+  color: var(--color-text-on-accent);
 }
 
 .agentstudio-modal-btn.danger:active {
-  background: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
-  border-color: color-mix(in srgb, var(--da-accent-red), var(--da-blend-dark));
+  background: color-mix(in srgb, var(--color-danger), #000000);
+  border-color: color-mix(in srgb, var(--color-danger), #000000);
 }

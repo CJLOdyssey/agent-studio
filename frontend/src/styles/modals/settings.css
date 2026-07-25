@@ -4,6 +4,6 @@
 .settings-section h4 {
   font-size: var(--da-font-size-lg);
   font-weight: 600;
-  color: var(--da-text-primary);
+  color: var(--color-text-primary);
   margin: 0 0 var(--sp-5);
 }

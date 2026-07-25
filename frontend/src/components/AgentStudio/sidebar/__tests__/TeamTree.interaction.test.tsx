@@ -157,7 +157,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     const deleteBtn = screen.getByText('workstation.delete').closest('button');
-    expect(deleteBtn?.className).toContain('accent-red');
+    expect(deleteBtn?.className).toContain('color-danger');
     restore();
   });
 

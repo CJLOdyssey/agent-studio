@@ -122,7 +122,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
           style={{ ...inputStyle, marginTop: 12 }}
         />
         {(localError || error) && (
-          <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--da-error)' }}>
+          <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--color-danger)' }}>
             {localError || error}
           </p>
         )}
@@ -153,7 +153,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
         autoComplete="email"
       />
       {(localError || error) && (
-        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--da-error)' }}>
+        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--color-danger)' }}>
           {localError || error}
         </p>
       )}

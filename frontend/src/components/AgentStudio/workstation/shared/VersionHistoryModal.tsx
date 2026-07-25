@@ -87,7 +87,7 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
   }, [sortedSelection, versions]);
 
   return (
-    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden max-w-[420px]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <h3>{t('workstation.versionHistory')} - {title}</h3>
@@ -123,13 +123,13 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
               <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[0]]?.version}</h5>
                 {diffResult.old.map((line, idx) => (
-                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--da-accent-green)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--da-accent-red)_12%,transparent)]' : ''}`}>{line.text}</div>
+                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--color-success)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
               <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[1]]?.version}</h5>
                 {diffResult.new.map((line, idx) => (
-                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--da-accent-green)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--da-accent-red)_12%,transparent)]' : ''}`}>{line.text}</div>
+                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--color-success)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
             </div>
