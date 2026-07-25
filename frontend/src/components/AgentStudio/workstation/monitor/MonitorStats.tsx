@@ -22,7 +22,7 @@ export default function MonitorStats({ stats, statCards, onNavigate }: Props) {
         return (
           <div
             key={cfg.key}
-            className="wsta-monitor-stat-card"
+            className="flex items-center gap-3 p-3 bg-[var(--da-bg-card)] border border-[var(--da-border-subtle)] rounded-[10px] transition-colors hover:border-[var(--da-border-strong)] hover:shadow-[0_1px_6px_rgba(0,0,0,0.06)]"
             onClick={() => onNavigate?.(cfg.tab)}
             style={{
               background: 'var(--da-bg-card)',
@@ -49,7 +49,7 @@ export default function MonitorStats({ stats, statCards, onNavigate }: Props) {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div
-                className="wsta-monitor-stat-icon"
+                className="shrink-0"
                 style={{
                   width: 36,
                   height: 36,

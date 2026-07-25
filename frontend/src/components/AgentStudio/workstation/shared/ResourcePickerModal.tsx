@@ -64,14 +64,14 @@ export default function ResourcePickerModal<T>({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content wsta-modal wsta-modal-md" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100vh/1.618)] overflow-hidden max-w-[420px]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
           <h3>{title}</h3>
-          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
+          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
-        <div className="modal-body">
-          <div className="wsta-picker-search">
+        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center gap-2 py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md mb-3">
             <Search size={16} />
             <input
               type="text"
@@ -81,9 +81,9 @@ export default function ResourcePickerModal<T>({
               autoFocus
             />
           </div>
-          <div className="wsta-picker-list">
+          <div className="max-h-80 overflow-y-auto border border-[var(--da-border)] rounded-md">
             {filtered.length === 0 && (
-              <div className="wsta-picker-empty">{t('workstation.noMatch')}</div>
+              <div className="p-6 text-center text-[var(--da-text-muted)] text-sm">{t('workstation.noMatch')}</div>
             )}
             {filtered.map((opt) => {
               const id = getOptionId(opt);
@@ -94,19 +94,19 @@ export default function ResourcePickerModal<T>({
                   className={`wsta-picker-item ${isSelected ? 'selected' : ''}`}
                   onClick={() => handleToggle(opt)}
                 >
-                  <div className="wsta-picker-item-info">
-                    <div className="wsta-picker-item-label">{getOptionLabel(opt)}</div>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="text-sm text-[var(--da-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis">{getOptionLabel(opt)}</div>
                     {getOptionSecondary && (
-                      <div className="wsta-picker-item-secondary">{getOptionSecondary(opt)}</div>
+                      <div className="text-xs text-[var(--da-text-muted)]">{getOptionSecondary(opt)}</div>
                     )}
                   </div>
-                  {isSelected && <Check size={16} className="wsta-picker-item-check" />}
+                  {isSelected && <Check size={16} className="text-[var(--da-accent-indigo)] shrink-0" />}
                 </div>
               );
             })}
           </div>
         </div>
-        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]" style={{ justifyContent: 'space-between' }}>
           <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>
             {multiple && tempSelected.size > 0 ? `${t('workstation.selectedCount')}: ${tempSelected.size}` : ''}
           </span>

@@ -142,7 +142,7 @@ function MonitorCenter({ onNavigate }: Props) {
 
   if (isLoading)
     return (
-      <div className="wsta-monitor">
+      <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
         <div style={{ padding: 24 }}>
           <CardSkeleton count={6} />
         </div>
@@ -152,12 +152,12 @@ function MonitorCenter({ onNavigate }: Props) {
   return (
     <ErrorBoundary
       fallback={
-        <div className="wsta-monitor wsta-error-state" role="alert">
+        <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert">
           <p>{t('monitor.error_render')}</p>
         </div>
       }
     >
-      <div className="wsta-monitor">
+      <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
         <div
           style={{
             flex: 1,

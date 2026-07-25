@@ -69,10 +69,10 @@ function LogAudit() {
   const paged = processed.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <ErrorBoundary fallback={<div className="wsta-agent-mgmt wsta-error-state" role="alert"><p>{t('logs.error_render')}</p></div>}>
-    <div className="wsta-agent-mgmt" role="region" aria-label={t('logs.empty')}>
-      <div className="wsta-toolbar" role="toolbar" aria-label={t('logs.search_placeholder')}>
-        <div className="wsta-toolbar-left">
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('logs.error_render')}</p></div>}>
+    <div className="flex flex-col h-full" role="region" aria-label={t('logs.empty')}>
+      <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label={t('logs.search_placeholder')}>
+        <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('logs.search_placeholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
           <Select style={{ width: 120 }} value={levelFilter} onChange={(v) => { setLevelFilter(v as LogLevel | 'all'); setPage(1); }} options={[
             { value: 'all', label: t('logs.all_levels') },
@@ -82,11 +82,11 @@ function LogAudit() {
         </div>
       </div>
 
-      <div className="wsta-table-wrap" style={processed.length > 0 && !isLoading ? { overflow: 'hidden' } : undefined}>
+      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden" style={processed.length > 0 && !isLoading ? { overflow: 'hidden' } : undefined}>
         {isLoading ? <TableSkeleton rows={8} cols={7} /> : processed.length === 0 ? (
-          <div className="wsta-empty-state">
-            <FileText size={40} className="wsta-empty-state-icon" />
-            <div className="wsta-empty-state-title">{t('logs.empty')}</div>
+          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+            <FileText size={40} className="text-[var(--da-text-muted)] opacity-50" />
+            <div className="text-lg font-semibold text-[var(--da-text-secondary)]">{t('logs.empty')}</div>
           </div>
         ) : (
         <TableVirtuoso
@@ -94,7 +94,7 @@ function LogAudit() {
           data={paged}
           components={{
             Table: forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>((props, ref) => (
-              <table ref={ref} className="wsta-table" role="grid" aria-label={t('logs.empty')} {...props} />
+              <table ref={ref} className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('logs.empty')} {...props} />
             )),
           }}
           fixedHeaderContent={() => (
@@ -110,13 +110,13 @@ function LogAudit() {
           )}
           itemContent={(_index: number, entry: LogEntry) => (
             <>
-              <td><span className="wsta-mono-text">{entry.timestamp}</span></td>
+              <td><span className="font-mono text-xs text-[var(--da-text-muted)]">{entry.timestamp}</span></td>
               <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
-              <td><span className="wsta-tag-pill wsta-tag-indigo">{MODULE_LABEL[entry.module] || entry.module}</span></td>
+              <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--da-accent-indigo)]/8 text-[var(--da-accent-indigo)]">{MODULE_LABEL[entry.module] || entry.module}</span></td>
               <td>{entry.user}</td>
               <td>{entry.action}</td>
-              <td className="wsta-secondary-text">{entry.details}</td>
-              <td><span className="wsta-mono-text">{entry.ip}</span></td>
+              <td className="text-sm text-[var(--da-text-secondary)]">{entry.details}</td>
+              <td><span className="font-mono text-xs text-[var(--da-text-muted)]">{entry.ip}</span></td>
             </>
           )}
         />

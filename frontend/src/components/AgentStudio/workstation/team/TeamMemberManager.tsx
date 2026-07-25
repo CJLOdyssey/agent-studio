@@ -27,7 +27,7 @@ function MemberAvatar({ name, size = 28 }: { name: string; size?: number }) {
   const initial = (name || '?').charAt(0).toUpperCase();
   return (
     <span
-      className="wsta-member-avatar"
+      className="rounded-full"
       style={{
         width: size,
         height: size,
@@ -63,9 +63,9 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
   } = useTeamMemberManager(team);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{
               width: 32, height: 32, borderRadius: 8,
@@ -85,10 +85,10 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
               <p style={{ margin: '1px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>{team.name}</p>
             </div>
           </div>
-          <button className="modal-close" onClick={onClose} aria-label="关闭"><X size={18} /></button>
+          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
         </div>
 
-        <div className="modal-body" style={{ paddingTop: 0 }}>
+        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ paddingTop: 0 }}>
           {error && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -244,7 +244,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                 {members.map((m) => (
                   <div
                     key={m.id}
-                    className="wsta-member-card"
+                    className="transition-all hover:border-[var(--da-border)]"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '8px 10px',

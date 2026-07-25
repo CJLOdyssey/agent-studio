@@ -66,23 +66,23 @@ export default function AgentManagement() {
     ];
   }
 
-  if (mgmt.isLoading) return <div className="wsta-panel" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={7} /></div>;
+  if (mgmt.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="wsta-panel wsta-error-state" role="alert"><p>{t('agent.error_render')}</p></div>}>
-    <div className="wsta-panel" role="region" aria-label="Agent 管理">
-      {mgmt.error && <div className="wsta-error-banner"><span>{mgmt.error}</span><button onClick={mgmt.retry} aria-label={t('agent.error_retry')}><RefreshCw size={14} /></button><button onClick={mgmt.clearError}><X size={14} /></button></div>}
-      {mgmt.batchError && <div className="wsta-error-banner" role="alert"><span>{mgmt.batchError}</span></div>}
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('agent.error_render')}</p></div>}>
+    <div className="flex flex-col h-full" role="region" aria-label="Agent 管理">
+      {mgmt.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-lg text-[var(--icon-status-error)] text-sm mb-4"><span>{mgmt.error}</span><button onClick={mgmt.retry} aria-label={t('agent.error_retry')}><RefreshCw size={14} /></button><button onClick={mgmt.clearError}><X size={14} /></button></div>}
+      {mgmt.batchError && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-lg text-[var(--icon-status-error)] text-sm mb-4" role="alert"><span>{mgmt.batchError}</span></div>}
 
-      <div className="wsta-toolbar" role="toolbar" aria-label={t('agent.col_name')}>
-        <div className="wsta-toolbar-left">
+      <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label={t('agent.col_name')}>
+        <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('agent.search_placeholder')} value={mgmt.search} onChange={(e) => mgmt.setSearch(e.target.value)} />
           <Select style={{ width: 130 }} value={mgmt.statusFilter} onChange={(v) => mgmt.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             ...Object.entries(STATUS_LABEL).map(([k, v]) => ({ value: k, label: v })),
           ]} />
         </div>
-        <div className="wsta-toolbar-right">
+        <div className="flex items-center gap-3">
           {mgmt.selectedIds.size > 0 && (
             <Button danger icon={<Trash2 size={16} />} onClick={() => mgmt.openBatchDelete()}>
               {t('agent.batch_delete', String(mgmt.selectedIds.size))}
@@ -94,41 +94,41 @@ export default function AgentManagement() {
         </div>
       </div>
 
-      <div className="wsta-table-wrap">
+      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {mgmt.processed.length === 0 ? (
-          <div className="wsta-empty-state">
-            <Bot size={40} className="wsta-empty-state-icon" />
-            <div className="wsta-empty-state-title">{t('agent.empty_title', mgmt.search ? '' : '')}</div>
-            <div className="wsta-empty-state-desc">{mgmt.search ? t('agent.empty_desc_search') : t('agent.empty_desc_general')}</div>
+          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+            <Bot size={40} className="text-[var(--da-text-muted)] opacity-50" />
+            <div className="text-lg font-semibold text-[var(--da-text-secondary)]">{t('agent.empty_title', mgmt.search ? '' : '')}</div>
+            <div className="text-sm text-[var(--da-text-muted)] max-w-80 leading-relaxed">{mgmt.search ? t('agent.empty_desc_search') : t('agent.empty_desc_general')}</div>
           </div>
         ) : (
-        <table className="wsta-table" role="grid" aria-label={t('agent.col_name')}>
+        <table className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('agent.col_name')}>
           <thead><tr>
-            <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={mgmt.allOnPageSelected} onChange={mgmt.toggleSelectAll} aria-label={t('agent.select_all')} /></th>
+            <th className="w-10 text-center align-middle p-1 px-2" scope="col"><input type="checkbox" checked={mgmt.allOnPageSelected} onChange={mgmt.toggleSelectAll} aria-label={t('agent.select_all')} /></th>
             <th scope="col">{t('agent.col_name')}</th>
             <th scope="col">{t('agent.col_team')}</th>
             <th scope="col">{t('agent.col_model')}</th>
             <th scope="col">{t('agent.col_status')}</th>
             <th scope="col">{t('agent.col.version')}</th>
-            <th className="wsta-col-actions" scope="col">{t('agent.col_actions')}</th>
+            <th className="w-[60px] text-right" scope="col">{t('agent.col_actions')}</th>
           </tr></thead>
           <tbody>
             {mgmt.paged.map((item) => (
               <tr key={item.id} className={mgmt.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
-                <td className="wsta-col-checkbox"><input type="checkbox" checked={mgmt.selectedIds.has(item.id)} onChange={() => mgmt.toggleSelect(item.id)} aria-label={t('agent.select_item', item.name)} /></td>
-                <td><span className="wsta-agent-name">{item.name}</span></td>
-                <td><span className="wsta-secondary-text">{item.team}</span></td>
-                <td><span className="wsta-tag-pill wsta-tag-indigo">{item.model}</span></td>
+                <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={mgmt.selectedIds.has(item.id)} onChange={() => mgmt.toggleSelect(item.id)} aria-label={t('agent.select_item', item.name)} /></td>
+                <td><span className="font-semibold text-[var(--da-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                <td><span className="text-sm text-[var(--da-text-secondary)]">{item.team}</span></td>
+                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--da-accent-indigo)]/8 text-[var(--da-accent-indigo)]">{item.model}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />
                     {STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="wsta-mono-text">{item.version}</span></td>
-                <td className="wsta-col-actions">
+                <td><span className="font-mono text-xs text-[var(--da-text-muted)]">{item.version}</span></td>
+                <td className="w-[60px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
-                    <button className="wsta-action-btn"><MoreHorizontal size={14} /></button>
+                    <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--da-text-muted)] cursor-pointer transition-all hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"><MoreHorizontal size={14} /></button>
                   </Dropdown>
                 </td>
               </tr>

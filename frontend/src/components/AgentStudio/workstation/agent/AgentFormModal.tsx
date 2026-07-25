@@ -43,51 +43,51 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
   const selectedSkills = availableSkills.filter((s) => formData.skillIds.includes(s.id));
 
   return (
-    <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
-      <div className="modal-content wsta-agent-form-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
+      <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] wsta-agent-form-modal" onClick={(e) => e.stopPropagation()}>
         {/* ── Header ── */}
-        <div className="modal-header">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
           <div className="modal-title">
             <Bot size={16} />
             {editingAgent ? t('agent.form_edit_title') : t('agent.form_create_title')}
           </div>
-          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}><X size={16} /></button>
+          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={16} /></button>
         </div>
 
         {/* ── Body ── */}
-        <div className="modal-body">
+        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
           {/* ═══ Section: Basic Info ═══ */}
-          <div className="wsta-form-section">
-            <div className="wsta-form-section-title">
+          <div className="mt-5 pt-4 border-t border-[var(--da-border-subtle)]">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--da-text-primary)] mb-3">
               <Bot size={14} />
               {t('agent.form_section_basic')}
             </div>
 
-            <div className="wsta-form-group">
-              <label className="wsta-label">{t('agent.form_name')} <span className="wsta-required">*</span></label>
-              <input className="wsta-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t('agent.form_name_placeholder')} maxLength={30} />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
+              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder={t('agent.form_name_placeholder')} maxLength={30} />
             </div>
-            <div className="wsta-form-group" style={{ marginTop: 14 }}>
-              <label className="wsta-label">{t('agent.form_desc')}</label>
-              <textarea className="wsta-textarea" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder={t('agent.form_desc_placeholder')} rows={2} maxLength={200} />
+            <div className="flex flex-col gap-1" style={{ marginTop: 14 }}>
+              <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_desc')}</label>
+              <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder={t('agent.form_desc_placeholder')} rows={2} maxLength={200} />
             </div>
-            <div className="wsta-form-row" style={{ marginTop: 14 }}>
-              <div className="wsta-form-group">
-                <label className="wsta-label">{t('agent.form_team')}</label>
-                <select className="wsta-select" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })}>
+            <div className="flex gap-4" style={{ marginTop: 14 }}>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_team')}</label>
+                <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })}>
                   <option value="">—</option>
                   {teamOptions.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-              <div className="wsta-form-group">
-                <label className="wsta-label">{t('agent.form_model')}</label>
-                <select className="wsta-select" value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })}>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_model')}</label>
+                <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })}>
                   {modelOptions.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-              <div className="wsta-form-group" style={{ maxWidth: 140 }}>
-                <label className="wsta-label">{t('agent.form_version')}</label>
-                <input className="wsta-input" value={formData.version} onChange={(e) => setFormData({ ...formData, version: e.target.value })} placeholder={t('agent.form_version_placeholder')} />
+              <div className="flex flex-col gap-1" style={{ maxWidth: 140 }}>
+                <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_version')}</label>
+                <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.version} onChange={(e) => setFormData({ ...formData, version: e.target.value })} placeholder={t('agent.form_version_placeholder')} />
               </div>
             </div>
           </div>
@@ -109,7 +109,7 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
         </div>
 
         {/* ── Footer ── */}
-        <div className="modal-footer">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-surface)] text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose}>{t('agent.form_cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={onSave}>
             {editingAgent ? t('agent.form_save_edit') : t('agent.form_save_create')}

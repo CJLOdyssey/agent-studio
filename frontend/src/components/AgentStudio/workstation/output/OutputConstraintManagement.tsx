@@ -35,48 +35,48 @@ export default function OutputConstraintManagement() {
     ];
   }
 
-  if (d.isLoading) return <div className="wsta-agent-mgmt" role="region" aria-label={t('output.loading')}><TableSkeleton rows={5} cols={5} /></div>;
+  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('output.loading')}><TableSkeleton rows={5} cols={5} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="wsta-agent-mgmt wsta-error-state" role="alert"><p>{t('output.error_render')}</p></div>}>
-    <div className="wsta-agent-mgmt" role="region" aria-label={t('output.col_name')}>
-      <div className="wsta-toolbar" role="toolbar">
-        <div className="wsta-toolbar-left">
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('output.error_render')}</p></div>}>
+    <div className="flex flex-col h-full" role="region" aria-label={t('output.col_name')}>
+      <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
+        <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('output.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
           <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
             { value: 'all', label: t('output.all_categories') },
             ...OUTPUT_CATEGORIES.map((c) => ({ value: c, label: c })),
           ]} />
         </div>
-        <div className="wsta-toolbar-right">
+        <div className="flex items-center gap-3">
           {d.selectedIds.size > 0 && <Button danger icon={<Trash2 size={16} />} onClick={handleBatchRemove}>{t('output.batch_delete', String(d.selectedIds.size))}</Button>}
           <Button type="primary" icon={<Plus size={16} />} style={{ background: 'var(--da-bg-hover)', borderColor: 'var(--da-bg-hover)', color: 'var(--da-text-primary)' }} onClick={d.openCreate}>{t('output.new')}</Button>
         </div>
       </div>
 
-      <div className="wsta-table-wrap">
+      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {d.filtered.length === 0 ? (
-          <div className="wsta-empty-state">
-            <FileText size={40} className="wsta-empty-state-icon" />
-            <div className="wsta-empty-state-title">{t('output.empty_title', '')}</div>
-            <div className="wsta-empty-state-desc">{d.search ? t('output.empty_desc_search') : t('output.empty_desc_general')}</div>
+          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+            <FileText size={40} className="text-[var(--da-text-muted)] opacity-50" />
+            <div className="text-lg font-semibold text-[var(--da-text-secondary)]">{t('output.empty_title', '')}</div>
+            <div className="text-sm text-[var(--da-text-muted)] max-w-80 leading-relaxed">{d.search ? t('output.empty_desc_search') : t('output.empty_desc_general')}</div>
           </div>
         ) : (
-          <table className="wsta-table" role="grid" aria-label={t('output.col_name')}>
+          <table className="w-full table-fixed border-collapse text-[var(--da-font-size-sm)]" role="grid" aria-label={t('output.col_name')}>
             <thead><tr>
-              <th className="wsta-col-checkbox" scope="col"><input type="checkbox" checked={d.allOnPageSelected} onChange={d.toggleSelectAll} aria-label={t('output.select_all')} /></th>
+              <th className="w-10 text-center align-middle p-1 px-2" scope="col"><input type="checkbox" checked={d.allOnPageSelected} onChange={d.toggleSelectAll} aria-label={t('output.select_all')} /></th>
               <th scope="col">{t('output.col_name')}</th>
               <th scope="col">{t('output.col_content')}</th>
               <th scope="col">{t('output.col_category')}</th>
               <th scope="col">{t('output.col_status')}</th>
-              <th className="wsta-col-actions" scope="col">{t('output.col_actions')}</th>
+              <th className="w-[60px] text-right" scope="col">{t('output.col_actions')}</th>
             </tr></thead>
             <tbody>
               {d.paged.map((item) => (
                 <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
-                  <td className="wsta-col-checkbox"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('output.select_item', item.name)} /></td>
-                  <td><span className="wsta-agent-name">{item.name}</span></td>
-                  <td><span className="wsta-secondary-text wsta-truncate" title={item.content}>{item.content}</span></td>
+                  <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('output.select_item', item.name)} /></td>
+                  <td><span className="font-semibold text-[var(--da-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                  <td><span className="text-sm text-[var(--da-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.content}>{item.content}</span></td>
                   <td><span className={`wsta-tag-pill ${categoryTagClass[item.category] || 'wsta-tag-indigo'}`}>{item.category}</span></td>
                   <td>
                     <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
@@ -84,9 +84,9 @@ export default function OutputConstraintManagement() {
                       {statusLabel[item.status] || item.status}
                     </span>
                   </td>
-                  <td className="wsta-col-actions">
+                  <td className="w-[60px] text-right">
                     <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
-                      <button className="wsta-action-btn"><MoreHorizontal size={14} /></button>
+                      <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--da-text-muted)] cursor-pointer transition-all hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]"><MoreHorizontal size={14} /></button>
                     </Dropdown>
                   </td>
                 </tr>

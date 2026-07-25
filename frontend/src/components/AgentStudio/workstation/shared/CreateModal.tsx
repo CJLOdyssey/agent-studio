@@ -23,30 +23,30 @@ export default function CreateModal({
   const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
 
   return (
-    <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
+    <div className="fixed inset-0 bg-[var(--da-overlay-bg)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div
-        className={`modal-content wsta-modal${large ? ' wsta-modal-lg' : ''}`}
+        className={`bg-[var(--da-bg-secondary)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] wsta-modal${large ? ' wsta-modal-lg' : ''}`}
         role="dialog" aria-modal="true" aria-label={title}
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: width }}
       >
-        <div className="modal-header">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
           <h3>{title}</h3>
-          <button className="modal-close" onClick={onClose} aria-label={t('workstation.close')}>
+          <button className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" onClick={onClose} aria-label={t('workstation.close')}>
             <CloseOutlined className="anticon-lg" />
           </button>
         </div>
 
-        <div className="modal-body wsta-modal-body">
+        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
           {errors && errors.length > 0 && (
-            <div className="wsta-form-errors" role="alert">
+            <div className="p-3 bg-[var(--icon-status-error)]/10 border border-[var(--icon-status-error)]/30 rounded-md text-[var(--icon-status-error)] text-xs" role="alert">
               {errors.map((e, i) => <p key={i}>{e}</p>)}
             </div>
           )}
           {children}
         </div>
 
-        <div className="modal-footer">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">
           {isEdit && onDelete && (
             <Button danger onClick={onDelete}>{t('workstation.delete')}</Button>
           )}
