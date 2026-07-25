@@ -66,22 +66,22 @@ export default function MessagesPanel({
 
   if (showAgentChat) {
     return (
-      <div className="agentstudio-messages-inner" aria-live="polite">
+      <div className="max-w-[900px] mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-12" aria-live="polite">
         {!welcomeDismissed && !activeTeamId && (
-          <div className="agentstudio-agent-welcome">
-            <button className="agentstudio-welcome-close" onClick={onDismissWelcome} aria-label={t('common.close')}>
+          <div className="flex flex-col items-center justify-center px-6 py-12 text-center relative">
+            <button className="absolute top-2 right-2 p-1 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer opacity-0 transition-opacity group-hover:opacity-100" onClick={onDismissWelcome} aria-label={t('common.close')}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
-            <div className="agentstudio-agent-welcome-icon">
+            <div className="w-14 h-14 rounded-[14px] flex items-center justify-center bg-[var(--da-bg-surface)] mb-4">
               {(() => {
                 const a = allAgents.find((x) => x.id === selectedAgentId);
                 return a ? <a.icon size={32} className={a.color} /> : <Bot size={32} />;
               })()}
             </div>
-            <h3>{t('agent.startChat', { name: allAgents.find((a) => a.id === selectedAgentId)?.name || '' })}</h3>
-            <p>{t('agent.welcome')}</p>
+            <h3 className="text-xl font-semibold text-[var(--da-text-primary)] m-0 mb-2">{t('agent.startChat', { name: allAgents.find((a) => a.id === selectedAgentId)?.name || '' })}</h3>
+            <p className="text-base text-[var(--da-text-muted)] m-0">{t('agent.welcome')}</p>
           </div>
         )}
         {displayMessages.map((msg) => (
@@ -105,7 +105,7 @@ export default function MessagesPanel({
 
   if (hasMessages) {
     return (
-      <div className="agentstudio-messages-inner" aria-live="polite">
+      <div className="max-w-[900px] mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-12" aria-live="polite">
         {displayMessages.map((msg) => (
           <TeamMessage
             key={msg.id}

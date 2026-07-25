@@ -154,8 +154,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   );
 
   return (
-    <div className="agentstudio-input-container">
-      <div className="agentstudio-input-wrapper">
+    <div className="px-6 py-4 pb-5 max-w-[900px] mx-auto w-full">
+      <div data-input-wrapper className="relative bg-[var(--da-bg-surface)] border-none rounded-[var(--da-input-radius)] overflow-hidden transition-shadow duration-200 shadow-none focus-within:shadow-[var(--da-focus-ring)]">
         {palette.open && (
           <CommandDropdown
             commands={palette.filtered}
@@ -167,7 +167,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         )}
 
         <textarea
-          className="agentstudio-textarea"
+          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none outline-none text-lg font-normal text-[var(--da-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--da-border-subtle)] placeholder:text-[var(--da-text-muted)] placeholder:font-normal"
           placeholder={placeholder ?? t('home.placeholder')}
           value={composer.value}
           maxLength={maxLength}
@@ -177,8 +177,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onPaste={handlePaste}
         />
 
-        <div className="agentstudio-input-toolbar">
-          <div className="agentstudio-input-tools">
+        <div className="flex items-center justify-between px-4 py-3 bg-[var(--da-bg-surface)] border-t-0 min-h-[var(--da-toolbar-height)]">
+          <div className="flex items-center gap-2">
             <ModelSelector
               models={models}
               selectedModel={selectedModel}
@@ -191,7 +191,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           {isRunning ? (
             <button
               onClick={onStop}
-              className="agentstudio-send-btn running"
+              className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 bg-[var(--da-accent-indigo)] text-[var(--da-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm"
               aria-label={t('home.stop', '停止')}
             >
               <Square size={14} fill="currentColor" />
@@ -201,7 +201,11 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
             <button
               onClick={composer.submit}
               disabled={!composer.hasContent}
-              className={`agentstudio-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
+              className={`flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 ${
+                composer.hasContent
+                  ? 'bg-[var(--da-accent-indigo)] text-[var(--da-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm'
+                  : 'bg-[var(--da-bg-hover)] text-[var(--da-text-muted)] cursor-not-allowed opacity-70'
+              }`}
               aria-label={t('home.send')}
             >
               <span>{t('home.send')}</span>

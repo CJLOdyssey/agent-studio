@@ -16,10 +16,10 @@ export function CodeBlock({
   const codeString = String(children).replace(/\n$/, '');
   if (match) {
     return (
-      <div className="ds-code-block">
-        <div className="ds-code-header">
-          <span className="ds-code-lang">{match[1]}</span>
-          <CopyBtn text={codeString} label={t('teamMessage.copy')} className="ds-code-copy" />
+      <div className="my-3 rounded-lg overflow-hidden bg-[var(--da-bg-elevated)]">
+        <div className="flex items-center justify-between px-3 py-2 bg-[var(--da-bg-surface)]">
+          <span className="text-xs text-[var(--da-text-muted)] font-[var(--font-mono)]">{match[1]}</span>
+          <CopyBtn text={codeString} label={t('teamMessage.copy')} className="flex items-center gap-1 px-2 py-1 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer text-xs transition-all duration-150 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]" />
         </div>
         <SyntaxHighlighter
           style={oneDark}
@@ -33,6 +33,6 @@ export function CodeBlock({
     );
   }
   return (
-    <code className="ds-inline-code">{children}</code>
+    <code className="bg-[color-mix(in_srgb,var(--da-accent-amber)_15%,transparent)] text-[var(--da-accent-amber)] px-1.5 py-0.5 rounded text-[0.9em] font-[var(--font-mono)]">{children}</code>
   );
 }

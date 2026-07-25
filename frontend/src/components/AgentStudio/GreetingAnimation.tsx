@@ -22,9 +22,9 @@ export default function GreetingAnimation() {
   }, [greeting]);
 
   return (
-    <h1 className="agentstudio-home-greeting">
+    <h1 className="text-[clamp(24px,4vw,32px)] leading-[1.2] font-bold tracking-tight text-[var(--da-text-primary)] m-0 mb-2 inline-flex items-center text-balance">
       {displayed}
-      {!complete && <span className="typing-cursor">|</span>}
+      {!complete && <span className="inline-block text-[var(--da-text-muted)] font-light animate-[blink_0.8s_step-end_infinite] ml-0.5">|</span>}
     </h1>
   );
 }

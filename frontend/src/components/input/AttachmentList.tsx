@@ -28,16 +28,16 @@ export default function AttachmentList({ files, onRemove }: Props) {
   if (files.length === 0) return null;
 
   return (
-    <div className="agentstudio-attached-files">
+    <div className="flex flex-wrap gap-2 px-4">
       {files.map((f) => {
         const Icon = getIcon(f.name);
         return (
-          <span key={f.id} className="agentstudio-attached-file">
+          <span key={f.id} className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-xs">
             <Icon size={14} />
-            <span className="agentstudio-attached-file-name">{f.name}</span>
-            <span className="agentstudio-attached-file-size">{fmtSize(f.size)}</span>
+            <span className="max-w-[120px] truncate text-[var(--da-text-primary)]">{f.name}</span>
+            <span className="text-[var(--da-text-muted)] text-[10px]">{fmtSize(f.size)}</span>
             <button
-              className="agentstudio-attached-file-remove"
+              className="p-0.5 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]"
               onClick={() => onRemove(f.id)}
               type="button"
               aria-label={`Remove ${f.name}`}

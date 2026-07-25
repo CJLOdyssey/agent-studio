@@ -96,21 +96,21 @@ const TeamMessage = memo(function TeamMessage({
 
     if (isEditing) {
       return (
-        <div className="agentstudio-edit-bar-wrapper">
-          <div className="agentstudio-edit-bar">
+        <div className="flex justify-end w-full">
+          <div className="flex items-center gap-2 w-full px-4 py-3 border border-[var(--da-border)] rounded-xl bg-[var(--da-bg-surface)]">
             <textarea
-              className="agentstudio-edit-input"
+              className="flex-1 border-none bg-transparent text-[var(--da-text-primary)] text-base font-[inherit] leading-[1.5] resize-none outline-none min-h-6 max-h-[120px] placeholder:text-[var(--da-text-muted)]"
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={handleKeyDown}
               autoFocus
               rows={1}
             />
-            <div className="agentstudio-edit-actions">
-              <button className="agentstudio-edit-cancel" onClick={cancelEdit}>
+            <div className="flex gap-2 flex-shrink-0">
+              <button className="px-4 py-1.5 border border-[var(--da-border)] rounded-lg bg-transparent text-[var(--da-text-secondary)] text-sm cursor-pointer transition-colors duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]" onClick={cancelEdit}>
                 {t('common.cancel')}
               </button>
-              <button className="agentstudio-edit-send" onClick={saveEdit}>
+              <button className="px-4 py-1.5 border border-[var(--da-border)] rounded-lg bg-transparent text-[var(--da-text-secondary)] text-sm cursor-pointer transition-colors duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed" onClick={saveEdit}>
                 {t('common.send')}
               </button>
             </div>
@@ -120,21 +120,21 @@ const TeamMessage = memo(function TeamMessage({
     }
 
     return (
-      <div className="agentstudio-message agentstudio-message-user">
-        <div className="agentstudio-message-content-wrapper user">
-          <div className="agentstudio-message-bubble-group">
-            <div className="agentstudio-message-bubble user">{sanitizeHtml(msg.content)}</div>
-            <div className="agentstudio-message-actions">
+      <div className="flex gap-3 flex-row-reverse">
+        <div className="flex flex-col gap-1 items-end max-w-[80%]">
+          <div className="flex flex-col items-end w-fit max-w-full">
+            <div className="px-4 py-3 rounded-[12px_12px_4px_12px] bg-[var(--da-msg-user-bg)] text-[var(--da-text-primary)]">{sanitizeHtml(msg.content)}</div>
+            <div className="flex items-center gap-2 mt-1 w-full justify-end">
               <CopyBtn text={msg.content} label={t('teamMessage.copy')} />
               <button
-                className="agentstudio-msg-edit"
+                className="px-1 py-0.5 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer flex items-center transition-colors duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]"
                 onClick={startEditing}
                 title={t('teamMessage.edit')}
                 aria-label={t('teamMessage.edit')}
               >
                 <Pencil size={12} />
               </button>
-              {time && <span className="agentstudio-message-time" style={{ marginLeft: 0 }}>{time}</span>}
+              {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70 text-right" style={{ marginLeft: 0 }}>{time}</span>}
             </div>
           </div>
         </div>
@@ -158,10 +158,10 @@ const TeamMessage = memo(function TeamMessage({
     : '';
 
   return (
-    <div className="agentstudio-message agentstudio-message-agent">
-      <div className="agentstudio-message-content-wrapper agent">
+    <div className="flex gap-3">
+      <div className="flex flex-col gap-1 items-start max-w-full">
         {msg.isTyping ? (
-          <div className="agentstudio-message-typing">
+          <div className="flex items-center gap-3 px-4 py-3 bg-[var(--da-bg-surface)] rounded-[12px_12px_12px_4px] w-fit">
             <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />
             <span>{t('agent.thinking', { name: agentInfo.name })}</span>
           </div>
@@ -214,23 +214,23 @@ const TeamMessage = memo(function TeamMessage({
               </div>
             )}
 
-            <div className="agentstudio-message-bubble-row">
-              <div className="agentstudio-message-bubble agent ds-markdown">
+            <div className="flex flex-row items-start gap-2 w-full">
+              <div className="flex-1 min-w-0 bg-transparent text-[var(--da-text-primary)] rounded-none p-0 text-base leading-[1.7]">
               {msg.thinking && msg.thinking.length > 0 && (
-                <div className="ds-thinking-block">
+                <div className="mb-3">
                   {msg.thinkingDone ? (
                     <>
                       <button
-                        className="ds-thinking-header"
+                        className="inline-flex items-center gap-1.5 p-0 bg-none border-none cursor-pointer text-xs font-medium text-[var(--da-text-muted)] transition-colors duration-150 hover:text-[var(--da-text-primary)]"
                         onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
                         aria-expanded={isThinkingExpanded}
                       >
                         <Sparkles size={14} className={agentInfo.color} />
                         <span>{t('teamMessage.thinkingComplete')}</span>
-                        <span className="ds-thinking-time">
+                        <span className="text-xs text-[var(--da-text-muted)] ml-1">
                           {Math.max(1, Math.round((msg.thinking ?? '').length / 50))}{t('teamMessage.seconds')}
                         </span>
-                        <span className="ds-thinking-meta">
+                        <span className="text-xs text-[var(--da-text-muted)]">
                           {isThinkingExpanded ? t('teamMessage.collapse') : t('teamMessage.expand')}
                         </span>
                         {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -238,12 +238,12 @@ const TeamMessage = memo(function TeamMessage({
                       {isThinkingExpanded && (() => {
                         const nodes = (msg.thinking ?? '').split(/\n{2,}/).filter(Boolean);
                         return (
-                          <div className="ds-thinking-body" ref={thinkingBodyRef}>
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-[12.5px] text-[var(--da-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                             {nodes.map((node, i) => (
-                              <div key={i} className="ds-think-node">
-                                <div className="ds-think-dot" />
-                                <div className="ds-think-branch" />
-                                <div className="ds-think-text">{node.trim()}</div>
+                              <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
+                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--da-text-muted)] border-2 border-[var(--da-bg-primary)] z-[1]" />
+                                <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-[var(--da-border)] z-0" />
+                                <div className="whitespace-pre-wrap break-words leading-[1.65]">{node.trim()}</div>
                               </div>
                             ))}
                           </div>
@@ -252,19 +252,19 @@ const TeamMessage = memo(function TeamMessage({
                     </>
                   ) : showContinue ? (
                     <>
-                      <div className="ds-thinking-header" style={{ cursor: 'default' }}>
+                      <div className="inline-flex items-center gap-1.5 p-0 bg-none border-none cursor-pointer text-xs font-medium text-[var(--da-text-muted)] transition-colors duration-150 hover:text-[var(--da-text-primary)]" style={{ cursor: 'default' }}>
                         <Sparkles size={14} className={agentInfo.color} />
                         <span>{t('teamMessage.thinkingStopped')}</span>
                       </div>
                       {msg.thinking && (() => {
                         const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
                         return (
-                          <div className="ds-thinking-body" ref={thinkingBodyRef}>
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-[12.5px] text-[var(--da-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                             {nodes.map((node, i) => (
-                              <div key={i} className="ds-think-node">
-                                <div className="ds-think-dot" />
-                                <div className="ds-think-branch" />
-                                <div className="ds-think-text">{node.trim()}</div>
+                              <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
+                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--da-text-muted)] border-2 border-[var(--da-bg-primary)] z-[1]" />
+                                <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-[var(--da-border)] z-0" />
+                                <div className="whitespace-pre-wrap break-words leading-[1.65]">{node.trim()}</div>
                               </div>
                             ))}
                           </div>
@@ -274,26 +274,26 @@ const TeamMessage = memo(function TeamMessage({
                   ) : (
                     <>
                       <button
-                        className="ds-thinking-header"
+                        className="inline-flex items-center gap-1.5 p-0 bg-none border-none cursor-pointer text-xs font-medium text-[var(--da-text-muted)] transition-colors duration-150 hover:text-[var(--da-text-primary)]"
                         onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
                         aria-expanded={isThinkingExpanded}
                       >
                         <Loader2 size={14} className={`${agentInfo.color} animate-spin`} />
                         <span>{t('teamMessage.thinkingPending')}</span>
-                        <span className="ds-thinking-meta">
+                        <span className="text-xs text-[var(--da-text-muted)]">
                           {isThinkingExpanded ? t('teamMessage.collapse') : t('teamMessage.expand')}
                         </span>
                         {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                       {isThinkingExpanded && (
-                        <div className="ds-thinking-body" ref={thinkingBodyRef}>
+                        <div className="relative mt-2 max-h-[420px] overflow-y-auto text-[12.5px] text-[var(--da-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                           {msg.thinking ? (() => {
                             const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
                             return nodes.map((node, i) => (
-                              <div key={i} className="ds-think-node">
-                                <div className="ds-think-dot" />
-                                <div className="ds-think-branch" />
-                                <div className="ds-think-text">{node.trim()}</div>
+                              <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
+                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--da-text-muted)] border-2 border-[var(--da-bg-primary)] z-[1]" />
+                                <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-[var(--da-border)] z-0" />
+                                <div className="whitespace-pre-wrap break-words leading-[1.65]">{node.trim()}</div>
                               </div>
                             ));
                           })() : null}
@@ -306,16 +306,16 @@ const TeamMessage = memo(function TeamMessage({
               <ReactMarkdown
                 components={{
                   ul({ children, ...props }) {
-                    return <ul className="ds-markdown-list" {...props}>{children}</ul>;
+                    return <ul className="my-2 pl-6 list-outside" {...props}>{children}</ul>;
                   },
                   ol({ children, ...props }) {
-                    return <ol className="ds-markdown-list ds-markdown-ordered" {...props}>{children}</ol>;
+                    return <ol className="my-2 pl-6 list-outside list-decimal" {...props}>{children}</ol>;
                   },
                   li({ children, ...props }) {
-                    return <li className="ds-markdown-list-item" {...props}>{children}</li>;
+                    return <li className="my-1 pl-1" {...props}>{children}</li>;
                   },
                   p({ children, ...props }) {
-                    return <p className="ds-markdown-paragraph" {...props}>{children}</p>;
+                    return <p className="m-0 mb-3 last:mb-0" {...props}>{children}</p>;
                   },
                   code({ className, children }) {
                     return <CodeBlock className={className} children={children} t={t} />;
@@ -328,26 +328,26 @@ const TeamMessage = memo(function TeamMessage({
             </div>
 
             {showContinue && !isContinuing && (
-              <div className="agentstudio-msg-interrupted">
-                <span className="agentstudio-msg-interrupted-line" />
-                <span className="agentstudio-msg-interrupted-label">{t('teamMessage.interrupted')}</span>
+              <div className="flex items-center gap-2 pt-1 pb-0 w-full">
+                <span className="flex-1 h-px border-t border-dashed border-[var(--da-text-muted)] opacity-50" />
+                <span className="text-xs text-[var(--da-text-muted)] whitespace-nowrap select-none">{t('teamMessage.interrupted')}</span>
               </div>
             )}
 
-            <div className="agentstudio-message-actions">
+            <div className="flex items-center gap-2 mt-1 w-full">
               {versions.length > 1 && (
-                <div className="agentstudio-version-pagination">
+                <div className="flex items-center gap-0.5">
                   <button
-                    className="agentstudio-version-btn"
+                    className="flex items-center justify-center w-5 h-5 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-surface-hover)] hover:text-[var(--da-text-primary)] hover:border-[var(--da-border-hover)] disabled:opacity-35 disabled:cursor-not-allowed"
                     onClick={() => onSwitchVersion?.(msg.id, 'prev')}
                     disabled={currentVersion === 0}
                     aria-label="Previous version"
                   >
                     <ChevronRight size={12} style={{ transform: 'rotate(180deg)' }} />
                   </button>
-                  <span className="agentstudio-version-count">{currentVersion + 1}/{versions.length}</span>
+                  <span className="text-xs text-[var(--da-text-muted)] min-w-7 text-center select-none">{currentVersion + 1}/{versions.length}</span>
                   <button
-                    className="agentstudio-version-btn"
+                    className="flex items-center justify-center w-5 h-5 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-surface-hover)] hover:text-[var(--da-text-primary)] hover:border-[var(--da-border-hover)] disabled:opacity-35 disabled:cursor-not-allowed"
                     onClick={() => onSwitchVersion?.(msg.id, 'next')}
                     disabled={currentVersion === versions.length - 1}
                     aria-label="Next version"
@@ -358,7 +358,7 @@ const TeamMessage = memo(function TeamMessage({
               )}
               <CopyBtn text={msg.content} label={t('teamMessage.copy')} />
               <button
-                className="agentstudio-msg-regenerate"
+                className="px-1 py-0.5 bg-transparent border-none rounded text-[var(--da-text-muted)] cursor-pointer flex items-center transition-colors duration-150 hover:text-[var(--da-text-primary)] hover:bg-[var(--da-bg-hover)]"
                 onClick={() => onRegenerate?.(msg.id)}
                 title={t('teamMessage.regenerate')}
                 aria-label={t('teamMessage.regenerate')}
@@ -368,7 +368,7 @@ const TeamMessage = memo(function TeamMessage({
               {!isUser && (
                 <>
                   <button
-                    className={`agentstudio-msg-thumb${msg.thumbsFeedback === 'up' ? ' active' : ''}`}
+                    className={`flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]${msg.thumbsFeedback === 'up' ? ' bg-[var(--da-accent-indigo)] !text-[var(--da-text-on-accent)] !border-[var(--da-accent-indigo)]' : ''}`}
                     onClick={() => onThumbsFeedback?.(msg.id, msg.thumbsFeedback === 'up' ? 'down' : 'up')}
                     title={msg.thumbsFeedback === 'up' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsUp')}
                     aria-label={msg.thumbsFeedback === 'up' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsUp')}
@@ -376,7 +376,7 @@ const TeamMessage = memo(function TeamMessage({
                     <ThumbsUp size={12} />
                   </button>
                   <button
-                    className={`agentstudio-msg-thumb${msg.thumbsFeedback === 'down' ? ' active' : ''}`}
+                    className={`flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]${msg.thumbsFeedback === 'down' ? ' bg-[var(--da-accent-indigo)] !text-[var(--da-text-on-accent)] !border-[var(--da-accent-indigo)]' : ''}`}
                     onClick={() => onThumbsFeedback?.(msg.id, msg.thumbsFeedback === 'down' ? 'up' : 'down')}
                     title={msg.thumbsFeedback === 'down' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsDown')}
                     aria-label={msg.thumbsFeedback === 'down' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsDown')}
@@ -385,10 +385,10 @@ const TeamMessage = memo(function TeamMessage({
                   </button>
                 </>
               )}
-              {time && <span className="agentstudio-message-time" style={{ marginLeft: 0 }}>{time}</span>}
+              {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70" style={{ marginLeft: 0 }}>{time}</span>}
               {(showContinue || isContinuing) && (
                 <button
-                  className={`agentstudio-msg-continue${isContinuing ? ' loading' : ''}`}
+                  className={`flex items-center gap-[3px] px-2 py-0.5 bg-transparent border border-[var(--da-accent-indigo)] rounded-md text-[var(--da-accent-indigo)] cursor-pointer text-xs font-medium ml-auto transition-colors duration-150 hover:bg-[var(--da-accent-indigo)] hover:text-[var(--da-text-on-accent)]${isContinuing ? ' opacity-70 cursor-wait' : ''}`}
                   onClick={isContinuing ? undefined : onContinue}
                   disabled={isContinuing}
                   title={isContinuing ? t('teamMessage.continuing') : t('teamMessage.continue')}

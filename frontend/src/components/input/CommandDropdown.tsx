@@ -46,29 +46,29 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
 
   if (commands.length === 0) {
     return (
-      <div className="agentstudio-command-popover" ref={ref}>
-        <div className="agentstudio-command-empty">{t('model.noCommands')}</div>
+      <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref}>
+        <div className="p-4 text-center text-sm text-[var(--da-text-muted)]">{t('model.noCommands')}</div>
       </div>
     );
   }
 
   return (
-    <div className="agentstudio-command-popover" ref={ref} role="listbox">
+    <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref} role="listbox">
       <div ref={listRef}>
         {commands.map((opt, idx) => (
           <button
             key={opt.id}
             data-cmd-option
-            className={`agentstudio-command-option ${idx === activeIndex ? 'focused' : ''}`}
+            className={`flex items-center gap-2 w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${idx === activeIndex ? 'bg-[color-mix(in_srgb,var(--da-accent-indigo)_12%,transparent)]' : ''}`}
             onClick={() => handleClick(idx)}
             onMouseEnter={() => onHover(idx)}
             role="option"
             aria-selected={idx === activeIndex}
             type="button"
           >
-            <span className="agentstudio-command-option-name">/{opt.name}</span>
-            {opt.source === 'agent' && <span className="agentstudio-command-option-source">Agent</span>}
-            {opt.description && <span className="agentstudio-command-option-desc">{opt.description}</span>}
+            <span className="font-medium">/{opt.name}</span>
+            {opt.source === 'agent' && <span className="inline-block px-[5px] rounded text-[var(--da-accent-purple)] bg-[color-mix(in_srgb,var(--da-accent-purple)_15%,transparent)] text-[9px] font-bold uppercase tracking-[0.5px] flex-shrink-0 ml-auto">Agent</span>}
+            {opt.description && <span className="text-xs text-[var(--da-text-muted)]">{opt.description}</span>}
           </button>
         ))}
       </div>
