@@ -253,7 +253,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'up' })} allAgents={[mockAgent]} />
       );
       const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
-      expect(thumbs[0].className).toContain('bg-[var(--da-accent-indigo)]');
+      expect(thumbs[0].className).toContain('bg-[var(--color-accent)]');
     });
 
     it('adds active class when thumbsFeedback is down', () => {
@@ -261,7 +261,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'down' })} allAgents={[mockAgent]} />
       );
       const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
-      expect(thumbs[1].className).toContain('bg-[var(--da-accent-indigo)]');
+      expect(thumbs[1].className).toContain('bg-[var(--color-accent)]');
     });
 
     it('calls onThumbsFeedback when thumbs up clicked', async () => {

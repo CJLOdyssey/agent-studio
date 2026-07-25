@@ -54,7 +54,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       {editingAgent === agent.id ? (
         <div className="agentstudio-agent-edit flex-1 min-w-0">
           <input
-            className="agentstudio-agent-edit-input w-full py-[3px] px-[6px] border border-[var(--da-accent-indigo)] rounded text-sm text-[var(--da-text-primary)] bg-transparent outline-none font-[inherit]"
+            className="agentstudio-agent-edit-input w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm text-[var(--da-text-primary)] bg-transparent outline-none font-[inherit]"
             value={editAgentName}
             onChange={(e) => onAgentNameChange(e.target.value)}
             onBlur={handleAgentBlur}

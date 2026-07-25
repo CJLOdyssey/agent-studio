@@ -172,11 +172,11 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
         <div className="px-6">
           <div className="mt-0">
             <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.agentName')}</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none" />
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
           <div className="mt-[14px]">
             <label className="block text-sm font-medium text-[var(--da-text-secondary)] mb-2">{t('workstation.agentDesc')}</label>
-            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none" />
+            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
           <p className="text-xs text-[var(--da-text-muted)] mt-2">{t('workstation.agentPlaceholder')}</p>
         </div>
@@ -185,7 +185,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
           {TABS.map((tab) => (
             <button
               key={tab.key}
-              className={`flex-1 flex items-center justify-center gap-[6px] py-[7px] px-3 border-none rounded-lg bg-transparent text-[var(--da-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--da-text-secondary)] hover:bg-[color-mix(in_srgb,var(--da-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--da-bg-elevated)] !text-[var(--da-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--da-accent-indigo)]' : ''}`}
+              className={`flex-1 flex items-center justify-center gap-[6px] py-[7px] px-3 border-none rounded-lg bg-transparent text-[var(--da-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--da-text-secondary)] hover:bg-[color-mix(in_srgb,var(--da-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--da-bg-elevated)] !text-[var(--da-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--color-accent)]' : ''}`}
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.icon && <tab.icon size={14} />}
@@ -199,7 +199,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-[14px] border-t border-[var(--da-border-subtle)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={onClose}>{t('workstation.cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" onClick={onClose}>{t('workstation.cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
         </div>
       </div>

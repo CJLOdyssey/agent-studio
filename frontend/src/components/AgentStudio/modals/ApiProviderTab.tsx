@@ -75,7 +75,7 @@ export default function ApiProviderTab({
         {FILTERS.map((type) => (
           <button
             key={type}
-            className={`px-3.5 py-[5px] border border-[var(--da-border)] rounded-md bg-transparent text-[var(--da-text-muted)] text-xs font-[450] cursor-pointer transition-all duration-150 hover:border-[var(--da-accent-indigo)] hover:text-[var(--da-text-primary)] ${usageTypeFilter === type ? 'active' : ''}`}
+            className={`px-3.5 py-[5px] border border-[var(--da-border)] rounded-md bg-transparent text-[var(--da-text-muted)] text-xs font-[450] cursor-pointer transition-all duration-150 hover:border-[var(--color-accent)] hover:text-[var(--da-text-primary)] ${usageTypeFilter === type ? 'active' : ''}`}
             onClick={() => onFilterChange(type)}
           >
             {typeLabel(type)}
@@ -107,7 +107,7 @@ export default function ApiProviderTab({
                     <span className={`inline-flex items-center px-[7px] py-px rounded text-[10px] font-medium leading-[1.5] tracking-[0.02em] uppercase ml-2 api-type-${key.usage_type || 'llm'}`}>
                       {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
                     </span>
-                    {key.is_active && <CheckCircle2 size={14} className="text-[var(--da-accent-emerald)]" />}
+                    {key.is_active && <CheckCircle2 size={14} className="text-[var(--color-accent)]" />}
                     {!key.is_active && <AlertCircle size={14} className="text-[var(--icon-status-error)]" />}
                   </div>
                   <div className="text-xs text-[var(--da-text-muted)] mt-0.5 truncate">
@@ -120,17 +120,17 @@ export default function ApiProviderTab({
                     size="sm"
                     onChange={(v) => onToggleActive(key.id, v)}
                   />
-                  <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={() => onEdit(key)}>
+                  <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" onClick={() => onEdit(key)}>
                     编辑
                   </button>
                   <button
-                    className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]"
+                    className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]"
                     onClick={() => onTest(key)}
                     disabled={testingId === key.id}
                   >
                     {testingId === key.id ? <Loader2 size={14} className="animate-spin" /> : t('api.test')}
                   </button>
-                  <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={() => onDelete(key.id)}>
+                  <button className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" onClick={() => onDelete(key.id)}>
                     <Trash2 size={14} />
                   </button>
                 </div>

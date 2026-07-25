@@ -112,7 +112,7 @@ function LogAudit() {
             <>
               <td><span className="font-mono text-xs text-[var(--da-text-muted)]">{entry.timestamp}</span></td>
               <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
-              <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--da-accent-indigo)]/8 text-[var(--da-accent-indigo)]">{MODULE_LABEL[entry.module] || entry.module}</span></td>
+              <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{MODULE_LABEL[entry.module] || entry.module}</span></td>
               <td>{entry.user}</td>
               <td>{entry.action}</td>
               <td className="text-sm text-[var(--da-text-secondary)]">{entry.details}</td>

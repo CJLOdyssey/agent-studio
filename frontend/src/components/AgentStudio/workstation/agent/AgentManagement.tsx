@@ -118,7 +118,7 @@ export default function AgentManagement() {
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={mgmt.selectedIds.has(item.id)} onChange={() => mgmt.toggleSelect(item.id)} aria-label={t('agent.select_item', item.name)} /></td>
                 <td><span className="font-semibold text-[var(--da-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
                 <td><span className="text-sm text-[var(--da-text-secondary)]">{item.team}</span></td>
-                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--da-accent-indigo)]/8 text-[var(--da-accent-indigo)]">{item.model}</span></td>
+                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{item.model}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />

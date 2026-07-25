@@ -311,21 +311,21 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '0 8px', flexWrap: 'wrap' }}>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="工作流名称" className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none" style={{ width: 200 }} />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="工作流名称" className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" style={{ width: 200 }} />
         <label style={{ fontSize: 13, color: '#6b7280' }}>最大轮次:</label>
-        <input type="number" value={maxRounds} onChange={(e) => setMaxRounds(Number(e.target.value))} min={1} max={10} className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--da-accent-indigo)] focus:outline-none" style={{ width: 60 }} />
+        <input type="number" value={maxRounds} onChange={(e) => setMaxRounds(Number(e.target.value))} min={1} max={10} className="w-full px-3 py-2 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" style={{ width: 60 }} />
         <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={saving || nodes.length === 0}>
           {saving ? '保存中...' : '保存工作流'}
         </button>
         {existingConfig?.id && (
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" style={{ color: '#ef4444', marginLeft: 'auto' }} onClick={handleDelete}>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" style={{ color: '#ef4444', marginLeft: 'auto' }} onClick={handleDelete}>
             删除工作流
           </button>
         )}
       </div>
       <div style={{ display: 'flex', gap: 6, padding: '0 8px', flexWrap: 'wrap', alignItems: 'center' }}>
         {agents.map((a) => (
-          <button key={a.id} className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => addAgentNode(a)}>
+          <button key={a.id} className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => addAgentNode(a)}>
             + {a.name}
           </button>
         ))}

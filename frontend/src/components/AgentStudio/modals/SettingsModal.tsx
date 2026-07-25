@@ -67,7 +67,7 @@ export default function SettingsModal({ onClose }: Props) {
                   <span className="text-xs text-[var(--da-text-muted)]">{t('settings.languageDesc')}</span>
                 </div>
                 <select
-                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--da-accent-indigo)]"
+                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
                   value={i18n.language}
                   onChange={(e) => changeLanguage(e.target.value)}
                 >
@@ -84,7 +84,7 @@ export default function SettingsModal({ onClose }: Props) {
                   <span className="text-xs text-[var(--da-text-muted)]">{t('settings.themeDesc')}</span>
                 </div>
                 <select
-                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--da-accent-indigo)]"
+                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
                   value={settings.theme}
                   onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
                 >
@@ -107,17 +107,17 @@ export default function SettingsModal({ onClose }: Props) {
                     value={settings.fontSize}
                     onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
                     style={{
-                      background: `linear-gradient(to right, var(--da-accent-indigo) 0%, var(--da-accent-indigo) ${fontPct}%, var(--da-bg-hover) ${fontPct}%, var(--da-bg-hover) 100%)`,
+                      background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${fontPct}%, var(--da-bg-hover) ${fontPct}%, var(--da-bg-hover) 100%)`,
                     }}
                     className="w-[120px] h-[6px] rounded-[3px] appearance-none cursor-pointer
                       focus-visible:outline-none
                       [&::-webkit-slider-runnable-track]:appearance-none [&::-webkit-slider-runnable-track]:h-[6px] [&::-webkit-slider-runnable-track]:bg-transparent
-                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--da-accent-indigo)] [&::-webkit-slider-thumb]:-mt-[5px] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:[box-shadow:0_1px_4px_rgba(0,0,0,0.3)]
-                      focus-visible:[&::-webkit-slider-thumb]:[box-shadow:0_0_0_2px_var(--da-accent-indigo),0_1px_4px_rgba(0,0,0,0.3)]
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--color-accent)] [&::-webkit-slider-thumb]:-mt-[5px] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:[box-shadow:0_1px_4px_rgba(0,0,0,0.3)]
+                      focus-visible:[&::-webkit-slider-thumb]:[box-shadow:0_0_0_2px_var(--color-accent),0_1px_4px_rgba(0,0,0,0.3)]
                       [&::-moz-range-track]:h-[6px] [&::-moz-range-track]:rounded-[3px] [&::-moz-range-track]:border-none [&::-moz-range-track]:bg-[var(--da-bg-hover)]
-                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--da-accent-indigo)] [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer
-                      focus-visible:[&::-moz-range-thumb]:[box-shadow:0_0_0_2px_var(--da-accent-indigo)]
-                      [&::-moz-range-progress]:h-[6px] [&::-moz-range-progress]:rounded-[3px] [&::-moz-range-progress]:bg-[var(--da-accent-indigo)]"
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--color-accent)] [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:cursor-pointer
+                      focus-visible:[&::-moz-range-thumb]:[box-shadow:0_0_0_2px_var(--color-accent)]
+                      [&::-moz-range-progress]:h-[6px] [&::-moz-range-progress]:rounded-[3px] [&::-moz-range-progress]:bg-[var(--color-accent)]"
                   />
                   <span className="text-sm font-semibold text-[var(--da-text-secondary)] min-w-[32px] text-right">{settings.fontSize}px</span>
                 </div>
@@ -131,7 +131,7 @@ export default function SettingsModal({ onClose }: Props) {
                   <span className="text-xs text-[var(--da-text-muted)]">{t('settings.sendModeDesc')}</span>
                 </div>
                 <select
-                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--da-accent-indigo)]"
+                  className="p-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
                   value={settings.sendMode}
                   onChange={(e) => updateSettings({ sendMode: e.target.value as 'enter' | 'ctrl-enter' })}
                 >
@@ -171,10 +171,10 @@ export default function SettingsModal({ onClose }: Props) {
                 }}>
                   <div style={{
                     width: 52, height: 52, borderRadius: 14,
-                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--da-accent-indigo) 40%, transparent), color-mix(in srgb, var(--da-accent-indigo) 10%, transparent))',
+                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 40%, transparent), color-mix(in srgb, var(--color-accent) 10%, transparent))',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--da-accent-indigo)', flexShrink: 0,
-                    boxShadow: '0 2px 8px color-mix(in srgb, var(--da-accent-indigo) 20%, transparent)',
+                    color: 'var(--color-accent)', flexShrink: 0,
+                    boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 20%, transparent)',
                   }}>
                     <Info size={24} />
                   </div>
@@ -186,8 +186,8 @@ export default function SettingsModal({ onClose }: Props) {
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                         padding: '2px 8px', borderRadius: 4,
-                        background: 'color-mix(in srgb, var(--da-accent-indigo) 12%, transparent)',
-                        color: 'var(--da-accent-indigo)',
+                        background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
+                        color: 'var(--color-accent)',
                         fontSize: 11, fontWeight: 500,
                       }}>
                         v {VERSION}
@@ -222,7 +222,7 @@ export default function SettingsModal({ onClose }: Props) {
                       <span style={{ color: 'var(--da-text-muted)', fontSize: 11 }}>{row.label}</span>
                       {row.link ? (
                         <a href={row.link} target="_blank" rel="noopener noreferrer"
-                          style={{ color: 'var(--da-accent-indigo)', textDecoration: 'none', fontWeight: 500 }}>
+                          style={{ color: 'var(--color-accent)', textDecoration: 'none', fontWeight: 500 }}>
                           {row.value} ↗
                         </a>
                       ) : (

@@ -106,7 +106,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       <div className="bg-[var(--da-bg-secondary)] rounded-xl w-[420px] max-h-[480px] max-w-[560px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--da-border-subtle)]">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--da-bg-primary),var(--da-text-primary)_8%)] flex items-center justify-center text-[var(--da-accent-indigo)] shrink-0">
+            <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--da-bg-primary),var(--da-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
               {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
             </div>
             <div>
@@ -144,13 +144,13 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             {multipleCaps ? (
               <div className="flex gap-3">
                 {caps.map((cap) => (
-                  <label key={cap} className="flex items-center gap-2 p-2 px-3 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md cursor-pointer text-sm text-[var(--da-text-primary)] transition-[border-color] duration-150 hover:border-[var(--da-accent-indigo)] [&>input]:[accent-color:var(--da-accent-indigo)]">
+                  <label key={cap} className="flex items-center gap-2 p-2 px-3 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md cursor-pointer text-sm text-[var(--da-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
                     <input type="radio" name="usage_type" checked={usageType === cap} onChange={() => setUsageType(cap)} />
                     <span>{CAP_LABEL[cap] || cap}</span>
                   </label>
                 ))}
                 {caps.includes('llm') && caps.includes('embedding') && (
-                  <label className="flex items-center gap-2 p-2 px-3 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md cursor-pointer text-sm text-[var(--da-text-primary)] transition-[border-color] duration-150 hover:border-[var(--da-accent-indigo)] [&>input]:[accent-color:var(--da-accent-indigo)]">
+                  <label className="flex items-center gap-2 p-2 px-3 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md cursor-pointer text-sm text-[var(--da-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
                     <input type="radio" name="usage_type" checked={usageType === 'both'} onChange={() => setUsageType('both')} />
                     <span>{t('workstation.bothSupported')}</span>
                   </label>
@@ -207,7 +207,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
                   </div>
                 ) : models.length > 0 ? (
                   <div className="flex-1 flex flex-wrap gap-2 p-2 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md min-h-[36px]">
-                    {models.map((model) => <span key={model} className="inline-flex items-center px-2 py-0.5 bg-[var(--da-accent-indigo)] text-white rounded text-xs font-medium">{model}</span>)}
+                    {models.map((model) => <span key={model} className="inline-flex items-center px-2 py-0.5 bg-[var(--color-accent)] text-white rounded text-xs font-medium">{model}</span>)}
                   </div>
                 ) : (
                   <div className="flex-1 flex items-center p-2 bg-[var(--da-bg-elevated)] border border-[var(--da-border)] rounded-md text-[var(--da-text-muted)] text-sm"><span>{t('workstation.enterApiKeyToFetch')}</span></div>

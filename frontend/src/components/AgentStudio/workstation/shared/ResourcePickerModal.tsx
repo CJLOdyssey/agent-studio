@@ -91,7 +91,7 @@ export default function ResourcePickerModal<T>({
               return (
                 <div
                   key={id}
-                  className={`flex items-center justify-between px-3 py-2.5 cursor-pointer transition-colors duration-150 border-b border-[var(--da-border-subtle)] last:border-b-0 hover:bg-[var(--da-bg-surface-hover)] ${isSelected ? 'bg-[color-mix(in_srgb,var(--da-accent-indigo)_10%,transparent)]' : ''}`}
+                  className={`flex items-center justify-between px-3 py-2.5 cursor-pointer transition-colors duration-150 border-b border-[var(--da-border-subtle)] last:border-b-0 hover:bg-[var(--da-bg-surface-hover)] ${isSelected ? 'bg-[color-mix(in_srgb,var(--color-accent)_10%,transparent)]' : ''}`}
                   onClick={() => handleToggle(opt)}
                 >
                   <div className="flex flex-col gap-0.5 min-w-0">
@@ -100,7 +100,7 @@ export default function ResourcePickerModal<T>({
                       <div className="text-xs text-[var(--da-text-muted)]">{getOptionSecondary(opt)}</div>
                     )}
                   </div>
-                  {isSelected && <Check size={16} className="text-[var(--da-accent-indigo)] shrink-0" />}
+                  {isSelected && <Check size={16} className="text-[var(--color-accent)] shrink-0" />}
                 </div>
               );
             })}

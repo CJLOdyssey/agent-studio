@@ -64,7 +64,7 @@ export default function PickerModal({ title, items, onSelect, onClose }: Props) 
                   <span className="block text-xs text-[var(--da-text-muted)] mt-0.5 truncate">{item.description}</span>
                 </div>
                 {item.source && <span className="text-xs text-[var(--da-text-muted)] bg-[var(--da-bg-surface)] px-2 py-0.5 rounded whitespace-nowrap">{item.source}</span>}
-                <Plus size={16} className="text-[var(--da-text-muted)] shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:text-[var(--da-accent-indigo)]" />
+                <Plus size={16} className="text-[var(--da-text-muted)] shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:text-[var(--color-accent)]" />
               </button>
             ))
           )}

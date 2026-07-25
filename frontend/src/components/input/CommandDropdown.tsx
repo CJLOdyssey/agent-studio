@@ -59,7 +59,7 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
           <button
             key={opt.id}
             data-cmd-option
-            className={`flex items-center gap-2 w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${idx === activeIndex ? 'bg-[color-mix(in_srgb,var(--da-accent-indigo)_12%,transparent)]' : ''}`}
+            className={`flex items-center gap-2 w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${idx === activeIndex ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)]' : ''}`}
             onClick={() => handleClick(idx)}
             onMouseEnter={() => onHover(idx)}
             role="option"
@@ -67,7 +67,7 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
             type="button"
           >
             <span className="font-medium">/{opt.name}</span>
-            {opt.source === 'agent' && <span className="inline-block px-[5px] rounded text-[var(--da-accent-purple)] bg-[color-mix(in_srgb,var(--da-accent-purple)_15%,transparent)] text-[9px] font-bold uppercase tracking-[0.5px] flex-shrink-0 ml-auto">Agent</span>}
+            {opt.source === 'agent' && <span className="inline-block px-[5px] rounded text-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[9px] font-bold uppercase tracking-[0.5px] flex-shrink-0 ml-auto">Agent</span>}
             {opt.description && <span className="text-xs text-[var(--da-text-muted)]">{opt.description}</span>}
           </button>
         ))}

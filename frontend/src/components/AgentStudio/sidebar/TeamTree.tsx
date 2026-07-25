@@ -182,7 +182,7 @@ const TeamTree = memo(function TeamTree({
           <Users size={14} /> {t('sidebar.myTeams')}
         </div>
         <button 
-          className={`agentstudio-sidebar-section-action bg-transparent border-none p-1 rounded cursor-pointer text-[var(--da-text-tertiary)] flex items-center justify-center transition-all duration-200 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
+          className={`agentstudio-sidebar-section-action bg-transparent border-none p-1 rounded cursor-pointer text-[var(--da-text-tertiary)] flex items-center justify-center transition-all duration-200 hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)] hover:opacity-100${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
           onClick={isAuthenticated ? handleAddTeam : () => openLoginModal()}
           title={isAuthenticated ? t('sidebar.createTeam') : '登录后解锁功能'}
         >
@@ -203,13 +203,13 @@ const TeamTree = memo(function TeamTree({
               </button>
               
               {team.isPinned && (
-                <Pin size={12} className="agentstudio-team-pin text-[var(--da-accent-amber)] flex-shrink-0 mr-[-2px]" />
+                <Pin size={12} className="agentstudio-team-pin text-[var(--color-accent-soft)] flex-shrink-0 mr-[-2px]" />
               )}
               
               {editingTeam === team.id ? (
                 <div className="agentstudio-team-edit flex-1 min-w-0">
                   <input
-                    className="agentstudio-team-edit-input w-full py-[3px] px-[6px] border border-[var(--da-accent-indigo)] rounded text-sm font-medium text-[var(--da-text-primary)] bg-transparent outline-none font-[inherit]"
+                    className="agentstudio-team-edit-input w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm font-medium text-[var(--da-text-primary)] bg-transparent outline-none font-[inherit]"
                     value={editName}
                     onChange={(e) => onTeamNameChange(e.target.value)}
                     onBlur={() => handleTeamBlur(team.id)}

@@ -28,29 +28,29 @@ const OutputFormModal = memo(function OutputFormModal({ editingItem, formData, s
           )}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('output.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
-            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('output.form_name_placeholder')} maxLength={50} />
+            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('output.form_name_placeholder')} maxLength={50} />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('output.form_content')} <span className="text-[var(--icon-status-error)]">*</span></label>
-            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" rows={4} value={formData.content} onChange={(e) => setFormData((f) => ({ ...f, content: e.target.value }))} placeholder={t('output.form_content_placeholder')} />
+            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" rows={4} value={formData.content} onChange={(e) => setFormData((f) => ({ ...f, content: e.target.value }))} placeholder={t('output.form_content_placeholder')} />
           </div>
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('output.form_category')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as OutputEntry['category'] }))}>
+              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as OutputEntry['category'] }))}>
                 {OUTPUT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('output.form_status')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as OutputEntry['status'] }))}>
+              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as OutputEntry['status'] }))}>
                 {Object.entries(OUTPUT_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-accent-indigo)]" onClick={onClose}>{t('output.form_cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--da-text-secondary)] hover:bg-[var(--da-bg-hover)] hover:text-[var(--color-accent)]" onClick={onClose}>{t('output.form_cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--da-bg-hover)] text-[var(--da-text-primary)] hover:bg-[var(--da-bg-elevated)] disabled:bg-[var(--da-bg-hover)] disabled:text-[var(--da-text-muted)] disabled:cursor-not-allowed" onClick={onSave} disabled={!formData.name.trim() || !formData.content.trim()}>{editingItem ? t('output.form_save_edit') : t('output.form_save_create')}</button>
         </div>
       </div>

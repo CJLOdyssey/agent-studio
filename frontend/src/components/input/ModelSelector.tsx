@@ -93,7 +93,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   return (
     <div className="relative inline-flex items-center" ref={ref}>
       <button
-        className={`inline-flex items-center gap-1 px-2 py-1 border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] ${isEmpty ? 'border-[var(--da-accent-amber)] text-[var(--da-accent-amber)] hover:bg-[color-mix(in_srgb,var(--da-accent-amber)_10%,transparent)] hover:border-[var(--da-accent-amber)] hover:text-[var(--da-accent-amber)]' : 'border-[var(--da-border-subtle)] text-[var(--da-text-secondary)] hover:border-[var(--da-border)] hover:text-[var(--da-text-primary)]'}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] ${isEmpty ? 'border-[var(--color-accent-soft)] text-[var(--color-accent-soft)] hover:bg-[color-mix(in_srgb,var(--color-accent-soft)_10%,transparent)] hover:border-[var(--color-accent-soft)] hover:text-[var(--color-accent-soft)]' : 'border-[var(--da-border-subtle)] text-[var(--da-text-secondary)] hover:border-[var(--da-border)] hover:text-[var(--da-text-primary)]'}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -125,7 +125,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       <button
                         key={m.id}
                         data-model-option
-                        className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--da-accent-indigo)_12%,transparent)] text-[var(--da-accent-indigo)]' : ''} ${globalIdx === focusIdx ? 'outline-2 outline-[var(--da-accent-indigo)] outline-offset-[-2px]' : ''}`}
+                        className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${globalIdx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
                         onClick={() => handleSelect(m.id)}
                         role="option"
                         aria-selected={m.id === selectedModel}
@@ -147,7 +147,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 <button
                   key={m.id}
                   data-model-option
-                  className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--da-accent-indigo)_12%,transparent)] text-[var(--da-accent-indigo)]' : ''} ${idx === focusIdx ? 'outline-2 outline-[var(--da-accent-indigo)] outline-offset-[-2px]' : ''}`}
+                  className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--da-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--da-bg-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${idx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
                   onClick={() => handleSelect(m.id)}
                   role="option"
                   aria-selected={m.id === selectedModel}

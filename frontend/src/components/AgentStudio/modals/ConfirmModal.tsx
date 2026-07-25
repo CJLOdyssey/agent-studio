@@ -47,7 +47,7 @@ export default function ConfirmModal({
         {danger ? (
           <OctagonX size={24} className="text-[var(--icon-status-error)]" aria-label={t('confirm.danger')} />
         ) : (
-          <AlertTriangle size={24} className="text-[var(--da-accent-amber)]" aria-label={t('confirm.info')} />
+          <AlertTriangle size={24} className="text-[var(--color-accent-soft)]" aria-label={t('confirm.info')} />
         )}
         <div>
           <p style={{ fontWeight: 600, marginBottom: 4 }}>{danger ? t('confirm.danger') : t('confirm.info')}</p>

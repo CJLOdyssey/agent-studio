@@ -44,22 +44,22 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--da-text-primary)] mb-3"><Bot size={14} />基本信息</div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('team.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
-              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('team.form_name_placeholder')} maxLength={50} autoFocus />
+              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('team.form_name_placeholder')} maxLength={50} autoFocus />
             </div>
             <div className="flex flex-col gap-1" style={{ marginTop: 14 }}>
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('team.form_desc')}</label>
-              <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('team.form_desc_placeholder')} rows={3} />
+              <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('team.form_desc_placeholder')} rows={3} />
             </div>
             <div className="flex gap-4" style={{ marginTop: 14 }}>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('team.form_category')}</label>
-                <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as TeamFormData['category'] }))}>
+                <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as TeamFormData['category'] }))}>
                   {CATEGORY_OPTIONS.map((opt) => (<option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>))}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('team.form_status')}</label>
-                <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as 'active' | 'inactive' }))}>
+                <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as 'active' | 'inactive' }))}>
                   <option value="active">{t('team.status_active')}</option>
                   <option value="inactive">{t('team.status_inactive')}</option>
                 </select>

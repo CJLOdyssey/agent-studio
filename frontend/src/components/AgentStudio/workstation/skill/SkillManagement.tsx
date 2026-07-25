@@ -91,7 +91,7 @@ export default function SkillManagement() {
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('skill.select_item', item.name)} /></td>
                 <td><span className="font-semibold text-[var(--da-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
                 <td><span className="text-sm text-[var(--da-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
-                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--da-accent-indigo)]/8 text-[var(--da-accent-indigo)]">{item.category}</span></td>
+                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{item.category}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />

@@ -21,22 +21,22 @@ export default function MCPFormModal({ editingItem, formData, setFormData, onSav
           )}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_name')} <span className="text-[var(--icon-status-error)]">*</span></label>
-            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('mcp.form_name_placeholder')} maxLength={50} />
+            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('mcp.form_name_placeholder')} maxLength={50} />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_desc')}</label>
-            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('mcp.form_desc_placeholder')} rows={3} maxLength={500} />
+            <textarea className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('mcp.form_desc_placeholder')} rows={3} maxLength={500} />
           </div>
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_type')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.type} onChange={(e) => setFormData((f) => ({ ...f, type: e.target.value as MCPEntry['type'] }))}>
+              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.type} onChange={(e) => setFormData((f) => ({ ...f, type: e.target.value as MCPEntry['type'] }))}>
                 {MCP_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o.toUpperCase()}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_status')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as MCPEntry['status'] }))}>
+              <select className="py-2 pr-7 pl-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as MCPEntry['status'] }))}>
                 {Object.entries(MCP_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
@@ -44,17 +44,17 @@ export default function MCPFormModal({ editingItem, formData, setFormData, onSav
           {formData.type === 'stdio' ? (
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_command')} <span className="text-[var(--icon-status-error)]">*</span></label>
-              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.command} onChange={(e) => setFormData((f) => ({ ...f, command: e.target.value, url: '' }))} placeholder={t('mcp.form_command_placeholder')} />
+              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.command} onChange={(e) => setFormData((f) => ({ ...f, command: e.target.value, url: '' }))} placeholder={t('mcp.form_command_placeholder')} />
             </div>
           ) : (
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_url')} <span className="text-[var(--icon-status-error)]">*</span></label>
-              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.url} onChange={(e) => setFormData((f) => ({ ...f, url: e.target.value, command: '' }))} placeholder={t('mcp.form_url_placeholder')} />
+              <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.url} onChange={(e) => setFormData((f) => ({ ...f, url: e.target.value, command: '' }))} placeholder={t('mcp.form_url_placeholder')} />
             </div>
           )}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('mcp.form_version')} <span className="text-[var(--icon-status-error)]">*</span></label>
-            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--da-accent-indigo)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.version} onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))} placeholder={t('mcp.form_version_placeholder')} />
+            <input className="py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[var(--da-focus-ring)] placeholder:text-[var(--da-text-muted)]" value={formData.version} onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))} placeholder={t('mcp.form_version_placeholder')} />
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--da-border-subtle)]">

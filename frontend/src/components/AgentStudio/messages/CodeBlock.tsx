@@ -33,6 +33,6 @@ export function CodeBlock({
     );
   }
   return (
-    <code className="bg-[color-mix(in_srgb,var(--da-accent-amber)_15%,transparent)] text-[var(--da-accent-amber)] px-1.5 py-0.5 rounded text-[0.9em] font-[var(--font-mono)]">{children}</code>
+    <code className="bg-[color-mix(in_srgb,var(--color-accent-soft)_15%,transparent)] text-[var(--color-accent-soft)] px-1.5 py-0.5 rounded text-[0.9em] font-[var(--font-mono)]">{children}</code>
   );
 }

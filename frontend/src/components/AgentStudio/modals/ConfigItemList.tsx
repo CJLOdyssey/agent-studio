@@ -98,7 +98,7 @@ export default function ConfigItemList<T extends ListItem>({
       )}
       <div className="flex flex-col gap-2">
         {items.map((item) => (
-          <div key={item.id} className={`flex items-center justify-between px-3 py-[10px] bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-lg transition-[background] duration-150 hover:bg-[var(--da-bg-hover)] ${item.enabled ? '!bg-[color-mix(in_srgb,var(--da-accent-indigo)_8%,transparent)] !border-[color-mix(in_srgb,var(--da-accent-indigo)_20%,transparent)]' : ''}`}>
+          <div key={item.id} className={`flex items-center justify-between px-3 py-[10px] bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-lg transition-[background] duration-150 hover:bg-[var(--da-bg-hover)] ${item.enabled ? '!bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] !border-[color-mix(in_srgb,var(--color-accent)_20%,transparent)]' : ''}`}>
             <div className="flex items-center gap-3">
               <input type="checkbox" checked={item.enabled} onChange={() => onToggle(item.id)} />
               <div className="flex flex-col">

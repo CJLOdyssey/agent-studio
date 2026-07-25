@@ -49,12 +49,12 @@ export function ToolsTab({
   return (
     <>
       <div className="flex items-center justify-between mb-3 gap-2">
-        <button className="inline-flex items-center gap-[5px] px-[10px] py-[5px] border border-[var(--da-border)] rounded-md bg-[var(--da-bg-surface)] text-[var(--da-text-muted)] text-xs cursor-pointer transition-[background,border-color,color] duration-150 ease hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-accent-indigo)] hover:text-[var(--da-text-primary)] [&>svg]:opacity-60 hover:[&>svg]:opacity-100" onClick={onPickerOpen}>
+        <button className="inline-flex items-center gap-[5px] px-[10px] py-[5px] border border-[var(--da-border)] rounded-md bg-[var(--da-bg-surface)] text-[var(--da-text-muted)] text-xs cursor-pointer transition-[background,border-color,color] duration-150 ease hover:bg-[var(--da-bg-hover)] hover:border-[var(--color-accent)] hover:text-[var(--da-text-primary)] [&>svg]:opacity-60 hover:[&>svg]:opacity-100" onClick={onPickerOpen}>
           <Plus size={14} />
           {t('workstation.add')}
         </button>
         <span className="text-sm font-medium text-[var(--da-text-secondary)]">{t('workstation.tool')} ({items.length})</span>
-        <button className="inline-flex items-center gap-[5px] px-[10px] py-[5px] border border-[var(--da-border)] rounded-md bg-[var(--da-bg-surface)] text-[var(--da-text-muted)] text-xs cursor-pointer transition-[background,border-color,color] duration-150 ease hover:bg-[var(--da-bg-hover)] hover:border-[var(--da-accent-indigo)] hover:text-[var(--da-text-primary)] [&>svg]:opacity-60 hover:[&>svg]:opacity-100" onClick={onCustomize}>
+        <button className="inline-flex items-center gap-[5px] px-[10px] py-[5px] border border-[var(--da-border)] rounded-md bg-[var(--da-bg-surface)] text-[var(--da-text-muted)] text-xs cursor-pointer transition-[background,border-color,color] duration-150 ease hover:bg-[var(--da-bg-hover)] hover:border-[var(--color-accent)] hover:text-[var(--da-text-primary)] [&>svg]:opacity-60 hover:[&>svg]:opacity-100" onClick={onCustomize}>
           <Sparkles size={14} />
           {t('workstation.customize')}
         </button>

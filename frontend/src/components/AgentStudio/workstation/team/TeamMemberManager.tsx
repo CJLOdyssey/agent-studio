@@ -9,12 +9,12 @@ interface Props {
 }
 
 const AVATAR_COLORS = [
-  'var(--da-accent-indigo)',
-  'var(--da-accent-cyan)',
-  'var(--da-accent-pink)',
-  'var(--da-accent-amber)',
-  'var(--da-accent-emerald)',
-  'var(--da-accent-purple)',
+  'var(--color-accent)',
+  'var(--color-accent)',
+  'var(--color-accent-hover)',
+  'var(--color-accent-soft)',
+  'var(--color-accent)',
+  'var(--color-accent)',
 ];
 
 function hashColor(name: string): string {

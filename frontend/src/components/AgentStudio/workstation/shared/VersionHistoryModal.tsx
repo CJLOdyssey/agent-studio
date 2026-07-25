@@ -136,7 +136,7 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
           ) : (
             <div className="font-mono text-xs text-[var(--da-text-secondary)] bg-[var(--da-bg-surface)] py-px px-2 rounded-list">
               {versions.map((v, i) => (
-                <div key={i} className={`p-2 bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-md transition-colors duration-150${compareMode ? ' cursor-pointer hover:border-[var(--da-accent-indigo)]' : ''}${selectedIndices.includes(i) ? ' border-[var(--da-accent-indigo)] bg-[color-mix(in_srgb,var(--da-accent-indigo)_8%,transparent)]' : ''}`}
+                <div key={i} className={`p-2 bg-[var(--da-bg-surface)] border border-[var(--da-border-subtle)] rounded-md transition-colors duration-150${compareMode ? ' cursor-pointer hover:border-[var(--color-accent)]' : ''}${selectedIndices.includes(i) ? ' border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]' : ''}`}
                   onClick={() => compareMode && setSelectedIndices((prev) => {
                     if (prev.includes(i)) return prev.filter((x) => x !== i);
                     if (prev.length >= 2) return [prev[1], i];

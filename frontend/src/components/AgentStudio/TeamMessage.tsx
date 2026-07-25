@@ -368,7 +368,7 @@ const TeamMessage = memo(function TeamMessage({
               {!isUser && (
                 <>
                   <button
-                    className={`flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]${msg.thumbsFeedback === 'up' ? ' bg-[var(--da-accent-indigo)] !text-[var(--da-text-on-accent)] !border-[var(--da-accent-indigo)]' : ''}`}
+                    className={`flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]${msg.thumbsFeedback === 'up' ? ' bg-[var(--color-accent)] !text-[var(--da-text-on-accent)] !border-[var(--color-accent)]' : ''}`}
                     onClick={() => onThumbsFeedback?.(msg.id, msg.thumbsFeedback === 'up' ? 'down' : 'up')}
                     title={msg.thumbsFeedback === 'up' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsUp')}
                     aria-label={msg.thumbsFeedback === 'up' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsUp')}
@@ -376,7 +376,7 @@ const TeamMessage = memo(function TeamMessage({
                     <ThumbsUp size={12} />
                   </button>
                   <button
-                    className={`flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]${msg.thumbsFeedback === 'down' ? ' bg-[var(--da-accent-indigo)] !text-[var(--da-text-on-accent)] !border-[var(--da-accent-indigo)]' : ''}`}
+                    className={`flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--da-border)] rounded text-[var(--da-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--da-bg-hover)] hover:text-[var(--da-text-primary)]${msg.thumbsFeedback === 'down' ? ' bg-[var(--color-accent)] !text-[var(--da-text-on-accent)] !border-[var(--color-accent)]' : ''}`}
                     onClick={() => onThumbsFeedback?.(msg.id, msg.thumbsFeedback === 'down' ? 'up' : 'down')}
                     title={msg.thumbsFeedback === 'down' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsDown')}
                     aria-label={msg.thumbsFeedback === 'down' ? t('teamMessage.removeFeedback') : t('teamMessage.thumbsDown')}
@@ -388,7 +388,7 @@ const TeamMessage = memo(function TeamMessage({
               {time && <span className="block text-xs text-[var(--da-text-muted)] mt-1 opacity-70 ml-0">{time}</span>}
               {(showContinue || isContinuing) && (
                 <button
-                  className={`flex items-center gap-[3px] px-2 py-0.5 bg-transparent border border-[var(--da-accent-indigo)] rounded-md text-[var(--da-accent-indigo)] cursor-pointer text-xs font-medium ml-auto transition-colors duration-150 hover:bg-[var(--da-accent-indigo)] hover:text-[var(--da-text-on-accent)]${isContinuing ? ' opacity-70 cursor-wait' : ''}`}
+                  className={`flex items-center gap-[3px] px-2 py-0.5 bg-transparent border border-[var(--color-accent)] rounded-md text-[var(--color-accent)] cursor-pointer text-xs font-medium ml-auto transition-colors duration-150 hover:bg-[var(--color-accent)] hover:text-[var(--da-text-on-accent)]${isContinuing ? ' opacity-70 cursor-wait' : ''}`}
                   onClick={isContinuing ? undefined : onContinue}
                   disabled={isContinuing}
                   title={isContinuing ? t('teamMessage.continuing') : t('teamMessage.continue')}

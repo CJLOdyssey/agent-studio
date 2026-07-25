@@ -121,7 +121,7 @@ export function ResourcePickerSection({
           {/* Prompt */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_prompt')} <span className="text-[var(--icon-status-error)]">*</span></label>
-            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--da-accent-indigo)]" onClick={() => setActivePicker('prompt')}>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('prompt')}>
               {selectedPrompt ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <MessageSquareText size={14} /> {selectedPrompt.name}
@@ -138,7 +138,7 @@ export function ResourcePickerSection({
           {/* Tools */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_tools')} ({selectedTools.length})</label>
-            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--da-accent-indigo)]" onClick={() => setActivePicker('tools')}>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('tools')}>
               {selectedTools.length > 0 ? (
                 <div className="inline-flex items-center gap-1 py-0.5 px-2 bg-[var(--da-bg-surface-hover)] rounded text-xs text-[var(--da-text-primary)]s">
                   {renderSelectedChips(selectedTools, (id) => setFormData({ ...formData, toolIds: formData.toolIds.filter((tid) => tid !== id) }))}
@@ -153,7 +153,7 @@ export function ResourcePickerSection({
           {/* MCP */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_mcp')} ({selectedMCPs.length})</label>
-            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--da-accent-indigo)]" onClick={() => setActivePicker('mcp')}>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('mcp')}>
               {selectedMCPs.length > 0 ? (
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {renderSelectedChips(selectedMCPs, (id) => setFormData({ ...formData, mcpIds: formData.mcpIds.filter((mid) => mid !== id) }))}
@@ -168,7 +168,7 @@ export function ResourcePickerSection({
           {/* Skills */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--da-text-secondary)]">{t('agent.form_skills')} ({selectedSkills.length})</label>
-            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--da-accent-indigo)]" onClick={() => setActivePicker('skills')}>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--da-bg-surface)] border border-[var(--da-border)] rounded-md text-[var(--da-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('skills')}>
               {selectedSkills.length > 0 ? (
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {renderSelectedChips(selectedSkills, (id) => setFormData({ ...formData, skillIds: formData.skillIds.filter((sid) => sid !== id) }))}
