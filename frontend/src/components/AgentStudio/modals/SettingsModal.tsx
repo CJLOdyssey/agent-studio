@@ -19,7 +19,7 @@ export default function SettingsModal({ onClose }: Props) {
   const { t, i18n } = useTranslation();
   const { settings, updateSettings } = useSettings();
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-  const fontPct = ((settings.fontSize - 12) / 4) * 100;
+  const fontPct = ((settings.fontSize - 14) / 6) * 100;
 
   return (
     <Modal
@@ -101,8 +101,8 @@ export default function SettingsModal({ onClose }: Props) {
                 <div className="flex items-center gap-2">
                   <input
                     type="range"
-                    min="12"
-                    max="16"
+                    min="14"
+                    max="20"
                     step="1"
                     value={settings.fontSize}
                     onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}

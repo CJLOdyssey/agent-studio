@@ -30,7 +30,7 @@ describe('SettingsContext', { tags: ['unit'] }, () => {
       </SettingsProvider>,
     );
     expect(screen.getByTestId('theme').textContent).toBe('dark');
-    expect(screen.getByTestId('fontSize').textContent).toBe('14');
+    expect(screen.getByTestId('fontSize').textContent).toBe('16');
     expect(screen.getByTestId('sendMode').textContent).toBe('enter');
     expect(screen.getByTestId('autoSave').textContent).toBe('true');
     expect(screen.getByTestId('streamOutput').textContent).toBe('true');

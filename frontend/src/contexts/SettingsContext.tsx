@@ -17,7 +17,7 @@ interface SettingsContextType {
 
 const defaultSettings: Settings = {
   theme: 'dark',
-  fontSize: 14,
+  fontSize: 16,
   sendMode: 'enter',
   autoSave: true,
   streamOutput: true,
