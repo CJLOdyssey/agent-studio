@@ -1,6 +1,7 @@
 import { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Send, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion, useReducedMotion } from 'motion/react';
 import type { ModelOption, AttachedFile, CommandOption, FileRejection } from '../../types/input';
 import ModelSelector from './ModelSelector';
 import FileAttach from './FileAttach';
@@ -49,6 +50,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   ref,
 ) {
   const { t } = useTranslation();
+  const reduce = useReducedMotion();
   const { toast } = useToast();
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const { settings } = useSettings();
@@ -154,7 +156,12 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   );
 
   return (
-    <div className="px-6 py-4 pb-5 max-w-[900px] mx-auto w-full">
+    <motion.div
+      className="px-6 py-4 pb-5 max-w-[900px] mx-auto w-full"
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+    >
       <div data-input-wrapper className="relative bg-[var(--da-bg-surface)] border-none rounded-[var(--da-input-radius)] overflow-hidden transition-shadow duration-200 shadow-none focus-within:shadow-[var(--da-focus-ring)]">
         {palette.open && (
           <CommandDropdown
@@ -214,7 +221,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           )}
         </div>
       </div>
-    </div>
+      </motion.div>
   );
 });
 
