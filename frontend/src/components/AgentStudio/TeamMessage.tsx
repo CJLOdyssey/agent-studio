@@ -338,7 +338,7 @@ const TeamMessage = memo(function TeamMessage({
               {versions.length > 1 && (
                 <div className="flex items-center gap-0.5">
                   <button
-                    className="flex items-center justify-center w-5 h-5 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--da-border-hover)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-5 h-5 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
                     onClick={() => onSwitchVersion?.(msg.id, 'prev')}
                     disabled={currentVersion === 0}
                     aria-label="Previous version"
@@ -347,7 +347,7 @@ const TeamMessage = memo(function TeamMessage({
                   </button>
                   <span className="text-xs text-[var(--color-text-muted)] min-w-7 text-center select-none">{currentVersion + 1}/{versions.length}</span>
                   <button
-                    className="flex items-center justify-center w-5 h-5 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--da-border-hover)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-5 h-5 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
                     onClick={() => onSwitchVersion?.(msg.id, 'next')}
                     disabled={currentVersion === versions.length - 1}
                     aria-label="Next version"
