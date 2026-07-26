@@ -43,7 +43,6 @@ export default function WorkstationPage({ onClose }: Props) {
         .wsta-root .wsta-row-selected td { background: transparent !important; }
         .wsta-root .ant-input-affix-wrapper { background: var(--color-surface) !important; }
         .wsta-root .ant-select-selector { background: var(--color-surface) !important; }
-        .menu-item-btn { padding: 9px 10px !important; border-radius: 8px !important; }
       `}</style>
       <div
         className="bg-[var(--color-surface-card)] rounded-xl w-[90vw] max-w-[1200px] h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] overflow-hidden"
