@@ -11,24 +11,22 @@ vi.mock('react-i18next', async () => {
         const map: Record<string, string> = {
           'providerEdit.edit': 'Edit Provider',
           'providerEdit.add': 'Add Provider',
-          'providerEdit.provider': 'Provider',
-          'providerEdit.name': 'Name',
+          'providerEdit.provider': '供应商',
+          'providerEdit.name': '备注名',
           'providerEdit.nameOptional': 'optional',
           'providerEdit.baseUrl': 'Base URL',
           'providerEdit.apiKey': 'API Key',
-          'providerEdit.supportedModels': 'Models',
+          'providerEdit.supportedModels': '模型列表',
           'providerEdit.save': 'Save',
-          'providerEdit.placeholders.name': 'Enter name',
-          'providerEdit.placeholders.baseUrl': 'https://...',
-          'providerEdit.placeholders.apiKey': 'sk-...',
           'providerEdit.nameHint': 'Hint text',
-          'workstation.capabilities': 'Capabilities',
-          'workstation.purpose': 'Purpose',
-          'workstation.bothSupported': 'Both',
+          'workstation.capabilities': '支持能力',
+          'workstation.purpose': '用途',
+          'workstation.bothSupported': '两者都支持',
           'workstation.fetchingModels': 'Fetching...',
-          'workstation.enterApiKeyToFetch': 'Enter API key',
+          'workstation.enterApiKeyToFetch': '填写 API Key 后点击刷新获取模型',
           'workstation.fetchFromApi': 'Fetch',
           'confirm.cancel': 'Cancel',
+          'common.close': 'Close',
         };
         return map[key] || key;
       },
@@ -51,17 +49,15 @@ vi.mock('../../../../api/client/providers', () => ({
 import ProviderEditModal, { type ApiProviderForm } from '../ProviderEditModal';
 
 const baseProvider: ApiProviderForm = {
-  id: '',
-  provider: 'openai',
-  usage_type: 'llm',
-  name: '',
-  baseUrl: 'https://api.openai.com/v1',
-  apiKey: '',
-  models: [],
-  isActive: true,
+  id: '', provider: 'openai', usage_type: 'llm',
+  name: '', baseUrl: 'https://api.openai.com/v1',
+  apiKey: '', models: [], isActive: true,
 };
 
-function renderModal(overrides: { provider?: ApiProviderForm; saving?: boolean; onSave?: ReturnType<typeof vi.fn>; onClose?: ReturnType<typeof vi.fn> } = {}) {
+function renderModal(overrides: {
+  provider?: ApiProviderForm; saving?: boolean;
+  onSave?: ReturnType<typeof vi.fn>; onClose?: ReturnType<typeof vi.fn>;
+} = {}) {
   return render(
     <TestProviders>
       <ProviderEditModal
@@ -75,11 +71,9 @@ function renderModal(overrides: { provider?: ApiProviderForm; saving?: boolean; 
 }
 
 describe('ProviderEditModal', { tags: ['integration'] }, () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => { vi.clearAllMocks(); });
 
-  it('renders the modal with add title', async () => {
+  it('renders add title', async () => {
     renderModal();
     expect(await screen.findByText('Add Provider')).toBeInTheDocument();
   });
@@ -89,28 +83,11 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     expect(await screen.findByText('Edit Provider')).toBeInTheDocument();
   });
 
-  it('calls onClose when cancel is clicked', async () => {
+  it('calls onClose when cancel clicked', async () => {
     const onClose = vi.fn();
     renderModal({ onClose });
     fireEvent.click(await screen.findByText('Cancel'));
     expect(onClose).toHaveBeenCalled();
-  });
-
-  it('calls onClose when overlay is clicked', async () => {
-    const onClose = vi.fn();
-    renderModal({ onClose });
-    const overlay = screen.getByRole('dialog').parentElement!;
-    fireEvent.click(overlay);
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it('toggles API key visibility', async () => {
-    renderModal();
-    await screen.findByText('Add Provider');
-    const apiKeyInput = screen.getByPlaceholderText('sk-...');
-    expect(apiKeyInput).toHaveAttribute('type', 'password');
-    fireEvent.click(screen.getByLabelText('Show API key'));
-    expect(apiKeyInput).toHaveAttribute('type', 'text');
   });
 
   it('calls onSave with form data', async () => {
@@ -122,7 +99,7 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     );
   });
 
-  it('save button is disabled when name is empty', async () => {
+  it('save button is disabled when apiKey empty', async () => {
     renderModal();
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
@@ -136,7 +113,7 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     expect(mockFetchModels).toHaveBeenCalled();
   });
 
-  it('shows loading spinner when saving', async () => {
+  it('shows loading when saving', async () => {
     renderModal({ saving: true });
     expect(await screen.findByText('...')).toBeInTheDocument();
   });

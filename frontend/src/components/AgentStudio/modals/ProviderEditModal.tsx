@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, EyeOff, Save, Loader2, RefreshCw, Tag } from 'lucide-react';
+import { X, Tag, Loader2, Save } from 'lucide-react';
 
 import { fetchModelsFromProvider } from '../../../api/client/keys';
 import { listProviders } from '../../../api/client/providers';
 import type { ProvidersMap } from '../../../api/client/providers';
+import ProviderSelector from './ProviderSelector';
+import CredentialsSection from './CredentialsSection';
+import ModelSection from './ModelSection';
+import ConnectionTest from './ConnectionTest';
+import type { TestResult } from './ConnectionTest';
 
 export interface ApiProviderForm {
   id: string;
@@ -18,7 +23,6 @@ export interface ApiProviderForm {
   status?: 'connected' | 'error' | 'untested';
 }
 
-/** Fallback used when /api/providers is unreachable. */
 const FALLBACK_PROVIDERS: ProvidersMap = {
   openai:    { name: 'OpenAI',       base_url: 'https://api.openai.com/v1',                          capabilities: ['llm', 'embedding'], docs_url: null },
   deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['llm'],              docs_url: null },
@@ -34,23 +38,23 @@ interface Props {
   saving?: boolean;
 }
 
-const CAP_LABEL: Record<string, string> = { llm: 'LLM', embedding: 'Embed' };
-
 export default function ProviderEditModal({ provider, onSave, onClose, saving = false }: Props) {
   const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
-
   const [providerType, setProviderType] = useState(provider.provider || 'custom');
   const [usageType, setUsageType] = useState(provider.usage_type || 'llm');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
   const [models, setModels] = useState<string[]>(provider.models);
+  const [isDefault, setIsDefault] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   useEffect(() => {
     listProviders()
@@ -77,8 +81,6 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providerType]);
 
-  const caps = providers[providerType]?.capabilities ?? ['llm'];
-  const multipleCaps = caps.length > 1;
   const showModels = usageType === 'llm' || usageType === 'both';
 
   const handleSave = () => {
@@ -95,135 +97,98 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       const result = await fetchModelsFromProvider({
         api_key: apiKey, base_url: baseUrl || undefined, provider: providerType,
       });
-      if (result.success && result.models.length > 0) setModels(result.models);
-      else setModels([]);
-    } catch { setModels([]); }
+      if (result.success && result.models.length > 0) {
+        setModels((prev) => {
+          const merged = new Set([...prev, ...result.models]);
+          return Array.from(merged);
+        });
+      }
+    } catch { /* ignore */ }
     finally { setFetchingModels(false); }
+  };
+
+  const handleTestConnection = async () => {
+    if (!apiKey.trim()) return;
+    setTesting(true);
+    setTestResult(null);
+    const start = performance.now();
+    try {
+      const result = await fetchModelsFromProvider({
+        api_key: apiKey, base_url: baseUrl || undefined, provider: providerType,
+      });
+      const latency = Math.round(performance.now() - start);
+      setTestResult({
+        success: result.success,
+        message: result.success ? '连接成功' : (result.message || '未知错误'),
+        latency,
+      });
+    } catch {
+      setTestResult({ success: false, message: '连接超时或网络错误', latency: 0 });
+    }
+    setTesting(false);
   };
 
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[420px] max-h-[480px] max-w-[560px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
+      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[480px] max-h-[600px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="flex items-center gap-3">
             <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
               {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
             </div>
             <div>
-              <h3 style={{ margin: 0 }}>{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--color-text-muted)' }}>
+              <h3 className="m-0">{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
+              <p className="mt-0.5 text-[11px] text-[var(--color-text-muted)] leading-tight">
                 {providers[providerType]?.base_url || ''}
               </p>
             </div>
           </div>
-          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
+          <button type="button" className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 
         <div className="flex-1 px-6 py-5 overflow-y-auto">
-          <div className="flex gap-4">
-            <div className="mb-4" style={{ flex: 2 }}>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.provider')}</label>
-              <select value={providerType} onChange={(e) => setProviderType(e.target.value)}>
-                {Object.entries(providers).map(([key, info]) => (
-                  <option key={key} value={key}>{info.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-4" style={{ flex: 1 }}>
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.capabilities')}</label>
-              <div className="flex gap-2" style={{ marginTop: 4 }}>
-                {caps.map((cap) => (
-                  <span key={cap} className="inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]">{CAP_LABEL[cap] || cap}</span>
-                ))}
-              </div>
-            </div>
+          <div className="mb-5">
+            <ProviderSelector
+              providers={providers}
+              providerType={providerType}
+              usageType={usageType}
+              onChangeProvider={setProviderType}
+              onChangeUsage={setUsageType}
+            />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.purpose')}</label>
-            {multipleCaps ? (
-              <div className="flex gap-3">
-                {caps.map((cap) => (
-                  <label key={cap} className="flex items-center gap-2 p-2 px-3 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md cursor-pointer text-sm text-[var(--color-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
-                    <input type="radio" name="usage_type" checked={usageType === cap} onChange={() => setUsageType(cap)} />
-                    <span>{CAP_LABEL[cap] || cap}</span>
-                  </label>
-                ))}
-                {caps.includes('llm') && caps.includes('embedding') && (
-                  <label className="flex items-center gap-2 p-2 px-3 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md cursor-pointer text-sm text-[var(--color-text-primary)] transition-[border-color] duration-150 hover:border-[var(--color-accent)] [&>input]:[accent-color:var(--color-accent)]">
-                    <input type="radio" name="usage_type" checked={usageType === 'both'} onChange={() => setUsageType('both')} />
-                    <span>{t('workstation.bothSupported')}</span>
-                  </label>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 py-2" style={{ marginTop: 4 }}>
-                {caps.map((cap) => (
-                  <span key={cap} className="inline-flex items-center px-[10px] py-0.5 rounded text-xs font-semibold tracking-[0.3px] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)]">{CAP_LABEL[cap] || cap}</span>
-                ))}
-                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: 8 }}>
-                  {t('workstation.purpose')}: {CAP_LABEL[caps[0]] || caps[0]}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-              {t('providerEdit.name')}
-              <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: 11 }}>
-                ({t('providerEdit.nameOptional') || 'optional'})
-              </span>
-            </label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('providerEdit.placeholders.name')} />
-            <p className="text-xs text-[var(--color-text-muted)] mt-2" style={{ marginTop: 4 }}>
-              <Tag size={11} /> {t('providerEdit.nameHint') || '用于区分不同的 Key，不填则使用提供商名称'}
-            </p>
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.baseUrl')}</label>
-            <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={t('providerEdit.placeholders.baseUrl')} />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.apiKey')}</label>
-            <div className="flex-1 flex items-center bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md overflow-hidden">
-              <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={t('providerEdit.placeholders.apiKey')} className="flex-1 bg-transparent border-none px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none [&::placeholder]:text-[var(--color-text-muted)]" />
-              <button className="p-2 bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--color-text-primary)]" onClick={() => setShowKey(!showKey)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
-                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
+          <div className="mb-5">
+            <CredentialsSection
+              name={name} baseUrl={baseUrl} apiKey={apiKey}
+              isDefault={isDefault} showKey={showKey}
+              onChangeName={setName} onChangeBaseUrl={setBaseUrl}
+              onChangeApiKey={setApiKey} onChangeIsDefault={setIsDefault}
+              onToggleShowKey={() => setShowKey(!showKey)}
+            />
           </div>
 
           {showModels && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('providerEdit.supportedModels')}</label>
-              <div className="flex items-start gap-2">
-                {fetchingModels ? (
-                  <div className="flex-1 flex items-center gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-text-muted)] text-sm">
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>{t('workstation.fetchingModels')}</span>
-                  </div>
-                ) : models.length > 0 ? (
-                  <div className="flex-1 flex flex-wrap gap-2 p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md min-h-[36px]">
-                    {models.map((model) => <span key={model} className="inline-flex items-center px-2 py-0.5 bg-[var(--color-accent)] text-white rounded text-xs font-medium">{model}</span>)}
-                  </div>
-                ) : (
-                  <div className="flex-1 flex items-center p-2 bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-md text-[var(--color-text-muted)] text-sm"><span>{t('workstation.enterApiKeyToFetch')}</span></div>
-                )}
-                <button type="button" className="inline-flex items-center justify-center gap-2 px-2 py-1 rounded-md text-xs font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={handleFetchModels}
-                  disabled={!apiKey.trim() || fetchingModels} title={t('workstation.fetchFromApi')}>
-                  {fetchingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                </button>
-              </div>
+            <div className="mb-5">
+              <ModelSection
+                models={models} fetching={fetchingModels} apiKey={apiKey}
+                onAddModel={(m) => setModels((prev) => [...prev, m])}
+                onRemoveModel={(m) => setModels((prev) => prev.filter((x) => x !== m))}
+                onFetchModels={handleFetchModels}
+              />
             </div>
           )}
+
+          <ConnectionTest
+            onTest={handleTestConnection}
+            disabled={!apiKey.trim() || testing}
+            testing={testing}
+            testResult={testResult}
+          />
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}
           </button>
