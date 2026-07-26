@@ -69,7 +69,7 @@ export default function AgentManagement() {
   if (mgmt.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('agent.error_render')}</p></div>}>
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('agent.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label="Agent 管理">
       {mgmt.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-lg text-[var(--color-danger)] text-sm mb-4"><span>{mgmt.error}</span><button onClick={mgmt.retry} aria-label={t('agent.error_retry')}><RefreshCw size={14} /></button><button onClick={mgmt.clearError}><X size={14} /></button></div>}
       {mgmt.batchError && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-lg text-[var(--color-danger)] text-sm mb-4" role="alert"><span>{mgmt.batchError}</span></div>}
@@ -94,9 +94,9 @@ export default function AgentManagement() {
         </div>
       </div>
 
-      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {mgmt.processed.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <Bot size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('agent.empty_title', mgmt.search ? '' : '')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{mgmt.search ? t('agent.empty_desc_search') : t('agent.empty_desc_general')}</div>
@@ -110,7 +110,7 @@ export default function AgentManagement() {
             <th scope="col">{t('agent.col_model')}</th>
             <th scope="col">{t('agent.col_status')}</th>
             <th scope="col">{t('agent.col.version')}</th>
-            <th className="w-[60px] text-right" scope="col">{t('agent.col_actions')}</th>
+            <th className="w-[100px] text-right" scope="col">{t('agent.col_actions')}</th>
           </tr></thead>
           <tbody>
             {mgmt.paged.map((item) => (
@@ -126,7 +126,7 @@ export default function AgentManagement() {
                   </span>
                 </td>
                 <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.version}</span></td>
-                <td className="w-[60px] text-right">
+                <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
                   </Dropdown>
@@ -141,7 +141,7 @@ export default function AgentManagement() {
       <WstaPagination
         current={mgmt.page}
         total={mgmt.processed.length}
-        pageSize={5}
+        pageSize={7}
         onChange={(p) => mgmt.setPage(p)}
       />
 

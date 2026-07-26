@@ -120,7 +120,7 @@ export function ResourcePickerSection({
         <div className="grid grid-cols-2 gap-4">
           {/* Prompt */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_prompt')} <span className="text-[var(--color-danger)]">*</span></label>
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_prompt')} ({selectedPrompt ? 1 : 0})</label>
             <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('prompt')}>
               {selectedPrompt ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -128,7 +128,7 @@ export function ResourcePickerSection({
                 </span>
               ) : (
                 <span className="placeholder" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <MessageSquareText size={14} /> {t('agent.form_prompt_empty')}
+                  <MessageSquareText size={14} /> {t('agent.form_prompt_select')}
                 </span>
               )}
               <ChevronRight size={14} />
@@ -140,7 +140,7 @@ export function ResourcePickerSection({
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_tools')} ({selectedTools.length})</label>
             <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('tools')}>
               {selectedTools.length > 0 ? (
-                <div className="inline-flex items-center gap-1 py-0.5 px-2 bg-[var(--color-surface-hover)] rounded text-xs text-[var(--color-text-primary)]s">
+                  <div className="inline-flex items-center gap-1 py-0.5 px-2 bg-[var(--color-surface-hover)] rounded text-xs text-[var(--color-text-primary)]">
                   {renderSelectedChips(selectedTools, (id) => setFormData({ ...formData, toolIds: formData.toolIds.filter((tid) => tid !== id) }))}
                 </div>
               ) : (
@@ -159,7 +159,7 @@ export function ResourcePickerSection({
                   {renderSelectedChips(selectedMCPs, (id) => setFormData({ ...formData, mcpIds: formData.mcpIds.filter((mid) => mid !== id) }))}
                 </div>
               ) : (
-                <span className="placeholder"><Server size={14} /> {t('agent.form_mcp_select')}</span>
+                <span className="placeholder" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Server size={14} /> {t('agent.form_mcp_select')}</span>
               )}
               <ChevronRight size={14} />
             </div>
@@ -174,7 +174,7 @@ export function ResourcePickerSection({
                   {renderSelectedChips(selectedSkills, (id) => setFormData({ ...formData, skillIds: formData.skillIds.filter((sid) => sid !== id) }))}
                 </div>
               ) : (
-                <span className="placeholder"><Puzzle size={14} /> {t('agent.form_skill_select')}</span>
+                <span className="placeholder" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Puzzle size={14} /> {t('agent.form_skill_select')}</span>
               )}
               <ChevronRight size={14} />
             </div>
