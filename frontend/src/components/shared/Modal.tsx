@@ -8,9 +8,12 @@ interface Props {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  hideHeaderBorder?: boolean;
+  hideFooterBorder?: boolean;
+  bodyClassName?: string;
 }
 
-export default function Modal({ title, onClose, children, footer, className = '' }: Props) {
+export default function Modal({ title, onClose, children, footer, className = '', hideHeaderBorder, hideFooterBorder, bodyClassName }: Props) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,7 +63,7 @@ export default function Modal({ title, onClose, children, footer, className = ''
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
+        <div className={`flex items-center justify-between px-6 py-4 ${hideHeaderBorder ? '' : 'border-b border-[var(--color-border)]'}`}>
           {typeof title === 'string'
             ? <h3 className="text-lg font-semibold text-[var(--color-text-primary)] m-0">{title}</h3>
             : title}
@@ -68,8 +71,8 @@ export default function Modal({ title, onClose, children, footer, className = ''
             <X size={18} />
           </button>
         </div>
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">{children}</div>
-        {footer && <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">{footer}</div>}
+        <div className={`overflow-y-auto flex-1 min-h-0 flex flex-col ${bodyClassName || 'p-5'}`}>{children}</div>
+        {footer && <div className={`flex items-center justify-end gap-2 px-6 py-4 ${hideFooterBorder ? '' : 'border-t border-[var(--color-border)]'}`}>{footer}</div>}
       </div>
     </div>
   );
