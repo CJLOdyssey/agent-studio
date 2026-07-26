@@ -26,6 +26,8 @@ export default function SettingsModal({ onClose }: Props) {
       title={t('settings.title')}
       onClose={onClose}
       className="w-[970px] h-[600px] flex flex-col overflow-hidden"
+      hideHeaderBorder
+      hideFooterBorder
       footer={
         <>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>
@@ -58,93 +60,96 @@ export default function SettingsModal({ onClose }: Props) {
 
         <div className="flex-1 px-6 py-5 overflow-y-auto min-h-0">
           {activeTab === 'general' && (
-            <div className="settings-section">
-              <h4>{t('settings.general')}</h4>
+            <div className="flex flex-col gap-6">
+              <section>
+                <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 tracking-tight">{t('settings.general')}</h4>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--color-text-primary)]">{t('settings.language')}</label>
+                    <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t('settings.languageDesc')}</span>
+                  </div>
+                  <select
+                    className="p-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
+                    value={i18n.language}
+                    onChange={(e) => changeLanguage(e.target.value)}
+                  >
+                    <option value="zh-CN">中文</option>
+                    <option value="en-US">English</option>
+                  </select>
+                </div>
+              </section>
 
-              <div className="flex items-center justify-between py-4">
-                <div className="flex-1">
-                  <label>{t('settings.language')}</label>
-                  <span className="text-xs text-[var(--color-text-muted)]">{t('settings.languageDesc')}</span>
+              <section>
+                <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 tracking-tight">{t('settings.appearance')}</h4>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--color-text-primary)]">{t('settings.theme')}</label>
+                    <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t('settings.themeDesc')}</span>
+                  </div>
+                  <select
+                    className="p-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
+                    value={settings.theme}
+                    onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
+                  >
+                    <option value="dark">{t('settings.dark')}</option>
+                    <option value="light">{t('settings.light')}</option>
+                    <option value="system">{t('settings.system')}</option>
+                  </select>
                 </div>
-                <select
-                  className="p-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
-                  value={i18n.language}
-                  onChange={(e) => changeLanguage(e.target.value)}
-                >
-                  <option value="zh-CN">中文</option>
-                  <option value="en-US">English</option>
-                </select>
-              </div>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--color-text-primary)]">{t('settings.fontSize')}</label>
+                    <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t('settings.fontSizeDesc')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="14"
+                      max="20"
+                      step="1"
+                      value={settings.fontSize}
+                      onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
+                      style={{
+                        background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${fontPct}%, var(--color-surface-hover) ${fontPct}%, var(--color-surface-hover) 100%)`,
+                      }}
+                      className="settings-font-slider"
+                    />
+                    <span className="text-sm font-semibold text-[var(--color-text-secondary)] min-w-[32px] text-right">{settings.fontSize}px</span>
+                  </div>
+                </div>
+              </section>
 
-              <div className="h-px bg-[var(--color-border)] my-5"></div>
-              <h4>{t('settings.appearance')}</h4>
-              <div className="flex items-center justify-between py-4">
-                <div className="flex-1">
-                  <label>{t('settings.theme')}</label>
-                  <span className="text-xs text-[var(--color-text-muted)]">{t('settings.themeDesc')}</span>
+              <section>
+                <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 tracking-tight">AI Chat</h4>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--color-text-primary)]">{t('settings.sendMode')}</label>
+                    <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t('settings.sendModeDesc')}</span>
+                  </div>
+                  <select
+                    className="p-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
+                    value={settings.sendMode}
+                    onChange={(e) => updateSettings({ sendMode: e.target.value as 'enter' | 'ctrl-enter' })}
+                  >
+                    <option value="enter">{t('settings.enterSend')}</option>
+                    <option value="ctrl-enter">Ctrl + Enter</option>
+                  </select>
                 </div>
-                <select
-                  className="p-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
-                  value={settings.theme}
-                  onChange={(e) => updateSettings({ theme: e.target.value as 'dark' | 'light' | 'system' })}
-                >
-                  <option value="dark">{t('settings.dark')}</option>
-                  <option value="light">{t('settings.light')}</option>
-                  <option value="system">{t('settings.system')}</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between py-4">
-                <div className="flex-1">
-                  <label>{t('settings.fontSize')}</label>
-                  <span className="text-xs text-[var(--color-text-muted)]">{t('settings.fontSizeDesc')}</span>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--color-text-primary)]">{t('settings.autoSave')}</label>
+                    <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t('settings.autoSaveDesc')}</span>
+                  </div>
+                  <ToggleSwitch checked={settings.autoSave} onChange={(v) => updateSettings({ autoSave: v })} />
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="14"
-                    max="20"
-                    step="1"
-                    value={settings.fontSize}
-                    onChange={(e) => updateSettings({ fontSize: Number(e.target.value) })}
-                    style={{
-                      background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${fontPct}%, var(--color-surface-hover) ${fontPct}%, var(--color-surface-hover) 100%)`,
-                    }}
-                    className="settings-font-slider"
-                  />
-                  <span className="text-sm font-semibold text-[var(--color-text-secondary)] min-w-[32px] text-right">{settings.fontSize}px</span>
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <label className="block text-sm text-[var(--color-text-primary)]">{t('settings.streamOutput')}</label>
+                    <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">{t('settings.streamOutputDesc')}</span>
+                  </div>
+                  <ToggleSwitch checked={settings.streamOutput} onChange={(v) => updateSettings({ streamOutput: v })} />
                 </div>
-              </div>
-
-              <div className="h-px bg-[var(--color-border)] my-5"></div>
-              <h4>AI Chat</h4>
-              <div className="flex items-center justify-between py-4">
-                <div className="flex-1">
-                  <label>{t('settings.sendMode')}</label>
-                  <span className="text-xs text-[var(--color-text-muted)]">{t('settings.sendModeDesc')}</span>
-                </div>
-                <select
-                  className="p-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm min-w-[140px] cursor-pointer focus:border-[var(--color-accent)]"
-                  value={settings.sendMode}
-                  onChange={(e) => updateSettings({ sendMode: e.target.value as 'enter' | 'ctrl-enter' })}
-                >
-                  <option value="enter">{t('settings.enterSend')}</option>
-                  <option value="ctrl-enter">Ctrl + Enter</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between py-4">
-                <div className="flex-1">
-                  <label>{t('settings.autoSave')}</label>
-                  <span className="text-xs text-[var(--color-text-muted)]">{t('settings.autoSaveDesc')}</span>
-                </div>
-                <ToggleSwitch checked={settings.autoSave} onChange={(v) => updateSettings({ autoSave: v })} />
-              </div>
-              <div className="flex items-center justify-between py-4">
-                <div className="flex-1">
-                  <label>{t('settings.streamOutput')}</label>
-                  <span className="text-xs text-[var(--color-text-muted)]">{t('settings.streamOutputDesc')}</span>
-                </div>
-                <ToggleSwitch checked={settings.streamOutput} onChange={(v) => updateSettings({ streamOutput: v })} />
-              </div>
+              </section>
             </div>
           )}
 

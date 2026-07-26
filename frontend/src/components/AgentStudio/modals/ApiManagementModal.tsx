@@ -15,11 +15,11 @@ interface Props {
   onClose: () => void;
 }
 
-type ApiTab = 'providers' | 'models' | 'usage';
+type ApiTab = 'keys' | 'models' | 'usage';
 
 export default function ApiManagementModal({ onClose }: Props) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<ApiTab>('providers');
+  const [activeTab, setActiveTab] = useState<ApiTab>('keys');
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingKey, setEditingKey] = useState<KeyItem | null>(null);
@@ -33,7 +33,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   });
   const [usage, setUsage] = useState({ today_requests: 0, today_tokens: 0, month_requests: 0, month_tokens: 0 });
-  const [usageTypeFilter, setUsageTypeFilter] = useState<'all' | 'llm' | 'embedding' | 'both'>('all');
+
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -202,16 +202,16 @@ export default function ApiManagementModal({ onClose }: Props) {
     window.dispatchEvent(new Event('agentstudio-model-changed'));
   };
 
-  const TABS = ['providers', 'models', 'usage'] as const;
-  const TAB_ICONS: Record<ApiTab, typeof Server> = { providers: Server, models: Globe, usage: Key };
+const TABS = ['keys', 'models', 'usage'] as const;
+const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, usage: Key };
 
   return (
-    <Modal title="API 管理" onClose={onClose} className="api-modal">
+    <Modal title="API 管理" onClose={onClose} className="api-modal" hideHeaderBorder>
       <div className="flex h-full min-h-0 overflow-hidden">
         <div className="w-[160px] px-4 py-5 flex flex-col gap-1 overflow-hidden min-h-0">
           {TABS.map((tab) => {
             const Icon = TAB_ICONS[tab];
-            const label = tab === 'providers' ? t('api.tab_provider') : tab === 'models' ? t('api.tab_model') : t('api.tab_usage');
+            const label = tab === 'keys' ? t('api.tab_api') : tab === 'models' ? t('api.tab_model') : t('api.tab_usage');
             return (
               <button
                 key={tab}
@@ -225,16 +225,14 @@ export default function ApiManagementModal({ onClose }: Props) {
           })}
         </div>
         <div className="flex-1 px-6 py-5 overflow-y-auto min-h-0">
-          {activeTab === 'providers' && (
+          {activeTab === 'keys' && (
             <ApiProviderTab
               keys={keys}
               loading={loading}
               error={error}
-              usageTypeFilter={usageTypeFilter}
               testingId={testingId}
               showApiKey={showApiKey}
               saving={saving}
-              onFilterChange={setUsageTypeFilter}
               onAdd={showAddForm}
               onEdit={setEditingKey}
               onToggleActive={(id, active) => handleUpdateKey(id, { isActive: active })}

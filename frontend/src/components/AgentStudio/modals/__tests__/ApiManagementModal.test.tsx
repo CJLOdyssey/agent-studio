@@ -10,7 +10,7 @@ vi.mock('react-i18next', async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const map: Record<string, string> = {
-          'api.tab_provider': 'API 提供商',
+          'api.tab_api': 'API',
           'api.tab_model': '模型选择',
           'api.tab_usage': '使用量',
         };
