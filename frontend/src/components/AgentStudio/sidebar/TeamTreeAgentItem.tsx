@@ -84,11 +84,11 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
 
           {openAgentMenu === agent.id && createPortal(
             <div
-              className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[99999]"
-              style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
+              className="bg-[var(--color-surface-overlay)] rounded-xl p-1 min-w-[124px] z-[99999]"
+              style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, boxShadow: 'rgba(0,0,0,0.2) 0px 0px 1px 0px, rgba(0,0,0,0.02) 0px 0px 4px 0px, rgba(0,0,0,0.08) 0px 12px 32px 0px' }}
             >
               <button
-                className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   if (onEditAgent) onEditAgent(agent);
@@ -100,7 +100,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 <span>{t('sidebar.edit')}</span>
               </button>
               <button
-                className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   startEditAgent(agent);
@@ -111,7 +111,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 <span>{t('sidebar.rename')}</span>
               </button>
               <button
-                className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
+                className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
                   setConfirmDelete({ type: 'agent', teamId, agentId: agent.id });

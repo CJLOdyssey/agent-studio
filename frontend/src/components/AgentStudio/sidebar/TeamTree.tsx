@@ -153,7 +153,7 @@ const TeamTree = memo(function TeamTree({
       setOpenTeamMenu(null);
     } else {
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 140 });
+      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 124 });
       setOpenTeamMenu(teamId);
       setOpenAgentMenu(null);
     }
@@ -164,7 +164,7 @@ const TeamTree = memo(function TeamTree({
       setOpenAgentMenu(null);
     } else {
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 140 });
+      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 124 });
       setOpenAgentMenu(agentId);
       setOpenTeamMenu(null);
     }
@@ -223,11 +223,11 @@ const TeamTree = memo(function TeamTree({
                 </div>
               ) : (
                 <>
-                  <span className="text-sm text-[var(--color-text-tertiary)] shrink-0 font-normal opacity-70 min-w-[16px] text-center">{team.agents.length}</span>
                   <span className="text-base font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
+                  <span className="text-sm text-[var(--color-text-tertiary)] shrink-0 font-normal opacity-70 min-w-[16px] text-center">{team.agents.length}</span>
                   {onTeamChat && (
                     <button
-                      className="opacity-0 group-hover:opacity-60 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100 flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
+                      className="bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
                       onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
                       title="团队对话"
                     >
@@ -235,7 +235,7 @@ const TeamTree = memo(function TeamTree({
                     </button>
                   )}
                   <button
-                    className="opacity-0 group-hover:opacity-60 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100 flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
+                    className="bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
                     onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
                     title={t('sidebar.moreOptions')}
                   >
@@ -247,11 +247,12 @@ const TeamTree = memo(function TeamTree({
 
             {openTeamMenu === team.id && createPortal(
               <div
-                className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[99999]"
-                style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
+                className="bg-[var(--color-surface-overlay)] rounded-xl p-1 min-w-[124px] z-[99999]"
+                style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, boxShadow: 'rgba(0,0,0,0.2) 0px 0px 1px 0px, rgba(0,0,0,0.02) 0px 0px 4px 0px, rgba(0,0,0,0.08) 0px 12px 32px 0px' }}
               >
                 <button
-                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  style={{ padding: '8px 10px', borderRadius: 8 }}
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleAddAgent(team.id);
@@ -263,7 +264,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('sidebar.addAgent')}</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     startEditTeam(team);
@@ -274,7 +275,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('workstation.rename')}</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleTogglePinTeam(team.id);
@@ -286,7 +287,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 py-[9px] px-[10px] rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
+                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     setConfirmDelete({ type: 'team', teamId: team.id });
