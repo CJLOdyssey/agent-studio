@@ -1,7 +1,6 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, FileText } from 'lucide-react';
-import { OUTPUT_CATEGORIES } from './output.constants';
 import type { OutputEntry } from './output.types';
 import { useOutputManagement } from './useOutputManagement';
 import OutputFormModal from './OutputFormModal';
@@ -38,14 +37,16 @@ export default function OutputConstraintManagement() {
   if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('output.loading')}><TableSkeleton rows={5} cols={5} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('output.error_render')}</p></div>}>
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('output.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label={t('output.col_name')}>
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('output.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
-          <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
-            { value: 'all', label: t('output.all_categories') },
-            ...OUTPUT_CATEGORIES.map((c) => ({ value: c, label: c })),
+          <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'active', label: '已启用' },
+            { value: 'draft', label: '草稿' },
+            { value: 'archived', label: '已归档' },
           ]} />
         </div>
         <div className="flex items-center gap-3">
@@ -54,9 +55,9 @@ export default function OutputConstraintManagement() {
         </div>
       </div>
 
-      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {d.filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <FileText size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('output.empty_title', '')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('output.empty_desc_search') : t('output.empty_desc_general')}</div>
@@ -69,7 +70,7 @@ export default function OutputConstraintManagement() {
               <th scope="col">{t('output.col_content')}</th>
               <th scope="col">{t('output.col_category')}</th>
               <th scope="col">{t('output.col_status')}</th>
-              <th className="w-[60px] text-right" scope="col">{t('output.col_actions')}</th>
+              <th className="w-[100px] text-right" scope="col">{t('output.col_actions')}</th>
             </tr></thead>
             <tbody>
               {d.paged.map((item) => (
@@ -84,7 +85,7 @@ export default function OutputConstraintManagement() {
                       {statusLabel[item.status] || item.status}
                     </span>
                   </td>
-                  <td className="w-[60px] text-right">
+                  <td className="w-[100px] text-right">
                     <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                       <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
                     </Dropdown>
@@ -99,7 +100,7 @@ export default function OutputConstraintManagement() {
       <WstaPagination
         current={d.page}
         total={d.filtered.length}
-        pageSize={5}
+        pageSize={7}
         onChange={(p) => d.setPage(p)}
       />
 

@@ -152,7 +152,7 @@ function MonitorCenter({ onNavigate }: Props) {
   return (
     <ErrorBoundary
       fallback={
-        <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert">
+        <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert">
           <p>{t('monitor.error_render')}</p>
         </div>
       }

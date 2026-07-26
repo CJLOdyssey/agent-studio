@@ -23,6 +23,8 @@ export type CategoryFilter = 'all' | PromptCategory;
 export interface PromptData extends GenericCrudReturn<PromptEntry, PromptFormData> {
   categoryFilter: CategoryFilter;
   setCategoryFilter: (v: CategoryFilter) => void;
+  statusFilter: string;
+  setStatusFilter: (v: string) => void;
   addPrompt: (data: PromptFormData) => void;
   updatePrompt: (id: string, data: Partial<PromptEntry>) => void;
   removePrompt: (id: string) => void;

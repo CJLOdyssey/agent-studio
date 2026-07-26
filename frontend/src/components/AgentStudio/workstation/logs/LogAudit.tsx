@@ -69,7 +69,7 @@ function LogAudit() {
   const paged = processed.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('logs.error_render')}</p></div>}>
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('logs.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label={t('logs.empty')}>
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label={t('logs.search_placeholder')}>
         <div className="flex items-center gap-3 flex-1">
@@ -82,9 +82,9 @@ function LogAudit() {
         </div>
       </div>
 
-      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden" style={processed.length > 0 && !isLoading ? { overflow: 'hidden' } : undefined}>
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden" style={processed.length > 0 && !isLoading ? { overflow: 'hidden' } : undefined}>
         {isLoading ? <TableSkeleton rows={8} cols={7} /> : processed.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <FileText size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('logs.empty')}</div>
           </div>

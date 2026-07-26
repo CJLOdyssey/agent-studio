@@ -17,6 +17,8 @@ export type CategoryFilter = 'all' | string;
 export interface SkillData extends GenericCrudReturn<SkillEntry, SkillFormData> {
   categoryFilter: CategoryFilter;
   setCategoryFilter: (v: CategoryFilter) => void;
+  statusFilter: string;
+  setStatusFilter: (v: string) => void;
   addSkill: (data: SkillFormData) => void;
   updateSkill: (id: string, data: Partial<SkillEntry>) => void;
   removeSkill: (id: string) => void;
@@ -32,6 +34,7 @@ export function useSkillManagement(): SkillData {
       description: '',
       category: '前端开发',
       status: 'installed',
+      model: 'GPT-4o',
       version: 'v1.0.0',
       author: '',
       instructions: '',
@@ -42,13 +45,15 @@ export function useSkillManagement(): SkillData {
     itemName: 'Skill',
     validate: validateSkillForm,
     sortFields: ['name', 'category', 'status'],
-    extraFilters: { categoryFilter: 'all' },
+    extraFilters: { category: 'all', status: 'all' },
   });
 
   return {
     ...crud,
-    get categoryFilter() { return crud.extraFilterValues.categoryFilter ?? 'all'; },
-    setCategoryFilter: (v) => crud.setExtraFilter('categoryFilter', v),
+    get categoryFilter() { return crud.extraFilterValues.category ?? 'all'; },
+    setCategoryFilter: (v) => crud.setExtraFilter('category', v),
+    get statusFilter() { return crud.extraFilterValues.status ?? 'all'; },
+    setStatusFilter: (v) => crud.setExtraFilter('status', v),
     addSkill: crud.createItem,
     updateSkill: crud.updateItem,
     removeSkill: crud.removeItem,

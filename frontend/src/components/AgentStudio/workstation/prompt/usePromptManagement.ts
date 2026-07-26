@@ -10,13 +10,15 @@ export function usePromptManagement(): PromptData {
     itemName: '提示词',
     validate: validatePromptForm,
     sortFields: ['name', 'category', 'status'],
-    extraFilters: { categoryFilter: 'all' },
+    extraFilters: { category: 'all', status: 'all' },
   });
 
   return {
     ...crud,
-    get categoryFilter() { return (crud.extraFilterValues.categoryFilter ?? 'all') as CategoryFilter; },
-    setCategoryFilter: (v) => crud.setExtraFilter('categoryFilter', v as string),
+    get categoryFilter() { return (crud.extraFilterValues.category ?? 'all') as CategoryFilter; },
+    setCategoryFilter: (v) => crud.setExtraFilter('category', v as string),
+    get statusFilter() { return crud.extraFilterValues.status ?? 'all'; },
+    setStatusFilter: (v) => crud.setExtraFilter('status', v as string),
     addPrompt: crud.createItem,
     updatePrompt: crud.updateItem,
     removePrompt: crud.removeItem,

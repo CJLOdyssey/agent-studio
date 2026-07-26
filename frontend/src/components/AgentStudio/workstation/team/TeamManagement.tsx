@@ -30,7 +30,7 @@ export default function TeamManagement() {
   if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('team.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('team.error_render')}</p></div>}>
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('team.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label={t('team.col_name')}>
       {d.error && <div className="flex items-center gap-3 py-3 px-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-lg text-[var(--color-danger)] text-sm mb-4"><span>{d.error}</span><button onClick={d.retry} aria-label={t('team.error_retry')}><RefreshCw size={14} /></button><button onClick={d.clearError}><X size={14} /></button></div>}
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
@@ -59,9 +59,9 @@ export default function TeamManagement() {
           </Button>
         </div>
       </div>
-      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {d.processed.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <Users size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('team.empty_title', '')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('team.empty_desc_search') : t('team.empty_desc_general')}</div>
@@ -75,7 +75,7 @@ export default function TeamManagement() {
             <th scope="col">{t('workstation.category')}</th>
             <th scope="col">{t('workstation.status')}</th>
             <th scope="col">{t('workstation.createdAt')}</th>
-            <th className="w-[60px] text-right" scope="col">{t('workstation.actions')}</th>
+            <th className="w-[100px] text-right" scope="col">{t('workstation.actions')}</th>
           </tr></thead>
           <tbody>
             {d.paged.map((item) => (
@@ -91,7 +91,7 @@ export default function TeamManagement() {
                   </span>
                 </td>
                 <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.createdAt}</span></td>
-                <td className="w-[60px] text-right">
+                <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: [
                     { key: 'edit', icon: <Edit3 size={14} />, label: t('team.edit'), onClick: () => d.openEdit(item) },
                     { key: 'view', icon: <Eye size={14} />, label: t('team.history'), onClick: () => d.openHistory(item) },
@@ -111,7 +111,7 @@ export default function TeamManagement() {
       <WstaPagination
         current={d.page}
         total={d.processed.length}
-        pageSize={5}
+        pageSize={7}
         onChange={(p) => d.setPage(p)}
       />
       {d.isFormOpen && <TeamFormModal editingItem={d.editingItem} formData={d.formData} setFormData={d.setFormData} onSave={handleSaveWrapper} onClose={d.closeForm} errors={d.formErrors} />}

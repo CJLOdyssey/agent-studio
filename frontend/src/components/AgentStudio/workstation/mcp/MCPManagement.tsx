@@ -57,7 +57,7 @@ export default function MCPManagement() {
   if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('mcp.error_render')}</p></div>}>
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('mcp.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label={t('mcp.col_name')}>
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1">
@@ -74,9 +74,9 @@ export default function MCPManagement() {
           <Button type="primary" icon={<Plus size={16} />} onClick={d.openCreate}>{t('mcp.new')}</Button>
         </div>
       </div>
-      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {d.processed.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <Server size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('mcp.empty_title', d.search ? '' : '')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('mcp.empty_desc_search') : t('mcp.empty_desc_general')}</div>
@@ -90,7 +90,7 @@ export default function MCPManagement() {
             <th scope="col">{t('mcp.col_type')}</th>
             <th scope="col">{t('mcp.col_status')}</th>
             <th scope="col">{t('mcp.col_version')}</th>
-            <th className="w-[60px] text-right" scope="col">{t('mcp.col_actions')}</th>
+            <th className="w-[100px] text-right" scope="col">{t('mcp.col_actions')}</th>
           </tr></thead>
           <tbody>
             {d.paged.map((item) => (
@@ -106,7 +106,7 @@ export default function MCPManagement() {
                   </span>
                 </td>
                 <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.version}</span></td>
-                <td className="w-[60px] text-right">
+                <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
                   </Dropdown>
@@ -120,7 +120,7 @@ export default function MCPManagement() {
       <WstaPagination
         current={d.page}
         total={d.processed.length}
-        pageSize={5}
+        pageSize={7}
         onChange={(p) => d.setPage(p)}
       />
       {d.isFormOpen && <MCPFormModal editingItem={d.editingItem} formData={d.formData} setFormData={d.setFormData} onSave={handleSave} onClose={d.closeForm} errors={d.formErrors} />}

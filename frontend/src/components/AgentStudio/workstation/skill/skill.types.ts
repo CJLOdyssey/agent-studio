@@ -4,6 +4,7 @@ export interface SkillEntry {
   description: string;
   category: string;
   status: 'installed' | 'available';
+  model: string;
   version: string;
   author: string;
   instructions: string;

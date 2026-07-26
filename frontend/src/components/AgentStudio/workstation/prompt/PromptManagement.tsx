@@ -38,7 +38,7 @@ export default function PromptManagement() {
   if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('prompt.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
-    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-col items-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('prompt.error_render')}</p></div>}>
+    <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('prompt.error_render')}</p></div>}>
     <div className="flex flex-col h-full" role="region" aria-label="提示词管理">
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label="操作工具栏">
         <div className="flex items-center gap-3 flex-1">
@@ -46,6 +46,12 @@ export default function PromptManagement() {
           <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
             { value: 'all', label: t('prompt.all_categories') },
             ...PROMPT_CATEGORIES.map((c) => ({ value: c, label: c })),
+          ]} />
+          <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'active', label: '已启用' },
+            { value: 'draft', label: '草稿' },
+            { value: 'archived', label: '已归档' },
           ]} />
         </div>
         <div className="flex items-center gap-3">
@@ -60,9 +66,9 @@ export default function PromptManagement() {
         </div>
       </div>
 
-      <div className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {d.processed.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 px-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <MessageSquare size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('prompt.empty_title')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('prompt.empty_desc_search') : t('prompt.empty_desc_general')}</div>
@@ -74,7 +80,7 @@ export default function PromptManagement() {
             <th scope="col">{t('prompt.col_name')}</th>
             <th scope="col">{t('prompt.col_category')}</th>
             <th scope="col">{t('prompt.col_status')}</th>
-            <th className="w-[60px] text-right" scope="col">{t('prompt.col_actions')}</th>
+            <th className="w-[100px] text-right" scope="col">{t('prompt.col_actions')}</th>
           </tr></thead>
           <tbody>
             {d.paged.map((item) => (
@@ -83,7 +89,7 @@ export default function PromptManagement() {
                 <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
                 <td><span className={`wsta-tag-pill ${categoryTagClass[item.category] || 'wsta-tag-gray'}`}>{item.category}</span></td>
                 <td><span>{item.status}</span></td>
-                <td className="w-[60px] text-right">
+                <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
                   </Dropdown>
@@ -98,7 +104,7 @@ export default function PromptManagement() {
       <WstaPagination
         current={d.page}
         total={d.processed.length}
-        pageSize={5}
+        pageSize={7}
         onChange={(p) => d.setPage(p)}
       />
 
