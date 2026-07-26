@@ -68,29 +68,11 @@ const PromptFormModal = memo(function PromptFormModal({ editingItem, formData, s
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_content')} <span className="text-[var(--color-danger)]">{t('prompt.required')}</span></label>
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.content} onChange={(e) => setFormData((f) => ({ ...f, content: e.target.value }))} placeholder={t('prompt.form_content_placeholder')} rows={6} maxLength={5000} />
-            <div className="text-xs text-[var(--color-text-muted)] text-right">
-              {t('prompt.form_char_count', { n: formData.content.length })}
-              <span className="text-[var(--color-text-muted)]"> · {t('prompt.form_token_est', { n: Math.ceil(formData.content.length * 0.45) })}</span>
-            </div>
-            {(() => {
-              const varMatches = [...formData.content.matchAll(/\{\{(.+?)\}\}/g)];
-              if (varMatches.length === 0) return null;
-              return (
-                <div className="mt-2.5 flex flex-col gap-2">
-                  <span className="text-xs font-medium text-[var(--color-accent-soft)]">{t('prompt.form_var_detected', { n: varMatches.length })}</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {varMatches.map((m, i) => (
-                      <span key={i} className="inline-flex items-center py-[3px] px-2 rounded text-xs font-medium bg-[var(--color-accent-soft)]/[0.12] text-[var(--color-accent-soft)] border border-[var(--color-accent-soft)]/[0.22] cursor-default">{`{{${m[1].trim()}}}`}</span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('prompt.form_cancel')}</button>
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={onSave}>{editingItem ? t('prompt.form_save_edit') : t('prompt.form_save_create')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('prompt.form_cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>{editingItem ? t('prompt.form_save_edit') : t('prompt.form_save_create')}</button>
         </div>
       </div>
     </div>

@@ -44,12 +44,12 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
 
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div className="modal-title">
             <Bot size={16} />
-            {editingAgent ? t('agent.form_edit_title') : t('agent.form_create_title')}
+            {editingAgent ? t('agent.form_title_edit') : t('agent.form_title_new')}
           </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={16} /></button>
         </div>
@@ -72,22 +72,22 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
               <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder={t('agent.form_desc_placeholder')} rows={2} maxLength={200} />
             </div>
             <div className="flex gap-4" style={{ marginTop: 14 }}>
-              <div className="flex flex-col gap-1">
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_team')}</label>
-                <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })}>
+                <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })}>
                   <option value="">—</option>
                   {teamOptions.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_model')}</label>
-                <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })}>
+                <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.model} onChange={(e) => setFormData({ ...formData, model: e.target.value })}>
                   {modelOptions.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1" style={{ maxWidth: 140 }}>
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_version')}</label>
-                <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version} onChange={(e) => setFormData({ ...formData, version: e.target.value })} placeholder={t('agent.form_version_placeholder')} />
+                <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version} onChange={(e) => setFormData({ ...formData, version: e.target.value })} placeholder={t('agent.form_version_placeholder')} />
               </div>
             </div>
           </div>
@@ -110,8 +110,8 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
 
         {/* ── Footer ── */}
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('agent.form_cancel')}</button>
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={onSave}>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('agent.form_cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>
             {editingAgent ? t('agent.form_save_edit') : t('agent.form_save_create')}
           </button>
         </div>
