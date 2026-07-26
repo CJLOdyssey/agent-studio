@@ -50,10 +50,10 @@ describe('ModelSection', () => {
   it('calls onRemoveModel when tag X is clicked', () => {
     const onRemoveModel = vi.fn();
     render(<TestProviders><ModelSection {...baseProps} onRemoveModel={onRemoveModel} /></TestProviders>);
-    const removeBtns = screen.getAllByRole('button', { hidden: true });
     // Find the X button on the first tag
     const tag = screen.getByText('gpt-4').closest('span');
     const xBtn = tag?.querySelector('button');
     if (xBtn) fireEvent.click(xBtn);
+    expect(onRemoveModel).toHaveBeenCalledWith('gpt-4');
   });
 });
