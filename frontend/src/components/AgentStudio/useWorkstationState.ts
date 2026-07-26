@@ -23,7 +23,7 @@ export function useWorkstationState(
   const { t } = useTranslation();
   const notify = useNotificationSound();
 
-  const teamMgmt = useTeamManagement();
+  const teamMgmt = useTeamManagement(toast);
   const conv = useConversation();
   useAgents();
   const { data: apiCommands } = useCommands();

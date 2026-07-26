@@ -5,6 +5,7 @@ import type { TeamMember } from '../types/team';
 import { getAllAgents } from '../utils/agentMapper';
 import { validateName, checkTeamLimit } from '../utils/validation';
 import { listTeams, createTeam, updateTeam, deleteTeam } from '../api/client/teams';
+import { ApiError } from '../api/client/errors';
 
 const STORAGE_KEY = 'agentstudio-conversations';
 
@@ -110,7 +111,19 @@ export function useTeamData(toast?: ToastFn) {
       const res = await createTeam({ name: teamName });
       setTeams((prev) => [...prev, { id: res.id, name: res.name, isExpanded: false, isPinned: false, agents: [] }]);
       toast?.('团队已创建', 'success');
-    } catch {
+    } catch (err: unknown) {
+      const isConflict = err instanceof ApiError && err.status === 409;
+      if (isConflict) {
+        let counter = 2;
+        while (counter <= 20) {
+          try {
+            const res = await createTeam({ name: `新团队 (${counter})` });
+            setTeams((prev) => [...prev, { id: res.id, name: res.name, isExpanded: false, isPinned: false, agents: [] }]);
+            toast?.(`团队已创建（新团队 (${counter})）`, 'success');
+            return;
+          } catch { counter++; }
+        }
+      }
       toast?.('创建团队失败', 'error');
     }
   }, [teams, toast]);
