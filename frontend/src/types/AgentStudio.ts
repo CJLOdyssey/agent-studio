@@ -9,6 +9,7 @@ export interface AgentTool {
   type?: string;
   enabled: boolean;
   parameters?: string;
+  archived?: boolean;
 }
 
 // Agent MCP 配置
@@ -19,6 +20,7 @@ export interface AgentMCP {
   serverUrl: string;
   type?: string;
   enabled: boolean;
+  archived?: boolean;
 }
 
 // Agent Skills 配置
@@ -28,6 +30,7 @@ export interface AgentSkill {
   description: string;
   type?: string;
   enabled: boolean;
+  archived?: boolean;
 }
 
 // Agent 配置
