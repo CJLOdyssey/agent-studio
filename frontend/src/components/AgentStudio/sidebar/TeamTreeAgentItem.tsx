@@ -49,7 +49,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
 }: TeamTreeAgentItemProps) {
   return (
     <div
-      className={`group relative px-1 flex items-center${selectedAgentId === agent.id ? ' active' : ''}`}
+      className={`group flex items-center pl-1${selectedAgentId === agent.id ? ' active' : ''}`}
     >
       {editingAgent === agent.id ? (
         <div className="flex-1 min-w-0">
@@ -67,19 +67,19 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       ) : (
         <>
           <button
-            className="flex items-center gap-[6px] py-[7px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent w-full min-h-[34px] text-[var(--color-text-secondary)] text-base text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+            className="flex items-center gap-[6px] py-[7px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent flex-1 min-w-0 min-h-[34px] text-[var(--color-text-secondary)] text-base text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
             onClick={() => handleAgentClick(agent)}
           >
-            <span className="text-base font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{agent.name}</span>
-          </button>
-          <button
-            className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-50 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleAgentMenu(agent.id, e);
-            }}
-          >
-            <MoreVertical size={15} />
+            <span className="text-base font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1.3] tracking-[-0.01em]">{agent.name}</span>
+            <span
+              className="opacity-0 transition-all duration-150 flex items-center justify-center w-[24px] h-[24px] shrink-0 rounded cursor-pointer text-[var(--color-text-muted)] group-hover:opacity-50 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleAgentMenu(agent.id, e);
+              }}
+            >
+              <MoreVertical size={15} />
+            </span>
           </button>
 
           {openAgentMenu === agent.id && createPortal(
@@ -113,6 +113,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 <span>{t('sidebar.rename')}</span>
               </button>
               <button
+                style={{ padding: "8px 10px", borderRadius: 8 }}
                 className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }

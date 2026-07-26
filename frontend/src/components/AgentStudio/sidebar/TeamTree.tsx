@@ -172,7 +172,7 @@ const TeamTree = memo(function TeamTree({
 
   return (
     <div>
-      <div className="flex items-center justify-between px-[10px] py-[2px]">
+      <div className="flex items-center justify-between py-[2px]" style={{ paddingLeft: 10, paddingRight: 9 }}>
         <div className="text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
           {t('sidebar.myTeams')}
         </div>
@@ -194,7 +194,7 @@ const TeamTree = memo(function TeamTree({
         )}
         {teams.map((team) => (
           <div key={team.id} className="mb-px rounded-md overflow-visible">
-            <div className="group flex items-center gap-[4px] py-2 pl-2 cursor-pointer transition-colors duration-150 bg-transparent min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
+            <div className="group flex items-center gap-[4px] py-2 pl-2 pr-2 cursor-pointer transition-colors duration-150 bg-transparent min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
                 className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[24px] h-[24px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
