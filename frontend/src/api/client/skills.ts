@@ -5,6 +5,7 @@ export interface SkillItem {
   name: string;
   description: string;
   category: string;
+  model?: string;
   version: string;
   status: string;
   author: string;
@@ -24,6 +25,7 @@ export async function createSkill(payload: {
   name: string;
   description: string;
   category: string;
+  model?: string;
   version?: string;
   status?: string;
   author?: string;
@@ -40,6 +42,7 @@ export async function updateSkill(id: string, payload: Partial<{
   name: string;
   description: string;
   category: string;
+  model: string;
   version: string;
   status: string;
   author: string;

@@ -40,6 +40,7 @@ function buildSkillItem(item: Record<string, unknown> | null) {
     description: (item.description as string) || '',
     category: (item.category as string) || '',
     status: ((item.status as string) || 'available') as 'available' | 'installed',
+    model: (item.model as string) || 'GPT-4o',
     version: (item.version as string) || 'v1.0.0',
     author: (item.author as string) || '',
     instructions: (item.instructions as string) || '',
