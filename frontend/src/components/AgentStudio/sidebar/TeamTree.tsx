@@ -194,7 +194,7 @@ const TeamTree = memo(function TeamTree({
         )}
         {teams.map((team) => (
           <div key={team.id} className="mb-px rounded-md overflow-visible">
-            <div className="group flex items-center gap-[6px] py-2 pl-2 pr-[34px] cursor-pointer transition-colors duration-150 bg-transparent relative min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
+            <div className="group flex items-center gap-[4px] py-2 pl-2 cursor-pointer transition-colors duration-150 bg-transparent min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
                 className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[24px] h-[24px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
@@ -223,24 +223,24 @@ const TeamTree = memo(function TeamTree({
                 </div>
               ) : (
                 <>
+                  <span className="text-sm text-[var(--color-text-tertiary)] shrink-0 font-normal opacity-70 min-w-[16px] text-center">{team.agents.length}</span>
                   <span className="text-base font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
-                  <span className="text-sm text-[var(--color-text-tertiary)] flex-shrink-0 font-normal opacity-70 min-w-fit px-1 text-right">{team.agents.length}</span>
-                  <button
-                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-[color,background,opacity] duration-150 z-10 flex items-center justify-center w-[26px] h-[26px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
-                    onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
-                    title={t('sidebar.moreOptions')}
-                  >
-                    <MoreVertical size={15} />
-                  </button>
                   {onTeamChat && (
                     <button
-                      className="absolute right-[34px] top-1/2 -translate-y-1/2 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] opacity-0 transition-all duration-150 flex items-center justify-center w-[24px] h-[24px] group-hover:opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100"
+                      className="opacity-0 group-hover:opacity-60 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] hover:opacity-100 flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
                       onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
                       title="团队对话"
                     >
                       <Users size={15} />
                     </button>
                   )}
+                  <button
+                    className="opacity-0 group-hover:opacity-60 bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100 flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
+                    onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
+                    title={t('sidebar.moreOptions')}
+                  >
+                    <MoreVertical size={15} />
+                  </button>
                 </>
               )}
             </div>
@@ -302,7 +302,7 @@ const TeamTree = memo(function TeamTree({
             )}
 
             {team.isExpanded && (
-              <div className="py-px ml-[28px]">
+              <div className="py-px" style={{ marginLeft: 26 }}>
                 {team.agents.map((agent) => (
                   <TeamTreeAgentItem
                     key={agent.id}
