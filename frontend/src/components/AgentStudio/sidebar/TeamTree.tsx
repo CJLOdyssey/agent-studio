@@ -251,7 +251,7 @@ const TeamTree = memo(function TeamTree({
                 style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, boxShadow: 'rgba(0,0,0,0.2) 0px 0px 1px 0px, rgba(0,0,0,0.02) 0px 0px 4px 0px, rgba(0,0,0,0.08) 0px 12px 32px 0px' }}
               >
                 <button
-                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   style={{ padding: '8px 10px', borderRadius: 8 }}
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
@@ -264,7 +264,8 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('sidebar.addAgent')}</span>
                 </button>
                 <button
-                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  style={{ padding: "8px 10px", borderRadius: 8 }}
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     startEditTeam(team);
@@ -275,7 +276,8 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('workstation.rename')}</span>
                 </button>
                 <button
-                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  style={{ padding: "8px 10px", borderRadius: 8 }}
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleTogglePinTeam(team.id);
@@ -287,7 +289,8 @@ const TeamTree = memo(function TeamTree({
                   <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                 </button>
                 <button
-                  className="menu-item-btn flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
+                  style={{ padding: "8px 10px", borderRadius: 8 }}
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     setConfirmDelete({ type: 'team', teamId: team.id });
