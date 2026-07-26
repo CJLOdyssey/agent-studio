@@ -1,23 +1,21 @@
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, Tag } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface Props {
   name: string;
   baseUrl: string;
   apiKey: string;
-  isDefault: boolean;
   showKey: boolean;
   onChangeName: (v: string) => void;
   onChangeBaseUrl: (v: string) => void;
   onChangeApiKey: (v: string) => void;
-  onChangeIsDefault: (v: boolean) => void;
   onToggleShowKey: () => void;
 }
 
 export default function CredentialsSection({
-  name, baseUrl, apiKey, isDefault, showKey,
+  name, baseUrl, apiKey, showKey,
   onChangeName, onChangeBaseUrl, onChangeApiKey,
-  onChangeIsDefault, onToggleShowKey,
+  onToggleShowKey,
 }: Props) {
   const { t } = useTranslation();
 
@@ -33,9 +31,6 @@ export default function CredentialsSection({
         <input type="text" value={name} onChange={(e) => onChangeName(e.target.value)}
           placeholder={t('providerEdit.name')}
           className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" />
-        <p className="text-xs text-[var(--color-text-muted)] mt-1 flex items-center gap-1">
-          <Tag size={11} className="shrink-0" /> {t('providerEdit.nameHint')}
-        </p>
       </div>
 
       <div className="mb-4">
@@ -57,13 +52,6 @@ export default function CredentialsSection({
           </button>
         </div>
       </div>
-
-      <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-text-primary)]">
-        <input type="checkbox" checked={isDefault} onChange={(e) => onChangeIsDefault(e.target.checked)}
-          className="[accent-color:var(--color-accent)]" />
-        <span>设为默认 Key</span>
-      </label>
-      <p className="text-[11px] text-[var(--color-text-muted)] ml-6 -mt-2 mb-4">当调用未指定 Key 时使用此 Key</p>
     </div>
   );
 }

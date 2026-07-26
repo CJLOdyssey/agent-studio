@@ -11,6 +11,11 @@ import * as api from '../../../api/client';
 import type { KeyItem } from '../../../api/client';
 import Logger from '../../../utils/logger';
 
+function maskKey(raw: string): string {
+  if (raw.length <= 8) return raw.slice(0, 2) + '***';
+  return raw.slice(0, 3) + '...' + raw.slice(-4);
+}
+
 interface Props {
   onClose: () => void;
 }
@@ -23,7 +28,7 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingKey, setEditingKey] = useState<KeyItem | null>(null);
-  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
+
   const [testingId, setTestingId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     try {
@@ -35,6 +40,7 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [usage, setUsage] = useState({ today_requests: 0, today_tokens: 0, month_requests: 0, month_tokens: 0 });
 
   const [error, setError] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -86,9 +92,14 @@ export default function ApiManagementModal({ onClose }: Props) {
     apiKey: string;
     baseUrl: string;
     models: string[];
-    isDefault: boolean;
   }) => {
-    setError(null);
+    setModalError(null);
+    const maskedNew = maskKey(keyData.apiKey);
+    const dup = keys.find((k) => k.key_masked === maskedNew);
+    if (dup) {
+      setModalError(`密钥已存在于「${dup.label || dup.provider}」中，请勿重复添加`);
+      return;
+    }
     setSaving(true);
     try {
       await api.createKey({
@@ -98,7 +109,7 @@ export default function ApiManagementModal({ onClose }: Props) {
         api_key: keyData.apiKey,
         base_url: keyData.baseUrl || undefined,
         models: keyData.models,
-        is_default: keyData.isDefault,
+        is_default: false,
       });
       await loadKeys();
       setEditingKey(null);
@@ -174,18 +185,14 @@ export default function ApiManagementModal({ onClose }: Props) {
     setTestingId(null);
   };
 
-  const toggleApiKeyVisibility = (id: string) => {
-    setShowApiKey((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id })));
 
   const showAddForm = () => {
     setEditingKey({
       id: '',
       provider: 'custom',
-      usage_type: 'llm',
-      label: '',
+            usage_type: 'chat',
+            label: '',
       key_masked: '',
       base_url: '',
       models: [],
@@ -206,7 +213,7 @@ const TABS = ['keys', 'models', 'usage'] as const;
 const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, usage: Key };
 
   return (
-    <Modal title="API 管理" onClose={onClose} className="api-modal" hideHeaderBorder>
+    <Modal title="API 管理" onClose={onClose} className="api-modal" hideHeaderBorder bodyClassName="p-3">
       <div className="flex h-full min-h-0 overflow-hidden">
         <div className="w-[160px] px-4 py-5 flex flex-col gap-1 overflow-hidden min-h-0">
           {TABS.map((tab) => {
@@ -224,21 +231,18 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
             );
           })}
         </div>
-        <div className="flex-1 px-6 py-5 overflow-y-auto min-h-0">
+            <div className="flex-1 px-6 overflow-hidden min-h-0">
           {activeTab === 'keys' && (
             <ApiProviderTab
               keys={keys}
               loading={loading}
               error={error}
               testingId={testingId}
-              showApiKey={showApiKey}
-              saving={saving}
               onAdd={showAddForm}
               onEdit={setEditingKey}
               onToggleActive={(id, active) => handleUpdateKey(id, { isActive: active })}
               onTest={handleTestConnection}
               onDelete={handleDeleteKey}
-              onToggleVisibility={toggleApiKeyVisibility}
               onDismissError={() => setError(null)}
             />
           )}
@@ -259,7 +263,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
           provider={{
             id: editingKey.id,
             provider: editingKey.provider,
-            usage_type: editingKey.usage_type || 'llm',
+            usage_type: editingKey.usage_type || 'chat',
             name: editingKey.label || editingKey.provider,
             baseUrl: editingKey.base_url || '',
             apiKey: '',
@@ -268,30 +272,34 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
             status: 'untested' as const,
           }}
           saving={saving}
+          error={modalError}
+          onCloseError={() => setModalError(null)}
           onSave={async (form) => {
+            const label = form.name.trim() || (() => {
+              const count = keys.filter((k) => k.provider === form.provider).length + 1;
+              return `${form.provider}-${count}`;
+            })();
             if (editingKey.id) {
               await handleUpdateKey(editingKey.id, {
-                label: form.name,
+                label,
                 usage_type: form.usage_type,
                 apiKey: form.apiKey || undefined,
                 baseUrl: form.baseUrl || undefined,
                 models: form.models,
-                isDefault: editingKey.is_default,
               });
             } else {
               await handleSaveKey({
                 provider: form.provider,
                 usage_type: form.usage_type,
-                label: form.name,
+                label,
                 apiKey: form.apiKey,
                 baseUrl: form.baseUrl,
                 models: form.models,
-                isDefault: keys.length === 0,
               });
             }
           }}
           onClose={() => {
-            if (!saving) setEditingKey(null);
+            if (!saving) { setEditingKey(null); setModalError(null); }
           }}
         />
       )}

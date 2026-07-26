@@ -77,19 +77,19 @@ class TestProviderRoutes:
             assert "capabilities" in provider_info
             assert isinstance(provider_info["capabilities"], list)
 
-    def test_openai_has_llm_and_embedding(self, client):
+    def test_openai_has_chat_and_vector(self, client):
         resp = client.get("/api/providers")
         data = resp.json()
         caps = data["openai"]["capabilities"]
-        assert "llm" in caps
-        assert "embedding" in caps
+        assert "chat" in caps
+        assert "vector" in caps
 
-    def test_deepseek_only_llm(self, client):
+    def test_deepseek_only_chat(self, client):
         resp = client.get("/api/providers")
         data = resp.json()
         caps = data["deepseek"]["capabilities"]
-        assert "llm" in caps
-        assert "embedding" not in caps
+        assert "chat" in caps
+        assert "vector" not in caps
 
     def test_provider_has_base_url(self, client):
         resp = client.get("/api/providers")

@@ -111,9 +111,8 @@ export function ResourcePickerSection({
   return (
     <>
       {/* ═══ Section: Resource Bindings ═══ */}
-      <div className="mt-5 pt-4 border-t border-[var(--color-border)]">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)] mb-3">
-          <Puzzle size={14} />
+      <div className="pt-4">
+        <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
           {t('agent.form_section_bindings')}
         </div>
 

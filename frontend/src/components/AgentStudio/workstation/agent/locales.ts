@@ -1,5 +1,5 @@
 const langs: Record<string, [zh: string, en: string]> = {
-  'agent.new': ['创建 Agent', 'New Agent'],
+  'agent.new': ['新建 Agent', 'New Agent'],
   'agent.edit': ['编辑 Agent', 'Edit Agent'],
   'agent.copy': ['复制', 'Copy'],
   'agent.delete': ['删除', 'Delete'],
@@ -20,7 +20,7 @@ const langs: Record<string, [zh: string, en: string]> = {
   'agent.more_actions': ['更多操作', 'More'],
   'agent.empty_title': ['暂无 Agent{extra}', 'No Agents{extra}'],
   'agent.empty_desc_search': ['尝试修改搜索关键词', 'Try different keywords'],
-  'agent.empty_desc_general': ['点击「创建 Agent」创建第一个 Agent', 'Click "New Agent" to create one'],
+  'agent.empty_desc_general': ['点击「新建 Agent」创建第一个 Agent', 'Click "New Agent" to create one'],
   'agent.pagination': ['共 {n} 条', '{n} total'],
   'agent.page_prev': ['上一页', 'Previous'],
   'agent.page_next': ['下一页', 'Next'],
@@ -36,7 +36,7 @@ const langs: Record<string, [zh: string, en: string]> = {
   'agent.error_render': ['模块出错了，请刷新页面重试', 'Module error, please refresh'],
   'agent.error_retry': ['重试', 'Retry'],
   'agent.error_loading': ['加载失败', 'Load failed'],
-  'agent.form_title_new': ['创建 Agent', 'New Agent'],
+  'agent.form_title_new': ['新建 Agent', 'New Agent'],
   'agent.form_title_edit': ['编辑 Agent', 'Edit Agent'],
   'agent.form_name': ['Agent 名称', 'Name'],
   'agent.form_name_placeholder': ['2-30 个字符', '2-30 characters'],
@@ -62,7 +62,7 @@ const langs: Record<string, [zh: string, en: string]> = {
   'agent.form_section_bindings': ['资源绑定', 'Resource Bindings'],
   'agent.form_cancel': ['取消', 'Cancel'],
   'agent.form_save_edit': ['保存修改', 'Save Changes'],
-  'agent.form_save_create': ['创建 Agent', 'Create Agent'],
+  'agent.form_save_create': ['新建 Agent', 'Create Agent'],
 };
 
 let lang: 'zh' | 'en' = typeof navigator !== 'undefined' && navigator.language?.startsWith('zh') ? 'zh' : 'en';

@@ -18,31 +18,31 @@ PROVIDERS: dict[str, dict[str, Any]] = {
     "openai": {
         "name": "OpenAI",
         "base_url": "https://api.openai.com/v1",
-        "capabilities": ["llm", "embedding"],
+        "capabilities": ["chat", "vector"],
         "docs_url": "https://platform.openai.com/api-keys",
     },
     "deepseek": {
         "name": "DeepSeek",
         "base_url": "https://api.deepseek.com",
-        "capabilities": ["llm"],
+        "capabilities": ["chat"],
         "docs_url": "https://platform.deepseek.com/api_keys",
     },
     "anthropic": {
         "name": "Anthropic",
         "base_url": "https://api.anthropic.com",
-        "capabilities": ["llm"],
+        "capabilities": ["chat"],
         "docs_url": "https://console.anthropic.com/settings/keys",
     },
     "dashscope": {
         "name": "DashScope（阿里云百炼）",
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "capabilities": ["llm", "embedding"],
+        "capabilities": ["chat", "vector"],
         "docs_url": "https://bailian.console.aliyun.com/#/api-key",
     },
     "custom": {
         "name": "自定义",
         "base_url": "",
-        "capabilities": ["llm", "embedding"],
+        "capabilities": ["chat", "vector"],
         "docs_url": None,
     },
 }

@@ -36,4 +36,11 @@ describe('ConnectionTest', () => {
     render(<TestProviders><ConnectionTest {...baseProps} disabled={true} /></TestProviders>);
     expect(screen.getByText('测试连接').closest('button')).toBeDisabled();
   });
+
+  it('calls onTest when test button is clicked', () => {
+    const onTest = vi.fn();
+    render(<TestProviders><ConnectionTest {...baseProps} onTest={onTest} /></TestProviders>);
+    fireEvent.click(screen.getByText('测试连接'));
+    expect(onTest).toHaveBeenCalled();
+  });
 });

@@ -11,10 +11,9 @@ vi.mock('react-i18next', async () => {
       t: (key: string) => {
         const map: Record<string, string> = {
           'api.manage': '管理',
-          'api.type_embed': 'Embed',
-          'api.type_both': 'Both',
-          'api.type_llm': 'LLM',
-          'api.encryptHint': 'Keys are encrypted',
+          'api.type_vector': 'Vector',
+          'api.type_general': 'General',
+          'api.type_chat': 'Chat',
           'api.noKeys': 'No keys',
           'api.addKeyHint': 'Add one',
           'api.test': 'Test',

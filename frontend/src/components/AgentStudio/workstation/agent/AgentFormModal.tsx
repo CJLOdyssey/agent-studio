@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useEffect } from 'react';
-import { X, Bot } from 'lucide-react';
+import { X, Cpu } from 'lucide-react';
 import type { AgentEntry, AgentFormData } from './agent.types';
 import { useModelOptions } from '../constants';
 import { listTeams } from '../../../../api/client/teams';
@@ -46,20 +46,19 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 640 }}>
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <div className="modal-title">
-            <Bot size={16} />
-            {editingAgent ? t('agent.form_title_edit') : t('agent.form_title_new')}
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Cpu size={16} />
+            <h3>{editingAgent ? t('agent.form_title_edit') : t('agent.form_title_new')}</h3>
           </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={16} /></button>
         </div>
 
         {/* ── Body ── */}
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
+        <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
           {/* ═══ Section: Basic Info ═══ */}
-          <div className="mt-5 pt-4 border-t border-[var(--color-border)]">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)] mb-3">
-              <Bot size={14} />
+          <div className="pt-4">
+            <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
               {t('agent.form_section_basic')}
             </div>
 
@@ -109,7 +108,7 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4">
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('agent.form_cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>
             {editingAgent ? t('agent.form_save_edit') : t('agent.form_save_create')}

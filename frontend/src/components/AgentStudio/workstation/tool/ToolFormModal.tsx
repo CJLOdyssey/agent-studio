@@ -1,4 +1,4 @@
-import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { X, CheckCircle, XCircle, Loader2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import type { ToolEntry, ToolFormData } from './tool.types';
 import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
@@ -40,11 +40,14 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <h3>{editingItem ? t('tool.form_title_edit') : t('tool.form_title_new')}</h3>
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Wrench size={16} />
+            <h3>{editingItem ? t('tool.form_title_edit') : t('tool.form_title_new')}</h3>
+          </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
+        <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
           {errors.length > 0 && (
             <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs">
               {errors.map((e, i) => <p key={i}>{e}</p>)}
@@ -109,7 +112,7 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)] font-mono text-xs" value={formData.parameters} onChange={(e) => setFormData((f) => ({ ...f, parameters: e.target.value }))} placeholder={t('tool.form_parameters_placeholder')} rows={4} />
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4">
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('tool.form_cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>{editingItem ? t('tool.form_save_edit') : t('tool.form_save_create')}</button>
         </div>

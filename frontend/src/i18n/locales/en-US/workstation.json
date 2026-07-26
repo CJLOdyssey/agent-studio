@@ -132,8 +132,8 @@
   "providerEdit": {
     "edit": "Edit Provider",
     "add": "Add Provider",
-    "name": "Display Name",
-    "provider": "Provider Type",
+    "name": "Label",
+    "provider": "Provider",
     "baseUrl": "Base URL",
     "apiKey": "API Key",
     "supportedModels": "Supported Models",
@@ -152,7 +152,21 @@
       "custom": "Custom"
     },
     "nameOptional": "optional",
-    "nameHint": "A label to identify this key. Falls back to provider name if empty."
+    "isDefault": "Set as default key",
+    "isDefaultHint": "Used when no key is specified",
+    "testConnection": "Test connection",
+    "testing": "Testing...",
+    "connectionSuccess": "✅ Connection successful",
+    "connectionFailed": "❌ Connection failed",
+    "unknownError": "Unknown error",
+    "networkError": "Connection timeout or network error",
+    "addModel": "Add manually",
+    "addModelAction": "Add",
+    "modelPlaceholder": "Enter model ID",
+    "addModelCancel": "Cancel",
+    "noModelsWithKey": "No models yet",
+    "fetchFromApi": "Fetch from API",
+    "enterApiKeyToFetch": "Enter API key to fetch models"
   },
   "api": {
     "manage": "API Management",

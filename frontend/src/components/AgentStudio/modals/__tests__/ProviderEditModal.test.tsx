@@ -18,7 +18,6 @@ vi.mock('react-i18next', async () => {
           'providerEdit.apiKey': 'API Key',
           'providerEdit.supportedModels': '模型列表',
           'providerEdit.save': 'Save',
-          'providerEdit.nameHint': 'Hint text',
           'workstation.capabilities': '支持能力',
           'workstation.purpose': '用途',
           'workstation.bothSupported': '两者都支持',
@@ -41,8 +40,8 @@ vi.mock('../../../../api/client/keys', () => ({
 
 vi.mock('../../../../api/client/providers', () => ({
   listProviders: vi.fn().mockResolvedValue({
-    openai: { name: 'OpenAI', base_url: 'https://api.openai.com/v1', capabilities: ['llm', 'embedding'], docs_url: null },
-    custom: { name: 'Custom', base_url: '', capabilities: ['llm', 'embedding'], docs_url: null },
+    openai: { name: 'OpenAI', base_url: 'https://api.openai.com/v1', capabilities: ['chat', 'vector'], docs_url: null },
+    custom: { name: 'Custom', base_url: '', capabilities: ['chat', 'vector'], docs_url: null },
   }),
 }));
 
@@ -51,7 +50,7 @@ import ProviderEditModal, { type ApiProviderForm } from '../ProviderEditModal';
 const baseProvider: ApiProviderForm = {
   id: '', provider: 'openai', usage_type: 'llm',
   name: '', baseUrl: 'https://api.openai.com/v1',
-  apiKey: '', models: [], isActive: true,
+  apiKey: '', models: [], isActive: true, isDefault: false,
 };
 
 function renderModal(overrides: {
@@ -124,5 +123,26 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     const content = document.querySelector('[role="dialog"]')!;
     fireEvent.click(content);
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('calls onClose when overlay is clicked', async () => {
+    const onClose = vi.fn();
+    renderModal({ onClose });
+    const dialog = screen.getByRole('dialog');
+    const overlay = dialog.parentElement!;
+    fireEvent.click(overlay);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('save button is disabled when only name is filled but apiKey is empty', async () => {
+    renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: '' } });
+    const saveBtn = await screen.findByText('Save');
+    expect(saveBtn.closest('button')).toBeDisabled();
+  });
+
+  it('save button is disabled when only apiKey is filled but name is empty', async () => {
+    renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' } });
+    const saveBtn = await screen.findByText('Save');
+    expect(saveBtn.closest('button')).toBeDisabled();
   });
 });

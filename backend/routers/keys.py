@@ -32,7 +32,7 @@ router = APIRouter(tags=["keys"])
 
 class KeyCreateRequest(BaseModel):
     provider: str = Field(..., min_length=1, max_length=32, pattern=r"^[a-z_]+$")
-    usage_type: str = Field(default="llm", pattern=r"^(llm|embedding|both)$")
+    usage_type: str = Field(default="chat", pattern=r"^(chat|vector|image|audio|general)$")
     label: str = Field(..., min_length=1, max_length=64)
     api_key: str = Field(
         ..., min_length=1, description="Plaintext API key — encrypted before storage"
@@ -43,7 +43,7 @@ class KeyCreateRequest(BaseModel):
 
 
 class KeyUpdateRequest(BaseModel):
-    usage_type: str | None = Field(default=None, pattern=r"^(llm|embedding|both)$")
+    usage_type: str | None = Field(default=None, pattern=r"^(chat|vector|image|audio|general)$")
     label: str | None = None
     api_key: str | None = Field(default=None, description="New plaintext key (optional)")
     base_url: str | None = None
@@ -124,8 +124,8 @@ async def add_key(req: KeyCreateRequest, request: Request) -> Any:
         is_default=req.is_default,
     )
 
-    # For embedding-only and both keys, skip connectivity test and model fetch
-    if req.usage_type in ("embedding", "both"):
+    # For vector-only keys, skip connectivity test and model fetch
+    if req.usage_type == "vector":
         from backend.core.infra.key_vault import decrypt_api_key, mask_api_key
 
         return KeyResponse(
@@ -204,7 +204,7 @@ async def edit_key(key_id: str, req: KeyUpdateRequest, request: Request) -> Any:
     return KeyResponse(
         id=result["id"],
         provider=result["provider"],
-        usage_type=result.get("usage_type", "llm"),
+        usage_type=result.get("usage_type", "chat"),
         label=result["label"],
         key_masked=result["key_masked"],
         base_url=result.get("base_url"),

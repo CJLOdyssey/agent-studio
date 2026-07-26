@@ -1,5 +1,5 @@
 import { memo, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, FileCheck } from 'lucide-react';
 import type { OutputEntry, OutputFormData } from './output.types';
 import { OUTPUT_CATEGORIES, OUTPUT_STATUS_LABEL } from './output.constants';
 import { t } from './locales';
@@ -16,11 +16,14 @@ const OutputFormModal = memo(function OutputFormModal({ editingItem, formData, s
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden" role="dialog" aria-modal="true" aria-label={editingItem ? t('output.form_title_edit') : t('output.form_title_new')} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <h3>{editingItem ? t('output.form_title_edit') : t('output.form_title_new')}</h3>
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <FileCheck size={16} />
+            <h3>{editingItem ? t('output.form_title_edit') : t('output.form_title_new')}</h3>
+          </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('output.form_cancel')}><X size={18} /></button>
         </div>
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
+        <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
           {formErrors && formErrors.length > 0 && (
             <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs" role="alert">
               {formErrors.map((e, i) => <div key={i} className="leading-relaxed">{e}</div>)}
@@ -49,7 +52,7 @@ const OutputFormModal = memo(function OutputFormModal({ editingItem, formData, s
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4">
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('output.form_cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave} disabled={!formData.name.trim() || !formData.content.trim()}>{editingItem ? t('output.form_save_edit') : t('output.form_save_create')}</button>
         </div>

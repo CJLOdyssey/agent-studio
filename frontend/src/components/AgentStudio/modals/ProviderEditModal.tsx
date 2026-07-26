@@ -1,15 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Tag, Loader2, Save } from 'lucide-react';
-
-import { fetchModelsFromProvider } from '../../../api/client/keys';
-import { listProviders } from '../../../api/client/providers';
-import type { ProvidersMap } from '../../../api/client/providers';
-import ProviderSelector from './ProviderSelector';
-import CredentialsSection from './CredentialsSection';
-import ModelSection from './ModelSection';
-import ConnectionTest from './ConnectionTest';
-import type { TestResult } from './ConnectionTest';
+import { X, Tag, Loader2, Save, AlertCircle } from 'lucide-react';
+ 
+ import { fetchModelsFromProvider } from '../../../api/client/keys';
+ import { listProviders } from '../../../api/client/providers';
+ import type { ProvidersMap } from '../../../api/client/providers';
+ import ProviderSelector from './ProviderSelector';
+ import CredentialsSection from './CredentialsSection';
+ import ModelSection from './ModelSection';
 
 export interface ApiProviderForm {
   id: string;
@@ -24,11 +22,11 @@ export interface ApiProviderForm {
 }
 
 const FALLBACK_PROVIDERS: ProvidersMap = {
-  openai:    { name: 'OpenAI',       base_url: 'https://api.openai.com/v1',                          capabilities: ['llm', 'embedding'], docs_url: null },
-  deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['llm'],              docs_url: null },
-  anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['llm'],              docs_url: null },
-  dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['llm', 'embedding'], docs_url: null },
-  custom:    { name: '自定义',       base_url: '',                                                    capabilities: ['llm', 'embedding'], docs_url: null },
+  openai:    { name: 'OpenAI',       base_url: 'https://api.openai.com/v1',                          capabilities: ['chat', 'vector'], docs_url: null },
+  deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['chat'],            docs_url: null },
+  anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['chat'],            docs_url: null },
+  dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['chat', 'vector'], docs_url: null },
+  custom:    { name: '自定义',       base_url: '',                                                    capabilities: ['chat', 'vector'], docs_url: null },
 };
 
 interface Props {
@@ -36,25 +34,24 @@ interface Props {
   onSave: (provider: ApiProviderForm) => void;
   onClose: () => void;
   saving?: boolean;
+  error?: string | null;
+  onCloseError?: () => void;
 }
 
-export default function ProviderEditModal({ provider, onSave, onClose, saving = false }: Props) {
+export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError }: Props) {
   const { t } = useTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [providerType, setProviderType] = useState(provider.provider || 'custom');
-  const [usageType, setUsageType] = useState(provider.usage_type || 'llm');
+  const [usageType, setUsageType] = useState(provider.usage_type || 'chat');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
   const [models, setModels] = useState<string[]>(provider.models);
-  const [isDefault, setIsDefault] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   useEffect(() => {
     listProviders()
@@ -65,23 +62,20 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
   useEffect(() => {
     const info = providers[providerType];
-    if (!info || !info.base_url) return;
-    const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
-    const nextBaseUrl = (!baseUrl || knownDefaults.includes(baseUrl)) ? info.base_url : baseUrl;
-    let nextUsage = usageType;
-    if (usageType === 'both' && !info.capabilities.includes('embedding')) nextUsage = 'llm';
-    if (usageType === 'embedding' && !info.capabilities.includes('embedding')) nextUsage = 'llm';
-    const patch: Record<string, string> = {};
-    if (nextBaseUrl !== baseUrl) patch.baseUrl = nextBaseUrl;
-    if (nextUsage !== usageType) patch.usageType = nextUsage;
-    if (Object.keys(patch).length) requestAnimationFrame(() => {
-      if (patch.baseUrl) setBaseUrl(patch.baseUrl);
-      if (patch.usageType) setUsageType(patch.usageType as 'llm' | 'embedding' | 'both');
-    });
+    if (!info) return;
+    const caps = info.capabilities ?? ['chat'];
+    const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
+    if (derived !== usageType) setUsageType(derived);
+    if (info.base_url) {
+      const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
+      if (!baseUrl || knownDefaults.includes(baseUrl)) {
+        setBaseUrl(info.base_url);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providerType]);
 
-  const showModels = usageType === 'llm' || usageType === 'both';
+  const showModels = usageType === 'chat' || usageType === 'general' || usageType === 'image' || usageType === 'audio';
 
   const handleSave = () => {
     onSave({
@@ -107,27 +101,6 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     finally { setFetchingModels(false); }
   };
 
-  const handleTestConnection = async () => {
-    if (!apiKey.trim()) return;
-    setTesting(true);
-    setTestResult(null);
-    const start = performance.now();
-    try {
-      const result = await fetchModelsFromProvider({
-        api_key: apiKey, base_url: baseUrl || undefined, provider: providerType,
-      });
-      const latency = Math.round(performance.now() - start);
-      setTestResult({
-        success: result.success,
-        message: result.success ? '连接成功' : (result.message || '未知错误'),
-        latency,
-      });
-    } catch {
-      setTestResult({ success: false, message: '连接超时或网络错误', latency: 0 });
-    }
-    setTesting(false);
-  };
-
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[480px] max-h-[600px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
@@ -138,52 +111,52 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             </div>
             <div>
               <h3 className="m-0">{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-              <p className="mt-0.5 text-[11px] text-[var(--color-text-muted)] leading-tight">
-                {providers[providerType]?.base_url || ''}
-              </p>
             </div>
           </div>
           <button type="button" className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
         </div>
 
-        <div className="flex-1 px-6 py-5 overflow-y-auto">
-          <div className="mb-5">
+        <div className="flex-1 px-6 py-5 overflow-y-auto space-y-5">
+          {error && (
+            <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
+              <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+              <span className="text-[var(--color-danger)] text-sm flex-1">{error}</span>
+              {onCloseError && (
+                <button type="button" onClick={onCloseError}
+                  className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-0.5 rounded hover:bg-[var(--color-surface-hover)] transition-colors shrink-0">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          )}
+          <div>
             <ProviderSelector
               providers={providers}
               providerType={providerType}
-              usageType={usageType}
               onChangeProvider={setProviderType}
-              onChangeUsage={setUsageType}
             />
           </div>
 
-          <div className="mb-5">
+          <div className="pt-1">
             <CredentialsSection
               name={name} baseUrl={baseUrl} apiKey={apiKey}
-              isDefault={isDefault} showKey={showKey}
+              showKey={showKey}
               onChangeName={setName} onChangeBaseUrl={setBaseUrl}
-              onChangeApiKey={setApiKey} onChangeIsDefault={setIsDefault}
+              onChangeApiKey={setApiKey}
               onToggleShowKey={() => setShowKey(!showKey)}
             />
           </div>
 
           {showModels && (
-            <div className="mb-5">
+            <div className="pt-1">
               <ModelSection
                 models={models} fetching={fetchingModels} apiKey={apiKey}
-                onAddModel={(m) => setModels((prev) => [...prev, m])}
                 onRemoveModel={(m) => setModels((prev) => prev.filter((x) => x !== m))}
                 onFetchModels={handleFetchModels}
               />
             </div>
           )}
 
-          <ConnectionTest
-            onTest={handleTestConnection}
-            disabled={!apiKey.trim() || testing}
-            testing={testing}
-            testResult={testResult}
-          />
         </div>
 
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">

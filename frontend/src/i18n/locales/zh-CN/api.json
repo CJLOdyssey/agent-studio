@@ -27,7 +27,6 @@
     "todayTokens": "今日 Token",
     "monthTokens": "本月 Token",
     "configureProviderFirst": "请先在\"API\"标签页配置至少一个有效的 API Key",
-    "encryptHint": "Key 加密存储在服务端，永不出站。仅显示前后各几位以供识别。",
     "noKeys": "尚未配置 API Key",
     "testSuccess": "连接成功",
     "testFail": "连接失败",
@@ -39,9 +38,11 @@
     "todayRequests": "今日请求",
     "monthRequests": "本月请求",
     "selectModel": "选择默认模型",
-    "type_llm": "LLM",
-    "type_embed": "嵌入",
-    "type_both": "LLM+嵌入",
+    "type_chat": "对话",
+    "type_vector": "向量",
+    "type_image": "图像",
+    "type_audio": "音频",
+    "type_general": "通用",
     "edit": "编辑"
   }
 }

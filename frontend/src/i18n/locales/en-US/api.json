@@ -27,7 +27,6 @@
     "todayTokens": "Today Tokens",
     "monthTokens": "Month Tokens",
     "configureProviderFirst": "Configure at least one valid API Key in the Provider tab first",
-    "encryptHint": "Keys are encrypted server-side and never leave. Only masked preview shown.",
     "noKeys": "No API Keys configured",
     "testSuccess": "Connection successful",
     "testFail": "Connection failed",
@@ -39,9 +38,11 @@
     "todayRequests": "Today Requests",
     "monthRequests": "Month Requests",
     "selectModel": "Select default model",
-    "type_llm": "LLM",
-    "type_embed": "Embed",
-    "type_both": "LLM+Embed",
+    "type_chat": "Chat",
+    "type_vector": "Vector",
+    "type_image": "Image",
+    "type_audio": "Audio",
+    "type_general": "General",
     "edit": "Edit"
   }
 }

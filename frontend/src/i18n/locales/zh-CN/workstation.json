@@ -130,10 +130,10 @@
     }
   },
   "providerEdit": {
-    "edit": "编辑提供商",
-    "add": "添加提供商",
-    "name": "提供商名称",
-    "provider": "提供商类型",
+    "edit": "编辑供应商",
+    "add": "添加供应商",
+    "name": "备注名",
+    "provider": "供应商",
     "baseUrl": "Base URL",
     "apiKey": "API Key",
     "supportedModels": "支持的模型",
@@ -152,7 +152,21 @@
       "custom": "自定义"
     },
     "nameOptional": "可选",
-    "nameHint": "用于区分不同的 Key，不填则使用提供商名称"
+    "isDefault": "设为默认 Key",
+    "isDefaultHint": "当调用未指定 Key 时使用此 Key",
+    "testConnection": "测试连接",
+    "testing": "测试中...",
+    "connectionSuccess": "✅ 连接成功",
+    "connectionFailed": "❌ 连接失败",
+    "unknownError": "未知错误",
+    "networkError": "连接超时或网络错误",
+    "addModel": "手动添加",
+    "addModelAction": "添加",
+    "modelPlaceholder": "输入模型 ID",
+    "addModelCancel": "取消",
+    "noModelsWithKey": "暂无模型，点击刷新或手动添加",
+    "fetchFromApi": "从 API 获取",
+    "enterApiKeyToFetch": "填写 API Key 后点击刷新获取模型"
   },
   "api": {
     "manage": "API 管理",

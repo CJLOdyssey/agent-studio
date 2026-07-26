@@ -34,13 +34,23 @@ export default function WorkstationPage({ onClose }: Props) {
       onClick={onClose}
       style={{ animation: 'wstaFadeIn 0.15s ease' }}
     >
+      <style>{`
+        .wsta-root table { background: transparent !important; }
+        .wsta-root table th,
+        .wsta-root table td { background: transparent !important; }
+        .wsta-root table thead tr,
+        .wsta-root table thead th { background: var(--color-surface) !important; }
+        .wsta-root .wsta-row-selected td { background: transparent !important; }
+        .wsta-root .ant-input-affix-wrapper { background: var(--color-surface) !important; }
+        .wsta-root .ant-select-selector { background: var(--color-surface) !important; }
+      `}</style>
       <div
         className="bg-[var(--color-surface-card)] rounded-xl w-[90vw] max-w-[1200px] h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-1 flex-row min-h-0">
-          <nav className="w-[200px] flex-shrink-0 flex flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface-raised)] p-5 px-3">
-            <div className="text-sm font-semibold text-[var(--color-text-primary)] px-2 border-b border-[var(--color-border)] mb-1 tracking-tight" style={{ paddingBottom: 28 }}>
+          <nav className="w-[200px] flex-shrink-0 flex flex-col overflow-y-auto bg-[var(--color-surface)] p-5 px-3">
+            <div className="text-sm font-semibold text-[var(--color-text-primary)] px-2 mb-1 tracking-tight" style={{ paddingBottom: 28 }}>
               管理工作台
             </div>
             {navGroups.map((group) => (
@@ -66,7 +76,7 @@ export default function WorkstationPage({ onClose }: Props) {
             ))}
           </nav>
           <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--color-surface)]">
-            <header className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--color-border)] bg-[var(--color-surface-card)] flex-shrink-0">
+            <header className="flex items-center justify-between px-6 pt-5 pb-4 bg-[var(--color-surface)] flex-shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 {currentTab && (
                   <>

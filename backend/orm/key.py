@@ -22,9 +22,9 @@ class UserApiKey(Base):
     )
     usage_type: Mapped[str] = mapped_column(
         String(16),
-        default="llm",
+        default="chat",
         nullable=False,
-        comment="llm|embedding|both — how this key is used",
+        comment="chat|vector|image|audio|general — how this key is used",
     )
     label: Mapped[str] = mapped_column(String(64), nullable=False)
     encrypted_key: Mapped[str] = mapped_column(Text, nullable=False)

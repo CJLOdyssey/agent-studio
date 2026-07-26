@@ -69,9 +69,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   );
 }
 
+function getCssVar(name: string): string {
+  if (typeof document === 'undefined') return '';
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
+}
+
 function ThemedApp() {
   const { settings } = useSettings();
   const isDark = settings.theme === 'dark';
+  const bgColor = getCssVar('--color-surface') || (isDark ? '#0f1117' : '#ffffff');
+  const bgElevated = getCssVar('--color-surface-overlay') || (isDark ? '#24252d' : '#ffffff');
 
   return (
     <ConfigProvider
@@ -79,8 +86,8 @@ function ThemedApp() {
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
           colorPrimary: '#6366f1',
-          colorBgContainer: isDark ? '#1a1a1a' : '#ffffff',
-          colorBgElevated: isDark ? '#242424' : '#ffffff',
+          colorBgContainer: bgColor,
+          colorBgElevated: bgElevated,
           borderRadius: 6,
           fontSize: 14,
         },
