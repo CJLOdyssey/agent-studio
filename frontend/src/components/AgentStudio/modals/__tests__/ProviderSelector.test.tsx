@@ -72,4 +72,16 @@ describe('ProviderSelector', () => {
     expect(screen.getAllByText('LLM').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('两者都支持')).not.toBeInTheDocument();
   });
+
+  it('calls onChangeUsage when radio clicked', () => {
+    const onChangeUsage = vi.fn();
+    render(<TestProviders><ProviderSelector {...baseProps} onChangeUsage={onChangeUsage} /></TestProviders>);
+    fireEvent.click(screen.getByLabelText('Embed'));
+    expect(onChangeUsage).toHaveBeenCalledWith('embedding');
+  });
+
+  it('shows both option when provider supports both', () => {
+    render(<TestProviders><ProviderSelector {...baseProps} /></TestProviders>);
+    expect(screen.getByLabelText('两者都支持')).toBeInTheDocument();
+  });
 });
