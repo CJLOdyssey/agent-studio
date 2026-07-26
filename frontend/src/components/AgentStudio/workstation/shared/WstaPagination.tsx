@@ -20,9 +20,10 @@ export default function WstaPagination({
   onChange,
   ...rest
 }: WstaPaginationProps) {
+  if (total === 0) return null;
   return (
-    <div className="flex items-center justify-between py-3 border-t border-[var(--color-border)] gap-4">
-      <span className="text-sm text-[var(--color-text-muted)] tabular-nums whitespace-nowrap">
+    <div className="flex items-center justify-between px-6 pt-3 gap-4" style={{ paddingBottom: 40 }}>
+      <span className="text-[14px] text-[var(--color-text-muted)] tabular-nums whitespace-nowrap font-medium">
         共 {total} 条
       </span>
       <Pagination
@@ -30,7 +31,6 @@ export default function WstaPagination({
         pageSize={pageSize}
         total={total}
         onChange={onChange}
-        size="small"
         showSizeChanger={false}
         showQuickJumper
         showLessItems

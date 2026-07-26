@@ -4,29 +4,29 @@
 
 /* ── Antd component overrides for workstation modal ── */
 /* Modal header: dark bg, bottom border */
-.workstation-modal.ant-modal .ant-modal-header {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-header {
   background: var(--color-surface-card);
   border-bottom: 1px solid var(--color-border);
   padding: 14px 20px;
 }
 
-.workstation-modal.ant-modal .ant-modal-title {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-title {
   color: var(--color-text-primary);
   font-size: 14px;
   font-weight: 600;
 }
 
-.workstation-modal.ant-modal .ant-modal-close {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-close {
   color: var(--color-text-muted);
 }
 
-.workstation-modal.ant-modal .ant-modal-close:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-close:hover {
   color: var(--color-text-primary);
   background: var(--color-surface-hover);
 }
 
 /* Modal body: fixed height, flex column, no body-level overflow */
-.workstation-modal.ant-modal .ant-modal-body {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-body {
   height: 700px;
   display: flex;
   flex-direction: column;
@@ -35,19 +35,19 @@
 }
 
 /* Modal content: dark bg + no padding (handled by WorkstationPage) */
-.workstation-modal.ant-modal .ant-modal-content {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-content {
   background: var(--color-surface-card);
   overflow: hidden;
   padding: 0;
 }
 
-.workstation-modal.ant-modal .ant-modal-container {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-container {
   background: var(--color-surface-card);
   padding: 0;
 }
 
 /* ProCard: flat structural wrapper (not a visual card) */
-.workstation-modal.ant-modal .ant-pro-card {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card {
   background: transparent;
   color: var(--color-text-primary);
   border: none;
@@ -55,143 +55,152 @@
   border-radius: 0;
 }
 
-.workstation-modal.ant-modal .ant-pro-card .ant-pro-card-body {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card .ant-pro-card-body {
   padding: 24px 20px;
 }
 
-.workstation-modal.ant-modal .ant-pro-card .ant-pro-card-header {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card .ant-pro-card-header {
   border-bottom: 1px solid var(--color-border);
   padding: 24px 20px;
   background: transparent;
 }
 
-.workstation-modal.ant-modal .ant-pro-card .ant-pro-card-title {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card .ant-pro-card-title {
   font-size: 20px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
-.workstation-modal.ant-modal .ant-table {
-  background: transparent;
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table {
+  background: var(--color-surface-card);
   color: var(--color-text-primary);
   font-size: 13px;
+  border-radius: 10px;
 }
 
-.workstation-modal.ant-modal .ant-table table {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-wrapper .ant-table-container {
+  border-radius: 10px;
+}
+
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table table {
   width: 100%;
   table-layout: fixed;
 }
 
-.workstation-modal.ant-modal .ant-table-thead > tr > th {
-  background: var(--color-surface-card);
-  color: var(--color-text-muted);
-  border-bottom: 1px solid var(--color-border-subtle);
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th {
+  background: color-mix(in srgb, var(--color-surface-card) 98%, var(--color-text-primary));
+  color: var(--color-text-tertiary);
+  border-bottom: 1px solid var(--color-border);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 18px;
+  padding-bottom: 18px;
   padding-left: 24px;
   padding-right: 24px;
   vertical-align: middle;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
-.workstation-modal.ant-modal .ant-table-thead > tr > th::before {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th::before {
   display: none;
 }
 
-.workstation-modal.ant-modal .ant-table-column-sorters {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-column-sorters {
   align-items: center;
 }
 
-.workstation-modal.ant-modal .ant-table-tbody > tr > td {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td {
   background: transparent;
   color: var(--color-text-primary);
   border-bottom: 1px solid var(--color-border-subtle);
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 20px;
+  padding-bottom: 20px;
   padding-left: 24px;
   padding-right: 24px;
   vertical-align: middle;
-  line-height: 1.3;
+  line-height: 1.6;
 }
 
-.workstation-modal.ant-modal .ant-table-tbody > tr > td::before {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:last-child > td {
+  border-bottom: none;
+}
+
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td::before {
   display: none;
 }
 
-.workstation-modal.ant-modal .ant-table-tbody > tr:hover > td,
-.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td,
-.workstation-modal.ant-modal .ant-table-tbody > tr > td.ant-table-cell-row-hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:hover > td,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row:hover > td,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td.ant-table-cell-row-hover {
   @apply bg-[var(--color-surface-hover)] text-[var(--color-text-primary)];
 }
 
-.workstation-modal.ant-modal .ant-table-tbody > tr:hover > td a,
-.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td a,
-.workstation-modal.ant-modal .ant-table-tbody > tr:hover > td span,
-.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row:hover > td span {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:hover > td a,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row:hover > td a,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:hover > td span,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row:hover > td span {
   @apply text-inherit;
 }
 
 /* Prevent header text turning white on hover */
-.workstation-modal.ant-modal .ant-table-thead > tr > th:hover,
-.workstation-modal.ant-modal .ant-table-thead > tr.ant-table-row:hover > th {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th:hover,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr.ant-table-row:hover > th {
   @apply text-[var(--color-text-muted)];
 }
 
-.workstation-modal.ant-modal .ant-table-column-sorters:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-column-sorters:hover {
   @apply text-[var(--color-text-muted)];
 }
 
-.workstation-modal.ant-modal .ant-table-tbody > tr.ant-table-row-selected > td {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row-selected > td {
   background: color-mix(in srgb, var(--color-accent) 6%, transparent);
 }
 
-.workstation-modal.ant-modal .ant-btn-default {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-default {
   background: var(--color-surface-raised);
   color: var(--color-text-primary);
   border-color: var(--color-border);
 }
 
-.workstation-modal.ant-modal .ant-btn-default:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-default:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-accent);
   color: var(--color-text-primary);
 }
 
-.workstation-modal.ant-modal .ant-btn-primary {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-primary {
   background: var(--color-accent);
   color: var(--color-text-on-accent);
   border-color: var(--color-accent);
 }
 
-.workstation-modal.ant-modal .ant-btn-primary:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-primary:hover {
   background: var(--color-surface-elevated);
   border-color: var(--color-surface-elevated);
 }
 
-.workstation-modal.ant-modal .ant-btn-text {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-text {
   color: var(--color-text-secondary);
 }
 
-.workstation-modal.ant-modal .ant-btn-text:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-text:hover {
   background: var(--color-surface-hover);
   color: var(--color-text-primary);
 }
 
-.workstation-modal.ant-modal .ant-checkbox-inner {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-checkbox-inner {
   background-color: var(--color-surface-raised);
   border-color: var(--color-border);
 }
 
-.workstation-modal.ant-modal .ant-checkbox-checked .ant-checkbox-inner {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-checkbox-checked .ant-checkbox-inner {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
 }
 
-.workstation-modal.ant-modal .ant-checkbox-wrapper {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-checkbox-wrapper {
   color: var(--color-text-primary);
 }
 
@@ -340,53 +349,53 @@
   content: none;
 }
 
-.workstation-modal.ant-modal .ant-empty-description {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-empty-description {
   color: var(--color-text-muted);
 }
 
-.workstation-modal.ant-modal .ant-input,
-.workstation-modal.ant-modal .ant-input-affix-wrapper {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-input,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-input-affix-wrapper {
   background: var(--color-surface-raised);
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }
 
-.workstation-modal.ant-modal .ant-input::placeholder,
-.workstation-modal.ant-modal .ant-input-affix-wrapper input::placeholder {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-input::placeholder,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-input-affix-wrapper input::placeholder {
   color: var(--color-text-muted);
 }
 
-.workstation-modal.ant-modal .ant-input-affix-wrapper:focus,
-.workstation-modal.ant-modal .ant-input-affix-wrapper-focused {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-input-affix-wrapper:focus,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-input-affix-wrapper-focused {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
-.workstation-modal.ant-modal .ant-select-selector {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-select-selector {
   background: var(--color-surface-raised);
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }
 
-.workstation-modal.ant-modal .ant-select-selection-item {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-select-selection-item {
   color: var(--color-text-primary);
 }
 
 /* ── Native element focus effects (used by tab components) ── */
-.workstation-modal.ant-modal input[type="text"]:focus,
-.workstation-modal.ant-modal input[type="search"]:focus,
-.workstation-modal.ant-modal select:focus {
+:where(.wsta-root, .workstation-modal.ant-modal) input[type="text"]:focus,
+:where(.wsta-root, .workstation-modal.ant-modal) input[type="search"]:focus,
+:where(.wsta-root, .workstation-modal.ant-modal) select:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 /* ── WstaDropdownPortal (Ant Menu inside fixed container) ── */
-.workstation-modal.ant-modal .ant-menu-vertical {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-vertical {
   border-inline-end: none;
 }
 
-.workstation-modal.ant-modal .ant-menu-item {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item {
   height: 36px;
   line-height: 36px;
   margin: 0;
@@ -395,87 +404,160 @@
   border-radius: 0;
 }
 
-.workstation-modal.ant-modal .ant-menu-item:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item:hover {
   background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   color: var(--color-accent);
 }
 
-.workstation-modal.ant-modal .ant-menu-item-danger {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item-danger {
   color: var(--color-danger);
 }
 
-.workstation-modal.ant-modal .ant-menu-item-danger:hover {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item-danger:hover {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   color: var(--color-danger);
 }
 
-.workstation-modal.ant-modal .ant-menu-item-divider {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item-divider {
   margin: 4px 0;
   border-color: var(--color-border-subtle);
 }
 
 /* ── Status Badge (Ant Design) ── */
-.workstation-modal.ant-modal .ant-badge-status-dot {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-badge-status-dot {
   width: 6px;
   height: 6px;
 }
 
-.workstation-modal.ant-modal .ant-badge-status-text {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-badge-status-text {
   color: var(--color-text-primary);
   font-size: 13px;
 }
 
 /* ── Table row spacing ── */
-.workstation-modal.ant-modal .ant-table-tbody > tr > td:first-child,
-.workstation-modal.ant-modal .ant-table-tbody .ant-table-cell:first-child {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td:first-child,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody .ant-table-cell:first-child {
   padding-left: 24px;
 }
 
-.workstation-modal.ant-modal .ant-table-tbody > tr > td:last-child,
-.workstation-modal.ant-modal .ant-table-tbody .ant-table-cell:last-child {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td:last-child,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody .ant-table-cell:last-child {
   padding-right: 24px;
 }
 
-.workstation-modal.ant-modal .ant-table-thead > tr > th:first-child,
-.workstation-modal.ant-modal .ant-table-thead .ant-table-cell:first-child {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th:first-child,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead .ant-table-cell:first-child {
   padding-left: 24px;
 }
 
-.workstation-modal.ant-modal .ant-table-thead > tr > th:last-child,
-.workstation-modal.ant-modal .ant-table-thead .ant-table-cell:last-child {
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th:last-child,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead .ant-table-cell:last-child {
   padding-right: 24px;
 }
 
 /* Override antd default cell padding */
-.workstation-modal.ant-modal .ant-table-cell,
-.workstation-modal.ant-modal td.ant-table-cell,
-.workstation-modal.ant-modal th.ant-table-cell,
-.workstation-modal.ant-modal .ant-table-tbody td.ant-table-cell,
-.workstation-modal.ant-modal .ant-table-thead th.ant-table-cell {
-  padding-top: 12px;
-  padding-bottom: 12px;
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-cell,
+:where(.wsta-root, .workstation-modal.ant-modal) td.ant-table-cell,
+:where(.wsta-root, .workstation-modal.ant-modal) th.ant-table-cell,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody td.ant-table-cell,
+:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead th.ant-table-cell {
+  padding-top: 20px;
+  padding-bottom: 20px;
   padding-left: 24px;
   padding-right: 24px;
-  padding-block: 12px;
+  padding-block: 20px;
   padding-inline: 24px;
 }
 
 /* ── Responsive design ── */
 @media (max-width: 1200px) {
-  .workstation-modal.ant-modal .ant-modal-content {
+  :where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-content {
     width: 100%;
     height: min(700px, 90vh);
   }
 }
 
 @media (max-width: 768px) {
-  .workstation-modal.ant-modal .ant-modal-content {
+  :where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-content {
     width: 100%;
     height: 100dvh;
     border-radius: 0;
   }
 
-  .workstation-modal.ant-modal .ant-modal-body {
+  :where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-body {
     height: 100dvh;
   }
+}
+
+/* ── Custom HTML tables (used by AgentMgmt, TeamMgmt, etc.) ── */
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm thead tr th {
+  background: color-mix(in srgb, var(--color-surface-card) 98%, var(--color-text-primary));
+  color: var(--color-text-tertiary);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 18px 24px;
+  vertical-align: middle;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm thead tr th:first-child {
+  padding-left: 24px;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm thead tr th:last-child {
+  padding: 18px 24px;
+  text-align: right;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm tbody tr td:first-child {
+  padding-left: 24px;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm tbody tr td:last-child {
+  padding: 20px 24px;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm tbody tr td:last-child button {
+  margin-left: auto;
+  margin-right: 0;
+  display: flex;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm tbody tr td {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: 20px 24px;
+  vertical-align: middle;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* ── Checkbox sizing in workstation tables ── */
+.wsta-root table.w-full.table-fixed.border-collapse.text-sm input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-accent);
+  border-radius: 4px;
 }

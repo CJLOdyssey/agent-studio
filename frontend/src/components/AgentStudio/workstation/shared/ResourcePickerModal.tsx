@@ -79,6 +79,7 @@ export default function ResourcePickerModal<T>({
               onChange={(e) => setQuery(e.target.value)}
               placeholder={searchPlaceholder}
               autoFocus
+              className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
             />
           </div>
           <div className="max-h-80 overflow-y-auto border border-[var(--color-border)] rounded-md">
