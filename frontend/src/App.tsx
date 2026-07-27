@@ -86,7 +86,7 @@ function ThemedApp() {
   const surfaceHover = getCssVar('--color-surface-hover') || (isDark ? 'rgba(255,255,255,0.08)' : '#f1f3f5');
 
   return (
-    <StyleProvider layer>
+    <StyleProvider layer={{ name: 'antd' } as any}>
     <ConfigProvider
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
