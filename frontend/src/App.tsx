@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { StyleProvider } from '@ant-design/cssinjs';
 import { ConfigProvider, theme } from 'antd';
 import { ToastProvider } from './utils/useToast';
 import { AuthProvider, useAuth, LoginModal } from './components/auth';
@@ -85,6 +86,7 @@ function ThemedApp() {
   const surfaceHover = getCssVar('--color-surface-hover') || (isDark ? 'rgba(255,255,255,0.08)' : '#f1f3f5');
 
   return (
+    <StyleProvider layer>
     <ConfigProvider
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
@@ -136,6 +138,7 @@ function ThemedApp() {
         </BrowserRouter>
       </AuthProvider>
     </ConfigProvider>
+    </StyleProvider>
   );
 }
 
