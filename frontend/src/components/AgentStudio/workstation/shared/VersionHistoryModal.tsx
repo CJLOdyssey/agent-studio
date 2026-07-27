@@ -93,7 +93,7 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
           <h3>{t('workstation.versionHistory')} - {title}</h3>
           <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-toolbar">
             {hasContent && (
-              <button className={`btn btn-sm ${compareMode ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setCompareMode(!compareMode); setSelectedIndices([]); }}>
+              <button className={`inline-flex items-center justify-center gap-2 px-2 py-2 rounded-[var(--radius-btn)] text-sm cursor-pointer transition-colors ${compareMode ? 'bg-[var(--color-accent)] text-white border-none hover:bg-[color-mix(in_srgb,var(--color-accent),#000)]' : 'bg-transparent border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'}`} onClick={() => { setCompareMode(!compareMode); setSelectedIndices([]); }}>
                 <GitCompare size={14} />
                 <span>{compareMode ? '退出对比' : '版本对比'}</span>
               </button>

@@ -112,7 +112,7 @@ export default function SettingsModal({ onClose }: Props) {
                       style={{
                         background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${fontPct}%, var(--color-surface-hover) ${fontPct}%, var(--color-surface-hover) 100%)`,
                       }}
-                      className="settings-font-slider"
+                      className="w-[120px] h-[6px] rounded-[var(--radius-btn)] appearance-none cursor-pointer accent-[var(--color-accent)]"
                     />
                     <span className="text-sm font-semibold text-[var(--color-text-secondary)] min-w-[32px] text-right">{settings.fontSize}px</span>
                   </div>
@@ -154,7 +154,7 @@ export default function SettingsModal({ onClose }: Props) {
           )}
 
           {activeTab === 'about' && (
-            <div className="settings-section">
+            <div>
               <h4>{t('settings.about')}</h4>
               <div className="flex items-center justify-between py-4" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 0, padding: 0, border: 'none' }}>
 
