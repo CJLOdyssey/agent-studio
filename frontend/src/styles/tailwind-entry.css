@@ -50,6 +50,34 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-full: 9999px;
+
+  /* ── 表面色（通过 :root 变量引用） ── */
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-overlay: var(--color-surface-overlay);
+  --color-surface-elevated: var(--color-surface-elevated);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-surface-card: var(--color-surface-card);
+  --color-surface-sidebar: var(--color-surface-sidebar);
+  --color-surface-pressed: var(--color-surface-pressed);
+
+  /* ── 文字色 ── */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-tertiary: var(--color-text-tertiary);
+  --color-text-on-accent: var(--color-text-on-accent);
+
+  /* ── 边框色 ── */
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-light: var(--color-border-light);
+
+  /* ── 阴影预设 ── */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
 }
 
 /* ── 主题相关颜色（运行时切换） ── */
