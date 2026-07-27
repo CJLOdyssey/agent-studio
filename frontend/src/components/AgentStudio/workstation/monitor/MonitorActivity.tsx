@@ -29,7 +29,7 @@ export default function MonitorActivity({ activities }: Props) {
           className="flex items-start gap-2.5 py-2 px-2.5 rounded-lg bg-[var(--color-surface-hover)]"
         >
           <span
-            className="w-2 h-2 rounded-full shrink-0 mt-[5px]"
+            className="w-2 h-2 rounded-full shrink-0 mt-1"
             style={{ background: act.type === 'success' ? '#22c55e' : act.type === 'warning' ? '#f59e0b' : '#3b82f6' }}
           />
           <div className="flex-1 min-w-0">

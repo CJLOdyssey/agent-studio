@@ -84,9 +84,9 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   useEffect(() => {
     let cancelled = false;
     if (!cancelled) {
-      if (agent.tools) tools.setItems(agent.tools);
-      if (agent.mcp) mcp.setItems(agent.mcp);
-      if (agent.skills) skills.setItems(agent.skills);
+      if (agent.tools) tools.setItems(agent.tools.map((t) => ({ ...t, archived: t.archived ?? !t.id.startsWith('custom-') })));
+      if (agent.mcp) mcp.setItems(agent.mcp.map((m) => ({ ...m, archived: m.archived ?? !m.id.startsWith('custom-') })));
+      if (agent.skills) skills.setItems(agent.skills.map((s) => ({ ...s, archived: s.archived ?? !s.id.startsWith('custom-') })));
     }
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,9 +95,9 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
     setSystemPrompt,
     setOutputConstraints,
-    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true } as AgentTool)),
-    addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentMCP),
-    addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentSkill),
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true } as AgentTool)),
+    addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentMCP),
+    addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentSkill),
   });
 
   const handleSave = () => {

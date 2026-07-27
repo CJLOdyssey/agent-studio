@@ -110,7 +110,7 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
         aria-label={fileCount > 0 ? `${fileCount} files attached` : t('fileAttach.attach')}
       >
         <Paperclip size={16} />
-        {fileCount > 0 && <span className="absolute -top-0.5 -right-1 min-w-[14px] h-[14px] px-[3px] rounded-[7px] bg-[var(--color-accent)] text-[var(--color-text-on-accent)] text-xs font-bold leading-[14px] text-center pointer-events-none">{fileCount}</span>}
+        {fileCount > 0 && <span className="absolute -top-0.5 -right-1 min-w-[14px] h-[14px] px-1 rounded-[7px] bg-[var(--color-accent)] text-[var(--color-text-on-accent)] text-xs font-bold leading-[14px] text-center pointer-events-none">{fileCount}</span>}
       </button>
     </>
   );

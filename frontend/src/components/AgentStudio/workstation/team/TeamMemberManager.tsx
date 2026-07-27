@@ -70,7 +70,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
             </span>
             <div>
               <h3 className="m-0 text-base font-semibold">管理成员</h3>
-              <p className="mt-[1px] mb-0 text-xs text-[var(--color-text-muted)]">{team.name}</p>
+              <p className="mt-px mb-0 text-xs text-[var(--color-text-muted)]">{team.name}</p>
             </div>
           </div>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
@@ -109,7 +109,7 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                     key={agent.id}
                     onClick={() => handleAdd(agent)}
                     disabled={addingId === agent.id}
-                    className="flex items-center gap-2.5 py-[7px] px-2.5 border-none rounded-lg bg-transparent cursor-pointer transition-all duration-150 hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)]"
+                    className="flex items-center gap-2.5 py-2 px-2.5 border-none rounded-lg bg-transparent cursor-pointer transition-all duration-150 hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)]"
                     style={{ animation: idx < 3 ? 'fadeSlideIn 0.25s ease-out both' : 'none', animationDelay: `${idx * 30}ms` }}
                   >
                     <MemberAvatar name={agent.name} size={26} />

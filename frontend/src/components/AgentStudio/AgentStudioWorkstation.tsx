@@ -102,7 +102,7 @@ if (currentTheme === 'system') {
               {s.apiStatus === 'error' && s.apiError && (
                 <div className="px-4 py-2 bg-[var(--color-danger)] text-[var(--color-text-on-accent)] text-center text-sm font-medium animate-[fadeIn_0.3s_ease] flex items-center justify-center gap-3" role="alert">
                   {s.apiError}
-                  <button className="bg-[var(--color-surface)] text-[var(--color-danger)] border-none py-[1px] px-3 rounded text-sm cursor-pointer font-semibold leading-[1.6] hover:opacity-80" onClick={s.retryApi}>
+                  <button className="bg-[var(--color-surface)] text-[var(--color-danger)] border-none py-px px-3 rounded text-sm cursor-pointer font-semibold leading-[1.6] hover:opacity-80" onClick={s.retryApi}>
                     {s.t('common.retry')}
                   </button>
                 </div>

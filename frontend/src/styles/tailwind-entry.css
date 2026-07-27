@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* ⚠️  Tailwind v4 已知限制
+   Tailwind v4 的 spacing logical properties (padding-inline-start/end 等)
+   在 `@layer` 内部，优先级不敌 reset.css 的物理属性(physical properties)，
+   导致部分 padding/margin/gap 的方括号任意值（如 px-[5px]）实际上不被编译为有效样式。
+   因此下方通过显式 baseline class 覆盖（.px-1 { padding-left: var(--sp-1); ... }），
+   同时组件中应避免使用 p/m/gap 方括号任意值，改用标准 spacing token。                */
+
 /* ── 静态设计 token（不随主题切换） ── */
 @theme {
   /* ── 品牌强调色（固定） ── */

@@ -1,5 +1,5 @@
 /* ============================================
-   Keyframes — 全局动画（fadeIn, pulse, spin）
+   Keyframes — 全局动画
    ============================================ */
 
 @keyframes fadeIn {
@@ -30,6 +30,21 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wsta-skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes wsta-skeleton-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .spin {

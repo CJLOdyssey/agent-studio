@@ -79,6 +79,10 @@ function ThemedApp() {
   const isDark = settings.theme === 'dark';
   const bgColor = getCssVar('--color-surface') || (isDark ? '#0f1117' : '#ffffff');
   const bgElevated = getCssVar('--color-surface-overlay') || (isDark ? '#24252d' : '#ffffff');
+  const txtColor = getCssVar('--color-text-primary') || (isDark ? '#f1f1f1' : '#1a1a2e');
+  const txtSecondary = getCssVar('--color-text-secondary') || (isDark ? '#a0a5b0' : '#495057');
+  const borderColor = getCssVar('--color-border') || (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)');
+  const surfaceHover = getCssVar('--color-surface-hover') || (isDark ? 'rgba(255,255,255,0.08)' : '#f1f3f5');
 
   return (
     <ConfigProvider
@@ -88,8 +92,19 @@ function ThemedApp() {
           colorPrimary: '#6366f1',
           colorBgContainer: bgColor,
           colorBgElevated: bgElevated,
+          colorText: txtColor,
+          colorTextSecondary: txtSecondary,
+          colorBorder: borderColor,
+          colorBgTextHover: surfaceHover,
           borderRadius: 6,
           fontSize: 14,
+        },
+        components: {
+          Pagination: {
+            itemBg: 'transparent',
+            itemActiveBg: '#6366f1',
+            itemInputBg: 'transparent',
+          },
         },
       }}
     >

@@ -54,7 +54,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       {editingAgent === agent.id ? (
         <div className="flex-1 min-w-0">
           <input
-            className="w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-sm text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
+            className="w-full py-1 px-1.5 border border-[var(--color-accent)] rounded text-sm text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
             value={editAgentName}
             onChange={(e) => onAgentNameChange(e.target.value)}
             onBlur={handleAgentBlur}
@@ -67,7 +67,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
       ) : (
         <>
           <button
-            className="flex items-center gap-[6px] py-[7px] px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent flex-1 min-w-0 min-h-[34px] text-[var(--color-text-secondary)] text-base text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+            className="flex items-center gap-1.5 py-2 px-2 rounded-md cursor-pointer transition-all duration-150 border-none bg-transparent flex-1 min-w-0 min-h-[34px] text-[var(--color-text-secondary)] text-base text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
             onClick={() => handleAgentClick(agent)}
           >
             <span className="text-base font-normal overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1.3] tracking-[-0.01em]">{agent.name}</span>

@@ -12,14 +12,10 @@ function renderList(overrides?: Record<string, unknown>) {
     title: 'Tools',
     items: baseItems,
     presets: [],
-    editingId: null,
     emptyLabel: 'No items',
     onToggle: vi.fn(),
     onAdd: vi.fn(),
-    onUpdate: vi.fn(),
     onRemove: vi.fn(),
-    onStartEdit: vi.fn(),
-    onFinishEdit: vi.fn(),
     ...overrides,
   };
   return { ...render(<ConfigItemList {...props} />), props };
@@ -52,21 +48,6 @@ describe('ConfigItemList', { tags: ['integration'] }, () => {
   it('hides header when hideHeader is true', () => {
     renderList({ hideHeader: true });
     expect(screen.queryByText('Tools (2)')).not.toBeInTheDocument();
-  });
-
-  it('opens three-dot menu and shows rename option', async () => {
-    renderList();
-    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
-    fireEvent.click(actionBtns[0]);
-    expect(screen.getByText('重命名')).toBeInTheDocument();
-  });
-
-  it('calls onStartEdit when rename clicked', () => {
-    const { props } = renderList();
-    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
-    fireEvent.click(actionBtns[0]);
-    fireEvent.click(screen.getByText('重命名'));
-    expect(props.onStartEdit).toHaveBeenCalledWith('1');
   });
 
   it('calls onRemove when delete clicked', () => {

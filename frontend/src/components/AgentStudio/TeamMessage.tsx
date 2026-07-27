@@ -388,7 +388,7 @@ const TeamMessage = memo(function TeamMessage({
               {time && <span className="block text-xs text-[var(--color-text-muted)] mt-1 ml-0">{time}</span>}
               {(showContinue || isContinuing) && (
                 <button
-                  className={`flex items-center gap-[3px] px-2 py-0.5 bg-transparent border border-[var(--color-accent)] rounded-md text-[var(--color-accent)] cursor-pointer text-xs font-medium ml-auto transition-colors duration-150 hover:bg-[var(--color-accent)] hover:text-[var(--color-text-on-accent)]${isContinuing ? ' opacity-70 cursor-wait' : ''}`}
+                  className={`flex items-center gap-1 px-2 py-0.5 bg-transparent border border-[var(--color-accent)] rounded-md text-[var(--color-accent)] cursor-pointer text-xs font-medium ml-auto transition-colors duration-150 hover:bg-[var(--color-accent)] hover:text-[var(--color-text-on-accent)]${isContinuing ? ' opacity-70 cursor-wait' : ''}`}
                   onClick={isContinuing ? undefined : onContinue}
                   disabled={isContinuing}
                   title={isContinuing ? t('teamMessage.continuing') : t('teamMessage.continue')}

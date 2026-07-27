@@ -204,13 +204,12 @@
   color: var(--color-text-primary);
 }
 
-.workstation-modal.ant-pagination,
-.workstation-modal .ant-pagination {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination {
   margin: 0;
 }
 
-.workstation-modal .ant-pagination-item {
-  background: var(--color-surface-raised);
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item {
+  background: transparent;
   border-color: var(--color-border);
   border-radius: 6px;
   min-width: 32px;
@@ -219,103 +218,104 @@
   transition: all 0.15s ease;
 }
 
-.workstation-modal .ant-pagination-item a {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item a {
   color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
 }
 
-.workstation-modal .ant-pagination-item:hover {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item:hover {
   border-color: var(--color-accent);
 }
 
-.workstation-modal .ant-pagination-item:hover a {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item:hover a {
   color: var(--color-accent);
 }
 
-.workstation-modal .ant-pagination-item-active {
+.ant-pagination .ant-pagination-item-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
 
-.workstation-modal .ant-pagination-item-active a {
+.ant-pagination .ant-pagination-item-active a,
+.ant-pagination .ant-pagination-item-active button {
   color: var(--color-text-on-accent);
   font-weight: 600;
 }
 
-.workstation-modal .ant-pagination-prev,
-.workstation-modal .ant-pagination-next {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-prev,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-next {
   min-width: 32px;
   height: 32px;
   line-height: 32px;
   border-radius: 6px;
   border: 1px solid var(--color-border);
-  background: var(--color-surface-raised);
+  background: transparent;
   color: var(--color-text-secondary);
   transition: all 0.15s ease;
 }
 
-.workstation-modal .ant-pagination-prev:hover,
-.workstation-modal .ant-pagination-next:hover {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-prev:hover,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-next:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
 
-.workstation-modal .ant-pagination-prev button,
-.workstation-modal .ant-pagination-next button {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-prev button,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-next button {
   color: inherit;
   font-size: 16px;
   font-weight: 600;
 }
 
-.workstation-modal .ant-pagination-disabled,
-.workstation-modal .ant-pagination-disabled:hover {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled:hover {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.workstation-modal .ant-pagination-disabled .ant-pagination-item,
-.workstation-modal .ant-pagination-disabled:hover .ant-pagination-item {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled .ant-pagination-item,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled:hover .ant-pagination-item {
   border-color: var(--color-border);
-  background: var(--color-surface-raised);
+  background: transparent;
 }
 
-.workstation-modal .ant-pagination-disabled .ant-pagination-item a,
-.workstation-modal .ant-pagination-disabled:hover .ant-pagination-item a {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled .ant-pagination-item a,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled:hover .ant-pagination-item a {
   color: var(--color-text-muted);
 }
 
-.workstation-modal .ant-pagination-jump-prev,
-.workstation-modal .ant-pagination-jump-next {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-prev,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-next {
   min-width: 32px;
   height: 32px;
   line-height: 32px;
   border-radius: 6px;
   border: 1px solid var(--color-border);
-  background: var(--color-surface-raised);
+  background: transparent;
   color: var(--color-text-muted);
   font-size: 14px;
   letter-spacing: 2px;
 }
 
-.workstation-modal .ant-pagination-jump-prev:hover,
-.workstation-modal .ant-pagination-jump-next:hover {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-prev:hover,
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-next:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
 
-.workstation-modal .ant-pagination-options {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options {
   margin-left: 12px;
 }
 
-.workstation-modal .ant-pagination-options-quick-jumper {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper {
   font-size: 13px;
   color: var(--color-text-muted);
   margin-left: 8px;
 }
 
-.workstation-modal .ant-pagination-options-quick-jumper input {
-  background: var(--color-surface-raised);
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper input {
+  background: transparent;
   border-color: var(--color-border);
   border-radius: 6px;
   color: var(--color-text-primary);
@@ -326,17 +326,17 @@
   transition: all 0.15s ease;
 }
 
-.workstation-modal .ant-pagination-options-quick-jumper input:hover {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper input:hover {
   border-color: var(--color-accent);
 }
 
-.workstation-modal .ant-pagination-options-quick-jumper input:focus {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper input:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
   outline: none;
 }
 
-.workstation-modal .ant-pagination-total-text {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-total-text {
   font-size: 13px;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
@@ -345,7 +345,7 @@
   line-height: 32px;
 }
 
-.workstation-modal .ant-pagination-total-text::after {
+:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-total-text::after {
   content: none;
 }
 

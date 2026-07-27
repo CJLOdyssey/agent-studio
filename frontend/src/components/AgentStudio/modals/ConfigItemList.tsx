@@ -35,10 +35,9 @@ function ItemMenu({ onEdit, onArchive, archived, onDelete }: { onEdit?: () => vo
     if (!open) return;
     const rect = btnRef.current?.getBoundingClientRect();
     if (rect) setPos({ top: rect.bottom + 4, left: rect.left - 80 });
-    const close = () => setOpen(false);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
   }, [open]);
+
+  const close = () => setOpen(false);
 
   return (
     <>
@@ -46,25 +45,28 @@ function ItemMenu({ onEdit, onArchive, archived, onDelete }: { onEdit?: () => vo
         <MoreVertical size={14} />
       </button>
       {open && createPortal(
-        <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[99999]" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
-          {onEdit && (
-            <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onEdit(); setOpen(false); }}>
-              <Pencil size={14} /><span>{t('workstation.edit')}</span>
-            </button>
-          )}
+        <>
+          <div className="fixed inset-0 z-[99998]" onClick={close} />
+          <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-1 min-w-[140px] shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[99999]" style={{ position: 'fixed', top: pos.top, left: pos.left }}>
+            {onEdit && (
+              <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onEdit(); close(); }}>
+                <Pencil size={14} /><span>{t('workstation.edit')}</span>
+              </button>
+            )}
           {onArchive && archived ? (
             <span className="flex items-center gap-2 py-2 px-2.5 rounded-md w-full text-sm text-[var(--color-text-muted)] text-left cursor-default">
-              <span>{t('workstation.archived')}</span>
+              <Archive size={14} /><span>{t('workstation.archived')}</span>
             </span>
           ) : onArchive ? (
-            <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onArchive(); setOpen(false); }}>
-              <Archive size={14} /><span>{t('workstation.archive')}</span>
+              <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => { onArchive(); close(); }}>
+                <Archive size={14} /><span>{t('workstation.archive')}</span>
+              </button>
+            ) : null}
+            <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]" onClick={() => { onDelete(); close(); }}>
+              <Trash2 size={14} /><span>{t('workstation.delete')}</span>
             </button>
-          ) : null}
-          <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]" onClick={() => { onDelete(); setOpen(false); }}>
-            <Trash2 size={14} /><span>{t('workstation.delete')}</span>
-          </button>
-        </div>,
+          </div>
+        </>,
         document.body,
       )}
     </>

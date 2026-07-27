@@ -87,7 +87,7 @@ export default function WorkstationPage({ onClose }: Props) {
                       <h2 className="text-sm font-semibold text-[var(--color-text-primary)] m-0 tracking-tight truncate leading-tight">
                         {currentTab.label}
                       </h2>
-                      <p className="text-[11px] text-[var(--color-text-tertiary)] m-0 leading-tight mt-[1px]">
+                      <p className="text-[11px] text-[var(--color-text-tertiary)] m-0 leading-tight mt-px">
                         {currentTab.id === 'teams' && '管理团队和成员'}
                         {currentTab.id === 'workflow' && '配置自动化工作流'}
                         {currentTab.id === 'agents' && '管理 Agent 配置和部署'}

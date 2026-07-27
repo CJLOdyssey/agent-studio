@@ -212,16 +212,16 @@ export default function ApiProviderTab({
         <ConfigProvider
           theme={{
             token: {
-              colorBgContainer: 'var(--color-surface)',
+              colorBgContainer: 'var(--color-surface-raised)',
               colorBorderSecondary: 'transparent',
               colorText: 'var(--color-text-primary)',
               colorTextSecondary: 'var(--color-text-secondary)',
             },
             components: {
               Table: {
-                headerBg: 'var(--color-surface)',
+                headerBg: 'var(--color-surface-raised)',
                 headerColor: 'var(--color-text-muted)',
-                rowHoverBg: 'var(--color-surface-raised)',
+                rowHoverBg: 'var(--color-surface-hover)',
                 borderColor: 'transparent',
               },
             },

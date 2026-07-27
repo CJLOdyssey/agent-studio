@@ -21,7 +21,6 @@ export function useItemList<T extends Item>(presets: T[]) {
   const addCustom = (createItem: () => T) => {
     const item = createItem();
     setItems((prev) => [...prev, item]);
-    setEditingId(item.id);
   };
 
   const update = (id: string, updates: Partial<T>) => {

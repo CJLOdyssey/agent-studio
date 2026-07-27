@@ -120,7 +120,7 @@ const ConversationsList = memo(function ConversationsList({
               ? Array.from(conv.title).slice(0, 28).join('') + '...'
               : conv.title}
           </div>
-          <div className="text-sm text-[var(--color-text-tertiary)] mt-[4px] flex items-center gap-1">
+          <div className="text-sm text-[var(--color-text-tertiary)] mt-1 flex items-center gap-1">
             {isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
             )}
@@ -138,7 +138,7 @@ const ConversationsList = memo(function ConversationsList({
           </div>
         </div>
         <button
-          className="shrink-0 p-[7px] rounded-md bg-transparent border border-transparent text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-all duration-150 flex items-center justify-center group-hover:opacity-80 hover:opacity-100 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:border-[var(--color-danger)]/20"
+          className="shrink-0 p-1.5 rounded-md bg-transparent border border-transparent text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-all duration-150 flex items-center justify-center group-hover:opacity-80 hover:opacity-100 hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 hover:border-[var(--color-danger)]/20"
           onClick={(e) => {
             e.stopPropagation();
             onDelete(conv.id);

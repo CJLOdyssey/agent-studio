@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
-import type { PickerItem } from '../PickerModal';
 import { promptAPI } from '../../workstation/prompt/api';
 import { outputAPI } from '../../workstation/output/api';
 import { toolAPI } from '../../workstation/tool/api';
 import { mcpAPI } from '../../workstation/mcp/api';
 import { skillAPI } from '../../workstation/skill/api';
+
+export interface PickerItem {
+  id: string;
+  name: string;
+  description: string;
+  source?: string;
+}
 
 export interface PickerDeps {
   setSystemPrompt: React.Dispatch<React.SetStateAction<string>>;

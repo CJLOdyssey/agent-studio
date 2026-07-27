@@ -172,7 +172,7 @@ const TeamTree = memo(function TeamTree({
 
   return (
     <div>
-      <div className="flex items-center justify-between py-[2px]" style={{ paddingLeft: 10, paddingRight: 9 }}>
+      <div className="flex items-center justify-between py-0.5" style={{ paddingLeft: 10, paddingRight: 9 }}>
         <div className="text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
           {t('sidebar.myTeams')}
         </div>
@@ -194,9 +194,9 @@ const TeamTree = memo(function TeamTree({
         )}
         {teams.map((team) => (
           <div key={team.id} className="mb-px rounded-md overflow-visible">
-            <div className="group flex items-center gap-[4px] py-2 pl-2 pr-2 cursor-pointer transition-colors duration-150 bg-transparent min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
+            <div className="group flex items-center gap-1 py-2 pl-2 pr-2 cursor-pointer transition-colors duration-150 bg-transparent min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
-                className="bg-transparent border-none p-[2px] rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[24px] h-[24px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
+                className="bg-transparent border-none p-0.5 rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[24px] h-[24px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
                 <ChevronDown
                   size={15}
@@ -211,7 +211,7 @@ const TeamTree = memo(function TeamTree({
               {editingTeam === team.id ? (
                 <div className="flex-1 min-w-0">
                   <input
-                    className="w-full py-[3px] px-[6px] border border-[var(--color-accent)] rounded text-base font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
+                    className="w-full py-1 px-1.5 border border-[var(--color-accent)] rounded text-base font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
                     value={editName}
                     onChange={(e) => onTeamNameChange(e.target.value)}
                     onBlur={() => handleTeamBlur(team.id)}
@@ -227,7 +227,7 @@ const TeamTree = memo(function TeamTree({
                   <span className="text-sm text-[var(--color-text-tertiary)] shrink-0 font-normal opacity-70 min-w-[16px] text-center">{team.agents.length}</span>
                   {onTeamChat && (
                     <button
-                      className="bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
+                      className="bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
                       onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
                       title="团队对话"
                     >
@@ -235,7 +235,7 @@ const TeamTree = memo(function TeamTree({
                     </button>
                   )}
                   <button
-                    className="bg-transparent border-none p-[3px] rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
+                    className="bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
                     onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
                     title={t('sidebar.moreOptions')}
                   >

@@ -141,7 +141,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
         />
 
         <div>
-          <div className="px-[10px] py-[2px] text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
+          <div className="px-2.5 py-0.5 text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
             {t('sidebar.recentConversations')}
           </div>
           <ConversationsList
