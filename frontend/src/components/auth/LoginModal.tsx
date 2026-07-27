@@ -131,15 +131,15 @@ export default function LoginModal({ onClose }: Props) {
   if (view === 'forgot' || view === 'reset') {
     return (
       <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
-        <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
+        <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[400px] p-0 overflow-hidden"
           onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]" style={{ justifyContent: 'center', position: 'relative' }}>
+          <div className="flex items-center justify-center relative px-6 py-4 border-b border-[var(--color-border)]">
             <h3 className="m-0 text-lg font-bold">重置密码</h3>
 <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)' }}>
             <X size={18} />
           </button>
           </div>
-          <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ padding: 24 }}>
+          <div className="p-6 overflow-y-auto flex-1 min-h-0 flex flex-col">
             <ForgotPasswordForm
               onSendCode={async (email) => { await forgotPassword(email); setEmail(email); }}
               onReset={async (email, code, newPassword) => { await resetPassword(email, code, newPassword); switchView('login'); }}
@@ -157,8 +157,7 @@ export default function LoginModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
       <div
-        className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]"
-        style={{ maxWidth: 400, padding: 0, overflow: 'hidden' }}
+        className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[400px] p-0 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center pt-[28px] pb-1">
@@ -184,11 +183,11 @@ export default function LoginModal({ onClose }: Props) {
           ))}
         </div>
 
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col" style={{ padding: '20px 24px 24px' }}>
+        <div className="px-6 pt-5 pb-6 overflow-y-auto flex-1 min-h-0 flex flex-col">
           <form onSubmit={handleSubmit}>
             {isRegister ? (
               <>
-                <div style={{ position: 'relative', marginBottom: 14 }}>
+                <div className="relative mb-3.5">
                   <Mail style={iconBase} size={16} />
                   <input
                     type="email"
@@ -204,7 +203,7 @@ export default function LoginModal({ onClose }: Props) {
                 </div>
 
                 <div className="mb-4">
-                  <div style={{ position: 'relative' }}>
+                  <div className="relative">
                     <Lock style={iconBase} size={16} />
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -237,7 +236,7 @@ export default function LoginModal({ onClose }: Props) {
                   )}
                 </div>
 
-                <div style={{ position: 'relative', marginBottom: 16 }}>
+                <div className="relative mb-4">
                   <Lock style={iconBase} size={16} />
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -260,7 +259,7 @@ export default function LoginModal({ onClose }: Props) {
                 <PasswordStrengthIndicator password={password} validated={passwordTouched} />
 
                 <div className="flex gap-2 items-start mb-3">
-                  <div style={{ position: 'relative', flex: 1 }}>
+                  <div className="relative flex-1">
                     <ShieldCheck style={iconBase} size={16} />
                     <input
                       type="text"
@@ -293,7 +292,7 @@ export default function LoginModal({ onClose }: Props) {
               </>
             ) : (
               <>
-                <div style={{ position: 'relative', marginBottom: 14 }}>
+                <div className="relative mb-3.5">
                   <Mail style={iconBase} size={16} />
                   <input
                     type="email"
@@ -308,7 +307,7 @@ export default function LoginModal({ onClose }: Props) {
                   />
                 </div>
 
-                <div style={{ position: 'relative', marginBottom: 14 }}>
+                <div className="relative mb-3.5">
                   <Lock style={iconBase} size={16} />
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -338,10 +337,7 @@ export default function LoginModal({ onClose }: Props) {
             )}
 
             {error && (
-              <div
-                className="px-3 py-2 rounded-[var(--radius-btn)] text-[var(--color-danger)] text-sm mb-3 leading-snug"
-                style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
-              >
+              <div className="px-3 py-2 rounded-[var(--radius-btn)] text-[var(--color-danger)] text-sm mb-3 leading-snug bg-[color-mix(in_srgb,var(--color-danger)_10%,_transparent)]">
                 {error}
               </div>
             )}
