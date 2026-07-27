@@ -10,7 +10,7 @@ describe('PasswordStrengthIndicator', { tags: ['unit'] }, () => {
 
   it('renders 6 progress bars', () => {
     const { container } = render(<PasswordStrengthIndicator password="a" validated={false} />);
-    const bars = container.querySelectorAll('div[style*="height: 3px"]');
+    const bars = container.querySelectorAll('div.h-\\[3px\\]');
     expect(bars.length).toBe(6);
   });
 

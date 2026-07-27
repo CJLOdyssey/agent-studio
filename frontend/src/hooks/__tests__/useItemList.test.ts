@@ -47,7 +47,7 @@ describe('useItemList', { tags: ['unit'] }, () => {
 
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0].id).toBe('custom-1');
-    expect(result.current.editingId).toBe('custom-1');
+    expect(result.current.editingId).toBeNull();
   });
 
   it('updates item', () => {

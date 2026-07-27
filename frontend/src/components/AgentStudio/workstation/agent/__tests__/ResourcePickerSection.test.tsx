@@ -49,7 +49,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('renders prompt picker trigger', () => {
     renderComponent();
-    expect(screen.getByText('agent.form_prompt_empty')).toBeInTheDocument();
+    expect(screen.getByText('agent.form_prompt_select')).toBeInTheDocument();
   });
 
   it('renders tools picker with count', () => {
@@ -78,7 +78,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('opens picker when prompt trigger clicked', () => {
     renderComponent();
-    fireEvent.click(screen.getByText('agent.form_prompt_empty'));
+    fireEvent.click(screen.getByText('agent.form_prompt_select'));
     expect(mockSetActivePicker).toHaveBeenCalledWith('prompt');
   });
 
@@ -111,7 +111,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('renders form section wrapper', () => {
     const { container } = renderComponent();
-    expect(container.querySelector('[class*="border-t border"]')).toBeInTheDocument();
+    expect(container.querySelector('.grid.grid-cols-2')).toBeInTheDocument();
   });
 
   it('renders chips when tools are selected', () => {

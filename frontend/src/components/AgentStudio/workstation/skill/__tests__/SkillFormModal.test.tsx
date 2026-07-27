@@ -54,10 +54,11 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('skill.form_category')).toBeInTheDocument();
     expect(screen.getByText('skill.form_status')).toBeInTheDocument();
     expect(screen.getByText('skill.form_version')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_author')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_prompt')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_tools')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_output_constraint')).toBeInTheDocument();
+    expect(screen.getByText('skill.form_model')).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_prompt/)).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_tools/)).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_mcp/)).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_output_constraint/)).toBeInTheDocument();
     expect(screen.getByText('skill.form_instructions')).toBeInTheDocument();
   });
 

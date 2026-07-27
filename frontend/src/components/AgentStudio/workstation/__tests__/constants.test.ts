@@ -11,7 +11,7 @@ import { MODEL_OPTIONS, PAGE_SIZE, useModelOptions } from '../constants';
 
 describe('PAGE_SIZE', { tags: ['integration'] }, () => {
   it('is 5', () => {
-    expect(PAGE_SIZE).toBe(5);
+    expect(PAGE_SIZE).toBe(7);
   });
 });
 

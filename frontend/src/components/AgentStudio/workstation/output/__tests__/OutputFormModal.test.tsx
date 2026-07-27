@@ -23,6 +23,7 @@ vi.mock('../locales', () => ({
 
 vi.mock('lucide-react', () => ({
   X: () => <span>X</span>,
+  FileCheck: () => <span>FileCheck</span>,
 }));
 
 const defaultFormData = {

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AgentStudioWorkstation from '../AgentStudio/AgentStudioWorkstation';
-import { TestProviders } from '../../test/setup';
+import AgentStudioWorkstation from '../AgentStudioWorkstation';
+import { TestProviders } from '../../../test/setup';
 
 vi.mock('lucide-react', () => ({
   Activity: () => <span data-testid="icon-activity" />,
@@ -25,6 +25,7 @@ vi.mock('lucide-react', () => ({
   Code: () => <span data-testid="icon-code" />,
   Code2: () => <span data-testid="icon-code2" />,
   Copy: () => <span data-testid="icon-copy" />,
+  Cpu: () => <span data-testid="icon-cpu" />,
   Download: () => <span data-testid="icon-download" />,
   Edit3: () => <span data-testid="icon-edit3" />,
   Eye: () => <span data-testid="icon-eye" />,
@@ -88,7 +89,7 @@ vi.mock('lucide-react', () => ({
   Zap: () => <span data-testid="icon-zap" />,
 }));
 
-vi.mock('../../api/hooks', () => ({
+vi.mock('../../../api/hooks', () => ({
   useAgents: () => ({ data: [], isLoading: false, isSuccess: true }),
   useSessions: () => ({ data: [], isLoading: false, isSuccess: true }),
   useRuns: () => ({ data: [], isLoading: false, isSuccess: true }),
@@ -124,7 +125,7 @@ const mockTeams = [
   },
 ];
 
-vi.mock('../../api/client', () => ({
+vi.mock('../../../api/client', () => ({
   default: {
     get: vi.fn((url: string) => {
       if (url === '/teams') return Promise.resolve({ data: mockTeams });

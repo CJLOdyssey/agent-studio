@@ -53,7 +53,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders all five feature buttons', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-1.5"]');
+    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-2"]');
     expect(btns.length).toBe(5);
   });
 
@@ -99,7 +99,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('does not throw when feature button clicked without onExecuteCommand', async () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-1.5"]');
+    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-2"]');
     await userEvent.click(btns[0] as HTMLElement);
     // should not crash
   });

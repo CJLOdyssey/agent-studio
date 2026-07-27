@@ -67,7 +67,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
       expect(screen.getByText('API 管理')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText('API 提供商')).toBeInTheDocument();
+      expect(screen.getByText('API')).toBeInTheDocument();
     });
     expect(screen.getByText('模型选择')).toBeInTheDocument();
     expect(screen.getByText('使用量')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('API 提供商')).toBeInTheDocument();
+      expect(screen.getByText('API')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByText('模型选择'));
@@ -91,7 +91,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
     fireEvent.click(screen.getByText('使用量'));
     expect(screen.getByTestId('api-usage-tab')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('API 提供商'));
+    fireEvent.click(screen.getByText('API'));
     expect(screen.getByTestId('api-provider-tab')).toBeInTheDocument();
   });
 
@@ -141,7 +141,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('API 提供商')).toBeInTheDocument();
+      expect(screen.getByText('API')).toBeInTheDocument();
     });
     expect(listKeys).toHaveBeenCalledTimes(1);
   });
@@ -156,7 +156,7 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('API 提供商')).toBeInTheDocument();
+      expect(screen.getByText('API')).toBeInTheDocument();
     });
     expect(getKeyUsage).toHaveBeenCalled();
   });

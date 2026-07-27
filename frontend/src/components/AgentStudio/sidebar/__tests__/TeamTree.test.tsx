@@ -411,7 +411,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(screen.getByText('workstation.delete'));
     fireEvent.click(screen.getByText('common.cancel'));
     expect(handleDeleteTeam).not.toHaveBeenCalled();
-    expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
   });
 
@@ -424,7 +424,8 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
 
     fireEvent.click(screen.getByText('workstation.delete'));
-    fireEvent.click(document.body.querySelector('.agentstudio-modal-overlay')!);
+    const dialog = document.body.querySelector('[role="dialog"]')!;
+    fireEvent.click(dialog.parentElement!);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
     restore();
   });
@@ -439,11 +440,11 @@ describe('TeamTree', { tags: ['integration'] }, () => {
 
     fireEvent.click(screen.getByText('workstation.delete'));
     // Click on the modal itself (not overlay) should not dismiss
-    const modal = document.body.querySelector('.agentstudio-modal')!;
+    const modal = document.body.querySelector('[role="dialog"]')!;
     fireEvent.click(modal);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
     // Dialog still visible
-    expect(document.body.querySelector('.agentstudio-modal')).toBeDefined();
+    expect(document.body.querySelector('[role="dialog"]')).toBeDefined();
     restore();
   });
 

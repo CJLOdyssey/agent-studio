@@ -44,13 +44,13 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
 
   it('shows active class when selected', () => {
     render(<TeamTreeAgentItem {...baseProps} selectedAgentId="a1" />);
-    const wrapper = screen.getByText('Test Agent').closest('[class*="group"][class*="relative"]');
+    const wrapper = screen.getByText('Test Agent').closest('.group');
     expect(wrapper?.className).toContain('active');
   });
 
   it('does not show active class when not selected', () => {
     render(<TeamTreeAgentItem {...baseProps} selectedAgentId="other" />);
-    const wrapper = screen.getByText('Test Agent').closest('[class*="group"][class*="relative"]');
+    const wrapper = screen.getByText('Test Agent').closest('.group');
     expect(wrapper?.className).not.toContain('active');
   });
 
@@ -82,10 +82,10 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
   it('calls toggleAgentMenu when menu button clicked', () => {
     const toggleAgentMenu = vi.fn();
     render(<TeamTreeAgentItem {...baseProps} toggleAgentMenu={toggleAgentMenu} />);
-    const buttons = screen.getAllByRole('button');
-    // The menu button (MoreVertical) is the second button
-    const menuBtn = buttons[1];
-    fireEvent.click(menuBtn);
+    // The MoreVertical menu icon is a span inside the agent button
+    const menuTrigger = screen.getByText('Test Agent').closest('button')?.querySelector('.group-hover\\:opacity-50');
+    expect(menuTrigger).toBeDefined();
+    fireEvent.click(menuTrigger!);
     expect(toggleAgentMenu).toHaveBeenCalledWith('a1', expect.any(Object));
   });
 
@@ -211,10 +211,10 @@ describe('TeamTreeAgentItem', { tags: ['integration'] }, () => {
     expect(screen.getByText('sidebar.delete')).toBeDefined();
   });
 
-  it('has two buttons when not editing', () => {
+  it('has one button (agent item) when not editing', () => {
     render(<TeamTreeAgentItem {...baseProps} />);
     const buttons = screen.getAllByRole('button');
-    // Agent item button + menu button (MoreVertical)
-    expect(buttons.length).toBe(2);
+    // Agent item button (MoreVertical is a span inside)
+    expect(buttons.length).toBe(1);
   });
 });

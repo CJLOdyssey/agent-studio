@@ -221,9 +221,10 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
     expect(wsMock.WorkstationPage).toHaveBeenCalled();
   });
 
-  it('renders header with toggle sidebar button', () => {
+  it('renders header with expand sidebar button when sidebar is closed', () => {
+    storeOverride.isSidebarOpen = false;
     render(<AgentStudioWorkstation />);
-    expect(screen.getByLabelText('Toggle sidebar')).toBeInTheDocument();
+    expect(screen.getByLabelText('Expand sidebar')).toBeInTheDocument();
   });
 
   it('renders dark mode toggle button', () => {

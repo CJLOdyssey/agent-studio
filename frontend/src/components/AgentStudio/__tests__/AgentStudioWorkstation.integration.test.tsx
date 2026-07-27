@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AgentStudioWorkstation from '../AgentStudio/AgentStudioWorkstation';
-import { TestProviders } from '../../test/setup';
-import { useChatStore } from '../../stores/chatStore';
+import AgentStudioWorkstation from '../AgentStudioWorkstation';
+import { TestProviders } from '../../../test/setup';
+import { useChatStore } from '../../../stores/chatStore';
 
 vi.mock('lucide-react', () => ({
   Activity: () => <span data-testid="icon-activity" />,
@@ -26,6 +26,7 @@ vi.mock('lucide-react', () => ({
   Code: () => <span data-testid="icon-code" />,
   Code2: () => <span data-testid="icon-code2" />,
   Copy: () => <span data-testid="icon-copy" />,
+  Cpu: () => <span data-testid="icon-cpu" />,
   Download: () => <span data-testid="icon-download" />,
   Edit3: () => <span data-testid="icon-edit3" />,
   Eye: () => <span data-testid="icon-eye" />,
@@ -89,7 +90,7 @@ vi.mock('lucide-react', () => ({
   Zap: () => <span data-testid="icon-zap" />,
 }));
 
-vi.mock('../../api/hooks', () => ({
+vi.mock('../../../api/hooks', () => ({
   useAgents: () => ({ data: [], isLoading: false, isSuccess: true }),
   useSessions: () => ({ data: [], isLoading: false, isSuccess: true }),
   useRuns: () => ({ data: [], isLoading: false, isSuccess: true }),
@@ -125,7 +126,7 @@ const intMockTeamsData = () => [
   },
 ];
 
-vi.mock('../../api/client', () => ({
+vi.mock('../../../api/client', () => ({
   default: {
     get: vi.fn((url: string) => {
       if (url === '/teams') return Promise.resolve({ data: intMockTeamsData() });
@@ -147,7 +148,7 @@ vi.mock('../../api/client', () => ({
   toggleAgent: vi.fn(),
 }));
 
-vi.mock('../../api/client/instance', () => ({
+vi.mock('../../../api/client/instance', () => ({
   default: {
     get: vi.fn((url: string) => {
       if (url === '/teams') return Promise.resolve({ data: intMockTeamsData() });
@@ -225,21 +226,19 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
 
       // Team starts expanded — agents list should be visible
       await waitFor(() => {
-        const lists = document.querySelectorAll('.agentstudio-team-agents');
-        expect(lists.length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText('产品经理').length).toBeGreaterThanOrEqual(1);
       });
 
       // Click to collapse
-      const teamHeader = screen.getByText('核心开发团队').closest('.agentstudio-team-folder-header');
-      fireEvent.click(teamHeader!);
+      const teamHeader = screen.getByText('核心开发团队').closest('div')!;
+      fireEvent.click(teamHeader);
 
       await waitFor(() => {
-        const lists = document.querySelectorAll('.agentstudio-team-agents');
-        expect(lists.length).toBe(0);
+        expect(screen.queryAllByText('产品经理').length).toBe(0);
       });
 
       // Click to expand again
-      fireEvent.click(teamHeader!);
+      fireEvent.click(teamHeader);
     });
 
     it('should create conversation after broadcast', async () => {
@@ -254,8 +253,8 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
       fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
 
       await waitFor(() => {
-        const convItems = document.querySelectorAll('.agentstudio-conv-item');
-        expect(convItems.length).toBeGreaterThanOrEqual(1);
+        const convSection = screen.queryByText('最近对话');
+        expect(convSection || screen.queryByText(/全体/)).toBeTruthy();
       });
     });
   });

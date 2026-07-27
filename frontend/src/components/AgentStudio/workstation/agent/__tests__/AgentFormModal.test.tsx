@@ -75,12 +75,12 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders create mode title when no editingAgent', () => {
     render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(screen.getByText('agent.form_create_title')).toBeInTheDocument();
+    expect(screen.getByText('agent.form_title_new')).toBeInTheDocument();
   });
 
   it('renders edit mode title when editingAgent is provided', () => {
     render(<AgentFormModal {...baseProps} editingAgent={makeAgentEntry()} />, { wrapper: Wrapper });
-    expect(screen.getByText('agent.form_edit_title')).toBeInTheDocument();
+    expect(screen.getByText('agent.form_title_edit')).toBeInTheDocument();
   });
 
   it('renders name input with placeholder', () => {
@@ -308,11 +308,12 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders modal with correct CSS class', () => {
     const { container } = render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(container.querySelector('.modal-title')).toBeInTheDocument();
+    expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument();
+    expect(container.querySelector('.bg-\\[var\\(--color-surface-raised\\)\\]')).toBeInTheDocument();
   });
 
-  it('renders header with Bot icon', () => {
+  it('renders header with Cpu icon', () => {
     const { container } = render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(container.querySelector('.modal-title')).toBeInTheDocument();
+    expect(container.querySelector('.lucide-cpu')).toBeInTheDocument();
   });
 });

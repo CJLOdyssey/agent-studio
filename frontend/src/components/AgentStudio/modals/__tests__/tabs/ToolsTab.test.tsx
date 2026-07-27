@@ -90,6 +90,6 @@ describe('ToolsTab', { tags: ['integration'] }, () => {
 
   it('renders ToolFormModal when showForm is true', () => {
     renderTab({ showForm: true });
-    expect(screen.getByText('New Tool')).toBeInTheDocument();
+    expect(screen.getByText('新建工具')).toBeInTheDocument();
   });
 });

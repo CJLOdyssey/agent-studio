@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_TOOLS, MOCK_TOOL_VERSIONS } from '../mocks/tool';
-import { MOCK_MCPS, MOCK_MCP_VERSIONS } from '../mocks/mcp';
-import { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from '../mocks/prompt';
-import { MOCK_SKILLS, MOCK_SKILL_VERSIONS } from '../mocks/skill';
-import { MOCK_TEAMS, MOCK_TEAM_VERSIONS } from '../mocks/team';
-import { MOCK_STATS, MOCK_ACTIVITY, MOCK_HEALTH } from '../mocks/monitor';
-import { MOCK_OUTPUTS } from '../mocks/output';
-import { MOCK_LOGS } from '../mocks/logs';
-import { MOCK_AGENTS } from '../mocks/agent';
+import { MOCK_TOOLS, MOCK_TOOL_VERSIONS } from '../tool';
+import { MOCK_MCPS, MOCK_MCP_VERSIONS } from '../mcp';
+import { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from '../prompt';
+import { MOCK_SKILLS, MOCK_SKILL_VERSIONS } from '../skill';
+import { MOCK_TEAMS, MOCK_TEAM_VERSIONS } from '../team';
+import { MOCK_STATS, MOCK_ACTIVITY, MOCK_HEALTH } from '../monitor';
+import { MOCK_OUTPUTS } from '../output';
+import { MOCK_LOGS } from '../logs';
+import { MOCK_AGENTS } from '../agent';
 
 describe('mocks/tool', { tags: ['unit'] }, () => {
   it('exports MOCK_TOOLS array', () => {

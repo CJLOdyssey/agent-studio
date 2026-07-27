@@ -100,7 +100,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(screen.getByText('workstation.delete'));
     fireEvent.click(screen.getByText('common.cancel'));
     expect(handleDeleteTeam).not.toHaveBeenCalled();
-    expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
   });
 
@@ -112,7 +112,8 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.delete'));
-    fireEvent.click(document.body.querySelector('.agentstudio-modal-overlay')!);
+    const dialog = document.body.querySelector('[role="dialog"]')!;
+    fireEvent.click(dialog.parentElement!);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
     restore();
   });
@@ -125,10 +126,10 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.delete'));
-    const modal = document.body.querySelector('.agentstudio-modal')!;
+    const modal = document.body.querySelector('[role="dialog"]')!;
     fireEvent.click(modal);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
-    expect(document.body.querySelector('.agentstudio-modal')).toBeDefined();
+    expect(document.body.querySelector('[role="dialog"]')).toBeDefined();
     restore();
   });
 
@@ -221,7 +222,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     act(() => { vi.advanceTimersByTime(100); });
     expect(document.body.textContent).toContain('sidebar.nameNotEmpty');
     fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
-    expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
     vi.useRealTimers();
   });

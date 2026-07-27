@@ -51,7 +51,7 @@ describe('SettingsContext', { tags: ['unit'] }, () => {
         <TestConsumer />
       </SettingsProvider>,
     );
-    expect(document.documentElement.style.getPropertyValue('--body-font-size')).toBe('14px');
+    expect(document.documentElement.style.getPropertyValue('--body-font-size')).toBe('16px');
   });
 
   it('loads settings from localStorage', () => {

@@ -76,13 +76,13 @@ describe('useOutputManagement', { tags: ['unit'] }, () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
   });
 
-  it('sets category filter', async () => {
+  it('sets status filter', async () => {
     const { result } = renderHook(() => useOutputManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    act(() => { result.current.setCategoryFilter('格式约束'); });
-    expect(result.current.categoryFilter).toBe('格式约束');
-    act(() => { result.current.setCategoryFilter('all'); });
-    expect(result.current.categoryFilter).toBe('all');
+    act(() => { result.current.setStatusFilter('active'); });
+    expect(result.current.statusFilter).toBe('active');
+    act(() => { result.current.setStatusFilter('all'); });
+    expect(result.current.statusFilter).toBe('all');
   });
 
   it('toggle selection', async () => {

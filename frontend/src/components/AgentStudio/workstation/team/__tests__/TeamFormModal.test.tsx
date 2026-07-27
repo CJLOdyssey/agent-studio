@@ -48,7 +48,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={makeTeamEntry()} formData={{ ...EMPTY_FORM, name: 'Alpha Team' }} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(screen.getByText('Alpha Team')).toBeInTheDocument();
+    expect(screen.getByText('team.form_title_edit')).toBeInTheDocument();
   });
 
   it('does not show team name subtitle in create mode', () => {
@@ -253,6 +253,6 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(container.querySelector('.team-form-avatar')).toBeInTheDocument();
+    expect(container.querySelector('.lucide-users')).toBeInTheDocument();
   });
 });

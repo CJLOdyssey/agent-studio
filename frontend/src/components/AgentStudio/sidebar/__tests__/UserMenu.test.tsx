@@ -56,7 +56,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
       expect(screen.getByText('sidebar.workstation')).toBeInTheDocument();
       expect(screen.getByText('sidebar.settings')).toBeInTheDocument();
       expect(screen.getByText('sidebar.help')).toBeInTheDocument();
-      expect(screen.getByText('API Key')).toBeInTheDocument();
+      expect(screen.getByText('API 管理')).toBeInTheDocument();
     });
 
     it('shows login button when not authenticated', () => {
@@ -128,7 +128,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
   describe('interaction', () => {
     it('does not render when closed', () => {
       const { container } = render(<UserMenu {...defaultProps} isUserMenuOpen={false} />);
-      expect(screen.queryByText('API Key')).not.toBeInTheDocument();
+      expect(screen.queryByText('API 管理')).not.toBeInTheDocument();
     });
 
     it('Escape key closes menu', () => {
@@ -170,7 +170,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
     it('clicking API Key triggers setIsApiOpen', () => {
       render(<UserMenu {...defaultProps} />);
-      fireEvent.click(screen.getByText('API Key'));
+      fireEvent.click(screen.getByText('API 管理'));
       expect(mockSetIsApiOpen).toHaveBeenCalledWith(true);
     });
 
