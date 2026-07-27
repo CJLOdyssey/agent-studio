@@ -24,8 +24,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:visual": "echo 'Visual regression tests: use Chromatic or Lost Pixel for snapshot testing'",
-    "docs:check": "node ../scripts/check-docs.js",
-    "docs:generate": "node ../scripts/generate-docs.js",
+    "docs:check": "node ../scripts/dev/check-docs.js",
+    "docs:generate": "node ../scripts/dev/generate-docs.js",
     "prepare": "husky"
   },
   "lint-staged": {
