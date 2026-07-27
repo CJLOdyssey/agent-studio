@@ -100,6 +100,15 @@ export function useConversation() {
     return () => window.removeEventListener('agentstudio-conversations-updated', handler);
   }, []);
 
+  /** Persist conversations to localStorage immediately (not just via the debounced effect). */
+  const persistConversations = useCallback((convs: Conversation[]) => {
+    try {
+      localStorage.setItem('agentstudio-conversations', JSON.stringify(convs));
+    } catch {
+      // non-fatal
+    }
+  }, []);
+
   /** Save or update a conversation. If convId exists, updates it; otherwise creates new. */
   const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string, teamId?: string, teamName?: string) => {
     const now = new Date().toISOString();
@@ -114,34 +123,46 @@ export function useConversation() {
       teamId,
       teamName,
     };
-    setConversations((prev) => [conv, ...prev]);
+    setConversations((prev) => {
+      const next = [conv, ...prev];
+      persistConversations(next);
+      return next;
+    });
     setActiveConvId(id);
     return id;
-  }, []);
+  }, [persistConversations]);
 
   /** Update messages for an existing conversation. */
   const updateConversationMessages = useCallback((convId: string, messages: unknown[], updateTimestamps = true, teamId?: string, teamName?: string) => {
-    setConversations((prev) =>
-      prev.map((c) =>
+    setConversations((prev) => {
+      const next = prev.map((c) =>
         c.id === convId
           ? { ...c, messages: messages as Conversation['messages'], ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}), ...(teamId !== undefined ? { teamId } : {}), ...(teamName !== undefined ? { teamName } : {}) }
           : c,
-      ),
-    );
-  }, []);
+      );
+      persistConversations(next);
+      return next;
+    });
+  }, [persistConversations]);
 
   /** Update session ID for an existing conversation (links to backend session). */
   const updateConversationSessionId = useCallback((convId: string, sessionId: string, updateTimestamps = true) => {
-    setConversations((prev) =>
-      prev.map((c) =>
+    setConversations((prev) => {
+      const next = prev.map((c) =>
         c.id === convId ? { ...c, sessionId, ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}) } : c,
-      ),
-    );
-  }, []);
+      );
+      persistConversations(next);
+      return next;
+    });
+  }, [persistConversations]);
 
   /** Delete a conversation by ID. */
   const deleteConversation = useCallback((convId: string) => {
-    setConversations((prev) => prev.filter((c) => c.id !== convId));
+    setConversations((prev) => {
+      const next = prev.filter((c) => c.id !== convId);
+      persistConversations(next);
+      return next;
+    });
     setActiveConvId((current) => {
       if (current === convId) {
         useChatStore.getState().reset();
@@ -149,7 +170,7 @@ export function useConversation() {
       }
       return current;
     });
-  }, []);
+  }, [persistConversations]);
 
   return {
     activeConvId,

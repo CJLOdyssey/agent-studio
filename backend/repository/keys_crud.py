@@ -1,5 +1,6 @@
 """API key CRUD repository — encrypt, store, list, and manage user API keys."""
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
@@ -53,21 +54,44 @@ async def create_api_key(
         return obj
 
 
-async def get_api_keys(user_id: str) -> list[dict[str, Any]]:
+async def get_api_keys(
+    user_id: str,
+    fallback_ids: list[str] | None = None,
+) -> list[dict[str, Any]]:
     """List a user's API keys — keys are MASKED, never returned raw.
 
     Falls back to 'anonymous' user's keys when the current user has none,
     so new browsers can use pre-configured keys without re-entering.
+
+    ``fallback_ids``: additional user IDs to search (e.g. X-User-ID from before login),
+    so keys created under a client-generated anonymous ID remain visible after
+    the user authenticates.
     """
     factory = get_session_factory()
     async with factory() as session:
-        stmt = (
-            select(UserApiKey).where(UserApiKey.user_id == user_id).order_by(UserApiKey.created_at)
-        )
-        result = await session.execute(stmt)
-        rows = result.scalars().all()
+        # Collect unique candidate IDs
+        candidates = {user_id}
+        if fallback_ids:
+            candidates.update(fbid for fbid in fallback_ids if fbid and fbid != user_id)
 
-        # Fallback: if current user has no keys, show anonymous user's keys
+        rows: Sequence[UserApiKey] = []
+        seen_ids: set[str] = set()
+        # Search candidates in priority order, deduplicating by key id
+        for cid in [user_id] + (fallback_ids or []):
+            if cid in ("anonymous", ""):
+                continue
+            stmt = (
+                select(UserApiKey)
+                .where(UserApiKey.user_id == cid)
+                .order_by(UserApiKey.created_at)
+            )
+            result = await session.execute(stmt)
+            for r in result.scalars().all():
+                if r.id not in seen_ids:
+                    rows.append(r)
+                    seen_ids.add(r.id)
+
+        # Ultimate fallback: anonymous user's keys (pre-configured defaults)
         if not rows and user_id != "anonymous":
             stmt = (
                 select(UserApiKey)

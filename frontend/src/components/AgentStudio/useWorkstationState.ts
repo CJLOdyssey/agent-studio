@@ -100,8 +100,13 @@ export function useWorkstationState(
     el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
   }, [lastMsgLen, lastMsgStream, messagesContainerRef]);
 
+  // Sync messages back to conversation when run completes (status idle)
+  // OR when WebSocket disconnects — covers the case where the 'result'
+  // event is lost and apiStatus stays at 'running'.
   useEffect(() => {
-    if (apiStatus === 'loading' || apiStatus === 'running') return;
+    if (apiStatus === 'loading') return;
+    if (apiStatus === 'running' && wsStatus !== 'disconnected') return;
+
     const activeId = convRef.current.activeConvId;
     if (activeId) {
       const state = useChatStore.getState();
@@ -113,7 +118,7 @@ export function useWorkstationState(
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiMessages, apiStatus]);
+  }, [apiMessages, apiStatus, wsStatus]);
 
   useEffect(() => {
     const activeId = conv.activeConvId;

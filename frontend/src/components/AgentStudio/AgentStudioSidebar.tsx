@@ -114,7 +114,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
 
       {/* New Chat - primary action */}
       <div className="px-4 shrink-0">
-        <button className="w-full flex items-center justify-center gap-2 h-10 px-4 bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-full text-sm font-medium text-[var(--color-text-primary)] cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface-hover)] active:scale-[0.98]" onClick={onNewChat}>
+        <button className="w-full flex items-center justify-center gap-2 h-10 px-4 bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-full text-sm font-medium text-[var(--color-text-primary)] cursor-pointer hover:bg-[var(--color-surface-hover)] active:scale-[0.98] transition-[transform] duration-150" onClick={onNewChat}>
           <Sparkles size={16} className="text-[var(--color-text-muted)]" />
           <span>{t('sidebar.newChat')}</span>
         </button>
@@ -140,8 +140,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
           onTeamChat={onTeamChat}
         />
 
-        <div>
-          <div className="px-2.5 py-0.5 text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
+        <div className="flex flex-col min-h-0 flex-1">
+          <div className="px-2.5 py-0.5 text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)] shrink-0">
             {t('sidebar.recentConversations')}
           </div>
           <ConversationsList
@@ -151,6 +151,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
             agents={teams.flatMap((t) => t.agents)}
             onSelect={handleConvSelect}
             onDelete={handleConvDelete}
+            onRename={(id) => {/* TODO */}}
+            onPin={(id) => {/* TODO */}}
           />
         </div>
       </div>

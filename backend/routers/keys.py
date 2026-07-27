@@ -79,8 +79,12 @@ class KeyResponse(BaseModel):
 async def list_keys(request: Request) -> Any:
     """List all API keys for the authenticated user. Keys are MASKED."""
     user_id = get_user_id(request)
+    # Include X-User-ID as fallback so keys created under a client-generated
+    # anonymous ID are still visible after the user authenticates (JWT cookie).
+    x_uid = str(request.headers.get("X-User-ID", ""))
+    fallback_ids = [x_uid] if x_uid and x_uid != user_id else None
     try:
-        keys = await get_api_keys(user_id)
+        keys = await get_api_keys(user_id, fallback_ids=fallback_ids)
         return [
             KeyResponse(
                 id=k["id"],

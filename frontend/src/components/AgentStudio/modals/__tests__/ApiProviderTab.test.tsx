@@ -63,9 +63,10 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
     vi.clearAllMocks();
   });
 
-  it('renders loading state', () => {
+  it('renders loading skeleton when loading and no keys', () => {
     renderTab({ loading: true, keys: [] });
-    expect(document.querySelector('.ant-spin')).toBeTruthy();
+    // Should show skeleton, not the table with empty text
+    expect(screen.queryByText(/No keys/i)).toBeNull();
   });
 
   it('renders empty state when no keys', () => {

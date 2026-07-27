@@ -5,6 +5,7 @@ import { ConfigProvider, Table, Switch, Tag, Button, Space, Tooltip } from 'antd
 import type { ColumnsType } from 'antd/es/table';
 import type { KeyItem } from '../../../api/client';
 import WstaPagination from '../workstation/shared/WstaPagination';
+import LoadingSkeleton from '../../shared/LoadingSkeleton';
 
 const USAGE_COLORS: Record<string, string> = {
   vector: 'var(--color-accent)',
@@ -209,6 +210,9 @@ export default function ApiProviderTab({
       `}</style>
       <div className="border-t border-[var(--color-border)] shrink-0" />
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {loading && keys.length === 0 ? (
+          <LoadingSkeleton type="table" rows={4} />
+        ) : (
         <ConfigProvider
           theme={{
             token: {
@@ -231,7 +235,6 @@ export default function ApiProviderTab({
           rowKey="id"
           columns={columns}
           dataSource={paginatedKeys}
-          loading={loading && { indicator: <Loader2 size={20} className="animate-spin" /> }}
           pagination={false}
           size="small"
           rowSelection={{
@@ -249,6 +252,7 @@ export default function ApiProviderTab({
           }}
         />
         </ConfigProvider>
+        )}
       </div>
       {keys.length > 0 && (
         <div>

@@ -36,16 +36,6 @@ function logError(error: unknown) {
   Logger.error('App Error Boundary triggered', { error: error as Error });
 }
 
-const loadingScreenStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100dvh',
-  background: 'var(--color-surface, #0f1117)',
-  color: 'var(--color-text-secondary, #888)',
-  fontSize: 14,
-};
-
 function AppInit() {
   const queryClient = useQueryClient();
 
@@ -56,11 +46,7 @@ function AppInit() {
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { loading, loginModalOpen, closeLoginModal } = useAuth();
-
-  if (loading) {
-    return <div style={loadingScreenStyle}>✦ AgentStudio</div>;
-  }
+  const { loginModalOpen, closeLoginModal } = useAuth();
 
   return (
     <>

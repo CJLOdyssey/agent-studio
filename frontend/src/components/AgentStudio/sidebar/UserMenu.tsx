@@ -37,7 +37,7 @@ function PopoverItem({
 
 export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSettingsOpen, setIsApiOpen, onOpenWorkstation }: Props) {
   const { t } = useTranslation();
-  const { user, isAuthenticated, logout, openLoginModal } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, logout, openLoginModal } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const closeMenu = useCallback(() => setIsUserMenuOpen(false), [setIsUserMenuOpen]);
@@ -128,7 +128,9 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
       >
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-9 h-9 bg-[var(--color-accent)]/15 rounded-full flex items-center justify-center shrink-0">
-              {isAuthenticated && user?.username ? (
+              {authLoading ? (
+                <div className="w-5 h-5 rounded-full bg-[var(--color-surface-hover)] animate-pulse" />
+              ) : isAuthenticated && user?.username ? (
                 <span className="text-sm font-semibold text-[var(--color-accent)] leading-none">
                   {user.username.charAt(0).toUpperCase()}
                 </span>
@@ -138,11 +140,19 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
             </div>
             <div className="overflow-hidden text-left">
               <div className="text-base font-semibold text-[var(--color-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis">
-                {isAuthenticated ? (user?.username || user?.email) : '游客'}
+                {authLoading ? (
+                  <span className="inline-block h-4 w-16 rounded bg-[var(--color-surface-hover)] animate-pulse align-middle" />
+                ) : isAuthenticated ? (user?.username || user?.email) : '游客'}
               </div>
               <div className="text-sm text-[var(--color-text-secondary)] flex items-center gap-1 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
-                {isAuthenticated ? t('user.onlineStatus') : '未登录'}
+                {authLoading ? (
+                  <span className="inline-block h-3 w-20 rounded bg-[var(--color-surface-hover)] animate-pulse align-middle" />
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
+                    {isAuthenticated ? t('user.onlineStatus') : '未登录'}
+                  </>
+                )}
               </div>
             </div>
           </div>

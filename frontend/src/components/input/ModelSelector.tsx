@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ModelOption } from '../../types/input';
 
@@ -15,10 +15,33 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const current = models.find((m) => m.id === selectedModel);
   const isEmpty = models.length === 0;
+
+  // Once models have been loaded (even if empty), never go back to "loading" state.
+  // This prevents flashing "请配置API" on page refresh when the /api/keys query is still in flight.
+  useEffect(() => {
+    if (models.length > 0 || hasLoadedOnce) {
+      setHasLoadedOnce(true);
+    }
+  }, [models, hasLoadedOnce]);
+
+  // Also mark loaded once the selected model arrives (cached from localStorage).
+  useEffect(() => {
+    if (selectedModel && models.find((m) => m.id === selectedModel)) {
+      setHasLoadedOnce(true);
+    }
+  }, [selectedModel, models]);
+
+  // Fallback: if models never arrive after 4s, mark as loaded so "请配置API" shows.
+  useEffect(() => {
+    if (hasLoadedOnce) return;
+    const timer = setTimeout(() => setHasLoadedOnce(true), 4000);
+    return () => clearTimeout(timer);
+  }, [hasLoadedOnce]);
 
   // Memoize grouped models — not called in render path anymore
   const providers = useMemo(() => {
@@ -108,9 +131,14 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         aria-haspopup={isEmpty ? undefined : 'listbox'}
       >
         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-          {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
+          {!hasLoadedOnce ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Loader2 size={10} className="animate-spin" />
+              {selectedModel || t('model.loading') || '加载中'}
+            </span>
+          ) : isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
         </span>
-        <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />
+        {hasLoadedOnce && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
       </button>
 
       {open && !isEmpty && (

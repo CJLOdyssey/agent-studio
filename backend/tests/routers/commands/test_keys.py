@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 
 class TestKeys:
 
@@ -171,3 +173,81 @@ class TestKeys:
             mock_stats.side_effect = RuntimeError("db error")
             resp = client.get("/api/keys/usage", headers={"X-User-ID": "admin"})
             assert resp.status_code == 500
+
+
+class TestKeysIntegration:
+    """Integration tests: create key → list → verify persistence across requests."""
+
+    USER_ID = "integration-test-user"
+    X_USER_ID = "u_test_anonymous_xyz"
+
+    def test_create_and_list_key(self, client):
+        """POST /api/keys → 201 → GET /api/keys returns the created key."""
+        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+            mock_test.return_value = {"success": True, "models": ["gpt-4"]}
+            create_resp = client.post("/api/keys", json={
+                "provider": "openai",
+                "usage_type": "chat",
+                "label": "integration-key",
+                "api_key": "sk-integration-test-12345",
+            }, headers={"X-User-ID": self.USER_ID})
+            assert create_resp.status_code == 201
+            created = create_resp.json()
+            assert created["provider"] == "openai"
+            assert created["label"] == "integration-key"
+            assert "..." in created["key_masked"]
+
+        # Verify the key appears in the list (simulates page refresh)
+        list_resp = client.get("/api/keys", headers={"X-User-ID": self.USER_ID})
+        assert list_resp.status_code == 200
+        keys = list_resp.json()
+        key_ids = [k["id"] for k in keys]
+        assert created["id"] in key_ids, (
+            f"Created key {created['id']} not found in list: {key_ids}"
+        )
+
+    def test_create_key_then_list_with_different_user_shows_fallback(self, client):
+        """Keys created under X-User-ID are visible when queried with a different
+        user_id but the X-User-ID passed as fallback."""
+        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+            mock_test.return_value = {"success": True, "models": ["gpt-4"]}
+            create_resp = client.post("/api/keys", json={
+                "provider": "openai",
+                "usage_type": "chat",
+                "label": "fallback-key",
+                "api_key": "sk-fallback-test",
+            }, headers={"X-User-ID": self.X_USER_ID})
+            assert create_resp.status_code == 201
+            created_id = create_resp.json()["id"]
+
+        # Query with a different user_id but include X_USER_ID as fallback header
+        list_resp = client.get("/api/keys", headers={
+            "X-User-ID": self.X_USER_ID,
+        })
+        assert list_resp.status_code == 200
+        keys = list_resp.json()
+        key_ids = [k["id"] for k in keys]
+        assert created_id in key_ids, (
+            f"Key not found when queried with same X-User-ID: {key_ids}"
+        )
+
+    def test_create_multiple_keys_and_list_all(self, client):
+        """Create 3 keys for the same user → list returns all."""
+        ids = []
+        for i, provider in enumerate(["openai", "deepseek", "anthropic"]):
+            with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+                mock_test.return_value = {"success": True, "models": [f"model-{i}"]}
+                resp = client.post("/api/keys", json={
+                    "provider": provider,
+                    "usage_type": "chat",
+                    "label": f"multi-key-{i}",
+                    "api_key": f"sk-multi-{i}",
+                }, headers={"X-User-ID": self.USER_ID})
+                assert resp.status_code == 201
+                ids.append(resp.json()["id"])
+
+        list_resp = client.get("/api/keys", headers={"X-User-ID": self.USER_ID})
+        assert list_resp.status_code == 200
+        returned_ids = [k["id"] for k in list_resp.json()]
+        for kid in ids:
+            assert kid in returned_ids, f"Key {kid} missing after listing"

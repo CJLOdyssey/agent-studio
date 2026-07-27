@@ -153,9 +153,19 @@ PUBLIC_PREFIXES = ("/ws/", "/api/auth/")
 def get_user_id(request: Any) -> str:
     """Extract user identity from the authenticated request.
 
-    Priority: auth middleware (request.state.user_id) → X-User-ID header (dev) → 'anonymous'
+    Priority: auth middleware (request.state.user_id) → JWT cookie → X-User-ID header → 'anonymous'
     """
     user_id: str | None = getattr(request.state, "user_id", None)
     if user_id:
         return user_id
+
+    # Check httpOnly access_token cookie (set by login/register/verify/refresh endpoints)
+    token = request.cookies.get("access_token")
+    if token:
+        payload = decode_jwt(token, AUTH_SECRET)
+        if payload:
+            uid = payload.get("sub")
+            if uid:
+                return uid
+
     return str(request.headers.get("X-User-ID", "anonymous"))
