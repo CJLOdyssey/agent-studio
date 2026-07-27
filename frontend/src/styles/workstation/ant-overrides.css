@@ -222,6 +222,7 @@
   font-weight: 500;
 }
 .ant-pagination.ant-pagination .ant-pagination-item:hover {
+  background: var(--color-surface-hover);
   border-color: var(--color-accent);
 }
 .ant-pagination.ant-pagination .ant-pagination-item:hover a {
@@ -235,6 +236,13 @@
 .ant-pagination.ant-pagination .ant-pagination-item-active button {
   color: var(--color-text-on-accent);
   font-weight: 600;
+}
+.ant-pagination.ant-pagination .ant-pagination-item-active:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.ant-pagination.ant-pagination .ant-pagination-item-active:hover a {
+  color: var(--color-text-on-accent);
 }
 .ant-pagination.ant-pagination .ant-pagination-prev,
 .ant-pagination.ant-pagination .ant-pagination-next {
