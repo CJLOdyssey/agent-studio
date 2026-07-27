@@ -11,7 +11,7 @@ interface Props {
 const inputBase: React.CSSProperties = {
   width: '100%',
   padding: '10px 40px 10px 36px',
-  borderRadius: 8,
+  borderRadius: 'var(--radius-btn)',
   border: '1px solid var(--color-border)',
   background: 'var(--color-surface-raised)',
   color: 'var(--color-text-primary)',
@@ -178,7 +178,7 @@ export default function LoginModal({ onClose }: Props) {
             ✦ AgentStudio
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 4, margin: '16px 24px 0', background: 'var(--color-surface-overlay)', borderRadius: 10, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 4, margin: '16px 24px 0', background: 'var(--color-surface-overlay)', borderRadius: 'var(--radius-card)', padding: 3 }}>
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -187,7 +187,7 @@ export default function LoginModal({ onClose }: Props) {
                 flex: 1,
                 padding: '8px 0',
                 border: 'none',
-                borderRadius: 8,
+                borderRadius: 'var(--radius-btn)',
                 background: view === t.key ? 'var(--color-surface-raised)' : 'transparent',
                 color: view === t.key ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
                 fontWeight: view === t.key ? 600 : 400,
@@ -296,7 +296,7 @@ export default function LoginModal({ onClose }: Props) {
                     style={{
                       height: 40,
                       padding: '0 14px',
-                      borderRadius: 8,
+                      borderRadius: 'var(--radius-btn)',
                       border: '1px solid',
                       borderColor: codeCooldown > 0 ? 'var(--color-border)' : 'var(--color-accent)',
                       background: codeCooldown > 0 ? 'var(--color-surface-raised)' : 'transparent',
@@ -360,7 +360,7 @@ export default function LoginModal({ onClose }: Props) {
             {error && (
               <div style={{
                 padding: '8px 12px',
-                borderRadius: 8,
+                borderRadius: 'var(--radius-btn)',
                 background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
                 color: 'var(--color-danger)',
                 fontSize: 13,
@@ -377,7 +377,7 @@ export default function LoginModal({ onClose }: Props) {
               style={{
                 width: '100%',
                 padding: '11px 0',
-                borderRadius: 8,
+                borderRadius: 'var(--radius-btn)',
                 border: 'none',
                 background: submitting ? 'var(--color-border)' : 'var(--color-accent)',
                 color: submitting ? 'var(--color-text-tertiary)' : '#fff',

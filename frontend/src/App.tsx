@@ -113,7 +113,7 @@ function ThemedApp() {
       <a className="skip-link" href="#main-content" style={{
         position: 'absolute', top: '-100%', left: 8, zIndex: 9999,
         padding: '8px 16px', background: '#6366f1', color: '#fff',
-        borderRadius: '0 0 6px 6px', fontSize: 14, textDecoration: 'none',
+        borderRadius: '0 0 var(--radius-btn) var(--radius-btn)', fontSize: 14, textDecoration: 'none',
       }} onFocus={(e) => { (e.target as HTMLElement).style.top = '0'; }}
        onBlur={(e) => { (e.target as HTMLElement).style.top = '-100%'; }}>
         跳转到主内容

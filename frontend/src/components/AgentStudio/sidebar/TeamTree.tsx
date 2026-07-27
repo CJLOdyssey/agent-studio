@@ -252,7 +252,7 @@ const TeamTree = memo(function TeamTree({
               >
                 <button
                   className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
-                  style={{ padding: '8px 10px', borderRadius: 8 }}
+                  style={{ padding: '8px 10px', borderRadius: 'var(--radius-btn)' }}
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleAddAgent(team.id);
@@ -264,7 +264,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('sidebar.addAgent')}</span>
                 </button>
                 <button
-                  style={{ padding: "8px 10px", borderRadius: 8 }}
+                  style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
                   className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
@@ -276,7 +276,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{t('workstation.rename')}</span>
                 </button>
                 <button
-                  style={{ padding: "8px 10px", borderRadius: 8 }}
+                  style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
                   className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
@@ -289,7 +289,7 @@ const TeamTree = memo(function TeamTree({
                   <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                 </button>
                 <button
-                  style={{ padding: "8px 10px", borderRadius: 8 }}
+                  style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
                   className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }

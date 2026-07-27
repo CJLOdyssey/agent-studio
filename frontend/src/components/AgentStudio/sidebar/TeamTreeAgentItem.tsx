@@ -88,7 +88,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
               style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, boxShadow: 'rgba(0,0,0,0.2) 0px 0px 1px 0px, rgba(0,0,0,0.02) 0px 0px 4px 0px, rgba(0,0,0,0.08) 0px 12px 32px 0px' }}
             >
               <button
-                style={{ padding: "8px 10px", borderRadius: 8 }}
+                style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
                 className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
@@ -101,7 +101,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 <span>{t('sidebar.edit')}</span>
               </button>
               <button
-                style={{ padding: "8px 10px", borderRadius: 8 }}
+                style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
                 className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }
@@ -113,7 +113,7 @@ const TeamTreeAgentItem = memo(function TeamTreeAgentItem({
                 <span>{t('sidebar.rename')}</span>
               </button>
               <button
-                style={{ padding: "8px 10px", borderRadius: 8 }}
+                style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
                 className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                 onClick={() => {
                   if (!isAuthenticated) { openLoginModal(); return; }

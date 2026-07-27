@@ -53,7 +53,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 12px',
-    borderRadius: 8,
+    borderRadius: 'var(--radius-btn)',
     border: '1px solid var(--color-border)',
     background: 'var(--color-surface-raised)',
     color: 'var(--color-text-primary)',
@@ -66,7 +66,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
   const btnStyle: React.CSSProperties = {
     width: '100%',
     padding: '10px 0',
-    borderRadius: 8,
+    borderRadius: 'var(--radius-btn)',
     border: 'none',
     background: 'var(--color-accent)',
     color: '#fff',

@@ -164,7 +164,7 @@ export default function SettingsModal({ onClose }: Props) {
                   padding: '24px 20px', width: '100%',
                   background: 'var(--color-surface-raised)',
                   border: '1px solid var(--color-border)',
-                  borderRadius: 10, marginBottom: 16,
+                  borderRadius: 'var(--radius-card)', marginBottom: 16,
                 }}>
                   <div style={{
                     width: 52, height: 52, borderRadius: 14,
@@ -200,7 +200,7 @@ export default function SettingsModal({ onClose }: Props) {
                 <div style={{
                   display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1,
                   width: '100%', background: 'var(--color-border)',
-                  border: '1px solid var(--color-border)', borderRadius: 10, overflow: 'hidden',
+                  border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)', overflow: 'hidden',
                 }}>
                   {[
                     { label: 'Version', value: VERSION },

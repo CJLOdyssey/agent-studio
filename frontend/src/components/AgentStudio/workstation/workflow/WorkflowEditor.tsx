@@ -66,7 +66,7 @@ function CustomNode({ id, data, selected }: NodeProps) {
       onMouseLeave={() => setHovered(false)}
       style={{
         padding: '10px 14px',
-        borderRadius: 8,
+        borderRadius: 'var(--radius-card)',
         border: `2px solid ${selected ? '#3b82f6' : '#e5e7eb'}`,
         background: '#fff',
         minWidth: 130,
@@ -140,7 +140,7 @@ function CustomNode({ id, data, selected }: NodeProps) {
             marginTop: 4,
             background: '#fff',
             border: '1px solid #e5e7eb',
-            borderRadius: 6,
+            borderRadius: 'var(--radius-btn)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             zIndex: 1000,
             minWidth: 100,
@@ -335,7 +335,7 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
           </span>
         )}
       </div>
-      <div style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+      <div style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 'var(--radius-card)' }}>
         <ReactFlow
           nodes={nodesWithCallbacks}
           edges={edges.map((e) => ({

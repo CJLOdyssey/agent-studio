@@ -25,7 +25,7 @@ export function CodeBlock({
           style={oneDark}
           language={match[1]}
           PreTag="div"
-          customStyle={{ margin: 0, borderRadius: '0 0 6px 6px' }}
+          customStyle={{ margin: 0, borderRadius: '0 0 var(--radius-btn) var(--radius-btn)' }}
         >
           {codeString}
         </SyntaxHighlighter>
