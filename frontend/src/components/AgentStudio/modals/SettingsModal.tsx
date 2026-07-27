@@ -162,7 +162,7 @@ export default function SettingsModal({ onClose }: Props) {
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 16,
                   padding: '24px 20px', width: '100%',
-                  background: 'color-mix(in srgb, var(--color-surface), var(--color-text-primary) 3%)',
+                  background: 'var(--color-surface-raised)',
                   border: '1px solid var(--color-border)',
                   borderRadius: 10, marginBottom: 16,
                 }}>
