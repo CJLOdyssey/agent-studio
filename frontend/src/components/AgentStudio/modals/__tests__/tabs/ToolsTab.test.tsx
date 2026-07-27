@@ -17,17 +17,13 @@ const baseItems = [
 function renderTab(overrides?: Record<string, unknown>) {
   const props = {
     items: baseItems,
-    editingId: null,
     showForm: false,
     formData: defaultFormData,
     formErrors: [],
     editingItem: null,
     onToggle: vi.fn(),
     onAdd: vi.fn(),
-    onUpdate: vi.fn(),
     onRemove: vi.fn(),
-    onStartEdit: vi.fn(),
-    onFinishEdit: vi.fn(),
     onPickerOpen: vi.fn(),
     onCustomize: vi.fn(),
     onFormSave: vi.fn(),
@@ -45,11 +41,6 @@ describe('ToolsTab', { tags: ['integration'] }, () => {
     expect(screen.getByText('web_search')).toBeInTheDocument();
   });
 
-  it('shows correct tool count', () => {
-    renderTab();
-    expect(screen.getByText('工具 (2)')).toBeInTheDocument();
-  });
-
   it('calls onToggle when checkbox clicked', () => {
     const { props } = renderTab();
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
@@ -57,9 +48,9 @@ describe('ToolsTab', { tags: ['integration'] }, () => {
     expect(props.onToggle).toHaveBeenCalledWith('1');
   });
 
-  it('calls onCustomize when customize button clicked', () => {
+  it('calls onCustomize when new tool button clicked', () => {
     const { props } = renderTab();
-    fireEvent.click(screen.getByText('自定义'));
+    fireEvent.click(screen.getByText('新建工具'));
     expect(props.onCustomize).toHaveBeenCalled();
   });
 
@@ -74,11 +65,10 @@ describe('ToolsTab', { tags: ['integration'] }, () => {
     expect(screen.getByText('暂无工具')).toBeInTheDocument();
   });
 
-  it('opens three-dot menu with rename and delete options', () => {
+  it('opens three-dot menu with delete option', () => {
     renderTab();
     const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
-    expect(screen.getByText('重命名')).toBeInTheDocument();
     expect(screen.getByText('删除')).toBeInTheDocument();
   });
 
