@@ -207,7 +207,8 @@ export function useWorkstationState(
       };
       const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined);
       if (convId) conv.setActiveConvId(convId);
-      submitToApi(text, undefined, undefined, false).catch(() => {
+      // saveConversation + setActiveConvId → useEffect loads msg into store → skip duplicate
+      submitToApi(text, undefined, undefined, true).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
