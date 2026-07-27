@@ -35,7 +35,7 @@ export default function GreetingAnimation({ onComplete }: { onComplete?: () => v
   }, [greeting, reduceMotion]);
 
   return (
-    <h1 className="text-[clamp(24px,4vw,32px)] leading-[1.2] font-bold tracking-tight text-[var(--color-text-primary)] m-0 mb-2 inline-flex items-center text-balance">
+    <h1 className="text-3xl leading-[1.2] font-bold tracking-tight text-[var(--color-text-primary)] m-0 mb-2 inline-flex items-center text-balance">
       {displayedText}
       {!reduceMotion && displayedText.length < greeting.length && (
         <span className="inline-block text-[var(--color-text-muted)] font-light animate-[blink_0.8s_step-end_infinite] ml-0.5">|</span>

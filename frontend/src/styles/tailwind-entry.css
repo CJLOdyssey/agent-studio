@@ -3,6 +3,22 @@
 @import "tailwindcss";
 @import "./base/index.css" layer(base);
 
+/* ── Geist font (variable) ── */
+@font-face {
+  font-family: 'Geist';
+  src: url('../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('../../node_modules/geist/dist/fonts/geist-sans/Geist-Italic[wght].woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* ── 静态设计 token（不随主题切换） ── */
 @theme {
   /* ── 品牌强调色（固定） ── */
@@ -24,6 +40,8 @@
   --text-lg: 1.125rem;
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;     /* 展示标题 */
+  --text-4xl: 2.25rem;      /* 页面大标题 */
 
   /* ── 圆角阶梯 ── */
   --radius-xs: 4px;
@@ -103,7 +121,7 @@
   --radius-full: 9999px;     /* Pill / Avatar */
 
   /* ── 字体 ── */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
   /* ── 语法高亮 ── */
