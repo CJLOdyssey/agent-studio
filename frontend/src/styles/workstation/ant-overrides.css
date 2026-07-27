@@ -204,11 +204,10 @@
   color: var(--color-text-primary);
 }
 
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination {
+.ant-pagination.ant-pagination {
   margin: 0;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item {
+.ant-pagination.ant-pagination .ant-pagination-item {
   background: transparent;
   border-color: var(--color-border);
   border-radius: 6px;
@@ -217,34 +216,28 @@
   line-height: 30px;
   transition: all 0.15s ease;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item a {
+.ant-pagination.ant-pagination .ant-pagination-item a {
   color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item:hover {
+.ant-pagination.ant-pagination .ant-pagination-item:hover {
   border-color: var(--color-accent);
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-item:hover a {
+.ant-pagination.ant-pagination .ant-pagination-item:hover a {
   color: var(--color-accent);
 }
-
-.ant-pagination .ant-pagination-item-active {
+.ant-pagination.ant-pagination .ant-pagination-item-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
-
-.ant-pagination .ant-pagination-item-active a,
-.ant-pagination .ant-pagination-item-active button {
+.ant-pagination.ant-pagination .ant-pagination-item-active a,
+.ant-pagination.ant-pagination .ant-pagination-item-active button {
   color: var(--color-text-on-accent);
   font-weight: 600;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-prev,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-next {
+.ant-pagination.ant-pagination .ant-pagination-prev,
+.ant-pagination.ant-pagination .ant-pagination-next {
   min-width: 32px;
   height: 32px;
   line-height: 32px;
@@ -254,39 +247,33 @@
   color: var(--color-text-secondary);
   transition: all 0.15s ease;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-prev:hover,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-next:hover {
+.ant-pagination.ant-pagination .ant-pagination-prev:hover,
+.ant-pagination.ant-pagination .ant-pagination-next:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-prev button,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-next button {
+.ant-pagination.ant-pagination .ant-pagination-prev button,
+.ant-pagination.ant-pagination .ant-pagination-next button {
   color: inherit;
   font-size: 16px;
   font-weight: 600;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled:hover {
+.ant-pagination.ant-pagination .ant-pagination-disabled,
+.ant-pagination.ant-pagination .ant-pagination-disabled:hover {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled .ant-pagination-item,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled:hover .ant-pagination-item {
+.ant-pagination.ant-pagination .ant-pagination-disabled .ant-pagination-item,
+.ant-pagination.ant-pagination .ant-pagination-disabled:hover .ant-pagination-item {
   border-color: var(--color-border);
   background: transparent;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled .ant-pagination-item a,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-disabled:hover .ant-pagination-item a {
+.ant-pagination.ant-pagination .ant-pagination-disabled .ant-pagination-item a,
+.ant-pagination.ant-pagination .ant-pagination-disabled:hover .ant-pagination-item a {
   color: var(--color-text-muted);
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-prev,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-next {
+.ant-pagination.ant-pagination .ant-pagination-jump-prev,
+.ant-pagination.ant-pagination .ant-pagination-jump-next {
   min-width: 32px;
   height: 32px;
   line-height: 32px;
@@ -297,24 +284,20 @@
   font-size: 14px;
   letter-spacing: 2px;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-prev:hover,
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-jump-next:hover {
+.ant-pagination.ant-pagination .ant-pagination-jump-prev:hover,
+.ant-pagination.ant-pagination .ant-pagination-jump-next:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options {
+.ant-pagination.ant-pagination .ant-pagination-options {
   margin-left: 12px;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper {
+.ant-pagination.ant-pagination .ant-pagination-options-quick-jumper {
   font-size: 13px;
   color: var(--color-text-muted);
   margin-left: 8px;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper input {
+.ant-pagination.ant-pagination .ant-pagination-options-quick-jumper input {
   background: transparent;
   border-color: var(--color-border);
   border-radius: 6px;
@@ -325,18 +308,15 @@
   padding: 0 8px;
   transition: all 0.15s ease;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper input:hover {
+.ant-pagination.ant-pagination .ant-pagination-options-quick-jumper input:hover {
   border-color: var(--color-accent);
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-options-quick-jumper input:focus {
+.ant-pagination.ant-pagination .ant-pagination-options-quick-jumper input:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
   outline: none;
 }
-
-:where(.wsta-root, .workstation-modal, .api-modal) .ant-pagination-total-text {
+.ant-pagination.ant-pagination .ant-pagination-total-text {
   font-size: 13px;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
@@ -371,13 +351,28 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-select-selector {
-  background: var(--color-surface-raised);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
+.ant-select-dropdown.ant-select-dropdown {
+  background: var(--color-surface-overlay);
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-select-selection-item {
+.ant-select-dropdown .ant-select-item-option.ant-select-item-option {
+  color: var(--color-text-secondary);
+}
+
+.ant-select-dropdown .ant-select-item-option.ant-select-item-option:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.ant-select-dropdown .ant-select-item-option.ant-select-item-option-active {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.ant-select-single .ant-select-selector.ant-select-selector {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+}
+
+.ant-select-single .ant-select-selection-item.ant-select-selection-item {
   color: var(--color-text-primary);
 }
 
@@ -390,35 +385,35 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
-/* ── WstaDropdownPortal (Ant Menu inside fixed container) ── */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-vertical {
-  border-inline-end: none;
+/* ── Dropdown menus (Ant Design v5) ── */
+.ant-dropdown .ant-dropdown-menu.ant-dropdown-menu {
+  background: var(--color-surface-overlay);
+  border-color: var(--color-border);
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item {
+.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.ant-dropdown-menu-item {
   height: 36px;
   line-height: 36px;
-  margin: 0;
   font-size: 13px;
   color: var(--color-text-secondary);
   border-radius: 0;
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item:hover {
+.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.ant-dropdown-menu-item:hover {
   background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   color: var(--color-accent);
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item-danger {
+.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.ant-dropdown-menu-item.ant-dropdown-menu-item-danger {
   color: var(--color-danger);
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item-danger:hover {
+.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item.ant-dropdown-menu-item.ant-dropdown-menu-item-danger:hover {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   color: var(--color-danger);
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-menu-item-divider {
+.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item-divider {
   margin: 4px 0;
   border-color: var(--color-border-subtle);
 }

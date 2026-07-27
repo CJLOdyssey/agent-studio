@@ -25,7 +25,9 @@ export default function ConfirmModal({
     <Modal
       title={title}
       onClose={onCancel}
-      className="w-[var(--modal-sm)] h-[var(--modal-height)] overflow-hidden"
+      hideHeaderBorder
+      hideFooterBorder
+      className="w-[var(--modal-sm)]"
       footer={
         <>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onCancel}>
