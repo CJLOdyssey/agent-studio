@@ -140,30 +140,28 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
       onEditSkill={itemEdit.handleEditSkill}
       onPickerOpen={setPickerTab}
       itemsToFormData={itemEdit.itemsToFormData}
+      pendingArchive={itemEdit.pendingArchive}
+      onArchiveConfirm={() => {
+        if (itemEdit.pendingArchive) {
+          itemEdit.archiveItem(itemEdit.pendingArchive.kind, itemEdit.pendingArchive.customId, itemEdit.pendingArchive.data);
+        }
+      }}
+      onArchiveCancel={() => itemEdit.setPendingArchive(null)}
+      onArchiveMenu={(kind, item) => itemEdit.handleArchiveFromMenu(kind as 'tool' | 'mcp' | 'skill', item)}
     />
   );
 
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div
-        className="bg-[var(--color-surface-raised)] rounded-[16px] w-[min(80vw,760px)] h-[min(80vh,640px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
+        className="bg-[var(--color-surface-raised)] rounded-[16px] w-[min(80vw,760px)] h-[min(85vh,720px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         role="dialog"
         aria-modal="true"
       >
         <div className="flex items-center justify-between pt-5 px-6 border-b-0">
-          <div className="flex items-center gap-[14px]">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center relative shrink-0 after:content-[''] after:absolute after:-inset-[2px] after:rounded-[14px] after:bg-[inherit] after:opacity-[0.15] after:blur-[4px] after:-z-[1] ${agent.bg} ${agent.border}`}>
-              <agent.icon size={20} className={agent.color} />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-[var(--color-text-primary)] m-0 leading-[1.3]">{t('workstation.agentManage')}</h3>
-              <p className="text-xs text-[var(--color-text-muted)] mt-0.5 mb-0 leading-[1.4]">
-                设置 <strong className="text-[var(--color-text-secondary)] font-medium">{agent.name}</strong> 的能力和行为
-              </p>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] m-0">配置Agent</h3>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />
           </button>
@@ -174,31 +172,37 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.agentName')}</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
-          <div className="mt-[14px]">
+          <div className="mt-3">
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.agentDesc')}</label>
             <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
-          <p className="text-xs text-[var(--color-text-muted)] mt-2">{t('workstation.agentPlaceholder')}</p>
         </div>
 
-        <div className="flex items-center gap-1 mx-6 mt-4 p-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px]">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`flex-1 flex items-center justify-center gap-[6px] py-[7px] px-3 border-none rounded-lg bg-transparent text-[var(--color-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--color-text-secondary)] hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--color-surface-elevated)] !text-[var(--color-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--color-accent)]' : ''}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.icon && <tab.icon size={14} />}
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 mx-6 mt-3 p-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px]">
+          {TABS.map((tab) => {
+            const count = tab.key === 'tools' ? tools.items.length
+              : tab.key === 'mcp' ? mcp.items.length
+              : tab.key === 'skills' ? skills.items.length
+              : null;
+            return (
+              <button
+                key={tab.key}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 border-none rounded-lg bg-transparent text-[var(--color-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--color-text-secondary)] hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--color-surface-elevated)] !text-[var(--color-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--color-accent)]' : ''}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.icon && <tab.icon size={16} />}
+                {tab.label}
+                {count !== null && <span className="text-xs opacity-60 ml-0.5">({count})</span>}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto py-5 px-6 animate-[agentTabFadeIn_0.2s_ease]" key={activeTab}>
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto py-5 px-6 animate-[agentTabFadeIn_0.2s_ease]" key={activeTab}>
           {renderTabContent()}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-[14px] border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-2 px-6 py-3.5">
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)]" onClick={onClose}>{t('workstation.cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
         </div>
