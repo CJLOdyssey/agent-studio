@@ -1,7 +1,4 @@
-/* ============================================
-   Transitions — 主题切换过渡 + reduced-motion
-   ============================================ */
-
+/* ── Theme transition (background, color, border) ── */
 .agentstudio-app,
 .agentstudio-sidebar,
 .agentstudio-global-header,
@@ -9,6 +6,7 @@
 .agentstudio-home,
 .agentstudio-messages,
 .agentstudio-modal,
+.wsta-root,
 .wsta-modal,
 .wsta-table,
 .wsta-toolbar {
@@ -19,7 +17,26 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none;
+    animation: none;
+  }
+}
+
+/* ── High contrast mode (accessibility) ── */
+@media (prefers-contrast: more) {
+  * {
+    border-color: currentColor !important;
+  }
+}
+
+/* ── Reduced transparency (accessibility) ── */
+@media (prefers-reduced-transparency: reduce) {
+  .agentstudio-modal-overlay,
+  .backdrop-blur-\[4px\] {
+    backdrop-filter: none !important;
+    background: rgba(0, 0, 0, 0.85) !important;
   }
 }
