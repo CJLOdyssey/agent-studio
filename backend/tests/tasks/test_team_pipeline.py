@@ -8,14 +8,14 @@ import pytest
 def mock_team_deps():
     """Mock all external dependencies for _run_team_pipeline."""
     patchers = [
-        patch("backend.tasks.team_pipeline.load_config"),
-        patch("backend.tasks.team_pipeline.get_workflow_config_by_team", new_callable=AsyncMock),
-        patch("backend.tasks.team_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.team_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.team_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.team_pipeline.create_checkpointer_async", new_callable=AsyncMock),
-        patch("backend.tasks.team_pipeline.DynamicTeamGraph"),
-        patch("backend.tasks.team_pipeline.log_memory_diff"),
+        patch("tasks.team_pipeline.load_config"),
+        patch("tasks.team_pipeline.get_workflow_config_by_team", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.create_checkpointer_async", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.DynamicTeamGraph"),
+        patch("tasks.team_pipeline.log_memory_diff"),
     ]
     mocks = {}
     for p in patchers:
@@ -34,7 +34,7 @@ def mock_team_deps():
 class TestRunTeamPipeline:
 
     async def test_success(self, mock_team_deps):
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
 
         wf = MagicMock()
         wf.nodes = [MagicMock(), MagicMock()]
@@ -61,7 +61,7 @@ class TestRunTeamPipeline:
         mock_team_deps["publish_run_message"].assert_awaited_once()
 
     async def test_no_workflow_config(self, mock_team_deps):
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
         mock_team_deps["get_workflow_config_by_team"].return_value = None
 
         await _run_team_pipeline(
@@ -75,7 +75,7 @@ class TestRunTeamPipeline:
         mock_team_deps["update_run_result"].assert_not_awaited()
 
     async def test_graph_error_sets_error_status(self, mock_team_deps):
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
 
         wf = MagicMock()
         wf.nodes = [MagicMock()]
@@ -96,7 +96,7 @@ class TestRunTeamPipeline:
         mock_team_deps["update_run_status"].assert_any_await("run-3", "error")
 
     async def test_custom_model_and_key(self, mock_team_deps):
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
 
         wf = MagicMock()
         wf.nodes = [MagicMock()]
@@ -124,7 +124,7 @@ class TestRunTeamPipeline:
 
     async def test_result_without_dict(self, mock_team_deps):
         """Graph.run returns a non-dict result — should not crash."""
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
 
         wf = MagicMock()
         wf.nodes = [MagicMock()]
@@ -146,7 +146,7 @@ class TestRunTeamPipeline:
 
     async def test_empty_artifacts_and_messages(self, mock_team_deps):
         """Empty artifacts and messages."""
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
 
         wf = MagicMock()
         wf.nodes = [MagicMock()]
@@ -168,7 +168,7 @@ class TestRunTeamPipeline:
 
     async def test_result_with_fallback_report(self, mock_team_deps):
         """When _final_report is not in artifacts, use last message content."""
-        from backend.tasks.team_pipeline import _run_team_pipeline
+        from tasks.team_pipeline import _run_team_pipeline
 
         wf = MagicMock()
         wf.nodes = [MagicMock()]

@@ -3,7 +3,7 @@ pytestmark = pytest.mark.integration
 
 """E2E Test: Agent CRUD operations + full config."""
 
-from backend.tests.conftest import Api, _cleanup, _rid
+from tests.conftest import Api, _cleanup, _rid
 
 
 class TestAgentCRUD:

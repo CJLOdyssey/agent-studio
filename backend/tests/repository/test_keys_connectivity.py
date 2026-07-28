@@ -12,7 +12,7 @@ os.environ.setdefault("AUTH_ENABLED", "0")
 os.environ.setdefault("CHECKPOINTER_BACKEND", "memory")
 os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 
-from backend.repository.keys_connectivity import (
+from repository.keys_connectivity import (
     _parse_models_from_response,
     _test_connection_sync,
 )
@@ -168,18 +168,18 @@ class TestTestConnectionSync:
 
 class TestApiKeyConnectionAsync:
     async def test_key_not_found(self, db_engine):
-        from backend.repository.keys_connectivity import test_api_key_connection
+        from repository.keys_connectivity import test_api_key_connection
         result = await test_api_key_connection("nonexistent", "user1")
         assert result["success"] is False
         assert "not found" in result["message"].lower()
 
     async def test_key_found_but_connection_mocked(self, db_engine):
-        from backend.repository.keys_connectivity import test_api_key_connection
-        from backend.repository.keys_crud import create_api_key
+        from repository.keys_connectivity import test_api_key_connection
+        from repository.keys_crud import create_api_key
         k = await create_api_key("user1", "openai", plaintext_key="sk-test")
 
         with unittest.mock.patch(
-            "backend.repository.keys_connectivity._test_connection_sync",
+            "repository.keys_connectivity._test_connection_sync",
             return_value={"success": True, "message": "ok", "models": ["gpt-4"]},
         ):
             result = await test_api_key_connection(k.id, "user1")

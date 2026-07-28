@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react';
 import { X, Users } from 'lucide-react';
 import type { TeamEntry, TeamFormData } from './team.types';
 import { t } from './locales';
+import { TEAM_CATEGORIES } from './team.constants';
 
 interface Props {
   editingItem: TeamEntry | null;
@@ -12,11 +13,10 @@ interface Props {
   errors: string[];
 }
 
-const CATEGORY_OPTIONS: { value: TeamFormData['category']; labelKey: string }[] = [
-  { value: 'dev', labelKey: 'team.category_dev' },
-  { value: 'ops', labelKey: 'team.category_ops' },
-  { value: 'test', labelKey: 'team.category_test' },
-];
+const CATEGORY_OPTIONS = TEAM_CATEGORIES.map(c => ({
+  value: c.value as TeamFormData['category'],
+  labelKey: `team.category_${c.value}` as const,
+}));
 
 function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, errors }: Props) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => { if (e.key === 'Escape') onClose(); }, [onClose]);

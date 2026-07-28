@@ -12,6 +12,13 @@ export interface TeamItem {
   status?: string | null;
 }
 
+export interface TeamCategoryItem { value: string; label: string; }
+
+export async function listTeamCategories(): Promise<TeamCategoryItem[]> {
+  const { data } = await api.get('/teams/categories');
+  return data;
+}
+
 export async function listTeams(): Promise<TeamItem[]> {
   const { data } = await api.get('/teams');
   return data;

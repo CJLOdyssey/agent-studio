@@ -3,20 +3,36 @@
 import contextlib
 import string
 import subprocess
+import sys
 import uuid
+from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from backend.core.infra.database import Base  # type: ignore[attr-defined]
-from backend.core.infra.redis_sentinel import (
+from core.infra.database import Base  # type: ignore[attr-defined]
+from core.infra.redis_sentinel import (
     create_redis as _original_create_redis,  # noqa: F401 — saved before test_client patches it
 )
 
+_base = Path(__file__).parent.parent
+if str(_base) not in sys.path:
+    sys.path.insert(0, str(_base))
+
+# Alias backend.X → X so mock patches like "broker.get_redis" resolve
+import importlib as _il
+import backend as _backend_mod
+_backend_src = _base / 'src'
+for _p in _backend_src.iterdir():
+    if _p.is_dir() and (_p / '__init__.py').exists() and not _p.name.startswith('_'):
+        _mod = _il.import_module(_p.name)
+        sys.modules[f'backend.{_p.name}'] = _mod
+        setattr(_backend_mod, _p.name, _mod)
+
 # Register the requirement coverage plugin
-from backend.tests.requirement_coverage import (  # noqa: F401
+from .requirement_coverage import (  # noqa: F401
     pytest_addoption,
     pytest_collection_modifyitems,
     pytest_configure,
@@ -26,7 +42,7 @@ from backend.tests.requirement_coverage import (  # noqa: F401
 
 # flaky_test may be unavailable in merge/test contexts — import gracefully
 try:
-    from backend.tests.conftest_flaky import flaky_test  # noqa: F401
+    from conftest_flaky import flaky_test  # noqa: F401
 except (ImportError, SyntaxError):
     def flaky_test(**kwargs):  # type: ignore[no-redef]
         """No-op fallback when conftest_flaky is unavailable."""
@@ -221,7 +237,7 @@ async def test_client() -> Any:
     # ── 1. Patch Redis BEFORE app import ────────────────────────────
     # Patch create_redis (the low-level connection factory) instead of
     # get_redis — some callers (login.py, password.py, register.py)
-    # import get_redis via `from backend.broker import get_redis` at
+    # import get_redis via `from broker import get_redis` at
     # module level, creating local references that a later patch on
     # backend.broker.get_redis cannot override.  create_redis is always
     # looked up from its module at call time, so a single patch covers
@@ -233,7 +249,7 @@ async def test_client() -> Any:
     session_redis.expire.return_value = True
     session_redis.publish.return_value = 1
 
-    patch_redis = patch("backend.core.infra.redis_sentinel.create_redis", return_value=session_redis)
+    patch_redis = patch("core.infra.redis_sentinel.create_redis", return_value=session_redis)
     patch_redis.start()
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
@@ -241,14 +257,14 @@ async def test_client() -> Any:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    import backend.core.infra.database as db_mod
+    import core.infra.database as db_mod
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────
     # ── 4. Create ASGI client ───────────────────────────────────────
     from httpx import ASGITransport, AsyncClient
 
-    from backend.core.app import app
+    from core.app import app
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -285,7 +301,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 
 # ── Test data factories ──────────────────────────────────────────────────────
-from backend.tests.factories import (  # noqa: E402
+from tests.factories import (  # noqa: E402
     agent_factory,
     mcp_factory,
     prompt_factory,

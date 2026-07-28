@@ -81,14 +81,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isLegacy = !config.enabled || config.mode === 'legacy';
         setLegacyMode(isLegacy);
 
-        if (isLegacy) {
+        // Skip /me call if no refresh token exists — avoids 401 console noise for guests
+        const rt = localStorage.getItem('agentstudio_refresh_token');
+        if (!rt) {
           setLoading(false);
           return;
         }
 
-        // Skip /me call if no refresh token exists — avoids 401 console noise for guests
-        const rt = localStorage.getItem('agentstudio_refresh_token');
-        if (!rt) {
+        // Legacy mode: still try to restore session from stored token
+        if (isLegacy) {
+          try {
+            const me = await getMe();
+            if (!cancelled && me) {
+              authenticated = true;
+              setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
+              window.dispatchEvent(new CustomEvent('auth:login'));
+              await mergeGuest();
+            }
+          } catch {
+            clearTokens();
+          }
           setLoading(false);
           return;
         }
@@ -157,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const isAuthenticated = !legacyMode && user !== null;
+  const isAuthenticated = user !== null;
 
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await apiLogin(email, password, rememberMe);

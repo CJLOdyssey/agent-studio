@@ -15,8 +15,8 @@ os.environ.setdefault("RATE_LIMIT", "9999")
 os.environ.setdefault("CHECKPOINTER_BACKEND", "memory")
 os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 
-from backend.workflow.dynamic_team_graph import DynamicTeamGraph
-from backend.workflow.models import (
+from workflow.dynamic_team_graph import DynamicTeamGraph
+from workflow.models import (
     NodeStrategy,
     WorkflowConfig,
     WorkflowEdge,
@@ -27,7 +27,7 @@ from backend.workflow.models import (
 
 @pytest.mark.unit
 class TestDynamicTeamGraphInit:
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_init_defaults(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         mock_chat_cls.assert_called_once()
@@ -37,19 +37,19 @@ class TestDynamicTeamGraphInit:
         assert graph._config is None
         assert graph._graph is None
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_init_with_base_url(self, mock_chat_cls):
         DynamicTeamGraph(base_url="https://custom.api.com/v1")
         call_kwargs = mock_chat_cls.call_args[1]
         assert call_kwargs["base_url"] == "https://custom.api.com/v1"
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_init_without_base_url(self, mock_chat_cls):
         DynamicTeamGraph()
         call_kwargs = mock_chat_cls.call_args[1]
         assert "base_url" not in call_kwargs
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_init_custom_params(self, mock_chat_cls):
         DynamicTeamGraph(model="gpt-4", temperature=0.3, max_tokens=4096)
         call_kwargs = mock_chat_cls.call_args[1]
@@ -57,7 +57,7 @@ class TestDynamicTeamGraphInit:
         assert call_kwargs["temperature"] == 0.3
         assert call_kwargs["max_tokens"] == 4096
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_init_with_checkpointer(self, mock_chat_cls):
         cp = MagicMock()
         graph = DynamicTeamGraph(checkpointer=cp)
@@ -66,7 +66,7 @@ class TestDynamicTeamGraphInit:
 
 @pytest.mark.unit
 class TestDynamicTeamGraphSetWorkflowSync:
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_set_workflow_sync_maps_agents(self, mock_chat_cls):
         graph = DynamicTeamGraph()
 
@@ -88,7 +88,7 @@ class TestDynamicTeamGraphSetWorkflowSync:
         assert graph._agent_prompts["pm"] == "Be a PM"
         assert graph._agent_prompts["dev"] == "Write code"
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_set_workflow_sync_no_matching_agents(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         config = WorkflowConfig(
@@ -99,7 +99,7 @@ class TestDynamicTeamGraphSetWorkflowSync:
         graph.set_workflow_sync(config, [])
         assert "pm" not in graph._agent_prompts
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_set_workflow_sync_agent_without_id(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         agent = MagicMock(spec=[])  # no 'id' attribute
@@ -111,7 +111,7 @@ class TestDynamicTeamGraphSetWorkflowSync:
         graph.set_workflow_sync(config, [agent])
         assert "pm" not in graph._agent_prompts
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_set_workflow_sync_stores_config(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         config = WorkflowConfig(
@@ -125,15 +125,15 @@ class TestDynamicTeamGraphSetWorkflowSync:
 
 @pytest.mark.unit
 class TestDynamicTeamGraphBuild:
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     def test_build_no_config_returns(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._config = None
         graph._build()
         assert graph._graph is None
 
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
-    @patch("backend.workflow.dynamic_team_graph.GraphBuilder")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.GraphBuilder")
     def test_build_creates_graph(self, mock_builder_cls, mock_chat_cls):
         graph = DynamicTeamGraph()
         mock_builder = MagicMock()
@@ -153,8 +153,8 @@ class TestDynamicTeamGraphBuild:
 @pytest.mark.unit
 class TestDynamicTeamGraphSetWorkflowAsync:
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_set_workflow_fetches_agents(self, mock_chat_cls, mock_get_agents):
         graph = DynamicTeamGraph()
         mock_agent = MagicMock()
@@ -171,8 +171,8 @@ class TestDynamicTeamGraphSetWorkflowAsync:
         assert graph._agent_prompts["pm"] == "prompt text"
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_set_workflow_no_matching_agents(self, mock_chat_cls, mock_get_agents):
         graph = DynamicTeamGraph()
         mock_agent = MagicMock()
@@ -191,7 +191,7 @@ class TestDynamicTeamGraphSetWorkflowAsync:
 @pytest.mark.unit
 class TestDynamicTeamGraphRun:
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_raises_if_graph_not_built(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._graph = None
@@ -199,7 +199,7 @@ class TestDynamicTeamGraphRun:
             await graph.run("requirement", "thread-1")
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_without_stream_callback(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         mock_compiled = AsyncMock()
@@ -213,7 +213,7 @@ class TestDynamicTeamGraphRun:
         assert "requirement" in result
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_with_run_id_rebuilds(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         config = WorkflowConfig(
@@ -231,7 +231,7 @@ class TestDynamicTeamGraphRun:
             mock_build.assert_called()
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_with_stream_callback(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._graph = AsyncMock()
@@ -246,7 +246,7 @@ class TestDynamicTeamGraphRun:
         assert callback.call_count >= 1
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_stream_callback_exception_suppressed(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._graph = AsyncMock()
@@ -260,7 +260,7 @@ class TestDynamicTeamGraphRun:
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_stream_non_dict_result(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._graph = AsyncMock()
@@ -273,7 +273,7 @@ class TestDynamicTeamGraphRun:
         assert result == {}
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_ainvoke_non_dict_result(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         mock_compiled = AsyncMock()
@@ -283,7 +283,7 @@ class TestDynamicTeamGraphRun:
         assert result == {}
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_stream_default_keys_filled(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._graph = AsyncMock()
@@ -302,7 +302,7 @@ class TestDynamicTeamGraphRun:
         assert "approved" in result
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_run_stream_none_callback(self, mock_chat_cls):
         graph = DynamicTeamGraph()
         graph._graph = AsyncMock()

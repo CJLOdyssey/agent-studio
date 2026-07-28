@@ -68,7 +68,7 @@ backend:
       cpu: "250m"
   # Non-secret environment variables — stored in ConfigMap
   env:
-    PYTHONPATH: /app
+    PYTHONPATH: /app/backend/src
     DB_HOST: ""  # auto-set to postgres service name if empty
     DB_PORT: "5432"
     DB_USER: postgres

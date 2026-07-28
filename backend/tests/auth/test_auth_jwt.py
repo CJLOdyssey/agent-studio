@@ -9,7 +9,7 @@ import pytest
 @pytest.mark.requirement("REQ-AUTH-004")
 class TestCreateToken:
     def test_returns_valid_jwt_string(self):
-        from backend.auth.auth_jwt import create_token
+        from auth.auth_jwt import create_token
 
         token = create_token("user-1", "mysecret", ttl=3600)
         parts = token.split(".")
@@ -17,7 +17,7 @@ class TestCreateToken:
         assert all(isinstance(p, str) and len(p) > 0 for p in parts)
 
     def test_token_contains_user_id(self):
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
 
         token = create_token("alice", "secret", ttl=3600)
         payload = decode_jwt(token, "secret")
@@ -29,7 +29,7 @@ class TestCreateToken:
 @pytest.mark.requirement("REQ-AUTH-004")
 class TestDecodeJWT:
     def test_valid_token(self):
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
 
         token = create_token("bob", "key123", ttl=3600)
         payload = decode_jwt(token, "key123")
@@ -39,7 +39,7 @@ class TestDecodeJWT:
         assert "iat" in payload
 
     def test_expired_token_returns_none(self):
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
 
         token = create_token("bob", "key123", ttl=-1)
 
@@ -47,26 +47,26 @@ class TestDecodeJWT:
         assert payload is None
 
     def test_wrong_secret_returns_none(self):
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
 
         token = create_token("bob", "real-secret", ttl=3600)
         payload = decode_jwt(token, "wrong-secret")
         assert payload is None
 
     def test_empty_secret_returns_none(self):
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
 
         payload = decode_jwt("some.token.here", "")
         assert payload is None
 
     def test_malformed_token_returns_none(self):
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
 
         payload = decode_jwt("not-a-valid-token", "secret")
         assert payload is None
 
     def test_tampered_payload_returns_none(self):
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
 
         token = create_token("alice", "secret", ttl=3600)
         parts = token.split(".")
@@ -75,13 +75,13 @@ class TestDecodeJWT:
         assert payload is None
 
     def test_base64url_decode_pads_correctly(self):
-        from backend.auth.auth_jwt import _base64url_decode
+        from auth.auth_jwt import _base64url_decode
 
         result = _base64url_decode("eyJzdWIiOiAidGVzdCJ9")
         assert json.loads(result) == {"sub": "test"}
 
     def test_simplified_token_format(self):
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
 
         now = int(time.time())
         raw = f"testuser:{now}:abcdef1234567890"
@@ -92,7 +92,7 @@ class TestDecodeJWT:
         assert payload is None  # Wrong signature
 
     def test_simplified_token_expired(self):
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
 
         past = int(time.time()) - 90000
         import base64
@@ -107,7 +107,7 @@ class TestDecodeJWT:
 
     def test_simplified_token_valid(self):
         """Create a valid simplified token and verify it decodes correctly."""
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
 
         import base64
         import hashlib
@@ -123,14 +123,14 @@ class TestDecodeJWT:
 
     def test_simplified_token_malformed_base64(self):
         """Malformed base64 in simplified token returns None."""
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
         # Non-base64 string that can't be decoded
         payload = decode_jwt("!!!not@base64!!!", "secret")
         assert payload is None
 
     def test_decode_jwt_exception_catch_all(self):
         """The catch-all except branch handles unexpected errors gracefully."""
-        from backend.auth.auth_jwt import decode_jwt
+        from auth.auth_jwt import decode_jwt
         # A token that causes json.loads to fail on valid-looking base64
         import base64
         bad_payload = base64.urlsafe_b64encode(b"{not json}").rstrip(b"=").decode()
@@ -140,14 +140,14 @@ class TestDecodeJWT:
 
     def test_token_without_expiration_is_valid(self):
         """A token with already-passed expiration returns None."""
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
         token = create_token("user", "secret", ttl=-5)
         payload = decode_jwt(token, "secret")
         assert payload is None
 
     def test_base64url_decode_different_paddings(self):
         """Test base64url_decode with 0, 1, 2 padding chars needed."""
-        from backend.auth.auth_jwt import _base64url_decode
+        from auth.auth_jwt import _base64url_decode
         import base64
         import json
 
@@ -164,7 +164,7 @@ class TestDecodeJWT:
         assert _base64url_decode(data) == b"abcdef"
 
     def test_create_token_custom_ttl(self):
-        from backend.auth.auth_jwt import create_token, decode_jwt
+        from auth.auth_jwt import create_token, decode_jwt
         token = create_token("u1", "s", ttl=7200)
         payload = decode_jwt(token, "s")
         assert payload is not None

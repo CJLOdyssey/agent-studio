@@ -69,7 +69,7 @@ def checkpoint_db_path(tmp_path):
 @pytest.fixture
 async def checkpointer_sqlite(checkpoint_db_path):
     """Create an AsyncSqliteSaver backed by a temp file."""
-    from backend.checkpoint import create_checkpointer_async
+    from checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()
     yield cp
@@ -86,7 +86,7 @@ async def checkpointer_sqlite(checkpoint_db_path):
 @pytest.fixture
 async def checkpointer_sqlite_fresh(checkpoint_db_path):
     """Create a fresh AsyncSqliteSaver instance against the same DB file."""
-    from backend.checkpoint import create_checkpointer_async
+    from checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()
     yield cp
@@ -150,7 +150,7 @@ async def test_recovery_after_restart(tmp_path):
     os.environ["CHECKPOINTER_DSN"] = {db_path!r}
 
     async def main():
-        from backend.checkpoint import create_checkpointer_async
+        from checkpoint import create_checkpointer_async
 
         cp = await create_checkpointer_async()
         config = {{"configurable": {{"thread_id": "recovery-t1", "checkpoint_ns": ""}}}}
@@ -190,7 +190,7 @@ async def test_recovery_after_restart(tmp_path):
     # Now recover from the same DB file in this process
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = db_path
-    from backend.checkpoint import create_checkpointer_async
+    from checkpoint import create_checkpointer_async
 
     recovery_cp = await create_checkpointer_async()
     config = _make_config("recovery-t1")

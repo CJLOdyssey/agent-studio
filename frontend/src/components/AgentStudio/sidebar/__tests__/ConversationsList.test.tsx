@@ -149,8 +149,8 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onDelete = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onDelete });
-    const deleteBtn = document.querySelector('button[aria-label="common.delete"]');
-    if (deleteBtn) fireEvent.click(deleteBtn);
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('删除'));
     expect(onDelete).toHaveBeenCalledWith('c1');
   });
 
@@ -159,8 +159,8 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onDelete = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect, onDelete });
-    const deleteBtn = document.querySelector('button[aria-label="common.delete"]');
-    if (deleteBtn) fireEvent.click(deleteBtn);
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('删除'));
     expect(onSelect).not.toHaveBeenCalled();
     expect(onDelete).toHaveBeenCalled();
   });
@@ -168,8 +168,8 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   it('has accessible delete button', () => {
     const conversations = [makeConv()];
     renderWithVirtuoso(conversations);
-    const deleteBtn = document.querySelector('button[aria-label="common.delete"]');
-    expect(deleteBtn).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    expect(screen.getByText('删除')).toBeInTheDocument();
   });
 
   it('has accessible conv item with tabIndex', () => {

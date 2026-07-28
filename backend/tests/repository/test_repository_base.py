@@ -7,31 +7,31 @@
 
 class TestRepositoryImports:
     def test_import_deps(self):
-        from backend.repository.deps import get_session
+        from repository.deps import get_session
 
         assert get_session is not None
 
     def test_get_session_is_asyncgen(self):
         import inspect
 
-        from backend.repository.deps import get_session
+        from repository.deps import get_session
         assert inspect.isasyncgenfunction(get_session)
 
     def test_session_factory_import(self):
-        from backend.core.infra.database import get_session_factory
+        from core.infra.database import get_session_factory
 
         assert get_session_factory is not None
 
     def test_repository_subclass_has_model(self):
-        from backend.core.infra.database import RegisteredSkillDB
-        from backend.repository.skills import SkillRepository
+        from core.infra.database import RegisteredSkillDB
+        from repository.skills import SkillRepository
 
         assert SkillRepository.model is RegisteredSkillDB
 
     def test_repository_subclass_imports(self):
-        from backend.repository.mcps import MCPRepository
-        from backend.repository.prompts import PromptRepository
-        from backend.repository.tools import ToolRepository
+        from repository.mcps import MCPRepository
+        from repository.prompts import PromptRepository
+        from repository.tools import ToolRepository
 
         assert ToolRepository is not None
         assert MCPRepository is not None

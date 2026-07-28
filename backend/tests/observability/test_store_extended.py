@@ -5,12 +5,12 @@ import tempfile
 import time
 from unittest.mock import MagicMock, patch
 
-from backend.observability.schema import Event
+from observability.schema import Event
 
 
 class TestEventStoreCleanup:
     def test_cleanup_deletes_old_events(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -53,7 +53,7 @@ class TestEventStoreCleanup:
             os.unlink(db_path)
 
     def test_cleanup_with_zero_days_returns_zero(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -67,7 +67,7 @@ class TestEventStoreCleanup:
             os.unlink(db_path)
 
     def test_cleanup_exception_returns_negative_one(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -83,7 +83,7 @@ class TestEventStoreCleanup:
             os.unlink(db_path)
 
     def test_cleanup_connects_inline(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -99,7 +99,7 @@ class TestEventStoreCleanup:
 
 class TestEventStoreDiskFree:
     def test_disk_free_returns_free_bytes(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -113,7 +113,7 @@ class TestEventStoreDiskFree:
             os.unlink(db_path)
 
     def test_disk_free_negative_on_oserror(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -129,7 +129,7 @@ class TestEventStoreDiskFree:
 
 class TestEventStoreWriteErrors:
     def test_write_increments_write_errors_after_close(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -145,7 +145,7 @@ class TestEventStoreWriteErrors:
             os.unlink(db_path)
 
     def test_write_rejects_when_disk_full(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -164,7 +164,7 @@ class TestEventStoreWriteErrors:
 
 class TestEventStoreSelfCheck:
     def test_self_check_includes_all_keys(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -186,7 +186,7 @@ class TestEventStoreSelfCheck:
             os.unlink(db_path)
 
     def test_self_check_reflects_write_errors(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -204,7 +204,7 @@ class TestEventStoreSelfCheck:
 
 class TestEventStoreSingleton:
     def test_get_store_returns_same_instance(self):
-        import backend.observability.store as obs_store
+        import observability.store as obs_store
 
         original = obs_store._store
         obs_store._store = None
@@ -224,7 +224,7 @@ class TestEventStoreSingleton:
 
 class TestEventStoreDbReconnect:
     def test_query_opts_readonly_mode(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name

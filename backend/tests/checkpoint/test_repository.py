@@ -9,13 +9,13 @@ import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from unittest.mock import patch
 
-from backend.checkpoint.models import AgentCheckpoint, CheckpointDB
-from backend.checkpoint.repository import (
+from checkpoint.models import AgentCheckpoint, CheckpointDB
+from checkpoint.repository import (
     save_checkpoint,
     load_latest_checkpoint,
     list_checkpoints,
 )
-from backend.core.base import Base
+from core.base import Base
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ async def db_session_factory():
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
     with patch(
-        "backend.checkpoint.repository.get_session_factory",
+        "checkpoint.repository.get_session_factory",
         return_value=factory,
     ):
         yield factory

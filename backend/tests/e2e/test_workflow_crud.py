@@ -3,7 +3,7 @@ pytestmark = pytest.mark.integration
 
 """E2E Test: Workflow CRUD operations."""
 
-from backend.tests.conftest import Api, _cleanup, _rid
+from tests.conftest import Api, _cleanup, _rid
 
 
 class TestWorkflowCRUD:

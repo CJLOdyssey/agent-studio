@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from backend.core.infra.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError, State
+from core.infra.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError, State
 
 
 class TestInit:

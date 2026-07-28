@@ -29,6 +29,7 @@ vi.mock('../workstation/tabConfig', () => ({
 
 vi.mock('lucide-react', () => ({
   RefreshCw: () => <span>Refresh</span>,
+  X: () => <span data-testid="icon-x" />,
 }));
 
 describe('WorkstationPage', { tags: ['integration'] }, () => {

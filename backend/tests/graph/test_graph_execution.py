@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END
 
-from backend.graph.graph import SingleAgentGraph
+from graph.graph import SingleAgentGraph
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ class _FakeToolExecutor:
 @pytest.fixture
 def graph() -> SingleAgentGraph:
     """Create a SingleAgentGraph with MemorySaver and mocked ChatOpenAI."""
-    with patch("backend.graph.graph.ChatOpenAI") as MockLLM:
+    with patch("graph.graph.ChatOpenAI") as MockLLM:
         MockLLM.return_value = MagicMock()
         g = SingleAgentGraph(
             model="test-model",
@@ -60,7 +60,7 @@ def graph() -> SingleAgentGraph:
 @pytest.fixture
 def graph_with_tools(graph: SingleAgentGraph) -> SingleAgentGraph:
     """Graph with two fake tools bound."""
-    from backend.services.tool_config import ToolConfig
+    from services.tool_config import ToolConfig
 
     tool1 = ToolConfig(
         name="search",

@@ -15,6 +15,7 @@ function backendToEntry(item: {
   name: string;
   description?: string | null;
   status?: string | null;
+  category?: string | null;
   created_at?: string | null;
   order?: number;
   is_expanded?: boolean;
@@ -25,7 +26,7 @@ function backendToEntry(item: {
     name: item.name,
     description: item.description || '',
     status: (item.status === 'inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
-    category: deriveCategory(item.name, item.description || ''),
+    category: (item.category as TeamEntry['category']) || deriveCategory(item.name, item.description || ''),
     createdAt: item.created_at ? item.created_at.slice(0, 10) : '',
     agents: item.agents ?? [],
     memberCount: item.agents?.length ?? 0,

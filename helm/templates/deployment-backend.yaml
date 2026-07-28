@@ -33,7 +33,7 @@ spec:
           image: {{ include "agent-studio.backend.image" . }}
           imagePullPolicy: {{ .Values.backend.image.pullPolicy | default "IfNotPresent" }}
           command: ["scripts/dev/docker-entrypoint.sh"]
-          args: ["uvicorn", "backend.core.app:app", "--host", "0.0.0.0", "--port", "8080"]
+          args: ["uvicorn", "core.app:app", "--host", "0.0.0.0", "--port", "8080"]
           ports:
             - name: http
               containerPort: {{ .Values.backend.port }}

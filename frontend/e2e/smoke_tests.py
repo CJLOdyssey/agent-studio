@@ -342,8 +342,19 @@ def test_b07_config_panel_overlay_close(page):
 
 
 def test_b08_team_members_section(page):
-    """B08: 团队成员列表渲染"""
-    pass
+    """B08: 团队管理 Tab — 导航与基本渲染"""
+    page.goto(f'{FRONTEND_URL}')
+    page.wait_for_load_state('networkidle')
+    page.get_by_role('button', name='系统设置').click()
+    page.wait_for_timeout(500)
+    page.get_by_role('menuitem', name='工作站').click()
+    page.wait_for_timeout(1000)
+    page.get_by_text('团队管理').click()
+    page.wait_for_timeout(1000)
+    expect(page.get_by_text('新建团队')).to_be_visible(timeout=5000)
+    expect(page.get_by_role('textbox')).to_be_visible()
+    expect(page.get_by_text('全部类别')).to_be_visible()
+    expect(page.get_by_text('全部状态')).to_be_visible()
 
 
 def test_b09_sessions_section(page):
@@ -386,6 +397,23 @@ def test_b13_error_banner_display(page):
     page.get_by_role('textbox').fill('触发错误的测试需求')
     page.get_by_role('button', name='发送').click()
     page.wait_for_timeout(3000)
+
+
+def test_b15_team_table_render(page):
+    """B15: 团队表格列头渲染"""
+    page.goto(f'{FRONTEND_URL}')
+    page.wait_for_load_state('networkidle')
+    page.get_by_role('button', name='系统设置').click()
+    page.wait_for_timeout(500)
+    page.get_by_role('menuitem', name='工作站').click()
+    page.wait_for_timeout(1000)
+    page.get_by_text('团队管理').click()
+    page.wait_for_timeout(2000)
+    expect(page.get_by_text('名称')).to_be_visible(timeout=5000)
+    expect(page.get_by_text('成员数')).to_be_visible()
+    expect(page.get_by_text('类别')).to_be_visible()
+    expect(page.get_by_text('状态')).to_be_visible()
+    expect(page.get_by_text('创建时间')).to_be_visible()
 
 
 def test_b14_agent_status_toggle(page):
@@ -482,6 +510,7 @@ def run_ui_tests(page):
         ('B12 路由不崩溃', test_b12_no_crash_on_routes),
         ('B13 错误提示', test_b13_error_banner_display),
         ('B14 Agent 状态', test_b14_agent_status_toggle),
+        ('B15 团队列头', test_b15_team_table_render),
     ]
     return _run_page_tests('UI 冒烟测试', ui_tests, page)
 

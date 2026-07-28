@@ -10,7 +10,7 @@ class TestStreamEmitterInit:
     """StreamEmitter initialization tests."""
 
     def test_init_attributes(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-abc")
         assert emitter._run_id == "run-abc"
@@ -27,10 +27,10 @@ class TestOnCustomToken:
 
     @pytest.mark.asyncio
     async def test_appends_content_and_publishes(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-1")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_token", "data": {"content": "hello"}})
             assert emitter._stream_buffer == ["hello"]
             mock_pub.assert_awaited_once_with(
@@ -40,30 +40,30 @@ class TestOnCustomToken:
 
     @pytest.mark.asyncio
     async def test_empty_content_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-2")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_token", "data": {"content": ""}})
             assert emitter._stream_buffer == []
             mock_pub.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_missing_content_key_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-3")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_token", "data": {}})
             assert emitter._stream_buffer == []
             mock_pub.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_publish_failure_still_appends(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-4")
-        with patch("backend.streaming.emitter.publish_run_message", side_effect=Exception("redis down")):
+        with patch("streaming.emitter.publish_run_message", side_effect=Exception("redis down")):
             await emitter({"event": "on_custom_token", "data": {"content": "chunk"}})
             assert emitter._stream_buffer == ["chunk"]
 
@@ -74,10 +74,10 @@ class TestOnCustomThinking:
 
     @pytest.mark.asyncio
     async def test_appends_thinking_and_publishes(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-5")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_thinking", "data": {"content": "reasoning"}})
             assert emitter._thinking_buffer == ["reasoning"]
             mock_pub.assert_awaited_once_with(
@@ -87,20 +87,20 @@ class TestOnCustomThinking:
 
     @pytest.mark.asyncio
     async def test_empty_content_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-6")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_custom_thinking", "data": {"content": ""}})
             assert emitter._thinking_buffer == []
             mock_pub.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_publish_failure_still_appends(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-7")
-        with patch("backend.streaming.emitter.publish_run_message", side_effect=Exception("redis down")):
+        with patch("streaming.emitter.publish_run_message", side_effect=Exception("redis down")):
             await emitter({"event": "on_custom_thinking", "data": {"content": "thought"}})
             assert emitter._thinking_buffer == ["thought"]
 
@@ -111,12 +111,12 @@ class TestOnNodeEnd:
 
     @pytest.mark.asyncio
     async def test_flushes_stream_and_thinking_buffers(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-8")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["a", "b"]
             emitter._thinking_buffer = ["t1"]
@@ -127,10 +127,10 @@ class TestOnNodeEnd:
 
     @pytest.mark.asyncio
     async def test_flush_with_empty_buffers_no_publish(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-9")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_node_end", "data": {}})
             mock_pub.assert_not_awaited()
 
@@ -141,7 +141,7 @@ class TestOnChatModelStream:
 
     @pytest.mark.asyncio
     async def test_chunk_with_content(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-10")
         chunk = MagicMock()
@@ -151,7 +151,7 @@ class TestOnChatModelStream:
 
     @pytest.mark.asyncio
     async def test_chunk_without_content_attr(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-11")
         await emitter({"event": "on_chat_model_stream", "data": {"chunk": "string"}})
@@ -159,7 +159,7 @@ class TestOnChatModelStream:
 
     @pytest.mark.asyncio
     async def test_chunk_with_empty_content(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-12")
         chunk = MagicMock()
@@ -169,7 +169,7 @@ class TestOnChatModelStream:
 
     @pytest.mark.asyncio
     async def test_no_chunk_in_data(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-13")
         await emitter({"event": "on_chat_model_stream", "data": {}})
@@ -177,7 +177,7 @@ class TestOnChatModelStream:
 
     @pytest.mark.asyncio
     async def test_chunk_is_none(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-14")
         await emitter({"event": "on_chat_model_stream", "data": {"chunk": None}})
@@ -190,12 +190,12 @@ class TestOnChatModelEnd:
 
     @pytest.mark.asyncio
     async def test_flushes_buffers(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-15")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["final content"]
             emitter._thinking_buffer = ["final thinking"]
@@ -210,12 +210,12 @@ class TestOnChainEnd:
 
     @pytest.mark.asyncio
     async def test_langgraph_flushes(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-16")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["chain output"]
             await emitter({"event": "on_chain_end", "name": "LangGraph", "data": {}})
@@ -223,7 +223,7 @@ class TestOnChainEnd:
 
     @pytest.mark.asyncio
     async def test_non_langgraph_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-17")
         emitter._stream_buffer = ["keep"]
@@ -232,7 +232,7 @@ class TestOnChainEnd:
 
     @pytest.mark.asyncio
     async def test_missing_name_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-18")
         emitter._stream_buffer = ["keep"]
@@ -246,7 +246,7 @@ class TestOnThinkingNodes:
 
     @pytest.mark.asyncio
     async def test_emits_thinking_nodes_via_event(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-19")
         nodes = [{"title": "Step 1"}]
@@ -255,7 +255,7 @@ class TestOnThinkingNodes:
 
     @pytest.mark.asyncio
     async def test_empty_nodes_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-20")
         await emitter({"event": "on_thinking_nodes", "data": {"nodes": []}})
@@ -268,10 +268,10 @@ class TestOnToolComplete:
 
     @pytest.mark.asyncio
     async def test_success_status(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-21")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_tool_complete", "data": {"toolName": "search", "status": "success"}})
             mock_pub.assert_awaited_once()
             payload = mock_pub.await_args[0][1]
@@ -280,20 +280,20 @@ class TestOnToolComplete:
 
     @pytest.mark.asyncio
     async def test_failure_status(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-22")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_tool_complete", "data": {"toolName": "calc", "status": "error"}})
             payload = mock_pub.await_args[0][1]
             assert "失败" in payload["node"]["content"]
 
     @pytest.mark.asyncio
     async def test_missing_fields_uses_defaults(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-23")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_tool_complete", "data": {}})
             payload = mock_pub.await_args[0][1]
             assert payload["node"]["toolName"] == ""
@@ -301,10 +301,10 @@ class TestOnToolComplete:
 
     @pytest.mark.asyncio
     async def test_publish_failure_handled(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-24")
-        with patch("backend.streaming.emitter.publish_run_message", side_effect=Exception("fail")):
+        with patch("streaming.emitter.publish_run_message", side_effect=Exception("fail")):
             # Should not raise
             await emitter({"event": "on_tool_complete", "data": {"toolName": "x", "status": "success"}})
 
@@ -315,10 +315,10 @@ class TestOnClientAction:
 
     @pytest.mark.asyncio
     async def test_publishes_action(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-25")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_client_action", "data": {"action": {"type": "scroll"}}})
             mock_pub.assert_awaited_once_with(
                 "run-25",
@@ -332,10 +332,10 @@ class TestOnToolResults:
 
     @pytest.mark.asyncio
     async def test_valid_tool_results(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-26")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({
                 "event": "on_tool_results",
                 "data": {
@@ -348,10 +348,10 @@ class TestOnToolResults:
 
     @pytest.mark.asyncio
     async def test_empty_refs_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-27")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({
                 "event": "on_tool_results",
                 "data": {"tool_name": "search", "tool_call_id": "c1", "references": []},
@@ -360,10 +360,10 @@ class TestOnToolResults:
 
     @pytest.mark.asyncio
     async def test_empty_tool_name_skips(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-28")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({
                 "event": "on_tool_results",
                 "data": {"tool_name": "", "tool_call_id": "c1", "references": [{"id": "r1"}]},
@@ -377,12 +377,12 @@ class TestOnToolStart:
 
     @pytest.mark.asyncio
     async def test_emits_tool_call_message(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-29")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
                 "event": "on_tool_start",
@@ -393,13 +393,13 @@ class TestOnToolStart:
 
     @pytest.mark.asyncio
     async def test_long_input_truncated(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-30")
         long_input = "x" * 300
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
                 "event": "on_tool_start",
@@ -416,12 +416,12 @@ class TestOnToolEnd:
 
     @pytest.mark.asyncio
     async def test_emits_tool_return_message(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-31")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
                 "event": "on_tool_end",
@@ -432,13 +432,13 @@ class TestOnToolEnd:
 
     @pytest.mark.asyncio
     async def test_long_output_truncated(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-32")
         long_output = "y" * 600
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
                 "event": "on_tool_end",
@@ -455,10 +455,10 @@ class TestEmitBalanceWarning:
 
     @pytest.mark.asyncio
     async def test_default_message(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-33")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter.emit_balance_warning()
             payload = mock_pub.await_args[0][1]
             assert payload["type"] == "balance_warning"
@@ -467,10 +467,10 @@ class TestEmitBalanceWarning:
 
     @pytest.mark.asyncio
     async def test_custom_message(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-34")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter.emit_balance_warning("custom warning")
             payload = mock_pub.await_args[0][1]
             assert payload["content"] == "custom warning"
@@ -481,14 +481,14 @@ class TestEmitThinkingNodes:
     """Tests for emit_thinking_nodes logic."""
 
     def test_first_call_sets_nodes(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-35")
         emitter.emit_thinking_nodes([{"a": 1}, {"b": 2}])
         assert emitter._pending_thinking_nodes == [{"a": 1}, {"b": 2}]
 
     def test_subsequent_calls_append(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-36")
         emitter._pending_thinking_nodes = [{"a": 1}]
@@ -496,7 +496,7 @@ class TestEmitThinkingNodes:
         assert len(emitter._pending_thinking_nodes) == 2
 
     def test_caps_at_20(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-37")
         emitter._pending_thinking_nodes = [{"i": i} for i in range(15)]
@@ -505,7 +505,7 @@ class TestEmitThinkingNodes:
         assert emitter._pending_thinking_nodes[-1] == {"i": 29}
 
     def test_first_call_caps_at_20(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-38")
         emitter.emit_thinking_nodes([{"i": i} for i in range(25)])
@@ -518,12 +518,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_stream_only_publishes_message_and_saves(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-39")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
         ):
             emitter._stream_buffer = ["hello", " ", "world"]
             await emitter._flush_buffers()
@@ -544,10 +544,10 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_thinking_only_publishes_thinking_done(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-40")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             emitter._thinking_buffer = ["reasoning"]
             await emitter._flush_buffers()
             # Should publish thinking_done
@@ -557,12 +557,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_both_buffers_flushed(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-41")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["content"]
             emitter._thinking_buffer = ["thought"]
@@ -575,12 +575,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_thinking_done_with_pending_nodes(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-42")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._thinking_buffer = ["thought"]
             emitter._pending_thinking_nodes = [{"title": "Step 1"}]
@@ -592,12 +592,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_thinking_done_without_nodes_no_nodes_key(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-43")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._thinking_buffer = ["thought"]
             await emitter._flush_buffers()
@@ -606,12 +606,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_empty_thinking_buffer_stripped(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-44")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._thinking_buffer = ["  ", "  "]
             await emitter._flush_buffers()
@@ -620,12 +620,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_publish_message_failure_handled(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-45")
         with (
-            patch("backend.streaming.emitter.publish_run_message", side_effect=Exception("fail")),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", side_effect=Exception("fail")),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["content"]
             # Should not raise
@@ -633,7 +633,7 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_publish_thinking_done_failure_handled(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-46")
         call_count = 0
@@ -645,8 +645,8 @@ class TestFlushBuffers:
                 raise Exception("thinking publish fail")
 
         with (
-            patch("backend.streaming.emitter.publish_run_message", side_effect=_mock_publish),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", side_effect=_mock_publish),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._thinking_buffer = ["thought"]
             emitter._stream_buffer = ["content"]
@@ -655,12 +655,12 @@ class TestFlushBuffers:
 
     @pytest.mark.asyncio
     async def test_message_index_increments(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-47")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             emitter._stream_buffer = ["first"]
             await emitter._flush_buffers()
@@ -676,12 +676,12 @@ class TestEmitMethod:
 
     @pytest.mark.asyncio
     async def test_publishes_and_saves_message(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-48")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
         ):
             await emitter._emit("Agent", "tool output")
             assert emitter._message_index == 1
@@ -693,12 +693,12 @@ class TestEmitMethod:
 
     @pytest.mark.asyncio
     async def test_with_thinking_parameter(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-49")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
         ):
             await emitter._emit("Agent", "output", thinking="my thinking")
             payload = mock_pub.await_args[0][1]
@@ -706,13 +706,13 @@ class TestEmitMethod:
 
     @pytest.mark.asyncio
     async def test_uses_pending_thinking_if_no_explicit(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-50")
         emitter._pending_thinking = "stored thinking"
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter._emit("Agent", "output")
             payload = mock_pub.await_args[0][1]
@@ -721,13 +721,13 @@ class TestEmitMethod:
 
     @pytest.mark.asyncio
     async def test_explicit_thinking_overrides_pending(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-51")
         emitter._pending_thinking = "pending"
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter._emit("Agent", "output", thinking="explicit")
             payload = mock_pub.await_args[0][1]
@@ -736,23 +736,23 @@ class TestEmitMethod:
 
     @pytest.mark.asyncio
     async def test_non_message_type_skips_save(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-52")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
         ):
             await emitter._emit("Agent", "output", msg_type="stream")
             mock_save.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_publish_failure_handled(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-53")
-        with patch("backend.streaming.emitter.publish_run_message", side_effect=Exception("fail")):
-            with patch("backend.streaming.emitter.save_message", new_callable=AsyncMock) as mock_save:
+        with patch("streaming.emitter.publish_run_message", side_effect=Exception("fail")):
+            with patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save:
                 await emitter._emit("Agent", "output")
                 mock_save.assert_not_awaited()
 
@@ -763,10 +763,10 @@ class TestUnknownEvents:
 
     @pytest.mark.asyncio
     async def test_unknown_event_ignored(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-54")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"event": "on_unknown_event", "data": {"key": "val"}})
             mock_pub.assert_not_awaited()
             assert emitter._message_index == 0
@@ -778,33 +778,33 @@ class TestEventWithMissingData:
 
     @pytest.mark.asyncio
     async def test_on_custom_token_missing_event_key(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-55")
-        with patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub:
             await emitter({"data": {"content": "hello"}})
             mock_pub.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_on_tool_start_missing_name(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-56")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({"event": "on_tool_start", "data": {"input": "test"}})
             assert emitter._message_index == 1
 
     @pytest.mark.asyncio
     async def test_on_tool_end_missing_name(self):
-        from backend.streaming.emitter import StreamEmitter
+        from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-57")
         with (
-            patch("backend.streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("backend.streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({"event": "on_tool_end", "data": {"output": "result"}})
             assert emitter._message_index == 1

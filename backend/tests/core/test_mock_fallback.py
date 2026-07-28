@@ -9,10 +9,10 @@ import pytest
 class TestRunMock:
     @pytest.mark.asyncio
     async def test_run_mock_produces_messages(self):
-        from backend.core.mock_fallback import run_mock
+        from core.mock_fallback import run_mock
 
         mock_emitter = AsyncMock()
-        with patch("backend.core.mock_fallback.StreamEmitter", return_value=mock_emitter):
+        with patch("core.mock_fallback.StreamEmitter", return_value=mock_emitter):
             result = await run_mock(
                 requirement="Build a REST API",
                 run_id="test-run",
@@ -32,11 +32,11 @@ class TestRunMock:
 
     @pytest.mark.asyncio
     async def test_run_mock_truncates_long_requirement(self):
-        from backend.core.mock_fallback import run_mock
+        from core.mock_fallback import run_mock
 
         mock_emitter = AsyncMock()
         long_req = "A" * 200
-        with patch("backend.core.mock_fallback.StreamEmitter", return_value=mock_emitter):
+        with patch("core.mock_fallback.StreamEmitter", return_value=mock_emitter):
             result = await run_mock(
                 requirement=long_req,
                 run_id="test-run",
@@ -50,10 +50,10 @@ class TestRunMock:
 
     @pytest.mark.asyncio
     async def test_run_mock_null_session(self):
-        from backend.core.mock_fallback import run_mock
+        from core.mock_fallback import run_mock
 
         mock_emitter = AsyncMock()
-        with patch("backend.core.mock_fallback.StreamEmitter", return_value=mock_emitter):
+        with patch("core.mock_fallback.StreamEmitter", return_value=mock_emitter):
             result = await run_mock(
                 requirement="Test",
                 run_id="r1",
@@ -64,10 +64,10 @@ class TestRunMock:
 
     @pytest.mark.asyncio
     async def test_run_mock_default_response_not_approved(self):
-        from backend.core.mock_fallback import run_mock
+        from core.mock_fallback import run_mock
 
         mock_emitter = AsyncMock()
-        with patch("backend.core.mock_fallback.StreamEmitter", return_value=mock_emitter):
+        with patch("core.mock_fallback.StreamEmitter", return_value=mock_emitter):
             result = await run_mock(
                 requirement="Test",
                 run_id="r2",

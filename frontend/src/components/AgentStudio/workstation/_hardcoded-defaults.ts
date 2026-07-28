@@ -12,15 +12,6 @@
  * - 不要直接修改此文件中的值作为业务逻辑变更
  */
 
-// ── 团队管理 ──────────────────────────────────────────────
-// 所在文件: team/team.constants.ts, team/TeamFormModal.tsx
-// TODO: 从 GET /api/teams/categories 获取
-export const HARDCODED_TEAM_CATEGORIES = [
-  { value: 'dev', label: '开发' },
-  { value: 'ops', label: '运维' },
-  { value: 'test', label: '测试' },
-] as const;
-
 // ── 工具管理 ──────────────────────────────────────────────
 // 所在文件: tool/tool.constants.ts
 // TODO: 从 GET /api/tools/categories 获取

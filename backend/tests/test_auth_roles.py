@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 
-from backend.auth.auth_rbac import CurrentUser, require_role
+from auth.auth_rbac import CurrentUser, require_role
 
 
 def _make_user(roles: list[str] | None = None) -> CurrentUser:
@@ -29,14 +29,14 @@ class TestRequireRoleReturnsCallable:
 class TestLegacyMode:
     """In legacy mode, role checks always pass through."""
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "legacy")
+    @patch("auth.auth_rbac.AUTH_MODE", "legacy")
     def test_any_role_passes(self):
         checker = require_role("superadmin")
         user = _make_user(["member"])
         result = checker(current_user=user)
         assert result is user
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "legacy")
+    @patch("auth.auth_rbac.AUTH_MODE", "legacy")
     def test_empty_roles_passes(self):
         checker = require_role("admin")
         user = _make_user([])
@@ -47,14 +47,14 @@ class TestLegacyMode:
 class TestRBACMode:
     """In RBAC mode, role checks are enforced."""
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_matching_role_passes(self):
         checker = require_role("admin")
         user = _make_user(["admin"])
         result = checker(current_user=user)
         assert result is user
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_no_matching_role_raises_403(self):
         checker = require_role("admin")
         user = _make_user(["member"])
@@ -63,14 +63,14 @@ class TestRBACMode:
         assert exc.value.status_code == 403
         assert "Insufficient role" in exc.value.detail
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_any_of_multiple_roles_passes(self):
         checker = require_role("admin", "manager", "editor")
         user = _make_user(["editor"])
         result = checker(current_user=user)
         assert result is user
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_multiple_roles_none_match_raises_403(self):
         checker = require_role("admin", "manager")
         user = _make_user(["viewer", "guest"])
@@ -78,14 +78,14 @@ class TestRBACMode:
             checker(current_user=user)
         assert exc.value.status_code == 403
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_user_with_multiple_roles_one_match_passes(self):
         checker = require_role("admin")
         user = _make_user(["member", "admin", "viewer"])
         result = checker(current_user=user)
         assert result is user
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_first_role_matches(self):
         """OR semantics: first listed role matches."""
         checker = require_role("viewer", "admin")
@@ -93,7 +93,7 @@ class TestRBACMode:
         result = checker(current_user=user)
         assert result is user
 
-    @patch("backend.auth.auth_rbac.AUTH_MODE", "rbac")
+    @patch("auth.auth_rbac.AUTH_MODE", "rbac")
     def test_second_role_matches(self):
         """OR semantics: second listed role matches."""
         checker = require_role("admin", "viewer")

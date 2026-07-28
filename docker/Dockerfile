@@ -24,8 +24,8 @@ COPY alembic.ini .
 COPY backend/alembic/ alembic/
 COPY scripts/ scripts/
 
-# PYTHONPATH so "from backend import ..." works
-ENV PYTHONPATH=/app
+# PYTHONPATH so imports from backend/src/ work
+ENV PYTHONPATH=/app/backend/src
 
 # Run as non-root user for security
 RUN groupadd -r appgroup -g 1000 && useradd -r -g appgroup -u 1000 -m appuser && \
@@ -36,4 +36,4 @@ USER appuser
 EXPOSE 8080
 
 ENTRYPOINT ["scripts/docker-entrypoint.sh"]
-CMD ["uvicorn", "backend.core.app:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "core.app:app", "--host", "0.0.0.0", "--port", "8080"]

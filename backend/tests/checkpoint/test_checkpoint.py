@@ -6,44 +6,44 @@ import pytest
 
 
 class TestCheckpointerFactoryCore:
-    @patch("backend.checkpoint.factory.MemorySaver")
+    @patch("checkpoint.factory.MemorySaver")
     def test_memory_backend(self, mock_memory):
-        from backend.checkpoint.factory import create_checkpointer
+        from checkpoint.factory import create_checkpointer
 
         result = create_checkpointer(backend="memory")
         mock_memory.assert_called_once()
         assert result == mock_memory.return_value
 
-    @patch("backend.checkpoint.factory.os.environ", {"CHECKPOINTER_BACKEND": "memory"})
-    @patch("backend.checkpoint.factory.MemorySaver")
+    @patch("checkpoint.factory.os.environ", {"CHECKPOINTER_BACKEND": "memory"})
+    @patch("checkpoint.factory.MemorySaver")
     def test_memory_backend_from_env(self, mock_memory):
-        from backend.checkpoint.factory import create_checkpointer
+        from checkpoint.factory import create_checkpointer
 
         create_checkpointer()
         mock_memory.assert_called_once()
 
     def test_resolve_backend_defaults(self):
-        from backend.checkpoint.factory import _resolve_backend
+        from checkpoint.factory import _resolve_backend
 
-        with patch("backend.checkpoint.factory.os.environ", {}):
+        with patch("checkpoint.factory.os.environ", {}):
             backend, dsn = _resolve_backend(None, None)
             assert backend == "sqlite"
             assert dsn is None
 
     def test_resolve_backend_from_env(self):
-        from backend.checkpoint.factory import _resolve_backend
+        from checkpoint.factory import _resolve_backend
 
         env = {"CHECKPOINTER_BACKEND": "memory", "CHECKPOINTER_DSN": "/data/cp.db"}
-        with patch("backend.checkpoint.factory.os.environ", env):
+        with patch("checkpoint.factory.os.environ", env):
             backend, dsn = _resolve_backend(None, None)
             assert backend == "memory"
             assert dsn == "/data/cp.db"
 
     def test_resolve_backend_explicit_overrides_env(self):
-        from backend.checkpoint.factory import _resolve_backend
+        from checkpoint.factory import _resolve_backend
 
         env = {"CHECKPOINTER_BACKEND": "memory", "CHECKPOINTER_DSN": "/data/cp.db"}
-        with patch("backend.checkpoint.factory.os.environ", env):
+        with patch("checkpoint.factory.os.environ", env):
             backend, dsn = _resolve_backend("postgres", "pg://local")
             assert backend == "postgres"
             assert dsn == "pg://local"
@@ -58,7 +58,7 @@ class TestCheckpointerFactoryCore:
 
 class TestCheckpointDB:
     def test_orm_model_attributes(self):
-        from backend.checkpoint.models import CheckpointDB
+        from checkpoint.models import CheckpointDB
 
         assert CheckpointDB.__tablename__ == "agent_checkpoints"
         cols = {c.name: c for c in CheckpointDB.__table__.columns}
@@ -70,14 +70,14 @@ class TestCheckpointDB:
         assert "created_at" in cols
 
     def test_id_auto_generated(self):
-        from backend.checkpoint.models import CheckpointDB
+        from checkpoint.models import CheckpointDB
 
         obj = CheckpointDB(session_id="sess-1", agent_state="{}", id="auto-id")
         assert obj.id is not None
         assert len(obj.id) > 0
 
     def test_default_step_index(self):
-        from backend.checkpoint.models import CheckpointDB
+        from checkpoint.models import CheckpointDB
 
         obj = CheckpointDB(session_id="sess-1", agent_state="{}", step_index=0)
         assert obj.step_index == 0
@@ -87,7 +87,7 @@ class TestCheckpointDB:
 
 class TestAgentCheckpoint:
     def test_dataclass_defaults(self):
-        from backend.checkpoint.models import AgentCheckpoint
+        from checkpoint.models import AgentCheckpoint
 
         cp = AgentCheckpoint(session_id="sess-1", run_id=None, step_index=0)
         assert cp.system_prompt == ""
@@ -96,7 +96,7 @@ class TestAgentCheckpoint:
         assert cp.react_steps == []
 
     def test_to_json_roundtrip(self):
-        from backend.checkpoint.models import AgentCheckpoint
+        from checkpoint.models import AgentCheckpoint
 
         cp = AgentCheckpoint(
             session_id="sess-1",
@@ -118,7 +118,7 @@ class TestAgentCheckpoint:
         assert restored.react_steps == [{"tool": "search", "result": "ok"}]
 
     def test_from_json_preserves_unicode(self):
-        from backend.checkpoint.models import AgentCheckpoint
+        from checkpoint.models import AgentCheckpoint
 
         cp = AgentCheckpoint(session_id="sess-1", run_id=None, step_index=0, system_prompt="你好世界")
         json_str = cp.to_json()
@@ -126,7 +126,7 @@ class TestAgentCheckpoint:
         assert restored.system_prompt == "你好世界"
 
     def test_to_json_ensure_ascii_false(self):
-        from backend.checkpoint.models import AgentCheckpoint
+        from checkpoint.models import AgentCheckpoint
 
         cp = AgentCheckpoint(session_id="s-1", run_id=None, step_index=0, system_prompt="こんにちは")
         json_str = cp.to_json()
@@ -142,11 +142,11 @@ class TestAgentCheckpoint:
 
 
 class TestCheckpointRepository:
-    @patch("backend.checkpoint.repository.get_session_factory")
+    @patch("checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_save_checkpoint(self, mock_get_factory):
-        from backend.checkpoint.models import AgentCheckpoint
-        from backend.checkpoint.repository import save_checkpoint
+        from checkpoint.models import AgentCheckpoint
+        from checkpoint.repository import save_checkpoint
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -166,11 +166,11 @@ class TestCheckpointRepository:
         mock_session.refresh.assert_awaited_once()
         assert result_id == added.id
 
-    @patch("backend.checkpoint.repository.get_session_factory")
+    @patch("checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_load_latest_checkpoint_found(self, mock_get_factory):
-        from backend.checkpoint.models import AgentCheckpoint
-        from backend.checkpoint.repository import load_latest_checkpoint
+        from checkpoint.models import AgentCheckpoint
+        from checkpoint.repository import load_latest_checkpoint
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -189,10 +189,10 @@ class TestCheckpointRepository:
         assert result.session_id == "sess-1"
         assert result.step_index == 5
 
-    @patch("backend.checkpoint.repository.get_session_factory")
+    @patch("checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_load_latest_checkpoint_not_found(self, mock_get_factory):
-        from backend.checkpoint.repository import load_latest_checkpoint
+        from checkpoint.repository import load_latest_checkpoint
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -205,11 +205,11 @@ class TestCheckpointRepository:
         result = await load_latest_checkpoint("nonexistent")
         assert result is None
 
-    @patch("backend.checkpoint.repository.get_session_factory")
+    @patch("checkpoint.repository.get_session_factory")
     @pytest.mark.asyncio
     async def test_list_checkpoints(self, mock_get_factory):
-        from backend.checkpoint.models import AgentCheckpoint
-        from backend.checkpoint.repository import list_checkpoints
+        from checkpoint.models import AgentCheckpoint
+        from checkpoint.repository import list_checkpoints
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()

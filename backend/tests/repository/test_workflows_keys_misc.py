@@ -7,16 +7,16 @@ import uuid
 
 from sqlalchemy import select
 
-from backend.repository.admin_stats import get_command_logs, get_dashboard_stats
-from backend.repository.attachments import (
+from repository.admin_stats import get_command_logs, get_dashboard_stats
+from repository.attachments import (
     create_attachment,
     delete_attachment,
     get_attachment_by_id,
     list_attachments_by_session,
 )
-from backend.repository.command_logs import log_command
-from backend.repository.core import apply_owner_filter
-from backend.repository.keys_crud import (
+from repository.command_logs import log_command
+from repository.core import apply_owner_filter
+from repository.keys_crud import (
     create_api_key,
     delete_api_key,
     get_api_key_for_use,
@@ -25,14 +25,14 @@ from backend.repository.keys_crud import (
     get_embedding_api_key,
     update_api_key,
 )
-from backend.repository.session_repo import create_session
-from backend.repository.workflows import (
+from repository.session_repo import create_session
+from repository.workflows import (
     delete_workflow_config,
     get_workflow_config_by_team,
     list_workflow_configs,
     save_workflow_config,
 )
-from backend.workflow.models import NodeStrategy, WorkflowConfig, WorkflowEdge, WorkflowNode
+from workflow.models import NodeStrategy, WorkflowConfig, WorkflowEdge, WorkflowNode
 
 # ── Workflow Tests ─────────────────────────────────────────────────────
 
@@ -287,19 +287,19 @@ class TestCommandLogsRepo:
 
 class TestCoreRepo:
     async def test_apply_owner_filter_with_owner(self, db_engine):
-        from backend.core.infra.database import AgentConfigDB
+        from core.infra.database import AgentConfigDB
         stmt = select(AgentConfigDB)
         filtered = apply_owner_filter(stmt, AgentConfigDB, owner_id="user123")
         assert filtered is not None
 
     async def test_apply_owner_filter_no_owner(self, db_engine):
-        from backend.core.infra.database import AgentConfigDB
+        from core.infra.database import AgentConfigDB
         stmt = select(AgentConfigDB)
         filtered = apply_owner_filter(stmt, AgentConfigDB, owner_id=None)
         assert filtered is not None
 
     async def test_apply_owner_filter_wildcard(self, db_engine):
-        from backend.core.infra.database import AgentConfigDB
+        from core.infra.database import AgentConfigDB
         stmt = select(AgentConfigDB)
         filtered = apply_owner_filter(stmt, AgentConfigDB, owner_id="*")
         assert filtered is not None

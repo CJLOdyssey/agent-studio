@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.tool_config import _ToolWrapper
-from backend.services.tool_handlers import (
+from services.tool_config import _ToolWrapper
+from services.tool_handlers import (
     call_http_endpoint,
     call_mcp_sdk,
     execute_mcp,
@@ -133,7 +133,7 @@ class TestHandleMcp:
     @pytest.mark.asyncio
     async def test_handle_mcp_mocked(self):
         w = _ToolWrapper(name="mcp", mcp_type="mocked")
-        with patch("backend.services.tool_handlers.execute_tool", return_value="mock result"):
+        with patch("services.tool_handlers.execute_tool", return_value="mock result"):
             result = await handle_mcp(w, {})
             assert result == "mock result"
 
@@ -169,7 +169,7 @@ class TestExecuteMcp:
     @pytest.mark.asyncio
     async def test_execute_mcp_fallback_to_execute_tool(self):
         w = _ToolWrapper(name="fallback")
-        with patch("backend.services.tool_handlers.execute_tool", return_value='{"status": "called"}'):
+        with patch("services.tool_handlers.execute_tool", return_value='{"status": "called"}'):
             result = await execute_mcp(w, {})
             assert "called" in result
 
@@ -355,7 +355,7 @@ class TestCallMcpSdk:
             mcp_endpoint="/usr/bin/env",
             mcp_tool_name="test_cmd",
         )
-        with patch("backend.services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
+        with patch("services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
             mock_sdk.return_value = '{"error": "mcp not available"}'
             result = await execute_mcp(w, {})
             assert "error" in result
@@ -387,12 +387,12 @@ class TestCallMcpSdk:
 class TestHandleOpenBrowser:
     @pytest.mark.asyncio
     async def test_open_browser_publishes_event(self):
-        from backend.services.tool_handlers import handle_open_browser
+        from services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         w._run_id = "run-123"
 
-        with patch("backend.broker.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("broker.publish_run_message", new_callable=AsyncMock) as mock_pub:
             result = await handle_open_browser(w, {"url": "https://example.com"})
             parsed = json.loads(result)
             assert parsed["status"] == "ok"
@@ -403,7 +403,7 @@ class TestHandleOpenBrowser:
 
     @pytest.mark.asyncio
     async def test_open_browser_missing_url(self):
-        from backend.services.tool_handlers import handle_open_browser
+        from services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         result = await handle_open_browser(w, {})
@@ -413,12 +413,12 @@ class TestHandleOpenBrowser:
 
     @pytest.mark.asyncio
     async def test_open_browser_publish_failure_handled(self):
-        from backend.services.tool_handlers import handle_open_browser
+        from services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         w._run_id = "run-456"
 
-        with patch("backend.broker.publish_run_message", new_callable=AsyncMock) as mock_pub:
+        with patch("broker.publish_run_message", new_callable=AsyncMock) as mock_pub:
             mock_pub.side_effect = Exception("Redis down")
             result = await handle_open_browser(w, {"url": "https://example.com"})
             parsed = json.loads(result)
@@ -426,7 +426,7 @@ class TestHandleOpenBrowser:
 
     @pytest.mark.asyncio
     async def test_open_browser_without_run_id(self):
-        from backend.services.tool_handlers import handle_open_browser
+        from services.tool_handlers import handle_open_browser
 
         w = _ToolWrapper(name="open_user_browser")
         result = await handle_open_browser(w, {"url": "https://example.com"})

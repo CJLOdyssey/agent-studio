@@ -7,18 +7,18 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import httpx
 import pytest
 
-from backend.tasks.complete_pipeline import _complete_pipeline
+from tasks.complete_pipeline import _complete_pipeline
 
 
 @pytest.fixture
 def mock_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("backend.tasks.complete_pipeline.load_config"),
-        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.load_config"),
+        patch("tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -212,7 +212,7 @@ class TestCompletePipeline:
         """Lines 38-39, 138-139: /proc read failure is silently ignored."""
         mock_deps["stream_prefix_completion"].return_value = (" output", [])
 
-        with patch("backend.tasks.complete_pipeline.os") as mock_os:
+        with patch("tasks.complete_pipeline.os") as mock_os:
             mock_os.getpid.return_value = 999999
             mock_os.open.side_effect = OSError("no such proc")
             result = await _complete_pipeline(
@@ -231,7 +231,7 @@ class TestCompletePipeline:
         """Lines 38-39, 138-139: /proc read failure with thinking enabled."""
         mock_deps["stream_prefix_completion"].return_value = (" result", ["thinking"])
 
-        with patch("backend.tasks.complete_pipeline.os") as mock_os:
+        with patch("tasks.complete_pipeline.os") as mock_os:
             mock_os.getpid.return_value = 999999
             mock_os.open.side_effect = OSError("no such proc")
             result = await _complete_pipeline(
@@ -249,7 +249,7 @@ class TestCompletePipeline:
         """Line 41: tracemalloc.start() called when not already tracing."""
         mock_deps["stream_prefix_completion"].return_value = (" output", [])
 
-        with patch("backend.tasks.complete_pipeline.tracemalloc") as mock_tm:
+        with patch("tasks.complete_pipeline.tracemalloc") as mock_tm:
             mock_tm.is_tracing.return_value = False
             await _complete_pipeline(
                 content="test",

@@ -4,19 +4,19 @@ import uuid
 
 import pytest
 
-from backend.repository.mcps import (
+from repository.mcps import (
     create_mcp,
     delete_mcp,
     get_mcps,
     update_mcp,
 )
-from backend.repository.skills import (
+from repository.skills import (
     create_skill,
     delete_skill,
     get_skills,
     update_skill,
 )
-from backend.repository.tools import (
+from repository.tools import (
     create_tool,
     delete_tool,
     get_tools,

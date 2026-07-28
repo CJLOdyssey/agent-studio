@@ -18,13 +18,13 @@ os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 @pytest.mark.unit
 class TestMigrateTeams:
     @pytest.mark.asyncio
-    @patch("backend.workflow.migrate.save_workflow_config", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_session_factory")
+    @patch("workflow.migrate.save_workflow_config", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_session_factory")
     async def test_migrate_creates_workflow_for_new_team(
         self, mock_factory_cls, mock_get_existing, mock_save
     ):
-        from backend.workflow.migrate import migrate_teams
+        from workflow.migrate import migrate_teams
 
         mock_get_existing.return_value = None
 
@@ -68,12 +68,12 @@ class TestMigrateTeams:
         mock_save.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_session_factory")
+    @patch("workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_session_factory")
     async def test_migrate_skips_team_with_existing_config(
         self, mock_factory_cls, mock_get_existing
     ):
-        from backend.workflow.migrate import migrate_teams
+        from workflow.migrate import migrate_teams
 
         mock_get_existing.return_value = MagicMock()  # already exists
 
@@ -94,13 +94,13 @@ class TestMigrateTeams:
         assert count == 0
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.migrate.save_workflow_config", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_session_factory")
+    @patch("workflow.migrate.save_workflow_config", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_session_factory")
     async def test_migrate_no_agents_skips_team(
         self, mock_factory_cls, mock_get_existing, mock_save
     ):
-        from backend.workflow.migrate import migrate_teams
+        from workflow.migrate import migrate_teams
 
         mock_get_existing.return_value = None
 
@@ -137,13 +137,13 @@ class TestMigrateTeams:
         mock_save.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.migrate.save_workflow_config", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_session_factory")
+    @patch("workflow.migrate.save_workflow_config", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_session_factory")
     async def test_migrate_agent_without_role_identifier(
         self, mock_factory_cls, mock_get_existing, mock_save
     ):
-        from backend.workflow.migrate import migrate_teams
+        from workflow.migrate import migrate_teams
 
         mock_get_existing.return_value = None
 
@@ -184,13 +184,13 @@ class TestMigrateTeams:
         assert count == 0
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.migrate.save_workflow_config", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_session_factory")
+    @patch("workflow.migrate.save_workflow_config", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_session_factory")
     async def test_migrate_member_without_agent_config_id(
         self, mock_factory_cls, mock_get_existing, mock_save
     ):
-        from backend.workflow.migrate import migrate_teams
+        from workflow.migrate import migrate_teams
 
         mock_get_existing.return_value = None
 
@@ -231,10 +231,10 @@ class TestMigrateTeams:
         assert count == 1
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
-    @patch("backend.workflow.migrate.get_session_factory")
+    @patch("workflow.migrate.get_workflow_config_by_team", new_callable=AsyncMock)
+    @patch("workflow.migrate.get_session_factory")
     async def test_migrate_no_teams(self, mock_factory_cls, mock_get_existing):
-        from backend.workflow.migrate import migrate_teams
+        from workflow.migrate import migrate_teams
 
         mock_session = AsyncMock()
         execute_result = MagicMock(

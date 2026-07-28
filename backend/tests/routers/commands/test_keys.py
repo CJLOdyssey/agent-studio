@@ -12,46 +12,46 @@ class TestKeys:
 
     def test_create_key_embedding_type(self, client):
         resp = client.post("/api/keys", json={
-            "provider": "openai", "usage_type": "embedding",
+            "provider": "openai", "usage_type": "vector",
             "label": "emb-key", "api_key": "sk-emb-test",
         }, headers={"X-User-ID": "admin"})
         assert resp.status_code == 201
         data = resp.json()
         assert data["provider"] == "openai"
-        assert data["usage_type"] == "embedding"
+        assert data["usage_type"] == "vector"
 
     def test_create_key_both_type(self, client):
         resp = client.post("/api/keys", json={
-            "provider": "openai", "usage_type": "both",
+            "provider": "openai", "usage_type": "general",
             "label": "both-key", "api_key": "sk-both-test",
         }, headers={"X-User-ID": "admin"})
         assert resp.status_code == 201
-        assert resp.json()["usage_type"] == "both"
+        assert resp.json()["usage_type"] == "general"
 
     def test_create_key_llm_type_success(self, client):
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": True, "models": ["gpt-4"]}
             resp = client.post("/api/keys", json={
-                "provider": "openai", "usage_type": "llm",
+                "provider": "openai", "usage_type": "chat",
                 "label": "llm-key", "api_key": "sk-llm-test",
             }, headers={"X-User-ID": "admin"})
             assert resp.status_code == 201
             assert resp.json()["models"] == ["gpt-4"]
 
     def test_create_key_llm_type_test_fails(self, client):
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": False, "message": "connection refused"}
             resp = client.post("/api/keys", json={
-                "provider": "openai", "usage_type": "llm",
+                "provider": "openai", "usage_type": "chat",
                 "label": "llm-key-fail", "api_key": "sk-llm-test",
             }, headers={"X-User-ID": "admin"})
             assert resp.status_code == 201
 
     def test_create_key_llm_type_no_models_fetched(self, client):
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": True, "models": []}
             resp = client.post("/api/keys", json={
-                "provider": "openai", "usage_type": "llm",
+                "provider": "openai", "usage_type": "chat",
                 "label": "llm-key-no-models", "api_key": "sk-llm-test",
                 "models": ["gpt-4"],
             }, headers={"X-User-ID": "admin"})
@@ -62,7 +62,7 @@ class TestKeys:
         assert resp.status_code == 422
 
     def test_edit_key_not_found(self, client):
-        with patch("backend.routers.keys.update_api_key", new_callable=AsyncMock) as mock_update:
+        with patch("routers.keys.update_api_key", new_callable=AsyncMock) as mock_update:
             mock_update.return_value = None
             resp = client.put("/api/keys/nonexistent", json={"label": "updated"}, headers={"X-User-ID": "admin"})
             assert resp.status_code == 404
@@ -74,8 +74,8 @@ class TestKeys:
             "base_url": None, "models": [], "is_active": True,
             "is_default": False, "last_used_at": None, "created_at": None,
         }
-        with patch("backend.routers.keys.update_api_key", new_callable=AsyncMock) as mock_update, \
-             patch("backend.routers.keys.log_audit", new_callable=AsyncMock):
+        with patch("routers.keys.update_api_key", new_callable=AsyncMock) as mock_update, \
+             patch("routers.keys.log_audit", new_callable=AsyncMock):
             mock_update.return_value = result
             resp = client.put("/api/keys/k1", json={"label": "updated"}, headers={"X-User-ID": "admin"})
             assert resp.status_code == 200
@@ -88,9 +88,9 @@ class TestKeys:
             "base_url": None, "models": [], "is_active": True,
             "is_default": False, "last_used_at": None, "created_at": None,
         }
-        with patch("backend.routers.keys.update_api_key", new_callable=AsyncMock) as mock_update, \
-             patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test, \
-             patch("backend.routers.keys.log_audit", new_callable=AsyncMock):
+        with patch("routers.keys.update_api_key", new_callable=AsyncMock) as mock_update, \
+             patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test, \
+             patch("routers.keys.log_audit", new_callable=AsyncMock):
             mock_update.return_value = result
             mock_test.return_value = {"success": True, "models": ["gpt-4"]}
             resp = client.put("/api/keys/k1", json={"api_key": "new-key"}, headers={"X-User-ID": "admin"})
@@ -103,9 +103,9 @@ class TestKeys:
             "base_url": None, "models": [], "is_active": True,
             "is_default": False, "last_used_at": None, "created_at": None,
         }
-        with patch("backend.routers.keys.update_api_key", new_callable=AsyncMock) as mock_update, \
-             patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test, \
-             patch("backend.routers.keys.log_audit", new_callable=AsyncMock):
+        with patch("routers.keys.update_api_key", new_callable=AsyncMock) as mock_update, \
+             patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test, \
+             patch("routers.keys.log_audit", new_callable=AsyncMock):
             mock_update.return_value = result
             mock_test.return_value = {"success": False, "message": "fail"}
             resp = client.put("/api/keys/k1", json={"base_url": "https://new.api.com"}, headers={"X-User-ID": "admin"})
@@ -113,38 +113,38 @@ class TestKeys:
 
     def test_delete_key_success(self, client):
         keys = [{"id": "k1", "label": "key-to-delete"}]
-        with patch("backend.routers.keys.get_api_keys", new_callable=AsyncMock) as mock_keys, \
-             patch("backend.routers.keys.delete_api_key", new_callable=AsyncMock) as mock_del, \
-             patch("backend.routers.keys.log_audit", new_callable=AsyncMock):
+        with patch("routers.keys.get_api_keys", new_callable=AsyncMock) as mock_keys, \
+             patch("routers.keys.delete_api_key", new_callable=AsyncMock) as mock_del, \
+             patch("routers.keys.log_audit", new_callable=AsyncMock):
             mock_keys.return_value = keys
             mock_del.return_value = True
             resp = client.delete("/api/keys/k1", headers={"X-User-ID": "admin"})
             assert resp.status_code == 200
 
     def test_delete_key_not_found(self, client):
-        with patch("backend.routers.keys.get_api_keys", new_callable=AsyncMock) as mock_keys, \
-             patch("backend.routers.keys.delete_api_key", new_callable=AsyncMock) as mock_del:
+        with patch("routers.keys.get_api_keys", new_callable=AsyncMock) as mock_keys, \
+             patch("routers.keys.delete_api_key", new_callable=AsyncMock) as mock_del:
             mock_keys.return_value = []
             mock_del.return_value = False
             resp = client.delete("/api/keys/nonexistent", headers={"X-User-ID": "admin"})
             assert resp.status_code == 404
 
     def test_test_key_connection_success(self, client):
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": True, "message": "OK"}
             resp = client.post("/api/keys/k1/test", headers={"X-User-ID": "admin"})
             assert resp.status_code == 200
             assert resp.json()["success"] is True
 
     def test_test_key_connection_failure(self, client):
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": False, "message": "Failed"}
             resp = client.post("/api/keys/k1/test", headers={"X-User-ID": "admin"})
             assert resp.status_code == 200
             assert resp.json()["success"] is False
 
     def test_fetch_models_from_provider_success(self, client):
-        with patch("backend.repository.keys._test_connection_sync") as mock_sync:
+        with patch("repository.keys._test_connection_sync") as mock_sync:
             mock_sync.return_value = {"success": True, "models": ["gpt-4"]}
             resp = client.post("/api/keys/fetch-models", json={
                 "api_key": "sk-test", "provider": "openai",
@@ -153,7 +153,7 @@ class TestKeys:
             assert resp.json()["models"] == ["gpt-4"]
 
     def test_fetch_models_from_provider_failure(self, client):
-        with patch("backend.repository.keys._test_connection_sync") as mock_sync:
+        with patch("repository.keys._test_connection_sync") as mock_sync:
             mock_sync.return_value = {"success": False, "message": "Connection refused"}
             resp = client.post("/api/keys/fetch-models", json={
                 "api_key": "sk-test", "provider": "openai",
@@ -163,13 +163,13 @@ class TestKeys:
             assert "warning" in resp.json()
 
     def test_key_usage(self, client):
-        with patch("backend.routers.keys.get_key_usage_stats", new_callable=AsyncMock) as mock_stats:
+        with patch("routers.keys.get_key_usage_stats", new_callable=AsyncMock) as mock_stats:
             mock_stats.return_value = {"total_tokens": 1000, "total_cost": 0.5}
             resp = client.get("/api/keys/usage", headers={"X-User-ID": "admin"})
             assert resp.status_code == 200
 
     def test_key_usage_error(self, client):
-        with patch("backend.routers.keys.get_key_usage_stats", new_callable=AsyncMock) as mock_stats:
+        with patch("routers.keys.get_key_usage_stats", new_callable=AsyncMock) as mock_stats:
             mock_stats.side_effect = RuntimeError("db error")
             resp = client.get("/api/keys/usage", headers={"X-User-ID": "admin"})
             assert resp.status_code == 500
@@ -183,7 +183,7 @@ class TestKeysIntegration:
 
     def test_create_and_list_key(self, client):
         """POST /api/keys → 201 → GET /api/keys returns the created key."""
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": True, "models": ["gpt-4"]}
             create_resp = client.post("/api/keys", json={
                 "provider": "openai",
@@ -209,7 +209,7 @@ class TestKeysIntegration:
     def test_create_key_then_list_with_different_user_shows_fallback(self, client):
         """Keys created under X-User-ID are visible when queried with a different
         user_id but the X-User-ID passed as fallback."""
-        with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
             mock_test.return_value = {"success": True, "models": ["gpt-4"]}
             create_resp = client.post("/api/keys", json={
                 "provider": "openai",
@@ -235,7 +235,7 @@ class TestKeysIntegration:
         """Create 3 keys for the same user → list returns all."""
         ids = []
         for i, provider in enumerate(["openai", "deepseek", "anthropic"]):
-            with patch("backend.routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+            with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
                 mock_test.return_value = {"success": True, "models": [f"model-{i}"]}
                 resp = client.post("/api/keys", json={
                     "provider": provider,

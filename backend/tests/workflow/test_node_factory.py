@@ -17,8 +17,8 @@ os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 
 from langchain_core.messages import AIMessage
 
-from backend.workflow.models import NodeStrategy, WorkflowNode, WorkflowState, create_initial_state
-from backend.workflow.node_factory import NodeFactory
+from workflow.models import NodeStrategy, WorkflowNode, WorkflowState, create_initial_state
+from workflow.node_factory import NodeFactory
 
 
 @dataclass
@@ -120,8 +120,8 @@ class TestNodeFactoryCreate:
         assert callable(fn)
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.convert_messages_to_api")
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    @patch("workflow.node_factory.convert_messages_to_api")
     async def test_node_fn_calls_llm(self, mock_convert, mock_stream):
         mock_convert.return_value = [{"role": "user", "content": "ctx"}]
         mock_stream.return_value = (["hello world"], None, None, None, None)
@@ -139,8 +139,8 @@ class TestNodeFactoryCreate:
         assert any(isinstance(m, AIMessage) for m in result["messages"])
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.convert_messages_to_api")
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    @patch("workflow.node_factory.convert_messages_to_api")
     async def test_node_fn_empty_prompt_context(self, mock_convert, mock_stream):
         mock_convert.return_value = [{"role": "user", "content": ""}]
         mock_stream.return_value = (["output"], None, None, None, None)
@@ -155,8 +155,8 @@ class TestNodeFactoryCreate:
         assert result["artifacts"]["dev"] == "output"
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.convert_messages_to_api")
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    @patch("workflow.node_factory.convert_messages_to_api")
     async def test_node_fn_no_run_id_skips_publish(self, mock_convert, mock_stream):
         mock_convert.return_value = [{"role": "user", "content": "ctx"}]
 
@@ -179,9 +179,9 @@ class TestNodeFactoryCreate:
 @pytest.mark.unit
 class TestNodeFnStreamCallback:
     @pytest.mark.asyncio
-    @patch("backend.workflow.node_factory.publish_run_message", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.convert_messages_to_api")
+    @patch("workflow.node_factory.publish_run_message", new_callable=AsyncMock)
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    @patch("workflow.node_factory.convert_messages_to_api")
     async def test_stream_cb_publishes_content(self, mock_convert, mock_stream, mock_publish):
         mock_convert.return_value = [{"role": "user", "content": "ctx"}]
 
@@ -206,8 +206,8 @@ class TestNodeFnStreamCallback:
         assert second_call[0][1]["type"] == "thinking_stream"
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.convert_messages_to_api")
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    @patch("workflow.node_factory.convert_messages_to_api")
     async def test_stream_cb_empty_content_skipped(self, mock_convert, mock_stream):
         mock_convert.return_value = [{"role": "user", "content": "ctx"}]
 
@@ -228,9 +228,9 @@ class TestNodeFnStreamCallback:
         assert "artifacts" in result
 
     @pytest.mark.asyncio
-    @patch("backend.workflow.node_factory.publish_run_message", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
-    @patch("backend.workflow.node_factory.convert_messages_to_api")
+    @patch("workflow.node_factory.publish_run_message", new_callable=AsyncMock)
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    @patch("workflow.node_factory.convert_messages_to_api")
     async def test_stream_cb_publish_exception_suppressed(self, mock_convert, mock_stream, mock_publish):
         mock_convert.return_value = [{"role": "user", "content": "ctx"}]
         mock_publish.side_effect = RuntimeError("redis down")
