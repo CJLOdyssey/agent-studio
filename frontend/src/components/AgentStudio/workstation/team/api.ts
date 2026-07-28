@@ -36,13 +36,13 @@ function backendToEntry(item: {
 const { bind: teamAPI, setAPI: setTeamAPI } = defineCrudModule<TeamEntry, TeamFormData>({
   fetchAll: async () => { const items = await listTeams(); return items.map(backendToEntry); },
   create: async (data) => {
-    const created = await createTeam({ name: data.name, description: data.description || undefined, status: data.status });
+    const created = await createTeam({ name: data.name, description: data.description || undefined, status: data.status, category: data.category });
     return backendToEntry(created);
   },
-  update: async (id, data) => { await updateTeam(id, { name: data.name, description: data.description ?? undefined, status: data.status }); },
+  update: async (id, data) => { await updateTeam(id, { name: data.name, description: data.description ?? undefined, status: data.status, category: data.category }); },
   remove: async (id) => { await deleteTeam(id); },
   clone: async (item) => {
-    const created = await createTeam({ name: `${item.name.slice(0, 60)} (副本)`, description: item.description || undefined, status: item.status });
+    const created = await createTeam({ name: `${item.name.slice(0, 60)} (副本)`, description: item.description || undefined, status: item.status, category: item.category });
     return backendToEntry(created);
   },
   removeBatch: async (ids) => { await Promise.all(Array.from(ids).map((id) => deleteTeam(id))); },

@@ -59,6 +59,13 @@ frontend/coverage/
 # ── Testing Tools ──────────────────────────────────────────────────────────
 .playwright-mcp/
 
+# Playwright auth state (contains credentials)
+frontend/.auth/
+
+# Playwright test artifacts
+frontend/test-results/
+.playwright-cli/
+
 # ── Build Artifacts ───────────────────────────────────────────────────────
 frontend/lighthouse-report.json
 frontend/antd-migration-screenshot.png

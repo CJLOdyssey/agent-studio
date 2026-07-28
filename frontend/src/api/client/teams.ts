@@ -10,6 +10,7 @@ export interface TeamItem {
   created_at: string | null;
   description?: string | null;
   status?: string | null;
+  category?: string | null;
 }
 
 export interface TeamCategoryItem { value: string; label: string; }
@@ -24,14 +25,14 @@ export async function listTeams(): Promise<TeamItem[]> {
   return data;
 }
 
-export async function createTeam(payload: { name: string; description?: string; status?: string }): Promise<TeamItem> {
+export async function createTeam(payload: { name: string; description?: string; status?: string; category?: string }): Promise<TeamItem> {
   const { data } = await api.post('/teams', payload);
   return data;
 }
 
 export async function updateTeam(
   id: string,
-  payload: { name?: string; description?: string; status?: string; order?: number; is_expanded?: boolean },
+  payload: { name?: string; description?: string; status?: string; category?: string; order?: number; is_expanded?: boolean },
 ): Promise<TeamItem> {
   const { data } = await api.put(`/teams/${id}`, payload);
   return data;
