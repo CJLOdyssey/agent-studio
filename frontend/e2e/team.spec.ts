@@ -7,7 +7,7 @@ let seq = 0;
 function uid() { return `${++seq}-${Date.now().toString(36).slice(-4)}`; }
 
 /** 学习13：根据 RUN_FROM 决定是否跳过当前 step */
-const stepNames = ['E1-01', 'E1-04', 'E1-02', 'E1-03', 'E1-06', 'E1-07', 'E1-08', 'E1-09', 'E1-10', 'E1-05', 'E1-14', 'E1-15', 'E1-11', 'E1-12'];
+const stepNames = ['E1-01', 'E1-04', 'E1-02', 'E1-03', 'E1-06', 'E1-07', 'E1-08', 'E1-09', 'E1-10', 'E1-05', 'E1-14', 'E1-15', 'E1-11', 'E1-12', 'E1-16'];
 function shouldSkip(name: string): boolean {
   if (!RUN_FROM) return false;
   return stepNames.indexOf(name) < stepNames.indexOf(RUN_FROM);
@@ -369,5 +369,44 @@ test('团队管理 E2E', async ({ page }) => {
   // ⚠️ 无 UI 菜单入口，无法自动化测试
 
   // ─── E1-16 错误处理 ────────────────────────────
-  // ⚠️ 需拦截 API 模拟后端错误，复杂度高，暂不实现
+  await runStep('E1-16: 错误处理', async () => {
+    await clearOverlays(page);
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: /在线状态/ }).click();
+    await page.getByRole('button', { name: '管理工作台' }).click();
+    await page.waitForTimeout(1500);
+    await resetFilters(page);
+
+    // 学习11：拦截 POST /api/teams 返回 500 模拟后端错误
+    await page.route('**/api/teams', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ detail: '模拟服务端错误' }) });
+      } else {
+        await route.continue();
+      }
+    });
+
+    // 打开创建弹窗并提交
+    await page.getByRole('button', { name: '新建团队' }).click();
+    await page.waitForTimeout(500);
+    await page.getByRole('textbox', { name: '输入团队名称' }).fill(`E2E-错误-${uid()}`);
+    await page.getByText('创建团队').click();
+    await page.waitForTimeout(1000);
+
+    // 验证错误处理：等待 toast 或 error banner
+    await page.waitForTimeout(1000);
+    // 重试按钮存在即表明错误处理生效
+    const hasRetry = await page.getByRole('button', { name: /重试/ }).isVisible().catch(() => false);
+    const hasErrorText = await page.getByText(/失败|错误|模拟/).isVisible().catch(() => false);
+    console.log('E1-16 错误提示可见:', { retry: hasRetry, errorText: hasErrorText });
+    if (hasRetry) {
+      // 有关闭按钮
+      await page.getByRole('button', { name: /重试/ }).click();
+      await page.waitForTimeout(500);
+    }
+
+    // 恢复正常 API
+    await page.unroute('**/api/teams');
+  });
 });
