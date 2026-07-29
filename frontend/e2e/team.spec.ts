@@ -7,7 +7,7 @@ let seq = 0;
 function uid() { return `${++seq}-${Date.now().toString(36).slice(-4)}`; }
 
 /** 学习13：根据 RUN_FROM 决定是否跳过当前 step */
-const stepNames = ['E1-01', 'E1-04', 'E1-02', 'E1-03', 'E1-06', 'E1-07', 'E1-05', 'E1-14', 'E1-15', 'E1-11', 'E1-12'];
+const stepNames = ['E1-01', 'E1-04', 'E1-02', 'E1-03', 'E1-06', 'E1-07', 'E1-08', 'E1-09', 'E1-10', 'E1-05', 'E1-14', 'E1-15', 'E1-11', 'E1-12'];
 function shouldSkip(name: string): boolean {
   if (!RUN_FROM) return false;
   return stepNames.indexOf(name) < stepNames.indexOf(RUN_FROM);
@@ -201,6 +201,72 @@ test('团队管理 E2E', async ({ page }) => {
     await expect(page.getByText(inactiveName)).toBeVisible();
   });
 
+  // ─── E1-08 批量删除 ──────────────────────────
+  await runStep('E1-08: 批量删除', async () => {
+    await resetFilters(page);
+    // 清理前序步骤残留的团队，避免分页影响
+    for (let i = 0; i < 3; i++) {
+      const cb = page.getByRole('checkbox', { name: '全选本页' });
+      if (!(await cb.isVisible().catch(() => false))) break;
+      await cb.check();
+      await page.waitForTimeout(200);
+      const btn = page.getByRole('button', { name: /批量删除/ });
+      if (!(await btn.isVisible().catch(() => false))) break;
+      await btn.click();
+      await page.getByRole('button', { name: '确认删除' }).click();
+      await page.waitForTimeout(500);
+    }
+    const teamA = `E2E-批量A-${uid()}`;
+    const teamB = `E2E-批量B-${uid()}`;
+    await createTeam(page, teamA);
+    await expect(page.getByText('团队已创建')).toBeVisible();
+    await createTeam(page, teamB);
+    await expect(page.getByText('团队已创建')).toBeVisible();
+
+    // 勾选两行
+    await page.locator('tr', { hasText: teamA }).locator('input[type="checkbox"]').check();
+    await page.locator('tr', { hasText: teamB }).locator('input[type="checkbox"]').check();
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: /批量删除/ }).click();
+    await page.getByRole('button', { name: '确认删除' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('团队已删除')).toBeVisible();
+  });
+
+  // ─── E1-09 全选 ──────────────────────────────
+  await runStep('E1-09: 全选', async () => {
+    await resetFilters(page);
+    await createTeam(page, `E2E-全选A-${uid()}`);
+    await expect(page.getByText('团队已创建')).toBeVisible();
+    await createTeam(page, `E2E-全选B-${uid()}`);
+    await expect(page.getByText('团队已创建')).toBeVisible();
+    await createTeam(page, `E2E-全选C-${uid()}`);
+    await expect(page.getByText('团队已创建')).toBeVisible();
+
+    await page.getByRole('checkbox', { name: '全选本页' }).check();
+    await page.waitForTimeout(300);
+    // 三行都应选中的验证：批量删除按钮显示数量
+    await expect(page.getByRole('button', { name: /批量删除.*3/ })).toBeVisible();
+  });
+
+  // ─── E1-10 空状态 ──────────────────────────
+  await runStep('E1-10: 空状态', async () => {
+    await resetFilters(page);
+    // 清空所有团队
+    for (let i = 0; i < 3; i++) {
+      const cb = page.getByRole('checkbox', { name: '全选本页' });
+      if (!(await cb.isVisible().catch(() => false))) break;
+      await cb.check();
+      await page.waitForTimeout(200);
+      const btn = page.getByRole('button', { name: /批量删除/ });
+      if (!(await btn.isVisible().catch(() => false))) break;
+      await btn.click();
+      await page.getByRole('button', { name: '确认删除' }).click();
+      await page.waitForTimeout(500);
+    }
+    await expect(page.getByText('暂无团队', { exact: true })).toBeVisible();
+  });
+
   // ─── E1-05 搜索筛选 ──────────────────────────
   await runStep('E1-05: 搜索筛选', async () => {
     await resetFilters(page);
@@ -216,9 +282,11 @@ test('团队管理 E2E', async ({ page }) => {
   // ─── E1-14 成员管理弹窗 ──────────────────────
   await runStep('E1-14: 成员管理弹窗', async () => {
     await resetFilters(page);
-    const row = page.locator('tr').filter({ hasText: /E2E-/ }).first();
-    await expect(row).toBeVisible({ timeout: 5000 });
-    const name = await row.locator('td').nth(1).innerText();
+    const name = `E2E-成员-${uid()}`;
+    await createTeam(page, name);
+    await expect(page.getByText('团队已创建')).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.getByText(name)).toBeVisible();
 
     await clickRowAction(page, name);
     await page.getByRole('menuitem', { name: '管理成员' }).click();
