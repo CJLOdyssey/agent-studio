@@ -366,7 +366,7 @@ test('团队管理 E2E', async ({ page }) => {
   });
 
   // ─── E1-13 复制团队 ────────────────────────────
-  // ⚠️ 无 UI 菜单入口，无法自动化测试
+  // ⚠️ UI 无菜单入口，已移除死代码（useTeamManagement.copyTeam / team.types.copyTeam）
 
   // ─── E1-16 错误处理 ────────────────────────────
   await runStep('E1-16: 错误处理', async () => {

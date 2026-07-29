@@ -31,6 +31,5 @@ export interface TeamData extends GenericCrudReturn<TeamEntry, TeamFormData> {
   addTeam: (data: TeamFormData) => Promise<TeamEntry | undefined>;
   updateTeam: (id: string, data: Partial<TeamFormData>) => Promise<void>;
   deleteTeam: (id: string) => Promise<void>;
-  copyTeam: (item: TeamEntry) => Promise<void>;
   batchDelete: (ids: Set<string>) => Promise<void>;
 }

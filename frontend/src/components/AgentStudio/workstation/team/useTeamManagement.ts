@@ -26,10 +26,6 @@ export function useTeamManagement(): TeamData {
     await crud.removeItem(id);
   }, [crud]);
 
-  const copyTeam = useCallback(async (item: TeamEntry) => {
-    await crud.cloneItem(item);
-  }, [crud]);
-
   const batchDelete = useCallback(async (ids: Set<string>) => {
     await crud.removeMultipleItems(ids);
   }, [crud]);
@@ -45,7 +41,6 @@ export function useTeamManagement(): TeamData {
     addTeam,
     updateTeam,
     deleteTeam,
-    copyTeam,
     batchDelete,
-  }), [crud, addTeam, updateTeam, deleteTeam, copyTeam, batchDelete]);
+  }), [crud, addTeam, updateTeam, deleteTeam, batchDelete]);
 }
