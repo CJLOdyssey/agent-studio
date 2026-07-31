@@ -182,7 +182,7 @@ function ToolCallCard({
           }
         }}
       >
-        <div className="text-sm leading-[1.65] text-[var(--color-text-secondary)]">
+        <div className="text-base leading-[1.65] text-[var(--color-text-secondary)]">
           <span>[{callParsed.prefix}]</span>
           {' '}
           <code className="text-[0.85em] font-[var(--font-mono)] break-all">{linkify(callParsed.rest)}</code>
@@ -190,7 +190,7 @@ function ToolCallCard({
       </div>
 
       {expanded && (
-        <div className="mt-1 flex gap-1.5 text-sm leading-[1.65] text-[var(--color-text-muted)]">
+        <div className="mt-1 flex gap-1.5 text-base leading-[1.65] text-[var(--color-text-muted)]">
           <span className="flex-none select-none text-[var(--color-text-tertiary)]">⟶</span>
           <div className="flex-1 min-w-0">
             <ThinkingMarkdown t={t}>{resultDisplay}</ThinkingMarkdown>
@@ -447,7 +447,7 @@ const TeamMessage = memo(function TeamMessage({
                       {isThinkingExpanded && (() => {
                         const items = groupThinkingNodes(msg.thinking ?? '');
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-sm text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                             <div className="relative pl-4">
                               <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
                               {items.map((item, i) => (
@@ -467,7 +467,7 @@ const TeamMessage = memo(function TeamMessage({
                       {msg.thinking && (() => {
                         const items = groupThinkingNodes(msg.thinking);
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-sm text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                             <div className="relative pl-4">
                               <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
                               {items.map((item, i) => (
