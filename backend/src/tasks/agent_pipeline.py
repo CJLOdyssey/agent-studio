@@ -227,6 +227,7 @@ async def _run_agent_pipeline(
                                 endpoint="",
                                 method="MCP",
                                 mcp_type="stdio",
+                                mcp_endpoint=mcp_endpoint,
                                 mcp_tool_name=st["name"],
                                 mcp_config=mcp_config,
                             ))

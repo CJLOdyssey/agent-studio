@@ -279,9 +279,58 @@ class TestRunAgentPipeline:
         bound_tools = graph.bind_tools.call_args[0][0]
         sub = next(t for t in bound_tools if t.name == "mcp_my-mcp_read_file")
         assert sub.mcp_type == "stdio"
+        assert sub.mcp_endpoint == "npx"
         assert sub.mcp_tool_name == "read_file"
         assert sub.mcp_config["command"] == "npx"
         assert sub.mcp_config["args"] == ["-y", "mcp-srv"]
+
+    async def test_prepare_tools_stdio_subtool_dispatch_reaches_call_mcp_sdk(self, mock_agent_deps):
+        """A stdio sub-tool must dispatch to call_mcp_sdk (not fall back to a
+        fabricated "called" result). Regression for mcp_endpoint missing on the
+        sub-tool ToolConfig."""
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.mcp = '[{"name": "my-mcp"}]'
+
+        mcp_mock = MagicMock()
+        mcp_mock.name = "my-mcp"
+        mcp_mock.type = "stdio"
+        mcp_mock.endpoint = "npx"
+        mcp_mock.config = '{"args": ["-y", "mcp-srv"], "env": {"KEY": "VAL"}}'
+        mock_agent_deps["get_mcps"].return_value = [mcp_mock]
+
+        with patch(
+            "tasks.agent_pipeline._discover_mcp_tools",
+            new_callable=AsyncMock,
+            return_value=[
+                {
+                    "name": "read_file",
+                    "description": "Read a file",
+                    "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}},
+                }
+            ],
+        ):
+            await _run_agent_pipeline(
+                requirement="test",
+                run_id="run-stdio-dispatch",
+                session_id=None,
+                agent_id="agent-1",
+            )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        sub = next(t for t in bound_tools if t.name == "mcp_my-mcp_read_file")
+        assert sub.mcp_endpoint == "npx"
+
+        from services.tool_config import build_tool_definition
+
+        _, wrapper, _ = build_tool_definition(sub)
+        wrapper.set_run_id("run-stdio-dispatch")
+        assert wrapper._resolve_handler() == "mcp"
+
+        with patch("services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
+            mock_sdk.return_value = "real mcp output"
+            result = await wrapper.invoke({"path": "/tmp/x"})
+        assert result == "real mcp output"
+        mock_sdk.assert_awaited_once_with(wrapper, {"path": "/tmp/x"})
 
     async def test_prepare_tools_non_stdio_mcp_carries_mcp_type(self, mock_agent_deps):
         ac, graph = _default_agent_mocks(mock_agent_deps)
