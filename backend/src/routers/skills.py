@@ -23,7 +23,6 @@ class SkillCreate(BaseModel):
     category: str = Field(..., min_length=1, max_length=32)
     description: str = ""
     instructions: str = ""
-    prompt_id: str | None = None
     tool_names: list[str] = []
     output_constraint: str = ""
     version: str = "v1.0.0"
@@ -36,7 +35,6 @@ class SkillUpdate(BaseModel):
     category: str | None = None
     description: str | None = None
     instructions: str | None = None
-    prompt_id: str | None = None
     tool_names: list[str] | None = None
     output_constraint: str | None = None
     version: str | None = None
@@ -75,7 +73,6 @@ async def get_skill(skill_id: str) -> Any:
             "version": s.version,
             "status": s.status,
             "instructions": s.instructions,
-            "prompt_id": s.prompt_id,
             "tool_names": s.tool_names,
             "output_constraint": s.output_constraint,
             "created_at": str(s.created_at) if s.created_at else None,
@@ -125,7 +122,6 @@ async def add_skill(req: SkillCreate) -> Any:
             "name": s.name,
             "category": s.category,
             "status": s.status,
-            "prompt_id": s.prompt_id,
             "tool_names": s.tool_names,
             "output_constraint": s.output_constraint,
             "instructions": s.instructions,
@@ -323,7 +319,6 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
             "name": s.name,
             "category": s.category,
             "status": s.status,
-            "prompt_id": s.prompt_id,
             "tool_names": s.tool_names,
             "output_constraint": s.output_constraint,
             "instructions": s.instructions,
