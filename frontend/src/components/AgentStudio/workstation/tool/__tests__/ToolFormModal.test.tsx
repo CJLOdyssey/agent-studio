@@ -5,10 +5,6 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }
 
 vi.mock('../locales', () => ({ t: (key: string) => key }));
 
-vi.mock('../../constants', () => ({
-  useModelOptions: () => ['GPT-4o', 'Claude Opus 4', 'DeepSeek V3'],
-}));
-
 vi.mock('../../../../../api/client/tools', () => ({
   testTool: vi.fn(),
 }));
@@ -46,7 +42,6 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('tool.form_name')).toBeInTheDocument();
     expect(screen.getByText('tool.form_desc')).toBeInTheDocument();
     expect(screen.getByText('tool.form_category')).toBeInTheDocument();
-    expect(screen.getByText('tool.form_model')).toBeInTheDocument();
     expect(screen.getByText('tool.form_status')).toBeInTheDocument();
     expect(screen.getByText('tool.form_version')).toBeInTheDocument();
     expect(screen.getByText('tool.form_endpoint')).toBeInTheDocument();
@@ -75,19 +70,19 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
     expect(setFormData).toHaveBeenCalled();
   });
 
-  it('calls setFormData on category select change', () => {
+  it('calls setFormData on category change', () => {
     const setFormData = vi.fn();
     render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[0], { target: { value: 'API 工具' } });
+    const input = screen.getByPlaceholderText('例如：内置工具、自定义工具');
+    fireEvent.change(input, { target: { value: 'API 工具' } });
     expect(setFormData).toHaveBeenCalled();
   });
 
-  it('calls setFormData on model select change', () => {
+  it('calls setFormData on status select change', () => {
     const setFormData = vi.fn();
     render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[1], { target: { value: 'DeepSeek V3' } });
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'disabled' } });
     expect(setFormData).toHaveBeenCalled();
   });
 

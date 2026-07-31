@@ -23,7 +23,6 @@ function buildToolItem(item: Record<string, unknown> | null) {
     name: item.name as string,
     description: (item.description as string) || '',
     category: (item.category as string) || '',
-    model: (item.model as string) || '',
     status: 'active' as const,
     version: (item.version as string) || 'v1.0.0',
     endpoint: (item.endpoint as string) || '',

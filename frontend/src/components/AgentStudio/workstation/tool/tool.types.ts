@@ -5,7 +5,6 @@ export interface ToolEntry {
   name: string;
   description: string;
   category: string;
-  model: string;
   status: 'active' | 'disabled';
   version: string;
   endpoint: string;

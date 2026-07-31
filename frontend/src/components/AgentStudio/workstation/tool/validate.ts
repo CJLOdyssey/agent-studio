@@ -1,7 +1,7 @@
 import type { ToolEntry, ToolFormData } from './tool.types';
 
 export const EMPTY_FORM: ToolFormData = {
-  name: '', description: '', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}',
+  name: '', description: '', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}',
 };
 
 export function validateToolForm(data: ToolFormData, items: ToolEntry[], editingId?: string): string[] {

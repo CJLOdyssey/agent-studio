@@ -74,7 +74,6 @@ export function useConfigItemEdit(
       name: (item.name as string) || '',
       description: (item.description as string) || '',
       category: (item.category as string) || '自定义工具',
-      model: (item.model as string) || 'GPT-4o',
       status: 'active',
       version: (item.version as string) || 'v1.0.0',
       endpoint: (item.endpoint as string) || '',

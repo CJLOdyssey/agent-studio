@@ -20,7 +20,7 @@ import ToolManagement from '../ToolManagement';
 function makeTool(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'Search Tool', description: 'A search tool', category: '内置工具',
-    model: '', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{}',
+    status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{}',
     createdAt: '2024-01-01', ...overrides,
   };
 }

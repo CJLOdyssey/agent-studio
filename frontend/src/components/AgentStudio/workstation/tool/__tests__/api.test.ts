@@ -24,7 +24,6 @@ describe('tool api', { tags: ['unit'] }, () => {
     name: 'Tool 1',
     description: 'A tool',
     category: 'utility',
-    model: 'gpt-4',
     status: 'active',
     version: 'v1',
     endpoint: 'https://example.com',
@@ -51,7 +50,6 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'New Tool',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
@@ -63,7 +61,6 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'New Tool',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
@@ -99,7 +96,6 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'Original',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
@@ -112,7 +108,6 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'Original (副本)',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
@@ -130,13 +125,12 @@ describe('tool api', { tags: ['unit'] }, () => {
   });
 
   it('toEntry maps disabled status', async () => {
-    mockListTools.mockResolvedValue([{ ...sampleRow, status: 'inactive', model: null }]);
+    mockListTools.mockResolvedValue([{ ...sampleRow, status: 'inactive' }]);
 
     const { toolAPI } = await import('../api');
     const result = await toolAPI.fetchAll();
 
     expect(result[0].status).toBe('disabled');
-    expect(result[0].model).toBe('');
   });
 
   it('toEntry defaults parameters when missing', async () => {

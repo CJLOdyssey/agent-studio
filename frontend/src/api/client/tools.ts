@@ -5,7 +5,6 @@ export interface ToolItem {
   name: string;
   description: string;
   category: string;
-  model: string | null;
   status: string;
   version: string;
   endpoint: string;
@@ -23,12 +22,12 @@ export async function listTools(): Promise<ToolItem[]> {
   return data;
 }
 
-export async function createTool(payload: { name: string; description: string; category: string; model?: string; status?: string; version?: string; endpoint?: string; parameters?: string }): Promise<ToolItem> {
+export async function createTool(payload: { name: string; description: string; category: string; status?: string; version?: string; endpoint?: string; parameters?: string }): Promise<ToolItem> {
   const { data } = await api.post('/tools', payload);
   return data;
 }
 
-export async function updateTool(id: string, payload: Partial<{ name: string; description: string; category: string; model: string; status: string; version: string; endpoint: string; parameters: string }>): Promise<ToolItem> {
+export async function updateTool(id: string, payload: Partial<{ name: string; description: string; category: string; status: string; version: string; endpoint: string; parameters: string }>): Promise<ToolItem> {
   const { data } = await api.put(`/tools/${id}`, payload);
   return data;
 }
