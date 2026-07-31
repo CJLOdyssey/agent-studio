@@ -247,6 +247,65 @@ class TestRunAgentPipeline:
         tool_names = [t.name for t in bound_tools]
         assert "search-tool" in tool_names
 
+    async def test_prepare_tools_stdio_mcp_subtool_carries_mcp_identity(self, mock_agent_deps):
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.mcp = '[{"name": "my-mcp"}]'
+
+        mcp_mock = MagicMock()
+        mcp_mock.name = "my-mcp"
+        mcp_mock.type = "stdio"
+        mcp_mock.endpoint = "npx"
+        mcp_mock.config = '{"args": ["-y", "mcp-srv"], "env": {"KEY": "VAL"}}'
+        mock_agent_deps["get_mcps"].return_value = [mcp_mock]
+
+        with patch(
+            "tasks.agent_pipeline._discover_mcp_tools",
+            new_callable=AsyncMock,
+            return_value=[
+                {
+                    "name": "read_file",
+                    "description": "Read a file",
+                    "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}},
+                }
+            ],
+        ):
+            await _run_agent_pipeline(
+                requirement="test",
+                run_id="run-stdio-mcp",
+                session_id=None,
+                agent_id="agent-1",
+            )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        sub = next(t for t in bound_tools if t.name == "mcp_my-mcp_read_file")
+        assert sub.mcp_type == "stdio"
+        assert sub.mcp_tool_name == "read_file"
+        assert sub.mcp_config["command"] == "npx"
+        assert sub.mcp_config["args"] == ["-y", "mcp-srv"]
+
+    async def test_prepare_tools_non_stdio_mcp_carries_mcp_type(self, mock_agent_deps):
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.mcp = '[{"name": "sse-mcp"}]'
+
+        mcp_mock = MagicMock()
+        mcp_mock.name = "sse-mcp"
+        mcp_mock.type = "sse"
+        mcp_mock.endpoint = "http://localhost:3000/mcp"
+        mcp_mock.config = "{}"
+        mock_agent_deps["get_mcps"].return_value = [mcp_mock]
+
+        await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-sse-mcp",
+            session_id=None,
+            agent_id="agent-1",
+        )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        sub = next(t for t in bound_tools if t.name == "mcp_sse-mcp_sse-mcp")
+        assert sub.mcp_type == "sse"
+        assert sub.method == "SSE"
+
     async def test_prepare_tools_disabled_item_skipped(self, mock_agent_deps):
         ac, graph = _default_agent_mocks(mock_agent_deps)
         ac.tools = '[{"name": "enabled-tool", "enabled": true}, {"name": "disabled-tool", "enabled": false}]'

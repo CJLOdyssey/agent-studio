@@ -226,6 +226,8 @@ async def _run_agent_pipeline(
                                 parameters=params,
                                 endpoint="",
                                 method="MCP",
+                                mcp_type="stdio",
+                                mcp_tool_name=st["name"],
                                 mcp_config=mcp_config,
                             ))
                 elif mcp_endpoint:
@@ -238,6 +240,7 @@ async def _run_agent_pipeline(
                             parameters=params,
                             endpoint=mcp_endpoint,
                             method=mcp_type.upper() if mcp_type else "GET",
+                            mcp_type=mcp_type,
                         )
                     )
 
