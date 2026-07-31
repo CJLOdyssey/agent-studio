@@ -29,7 +29,7 @@ function makeItemList<T>() {
 function makeForm() {
   const state = {
     tool: { show: false, data: { name: '', description: '', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '' }, errors: [] as string[] },
-    mcp: { show: false, data: { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '' }, errors: [] as string[] },
+    mcp: { show: false, data: { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [] }, errors: [] as string[] },
     skill: { show: false, data: { name: '', description: '', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' }, errors: [] as string[] },
   };
   return {

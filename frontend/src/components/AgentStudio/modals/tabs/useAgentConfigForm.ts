@@ -10,7 +10,7 @@ interface FormState {
 }
 
 const defaultTool: ToolFormData = { name: '', description: '', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{"type":"object"}' };
-const defaultMCP: MCPFormData = { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '' };
+const defaultMCP: MCPFormData = { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [] };
 const defaultSkill: SkillFormData = { name: '', description: '', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', tool_names: [], output_constraint: '' };
 
 const initialState: FormState = {

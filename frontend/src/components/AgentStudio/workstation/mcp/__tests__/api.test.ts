@@ -54,6 +54,8 @@ describe('mcp api', { tags: ['unit'] }, () => {
       url: '',
       description: 'desc',
       version: 'v1',
+      args: [],
+      env: [],
     };
     const result = await mcpAPI.create(data);
 
@@ -61,7 +63,8 @@ describe('mcp api', { tags: ['unit'] }, () => {
       name: 'New MCP',
       type: 'stdio',
       endpoint: '/usr/bin/cmd',
-      config: JSON.stringify({ description: 'desc', version: 'v1' }),
+      status: 'inactive',
+      config: JSON.stringify({ description: 'desc', version: 'v1', args: [], env: [] }),
     });
     expect(result.name).toBe('MCP 1');
   });
@@ -77,6 +80,8 @@ describe('mcp api', { tags: ['unit'] }, () => {
       url: 'https://example.com',
       description: 'desc',
       version: 'v1',
+      args: [],
+      env: [],
     };
     await mcpAPI.create(data);
 
@@ -84,7 +89,8 @@ describe('mcp api', { tags: ['unit'] }, () => {
       name: 'SSE MCP',
       type: 'sse',
       endpoint: 'https://example.com',
-      config: JSON.stringify({ description: 'desc', version: 'v1' }),
+      status: 'inactive',
+      config: JSON.stringify({ description: 'desc', version: 'v1', args: [], env: [] }),
     });
   });
 
@@ -147,6 +153,8 @@ describe('mcp api', { tags: ['unit'] }, () => {
       version: 'v1',
       command: '/usr/bin/cmd',
       url: '',
+      args: ['-y'],
+      env: ['TOKEN=abc'],
       createdAt: '2024-01-01',
     };
     await mcpAPI.clone(item);
@@ -155,7 +163,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
       name: 'Original (副本)',
       type: 'stdio',
       endpoint: '/usr/bin/cmd',
-      config: JSON.stringify({ description: 'desc', version: 'v1' }),
+      config: JSON.stringify({ description: 'desc', version: 'v1', args: ['-y'], env: ['TOKEN=abc'] }),
     });
   });
 

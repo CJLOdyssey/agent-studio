@@ -7,7 +7,7 @@ import MCPFormModal from '../MCPFormModal';
 import type { MCPFormData } from '../mcp.types';
 
 const baseFormData: MCPFormData = {
-  name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '',
+  name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [],
 };
 
 function renderModal(overrides?: Record<string, unknown>) {

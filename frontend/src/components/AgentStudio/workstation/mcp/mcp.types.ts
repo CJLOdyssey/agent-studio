@@ -9,6 +9,8 @@ export interface MCPEntry {
   version: string;
   command: string;
   url: string;
+  args: string[];
+  env: string[];
   createdAt: string;
 }
 

@@ -1,7 +1,7 @@
 import type { MCPEntry, MCPFormData } from './mcp.types';
 
 export const EMPTY_FORM: MCPFormData = {
-  name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '',
+  name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [],
 };
 
 export function validateMCPForm(data: MCPFormData, items: MCPEntry[], editingId?: string): string[] {

@@ -21,7 +21,7 @@ function makeMCP(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'File Server', description: 'MCP file server', type: 'sse' as const,
     status: 'connected' as const, version: 'v1.0.0', command: '', url: 'http://localhost:3000',
-    createdAt: '2024-01-01', ...overrides,
+    args: [], env: [], createdAt: '2024-01-01', ...overrides,
   };
 }
 

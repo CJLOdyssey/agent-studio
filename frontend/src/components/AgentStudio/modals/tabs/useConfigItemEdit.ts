@@ -90,6 +90,8 @@ export function useConfigItemEdit(
       version: (item.version as string) || 'v1.0.0',
       command: (item.command as string) || '',
       url: (item.url as string) || '',
+      args: Array.isArray(item.args) ? (item.args as string[]) : [],
+      env: Array.isArray(item.env) ? (item.env as string[]) : [],
     };
   }
 
@@ -213,6 +215,8 @@ export function useConfigItemEdit(
       version: (item.version as string) || 'v1.0.0',
       command: (item.command as string) || '',
       url: (item.url as string) || '',
+      args: Array.isArray(item.args) ? (item.args as string[]) : [],
+      env: Array.isArray(item.env) ? (item.env as string[]) : [],
     }));
   }
 

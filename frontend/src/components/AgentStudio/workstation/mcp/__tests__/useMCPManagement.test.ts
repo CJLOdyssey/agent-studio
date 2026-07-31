@@ -59,7 +59,7 @@ describe('useMcpManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    act(() => { result.current.addMCP({ name: 'Test MCP', description: 'Test', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: 'test', url: '' }); });
+    act(() => { result.current.addMCP({ name: 'Test MCP', description: 'Test', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: 'test', url: '', args: [], env: [] }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 

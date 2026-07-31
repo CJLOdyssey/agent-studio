@@ -1,6 +1,6 @@
 import { X, Server } from 'lucide-react';
 import type { MCPEntry, MCPFormData } from './mcp.types';
-import { MCP_TYPE_OPTIONS, MCP_STATUS_LABEL } from './mcp.constants';
+import { MCP_TYPE_OPTIONS, MCP_TYPE_LABEL, MCP_STATUS_LABEL } from './mcp.constants';
 import { t } from './locales';
 
 interface Props { editingItem: MCPEntry | null; formData: MCPFormData; setFormData: (fn: (f: MCPFormData) => MCPFormData) => void; onSave: () => void; onClose: () => void; errors: string[]; }
@@ -22,6 +22,11 @@ export default function MCPFormModal({ editingItem, formData, setFormData, onSav
               {errors.map((e, i) => <p key={i}>{e}</p>)}
             </div>
           )}
+          {formData.type === 'sse' && (
+            <div className="p-2 text-xs rounded-md bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 text-[var(--color-warning)]">
+              {t('mcp.sse_warning')}
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('mcp.form_name')} <span className="text-[var(--color-danger)]">*</span></label>
             <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('mcp.form_name_placeholder')} maxLength={50} />
@@ -34,7 +39,7 @@ export default function MCPFormModal({ editingItem, formData, setFormData, onSav
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('mcp.form_type')}</label>
               <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.type} onChange={(e) => setFormData((f) => ({ ...f, type: e.target.value as MCPEntry['type'] }))}>
-                {MCP_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o.toUpperCase()}</option>)}
+                {MCP_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{MCP_TYPE_LABEL[o]}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -45,9 +50,19 @@ export default function MCPFormModal({ editingItem, formData, setFormData, onSav
             </div>
           </div>
           {formData.type === 'stdio' ? (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('mcp.form_command')} <span className="text-[var(--color-danger)]">*</span></label>
-              <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.command} onChange={(e) => setFormData((f) => ({ ...f, command: e.target.value, url: '' }))} placeholder={t('mcp.form_command_placeholder')} />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('mcp.form_command')} <span className="text-[var(--color-danger)]">*</span></label>
+                <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.command} onChange={(e) => setFormData((f) => ({ ...f, command: e.target.value, url: '' }))} placeholder={t('mcp.form_command_placeholder')} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('mcp.form_args')}</label>
+                <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.args.join('\n')} onChange={(e) => setFormData((f) => ({ ...f, args: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) }))} placeholder={t('mcp.form_args_placeholder')} rows={2} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('mcp.form_env')}</label>
+                <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.env.join('\n')} onChange={(e) => setFormData((f) => ({ ...f, env: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) }))} placeholder={t('mcp.form_env_placeholder')} rows={2} />
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-1">

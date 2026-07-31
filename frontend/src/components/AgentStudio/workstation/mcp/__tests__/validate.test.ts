@@ -3,7 +3,7 @@ import { validateMCPForm, EMPTY_FORM } from '../validate';
 import type { MCPFormData } from '../mcp.types';
 
 function makeForm(overrides: Partial<MCPFormData> = {}): MCPFormData {
-  return { name: 'my-mcp', version: 'v1.0.0', type: 'stdio', command: 'node server.js', url: '', ...overrides, description: '', status: 'disconnected' };
+  return { name: 'my-mcp', version: 'v1.0.0', type: 'stdio', command: 'node server.js', url: '', args: [], env: [], ...overrides, description: '', status: 'disconnected' };
 }
 
 describe('validateMCPForm', { tags: ['unit'] }, () => {

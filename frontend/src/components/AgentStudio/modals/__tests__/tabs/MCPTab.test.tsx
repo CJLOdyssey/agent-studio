@@ -5,7 +5,7 @@ import type { MCPFormData } from '../../../workstation/mcp/mcp.types';
 
 const defaultFormData: MCPFormData = {
   name: '', description: '', type: 'stdio', status: 'disconnected',
-  version: 'v1.0.0', command: '', url: '',
+  version: 'v1.0.0', command: '', url: '', args: [], env: [],
 };
 
 const baseItems = [
