@@ -264,8 +264,8 @@ async def _run_agent_pipeline(
     # can actually generate files, not just inject instructions.
     tool_configs.append(ToolConfig(
         name="execute_python",
-        description="Execute Python code in a sandbox subprocess and return stdout/stderr plus any generated files. Use this to create or process files (e.g. build a .docx with python-docx, parse data, run calculations) when a skill instructs you to run code.",
-        parameters={"type": "object", "properties": {"code": {"type": "string", "description": "The complete Python source code to execute."}}, "required": ["code"]},
+        description="Execute Python code in a sandbox subprocess. ALWAYS save generated files to the CURRENT working directory (use a relative filename like 'report.docx' or os.getcwd()), NOT absolute paths like /mnt or /home — the tool auto-registers any generated file as a downloadable attachment and returns its download link. Use this to create or process files (e.g. build a .docx with python-docx, parse data, run calculations) when a skill instructs you to run code.",
+        parameters={"type": "object", "properties": {"code": {"type": "string", "description": "The complete Python source code to execute. Save output files to the current working directory with relative paths."}}, "required": ["code"]},
     ))
 
     for tc in tool_configs:

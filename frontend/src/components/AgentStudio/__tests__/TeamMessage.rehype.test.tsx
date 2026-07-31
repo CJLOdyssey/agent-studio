@@ -58,4 +58,14 @@ describe('rehypeLinkify recursion guard', { tags: ['unit'] }, () => {
     );
     expect(container.querySelector('a[href="https://news.baidu.com"]')).toBeTruthy();
   });
+
+  it('renders relative attachment download URLs as links in the answer body', () => {
+    const { container } = render(
+      <TeamMessage
+        msg={makeMsg({ content: '文档已生成：/api/attachments/abc-123 下载', thinkingDone: true })}
+        allAgents={[mockAgent]}
+      />
+    );
+    expect(container.querySelector('a[href="/api/attachments/abc-123"]')).toBeTruthy();
+  });
 });

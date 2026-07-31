@@ -127,7 +127,7 @@ class _ToolWrapper:
         if kind == "http":
             return await call_http_endpoint(self, args)
         if kind == "code":
-            return handle_execute_python(self, args)
+            return await handle_execute_python(self, args)
         if kind == "skill":
             return handle_skill(self, args)
 

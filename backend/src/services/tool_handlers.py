@@ -41,14 +41,28 @@ import traceback
 # ponytail: workspace dir for generated artifacts; per-run subdir keeps outputs isolated
 _AGENT_WORKSPACE = os.environ.get("AGENT_WORKSPACE", "/tmp/agent-workspace")
 _PY_TIMEOUT_SECONDS = 60
+_ATTACHMENT_CONTENT_TYPES = {
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pdf": "application/pdf",
+    ".csv": "text/csv",
+    ".txt": "text/plain",
+    ".md": "text/markdown",
+    ".json": "application/json",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+}
 
 
-def handle_execute_python(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+async def handle_execute_python(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Execute Python code in a subprocess and return stdout + generated files.
 
     The model writes code using the ``code`` argument; the script runs in a
     dedicated workspace directory so files it creates (e.g. a .docx via the
     preinstalled ``python-docx``) land somewhere the agent can report back.
+    Generated files are registered as session attachments so the frontend can
+    offer a real download link.
     """
     code = str(args.get("code", "") if isinstance(args, dict) else args)
     if not code.strip():
@@ -60,6 +74,35 @@ def handle_execute_python(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
         script_path = f.name
         f.write(code)
 
+    def _candidate_dirs() -> list[str]:
+        dirs = [workspace]
+        try:
+            dirs.append(os.path.expanduser("~"))
+        except Exception:
+            pass
+        try:
+            if _AGENT_WORKSPACE not in dirs:
+                dirs.append(_AGENT_WORKSPACE)
+        except Exception:
+            pass
+        return dirs
+
+    def _snapshot_docx() -> set[str]:
+        found: set[str] = set()
+        for d in _candidate_dirs():
+            try:
+                if not os.path.isdir(d):
+                    continue
+                for name in os.listdir(d):
+                    p = os.path.join(d, name)
+                    if os.path.isfile(p) and name.lower().endswith(".docx"):
+                        found.add(p)
+            except OSError:
+                continue
+        return found
+
+    before = _snapshot_docx()
+    start_ts = time.time()
     try:
         proc = subprocess.run(
             [sys.executable, script_path],
@@ -68,16 +111,49 @@ def handle_execute_python(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
             timeout=_PY_TIMEOUT_SECONDS,
             cwd=workspace,
         )
-        generated = []
-        for name in sorted(os.listdir(workspace)):
-            if name.endswith(".docx"):
-                generated.append(os.path.join(workspace, name))
+        # New files created by the script, anywhere in the candidate dirs,
+        # within a generous window around this run (the model may save to ~ or
+        # /tmp instead of the workspace cwd despite instructions).
+        after = _snapshot_docx()
+        generated = [p for p in (after - before) if os.path.isfile(p)]
+        attachments = []
+        session_id = None
+        if tool_self._run_id:
+            try:
+                from repository import get_run
+                run = await get_run(tool_self._run_id)
+                session_id = run.session_id if run else None
+            except Exception:
+                session_id = None
+        for path in generated:
+            name = os.path.basename(path)
+            ext = name.lower().rsplit(".", 1)[-1] if "." in name else ""
+            if ext not in {k.lstrip(".") for k in _ATTACHMENT_CONTENT_TYPES}:
+                continue
+            if session_id:
+                try:
+                    from uuid import uuid4 as _uuid4
+                    from repository.attachments import create_attachment
+                    att_id = str(_uuid4())
+                    await create_attachment(
+                        attachment_id=att_id,
+                        session_id=session_id,
+                        run_id=tool_self._run_id,
+                        filename=name,
+                        content_type=_ATTACHMENT_CONTENT_TYPES["." + ext],
+                        size_bytes=os.path.getsize(path),
+                        storage_path=path,
+                    )
+                    attachments.append({"id": att_id, "filename": name, "download_url": f"/api/attachments/{att_id}"})
+                except Exception:
+                    logger.warning("Attachment registration failed for %s", path, exc_info=True)
         return json.dumps({
             "ok": proc.returncode == 0,
             "returncode": proc.returncode,
             "stdout": proc.stdout[-4000:],
             "stderr": proc.stderr[-2000:],
             "generated_files": generated,
+            "attachments": attachments,
         }, ensure_ascii=False)
     except subprocess.TimeoutExpired:
         return json.dumps({"ok": False, "error": f"执行超时（>{_PY_TIMEOUT_SECONDS}s）"})

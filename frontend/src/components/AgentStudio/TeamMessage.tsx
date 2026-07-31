@@ -71,7 +71,7 @@ function ThinkingMarkdown({ t, children }: { t: (key: string) => string; childre
   );
 }
 
-const BARE_URL_RE = /(https?:\/\/[^\s"',)\]}]+)/g;
+const BARE_URL_RE = /(https?:\/\/[^\s"',)\]}]+|\/api\/attachments\/[^\s"',)\]}]+)/g;
 
 function rehypeLinkify() {
   return (tree: Root) => {
@@ -83,7 +83,7 @@ function rehypeLinkify() {
       const children: ElementContent[] = [];
       for (const part of parts) {
         if (!part) continue;
-        if (/^https?:\/\//.test(part)) {
+        if (/^(https?:\/\/|\/api\/attachments\/)/.test(part)) {
           children.push({
             type: 'element',
             tagName: 'a',
@@ -507,7 +507,15 @@ const TeamMessage = memo(function TeamMessage({
                   )}
                 </div>
               )}
-              <ReactMarkdown components={markdownComponents(t)}>
+              <ReactMarkdown
+                rehypePlugins={[rehypeLinkify]}
+                components={{
+                  ...markdownComponents(t),
+                  a({ href, children }) {
+                    return <a href={href} target="_blank" rel="noopener noreferrer" className="underline text-[var(--color-accent)] hover:opacity-80 break-all">{children}</a>;
+                  },
+                }}
+              >
                 {msg.content}
               </ReactMarkdown>
             </div>
