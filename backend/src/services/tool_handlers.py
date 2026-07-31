@@ -6,6 +6,7 @@ import asyncio
 import json
 import shlex
 import subprocess
+import sys
 import time
 import urllib.request
 from typing import TYPE_CHECKING, Any
@@ -31,6 +32,62 @@ def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
         "name": tool_self.name,
         "content": "This skill provides specialized guidance. Follow these instructions.",
     })
+
+
+import os
+import tempfile
+import traceback
+
+# ponytail: workspace dir for generated artifacts; per-run subdir keeps outputs isolated
+_AGENT_WORKSPACE = os.environ.get("AGENT_WORKSPACE", "/tmp/agent-workspace")
+_PY_TIMEOUT_SECONDS = 60
+
+
+def handle_execute_python(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
+    """Execute Python code in a subprocess and return stdout + generated files.
+
+    The model writes code using the ``code`` argument; the script runs in a
+    dedicated workspace directory so files it creates (e.g. a .docx via the
+    preinstalled ``python-docx``) land somewhere the agent can report back.
+    """
+    code = str(args.get("code", "") if isinstance(args, dict) else args)
+    if not code.strip():
+        return json.dumps({"ok": False, "error": "code 参数为空"})
+
+    workspace = os.path.join(_AGENT_WORKSPACE, tool_self._run_id or "default")
+    os.makedirs(workspace, exist_ok=True)
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False, dir=workspace) as f:
+        script_path = f.name
+        f.write(code)
+
+    try:
+        proc = subprocess.run(
+            [sys.executable, script_path],
+            capture_output=True,
+            text=True,
+            timeout=_PY_TIMEOUT_SECONDS,
+            cwd=workspace,
+        )
+        generated = []
+        for name in sorted(os.listdir(workspace)):
+            if name.endswith(".docx"):
+                generated.append(os.path.join(workspace, name))
+        return json.dumps({
+            "ok": proc.returncode == 0,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout[-4000:],
+            "stderr": proc.stderr[-2000:],
+            "generated_files": generated,
+        }, ensure_ascii=False)
+    except subprocess.TimeoutExpired:
+        return json.dumps({"ok": False, "error": f"执行超时（>{_PY_TIMEOUT_SECONDS}s）"})
+    except Exception:
+        return json.dumps({"ok": False, "error": traceback.format_exc()[-2000:]})
+    finally:
+        try:
+            os.remove(script_path)
+        except OSError:
+            pass
 
 
 async def handle_mcp(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:

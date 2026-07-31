@@ -82,12 +82,14 @@ class _ToolWrapper:
     def _resolve_handler(self) -> str | None:
         """Resolve handler discriminator from tool config fields.
 
-        Returns 'mcp', 'http', 'skill', or None if no match.
+        Returns 'mcp', 'http', 'skill', 'code', or None if no match.
         """
         if self.mcp_type or self.mcp_endpoint:
             return "mcp"
         if self.endpoint and self.endpoint.startswith(("http://", "https://")):
             return "http"
+        if self.name == "execute_python":
+            return "code"
         if self.instructions:
             return "skill"
         return None
@@ -112,13 +114,20 @@ class _ToolWrapper:
             return await handle_open_browser(self, args)
 
         # 3) Field-based handler
-        from services.tool_handlers import call_http_endpoint, handle_mcp, handle_skill
+        from services.tool_handlers import (
+            call_http_endpoint,
+            handle_execute_python,
+            handle_mcp,
+            handle_skill,
+        )
 
         kind = self._resolve_handler()
         if kind == "mcp":
             return await handle_mcp(self, args)
         if kind == "http":
             return await call_http_endpoint(self, args)
+        if kind == "code":
+            return handle_execute_python(self, args)
         if kind == "skill":
             return handle_skill(self, args)
 

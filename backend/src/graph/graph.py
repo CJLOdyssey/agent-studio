@@ -343,6 +343,9 @@ class SingleAgentGraph:
         run_id: str = "",
     ) -> dict[str, Any]:
         """Run the agent graph with the given requirement and return results."""
+        if run_id:
+            for wrapper in self._tool_map.values():
+                wrapper.set_run_id(run_id)
         config = cast(
             "RunnableConfig",
             {

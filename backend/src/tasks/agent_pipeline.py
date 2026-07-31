@@ -236,10 +236,16 @@ async def _run_agent_pipeline(
             if name:
                 skill_match = next((s for s in all_skills if s.name == name), None)
                 if skill_match:
+                    skill_instructions = "\n\n".join(filter(None, [
+                        skill_match.instructions or "",
+                        f"输出约束：\n{skill_match.output_constraint}" if skill_match.output_constraint else "",
+                        f"可用的工具：{', '.join(skill_match.tool_names or [])}" if (skill_match.tool_names or []) else "",
+                    ]))
                     tool_configs.append(
                         ToolConfig(
                             name=f"skill_{name}",
-                            description=skill_match.name or name,
+                            description=f"{skill_match.content or skill_match.name}。当用户请求与该能力相关时调用此技能。",
+                            instructions=skill_instructions,
                             parameters={"type": "object"},
                             endpoint="",
                             method="GET",
@@ -252,6 +258,14 @@ async def _run_agent_pipeline(
         name="open_user_browser",
         description="Open a URL in the user's local browser. Use when the user needs to see a webpage in their own browser.",
         parameters={"type": "object", "properties": {"url": {"type": "string", "description": "The full URL to open"}}, "required": ["url"]},
+    ))
+
+    # Host code-execution primitive so skills (e.g. docx via preinstalled python-docx)
+    # can actually generate files, not just inject instructions.
+    tool_configs.append(ToolConfig(
+        name="execute_python",
+        description="Execute Python code in a sandbox subprocess and return stdout/stderr plus any generated files. Use this to create or process files (e.g. build a .docx with python-docx, parse data, run calculations) when a skill instructs you to run code.",
+        parameters={"type": "object", "properties": {"code": {"type": "string", "description": "The complete Python source code to execute."}}, "required": ["code"]},
     ))
 
     for tc in tool_configs:
