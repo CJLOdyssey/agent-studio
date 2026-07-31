@@ -28,7 +28,7 @@ function makeItemList<T>() {
 
 function makeForm() {
   const state = {
-    tool: { show: false, data: { name: '', description: '', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '' }, errors: [] as string[] },
+    tool: { show: false, data: { name: '', description: '', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '' }, errors: [] as string[] },
     mcp: { show: false, data: { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '' }, errors: [] as string[] },
     skill: { show: false, data: { name: '', description: '', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' }, errors: [] as string[] },
   };
@@ -135,7 +135,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
   it('saveFormItem with valid name creates tool via addCustom', () => {
     const tools = makeItemList<AgentTool>();
     const form = makeForm();
-    form.forms.tool.data = { name: 'NewTool', description: 'desc', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '' };
+    form.forms.tool.data = { name: 'NewTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '' };
     const { result } = renderHook(() => useConfigItemEdit(
       tools,
       makeItemList<AgentMCP>(),
@@ -149,7 +149,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
   it('saveFormItem with existing tool calls update', () => {
     const tools = makeItemList<AgentTool>();
     const form = makeForm();
-    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' };
+    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' };
     const { result } = renderHook(() => useConfigItemEdit(
       tools,
       makeItemList<AgentMCP>(),
@@ -274,7 +274,6 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     const fd = result.current.itemsToFormData({});
     expect(fd.name).toBe('');
     expect(fd.category).toBe('自定义工具');
-    expect(fd.model).toBe('GPT-4o');
     expect(fd.status).toBe('active');
     expect(fd.version).toBe('v1.0.0');
   });

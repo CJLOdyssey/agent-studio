@@ -5,7 +5,7 @@ import { TestProviders } from '../../../../../test/setup';
 import type { ToolFormData } from '../../../workstation/tool/tool.types';
 
 const defaultFormData: ToolFormData = {
-  name: '', description: '', category: '自定义工具', model: 'GPT-4o',
+  name: '', description: '', category: '自定义工具',
   status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{"type":"object"}',
 };
 
