@@ -302,11 +302,20 @@ async def _run_agent_pipeline(
                         )
                     )
 
+    # Dedupe by tool name: agent tools, MCP sub-tools, and skill sub-tools can
+    # overlap (e.g. agent binds execute_python AND a skill lists it in
+    # allowed-tools). LLM APIs reject duplicate tool names — keep first config.
+    seen: set[str] = set()
+    unique_configs: list[ToolConfig] = []
     for tc in tool_configs:
         if tc.method == "MCP":
             tc.endpoint = exec_stdio_mcp.__name__
+        if tc.name in seen:
+            continue
+        seen.add(tc.name)
+        unique_configs.append(tc)
 
-    graph.bind_tools(tool_configs)
+    graph.bind_tools(unique_configs)
 
     # ── Intent detection: direct URL open for "打开XX" patterns ──
     # ponytail: manual mapping for common Chinese site names; expand as needed
