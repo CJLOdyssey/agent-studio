@@ -155,12 +155,6 @@ function groupThinkingNodes(text: string): ThinkingItem[] {
   return items;
 }
 
-const TOOL_BADGE: Record<string, { label: string; className: string }> = {
-  skill: { label: 'skill', className: 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]' },
-  mcp: { label: 'mcp', className: 'bg-[var(--color-info)]/10 text-[var(--color-info)]' },
-  tools: { label: 'tools', className: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' },
-};
-
 function ToolCallCard({
   callParsed,
   resultParsed,
@@ -171,7 +165,6 @@ function ToolCallCard({
   t: (key: string) => string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const badge = TOOL_BADGE[callParsed.prefix] || TOOL_BADGE.tools;
   const resultDisplay = resultParsed.rest.replace(/^\w+\s*(?:→|返回:)\s*/, '');
 
   return (
@@ -180,7 +173,7 @@ function ToolCallCard({
         role="button"
         tabIndex={0}
         aria-expanded={expanded}
-        className="inline-flex items-center gap-1.5 cursor-pointer select-none rounded-sm py-0.5 hover:bg-[var(--color-surface-hover)] transition-colors duration-150"
+        className="cursor-pointer select-none rounded-sm hover:bg-[var(--color-surface-hover)] transition-colors duration-150"
         onClick={() => setExpanded(!expanded)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -189,11 +182,11 @@ function ToolCallCard({
           }
         }}
       >
-        <span className={`inline-flex items-center py-0.5 px-2 rounded-full text-[10px] font-medium leading-none ${badge.className}`}>{badge.label}</span>
-        <code className="text-[0.85em] font-[var(--font-mono)] text-[var(--color-text-secondary)] break-all">{linkify(callParsed.rest)}</code>
-        <span className="text-[var(--color-text-tertiary)]">
-          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        </span>
+        <div className="text-sm leading-[1.65] text-[var(--color-text-secondary)]">
+          <span>[{callParsed.prefix}]</span>
+          {' '}
+          <code className="text-[0.85em] font-[var(--font-mono)] break-all">{linkify(callParsed.rest)}</code>
+        </div>
       </div>
 
       {expanded && (

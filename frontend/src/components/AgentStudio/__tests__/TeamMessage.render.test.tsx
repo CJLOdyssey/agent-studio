@@ -241,7 +241,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
   describe('tool call cards', () => {
     const toolThinking = '[skill] skill_code_review({})[result] skill_code_review → 输出约束：**markdown**';
 
-    it('renders badge and monospace call text', () => {
+    it('renders plain [skill] prefix and monospace call text', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thinking: toolThinking, thinkingDone: true })} allAgents={[mockAgent]} />
       );
