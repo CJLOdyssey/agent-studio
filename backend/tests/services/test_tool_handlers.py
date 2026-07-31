@@ -415,6 +415,104 @@ class TestCallMcpSdk:
                 result = await call_mcp_sdk(w, {})
                 assert "result" in result
 
+    @pytest.mark.asyncio
+    async def test_call_mcp_sdk_builds_params_from_mcp_config(self):
+        """mcp_config args/env must reach StdioServerParameters; endpoint inline args ignored."""
+        w = _ToolWrapper(
+            name="mcp-stdio",
+            mcp_type="stdio",
+            mcp_endpoint="node legacy.js --old",
+            mcp_tool_name="test_cmd",
+            mcp_config={
+                "command": "/usr/bin/env",
+                "args": ["--foo", "bar"],
+                "env": ["FOO=1", "BAR=two"],
+            },
+        )
+        w._run_id = "run-mcp-cfg"
+        mock_result = MagicMock()
+        mock_result.content = [MagicMock(text="tool output")]
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock()
+        mock_session.call_tool = AsyncMock(return_value=mock_result)
+
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
+            mock_read = AsyncMock()
+            mock_write = AsyncMock()
+            mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
+                mock_cs.return_value.__aenter__.return_value = mock_session
+                result = await call_mcp_sdk(w, {"x": 1})
+
+        assert "tool output" in result
+        params = mock_stdio.call_args[0][0]
+        assert params.command == "/usr/bin/env"
+        assert params.args == ["--foo", "bar"]
+        assert params.env == {"FOO": "1", "BAR": "two"}
+
+    @pytest.mark.asyncio
+    async def test_call_mcp_sdk_mcp_config_json_string(self):
+        """mcp_config may be a JSON string (e.g. parsed from DB config column)."""
+        w = _ToolWrapper(
+            name="mcp-stdio",
+            mcp_type="stdio",
+            mcp_endpoint="node server.js",
+            mcp_tool_name="test_cmd",
+            mcp_config=json.dumps({
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+                "env": {"X": "Y"},
+            }),
+        )
+        w._run_id = "run-mcp-json"
+        mock_result = MagicMock()
+        mock_result.content = [MagicMock(text="ok")]
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock()
+        mock_session.call_tool = AsyncMock(return_value=mock_result)
+
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
+            mock_read = AsyncMock()
+            mock_write = AsyncMock()
+            mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
+                mock_cs.return_value.__aenter__.return_value = mock_session
+                await call_mcp_sdk(w, {})
+
+        params = mock_stdio.call_args[0][0]
+        assert params.command == "npx"
+        assert params.args == ["-y", "@modelcontextprotocol/server-filesystem"]
+        assert params.env == {"X": "Y"}
+
+    @pytest.mark.asyncio
+    async def test_call_mcp_sdk_legacy_shlex_fallback(self):
+        """Without mcp_config, endpoint is shlex.split() as before."""
+        w = _ToolWrapper(
+            name="mcp-stdio",
+            mcp_type="stdio",
+            mcp_endpoint="node server.js --port 3000",
+            mcp_tool_name="test_cmd",
+        )
+        w._run_id = "run-mcp-legacy"
+        mock_result = MagicMock()
+        mock_result.content = [MagicMock(text="ok")]
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock()
+        mock_session.call_tool = AsyncMock(return_value=mock_result)
+
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
+            mock_read = AsyncMock()
+            mock_write = AsyncMock()
+            mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
+                mock_cs.return_value.__aenter__.return_value = mock_session
+                await call_mcp_sdk(w, {})
+
+        params = mock_stdio.call_args[0][0]
+        assert params.command == "node"
+        assert params.args == ["server.js", "--port", "3000"]
+        assert params.env is None
+
 
 class TestHandleOpenBrowser:
     @pytest.mark.asyncio

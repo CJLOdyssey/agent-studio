@@ -131,9 +131,19 @@ def _parse_json_field(field: Any) -> list[Any]:
     return field or []
 
 
-async def _discover_mcp_tools(endpoint: str) -> list[dict[str, Any]]:
-    cmd = shlex.split(endpoint)
-    params = StdioServerParameters(command=cmd[0], args=cmd[1:])
+async def _discover_mcp_tools(
+    endpoint: str,
+    args: list[str] | None = None,
+    env: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
+    from services.tool_handlers import _normalize_mcp_env
+
+    env = _normalize_mcp_env(env)
+    if args:
+        params = StdioServerParameters(command=endpoint, args=list(args), env=env)
+    else:
+        cmd = shlex.split(endpoint)
+        params = StdioServerParameters(command=cmd[0], args=cmd[1:], env=env)
     try:
         async with asyncio.timeout(25):
             async with stdio_client(params) as (read, write):

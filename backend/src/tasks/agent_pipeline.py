@@ -204,12 +204,20 @@ async def _run_agent_pipeline(
 
                 if mcp_type == "stdio" and mcp_endpoint:
                     try:
-                        sub_tools = await _discover_mcp_tools(mcp_endpoint)
+                        sub_tools = await _discover_mcp_tools(
+                            mcp_endpoint,
+                            args=mcp_params.get("args") if isinstance(mcp_params, dict) else None,
+                            env=mcp_params.get("env") if isinstance(mcp_params, dict) else None,
+                        )
                     except Exception as e:
                         logger.warning("MCP discovery failed for %s: %s", name, e)
                         sub_tools = []
 
                     if sub_tools:
+                        mcp_config = {
+                            **(mcp_params if isinstance(mcp_params, dict) else {}),
+                            "command": mcp_endpoint,
+                        }
                         for st in sub_tools:
                             params = st.get("inputSchema") or {"type": "object"}
                             tool_configs.append(ToolConfig(
@@ -218,6 +226,7 @@ async def _run_agent_pipeline(
                                 parameters=params,
                                 endpoint="",
                                 method="MCP",
+                                mcp_config=mcp_config,
                             ))
                 elif mcp_endpoint:
                     # Non-stdio MCP (like REST-based) → single tool

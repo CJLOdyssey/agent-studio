@@ -267,9 +267,49 @@ def execute_tool(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     return json.dumps({"status": "called", "args": args})
 
 
+def _normalize_mcp_env(env: Any) -> dict[str, str] | None:
+    """Normalize MCP env config (dict or list of ``K=V`` strings) for ``StdioServerParameters``."""
+    if not env:
+        return None
+    if isinstance(env, dict):
+        return {str(k): str(v) for k, v in env.items()}
+    if isinstance(env, (list, tuple)):
+        out: dict[str, str] = {}
+        for item in env:
+            if isinstance(item, str) and "=" in item:
+                key, _, value = item.partition("=")
+                out[key.strip()] = value
+        return out or None
+    return None
+
+
+def _mcp_params(tool_self: _ToolWrapper) -> Any:
+    """Build ``StdioServerParameters`` from ``tool_self.mcp_config``.
+
+    Falls back to ``shlex.split(tool_self.mcp_endpoint)`` for legacy tool
+    definitions that inline args in the endpoint string.
+    """
+    from mcp import StdioServerParameters
+
+    cfg = tool_self.mcp_config or {}
+    if isinstance(cfg, str):
+        try:
+            cfg = json.loads(cfg)
+        except Exception:
+            cfg = {}
+    if not isinstance(cfg, dict):
+        cfg = {}
+    cmd = cfg.get("command") or tool_self.mcp_endpoint
+    args = cfg.get("args") or []
+    env = _normalize_mcp_env(cfg.get("env"))
+    if args:
+        return StdioServerParameters(command=str(cmd), args=[str(a) for a in args], env=env)
+    cmd_parts = shlex.split(cmd)
+    return StdioServerParameters(command=cmd_parts[0], args=cmd_parts[1:], env=env)
+
+
 async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Call MCP stdio tool, caching sessions per run_id so browser state persists."""
-    from mcp import StdioServerParameters
     from mcp.client.session import ClientSession
     from mcp.client.stdio import stdio_client
 
@@ -280,8 +320,7 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
 
     # Discovery calls (no specific tool name) always create fresh connections
     if not tool_self.mcp_tool_name:
-        cmd = shlex.split(tool_self.mcp_endpoint)
-        params = StdioServerParameters(command=cmd[0], args=cmd[1:])
+        params = _mcp_params(tool_self)
         try:
             async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
                 await session.initialize()
@@ -301,8 +340,7 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
                     "\n\nTo call one, pass {\"_tool\": \"TOOL_NAME\", \"_args\": {...}}")
         return json.dumps({"error": "no tools found"})
 
-    cmd = shlex.split(tool_self.mcp_endpoint)
-    params = StdioServerParameters(command=cmd[0], args=cmd[1:])
+    params = _mcp_params(tool_self)
     run_key = tool_self._run_id or ""
 
     # Reuse cached session for this run

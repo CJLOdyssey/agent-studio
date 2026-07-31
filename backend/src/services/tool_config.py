@@ -25,6 +25,7 @@ class ToolConfig:
     mcp_type: str = ""
     mcp_endpoint: str = ""
     mcp_tool_name: str = ""
+    mcp_config: dict[str, Any] | None = None
     endpoint: str = ""
     method: str = "GET"
     headers: str = "{}"
@@ -53,6 +54,7 @@ class _ToolWrapper:
         mcp_type: str = "",
         mcp_endpoint: str = "",
         mcp_tool_name: str = "",
+        mcp_config: dict[str, Any] | None = None,
         endpoint: str = "",
         method: str = "GET",
         headers: str = "{}",
@@ -63,6 +65,7 @@ class _ToolWrapper:
         self.mcp_type = mcp_type
         self.mcp_endpoint = mcp_endpoint
         self.mcp_tool_name = mcp_tool_name
+        self.mcp_config = mcp_config
         self.endpoint = endpoint
         self.method = method
         self.headers = headers
@@ -164,6 +167,7 @@ def build_tool_definition(
         mcp_type=tc.mcp_type,
         mcp_endpoint=tc.mcp_endpoint,
         mcp_tool_name=tc.mcp_tool_name,
+        mcp_config=getattr(tc, "mcp_config", None),
         endpoint=tc.endpoint,
         method=tc.method,
         headers=tc.headers,
