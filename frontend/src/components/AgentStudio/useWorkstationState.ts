@@ -127,7 +127,58 @@ export function useWorkstationState(
     const found = filteredConversations.find((c) => c.id === activeId);
     if (!found) { resetApi(); return; }
 
-    if (found.messages.length === 0 && found.sessionId) {
+    const loadSnapshot = () => {
+      const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m, idx) => ({
+        id: typeof m.id === 'number' ? `${activeId}-${idx}` : m.id,
+        role: m.role === 'user' ? 'user' : 'agent',
+        agent_name: m.agentId ?? (m.role === 'user' ? '我' : 'Agent'),
+        content: m.content,
+        thinking: m.thinking ?? undefined,
+        thinkingDone: m.thinkingDone === true || Boolean(m.thinking && !m.interrupted),
+        versions: m.versions ?? undefined,
+        currentVersion: m.currentVersion ?? undefined,
+        thumbsFeedback: m.thumbsFeedback ?? undefined,
+        interrupted: m.interrupted ?? undefined,
+        round_number: 0,
+        created_at: m.timestamp
+          ? new Date(m.timestamp).toISOString()
+          : Reflect.get(m, 'created_at')
+            ? String(Reflect.get(m, 'created_at'))
+            : found.createdAt && found.updatedAt && found.messages.length > 0
+              ? new Date(
+                  new Date(found.createdAt).getTime() +
+                  (new Date(found.updatedAt).getTime() - new Date(found.createdAt).getTime()) *
+                  ((idx + 0.5) / found.messages.length)
+                ).toISOString()
+              : null,
+      }));
+      const current = useChatStore.getState().messages;
+      for (const msg of chatMessages) {
+        if (!msg.thinking) {
+          const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+          if (live?.thinking) msg.thinking = live.thinking;
+        }
+        if (!msg.versions) {
+          const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+          if (live?.versions) { msg.versions = live.versions; msg.currentVersion = live.currentVersion; }
+        }
+        if (!msg.thumbsFeedback) {
+          const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+          if (live?.thumbsFeedback) msg.thumbsFeedback = live.thumbsFeedback;
+        }
+        if (!msg.thinkingDone) {
+          const live = current.find((c) => c.content === msg.content && c.role === msg.role);
+          if (live?.thinkingDone) msg.thinkingDone = true;
+        }
+      }
+      loadConversation(chatMessages, found.id, found.sessionId);
+    };
+
+    // Backend is the source of truth for session-backed conversations: always
+    // re-fetch so fresh data (thinking included) wins over stale localStorage
+    // snapshots. Local-only UI state (versions/thumbs/interrupted) is overlaid
+    // from the snapshot; on API failure/empty, fall back to the snapshot.
+    if (found.sessionId) {
       let cancelled = false;
       getSessionDetail(found.sessionId).then((detail) => {
         if (cancelled) return;
@@ -171,61 +222,32 @@ export function useWorkstationState(
           }
         }
         if (msgs.length > 0) {
+          const snapshot = found.messages || [];
+          for (const m of msgs) {
+            const local = snapshot.find((lm) => lm.content === m.content && (lm.role === 'user') === (m.role === 'user'));
+            if (!local) continue;
+            m.versions = local.versions ?? undefined;
+            m.currentVersion = local.currentVersion ?? undefined;
+            m.thumbsFeedback = local.thumbsFeedback ?? undefined;
+            m.interrupted = local.interrupted ?? undefined;
+            m.thinkingDone = local.thinkingDone === true || Boolean(m.thinking && !m.interrupted);
+          }
           conv.updateConversationMessages(activeId, msgs as unknown as import('../../types/AgentStudio').Message[], false);
           loadConversation(msgs, found.id, found.sessionId);
+        } else if (found.messages.length > 0) {
+          loadSnapshot();
         } else {
           resetApi();
         }
-      }).catch(() => resetApi());
+      }).catch(() => {
+        if (found.messages.length > 0) loadSnapshot();
+        else resetApi();
+      });
       return () => { cancelled = true; };
     }
 
     if (found.messages.length === 0) { resetApi(); return; }
-
-    const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m, idx) => ({
-      id: typeof m.id === 'number' ? `${activeId}-${idx}` : m.id,
-      role: m.role === 'user' ? 'user' : 'agent',
-      agent_name: m.agentId ?? (m.role === 'user' ? '我' : 'Agent'),
-      content: m.content,
-      thinking: m.thinking ?? undefined,
-      thinkingDone: m.thinkingDone === true || Boolean(m.thinking && !m.interrupted),
-      versions: m.versions ?? undefined,
-      currentVersion: m.currentVersion ?? undefined,
-      thumbsFeedback: m.thumbsFeedback ?? undefined,
-      interrupted: m.interrupted ?? undefined,
-      round_number: 0,
-      created_at: m.timestamp
-        ? new Date(m.timestamp).toISOString()
-        : Reflect.get(m, 'created_at')
-          ? String(Reflect.get(m, 'created_at'))
-          : found.createdAt && found.updatedAt && found.messages.length > 0
-            ? new Date(
-                new Date(found.createdAt).getTime() +
-                (new Date(found.updatedAt).getTime() - new Date(found.createdAt).getTime()) *
-                ((idx + 0.5) / found.messages.length)
-              ).toISOString()
-            : null,
-    }));
-    const current = useChatStore.getState().messages;
-    for (const msg of chatMessages) {
-      if (!msg.thinking) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.thinking) msg.thinking = live.thinking;
-      }
-      if (!msg.versions) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.versions) { msg.versions = live.versions; msg.currentVersion = live.currentVersion; }
-      }
-      if (!msg.thumbsFeedback) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.thumbsFeedback) msg.thumbsFeedback = live.thumbsFeedback;
-      }
-      if (!msg.thinkingDone) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.thinkingDone) msg.thinkingDone = true;
-      }
-    }
-    loadConversation(chatMessages, found.id, found.sessionId);
+    loadSnapshot();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conv.activeConvId]);
 

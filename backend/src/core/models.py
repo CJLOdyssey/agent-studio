@@ -180,6 +180,7 @@ class RunSummary(BaseModel):
     status: str = "pending"
     created_at: str | None = None
     updated_at: str | None = None
+    messages: list["MessageItem"] = Field(default_factory=list)
 
 
 class MessageItem(BaseModel):

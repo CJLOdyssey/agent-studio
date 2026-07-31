@@ -77,6 +77,7 @@ function rehypeLinkify() {
   return (tree: Root) => {
     visit(tree, 'text', (node, index, parent) => {
       if (!parent || typeof node.value !== 'string' || typeof index !== 'number') return;
+      if (parent.type === 'element' && parent.tagName === 'a') return;
       const parts = node.value.split(BARE_URL_RE);
       if (parts.length === 1) return;
       const children: ElementContent[] = [];

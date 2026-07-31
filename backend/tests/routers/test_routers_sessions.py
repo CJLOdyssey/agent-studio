@@ -1,5 +1,6 @@
 """Sessions router tests — merged from test_coverage_boost and test_coverage_gaps."""
 
+import asyncio
 import os
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -143,6 +144,26 @@ class TestSessions:
         data = resp.json()
         assert "runs" in data
         assert "memories" in data
+
+    def test_get_session_detail_returns_messages_with_thinking(self, client):
+        """Session detail must include run.messages with thinking — the frontend
+        renders the thinking panel from this field; a stripped response falls
+        back to run.requirement/code without thinking."""
+        from repository import create_run, save_message
+
+        resp = client.post("/api/sessions", json={"title": "detail-thinking"}, headers={"X-User-ID": "admin"})
+        session_id = resp.json()["id"]
+        run_id = asyncio.run(create_run("打开抖音", session_id=session_id))
+        asyncio.run(save_message(run_id, "Agent", "Agent", "已打开抖音", 1, thinking="先想一下再回答"))
+
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        runs = resp.json()["runs"]
+        assert len(runs) == 1
+        messages = runs[0].get("messages", [])
+        assert len(messages) == 1
+        assert messages[0]["content"] == "已打开抖音"
+        assert messages[0]["thinking"] == "先想一下再回答"
 
     def test_get_session_not_found(self, client):
         resp = client.get("/api/sessions/nonexistent", headers={"X-User-ID": "admin"})
