@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
+import { visit } from 'unist-util-visit';
+import type { Root, ElementContent } from 'hast';
 import {
   Bot,
   Terminal,
@@ -28,6 +30,73 @@ function linkify(text: string): React.ReactNode {
       ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline text-[var(--color-accent)] hover:opacity-80 break-all">{part}</a>
       : part,
   );
+}
+
+function markdownComponents(t: (key: string) => string): Components {
+  return {
+    ul({ children, ...props }) {
+      return <ul className="my-2 pl-6 list-outside" {...props}>{children}</ul>;
+    },
+    ol({ children, ...props }) {
+      return <ol className="my-2 pl-6 list-outside list-decimal" {...props}>{children}</ol>;
+    },
+    li({ children, ...props }) {
+      return <li className="my-1 pl-1" {...props}>{children}</li>;
+    },
+    p({ children, ...props }) {
+      return <p className="m-0 mb-3 last:mb-0" {...props}>{children}</p>;
+    },
+    code({ className, children }) {
+      return <CodeBlock className={className} children={children} t={t} />;
+    },
+  };
+}
+
+function ThinkingMarkdown({ t, children }: { t: (key: string) => string; children: string }) {
+  return (
+    <ReactMarkdown
+      rehypePlugins={[rehypeLinkify]}
+      components={{
+        ...markdownComponents(t),
+        p({ children }) {
+          return <p className="m-0">{children}</p>;
+        },
+        a({ href, children }) {
+          return <a href={href} target="_blank" rel="noopener noreferrer" className="underline text-[var(--color-accent)] hover:opacity-80 break-all">{children}</a>;
+        },
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
+
+const BARE_URL_RE = /(https?:\/\/[^\s"',)\]}]+)/g;
+
+function rehypeLinkify() {
+  return (tree: Root) => {
+    visit(tree, 'text', (node, index, parent) => {
+      if (!parent || typeof node.value !== 'string' || typeof index !== 'number') return;
+      const parts = node.value.split(BARE_URL_RE);
+      if (parts.length === 1) return;
+      const children: ElementContent[] = [];
+      for (const part of parts) {
+        if (!part) continue;
+        if (/^https?:\/\//.test(part)) {
+          children.push({
+            type: 'element',
+            tagName: 'a',
+            properties: { href: part, target: '_blank', rel: ['noopener', 'noreferrer'] },
+            children: [{ type: 'text', value: part }],
+          });
+        } else {
+          children.push({ type: 'text', value: part });
+        }
+      }
+      parent.children.splice(index, 1, ...children);
+      return index + children.length - 1;
+    });
+  };
 }
 
 type ParsedNode = { prefix: string; rest: string } | null;
@@ -121,7 +190,7 @@ function ToolCallBranch(
   );
 }
 
-function ThinkingNodeItem({ item }: { item: ThinkingItem }) {
+function ThinkingNodeItem({ item, t }: { item: ThinkingItem; t: (key: string) => string }) {
   const Dot = () => (
     <div className="absolute -left-3 top-[6px] w-2 h-2 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
   );
@@ -136,34 +205,15 @@ function ThinkingNodeItem({ item }: { item: ThinkingItem }) {
   }
 
   const parsed = item.parsed;
-  if (parsed === null) {
-    const displayText = item.node.trim();
-    return (
-      <div className="relative mb-2.5 last:mb-0 leading-[1.65] pl-3">
-        <Dot />
-        {linkify(displayText)}
-      </div>
-    );
-  }
-
-  const displayText = parsed.rest;
-  const isInfo = parsed.prefix === 'info';
+  const isInfo = parsed?.prefix === 'info';
+  const displayText = parsed === null ? item.node.trim() : parsed.rest;
   return (
     <div className="relative mb-2.5 last:mb-0 leading-[1.65] pl-3">
       <Dot />
-      {isInfo ? (
-        <span className="text-[var(--color-text-muted)]">
-          <span className="text-[var(--color-text-tertiary)]">[{parsed.prefix}]</span>
-          {' '}
-          {linkify(displayText)}
-        </span>
-      ) : (
-        <span className="text-[var(--color-text-muted)]">
-          <span className="text-[var(--color-text-secondary)]">[{parsed.prefix}]</span>
-          {' '}
-          {linkify(displayText)}
-        </span>
-      )}
+      <div className="text-[var(--color-text-muted)]">
+        {isInfo && <span className="text-[var(--color-text-tertiary)]">[info] </span>}
+        <ThinkingMarkdown t={t}>{displayText}</ThinkingMarkdown>
+      </div>
     </div>
   );
 }
@@ -390,7 +440,7 @@ const TeamMessage = memo(function TeamMessage({
                             <div className="relative pl-4">
                               <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
                               {items.map((item, i) => (
-                                <ThinkingNodeItem key={i} item={item} />
+                                <ThinkingNodeItem key={i} item={item} t={t} />
                               ))}
                             </div>
                           </div>
@@ -410,7 +460,7 @@ const TeamMessage = memo(function TeamMessage({
                             <div className="relative pl-4">
                               <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
                               {items.map((item, i) => (
-                                <ThinkingNodeItem key={i} item={item} />
+                                <ThinkingNodeItem key={i} item={item} t={t} />
                               ))}
                             </div>
                           </div>
@@ -436,7 +486,7 @@ const TeamMessage = memo(function TeamMessage({
                           {msg.thinking ? (() => {
                             const items = groupThinkingNodes(msg.thinking);
                             return items.map((item, i) => (
-                              <ThinkingNodeItem key={i} item={item} />
+                              <ThinkingNodeItem key={i} item={item} t={t} />
                             ));
                           })() : null}
                         </div>
@@ -445,25 +495,7 @@ const TeamMessage = memo(function TeamMessage({
                   )}
                 </div>
               )}
-              <ReactMarkdown
-                components={{
-                  ul({ children, ...props }) {
-                    return <ul className="my-2 pl-6 list-outside" {...props}>{children}</ul>;
-                  },
-                  ol({ children, ...props }) {
-                    return <ol className="my-2 pl-6 list-outside list-decimal" {...props}>{children}</ol>;
-                  },
-                  li({ children, ...props }) {
-                    return <li className="my-1 pl-1" {...props}>{children}</li>;
-                  },
-                  p({ children, ...props }) {
-                    return <p className="m-0 mb-3 last:mb-0" {...props}>{children}</p>;
-                  },
-                  code({ className, children }) {
-                    return <CodeBlock className={className} children={children} t={t} />;
-                  },
-                }}
-              >
+              <ReactMarkdown components={markdownComponents(t)}>
                 {msg.content}
               </ReactMarkdown>
             </div>

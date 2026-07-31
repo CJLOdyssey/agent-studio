@@ -172,7 +172,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelectorAll('[class*="pl-5"][class*="mb-2.5"]').length).toBe(3);
+      expect(container.querySelectorAll('[class*="pl-3"][class*="mb-2.5"]').length).toBe(3);
     });
 
     it('toggles thinking expansion when header clicked', async () => {
@@ -198,6 +198,43 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       );
       const header = container.querySelector('[class*="cursor-default"]') as HTMLElement;
       expect(header).not.toBeNull();
+    });
+  });
+
+  describe('thinking markdown rendering', () => {
+    it('renders bold and inline code in reasoning nodes without raw markers', () => {
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({ thinking: 'The **readability** of `calc` is poor', thinkingDone: true })}
+          allAgents={[mockAgent]}
+        />
+      );
+      const strong = container.querySelector('strong');
+      expect(strong).toBeTruthy();
+      expect(strong?.textContent).toBe('readability');
+      expect(container.querySelector('code')?.textContent).toBe('calc');
+      expect(container.textContent).not.toContain('**');
+    });
+
+    it('renders bare URLs as links in reasoning nodes', () => {
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({ thinking: 'See https://example.com for details', thinkingDone: true })}
+          allAgents={[mockAgent]}
+        />
+      );
+      expect(container.querySelector('a[href="https://example.com"]')).toBeTruthy();
+    });
+
+    it('renders ordered/nested lists from markdown in reasoning nodes', () => {
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({ thinking: '1. **Readability**\n   - name is vague', thinkingDone: true })}
+          allAgents={[mockAgent]}
+        />
+      );
+      expect(container.querySelector('ol')).toBeTruthy();
+      expect(container.querySelector('strong')?.textContent).toBe('Readability');
     });
   });
 
