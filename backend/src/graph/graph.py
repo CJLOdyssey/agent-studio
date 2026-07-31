@@ -12,6 +12,7 @@ from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from typing import Any, cast
 
+import httpx
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
@@ -23,6 +24,8 @@ from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
 from core.infra.logging_config import get_logger
 from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 from services.tool_config import ToolConfig, build_tool_definition
+from services.thinking_chain import format_result_preview, get_tool_prefix
+from streaming.emitter import StreamEmitter
 from streaming.llm_stream import (
     build_llm_request_body,
     build_tool_calls_list,
@@ -30,7 +33,38 @@ from streaming.llm_stream import (
     stream_llm_response,
 )
 
+# Balance/quota error keywords used to detect API billing failures
+_BALANCE_ERROR_KEYWORDS = [
+    "insufficient_quota", "insufficient_balance", "insufficient balance", "余额不足",
+    "billing limit", "quota exceeded", "payment required", "account balance", "402",
+]
+
 logger = get_logger(__name__)
+
+logger = get_logger(__name__)
+
+
+def _is_balance_error(error_body: str) -> bool:
+    """Check if the API error response indicates insufficient balance/quota."""
+    body_lower = error_body.lower()
+    return any(kw in body_lower for kw in _BALANCE_ERROR_KEYWORDS)
+
+
+async def _emit_balance_warning(stream_cb: Any) -> None:
+    """Emit a balance warning event to the frontend via the stream callback."""
+    if hasattr(stream_cb, "emit_balance_warning"):
+        await stream_cb.emit_balance_warning(
+            "模型余额不足，请检查 API Key 配置并确保账户有足够额度"
+        )
+    else:
+        # Fallback: emit as thinking event
+        try:
+            await stream_cb({
+                "event": "on_custom_thinking",
+                "data": {"content": "[warning] API 余额不足，请检查 API Key 配置"},
+            })
+        except Exception:
+            pass
 
 
 class SingleAgentGraph:
@@ -95,9 +129,25 @@ class SingleAgentGraph:
             tool_definitions=self._tool_definitions,
         )
 
-        content_chunks, thinking_chunks, tool_calls_map, finish_reason, usage_info = (
-            await _stream_handler(url, headers, body, self._stream_cb, self._tool_definitions)
-        )
+        try:
+            content_chunks, thinking_chunks, tool_calls_map, finish_reason, usage_info = (
+                await _stream_handler(url, headers, body, self._stream_cb, self._tool_definitions)
+            )
+        except httpx.HTTPStatusError as exc:
+            error_detail = ""
+            if exc.response is not None:
+                try:
+                    error_detail = exc.response.text[:1000]
+                except Exception:
+                    error_detail = str(exc)[:1000]
+            logger.error("LLM API rejected request | status=%s | body=%s",
+                         exc.response.status_code if exc.response else "?", error_detail)
+
+            # Detect balance/quota errors and warn the user via frontend
+            if _is_balance_error(error_detail) and self._stream_cb:
+                await _emit_balance_warning(self._stream_cb)
+
+            raise
 
         full_content = "".join(content_chunks)
         thinking = "".join(thinking_chunks).strip()
@@ -139,7 +189,6 @@ class SingleAgentGraph:
         if session_context:
             full_messages.append(SystemMessage(content=session_context))
         full_messages.extend(messages)
-
         content, thinking, raw_tool_calls = await self._raw_llm_stream(full_messages)
 
         kwargs: dict[str, Any] = {"content": content}
@@ -185,6 +234,16 @@ class SingleAgentGraph:
             tool_args = tc.get("args", {})
             tool_id = tc.get("id", "")
             fn = self._tool_map.get(tool_name)
+
+            # ── Emit tool-call start into thinking chain ──
+            if self._stream_cb:
+                prefix = get_tool_prefix(tool_name)
+                args_preview = json.dumps(tool_args, ensure_ascii=False)[:200]
+                await self._stream_cb({
+                    "event": "on_custom_thinking",
+                    "data": {"content": f"{prefix} {tool_name}({args_preview})"},
+                })
+
             if fn:
                 try:
                     result = await fn.invoke(tool_args)
@@ -223,10 +282,13 @@ class SingleAgentGraph:
             tool_messages.append(
                 ToolMessage(content=str(result or ""), tool_call_id=tool_id, name=tool_name)
             )
+
+            # ── Emit tool result into thinking chain ──
             if self._stream_cb:
+                result_preview = format_result_preview(result)
                 await self._stream_cb({
-                    "event": "on_tool_result",
-                    "data": {"tool": tool_name, "result": str(result or "")[:500]},
+                    "event": "on_custom_thinking",
+                    "data": {"content": f"[result] {tool_name} → {result_preview}"},
                 })
         if self._stream_cb:
             await self._stream_cb({"event": "on_node_end", "data": {}})

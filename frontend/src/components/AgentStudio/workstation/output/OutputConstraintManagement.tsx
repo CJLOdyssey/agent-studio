@@ -1,6 +1,7 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, FileText } from 'lucide-react';
+import { useMemo } from 'react';
 import type { OutputEntry } from './output.types';
 import { useOutputManagement } from './useOutputManagement';
 import OutputFormModal from './OutputFormModal';
@@ -24,7 +25,14 @@ export default function OutputConstraintManagement() {
   const statusDotClass: Record<string, string> = { active: 'wsta-badge-dot-green', draft: 'wsta-badge-dot-gray', archived: 'wsta-badge-dot-gray' };
   const dotClass: Record<string, string> = { active: 'wsta-dot-green', draft: 'wsta-dot-gray', archived: 'wsta-dot-gray' };
   const statusLabel: Record<string, string> = { active: t('output.status_active'), draft: t('output.status_draft'), archived: t('output.status_archived') };
-  const categoryTagClass: Record<string, string> = { '格式约束': 'wsta-tag-indigo', '内容约束': 'wsta-tag-green', '长度约束': 'wsta-tag-amber', '语言约束': 'wsta-tag-green' };
+
+  const categoryOptions = useMemo(() => {
+    const cats = Array.from(new Set(d.filtered.map((i) => i.category).filter(Boolean)));
+    return [
+      { value: 'all', label: '全部分类' },
+      ...cats.map((c) => ({ value: c, label: c })),
+    ];
+  }, [d.filtered]);
 
   function makeMenuItems(item: OutputEntry): MenuProps['items'] {
     return [
@@ -42,6 +50,7 @@ export default function OutputConstraintManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('output.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
+          <Select style={{ width: 130 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             { value: 'active', label: '已启用' },
@@ -78,7 +87,7 @@ export default function OutputConstraintManagement() {
                   <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('output.select_item', item.name)} /></td>
                   <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
                   <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.content}>{item.content}</span></td>
-                  <td><span className={`wsta-tag-pill ${categoryTagClass[item.category] || 'wsta-tag-indigo'}`}>{item.category}</span></td>
+                  <td><span className="wsta-tag-pill wsta-tag-indigo">{item.category}</span></td>
                   <td>
                     <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                       <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />

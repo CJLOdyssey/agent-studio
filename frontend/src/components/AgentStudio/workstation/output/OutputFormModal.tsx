@@ -1,7 +1,7 @@
 import { memo, useEffect } from 'react';
 import { X, FileCheck } from 'lucide-react';
 import type { OutputEntry, OutputFormData } from './output.types';
-import { OUTPUT_CATEGORIES, OUTPUT_STATUS_LABEL } from './output.constants';
+import { OUTPUT_STATUS_LABEL } from './output.constants';
 import { t } from './locales';
 
 interface Props { editingItem: OutputEntry | null; formData: OutputFormData; setFormData: (fn: (f: OutputFormData) => OutputFormData) => void; onSave: () => void; onClose: () => void; formErrors?: string[]; }
@@ -40,9 +40,7 @@ const OutputFormModal = memo(function OutputFormModal({ editingItem, formData, s
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('output.form_category')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as OutputEntry['category'] }))}>
-                {OUTPUT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))} placeholder="例如：格式约束、内容约束" />
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('output.form_status')}</label>

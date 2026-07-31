@@ -33,6 +33,9 @@ RUN groupadd -r appgroup -g 1000 && useradd -r -g appgroup -u 1000 -m appuser &&
     chown -R appuser:appgroup /app
 USER appuser
 
+# Health monitoring script for Docker healthcheck
+COPY scripts/dev/health.py scripts/health.py
+
 EXPOSE 8080
 
 ENTRYPOINT ["scripts/docker-entrypoint.sh"]

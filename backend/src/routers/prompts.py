@@ -2,14 +2,13 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 from repository import create_prompt, delete_prompt, get_prompts_as_dicts, update_prompt
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["prompts"])
@@ -20,6 +19,7 @@ class PromptCreate(BaseModel):
     category: str = Field(..., min_length=1)
     content: str = Field(..., min_length=1)
     model: str | None = None
+    status: str | None = None
 
 
 class PromptUpdate(BaseModel):
@@ -28,6 +28,15 @@ class PromptUpdate(BaseModel):
     content: str | None = None
     model: str | None = None
     status: str | None = None
+
+
+@router.get("/api/prompts/categories")
+async def list_prompt_categories() -> Any:
+    return [
+        {"value": "system", "label": "系统提示词"},
+        {"value": "user", "label": "用户提示词"},
+        {"value": "meta", "label": "元提示词"},
+    ]
 
 
 @router.get("/api/prompts")

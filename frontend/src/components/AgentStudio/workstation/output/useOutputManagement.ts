@@ -6,8 +6,8 @@ import { useGenericCrud } from '../shared/useGenericCrud';
 export interface OutputData {
   isLoading: boolean; error: string | null;
   filtered: OutputEntry[]; paged: OutputEntry[]; page: number; totalPages: number;
-  search: string; statusFilter: string; selectedIds: Set<string>; allOnPageSelected: boolean;
-  setSearch: (v: string) => void; setStatusFilter: (v: string) => void; setPage: (v: number) => void;
+  search: string; statusFilter: string; categoryFilter: string; selectedIds: Set<string>; allOnPageSelected: boolean;
+  setSearch: (v: string) => void; setStatusFilter: (v: string) => void; setCategoryFilter: (v: string) => void; setPage: (v: number) => void;
   toggleSelect: (id: string) => void; toggleSelectAll: () => void;
   addItem: (data: OutputFormData) => Promise<void>; updateItem: (id: string, data: Partial<OutputEntry>) => Promise<void>;
   removeItem: (id: string) => void; copyItem: (item: OutputEntry) => void;
@@ -47,7 +47,7 @@ export function useOutputManagement(): OutputData {
     emptyForm: EMPTY_FORM,
     itemName: 'Output',
     validate: validateOutputForm,
-    extraFilters: { status: 'all' },
+    extraFilters: { status: 'all', category: 'all' },
   });
 
   const itemsRef = useRef(crud.items);
@@ -75,6 +75,7 @@ export function useOutputManagement(): OutputData {
     totalPages: crud.totalPages,
     search: crud.search,
     statusFilter: crud.extraFilterValues.status ?? 'all',
+    categoryFilter: crud.extraFilterValues.category ?? 'all',
     selectedIds: crud.selectedIds,
     allOnPageSelected: crud.allOnPageSelected,
     isFormOpen: crud.isFormOpen,
@@ -86,6 +87,7 @@ export function useOutputManagement(): OutputData {
     menuAnchorEl: crud.menuAnchorEl,
     setSearch: crud.setSearch,
     setStatusFilter: (v) => crud.setExtraFilter('status', v),
+    setCategoryFilter: (v) => crud.setExtraFilter('category', v),
     setPage: crud.setPage,
     setFormData: (fn) => crud.setFormData(fn),
     setOpenMenuId: crud.setOpenMenuId,

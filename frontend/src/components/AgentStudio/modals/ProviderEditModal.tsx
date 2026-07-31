@@ -45,7 +45,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [providerType, setProviderType] = useState(provider.provider || 'custom');
-  const [usageType, setUsageType] = useState(provider.usage_type || 'chat');
+  const [usageType, setUsageType] = useState<string>(provider.usage_type || 'chat');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
@@ -64,9 +64,14 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     const info = providers[providerType];
     if (!info) return;
     const caps = info.capabilities ?? ['chat'];
-    const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
-    if (derived !== usageType) setUsageType(derived);
-    if (info.base_url) {
+    const isTool = caps.includes('tool');
+    if (isTool) {
+      setUsageType('tool');
+    } else {
+      const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
+      if (derived !== usageType) setUsageType(derived);
+    }
+    if (info.base_url && !isTool) {
       const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
       if (!baseUrl || knownDefaults.includes(baseUrl)) {
         setBaseUrl(info.base_url);
@@ -75,7 +80,10 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providerType]);
 
-  const showModels = usageType === 'chat' || usageType === 'general' || usageType === 'image' || usageType === 'audio';
+  const info = providers[providerType];
+  const caps = info?.capabilities ?? [];
+  const isToolProvider = caps.includes('tool');
+  const showModels = !isToolProvider && (usageType === 'chat' || usageType === 'general' || usageType === 'image' || usageType === 'audio');
 
   const handleSave = () => {
     onSave({
@@ -140,7 +148,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
           <div className="pt-1">
             <CredentialsSection
               name={name} baseUrl={baseUrl} apiKey={apiKey}
-              showKey={showKey}
+              showKey={showKey} hideBaseUrl={isToolProvider}
               onChangeName={setName} onChangeBaseUrl={setBaseUrl}
               onChangeApiKey={setApiKey}
               onToggleShowKey={() => setShowKey(!showKey)}

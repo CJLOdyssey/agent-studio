@@ -7,4 +7,4 @@ export function validateTeamForm(formData: { name: string }): string[] {
   return errs;
 }
 
-export const EMPTY_FORM = { name: '', description: '', status: 'active' as const, category: 'dev' as const };
+export const EMPTY_FORM = { name: '', description: '', status: 'active' as const, category: '' };

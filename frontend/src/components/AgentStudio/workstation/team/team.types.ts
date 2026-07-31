@@ -5,8 +5,8 @@ export interface TeamEntry {
   id: string;
   name: string;
   description: string;
-  status: 'active' | 'inactive';
-  category: 'dev' | 'ops' | 'test';
+  status: 'active' | 'disabled';
+  category: string;
   createdAt: string;
   agents: TeamMember[];
   memberCount: number;
@@ -15,11 +15,11 @@ export interface TeamEntry {
 export type TeamFormData = {
   name: string;
   description: string;
-  status: 'active' | 'inactive';
-  category: 'dev' | 'ops' | 'test';
+  status: 'active' | 'disabled';
+  category: string;
 };
 
-export type TeamCategoryFilter = 'all' | TeamEntry['category'];
+export type TeamCategoryFilter = 'all' | string;
 
 export interface TeamData extends GenericCrudReturn<TeamEntry, TeamFormData> {
   teams: TeamEntry[];

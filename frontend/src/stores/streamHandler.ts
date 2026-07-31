@@ -133,6 +133,22 @@ export function handleStreamEvent(
     return;
   }
   activeStreamMsgIds.add(s.currentRunId || '');
+  // If streamingId already set (from prior thinking_stream), use that message
+  if (s.streamingId) {
+    set((prev) => {
+      if (!prev.streamingId) return {};
+      return {
+        skipThinking: false,
+        messages: prev.messages.map((m) => {
+          if (m.id !== prev.streamingId) return m;
+          return { ...m, content: m.content + chunk, thinking: m.thinking ?? '' };
+        }),
+        currentRole: msg.agent_name || 'Agent',
+        wsStatus: 'connected' as ChatState['wsStatus'],
+      };
+    });
+    return;
+  }
   set((prev) => {
     return handleStreamStart(prev, msg, chunk);
   });

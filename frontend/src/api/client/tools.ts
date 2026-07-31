@@ -62,3 +62,15 @@ export async function testTool(id: string): Promise<ToolTestResult> {
   const { data } = await api.post(`/tools/${id}/test`);
   return data;
 }
+
+export interface ToolPluginItem {
+  tool_name: string;
+  label: string;
+  description: string;
+  config_schema: Record<string, unknown> | null;
+}
+
+export async function listToolPlugins(): Promise<ToolPluginItem[]> {
+  const { data } = await api.get('/tools/plugins');
+  return data;
+}

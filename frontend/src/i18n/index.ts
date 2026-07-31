@@ -13,8 +13,23 @@ import chatEn from './locales/en-US/chat.json';
 import workstationEn from './locales/en-US/workstation.json';
 import apiEn from './locales/en-US/api.json';
 
-const zh = { ...commonZh, ...sidebarZh, ...chatZh, ...workstationZh, ...apiZh };
-const en = { ...commonEn, ...sidebarEn, ...chatEn, ...workstationEn, ...apiEn };
+function deepMerge<T extends Record<string, unknown>>(target: T, ...sources: Partial<T>[]): T {
+  const out = { ...target };
+  for (const src of sources) {
+    for (const key of Object.keys(src) as (keyof T)[]) {
+      const val = src[key];
+      if (val && typeof val === 'object' && !Array.isArray(val) && typeof out[key] === 'object' && !Array.isArray(out[key])) {
+        out[key] = deepMerge(out[key] as Record<string, unknown>, val as Record<string, unknown>) as T[keyof T];
+      } else if (val !== undefined) {
+        out[key] = val as T[keyof T];
+      }
+    }
+  }
+  return out;
+}
+
+const zh = deepMerge({}, commonZh, sidebarZh, chatZh, workstationZh, apiZh);
+const en = deepMerge({}, commonEn, sidebarEn, chatEn, workstationEn, apiEn);
 
 const saved = typeof window !== 'undefined' ? localStorage.getItem('language') : null;
 const legacyMap: Record<string, string> = { en: 'en-US' };

@@ -45,7 +45,13 @@ export default function AgentStudioWorkstation() {
           handleRenameTeam={s.teamMgmt.handleRename}
           handleRenameAgent={s.teamMgmt.handleRenameAgent}
           handleTogglePinTeam={s.teamMgmt.handleTogglePinTeam}
-          handleAgentClick={(_agent) => { s.setSelectedAgentId(_agent.id); }}
+          handleAgentClick={(_agent) => {
+            if (s.apiMessages.length > 0 && s.conv.activeConvId) { s.conv.updateConversationMessages(s.conv.activeConvId, s.apiMessages); }
+            s.resetApi();
+            useChatStore.getState().setActiveTeam(null);
+            s.conv.setActiveConvId(null);
+            s.setSelectedAgentId(_agent.id);
+          }}
           onEditAgent={(agent) => { s.setConfiguringAgent(agent); }}
           onTeamChat={(teamId) => {
             if (s.apiMessages.length > 0 && s.conv.activeConvId) { s.conv.updateConversationMessages(s.conv.activeConvId, s.apiMessages); }

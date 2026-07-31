@@ -10,6 +10,7 @@ import LoadingSkeleton from '../../shared/LoadingSkeleton';
 const USAGE_COLORS: Record<string, string> = {
   vector: 'var(--color-accent)',
   general: 'var(--color-success)',
+  tool: 'var(--color-warning)',
 };
 
 interface Props {
@@ -69,6 +70,7 @@ export default function ApiProviderTab({
   };
 
   const usageLabel = (type: string) => {
+    if (type === 'tool') return t('api.type_tool');
     if (type === 'general') return t('api.type_general');
     if (type === 'vector') return t('api.type_vector');
     if (type === 'image') return t('api.type_image');

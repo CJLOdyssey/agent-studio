@@ -76,6 +76,8 @@ export interface ProjectRun {
 export interface SessionItem {
   id: string;
   title: string;
+  kind: string;
+  agent_id: string | null;
   run_count: number;
   created_at: string | null;
   updated_at: string | null;

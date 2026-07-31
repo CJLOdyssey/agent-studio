@@ -39,6 +39,12 @@ PROVIDERS: dict[str, dict[str, Any]] = {
         "capabilities": ["chat", "vector"],
         "docs_url": "https://bailian.console.aliyun.com/#/api-key",
     },
+    "tavily": {
+        "name": "Tavily AI Search",
+        "base_url": "",
+        "capabilities": ["tool"],
+        "docs_url": "https://app.tavily.com",
+    },
     "custom": {
         "name": "自定义",
         "base_url": "",

@@ -43,6 +43,7 @@ class RegisteredToolDB(Base):
     method: Mapped[str] = mapped_column(String(8), default="GET")
     headers: Mapped[str] = mapped_column(Text, default="{}")
     parameters: Mapped[str] = mapped_column(Text, default='{"type":"object","properties":{}}')
+    is_builtin: Mapped[bool] = mapped_column(default=False)
     owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)

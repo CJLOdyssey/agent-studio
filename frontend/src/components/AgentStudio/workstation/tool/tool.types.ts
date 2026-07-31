@@ -11,6 +11,7 @@ export interface ToolEntry {
   endpoint: string;
   parameters: string;
   createdAt: string;
+  is_builtin?: boolean;
 }
 
 export type ToolFormData = Omit<ToolEntry, 'id' | 'createdAt'>;

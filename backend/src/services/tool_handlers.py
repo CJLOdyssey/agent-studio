@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# ponytail: per-run_id MCP session cache, avoids creating a new browser per tool call
+_mcp_sessions: dict[str, dict[str, Any]] = {}
+
 
 def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Return the skill's instruction text as the tool result."""
@@ -103,7 +106,7 @@ def execute_tool(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
 
 
 async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
-    """Call MCP stdio tool, caching sessions."""
+    """Call MCP stdio tool, caching sessions per run_id so browser state persists."""
     from mcp import StdioServerParameters
     from mcp.client.session import ClientSession
     from mcp.client.stdio import stdio_client
@@ -113,34 +116,92 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
             return await asyncio.wait_for(session.call_tool(name, arguments=arguments or {}), timeout=timeout)
         return await asyncio.wait_for(session.list_tools(), timeout=20)
 
-    # Create a fresh session for each call — avoids cross-task connection issues
+    # Discovery calls (no specific tool name) always create fresh connections
+    if not tool_self.mcp_tool_name:
+        cmd = shlex.split(tool_self.mcp_endpoint)
+        params = StdioServerParameters(command=cmd[0], args=cmd[1:])
+        try:
+            async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+                await session.initialize()
+                result = await _call(session, None, None)
+        except Exception as e:
+            return json.dumps({"error": str(e)})
+        tools = getattr(result, "tools", [])
+        if tools:
+            lines = []
+            for t in tools:
+                props = {}
+                if hasattr(t, "inputSchema") and t.inputSchema:
+                    props = t.inputSchema.get("properties", {}) or {}
+                desc = "; ".join(f"{k}: {v.get('description','')}" for k, v in props.items()) if props else ""
+                lines.append(f"- {t.name}: {t.description or ''} [{desc}]")
+            return ("MCP server provides:\n" + "\n".join(lines) +
+                    "\n\nTo call one, pass {\"_tool\": \"TOOL_NAME\", \"_args\": {...}}")
+        return json.dumps({"error": "no tools found"})
+
     cmd = shlex.split(tool_self.mcp_endpoint)
     params = StdioServerParameters(command=cmd[0], args=cmd[1:])
+    run_key = tool_self._run_id or ""
+
+    # Reuse cached session for this run
+    if run_key in _mcp_sessions:
+        try:
+            result = await _call(_mcp_sessions[run_key], tool_self.mcp_tool_name, args)
+            if tool_self.name and "browser_" in tool_self.name:
+                await _push_mcp_screenshot(_mcp_sessions[run_key], tool_self._run_id)
+            texts = _extract_mcp_texts(result)
+            return texts if texts else json.dumps({"result": "ok"})
+        except Exception as e:
+            logger.warning("MCP session %s failed, recreating: %s", run_key[:12], e)
+            await _cleanup_mcp_session(run_key)
+
+    # Create new session
     try:
-        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
-            await session.initialize()
-            result = await _call(session, tool_self.mcp_tool_name, args)
+        read, write = await stdio_client(params).__aenter__()
+        session = ClientSession(read, write)
+        await session.__aenter__()
+        await session.initialize()
+        _mcp_sessions[run_key] = session
+        result = await _call(session, tool_self.mcp_tool_name, args)
+        if tool_self.name and "browser_" in tool_self.name and tool_self._run_id:
+            await _push_mcp_screenshot(session, tool_self._run_id)
+        texts = _extract_mcp_texts(result)
+        return texts if texts else json.dumps({"result": "ok"})
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-    if tool_self.mcp_tool_name:
-        content_list = getattr(result, "content", [])
-        texts = [getattr(c, "text", "") for c in content_list if getattr(c, "text", "")]
-        texts = [t for t in texts if t]
-        return "\n".join(texts) if texts else json.dumps({"result": str(content_list)})
 
-    tools = getattr(result, "tools", [])
-    if tools:
-        lines = []
-        for t in tools:
-            props: dict[str, Any] = {}
-            if hasattr(t, "inputSchema") and t.inputSchema:
-                props = t.inputSchema.get("properties", {}) or {}
-            desc = "; ".join(f"{k}: {v.get('description','')}" for k, v in props.items()) if props else ""
-            lines.append(f"- {t.name}: {t.description or ''} [{desc}]")
-        return ("MCP server provides:\n" + "\n".join(lines) +
-                "\n\nTo call one, pass {\"_tool\": \"TOOL_NAME\", \"_args\": {...}}")
-    return json.dumps({"error": "no tools found"})
+def _extract_mcp_texts(result: Any) -> str:
+    """Extract text content from MCP tool result."""
+    content_list = getattr(result, "content", [])
+    texts = [getattr(c, "text", "") for c in content_list if getattr(c, "text", "")]
+    texts = [t for t in texts if t]
+    return "\n".join(texts) if texts else ""
+
+
+async def _push_mcp_screenshot(session: Any, run_id: str | None) -> None:
+    """Take a screenshot after browser tool call and push to frontend via WebSocket."""
+    if not run_id:
+        return
+    try:
+        r = await session.call_tool("browser_take_screenshot", {"type": "png"})
+        for c in (r.content or []):
+            if hasattr(c, "type") and c.type == "image" and hasattr(c, "data") and c.data:
+                from broker import publish_run_message
+                await publish_run_message(run_id, {"type": "browser_frame", "data": c.data})
+                return
+    except Exception:
+        pass
+
+
+async def _cleanup_mcp_session(run_key: str) -> None:
+    """Close and remove a cached MCP session."""
+    session = _mcp_sessions.pop(run_key, None)
+    if session:
+        try:
+            await session.__aexit__(None, None, None)
+        except Exception:
+            pass
 
 
 async def handle_open_browser(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:

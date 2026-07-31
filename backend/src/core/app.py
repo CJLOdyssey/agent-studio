@@ -19,8 +19,6 @@ from observability.startup_guard import mark_starting
 
 mark_starting()
 
-from core.app_lifespan import shutdown, startup
-from core.infra.logging_config import get_logger
 from routers import (
     admin,
     agent_test_handler,
@@ -42,6 +40,9 @@ from routers import (
     versions,
     workflows,
 )
+
+from core.app_lifespan import shutdown, startup
+from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -181,6 +182,23 @@ def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
 
 
 # ── Health / Metrics / Version ─────────────────────────────────────────────
+
+
+def _get_process_cpu_seconds() -> float | None:
+    """Return total CPU seconds consumed by this process (from /proc/pid/stat).
+
+    Linux exposes utime+stime (fields 13-14) and cutime+cstime (fields 15-16)
+    in clock ticks, where CLK_TCK is almost always 100.
+    """
+    try:
+        with open(f"/proc/{os.getpid()}/stat") as f:
+            parts = f.read().split()
+        total_ticks = int(parts[13]) + int(parts[14]) + int(parts[15]) + int(parts[16])
+        return round(total_ticks / 100, 1)  # CLK_TCK=100 on Linux
+    except Exception:
+        return None
+
+
 @app.get("/api/metrics")
 def metrics() -> Any:
     """Prometheus metrics endpoint."""
@@ -190,12 +208,17 @@ def metrics() -> Any:
 
 @app.get("/api/health")
 async def health() -> Any:
-    """Deep health check — verifies DB and Redis connectivity."""
+    """Deep health check — verifies DB, Redis, and self CPU health."""
     from repository.health import check_database, check_redis
 
     db_status = await check_database()
     redis_status = await check_redis()
+    cpu_seconds = _get_process_cpu_seconds()
+
     checks: dict[str, str] = {"database": db_status, "redis": redis_status}
+    if cpu_seconds is not None:
+        checks["cpu_seconds"] = str(cpu_seconds)
+
     healthy = db_status == "ok" and redis_status == "ok"
     status_code = 200 if healthy else 503
     return JSONResponse(

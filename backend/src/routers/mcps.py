@@ -21,6 +21,7 @@ class MCPCreate(BaseModel):
     type: str = Field(default="stdio")
     endpoint: str = Field(default="")
     config: str | None = None
+    status: str | None = None
 
 
 class MCPUpdate(BaseModel):

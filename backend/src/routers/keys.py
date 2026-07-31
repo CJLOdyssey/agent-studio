@@ -32,7 +32,7 @@ router = APIRouter(tags=["keys"])
 
 class KeyCreateRequest(BaseModel):
     provider: str = Field(..., min_length=1, max_length=32, pattern=r"^[a-z_]+$")
-    usage_type: str = Field(default="chat", pattern=r"^(chat|vector|image|audio|general)$")
+    usage_type: str = Field(default="chat", pattern=r"^(chat|vector|image|audio|general|tool)$")
     label: str = Field(..., min_length=1, max_length=64)
     api_key: str = Field(
         ..., min_length=1, description="Plaintext API key — encrypted before storage"
@@ -43,7 +43,7 @@ class KeyCreateRequest(BaseModel):
 
 
 class KeyUpdateRequest(BaseModel):
-    usage_type: str | None = Field(default=None, pattern=r"^(chat|vector|image|audio|general)$")
+    usage_type: str | None = Field(default=None, pattern=r"^(chat|vector|image|audio|general|tool)$")
     label: str | None = None
     api_key: str | None = Field(default=None, description="New plaintext key (optional)")
     base_url: str | None = None

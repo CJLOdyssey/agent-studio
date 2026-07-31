@@ -102,7 +102,7 @@ class _ToolWrapper:
                 result = await handler(self.name, args)
                 if isinstance(result, dict) and result.get("error") and not result.get("results"):
                     continue
-                return json.dumps(result) if not isinstance(result, str) else result
+                return json.dumps(result, ensure_ascii=False) if not isinstance(result, str) else result
             except Exception:
                 continue
 
@@ -166,6 +166,29 @@ def build_tool_definition(
             schema = tc.parameters if props else {"type": tc.parameters.get("type", "object")}
         else:
             schema = tc.parameters
+
+    # Enrich search tools with optional Tavily parameters (topic, time_range)
+    # so the LLM can pass them when time-sensitive or topic-specific search is needed.
+    search_tools = {"web_search", "tavily", "TavilyAISearch", "search"}
+    tool_key = api_name.lower().replace("_", "").replace("-", "")
+    if any(st in tool_key or tool_key in st for st in search_tools):
+        props = schema.setdefault("properties", {})
+        if "topic" not in props:
+            props["topic"] = {
+                "type": "string",
+                "enum": ["general", "news", "finance"],
+                "description": "Search category. Use 'news' for current events/news searches, 'finance' for financial data, 'general' otherwise.",
+            }
+        if "time_range" not in props:
+            props["time_range"] = {
+                "type": "string",
+                "enum": ["day", "week", "month", "year"],
+                "description": "Time range back from today. Use 'day' or 'week' for recent news, 'month' or 'year' for broader historical search.",
+            }
+        if "required" not in schema:
+            schema["required"] = ["query"]
+        elif "query" not in schema["required"]:
+            schema["required"].append("query")
 
     definition = {
         "type": "function",

@@ -1,9 +1,10 @@
 import { RefObject } from 'react';
-import { Bot } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, useReducedMotion } from 'motion/react';
 import type { Agent, Message } from '../../types/AgentStudio';
 import TeamMessage from './TeamMessage';
+import BrowserFrame from './BrowserFrame';
 import { useChatStore } from '../../stores/chatStore';
 import { editMessage, regenerateMessage, continueGeneration } from '../../stores/chatActions';
 
@@ -79,7 +80,7 @@ export default function MessagesPanel({
             <div className="w-14 h-14 rounded-[14px] flex items-center justify-center bg-[var(--color-surface-raised)] mb-4">
               {(() => {
                 const a = allAgents.find((x) => x.id === selectedAgentId);
-                return a ? <a.icon size={32} className={a.color} /> : <Bot size={32} />;
+                return a ? <a.icon size={32} className={a.color} /> : <Cpu size={32} />;
               })()}
             </div>
             <h3 className="text-xl font-semibold text-[var(--color-text-primary)] m-0 mb-2">{t('agent.startChat', { name: allAgents.find((a) => a.id === selectedAgentId)?.name || '' })}</h3>
@@ -106,6 +107,7 @@ export default function MessagesPanel({
             />
           </motion.div>
         ))}
+        <BrowserFrame />
         <div ref={messagesEndRef} />
       </div>
     );
@@ -134,6 +136,7 @@ export default function MessagesPanel({
             />
           </motion.div>
         ))}
+        <BrowserFrame />
         <div ref={messagesEndRef} />
       </div>
     );

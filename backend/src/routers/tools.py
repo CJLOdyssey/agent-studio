@@ -100,9 +100,15 @@ def list_tool_plugins() -> Any:
 
 @router.get("/api/tools")
 async def list_tools() -> Any:
-    """List all registered tools."""
+    """List all registered tools. Lazy-seeds builtin plugins on first call."""
     try:
-        return await repo_get_tools_as_dicts()
+        tools = await repo_get_tools_as_dicts()
+        has_builtins = any(t.get("is_builtin") for t in tools)
+        if not has_builtins:
+            from core.seed import seed_builtin_tools
+            await seed_builtin_tools()
+            tools = await repo_get_tools_as_dicts()
+        return tools
     except Exception as e:
         raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
@@ -191,6 +197,11 @@ async def add_tool(req: ToolCreate) -> Any:
 async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
     """Update an existing tool."""
     try:
+        existing = await get_tool(tool_id)
+        if not existing:
+            raise error_response(ErrorCode.TOOL_NOT_FOUND, detail="Tool not found")
+        if existing.is_builtin:
+            raise error_response(ErrorCode.INVALID_REQUEST, detail="Built-in tools cannot be modified")
         t = await update_tool(tool_id, req.model_dump(exclude_unset=True))
         if not t:
             raise error_response(ErrorCode.TOOL_NOT_FOUND, detail="Tool not found")
@@ -209,6 +220,8 @@ async def remove_tool(tool_id: str) -> None:
     """Delete a tool by ID."""
     try:
         t = await get_tool(tool_id)
+        if t and t.is_builtin:
+            raise error_response(ErrorCode.INVALID_REQUEST, detail="Built-in tools cannot be deleted")
         tool_name = t.name if t else tool_id
         ok = await delete_tool(tool_id)
         if not ok:

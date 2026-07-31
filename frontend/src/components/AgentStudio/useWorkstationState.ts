@@ -11,6 +11,7 @@ import { executeCommand } from '../../api/client';
 import { useAgentCommands } from '../../hooks/useAgentCommands';
 import { useChatStore } from '../../stores/chatStore';
 import { submitRequirement, retry } from '../../stores/chatActions';
+import { getSessionDetail } from '../../api/client/sessions';
 import { useDragAndDrop } from './useDragAndDrop';
 import Logger from '../../utils/logger';
 
@@ -124,7 +125,62 @@ export function useWorkstationState(
     const activeId = conv.activeConvId;
     if (!activeId) return;
     const found = filteredConversations.find((c) => c.id === activeId);
-    if (!found || found.messages.length === 0) { resetApi(); return; }
+    if (!found) { resetApi(); return; }
+
+    if (found.messages.length === 0 && found.sessionId) {
+      let cancelled = false;
+      getSessionDetail(found.sessionId).then((detail) => {
+        if (cancelled) return;
+        const msgs: import('../../types').ChatMessage[] = [];
+        if (detail.runs) {
+          for (const run of detail.runs) {
+            // Use run.messages with thinking if available (from batch message loading)
+            if (run.messages && run.messages.length > 0) {
+              for (const m of run.messages) {
+                msgs.push({
+                  id: m.id || `run-${run.id}-${m.round_number}-${m.role}`,
+                  role: m.role === 'user' ? 'user' : 'assistant',
+                  agent_name: m.agent_name || (m.role === 'user' ? '我' : found.teamName || 'Agent'),
+                  content: m.content,
+                  thinking: m.thinking ?? undefined,
+                  round_number: m.round_number ?? 0,
+                  created_at: m.created_at || null,
+                });
+              }
+            } else {
+              // Fallback: construct from run.requirement / run.code
+              msgs.push({
+                id: `run-${run.id}-user`,
+                role: 'user',
+                agent_name: '我',
+                content: run.requirement,
+                round_number: 0,
+                created_at: run.created_at || null,
+              });
+              if (run.code) {
+                msgs.push({
+                  id: `run-${run.id}-agent`,
+                  role: 'assistant',
+                  agent_name: found.teamName || 'Agent',
+                  content: run.code,
+                  round_number: 0,
+                  created_at: run.updated_at || run.created_at || null,
+                });
+              }
+            }
+          }
+        }
+        if (msgs.length > 0) {
+          conv.updateConversationMessages(activeId, msgs as unknown as import('../../types/AgentStudio').Message[], false);
+          loadConversation(msgs, found.id, found.sessionId);
+        } else {
+          resetApi();
+        }
+      }).catch(() => resetApi());
+      return () => { cancelled = true; };
+    }
+
+    if (found.messages.length === 0) { resetApi(); return; }
 
     const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m, idx) => ({
       id: typeof m.id === 'number' ? `${activeId}-${idx}` : m.id,
@@ -186,10 +242,19 @@ export function useWorkstationState(
   const handleSendMessage = useCallback(
     (text: string, _files: AttachedFile[]) => {
       if (!conv.activeConvId) {
+        const userMessage: import('../../types/AgentStudio').Message = {
+          id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
+          role: 'user',
+          content: text,
+          timestamp: Date.now(),
+        };
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
-        conv.saveConversation(text, [], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName);
+        const kind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : activeTeamId ? 'team' : 'normal';
+        const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName, kind);
+        if (convId) conv.setActiveConvId(convId);
       }
-      submitToApi(text, undefined, selectedAgentId ?? undefined).catch(() => {
+      window.dispatchEvent(new CustomEvent('clear-browser-url'));
+      submitToApi(text, undefined, selectedAgentId ?? undefined, true).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
@@ -205,7 +270,8 @@ export function useWorkstationState(
         content: text,
         timestamp: Date.now(),
       };
-      const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined);
+      const homeKind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : 'normal';
+      const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, undefined, undefined, homeKind);
       if (convId) conv.setActiveConvId(convId);
       // saveConversation + setActiveConvId → useEffect loads msg into store → skip duplicate
       submitToApi(text, undefined, undefined, true).catch(() => {

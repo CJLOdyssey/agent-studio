@@ -12,6 +12,7 @@ function toEntry(item: { id: string; name: string; description: string; category
     status: item.status === 'active' ? 'active' : 'disabled',
     version: item.version,
     endpoint: item.endpoint,
+    is_builtin: (item as any).is_builtin ?? false,
     parameters: item.parameters || '{"type":"object","properties":{}}',
     createdAt: item.created_at.slice(0, 10),
   };

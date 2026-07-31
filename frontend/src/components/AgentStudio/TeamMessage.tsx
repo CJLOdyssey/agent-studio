@@ -20,6 +20,154 @@ import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
 import { CopyBtn, CodeBlock } from './messages';
 
+function linkify(text: string): React.ReactNode {
+  const parts = text.split(/(https?:\/\/[^\s"',)\]}]+)/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    /^https?:\/\//.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline text-[var(--color-accent)] hover:opacity-80 break-all">{part}</a>
+      : part,
+  );
+}
+
+type ParsedNode = { prefix: string; rest: string } | null;
+
+function parseNode(text: string): ParsedNode {
+  const t = text.trim();
+  const match = t.match(/^\[(tools|mcp|skill|result|info)\]\s+(.*)/);
+  if (match) return { prefix: match[1], rest: match[2] };
+
+  if (t.startsWith('🔧')) return { prefix: 'tools', rest: t.replace(/^🔧\s*/, '') };
+  if (t.startsWith('📡')) return { prefix: 'mcp', rest: t.replace(/^📡\s*/, '') };
+  if (t.startsWith('🛠️')) return { prefix: 'skill', rest: t.replace(/^🛠️\s*/, '') };
+  if (t.startsWith('📥')) return { prefix: 'result', rest: t.replace(/^📥\s*/, '') };
+  if (t.startsWith('📋') || t.startsWith('📏')) return { prefix: 'info', rest: t.replace(/^[^\s]+\s*/, '') };
+
+  return null;
+}
+
+type ThinkingItem =
+  | { type: 'node'; node: string; parsed: ParsedNode }
+  | { type: 'toolPair'; callNode: string; resultNode: string; callParsed: NonNullable<ParsedNode>; resultParsed: NonNullable<ParsedNode> };
+
+function groupThinkingNodes(text: string): ThinkingItem[] {
+  const nodes = text.split(/\n{2,}|(?=\[(?:tools|mcp|skill|result|info)\]|🔧|📡|🛠️|📋|📥)/).filter(Boolean);
+  const items: ThinkingItem[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const cur = parseNode(nodes[i]);
+    const isToolCall = cur && (cur.prefix === 'tools' || cur.prefix === 'mcp' || cur.prefix === 'skill');
+    if (isToolCall && i + 1 < nodes.length) {
+      const nxt = parseNode(nodes[i + 1]);
+      if (nxt && nxt.prefix === 'result') {
+        items.push({
+          type: 'toolPair',
+          callNode: nodes[i],
+          resultNode: nodes[i + 1],
+          callParsed: cur,
+          resultParsed: nxt,
+        });
+        i++;
+        continue;
+      }
+    }
+    // [tools] without [result] → create toolPair with empty result
+    if (isToolCall) {
+      items.push({
+        type: 'toolPair',
+        callNode: nodes[i],
+        resultNode: `[result] ${cur.rest}`,
+        callParsed: cur,
+        resultParsed: { prefix: 'result', rest: cur.rest },
+      });
+      continue;
+    }
+    items.push({ type: 'node', node: nodes[i], parsed: cur });
+  }
+  return items;
+}
+
+function ToolCallBranch(
+  { callText, resultText }: { callText: string; resultText: string },
+) {
+  const [expanded, setExpanded] = useState(false);
+
+  const cp = parseNode(callText)!;
+  const rp = parseNode(resultText)!;
+
+  const callDisplay = cp.rest;
+  const resultDisplay = rp.rest.replace(/^\w+\s*(?:→|返回:)\s*/, '');
+  const prefix = cp.prefix;
+
+  return (
+    <div>
+      <div
+        className="cursor-pointer select-none rounded-sm hover:bg-[var(--color-surface-hover)] transition-colors duration-150"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="text-sm leading-[1.65] text-[var(--color-text-secondary)]">
+          <span>[{prefix}]</span>
+          {' '}
+          <span>{linkify(callDisplay)}</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="flex mt-0.5 text-sm leading-[1.65] text-[var(--color-text-muted)]">
+          <span className="flex-none w-[1.2em] text-center select-none">⟶</span>
+          <span className="flex-1 min-w-0 whitespace-pre-wrap break-all pl-1">{linkify(resultDisplay)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ThinkingNodeItem({ item }: { item: ThinkingItem }) {
+  const Dot = () => (
+    <div className="absolute -left-3 top-[6px] w-2 h-2 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
+  );
+
+  if (item.type === 'toolPair') {
+    return (
+      <div className="relative mb-2.5 last:mb-0 pl-3">
+        <Dot />
+        <ToolCallBranch callText={item.callNode} resultText={item.resultNode} />
+      </div>
+    );
+  }
+
+  const parsed = item.parsed;
+  if (parsed === null) {
+    const displayText = item.node.trim();
+    return (
+      <div className="relative mb-2.5 last:mb-0 leading-[1.65] pl-3">
+        <Dot />
+        {linkify(displayText)}
+      </div>
+    );
+  }
+
+  const displayText = parsed.rest;
+  const isInfo = parsed.prefix === 'info';
+  return (
+    <div className="relative mb-2.5 last:mb-0 leading-[1.65] pl-3">
+      <Dot />
+      {isInfo ? (
+        <span className="text-[var(--color-text-muted)]">
+          <span className="text-[var(--color-text-tertiary)]">[{parsed.prefix}]</span>
+          {' '}
+          {linkify(displayText)}
+        </span>
+      ) : (
+        <span className="text-[var(--color-text-muted)]">
+          <span className="text-[var(--color-text-secondary)]">[{parsed.prefix}]</span>
+          {' '}
+          {linkify(displayText)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 const TeamMessage = memo(function TeamMessage({
   msg,
   allAgents,
@@ -236,16 +384,15 @@ const TeamMessage = memo(function TeamMessage({
                         {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                       {isThinkingExpanded && (() => {
-                        const nodes = (msg.thinking ?? '').split(/\n{2,}/).filter(Boolean);
+                        const items = groupThinkingNodes(msg.thinking ?? '');
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
-                            {nodes.map((node, i) => (
-                              <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
-                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
-                                <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-[var(--color-border)] z-0" />
-                                <div className="whitespace-pre-wrap break-words leading-[1.65]">{node.trim()}</div>
-                              </div>
-                            ))}
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-sm text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                            <div className="relative pl-4">
+                              <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
+                              {items.map((item, i) => (
+                                <ThinkingNodeItem key={i} item={item} />
+                              ))}
+                            </div>
                           </div>
                         );
                       })()}
@@ -257,16 +404,15 @@ const TeamMessage = memo(function TeamMessage({
                         <span>{t('teamMessage.thinkingStopped')}</span>
                       </div>
                       {msg.thinking && (() => {
-                        const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
+                        const items = groupThinkingNodes(msg.thinking);
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
-                            {nodes.map((node, i) => (
-                              <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
-                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
-                                <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-[var(--color-border)] z-0" />
-                                <div className="whitespace-pre-wrap break-words leading-[1.65]">{node.trim()}</div>
-                              </div>
-                            ))}
+                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-sm text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                            <div className="relative pl-4">
+                              <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
+                              {items.map((item, i) => (
+                                <ThinkingNodeItem key={i} item={item} />
+                              ))}
+                            </div>
                           </div>
                         );
                       })()}
@@ -288,13 +434,9 @@ const TeamMessage = memo(function TeamMessage({
                       {isThinkingExpanded && (
                         <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                           {msg.thinking ? (() => {
-                            const nodes = msg.thinking.split(/\n{2,}/).filter(Boolean);
-                            return nodes.map((node, i) => (
-                              <div key={i} className="relative pl-5 mb-2.5 min-h-[18px] last:mb-0">
-                                <div className="absolute left-0 top-1 w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
-                                <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-[var(--color-border)] z-0" />
-                                <div className="whitespace-pre-wrap break-words leading-[1.65]">{node.trim()}</div>
-                              </div>
+                            const items = groupThinkingNodes(msg.thinking);
+                            return items.map((item, i) => (
+                              <ThinkingNodeItem key={i} item={item} />
                             ));
                           })() : null}
                         </div>

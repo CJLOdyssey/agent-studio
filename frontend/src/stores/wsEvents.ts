@@ -50,6 +50,11 @@ export interface WsOpenUrlEvent {
   url?: string;
 }
 
+export interface WsBrowserFrameEvent {
+  type: 'browser_frame';
+  data: string;
+}
+
 export interface WsResultEvent {
   type: 'result';
   run_id?: string;
@@ -75,6 +80,7 @@ export type WsEvent =
   | WsErrorEvent
   | WsBalanceWarningEvent
   | WsOpenUrlEvent
+  | WsBrowserFrameEvent
   | WsResultEvent
   | WsTeamResultEvent
   | WsThumbsEvent;

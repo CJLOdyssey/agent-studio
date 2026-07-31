@@ -190,6 +190,7 @@ __all__ = [
     "get_cached_teams",
     "get_api_key_for_use",
     "get_api_keys",
+    "get_tool_api_key",
     "get_attachment_by_id",
     "get_default_api_key",
     "get_embedding_api_key",

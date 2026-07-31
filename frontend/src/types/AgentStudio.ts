@@ -95,6 +95,7 @@ export interface Conversation {
   messages: Message[];
   createdAt: string;
   updatedAt: string;
+  kind?: 'normal' | 'agent' | 'team';
   agentId?: string;
   sessionId?: string;
   teamId?: string;

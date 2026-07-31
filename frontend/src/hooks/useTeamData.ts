@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Bot } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import type { Team, Agent } from '../types/AgentStudio';
 import type { TeamMember } from '../types/team';
 import { getAllAgents } from '../utils/agentMapper';
@@ -35,7 +35,7 @@ export function teamMemberToAgent(a: TeamMember): Agent {
     tools: parseJsonArray(a.tools).map((t: { name: string; enabled?: boolean }) => ({ id: t.name, name: t.name, description: '', enabled: t.enabled ?? true })),
     mcp: parseJsonArray(a.mcp).map((m: { name: string; enabled?: boolean }) => ({ id: m.name, name: m.name, description: '', serverUrl: '', enabled: m.enabled ?? true })),
     skills: parseJsonArray(a.skills).map((s: { name: string; enabled?: boolean }) => ({ id: s.name, name: s.name, description: '', enabled: s.enabled ?? true })),
-    icon: Bot,
+    icon: Cpu,
     color: 'text-[var(--da-text-muted)]',
     bg: 'bg-[var(--da-bg-surface)]',
     border: 'border-[var(--da-border)]',

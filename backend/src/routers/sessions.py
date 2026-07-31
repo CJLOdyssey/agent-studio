@@ -19,6 +19,7 @@ from repository import (
     get_runs_by_session_ids,
     get_session,
     get_session_memories,
+    get_session_messages,
     get_session_runs,
     get_sessions,
     update_session_title,
@@ -52,6 +53,8 @@ async def list_sessions(request: Request, limit: int = 50, agent_id: str | None 
                 {
                     "id": s.id,
                     "title": s.title,
+                    "kind": s.kind,
+                    "agent_id": s.agent_id,
                     "run_count": len(runs),
                     "created_at": s.created_at.isoformat() if s.created_at else None,
                     "updated_at": s.updated_at.isoformat() if s.updated_at else None,
@@ -98,9 +101,27 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
         runs = await get_session_runs(session_id)
         memories = await get_session_memories(session_id)
 
+        # Load messages with thinking for all runs in batch
+        all_messages = await get_session_messages(session_id)
+        messages_by_run: dict[str, list[dict[str, Any]]] = {}
+        for m in all_messages:
+            if m.run_id not in messages_by_run:
+                messages_by_run[m.run_id] = []
+            messages_by_run[m.run_id].append({
+                "id": m.id,
+                "role": m.role,
+                "agent_name": m.agent_name,
+                "content": m.content,
+                "thinking": m.thinking,
+                "round_number": m.round_number,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            })
+
         return {
             "id": sess.id,
             "title": sess.title,
+            "kind": sess.kind,
+            "agent_id": sess.agent_id,
             "created_at": sess.created_at.isoformat() if sess.created_at else None,
             "updated_at": sess.updated_at.isoformat() if sess.updated_at else None,
             "runs": [
@@ -114,6 +135,7 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                     "status": r.status,
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                     "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+                    "messages": messages_by_run.get(r.id, []),
                 }
                 for r in runs
             ],

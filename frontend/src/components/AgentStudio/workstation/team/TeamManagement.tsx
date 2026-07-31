@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, UserCog, Trash2, X, Users, RefreshCw } from 'lucide-react';
 import { useTeamManagement } from './useTeamManagement';
-import { TEAM_STATUS_LABEL } from './team.constants';
+import { TEAM_STATUS_LABEL, getCategoryTagClass } from './team.constants';
 import TeamFormModal from './TeamFormModal';
 import TeamMemberManager from './TeamMemberManager';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
@@ -15,13 +15,20 @@ import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 import type { TeamEntry } from './team.types';
 
-const CATEGORY_CLASS: Record<string, string> = { dev: 'wsta-tag-indigo', ops: 'wsta-tag-green', test: 'wsta-tag-amber' };
-const CATEGORY_LABEL: Record<string, string> = { dev: t('team.category_dev'), ops: t('team.category_ops'), test: t('team.category_test') };
+
 
 export default function TeamManagement() {
   const d = useTeamManagement();
   const { toast } = useToast();
   const [memberMgmtTeam, setMemberMgmtTeam] = useState<TeamEntry | null>(null);
+
+  const categoryOptions = useMemo(() => {
+    const cats = Array.from(new Set(d.teams.map((t) => t.category).filter(Boolean)));
+    return [
+      { value: 'all' as const, label: t('team.all_category') },
+      ...cats.map((c) => ({ value: c, label: c })),
+    ];
+  }, [d.teams, t]);
 
   function handleSaveWrapper() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('team.toast_updated') : t('team.toast_created'), 'success'); }
   function handleDeleteWrapper() { d.handleDelete(); toast(t('team.toast_deleted'), 'success'); }
@@ -36,18 +43,12 @@ export default function TeamManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1" style={{ flexWrap: 'wrap' }}>
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('team.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
-          <Select style={{ width: 120 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)}
-            options={[
-              { value: 'all', label: t('team.all_category') },
-              { value: 'dev', label: t('team.category_dev') },
-              { value: 'ops', label: t('team.category_ops') },
-              { value: 'test', label: t('team.category_test') },
-            ]} />
+          <Select style={{ width: 120 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)}
             options={[
               { value: 'all', label: t('team.all_status') },
               { value: 'active', label: t('team.status_active') },
-              { value: 'inactive', label: t('team.status_inactive') },
+              { value: 'disabled', label: '已停用' },
             ]} />
         </div>
         <div className="flex items-center gap-3">
@@ -83,7 +84,7 @@ export default function TeamManagement() {
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('team.select_item', item.name)} /></td>
                 <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
                 <td><span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-surface-raised)] text-xs font-semibold text-[var(--color-text-secondary)]">{item.memberCount}</span></td>
-                <td><span className={`wsta-tag-pill ${CATEGORY_CLASS[item.category] || 'wsta-tag-indigo'}`}>{CATEGORY_LABEL[item.category] || item.category}</span></td>
+                <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category || '—'}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${item.status === 'active' ? 'wsta-badge-dot-green' : 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${item.status === 'active' ? 'wsta-dot-green' : 'wsta-dot-gray'}`} />
@@ -118,7 +119,7 @@ export default function TeamManagement() {
       {d.isDeleteOpen && <DeleteConfirmModal name={d.deletingItem?.name || ''} label={t('team.delete')} onConfirm={handleDeleteWrapper} onClose={d.closeDelete} />}
       {d.isBatchDeleteOpen && <BatchDeleteModal count={d.selectedIds.size} onConfirm={handleBatchDeleteWrapper} onClose={d.closeBatchDelete} />}
       {d.isHistoryOpen && d.historyItem && <VersionHistoryModal title={d.historyItem.name} resourceType="team" resourceId={d.historyItem.id} onClose={d.closeHistory} />}
-      {memberMgmtTeam && <TeamMemberManager team={memberMgmtTeam} onClose={() => setMemberMgmtTeam(null)} />}
+      {memberMgmtTeam && <TeamMemberManager team={memberMgmtTeam} onClose={() => { setMemberMgmtTeam(null); d.retry(); }} />}
     </div>
     </ErrorBoundary>
   );

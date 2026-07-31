@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { MoreVertical, Users, Pencil, Pin, Trash2 } from 'lucide-react';
+import { MoreVertical, Users, Pencil, Pin, Trash2, MessageSquare, Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
 import type { Conversation, Agent } from '../../../types/AgentStudio';
@@ -142,14 +142,17 @@ const ConversationsList = memo(function ConversationsList({
       >
         <div className="flex-1 min-w-0">
           <div className="text-base text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">
-            {isTeam && (
+            {conv.kind === 'team' || isTeam ? (
               <span className="shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
                 <Users size={14} />
               </span>
-            )}
-            {agent && AgentIcon && !isTeam && (
-              <span className="shrink-0 flex items-center" style={{ color: agent.color }}>
-                <AgentIcon size={14} />
+            ) : conv.kind === 'agent' ? (
+              <span className="shrink-0 flex items-center" style={{ color: agent?.color || 'var(--color-accent)' }}>
+                {agent && AgentIcon ? <AgentIcon size={14} /> : <Cpu size={14} />}
+              </span>
+            ) : (
+              <span className="shrink-0 flex items-center" style={{ color: 'var(--color-text-tertiary)' }}>
+                <MessageSquare size={14} />
               </span>
             )}
             {Array.from(conv.title).length > 28

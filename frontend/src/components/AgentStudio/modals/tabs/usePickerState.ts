@@ -30,10 +30,10 @@ export function usePickerState(deps: PickerDeps) {
     promptAPI
       .fetchAll()
       .then((items) => {
-        if (!cancelled)
-          setPickerItems((prev) => ({
-            ...prev,
-            system: items.map(
+        if (!cancelled) {
+          const systemItems = items
+            .filter((p) => p.category === 'system_prompt')
+            .map(
               (p) =>
                 ({
                   id: p.id,
@@ -41,8 +41,12 @@ export function usePickerState(deps: PickerDeps) {
                   description: p.content.length > 120 ? p.content.slice(0, 120) + '…' : p.content,
                   source: '提示词管理',
                 }) as PickerItem,
-            ),
+            );
+          setPickerItems((prev) => ({
+            ...prev,
+            system: systemItems,
           }));
+        }
       })
       .catch(() => {});
     outputAPI
@@ -69,10 +73,12 @@ export function usePickerState(deps: PickerDeps) {
               name: tool.name,
               description: tool.description || '',
               source: '工具管理',
+              is_builtin: (tool as any).is_builtin ?? false,
             })),
           }));
       })
       .catch((e) => console.error('AgentConfigModal: tool fetch failed', e));
+
     mcpAPI
       .fetchAll()
       .then((items) => {

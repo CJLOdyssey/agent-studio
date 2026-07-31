@@ -62,54 +62,6 @@ class TestAppLifespan:
             mock_redis.ping.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_seed_default_tools_when_empty(self):
-        from core.seed import seed_default_tools
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-
-        async def fake_execute(*args, **kwargs):
-            return mock_result
-
-        mock_session = MagicMock()
-        mock_session.execute = fake_execute
-        mock_session.add = MagicMock()
-        mock_session.commit = AsyncMock()
-
-        mock_cm = AsyncMock()
-        mock_cm.__aenter__.return_value = mock_session
-        mock_factory = MagicMock(return_value=mock_cm)
-
-        with patch("core.seed.get_session_factory", return_value=mock_factory):
-            await seed_default_tools()
-            assert mock_session.add.call_count == 3
-            mock_session.commit.assert_awaited_once()
-
-    @pytest.mark.asyncio
-    async def test_seed_default_tools_skips_when_exists(self):
-        from core.seed import seed_default_tools
-
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = {"id": 1}
-
-        async def fake_execute(*args, **kwargs):
-            return mock_result
-
-        mock_session = MagicMock()
-        mock_session.execute = fake_execute
-        mock_session.add = MagicMock()
-        mock_session.commit = AsyncMock()
-
-        mock_cm = AsyncMock()
-        mock_cm.__aenter__.return_value = mock_session
-        mock_factory = MagicMock(return_value=mock_cm)
-
-        with patch("core.seed.get_session_factory", return_value=mock_factory):
-            await seed_default_tools()
-            mock_session.add.assert_not_called()
-            mock_session.commit.assert_not_called()
-
-    @pytest.mark.asyncio
     async def test_init_database_handles_exception(self):
         from core.app_lifespan import _init_database
 

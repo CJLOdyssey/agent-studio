@@ -3,7 +3,7 @@ import client from './instance';
 export interface ProviderInfo {
   name: string;
   base_url: string;
-  capabilities: ('chat' | 'vector')[];
+  capabilities: ('chat' | 'vector' | 'tool')[];
   docs_url: string | null;
 }
 

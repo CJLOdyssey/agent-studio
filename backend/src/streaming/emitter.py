@@ -67,6 +67,8 @@ class StreamEmitter:
         elif kind == "on_custom_thinking":
             rc = data.get("content", "")
             if rc:
+                if rc.startswith("[result]"):
+                    logger.debug("on_custom_thinking: [result] node received, tool=%s", rc.split(chr(10))[0][:100])
                 self._checked_append(self._thinking_buffer, rc, "thinking")
                 try:
                     await publish_run_message(
@@ -124,18 +126,8 @@ class StreamEmitter:
             if tool_name and refs:
                 await self.emit_tool_results(tool_name, tool_call_id, refs)
 
-        elif kind == "on_tool_start":
-            tool_name = event.get("name", "tool")
-            tool_input = data.get("input", "")
-            await self._emit(
-                "Agent",
-                f"\U0001f527 \u8c03\u7528\u5de5\u5177: {tool_name}({str(tool_input)[:200]})",
-            )
-
-        elif kind == "on_tool_end":
-            tool_name = event.get("name", "tool")
-            output = str(data.get("output", ""))[:500]
-            await self._emit("Agent", f"\U0001f441 {tool_name} \u8fd4\u56de: {output}")
+        # on_tool_start / on_tool_end are handled at the graph level
+        # via on_custom_thinking (see _tools_node in graph.py)
 
     async def emit_balance_warning(self, message: str = "") -> None:
         await publish_run_message(
@@ -195,6 +187,25 @@ class StreamEmitter:
             thinking_text = "".join(self._thinking_buffer).strip()
             self._thinking_buffer.clear()
 
+        has_pending = self._pending_thinking is not None
+        if has_pending:
+            logger.debug("_flush_buffers: pending_thinking exists, len=%d, has_tool_result=%s",
+                         len(self._pending_thinking), "[result]" in self._pending_thinking)
+        if thinking_text and "[result]" in thinking_text:
+            logger.debug("_flush_buffers: thinking_text has [result], len=%d", len(thinking_text))
+        elif thinking_text:
+            logger.debug("_flush_buffers: thinking_text without [result], len=%d, content=%s...",
+                         len(thinking_text), thinking_text[:80])
+
+        # Merge pending thinking from a previous tools-only flush with current thinking
+        if self._pending_thinking:
+            if thinking_text:
+                thinking_text = self._pending_thinking + "\n\n" + thinking_text
+            else:
+                thinking_text = self._pending_thinking
+            self._pending_thinking = None
+
+        saved_with_content = False
         if self._stream_buffer:
             full_content = "".join(self._stream_buffer)
             self._stream_buffer.clear()
@@ -218,6 +229,7 @@ class StreamEmitter:
                     thinking=thinking_text,
                     round_number=self._message_index,
                 )
+                saved_with_content = True
             except Exception:
                 logger.exception("Stream publish failed for run %s", self._run_id)
 
@@ -234,6 +246,10 @@ class StreamEmitter:
                 await publish_run_message(self._run_id, payload)
             except Exception:
                 logger.exception("Thinking publish failed for run %s", self._run_id)
+            # Tools-only flush: has thinking but no content to save with.
+            # Cache it as pending so the next content flush carries it to DB.
+            if not saved_with_content:
+                self._pending_thinking = thinking_text
 
     async def _emit(
         self, agent_name: str, content: str, msg_type: str = "message", thinking: str | None = None

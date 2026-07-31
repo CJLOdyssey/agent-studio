@@ -1,7 +1,7 @@
 import { memo, useCallback, useState, useEffect } from 'react';
 import { X, MessageSquareText, Wrench, Server, FileText, ChevronRight, Zap } from 'lucide-react';
 import type { SkillEntry, SkillFormData } from './skill.types';
-import { SKILL_CATEGORIES, SKILL_STATUS_LABEL } from './skill.constants';
+import { SKILL_STATUS_LABEL } from './skill.constants';
 import { useModelOptions } from '../constants';
 import { t } from './locales';
 import ResourcePickerModal from '../shared/ResourcePickerModal';
@@ -105,10 +105,8 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_category')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category}
-                onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}>
-                {SKILL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.category}
+              onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))} placeholder="例如：前端开发、AI/ML" />
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_status')}</label>

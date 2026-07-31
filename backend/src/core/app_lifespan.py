@@ -7,15 +7,16 @@ import contextlib
 import gc
 import os
 import platform
+import signal
 from typing import TYPE_CHECKING, Any, cast
 
 from broker import BROKER_URL, REDIS_URL, get_redis
+from observability.startup_guard import mark_started, mark_stopped, record_crash
+
 from core.config import load_config
 from core.infra.database import DATABASE_URL, get_session_factory, init_db
 from core.infra.events import Events, bus
 from core.infra.logging_config import get_logger
-from core.seed import seed_default_tools
-from observability.startup_guard import mark_started, mark_stopped, record_crash
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -86,7 +87,6 @@ def _startup_report() -> list[str]:
 
 async def _do_init_db() -> None:
     await init_db()
-    await seed_default_tools()
     from sqlalchemy import text
 
     factory = get_session_factory()
@@ -120,6 +120,11 @@ async def _check_redis() -> None:
 async def startup(app: FastAPI) -> None:
     """Run on application startup — config, GC, DB, Redis."""
     load_config()
+
+    # NOTE: PR_SET_PDEATHSIG was removed because it kills the backend when
+    # the parent shell exits (after `nohup uvicorn ... &` or Makefile targets).
+    # External cleanup (startup script's pkill, _kill_stuck_child_processes)
+    # handles orphan processes instead.
 
     import thinking_tree.tools  # noqa: F401
 

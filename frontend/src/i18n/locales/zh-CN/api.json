@@ -42,7 +42,8 @@
     "type_vector": "向量",
     "type_image": "图像",
     "type_audio": "音频",
-    "type_general": "通用",
+    "type_general": "LLM 通用",
+    "type_tool": "工具",
     "edit": "编辑"
   }
 }

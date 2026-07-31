@@ -16,6 +16,7 @@ class SessionDB(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     title: Mapped[str] = mapped_column(String(256), default="新对话")
     user_id: Mapped[str] = mapped_column(String(128), default="default")
+    kind: Mapped[str] = mapped_column(String(16), default="normal")
     agent_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("agent_configs.id", ondelete="SET NULL"),

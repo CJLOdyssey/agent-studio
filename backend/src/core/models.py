@@ -160,6 +160,8 @@ class SessionSummary(BaseModel):
 
     id: str
     title: str
+    kind: str = "normal"
+    agent_id: str | None = None
     run_count: int = 0
     created_at: str | None = None
     updated_at: str | None = None
@@ -214,6 +216,8 @@ class SessionDetailResponse(BaseModel):
 
     id: str
     title: str
+    kind: str = "normal"
+    agent_id: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
     runs: list[RunSummary] = Field(default_factory=list)

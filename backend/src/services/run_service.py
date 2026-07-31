@@ -64,15 +64,16 @@ class RunService:
         config = load_config()
 
         # ── Session ─────────────────────────────────────────────────
+        kind = 'agent' if agent_id else 'team' if team_id else 'normal'
         if session_id is None:
-            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=agent_id)
+            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind)
             session_id = sess.id
         else:
             existing_sess = await get_session(session_id)
             if existing_sess is None:
                 logger.warning("session_id=%s not found, creating new session", session_id)
                 sess = await create_session(
-                    title=requirement[:64], user_id=user_id, agent_id=agent_id
+                    title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind
                 )
                 session_id = sess.id
 

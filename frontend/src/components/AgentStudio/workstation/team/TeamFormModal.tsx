@@ -2,7 +2,6 @@ import { memo, useCallback } from 'react';
 import { X, Users } from 'lucide-react';
 import type { TeamEntry, TeamFormData } from './team.types';
 import { t } from './locales';
-import { TEAM_CATEGORIES } from './team.constants';
 
 interface Props {
   editingItem: TeamEntry | null;
@@ -12,11 +11,6 @@ interface Props {
   onClose: () => void;
   errors: string[];
 }
-
-const CATEGORY_OPTIONS = TEAM_CATEGORIES.map(c => ({
-  value: c.value as TeamFormData['category'],
-  labelKey: `team.category_${c.value}` as const,
-}));
 
 function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, errors }: Props) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => { if (e.key === 'Escape') onClose(); }, [onClose]);
@@ -48,15 +42,13 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
             <div className="flex gap-4" style={{ marginTop: 14 }}>
               <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('team.form_category')}</label>
-                <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as TeamFormData['category'] }))}>
-                  {CATEGORY_OPTIONS.map((opt) => (<option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>))}
-                </select>
+                <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))} placeholder="例如：业务、技术、数据" />
               </div>
               <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('team.form_status')}</label>
-                <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as 'active' | 'inactive' }))}>
+                <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as 'active' | 'disabled' }))}>
                   <option value="active">{t('team.status_active')}</option>
-                  <option value="inactive">{t('team.status_inactive')}</option>
+                  <option value="disabled">{t('team.status_disabled')}</option>
                 </select>
               </div>
             </div>

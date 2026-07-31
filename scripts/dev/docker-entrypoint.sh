@@ -37,5 +37,22 @@ else
   echo "✅ Stamped at head"
 fi
 
-# ── 3. Exec CMD ────────────────────────────────────────────────────────────────
+# ── 3. Kill any existing uvicorn instances of this app ──────────────────────────
+for pid in $(pgrep -f "uvicorn.*core.app:app" 2>/dev/null || true); do
+  if [ "$pid" != "$BASHPID" ]; then
+    echo "🔄 Killing existing uvicorn instance (PID $pid)..."
+    kill "$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null || true
+  fi
+done
+sleep 1
+
+# ── 4. Port conflict check (last resort) ───────────────────────────────────────
+PORT="${PORT:-8080}"
+if command -v ss &>/dev/null && ss -tlnp "sport = :$PORT" 2>/dev/null | grep -q LISTEN; then
+  echo "⚠️ Port $PORT still in use — force killing..."
+  fuser -k "$PORT/tcp" 2>/dev/null || true
+  sleep 1
+fi
+
+# ── 5. Exec CMD ────────────────────────────────────────────────────────────────
 exec "$@"

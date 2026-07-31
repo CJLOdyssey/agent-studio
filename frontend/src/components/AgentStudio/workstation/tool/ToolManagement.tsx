@@ -1,8 +1,9 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Wrench } from 'lucide-react';
+import { useMemo, useCallback } from 'react';
 import { useToolManagement } from './useToolManagement';
-import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
+import { TOOL_STATUS_LABEL } from './tool.constants';
 import ToolFormModal from './ToolFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -17,6 +18,11 @@ export default function ToolManagement() {
   const d = useToolManagement();
   const { toast } = useToast();
 
+  const pagedItems = useMemo(() => {
+    const start = (d.page - 1) * 7;
+    return d.processed.slice(start, start + 7);
+  }, [d.processed, d.page]);
+
   function handleSave() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('tool.toast_updated') : t('tool.toast_created'), 'success'); }
   function handleDelete() { d.handleDelete(); toast(t('tool.toast_deleted'), 'success'); }
   function handleBatchDelete() { d.handleBatchDelete(); toast(t('tool.toast_batch_deleted'), 'success'); }
@@ -24,14 +30,23 @@ export default function ToolManagement() {
   const statusDotClass: Record<string, string> = { active: 'wsta-badge-dot-green', disabled: 'wsta-badge-dot-gray' };
   const dotClass: Record<string, string> = { active: 'wsta-dot-green', disabled: 'wsta-dot-gray' };
 
-  function makeMenuItems(item: typeof d.processed[0]): MenuProps['items'] {
+  const categoryOptions = useMemo(() => {
+    const cats = Array.from(new Set(d.processed.map((i) => i.category).filter(Boolean)));
+    return [
+      { value: 'all', label: t('tool.all_categories') },
+      ...cats.map((c) => ({ value: c, label: c })),
+    ];
+  }, [d.processed]);
+
+  const makeMenuItems = useCallback((item: (typeof d.processed)[0]): MenuProps['items'] => {
+    if ((item as any).is_builtin) return [];
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('tool.edit'), onClick: () => d.openEdit(item) },
       { key: 'view', icon: <Eye size={14} />, label: t('tool.history'), onClick: () => d.openHistory(item) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('tool.delete'), onClick: () => d.openDelete(item), danger: true },
     ];
-  }
+  }, [d]);
 
   if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('tool.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
@@ -41,10 +56,7 @@ export default function ToolManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('tool.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
-          <Select style={{ width: 130 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
-            { value: 'all', label: t('tool.all_categories') },
-            ...TOOL_CATEGORIES.map((c) => ({ value: c, label: c })),
-          ]} />
+          <Select style={{ width: 130 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             { value: 'active', label: TOOL_STATUS_LABEL.active },
@@ -75,23 +87,27 @@ export default function ToolManagement() {
             <th className="w-[100px] text-right" scope="col">{t('tool.col_actions')}</th>
           </tr></thead>
           <tbody>
-            {d.paged.map((item) => (
-              <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
-                <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('tool.select_item', item.name)} /></td>
-                <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+            {pagedItems.map((item) => (
+              <tr key={item.id} className={`${!(item as any).is_builtin && d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}`}>
+                <td className="w-10 text-center align-middle p-1 px-2">
+                  <input type="checkbox" checked={false} disabled={(item as any).is_builtin} aria-label={t('tool.select_item', item.name)} />
+                </td>
+                <td>
+                  <span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span>
+                  {(item as any).is_builtin && <span className="ml-1.5 inline-block py-0.5 px-1.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)] align-middle">内置</span>}
+                </td>
                 <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{item.category}</span></td>
                 <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
-                <td>
-                  <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
-                    <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />
-                    {TOOL_STATUS_LABEL[item.status]}
-                  </span>
-                </td>
+                <td><span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}><span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />{TOOL_STATUS_LABEL[item.status]}</span></td>
                 <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.version}</span></td>
                 <td className="w-[100px] text-right">
-                  <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
-                    <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
-                  </Dropdown>
+                  {(item as any).is_builtin ? (
+                    <span className="text-xs text-[var(--color-text-muted)]">—</span>
+                  ) : (
+                    <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
+                      <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
+                    </Dropdown>
+                  )}
                 </td>
               </tr>
             ))}

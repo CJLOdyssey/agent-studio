@@ -3,13 +3,6 @@ import type { TeamEntry, TeamFormData } from './team.types';
 import { defineCrudModule } from '../shared/api-base';
 import { listTeams, createTeam, updateTeam, deleteTeam } from '../../../../api/client/teams';
 
-function deriveCategory(name: string, description: string): 'dev' | 'ops' | 'test' {
-  const text = `${name} ${description}`.toLowerCase();
-  if (text.includes('测试') || text.includes('质量') || text.includes('test')) return 'test';
-  if (text.includes('运维') || text.includes('部署') || text.includes('devops') || text.includes('ci/cd')) return 'ops';
-  return 'dev';
-}
-
 function backendToEntry(item: {
   id: string;
   name: string;
@@ -25,8 +18,8 @@ function backendToEntry(item: {
     id: item.id,
     name: item.name,
     description: item.description || '',
-    status: (item.status === 'inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
-    category: (item.category as TeamEntry['category']) || deriveCategory(item.name, item.description || ''),
+    status: (item.status === 'inactive' || item.status === 'disabled' ? 'disabled' : 'active') as 'active' | 'disabled',
+    category: item.category || '',
     createdAt: item.created_at ? item.created_at.slice(0, 10) : '',
     agents: item.agents ?? [],
     memberCount: item.agents?.length ?? 0,

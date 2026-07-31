@@ -63,7 +63,13 @@ export function handleThinkingDoneEvent(set: SetFn, msg: WsThinkingDoneEvent): v
     if (s.streamingId) {
       return {
         messages: s.messages.map((m) =>
-          m.id === s.streamingId ? { ...m, thinkingDone: true } : m,
+          m.id === s.streamingId
+            ? {
+                ...m,
+                thinkingDone: true,
+                ...(msg.thinking ? { thinking: msg.thinking } : {}),
+              }
+            : m,
         ),
       };
     }

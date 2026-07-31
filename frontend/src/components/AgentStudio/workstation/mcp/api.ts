@@ -32,6 +32,7 @@ const { bind: mcpAPI, setAPI: setMCPAPI } = defineCrudModule<MCPEntry, MCPFormDa
       name: data.name, type: data.type,
       endpoint: data.type === 'stdio' ? data.command : data.url,
       config: JSON.stringify({ description: data.description, version: data.version }),
+      status: data.status === 'connected' ? 'active' : 'inactive',
     });
     return toEntry(item);
   },

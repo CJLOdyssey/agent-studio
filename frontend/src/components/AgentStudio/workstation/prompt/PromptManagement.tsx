@@ -1,7 +1,8 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Trash2, MessageSquare } from 'lucide-react';
-import { usePromptManagement, PROMPT_CATEGORIES, t } from './index';
+import { useMemo } from 'react';
+import { usePromptManagement, PROMPT_STATUS_LABEL, getCategoryLabel, t } from './index';
 import PromptFormModal from './PromptFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -19,12 +20,13 @@ export default function PromptManagement() {
   function handleDeleteWrapper() { d.handleDelete(); toast(t('prompt.toast_deleted'), 'success'); }
   function handleBatchDeleteWrapper() { d.handleBatchDelete(); toast(t('prompt.toast_batch_deleted'), 'success'); }
 
-  const categoryTagClass: Record<string, string> = {
-    '系统提示词': 'wsta-tag-indigo', '系统': 'wsta-tag-indigo',
-    '用户提示词': 'wsta-tag-green', '自定义': 'wsta-tag-green',
-    '任务模板': 'wsta-tag-amber', '模板': 'wsta-tag-amber',
-    '角色定义': 'wsta-tag-indigo',
-  };
+  const categoryOptions = useMemo(() => {
+    const cats = Array.from(new Set(d.processed.map((i) => i.category).filter(Boolean)));
+    return [
+      { value: 'all', label: t('prompt.all_categories') },
+      ...cats.map((c) => ({ value: c, label: getCategoryLabel(c) })),
+    ];
+  }, [d.processed]);
 
   function makeMenuItems(item: typeof d.processed[0]): MenuProps['items'] {
     return [
@@ -43,10 +45,7 @@ export default function PromptManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label="操作工具栏">
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('prompt.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
-          <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
-            { value: 'all', label: t('prompt.all_categories') },
-            ...PROMPT_CATEGORIES.map((c) => ({ value: c, label: c })),
-          ]} />
+          <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             { value: 'active', label: '已启用' },
@@ -87,8 +86,13 @@ export default function PromptManagement() {
               <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('prompt.select_item', { n: item.name })} /></td>
                 <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
-                <td><span className={`wsta-tag-pill ${categoryTagClass[item.category] || 'wsta-tag-gray'}`}>{item.category}</span></td>
-                <td><span>{item.status}</span></td>
+                <td><span className="wsta-tag-pill wsta-tag-indigo">{item.category}</span></td>
+                <td>
+                  <span className={`wsta-badge-dot ${item.status === 'active' ? 'wsta-badge-dot-green' : item.status === 'draft' ? 'wsta-badge-dot-gray' : 'wsta-badge-dot-gray'}`}>
+                    <span className={`wsta-dot ${item.status === 'active' ? 'wsta-dot-green' : 'wsta-dot-gray'}`} />
+                    {PROMPT_STATUS_LABEL[item.status] || item.status}
+                  </span>
+                </td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

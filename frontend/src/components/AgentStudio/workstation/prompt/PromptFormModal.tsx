@@ -1,8 +1,8 @@
 import { memo, useEffect } from 'react';
 import { X, MessageSquare } from 'lucide-react';
-import type { PromptEntry, PromptFormData, PromptCategory } from './types';
+import type { PromptEntry, PromptFormData } from './types';
 import { useModelOptions } from '../constants';
-import { PROMPT_CATEGORIES, PROMPT_STATUS_LABEL, t } from './index';
+import { PROMPT_STATUS_LABEL, PROMPT_CATEGORY_LABEL, t } from './index';
 
 interface Props {
   editingItem: PromptEntry | null;
@@ -45,8 +45,8 @@ const PromptFormModal = memo(function PromptFormModal({ editingItem, formData, s
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_category')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value as PromptCategory }))}>
-                {PROMPT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}>
+                {Object.entries(PROMPT_CATEGORY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">

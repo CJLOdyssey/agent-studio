@@ -1,8 +1,9 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap } from 'lucide-react';
+import { useMemo } from 'react';
 import { useSkillManagement } from './useSkillManagement';
-import { SKILL_CATEGORIES, SKILL_STATUS_LABEL } from './skill.constants';
+import { SKILL_STATUS_LABEL } from './skill.constants';
 import SkillFormModal from './SkillFormModal';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
@@ -33,6 +34,14 @@ export default function SkillManagement() {
   const statusDotClass: Record<string, string> = { installed: 'wsta-badge-dot-green', available: 'wsta-badge-dot-gray' };
   const dotClass: Record<string, string> = { installed: 'wsta-dot-green', available: 'wsta-dot-gray' };
 
+  const categoryOptions = useMemo(() => {
+    const cats = Array.from(new Set(d.processed.map((i) => i.category).filter(Boolean)));
+    return [
+      { value: 'all', label: t('skill.all_categories') },
+      ...cats.map((c) => ({ value: c, label: c })),
+    ];
+  }, [d.processed]);
+
   function makeMenuItems(item: typeof d.processed[0]): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('skill.edit'), onClick: () => d.openEdit(item) },
@@ -50,10 +59,7 @@ export default function SkillManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label={t('skill.col_name')}>
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('skill.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
-          <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={[
-            { value: 'all', label: t('skill.all_categories') },
-            ...SKILL_CATEGORIES.map((c) => ({ value: c, label: c })),
-          ]} />
+          <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             { value: 'installed', label: '已安装' },

@@ -74,6 +74,7 @@ frontend/antd-snapshot.txt
 # ── Code Intelligence Caches ──────────────────────────────────────────────
 .codegraph/
 .superpowers/
+.cocoindex_code/
 
 # ── AI Tool Directories ───────────────────────────────────────────────────
 .mimocode/

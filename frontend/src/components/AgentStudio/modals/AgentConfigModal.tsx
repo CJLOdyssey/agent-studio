@@ -95,7 +95,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
     setSystemPrompt,
     setOutputConstraints,
-    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true } as AgentTool)),
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: !(item as any).is_builtin } as AgentTool)),
     addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentMCP),
     addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentSkill),
   });

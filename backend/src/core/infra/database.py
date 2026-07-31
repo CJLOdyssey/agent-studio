@@ -134,9 +134,26 @@ async def init_db() -> None:
         await conn.execute(
             text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);")
         )
+        await conn.execute(
+            text(
+                """
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'sessions' AND column_name = 'kind'
+                ) THEN
+                    ALTER TABLE sessions ADD COLUMN kind VARCHAR(16) NOT NULL DEFAULT 'normal';
+                    UPDATE sessions SET kind = 'agent' WHERE agent_id IS NOT NULL;
+                END IF;
+            END $$;
+        """
+            )
+        )
 
     from core.seed import seed_default_roles_and_admin  # noqa: F401
     await seed_default_roles_and_admin()
+    from core.seed import seed_builtin_tools  # noqa: F401
+    await seed_builtin_tools()
 
 
 

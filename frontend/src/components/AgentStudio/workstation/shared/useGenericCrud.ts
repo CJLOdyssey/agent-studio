@@ -315,30 +315,38 @@ export function useGenericCrud<T extends { id: string }, F>(
   }, [openMenuId]);
 
   // ── Save / Delete / Batch Delete orchestration ────────────────
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback((): Promise<void> | undefined => {
     const errors = validate ? validate(formData_, items, editingItem?.id) : [];
     setFormErrors(errors);
-    if (errors.length > 0) return;
+    if (errors.length > 0) return undefined;
     const action = editingItem
       ? updateItem(editingItem.id, asPartial(formData_))
       : createItem(formData_);
-    action.then(() => {
+    return action.then(() => {
       setIsFormOpen(false);
+      setFormErrors([]);
+    }).catch((e: Error) => {
+      setError(e.message || `保存${itemName}失败`);
     });
-  }, [validate, formData_, items, editingItem, updateItem, createItem]);
+  }, [validate, formData_, items, editingItem, updateItem, createItem, itemName]);
 
-  const handleDelete = useCallback(() => {
-    if (!deletingItem) return;
-    removeItem(deletingItem.id).then(() => {
+  const handleDelete = useCallback((): Promise<void> | undefined => {
+    if (!deletingItem) return undefined;
+    return removeItem(deletingItem.id).then(() => {
       setIsDeleteOpen(false);
       setDeletingItem(null);
+    }).catch((e: Error) => {
+      setError(e.message || `删除${itemName}失败`);
     });
-  }, [deletingItem, removeItem]);
+  }, [deletingItem, removeItem, itemName]);
 
-  const handleBatchDelete = useCallback(() => {
-    removeMultipleItems(selectedIds).then(() => {
+  const handleBatchDelete = useCallback((): Promise<void> | undefined => {
+    if (selectedIds.size === 0) return undefined;
+    return removeMultipleItems(selectedIds).then(() => {
       setIsBatchDeleteOpen(false);
       setSelectedIds_(new Set());
+    }).catch((e: Error) => {
+      setError(e.message || `批量删除失败`);
     });
   }, [selectedIds, removeMultipleItems]);
 

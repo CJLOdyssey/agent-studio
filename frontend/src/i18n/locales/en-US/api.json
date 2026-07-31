@@ -42,7 +42,8 @@
     "type_vector": "Vector",
     "type_image": "Image",
     "type_audio": "Audio",
-    "type_general": "General",
+    "type_general": "LLM",
+    "type_tool": "Tool",
     "edit": "Edit"
   }
 }

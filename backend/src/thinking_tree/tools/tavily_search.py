@@ -1,13 +1,12 @@
-"""Tavily Web Search tool — hybrid keyword + semantic search with AI reranking."""
+"""Tavily Web Search tool — official SDK wrapper."""
 
+import asyncio
 import os
 from typing import Any
 
 from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-TAVILY_API_URL = "https://api.tavily.com/search"
 
 
 def _get_api_key() -> str:
@@ -17,13 +16,29 @@ def _get_api_key() -> str:
     return ""
 
 
+async def _get_api_key_from_vault() -> str:
+    """Fallback: read Tavily key from the API Key Management vault."""
+    try:
+        from repository.keys_crud import get_tool_api_key
+        vault_key = await get_tool_api_key("tavily")
+        if vault_key:
+            return vault_key
+    except Exception:
+        logger.warning("Failed to read Tavily key from vault", exc_info=True)
+    return ""
+
+
 async def tavily_search(tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
     query = args.get("query", "")
     max_results = int(args.get("max_results", 5))
+    topic = args.get("topic", "general")
+    time_range = args.get("time_range")
     if not query:
         return {"tool": tool_name, "error": "No query provided"}
 
     api_key = _get_api_key()
+    if not api_key:
+        api_key = await _get_api_key_from_vault()
     if not api_key:
         return {
             "tool": tool_name,
@@ -32,21 +47,22 @@ async def tavily_search(tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
             "answer": "",
         }
 
-    import httpx
-
-    payload = {
-        "api_key": api_key,
-        "query": query,
-        "search_depth": "advanced",
-        "include_answer": True,
-        "max_results": max_results,
-    }
-
     try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(TAVILY_API_URL, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
+        from tavily import TavilyClient
+        client = TavilyClient(api_key=api_key)
+        kwargs: dict[str, Any] = {
+            "query": query,
+            "search_depth": "advanced",
+            "max_results": max_results,
+            "include_answer": True,
+        }
+        if topic:
+            kwargs["topic"] = topic
+        if time_range:
+            kwargs["time_range"] = time_range
+
+        # Tavily SDK is synchronous — run in executor to avoid blocking
+        data = await asyncio.to_thread(lambda: client.search(**kwargs))
     except Exception as e:
         logger.error("Tavily search failed: %s", e)
         return {"tool": tool_name, "error": str(e), "results": []}

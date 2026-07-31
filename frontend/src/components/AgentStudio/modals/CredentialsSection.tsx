@@ -6,6 +6,7 @@ interface Props {
   baseUrl: string;
   apiKey: string;
   showKey: boolean;
+  hideBaseUrl?: boolean;
   onChangeName: (v: string) => void;
   onChangeBaseUrl: (v: string) => void;
   onChangeApiKey: (v: string) => void;
@@ -13,7 +14,7 @@ interface Props {
 }
 
 export default function CredentialsSection({
-  name, baseUrl, apiKey, showKey,
+  name, baseUrl, apiKey, showKey, hideBaseUrl,
   onChangeName, onChangeBaseUrl, onChangeApiKey,
   onToggleShowKey,
 }: Props) {
@@ -33,12 +34,14 @@ export default function CredentialsSection({
           className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" />
       </div>
 
+      {!hideBaseUrl && (
       <div className="mb-4">
         <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">{t('providerEdit.baseUrl')}</label>
         <input type="text" value={baseUrl} onChange={(e) => onChangeBaseUrl(e.target.value)}
           placeholder="https://api.openai.com/v1"
           className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" />
       </div>
+      )}
 
       <div className="mb-4">
         <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">{t('providerEdit.apiKey')}</label>

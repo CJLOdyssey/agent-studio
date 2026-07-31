@@ -27,6 +27,7 @@ class ToolRepository(BaseRepository[RegisteredToolDB]):
             "method": obj.method,
             "headers": obj.headers,
             "parameters": obj.parameters,
+            "is_builtin": obj.is_builtin,
             "created_at": obj.created_at.isoformat() if obj.created_at else None,
         }
 

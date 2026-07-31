@@ -339,6 +339,29 @@ async def get_embedding_api_key() -> str | None:
     return None
 
 
+async def get_tool_api_key(provider: str) -> str | None:
+    """Get the decrypted API key for a tool provider (e.g. 'tavily')."""
+    from core.infra.database import UserApiKey
+    from core.infra.key_vault import decrypt_api_key
+
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(
+                UserApiKey.provider == provider,
+                UserApiKey.usage_type == "tool",
+                UserApiKey.is_active,
+            )
+            .limit(1)
+        )
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row:
+            return decrypt_api_key(row.encrypted_key)
+    return None
+
+
 async def log_key_usage(
     key_id: str | None,
     user_id: str,

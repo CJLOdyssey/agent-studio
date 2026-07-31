@@ -8,7 +8,7 @@ from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
 
 from core.infra.cache import get_cache
-from core.infra.database import TeamAgentDB, TeamDB, get_session_factory
+from core.infra.database import AgentConfigDB, TeamAgentDB, TeamDB, get_session_factory
 
 CACHE_KEY_TEAMS = "teams:all"
 DEFAULT_TTL = 300
@@ -203,6 +203,22 @@ async def update_team(
             team.description = description
         if status is not None:
             team.status = status
+            is_active = status == "active"
+            member_stmt = select(TeamAgentDB).where(
+                TeamAgentDB.team_id == team_id,
+                TeamAgentDB.agent_config_id.isnot(None),
+            )
+            members_result = await session.execute(member_stmt)
+            member_ids = [
+                m.agent_config_id
+                for m in members_result.scalars().all()
+                if m.agent_config_id
+            ]
+            if member_ids:
+                stmt = select(AgentConfigDB).where(AgentConfigDB.id.in_(member_ids))
+                agents_result = await session.execute(stmt)
+                for agent in agents_result.scalars().all():
+                    agent.is_active = is_active
         if category is not None:
             team.category = category
         if order is not None:
@@ -212,6 +228,9 @@ async def update_team(
         await session.commit()
         await session.refresh(team)
         await _invalidate_teams_cache()
+        if status is not None:
+            cache = get_cache()
+            await cache.delete("agents:all")
         return team
 
 

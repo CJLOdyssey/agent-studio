@@ -13,7 +13,7 @@ export interface PromptEntry {
 
 export type PromptFormData = Omit<PromptEntry, 'id' | 'createdAt'>;
 
-export type PromptCategory = '系统提示词' | '用户提示词' | '任务模板' | '角色定义';
+export type PromptCategory = string;
 
 export type PromptSortField = 'name' | 'category' | 'status';
 

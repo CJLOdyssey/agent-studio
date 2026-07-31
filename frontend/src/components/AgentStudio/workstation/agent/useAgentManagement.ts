@@ -47,13 +47,13 @@ export interface AgentManagementReturn {
   toggleSelect: (id: string) => void;
   openCreate: () => void;
   openEdit: (agent: AgentEntry) => void;
-  handleSave: () => void;
+  handleSave: () => Promise<void> | undefined;
   openDelete: (agent: AgentEntry) => void;
-  handleDelete: () => void;
+  handleDelete: () => Promise<void> | undefined;
   handleCopy: (agent: AgentEntry) => void;
   openHistory: (agent: AgentEntry) => void;
   openBatchDelete: () => void;
-  handleBatchDelete: () => void;
+  handleBatchDelete: () => Promise<void> | undefined;
   closeMenu: () => void;
   setIsFormOpen: (v: boolean) => void;
   setIsDeleteOpen: (v: boolean) => void;
@@ -73,12 +73,12 @@ export function useAgentManagement(): AgentManagementReturn {
     itemName: 'Agent',
     validate: validateForm,
     sortFields: ['name', 'team', 'status'],
-    extraFilters: { statusFilter: 'all' },
+    extraFilters: { status: 'all' },
   });
 
   // Wrap extra filter to match AgentManagementReturn's setStatusFilter
   const wrappedSetStatusFilter = useCallback((v: StatusFilter) => {
-    crud.setExtraFilter('statusFilter', v);
+    crud.setExtraFilter('status', v);
     setStatusFilter(v);
   }, [crud]);
 
@@ -87,13 +87,8 @@ export function useAgentManagement(): AgentManagementReturn {
     crud.openDelete(agent);
   }, [crud]);
 
-  const handleDelete = useCallback(async () => {
-    try {
-      if (crud.deletingItem) {
-        await crud.removeItem(crud.deletingItem.id);
-        crud.closeDelete();
-      }
-    } catch (e) { setBatchError(`删除失败：${(e as Error).message}`); }
+  const handleDelete = useCallback((): Promise<void> | undefined => {
+    return crud.handleDelete();
   }, [crud]);
 
   const handleCopy = useCallback((agent: AgentEntry) => {
@@ -106,18 +101,12 @@ export function useAgentManagement(): AgentManagementReturn {
     crud.openBatchDelete();
   }, [crud]);
 
-  const handleBatchDelete = useCallback(async () => {
-    try {
-      await crud.removeMultipleItems(crud.selectedIds);
-      crud.closeBatchDelete();
-    } catch (e) { setBatchError(`批量删除失败：${(e as Error).message}`); }
+  const handleBatchDelete = useCallback((): Promise<void> | undefined => {
+    return crud.handleBatchDelete();
   }, [crud]);
 
-  const handleSave = useCallback(() => {
-    crud.handleSave();
-    if (crud.formErrors.length === 0) {
-      // close happens inside useGenericCrud's handleSave on success
-    }
+  const handleSave = useCallback((): Promise<void> | undefined => {
+    return crud.handleSave();
   }, [crud]);
 
   return {

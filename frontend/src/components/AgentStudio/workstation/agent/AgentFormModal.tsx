@@ -4,6 +4,7 @@ import type { AgentEntry, AgentFormData } from './agent.types';
 import { useModelOptions } from '../constants';
 import { listTeams } from '../../../../api/client/teams';
 import { ResourcePickerSection } from './ResourcePickerSection';
+import { STATUS_LABEL } from './agent.constants';
 import { t } from './locales';
 
 /** Minimal reference shape — agent module owns its own reference interface. */
@@ -27,7 +28,7 @@ interface Props {
 
 type PickerType = 'prompt' | 'tools' | 'mcp' | 'skills' | null;
 
-function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, availablePrompts, availableTools, availableMCPs, availableSkills }: Props) {
+function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, formErrors, availablePrompts, availableTools, availableMCPs, availableSkills }: Props) {
   const modelOptions = useModelOptions();
   const [activePicker, setActivePicker] = useState<PickerType>(null);
   const [teamOptions, setTeamOptions] = useState<string[]>([]);
@@ -88,6 +89,12 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_version')}</label>
                 <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version} onChange={(e) => setFormData({ ...formData, version: e.target.value })} placeholder={t('agent.form_version_placeholder')} />
               </div>
+              <div className="flex flex-col gap-1" style={{ maxWidth: 120 }}>
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">状态</label>
+                <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as AgentFormData['status'] })}>
+                  {Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -108,6 +115,15 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
         </div>
 
         {/* ── Footer ── */}
+        {formErrors.length > 0 && (
+          <div className="px-6 pb-2">
+            {formErrors.map((err, i) => (
+              <p key={i} className="text-xs text-[var(--color-danger)] flex items-center gap-1">
+                <span>•</span> {err}
+              </p>
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-end gap-2 px-6 py-4">
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('agent.form_cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>

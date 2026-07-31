@@ -17,8 +17,8 @@
     "inputPlaceholder": "输入需求，AI 团队将展开讨论..."
   },
   "agent": {
-    "welcome": "训练模型精准度 - 发送消息来优化 Agent 的响应",
-    "startChat": "与 {{name}} 对话",
+    "welcome": "请描述你的需求，Agent 将为你分析和处理",
+    "startChat": "与 {{name}} 开始对话",
     "thinking": "{{name}} 正在思考...",
     "config": "配置 Agent",
     "saveConfig": "保存配置"

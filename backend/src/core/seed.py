@@ -1,9 +1,9 @@
-"""Default data seeding — roles, admin user, and built-in tools bootstrap."""
+"""Default data seeding — roles and admin user bootstrap."""
 
 from sqlalchemy import select
 
 from core.infra.database import get_session_factory
-from orm import RegisteredToolDB, RoleDB, UserDB, UserRoleDB
+from orm import RoleDB, UserDB, UserRoleDB
 
 
 async def seed_default_roles_and_admin() -> None:
@@ -39,38 +39,36 @@ async def seed_default_roles_and_admin() -> None:
         await session.commit()
 
 
-async def seed_default_tools() -> None:
-    """Create built-in tools (web_search, calculator, fetch_page) if none exist."""
-    from core.infra.logging_config import get_logger
+async def seed_builtin_tools() -> None:
+    """Sync registered plugins from ToolRegistry into registered_tools table."""
+    import json
+    from sqlalchemy import select
+    from core.infra.database import get_session_factory
+    from orm import RegisteredToolDB
+    import thinking_tree.tools  # noqa: F401 — triggers registration
+    from thinking_tree.registry import registry
 
-    logger = get_logger(__name__)
     factory = get_session_factory()
+    plugins = registry.list_plugins()
     async with factory() as session:
-        existing = await session.execute(select(RegisteredToolDB).limit(1))
-        if existing.scalar_one_or_none():
-            return
-
-        seed_data = [
-            {
-                "name": "web_search",
-                "category": "builtin",
-                "description": "Search the web for current information.",
-                "endpoint": "builtin://web_search",
-            },
-            {
-                "name": "calculator",
-                "category": "builtin",
-                "description": "Evaluate math expressions: +, -, *, /, **, %, sqrt, sin, cos.",
-                "endpoint": "builtin://calculator",
-            },
-            {
-                "name": "fetch_page",
-                "category": "builtin",
-                "description": "Fetch and read the content of a web page.",
-                "endpoint": "builtin://fetch_page",
-            },
-        ]
-        for data in seed_data:
-            session.add(RegisteredToolDB(**data))
+        for p in plugins:
+            name = p["tool_name"]
+            result = await session.execute(
+                select(RegisteredToolDB).where(
+                    RegisteredToolDB.name == name,
+                    RegisteredToolDB.is_builtin == True,
+                )
+            )
+            if result.scalar_one_or_none():
+                continue
+            tool = RegisteredToolDB(
+                name=name,
+                category="builtin",
+                description=p.get("description", ""),
+                status="active",
+                version="v1.0.0",
+                parameters=json.dumps(p.get("config_schema") or {"type": "object", "properties": {}}),
+                is_builtin=True,
+            )
+            session.add(tool)
         await session.commit()
-        logger.info("[LIFECYCLE] seeded %d default tools", len(seed_data))

@@ -34,6 +34,9 @@ docker compose -f docker/compose.local.yml up -d
 ## 2. 🔀 混合模式（Docker 数据库 + 本地代码）
 
 > Docker 跑 PostgreSQL 和 Redis，后端 + 前端在本机运行，享受热更新。
+>
+> **⚠️ 后端启动请始终使用 `make dev-backend`，不要手敲 `uvicorn`。**
+> 手敲会绕过端口检测 + pidfile 防护，可能产生孤儿进程导致 CPU 过载。
 
 ```bash
 # ① 启动数据库
@@ -45,13 +48,32 @@ cp .env.example .env
 # DATABASE_URL 和 REDIS_URL 指向 localhost 默认端口即可
 # 可观测性系统默认开启（OBSERVABILITY_ENABLED=1），磁盘低于 100MB 自动停止写入
 
-# ③ 后端 API（端口 8081，热更新）
-PYTHONPATH=backend/src uvicorn core.app:app --reload --port 8081
-# → http://localhost:8081
+# ③ 后端 API（端口 8081，热更新）— 推荐方式
+make dev-backend
+# 或指定端口：PORT=8082 make dev-backend
 
 # ④ 前端开发服务器（端口 5174，热更新）
 cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 5174
 # → http://localhost:5174
+```
+
+### 启动问题排查
+
+```bash
+# 健康检查（含 CPU 时间 + 孤儿进程扫描）
+make health PORT=8081
+
+# 查看端口占用
+ss -tlnp | grep -E "808[0-9]"
+
+# 查找孤儿进程（PPID=1 的 python 进程）
+ps --ppid 1 -o pid,%cpu,etime,args | grep python
+
+# 查看后端日志
+make dev-backend-logs
+
+# 强制清理端口
+fuser -k 8081/tcp
 ```
 
 ---

@@ -25,7 +25,7 @@ interface Props<T extends ListItem> {
   onArchive?: (item: T) => void;
 }
 
-function ItemMenu({ onEdit, onArchive, archived, onDelete }: { onEdit?: () => void; onArchive?: () => void; archived: boolean; onDelete: () => void }) {
+function ItemMenu({ onEdit, onArchive, archived, onDelete }: { onEdit?: () => void; onArchive?: () => void; archived: boolean; onDelete?: () => void }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -62,9 +62,11 @@ function ItemMenu({ onEdit, onArchive, archived, onDelete }: { onEdit?: () => vo
                 <Archive size={14} /><span>{t('workstation.archive')}</span>
               </button>
             ) : null}
-            <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]" onClick={() => { onDelete(); close(); }}>
-              <Trash2 size={14} /><span>{t('workstation.delete')}</span>
-            </button>
+            {onDelete && (
+              <button className="flex items-center gap-2 py-2 px-2.5 rounded-md cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-sm text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]" onClick={() => { onDelete(); close(); }}>
+                <Trash2 size={14} /><span>{t('workstation.delete')}</span>
+              </button>
+            )}
           </div>
         </>,
         document.body,
@@ -104,16 +106,19 @@ export default function ConfigItemList<T extends ListItem>({
             <div className="flex items-center gap-3">
               <input type="checkbox" checked={item.enabled} onChange={() => onToggle(item.id)} />
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-[var(--color-text-primary)]">{item.name}</span>
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                  {item.name}
+                  {(item as any).is_builtin && <span className="ml-1.5 inline-block py-0.5 px-1.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)] align-middle">内置</span>}
+                </span>
                 {item.description && <span className="text-xs text-[var(--color-text-muted)]">{item.description}</span>}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <ItemMenu
-                onEdit={onEditFull ? () => onEditFull(item) : undefined}
-                onArchive={onArchive ? () => onArchive(item) : undefined}
+                onEdit={onEditFull && !(item as any).is_builtin ? () => onEditFull(item) : undefined}
+                onArchive={onArchive && !(item as any).is_builtin ? () => onArchive(item) : undefined}
                 archived={!!(item as any).archived}
-                onDelete={() => onRemove(item.id)}
+                onDelete={(item as any).is_builtin ? undefined : () => onRemove(item.id)}
               />
             </div>
           </div>

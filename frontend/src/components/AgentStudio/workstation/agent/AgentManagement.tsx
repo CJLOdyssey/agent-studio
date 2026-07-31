@@ -14,7 +14,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
 import { t } from './locales';
 import { listPrompts } from '../../../../api/client/prompts';
-import { listTools } from '../../../../api/client/tools';
+import { listTools, listToolPlugins } from '../../../../api/client/tools';
 import { listMCPs } from '../../../../api/client/mcps';
 import { listSkills } from '../../../../api/client/skills';
 
@@ -29,14 +29,23 @@ export default function AgentManagement() {
 
   useEffect(() => {
     listPrompts().then((items) => { const filtered = items.filter((p) => p.category !== 'output_constraint'); if (filtered.length > 0) setAvailPrompts(filtered.map((p) => ({ id: p.id, name: p.name }))); }).catch(() => {});
-    listTools().then((items) => { if (items.length > 0) setAvailTools(items.map((t) => ({ id: t.id, name: t.name }))); }).catch(() => {});
+    Promise.all([listTools(), listToolPlugins()]).then(([tools, plugins]) => {
+      const merged = [
+        ...tools.map((t: { id: string; name: string }) => ({ id: t.id, name: t.name })),
+        ...plugins.map((p: { tool_name: string; label: string }) => ({ id: p.tool_name, name: p.label })),
+      ];
+      if (merged.length > 0) setAvailTools(merged);
+    }).catch(() => {});
     listMCPs().then((items) => { if (items.length > 0) setAvailMCPs(items.map((m) => ({ id: m.id, name: m.name }))); }).catch(() => {});
     listSkills().then((items) => { if (items.length > 0) setAvailSkills(items.map((s) => ({ id: s.id, name: s.name }))); }).catch(() => {});
   }, []);
 
-  function handleSaveWrapper() { mgmt.handleSave(); if (mgmt.formErrors.length === 0) toast(mgmt.editingAgent ? t('agent.toast_updated') : t('agent.toast_created'), 'success'); }
-  function handleDeleteWrapper() { mgmt.handleDelete(); toast(t('agent.toast_deleted'), 'success'); }
-  function handleBatchDeleteWrapper() { mgmt.handleBatchDelete(); toast(t('agent.toast_batch_deleted', String(mgmt.selectedIds.size)), 'success'); }
+  function handleSaveWrapper() {
+    const p = mgmt.handleSave();
+    if (p) p.then(() => toast(mgmt.editingAgent ? t('agent.toast_updated') : t('agent.toast_created'), 'success'));
+  }
+  function handleDeleteWrapper() { const p = mgmt.handleDelete(); if (p) p.then(() => toast(t('agent.toast_deleted'), 'success')); }
+  function handleBatchDeleteWrapper() { const p = mgmt.handleBatchDelete(); if (p) p.then(() => toast(t('agent.toast_batch_deleted', String(mgmt.selectedIds.size)), 'success')); }
 
   const statusDotClass: Record<string, string> = { running: 'wsta-badge-dot-green', stopped: 'wsta-badge-dot-gray', error: 'wsta-badge-dot-red' };
   const dotClass: Record<string, string> = { running: 'wsta-dot-green', stopped: 'wsta-dot-gray', error: 'wsta-dot-red' };

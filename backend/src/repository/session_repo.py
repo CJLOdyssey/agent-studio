@@ -9,7 +9,8 @@ from core.infra.database import SessionDB, get_session_factory
 
 
 async def create_session(
-    title: str = "新对话", user_id: str = "default", agent_id: str | None = None
+    title: str = "新对话", user_id: str = "default", agent_id: str | None = None,
+    kind: str = "normal",
 ) -> SessionDB:
     """Create a new conversation session and return the persisted row.
 
@@ -17,6 +18,7 @@ async def create_session(
         title: Display title for the session.
         user_id: Owner user ID.
         agent_id: Optional bound agent config ID.
+        kind: Session kind — normal, agent, or team.
 
     Returns:
         The newly created SessionDB instance.
@@ -28,6 +30,7 @@ async def create_session(
             id=str(uuid4()),
             title=title,
             user_id=user_id,
+            kind=kind,
             agent_id=agent_id,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),

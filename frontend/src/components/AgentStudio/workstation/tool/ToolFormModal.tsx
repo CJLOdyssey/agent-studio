@@ -1,7 +1,7 @@
 import { X, CheckCircle, XCircle, Loader2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import type { ToolEntry, ToolFormData } from './tool.types';
-import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
+import { TOOL_STATUS_LABEL } from './tool.constants';
 import { useModelOptions } from '../constants';
 import { t } from './locales';
 import { testTool, type ToolTestResult } from '../../../../api/client/tools';
@@ -64,9 +64,7 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_category')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}>
-                {TOOL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))} placeholder="例如：内置工具、自定义工具" />
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_model')}</label>

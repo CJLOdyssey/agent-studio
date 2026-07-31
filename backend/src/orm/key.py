@@ -24,7 +24,7 @@ class UserApiKey(Base):
         String(16),
         default="chat",
         nullable=False,
-        comment="chat|vector|image|audio|general — how this key is used",
+        comment="chat|vector|image|audio|general|tool — how this key is used",
     )
     label: Mapped[str] = mapped_column(String(64), nullable=False)
     encrypted_key: Mapped[str] = mapped_column(Text, nullable=False)

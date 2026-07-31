@@ -1,6 +1,6 @@
 """Team API routes: CRUD and member management."""
 
-from typing import Any, Literal
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -30,14 +30,14 @@ class TeamCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     description: str | None = None
     status: str | None = None
-    category: Literal["dev", "ops", "test"] | None = None
+    category: str | None = None
 
 
 class TeamUpdateRequest(BaseModel):
     name: str | None = None
     description: str | None = None
     status: str | None = None
-    category: Literal["dev", "ops", "test"] | None = None
+    category: str | None = None
     order: int | None = None
     is_expanded: bool | None = None
 

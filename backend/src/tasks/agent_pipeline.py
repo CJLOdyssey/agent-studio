@@ -1,19 +1,20 @@
 """Single-agent pipeline — tool discovery, RAG context, and graph execution."""
 
 # ruff: noqa: E402 — imports after tracemalloc setup are intentional
+import asyncio
 import contextlib
 import gc
 import json
+import os
 import tracemalloc
 from typing import Any
-
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from broker import publish_run_message
 from checkpoint import create_checkpointer_async
 from core.config import load_config
 from core.infra.logging_config import get_logger
 from graph.graph import SingleAgentGraph
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from repository import (
     get_agent_config,
     get_mcps,
@@ -41,6 +42,34 @@ from .pipeline_utils import (
 logger = get_logger(__name__)
 
 _run_counter = 0
+_AGENT_TIMEOUT = int(os.environ.get("AGENT_TIMEOUT", "600"))  # 10 minutes default
+
+
+def _kill_stuck_child_processes() -> None:
+    """Kill any OS-level child processes left behind by a timed-out task.
+
+    ``asyncio.timeout`` cancels the coroutine but does **not** kill child
+    OS processes spawned by libraries (e.g. multiprocessing forks inside
+    LangGraph).  Those orphans continue burning CPU indefinitely.
+    """
+    try:
+        ppid = os.getpid()
+        with os.popen(f"ps --ppid {ppid} -o pid= --no-headers") as pipe:
+            children = pipe.read().strip().split()
+        for pid_str in children:
+            if not pid_str.strip():
+                continue
+            pid = int(pid_str)
+            try:
+                with open(f"/proc/{pid}/cmdline") as f:
+                    cmd = f.read().replace("\0", " ")
+                if "multiprocessing.spawn" in cmd:
+                    logger.warning("[TASKS] Killing stuck child PID %d (cmd=%s…)", pid, cmd[:80])
+                    os.kill(pid, 9)
+            except (ProcessLookupError, FileNotFoundError, PermissionError):
+                pass
+    except Exception:
+        logger.exception("[TASKS] Failed to clean up child processes")
 
 
 async def _run_agent_pipeline(
@@ -131,6 +160,12 @@ async def _run_agent_pipeline(
             name = item.get("name", "")
             if name:
                 tool_match = next((t for t in all_tools if t.name == name), None)
+                # Plugin tool fallback: item.id = canonical tool_name, item.name = display label
+                if not tool_match:
+                    tid = item.get("id", "")
+                    if tid and tid != name:
+                        name = tid
+                        tool_match = next((t for t in all_tools if t.name == name), None)
                 raw_params = tool_match.parameters if tool_match else (item.get("parameters"))
                 if isinstance(raw_params, str):
                     try:
@@ -212,20 +247,66 @@ async def _run_agent_pipeline(
                         )
                     )
 
+    # Append open_user_browser tool for all agents (opens URL in user's local browser)
+    tool_configs.append(ToolConfig(
+        name="open_user_browser",
+        description="Open a URL in the user's local browser. Use when the user needs to see a webpage in their own browser.",
+        parameters={"type": "object", "properties": {"url": {"type": "string", "description": "The full URL to open"}}, "required": ["url"]},
+    ))
+
     for tc in tool_configs:
         if tc.method == "MCP":
             tc.endpoint = exec_stdio_mcp.__name__
 
     graph.bind_tools(tool_configs)
 
-    result = await graph.run(
-        requirement=requirement,
-        system_prompt=system_prompt,
-        session_context=session_context,
-        chat_history=chat_history,
-        thread_id=run_id,
-        run_id=run_id,
-    )
+    # ── Intent detection: direct URL open for "打开XX" patterns ──
+    # ponytail: manual mapping for common Chinese site names; expand as needed
+    _SITE_MAP = {
+        "百度": "https://www.baidu.com",
+        "谷歌": "https://www.google.com",
+        "google": "https://www.google.com",
+        "bing": "https://www.bing.com",
+        "必应": "https://www.bing.com",
+        "抖音": "https://www.douyin.com",
+        "github": "https://github.com",
+        "知乎": "https://www.zhihu.com",
+        "微博": "https://weibo.com",
+    }
+    _open_url = None
+    _clean = requirement.strip().lower()
+    for _keyword, _site_url in _SITE_MAP.items():
+        if _keyword in _clean and ("打开" in _clean or "访问" in _clean or "去" in _clean):
+            _open_url = _site_url
+            break
+    # Also try regex for full URLs / domains with dots
+    if not _open_url:
+        import re
+        _m = re.search(r'(?:https?://)?([a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*)+', requirement.strip())
+        if _m and ("打开" in _clean or "访问" in _clean or "去" in _clean):
+            _domain = _m.group(0)
+            _open_url = f"https://{_domain}" if not _domain.startswith("http") else _domain
+    if _open_url:
+        logger.info("Intent detection: open_url -> %s", _open_url)
+        await publish_run_message(run_id, {"type": "open_url", "url": _open_url})
+
+    try:
+        async with asyncio.timeout(_AGENT_TIMEOUT):
+            result = await graph.run(
+                requirement=requirement,
+                system_prompt=system_prompt,
+                session_context=session_context,
+                chat_history=chat_history,
+                thread_id=run_id,
+                run_id=run_id,
+            )
+    except TimeoutError:
+        logger.error("[TASKS] Agent pipeline timed out after %ds (run=%s)", _AGENT_TIMEOUT, run_id)
+        await publish_run_message(run_id, {"type": "error", "message": "任务执行超时"})
+        await update_run_status(run_id, "timeout")
+        # Kill any OS child processes spawned by the timed-out task
+        _kill_stuck_child_processes()
+        return {"run_id": run_id, "status": "timeout"}
 
     # ── Extract artifacts ──
     messages = result.get("messages", [])

@@ -3,7 +3,7 @@
 import type { AgentEntry } from './agent.types';
 import type { AgentConfig } from '../../../../types';
 import { listPrompts } from '../../../../api/client/prompts';
-import { listTools } from '../../../../api/client/tools';
+import { listTools, listToolPlugins } from '../../../../api/client/tools';
 import { listMCPs } from '../../../../api/client/mcps';
 import { listSkills } from '../../../../api/client/skills';
 
@@ -58,15 +58,18 @@ export async function resolveLists(
   mcpIds: string[],
   skillIds: string[],
 ) {
-  const [allPrompts, allTools, allMcps, allSkills] = await Promise.all([
+  const [allPrompts, allTools, allPlugins, allMcps, allSkills] = await Promise.all([
     listPrompts().catch(() => [] as { id: string; content: string }[]),
     listTools().catch(() => [] as { id: string; name: string; description: string }[]),
+    listToolPlugins().catch(() => [] as { tool_name: string; label: string; description: string }[]),
     listMCPs().catch(() => [] as { id: string; name: string; endpoint: string }[]),
     listSkills().catch(() => [] as { id: string; name: string; description: string }[]),
   ]);
 
   const system_prompt = allPrompts.find((p) => p.id === systemPromptId)?.content ?? '';
-  const tools = allTools.filter((t) => toolIds.includes(t.id)).map((t) => ({
+  const pluginTools = allPlugins.map((p) => ({ id: p.tool_name, name: p.label, description: p.description }));
+  const dbTools = allTools.map((t) => ({ id: t.id, name: t.name, description: t.description }));
+  const tools = [...dbTools, ...pluginTools].filter((t) => toolIds.includes(t.id)).map((t) => ({
     id: t.id,
     name: t.name,
     description: t.description,
