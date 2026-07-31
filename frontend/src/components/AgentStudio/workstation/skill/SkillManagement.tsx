@@ -174,6 +174,7 @@ export default function SkillManagement() {
       <Modal
         title={t('skill.import_skill_md')}
         open={importOpen}
+        destroyOnHidden
         onOk={handleImport}
         onCancel={() => setImportOpen(false)}
         okText={t('skill.import_confirm')}
