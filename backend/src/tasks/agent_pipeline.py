@@ -272,6 +272,9 @@ async def _run_agent_pipeline(
                                 name=tname,
                                 description=tmatch.description or tname,
                                 parameters=params or {"type": "object"},
+                                endpoint=tmatch.endpoint or "",
+                                method=tmatch.method or "GET",
+                                headers=tmatch.headers or "{}",
                             ))
 
                     tool_configs.append(
