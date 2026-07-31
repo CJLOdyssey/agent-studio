@@ -44,6 +44,11 @@ class SkillUpdate(BaseModel):
     status: str | None = None
 
 
+class SkillImportRequest(BaseModel):
+    markdown: str = Field(..., min_length=1, max_length=200000)
+    category: str = Field(default="导入", min_length=1, max_length=32)
+
+
 @router.get("/api/skills")
 async def list_skills() -> Any:
     """List all skill configurations."""
@@ -128,6 +133,84 @@ async def add_skill(req: SkillCreate) -> Any:
         }
     except Exception as e:
         raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.post("/api/skills/import", status_code=201)
+async def import_skill(req: SkillImportRequest) -> Any:
+    """Import a skill from Anthropic Agent Skills SKILL.md format.
+
+    Parses the YAML frontmatter (``name``, ``description``, ``allowed-tools``,
+    ``metadata.category``) and maps the markdown body to ``instructions``.
+    """
+    try:
+        import yaml
+
+        markdown = req.markdown
+        meta: dict[str, Any] = {}
+        body = markdown
+        if markdown.startswith("---"):
+            end = markdown.find("\n---", 3)
+            if end != -1:
+                raw_meta = markdown[3:end].strip()
+                body = markdown[end + 4:].lstrip("\n")
+                try:
+                    parsed = yaml.safe_load(raw_meta)
+                    if isinstance(parsed, dict):
+                        meta = parsed
+                except Exception:
+                    meta = {}
+
+        name = str(meta.get("name") or "").strip()
+        if not name:
+            # Fall back to the first markdown heading if frontmatter lacks name
+            import re
+
+            m = re.match(r"^#\s+(.+)", body)
+            name = m.group(1).strip() if m else "imported-skill"
+        name = name[:64]
+
+        description = str(meta.get("description") or "").strip()[:500]
+        category = str(meta.get("metadata", {}).get("category") or req.category)[:32]
+        author = str(meta.get("metadata", {}).get("author") or "")[:64]
+
+        tools = meta.get("allowed-tools") or meta.get("allowed_tools") or []
+        if not isinstance(tools, list):
+            tools = []
+        tool_names = [str(x) for x in tools if x]
+
+        instructions = body.strip()
+        if not instructions:
+            raise error_response(
+                ErrorCode.INVALID_REQUEST, detail="SKILL.md 缺少正文，无法导入"
+            )
+
+        data = {
+            "name": name,
+            "category": category,
+            "content": description,
+            "instructions": instructions,
+            "tool_names": tool_names,
+            "version": "v1.0.0",
+            "author": author,
+            "status": "active",
+            "output_constraint": "",
+        }
+        s = await repo_create_skill(data)
+        await log_audit("create", "skill", s.name, "导入成功")
+        return {
+            "id": s.id,
+            "name": s.name,
+            "category": s.category,
+            "status": s.status,
+            "instructions": s.instructions,
+            "tool_names": s.tool_names,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Skill import failed: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=f"导入失败: {e}") from e
 
 
 @router.put("/api/skills/{skill_id}")

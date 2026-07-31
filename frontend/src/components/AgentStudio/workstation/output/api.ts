@@ -12,7 +12,7 @@ function toEntry(item: PromptRow): OutputEntry {
     id: item.id,
     name: item.name,
     content: item.content,
-    category: (item.model || item.category) as OutputCategory,
+    category: (item.model || '') as OutputCategory,
     model: '',
     status: 'active',
     version: item.version,

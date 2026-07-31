@@ -18,10 +18,13 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from repository import (
     get_agent_config,
     get_mcps,
+    get_messages,
     get_session_memories,
     get_session_messages,
     get_skills,
     get_tools,
+    list_attachments_by_run,
+    update_message_content,
     update_run_result,
     update_run_status,
 )
@@ -253,21 +256,6 @@ async def _run_agent_pipeline(
                         )
                     )
 
-    # Append open_user_browser tool for all agents (opens URL in user's local browser)
-    tool_configs.append(ToolConfig(
-        name="open_user_browser",
-        description="Open a URL in the user's local browser. Use when the user needs to see a webpage in their own browser.",
-        parameters={"type": "object", "properties": {"url": {"type": "string", "description": "The full URL to open"}}, "required": ["url"]},
-    ))
-
-    # Host code-execution primitive so skills (e.g. docx via preinstalled python-docx)
-    # can actually generate files, not just inject instructions.
-    tool_configs.append(ToolConfig(
-        name="execute_python",
-        description="Execute Python code in a sandbox subprocess. ALWAYS save generated files to the CURRENT working directory (use a relative filename like 'report.docx' or os.getcwd()), NOT absolute paths like /mnt or /home — the tool auto-registers any generated file as a downloadable attachment and returns its download link. Use this to create or process files (e.g. build a .docx with python-docx, parse data, run calculations) when a skill instructs you to run code.",
-        parameters={"type": "object", "properties": {"code": {"type": "string", "description": "The complete Python source code to execute. Save output files to the current working directory with relative paths."}}, "required": ["code"]},
-    ))
-
     for tc in tool_configs:
         if tc.method == "MCP":
             tc.endpoint = exec_stdio_mcp.__name__
@@ -348,6 +336,26 @@ async def _run_agent_pipeline(
         approved=True,
         status="converged",
     )
+
+    # ── Attach download links to the final message ──
+    # The model often references generated files by filename without a URL;
+    # inject the /api/attachments links deterministically so the frontend can
+    # offer a working download.
+    try:
+        atts = await list_attachments_by_run(run_id)
+        if atts:
+            links = [
+                f"[📥 {a.filename}](/api/attachments/{a.id})"
+                for a in atts
+            ]
+            block = "\n\n" + "\n".join(f"- {lnk}" for lnk in links)
+            msg = await get_messages(run_id)
+            if msg:
+                last = msg[-1]
+                if not any(a.id in (last.content or "") for a in atts):
+                    await update_message_content(last.id, (last.content or "") + block)
+    except Exception:
+        logger.warning("Failed to attach download links for run %s", run_id, exc_info=True)
 
     # ── Save messages ── (now handled by save_response_action in agent_graph.py)
 

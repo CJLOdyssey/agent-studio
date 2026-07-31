@@ -3,7 +3,7 @@ import { validateSkillForm } from '../validate';
 import type { SkillFormData } from '../skill.types';
 
 function makeForm(overrides: Partial<SkillFormData> = {}): SkillFormData {
-  return { name: 'my-skill', version: 'v1.0.0', ...overrides };
+  return { name: 'my-skill', version: 'v1.0.0', instructions: '做点什么', ...overrides };
 }
 
 describe('validateSkillForm', { tags: ['unit'] }, () => {
@@ -55,5 +55,15 @@ describe('validateSkillForm', { tags: ['unit'] }, () => {
   it('rejects version v1.0', () => {
     const errors = validateSkillForm(makeForm({ version: 'v1.0' }), []);
     expect(errors).toContain('版本格式应为 v1.0.0');
+  });
+
+  it('rejects empty instructions', () => {
+    const errors = validateSkillForm(makeForm({ instructions: '   ' }), []);
+    expect(errors).toContain('Skill 指令不能为空');
+  });
+
+  it('accepts non-empty instructions', () => {
+    const errors = validateSkillForm(makeForm(), []);
+    expect(errors).not.toContain('Skill 指令不能为空');
   });
 });

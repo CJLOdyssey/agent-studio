@@ -8,6 +8,16 @@ const mockUpdate = vi.fn();
 const mockRemove = vi.fn();
 const mockClone = vi.fn();
 const mockRemoveBatch = vi.fn();
+const mockImport = vi.fn().mockResolvedValue({
+  id: 'imported-1', name: 'imported-skill', description: 'desc', category: '导入',
+  status: 'active', version: 'v1.0.0', author: '', instructions: 'body text',
+  prompt_id: null, tool_names: ['execute_python'], output_constraint: '',
+  created_at: '2024-01-01T00:00:00Z',
+});
+
+vi.mock('../../../../../api/client/skills', () => ({
+  importSkillFromMarkdown: (...args: unknown[]) => mockImport(...args),
+}));
 
 vi.mock('../api', () => ({
   get skillAPI() {
@@ -100,6 +110,27 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
     render(<SkillManagement />, { wrapper: TestProviders });
     await waitFor(() => {
       expect(screen.getByText('前端开发')).toBeInTheDocument();
+    });
+  });
+
+  it('imports a SKILL.md and shows the imported skill', async () => {
+    mockFetchAll.mockResolvedValue([]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('导入 SKILL.md')).toBeInTheDocument(); });
+    fireEvent.click(screen.getByText('导入 SKILL.md'));
+    const textarea = await screen.findByPlaceholderText(/name: my-skill/);
+    fireEvent.change(textarea, { target: { value: '---\nname: imported-skill\n---\n\nbody' } });
+    const okButton = await waitFor(() => {
+      const el = document.querySelector('.ant-modal-footer .ant-btn-primary');
+      if (!el) throw new Error('ok button not found');
+      return el as Element;
+    });
+    fireEvent.click(okButton);
+    await waitFor(() => {
+      expect(mockImport).toHaveBeenCalledWith('---\nname: imported-skill\n---\n\nbody');
+    });
+    await waitFor(() => {
+      expect(screen.getByText('imported-skill')).toBeInTheDocument();
     });
   });
 });

@@ -10,7 +10,7 @@ from repository import save_message
 
 logger = logging.getLogger(__name__)
 
-STREAM_DEFAULT_MAX_BUFFER_SIZE = 1000
+STREAM_DEFAULT_MAX_BUFFER_SIZE = 20000
 
 
 class StreamEmitter:
@@ -19,6 +19,7 @@ class StreamEmitter:
         self._message_index = 0
         self._stream_buffer: list[str] = []
         self._thinking_buffer: list[str] = []
+        self._buffer_chars: dict[int, int] = {}
         self._pending_thinking: str | None = None
         self._pending_thinking_nodes: list[dict[str, Any]] | None = None
         self._max_buffer_size = self._load_max_buffer_size()
@@ -33,13 +34,21 @@ class StreamEmitter:
 
     def _checked_append(self, buffer: list[str], item: str, label: str) -> None:
         buffer.append(item)
-        overflow = len(buffer) - self._max_buffer_size
-        if overflow > 0:
-            del buffer[:overflow]
-            stream_messages_dropped_total.inc(overflow)
+        # Limit by accumulated character count, not chunk count — the model
+        # streams 1-2 char chunks, so a 1000-chunk cap truncates the start of
+        # long messages. Drop oldest chunks only when total chars overflow.
+        buf_id = id(buffer)
+        total = self._buffer_chars.get(buf_id, 0) + len(item)
+        dropped = 0
+        while total - dropped > self._max_buffer_size and len(buffer) > 1:
+            removed = buffer.pop(0)
+            dropped += len(removed)
+        self._buffer_chars[buf_id] = total - dropped
+        if dropped:
+            stream_messages_dropped_total.inc(dropped)
             if not self._backpressure_warned:
                 logger.warning(
-                    "Stream buffer exceeded limit for run %s (%s): limit=%d, dropping oldest messages",
+                    "Stream buffer exceeded limit for run %s (%s): limit=%d chars, dropping oldest messages",
                     self._run_id, label, self._max_buffer_size,
                 )
                 self._backpressure_warned = True
@@ -186,11 +195,12 @@ class StreamEmitter:
         if self._thinking_buffer:
             thinking_text = "".join(self._thinking_buffer).strip()
             self._thinking_buffer.clear()
+            self._buffer_chars.pop(id(self._thinking_buffer), None)
 
         has_pending = self._pending_thinking is not None
         if has_pending:
             logger.debug("_flush_buffers: pending_thinking exists, len=%d, has_tool_result=%s",
-                         len(self._pending_thinking), "[result]" in self._pending_thinking)
+                         len(self._pending_thinking or ""), "[result]" in (self._pending_thinking or ""))
         if thinking_text and "[result]" in thinking_text:
             logger.debug("_flush_buffers: thinking_text has [result], len=%d", len(thinking_text))
         elif thinking_text:
@@ -209,6 +219,7 @@ class StreamEmitter:
         if self._stream_buffer:
             full_content = "".join(self._stream_buffer)
             self._stream_buffer.clear()
+            self._buffer_chars.pop(id(self._stream_buffer), None)
             self._message_index += 1
             try:
                 await publish_run_message(

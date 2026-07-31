@@ -18,10 +18,11 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
     const agentToTeams = new Map<string, string[]>();
     for (const team of teamItems) {
       for (const member of team.agents) {
-        if (member.agentConfigId) {
-          const existing = agentToTeams.get(member.agentConfigId) ?? [];
+        const agentConfigId = String(Reflect.get(member, 'agent_config_id') ?? '') || member.agentConfigId;
+        if (agentConfigId) {
+          const existing = agentToTeams.get(agentConfigId) ?? [];
           existing.push(team.name);
-          agentToTeams.set(member.agentConfigId, existing);
+          agentToTeams.set(agentConfigId, existing);
         }
       }
     }

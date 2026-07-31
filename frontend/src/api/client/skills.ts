@@ -58,3 +58,8 @@ export async function updateSkill(id: string, payload: Partial<{
 export async function deleteSkill(id: string): Promise<void> {
   await api.delete(`/skills/${id}`);
 }
+
+export async function importSkillFromMarkdown(markdown: string, category = '导入'): Promise<SkillItem> {
+  const { data } = await api.post('/skills/import', { markdown, category });
+  return data;
+}

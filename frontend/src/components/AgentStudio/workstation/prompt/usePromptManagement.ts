@@ -6,7 +6,7 @@ import { useGenericCrud } from '../shared/useGenericCrud';
 export function usePromptManagement(): PromptData {
   const crud = useGenericCrud<PromptEntry, PromptFormData>({
     api: promptAPI,
-    emptyForm: { name: '', content: '', category: '系统提示词' as PromptCategory, model: 'GPT-4o', status: 'draft' as const, version: 'v1.0.0' },
+    emptyForm: { name: '', content: '', category: 'system' as PromptCategory, model: 'GPT-4o', status: 'draft' as const, version: 'v1.0.0' },
     itemName: '提示词',
     validate: validatePromptForm,
     sortFields: ['name', 'category', 'status'],

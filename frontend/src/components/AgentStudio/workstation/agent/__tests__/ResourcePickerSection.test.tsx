@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 
 const mockSetActivePicker = vi.fn();
@@ -11,6 +11,7 @@ vi.mock('../../shared/ResourcePickerModal', () => ({
 }));
 
 import { ResourcePickerSection } from '../ResourcePickerSection';
+import ResourcePickerModal from '../../shared/ResourcePickerModal';
 
 const baseFormData = {
   name: '', description: '', team: '前端团队', model: 'GPT-4o',
@@ -158,5 +159,19 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
   it('renders ResourcePickerModal for skills activePicker', () => {
     renderComponent({ activePicker: 'skills', availableSkills: [{ id: 's1', name: 'Skill 1' }] });
     expect(screen.getByTestId('resource-picker-modal')).toBeInTheDocument();
+  });
+
+  it('writes skills picker confirm into skillIds', () => {
+    renderComponent({ activePicker: 'skills', availableSkills: [{ id: 's1', name: 'Skill 1' }] });
+    const modalProps = (ResourcePickerModal as unknown as ReturnType<typeof vi.fn>).mock.lastCall?.[0];
+    act(() => modalProps.onConfirm(['s1']));
+    expect(mockSetFormData).toHaveBeenCalledWith(expect.objectContaining({ skillIds: ['s1'] }));
+  });
+
+  it('writes tools picker confirm into toolIds', () => {
+    renderComponent({ activePicker: 'tools', availableTools: [{ id: 't1', name: 'Tool 1' }] });
+    const modalProps = (ResourcePickerModal as unknown as ReturnType<typeof vi.fn>).mock.lastCall?.[0];
+    act(() => modalProps.onConfirm(['t1']));
+    expect(mockSetFormData).toHaveBeenCalledWith(expect.objectContaining({ toolIds: ['t1'] }));
   });
 });

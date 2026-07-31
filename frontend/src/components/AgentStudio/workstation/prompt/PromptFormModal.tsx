@@ -30,7 +30,7 @@ const PromptFormModal = memo(function PromptFormModal({ editingItem, formData, s
             <MessageSquare size={16} />
             <h3>{editingItem ? t('prompt.form_title_edit') : t('prompt.form_title_new')}</h3>
           </div>
-          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
+          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('workstation.close')}><X size={18} /></button>
         </div>
         <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0 flex flex-col flex flex-col gap-4">
           {errors.length > 0 && (

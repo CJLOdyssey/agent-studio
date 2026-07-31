@@ -39,6 +39,14 @@ describe('useAgentManagement', { tags: ['unit'] }, () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('prefills team from bound teams when editing', async () => {
+    const { result } = renderHook(() => useAgentManagement());
+    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
+    act(() => { result.current.openEdit({ ...MOCK_AGENTS[0], teams: ['客户支持中心', '智能客服组'] }); });
+    expect(result.current.isFormOpen).toBe(true);
+    expect(result.current.formData.team).toBe('客户支持中心');
+  });
+
   it('adds agent via handleSave', async () => {
     const { result } = renderHook(() => useAgentManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });

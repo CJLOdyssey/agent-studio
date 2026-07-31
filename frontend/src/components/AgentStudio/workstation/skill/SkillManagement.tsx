@@ -1,7 +1,7 @@
-import { Input, Select, Button, Dropdown } from 'antd';
+import { Input, Select, Button, Dropdown, Modal, message } from 'antd';
 import type { MenuProps } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap } from 'lucide-react';
-import { useMemo } from 'react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap, Upload } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useSkillManagement } from './useSkillManagement';
 import { SKILL_STATUS_LABEL } from './skill.constants';
 import SkillFormModal from './SkillFormModal';
@@ -12,11 +12,38 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
+import { importSkillFromMarkdown } from '../../../../api/client/skills';
 import { t } from './locales';
 
 export default function SkillManagement() {
   const d = useSkillManagement();
   const { toast } = useToast();
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
+
+  async function handleImport() {
+    if (!importText.trim()) return;
+    setImporting(true);
+    try {
+      const item = await importSkillFromMarkdown(importText);
+      d.batchAdd([{
+        id: item.id, name: item.name, description: item.description, category: item.category,
+        status: (item.status === 'installed' || item.status === 'available' ? item.status : 'active'),
+        model: item.model || 'GPT-4o', version: item.version, author: item.author,
+        instructions: item.instructions || '', prompt_id: item.prompt_id || '',
+        tool_names: Array.isArray(item.tool_names) ? item.tool_names : [],
+        output_constraint: item.output_constraint || '', createdAt: item.created_at.slice(0, 10),
+      }]);
+      setImportOpen(false);
+      setImportText('');
+      toast(t('skill.toast_imported'), 'success');
+    } catch {
+      message.error(t('skill.import_failed'));
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function handleSaveWrapper() {
     d.handleSave();
@@ -72,6 +99,9 @@ export default function SkillManagement() {
               {t('skill.batch_delete', String(d.selectedIds.size))}
             </Button>
           )}
+          <Button icon={<Upload size={16} />} onClick={() => { setImportText(''); setImportOpen(true); }}>
+            {t('skill.import_skill_md')}
+          </Button>
           <Button type="primary" icon={<Plus size={16} />} onClick={d.openCreate}>
             {t('skill.new')}
           </Button>
@@ -133,6 +163,27 @@ export default function SkillManagement() {
       {d.isDeleteOpen && <DeleteConfirmModal name={d.deletingItem?.name || ''} label="Skill" onConfirm={handleDeleteWrapper} onClose={d.closeDelete} />}
       {d.isBatchDeleteOpen && <BatchDeleteModal count={d.selectedIds.size} label="Skill" onConfirm={handleBatchDeleteWrapper} onClose={d.closeBatchDelete} />}
       {d.isHistoryOpen && d.historyItem && <VersionHistoryModal title={d.historyItem.name} resourceType="skill" resourceId={d.historyItem.id} onClose={d.closeHistory} />}
+      <Modal
+        title={t('skill.import_skill_md')}
+        open={importOpen}
+        onOk={handleImport}
+        onCancel={() => setImportOpen(false)}
+        okText={t('skill.import_confirm')}
+        cancelText={t('skill.form_cancel')}
+        confirmLoading={importing}
+        okButtonProps={{ disabled: !importText.trim() }}
+      >
+        <p style={{ marginBottom: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+          {t('skill.import_hint')}
+        </p>
+        <Input.TextArea
+          value={importText}
+          onChange={(e) => setImportText(e.target.value)}
+          rows={10}
+          placeholder="---&#10;name: my-skill&#10;description: 技能描述&#10;allowed-tools:&#10;  - execute_python&#10;---&#10;&#10;# 用法&#10;..."
+          style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12 }}
+        />
+      </Modal>
     </div>
     </ErrorBoundary>
   );

@@ -38,10 +38,12 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
     listTeams().then((items) => setTeamOptions(items.map((t) => t.name))).catch(() => {});
   }, []);
 
-  const selectedPrompt = availablePrompts.find((p) => p.id === formData.systemPromptId);
-  const selectedTools = availableTools.filter((t) => formData.toolIds.includes(t.id));
-  const selectedMCPs = availableMCPs.filter((m) => formData.mcpIds.includes(m.id));
-  const selectedSkills = availableSkills.filter((s) => formData.skillIds.includes(s.id));
+  const matchByIdOrName = (ids: string[], item: RefItem) =>
+    ids.includes(item.id) || ids.includes(item.name);
+  const selectedPrompt = availablePrompts.find((p) => p.id === formData.systemPromptId || p.name === formData.systemPromptId);
+  const selectedTools = availableTools.filter((t) => matchByIdOrName(formData.toolIds, t));
+  const selectedMCPs = availableMCPs.filter((m) => matchByIdOrName(formData.mcpIds, m));
+  const selectedSkills = availableSkills.filter((s) => matchByIdOrName(formData.skillIds, s));
 
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>

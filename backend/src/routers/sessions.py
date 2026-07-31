@@ -26,6 +26,33 @@ from repository import (
 )
 
 logger = get_logger(__name__)
+
+
+def _with_requirement_message(run: Any, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Prepend the run requirement as a synthetic user message when the run has
+    no persisted user message.
+
+    chat_messages only stores assistant/agent turns; the user prompt lives on the
+    run's ``requirement`` field. Without this, session history renders agent-only
+    messages and the user's input disappears from the conversation.
+    """
+    if any(m.get("role") == "user" for m in messages):
+        return messages
+    req = (run.requirement or "").strip()
+    if not req:
+        return messages
+    return [
+        {
+            "id": f"run-{run.id}-requirement",
+            "role": "user",
+            "agent_name": "我",
+            "content": req,
+            "thinking": None,
+            "round_number": 0,
+            "created_at": run.created_at.isoformat() if run.created_at else None,
+        },
+        *messages,
+    ]
 router = APIRouter(tags=["sessions"])
 
 
@@ -135,7 +162,7 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                     "status": r.status,
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                     "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-                    "messages": messages_by_run.get(r.id, []),
+                    "messages": _with_requirement_message(r, messages_by_run.get(r.id, [])),
                 }
                 for r in runs
             ],

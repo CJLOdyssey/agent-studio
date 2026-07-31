@@ -154,6 +154,41 @@ class TestSkills:
 
     # ── Exception handler paths ──
 
+    def test_import_skill_skill_md(self, client):
+        markdown = """---
+name: import-me
+description: 导入的技能
+allowed-tools:
+  - execute_python
+metadata:
+  category: 文档处理
+  author: third-party
+---
+
+# 用法
+
+用 openpyxl 生成 xlsx 文件。
+"""
+        resp = client.post("/api/skills/import", json={"markdown": markdown})
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "import-me"
+        assert data["tool_names"] == ["execute_python"]
+        # instructions = body
+        assert "openpyxl" in data["instructions"]
+
+    def test_import_skill_no_frontmatter_uses_heading(self, client):
+        markdown = "# My Skill\n\n做点什么。"
+        resp = client.post("/api/skills/import", json={"markdown": markdown})
+        assert resp.status_code == 201
+        assert resp.json()["name"] == "My Skill"
+
+    def test_import_skill_empty_body_rejected(self, client):
+        resp = client.post("/api/skills/import", json={"markdown": "---\nname: x\n---\n"})
+        assert resp.status_code == 400
+
+    # ── Exception handler paths ──
+
     def test_list_skills_exception(self, client):
         with patch("routers.skills.repo_get_skills_as_dicts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.get("/api/skills")

@@ -109,6 +109,13 @@ export function useAgentManagement(): AgentManagementReturn {
     return crud.handleSave();
   }, [crud]);
 
+  const openEdit = useCallback((agent: AgentEntry) => {
+    crud.openEdit(agent);
+    if (agent.teams?.length) {
+      crud.setFormData((prev) => ({ ...prev, team: agent.teams[0] }));
+    }
+  }, [crud]);
+
   return {
     isLoading: crud.isLoading,
     error: crud.error,
@@ -145,7 +152,7 @@ export function useAgentManagement(): AgentManagementReturn {
     toggleSelectAll: crud.toggleSelectAll,
     toggleSelect: crud.toggleSelect,
     openCreate: crud.openCreate,
-    openEdit: (agent: AgentEntry) => crud.openEdit(agent),
+    openEdit,
     handleSave,
     openDelete,
     handleDelete,

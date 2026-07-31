@@ -19,6 +19,7 @@ from repository.attachments import (
     create_attachment,
     delete_attachment,
     get_attachment_by_id,
+    list_attachments_by_run,
     list_attachments_by_session,
 )
 
@@ -80,6 +81,7 @@ from repository.message_repo import (
     get_run_messages,
     get_session_messages,
     save_message,
+    update_message_content,
 )
 
 from repository.prompts import (
@@ -224,6 +226,7 @@ __all__ = [
     "get_workflow_config_by_team",
     "increment_failed_logins",
     "link_agent_config",
+    "list_attachments_by_run",
     "list_attachments_by_session",
     "list_tool_plugins",
     "list_workflow_configs",
@@ -239,6 +242,7 @@ __all__ = [
     "save_message",
     "save_workflow_config",
     "test_api_key_connection",
+    "update_message_content",
     "update_api_key",
     "update_agent_config",
     "update_mcp",

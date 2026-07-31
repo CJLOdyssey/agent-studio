@@ -29,7 +29,7 @@ export default function OutputConstraintManagement() {
   const categoryOptions = useMemo(() => {
     const cats = Array.from(new Set(d.filtered.map((i) => i.category).filter(Boolean)));
     return [
-      { value: 'all', label: '全部分类' },
+      { value: 'all', label: t('output.all_categories') },
       ...cats.map((c) => ({ value: c, label: c })),
     ];
   }, [d.filtered]);
@@ -52,10 +52,10 @@ export default function OutputConstraintManagement() {
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('output.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
           <Select style={{ width: 130 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
-            { value: 'all', label: '全部状态' },
-            { value: 'active', label: '已启用' },
-            { value: 'draft', label: '草稿' },
-            { value: 'archived', label: '已归档' },
+            { value: 'all', label: t('output.all_status') },
+            { value: 'active', label: statusLabel.active },
+            { value: 'draft', label: statusLabel.draft },
+            { value: 'archived', label: statusLabel.archived },
           ]} />
         </div>
         <div className="flex items-center gap-3">

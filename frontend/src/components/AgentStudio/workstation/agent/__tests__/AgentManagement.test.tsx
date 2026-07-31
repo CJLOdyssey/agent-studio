@@ -148,6 +148,12 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
     expect(screen.getByText('Claude Sonnet 4')).toBeInTheDocument();
   });
 
+  it('renders bound teams when agent has team links', () => {
+    mockProcessed = [makeAgent({ team: '', teams: ['客户支持中心', '智能客服组'] })];
+    renderComponent();
+    expect(screen.getByText('客户支持中心、智能客服组')).toBeInTheDocument();
+  });
+
   it('renders multiple agents', () => {
     mockProcessed = [
       makeAgent({ id: '1', name: 'Agent One', team: '前端团队' }),

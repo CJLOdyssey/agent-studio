@@ -32,7 +32,7 @@ export function usePickerState(deps: PickerDeps) {
       .then((items) => {
         if (!cancelled) {
           const systemItems = items
-            .filter((p) => p.category === 'system_prompt')
+            .filter((p) => p.category === 'system')
             .map(
               (p) =>
                 ({

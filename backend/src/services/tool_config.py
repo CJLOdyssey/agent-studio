@@ -90,7 +90,10 @@ class _ToolWrapper:
             return "http"
         if self.name == "execute_python":
             return "code"
-        if self.instructions:
+        # Skill tools are bound as skill_<name>; route by prefix so an
+        # unconfigured skill (empty instructions) gets a clear message from
+        # handle_skill instead of silently falling through to llm_fallback.
+        if self.instructions or self.name.startswith("skill_"):
             return "skill"
         return None
 

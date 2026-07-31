@@ -20,7 +20,9 @@ export function useItemList<T extends Item>(presets: T[]) {
 
   const addCustom = (createItem: () => T) => {
     const item = createItem();
-    setItems((prev) => [...prev, item]);
+    setItems((prev) =>
+      prev.some((i) => i.id === item.id) ? prev : [...prev, item],
+    );
   };
 
   const update = (id: string, updates: Partial<T>) => {

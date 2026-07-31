@@ -76,6 +76,9 @@ class RunService:
                     title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind
                 )
                 session_id = sess.id
+            elif agent_id is None and team_id is None and existing_sess.agent_id:
+                # 会话已绑定 agent，但前端续聊未显式传 agent_id 时从会话回退
+                agent_id = existing_sess.agent_id
 
         # ── Key resolution ──────────────────────────────────────────
         api_key: str | None = None

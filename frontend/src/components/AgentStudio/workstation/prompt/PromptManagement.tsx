@@ -47,10 +47,10 @@ export default function PromptManagement() {
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('prompt.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
           <Select style={{ width: 140 }} value={d.categoryFilter} onChange={(v) => d.setCategoryFilter(v)} options={categoryOptions} />
           <Select style={{ width: 120 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
-            { value: 'all', label: '全部状态' },
-            { value: 'active', label: '已启用' },
-            { value: 'draft', label: '草稿' },
-            { value: 'archived', label: '已归档' },
+            { value: 'all', label: t('prompt.all_status') },
+            { value: 'active', label: PROMPT_STATUS_LABEL.active },
+            { value: 'draft', label: PROMPT_STATUS_LABEL.draft },
+            { value: 'archived', label: PROMPT_STATUS_LABEL.archived },
           ]} />
         </div>
         <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ export default function PromptManagement() {
               <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('prompt.select_item', { n: item.name })} /></td>
                 <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
-                <td><span className="wsta-tag-pill wsta-tag-indigo">{item.category}</span></td>
+                <td><span className="wsta-tag-pill wsta-tag-indigo">{getCategoryLabel(item.category)}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${item.status === 'active' ? 'wsta-badge-dot-green' : item.status === 'draft' ? 'wsta-badge-dot-gray' : 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${item.status === 'active' ? 'wsta-dot-green' : 'wsta-dot-gray'}`} />

@@ -26,6 +26,16 @@ async def save_message(run_id: str, role: str, agent_name: str, content: str, ro
         await session.commit()
 
 
+async def update_message_content(message_id: str, content: str) -> None:
+    """Replace a chat message's content in place."""
+    factory = get_session_factory()
+    async with factory() as session:
+        msg = await session.get(ChatMessage, message_id)
+        if msg is not None:
+            msg.content = content
+            await session.commit()
+
+
 async def get_messages(run_id: str) -> list[ChatMessage]:
     """Return all chat messages for a run, ordered chronologically."""
     factory = get_session_factory()

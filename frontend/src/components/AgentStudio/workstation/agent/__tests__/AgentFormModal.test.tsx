@@ -201,6 +201,20 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
     expect(lastCall.selectedMCPs).toEqual([{ id: 'm1', name: 'MCP 1' }]);
   });
 
+  it('matches bindings by name when stored ids are display names', () => {
+    const mcps = [{ id: '39fad2d1-3cd8', name: 'Playwright MCP' }];
+    render(
+      <AgentFormModal
+        {...baseProps}
+        formData={makeFormData({ mcpIds: ['Playwright MCP'] })}
+        availableMCPs={mcps}
+      />,
+      { wrapper: Wrapper }
+    );
+    const lastCall = (ResourcePickerSection as ReturnType<typeof vi.fn>).mock.lastCall?.[0];
+    expect(lastCall.selectedMCPs).toEqual([{ id: '39fad2d1-3cd8', name: 'Playwright MCP' }]);
+  });
+
   it('passes selected skills to ResourcePickerSection', () => {
     const skills = [{ id: 's1', name: 'Skill 1' }];
     render(

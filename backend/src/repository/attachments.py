@@ -52,6 +52,18 @@ async def list_attachments_by_session(session_id: str) -> list[AttachmentDB]:
         return list(result.scalars().all())
 
 
+async def list_attachments_by_run(run_id: str) -> list[AttachmentDB]:
+    """List all attachments for a run, ordered by creation time ascending."""
+    factory = get_session_factory()
+    async with factory() as session:
+        result = await session.execute(
+            select(AttachmentDB)
+            .where(AttachmentDB.run_id == run_id)
+            .order_by(AttachmentDB.created_at.asc())
+        )
+        return list(result.scalars().all())
+
+
 async def delete_attachment(attachment_id: str) -> str | None:
     """Delete an attachment by ID. Returns the storage_path if found, None otherwise."""
     factory = get_session_factory()

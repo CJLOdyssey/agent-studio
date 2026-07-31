@@ -84,7 +84,8 @@ function getResourcePicker(
     if (pickerType === 'prompt') {
       setFormData({ ...formData, systemPromptId: ids as string });
     } else {
-      setFormData({ ...formData, [`${pickerType}Ids`]: ids });
+      const idField = pickerType === 'tools' ? 'toolIds' : pickerType === 'skills' ? 'skillIds' : 'mcpIds';
+      setFormData({ ...formData, [idField]: ids });
     }
     setActivePicker(null);
   };

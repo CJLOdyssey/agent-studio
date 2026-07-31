@@ -26,12 +26,22 @@ _mcp_sessions: dict[str, dict[str, Any]] = {}
 
 
 def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
-    """Return the skill's instruction text as the tool result."""
-    return tool_self.instructions if tool_self.instructions else json.dumps({
+    """Return the skill's instruction text as the tool result.
+
+    An unconfigured skill (no instructions) returns a clear message instead of
+    an empty result, so the model doesn't misread it as "nothing to do".
+    """
+    if tool_self.instructions:
+        return tool_self.instructions
+    return json.dumps({
         "role": "skill",
         "name": tool_self.name,
-        "content": "This skill provides specialized guidance. Follow these instructions.",
-    })
+        "status": "unconfigured",
+        "content": (
+            f"技能 {tool_self.name} 未配置使用说明（instructions 为空）。"
+            "请在技能管理中填写 instructions 后再调用此技能。"
+        ),
+    }, ensure_ascii=False)
 
 
 import os
@@ -43,6 +53,7 @@ _AGENT_WORKSPACE = os.environ.get("AGENT_WORKSPACE", "/tmp/agent-workspace")
 _PY_TIMEOUT_SECONDS = 60
 _ATTACHMENT_CONTENT_TYPES = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ".pdf": "application/pdf",
     ".csv": "text/csv",
     ".txt": "text/plain",
@@ -89,13 +100,14 @@ async def handle_execute_python(tool_self: _ToolWrapper, args: dict[str, Any]) -
 
     def _snapshot_docx() -> set[str]:
         found: set[str] = set()
+        exts = tuple(_ATTACHMENT_CONTENT_TYPES.keys())
         for d in _candidate_dirs():
             try:
                 if not os.path.isdir(d):
                     continue
                 for name in os.listdir(d):
                     p = os.path.join(d, name)
-                    if os.path.isfile(p) and name.lower().endswith(".docx"):
+                    if os.path.isfile(p) and name.lower().endswith(exts):
                         found.add(p)
             except OSError:
                 continue
@@ -172,15 +184,32 @@ async def handle_mcp(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
 
 
 async def call_http_endpoint(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
-    """Call an HTTP endpoint with the tool's configured method and headers."""
+    """Call an HTTP endpoint with the tool's configured method and headers.
+
+    Endpoint may contain ``{param}`` placeholders (RFC 6570 URI template) —
+    matching keys are taken from *args* and substituted into the path; any
+    remaining args are sent as query params (GET) or JSON body (other methods).
+    """
     try:
         hdrs = json.loads(tool_self.headers) if isinstance(tool_self.headers, str) else {}
         hdrs.setdefault("Content-Type", "application/json")
+
+        url = tool_self.endpoint
+        query_args: dict[str, Any] = dict(args)
+        if "{" in url:
+            path_args, query_args = {}, dict(args)
+            for key, value in list(query_args.items()):
+                token = "{" + str(key) + "}"
+                if token in url:
+                    url = url.replace(token, str(value))
+                    path_args[key] = value
+            query_args = {k: v for k, v in query_args.items() if k not in path_args}
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             if tool_self.method.upper() == "GET":
-                resp = await client.get(tool_self.endpoint, params=args, headers=hdrs)
+                resp = await client.get(url, params=query_args, headers=hdrs)
             else:
-                resp = await client.post(tool_self.endpoint, json=args, headers=hdrs)
+                resp = await client.post(url, json=query_args, headers=hdrs)
             resp.raise_for_status()
             return resp.text
     except httpx.HTTPStatusError as e:

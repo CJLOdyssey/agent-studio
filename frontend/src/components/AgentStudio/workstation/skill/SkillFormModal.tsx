@@ -185,7 +185,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_instructions')}</label>
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_instructions')} <span className="text-[var(--color-danger)]">*</span></label>
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.instructions}
               onChange={(e) => setFormData((f) => ({ ...f, instructions: e.target.value }))}
               placeholder={t('skill.form_instructions_placeholder')} rows={4} />

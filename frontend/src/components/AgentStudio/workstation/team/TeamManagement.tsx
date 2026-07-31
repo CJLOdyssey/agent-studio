@@ -48,7 +48,7 @@ export default function TeamManagement() {
             options={[
               { value: 'all', label: t('team.all_status') },
               { value: 'active', label: t('team.status_active') },
-              { value: 'disabled', label: '已停用' },
+              { value: 'disabled', label: t('team.status_disabled') },
             ]} />
         </div>
         <div className="flex items-center gap-3">

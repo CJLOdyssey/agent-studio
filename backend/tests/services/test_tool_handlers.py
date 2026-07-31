@@ -57,6 +57,16 @@ class TestHandleSkill:
         parsed = json.loads(result)
         assert parsed["role"] == "skill"
         assert parsed["name"] == "bare-skill"
+        assert parsed["status"] == "unconfigured"
+
+    def test_skill_prefix_routes_unconfigured_to_handle_skill(self):
+        from services.tool_config import _ToolWrapper as W
+
+        w = W(name="skill_xlsx")
+        result = handle_skill(w, {})
+        parsed = json.loads(result)
+        assert parsed["status"] == "unconfigured"
+        assert "instructions" in parsed["content"]
 
 
 class TestCallHttpEndpoint:
@@ -78,6 +88,28 @@ class TestCallHttpEndpoint:
             assert result == '{"key": "value"}'
             mock_client.get.assert_called_once_with(
                 "https://example.com/data", params={"id": "42"}, headers={"Content-Type": "application/json"}
+            )
+
+    @pytest.mark.asyncio
+    async def test_get_request_path_template(self):
+        """{param} placeholders in the endpoint are substituted from args;
+        remaining args go to the query string."""
+        w = _ToolWrapper(name="weather", endpoint="https://wttr.in/{location}", method="GET")
+        mock_response = AsyncMock()
+        mock_response.text = "Beijing: +30C"
+        mock_response.raise_for_status = MagicMock()
+
+        with patch("httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client_cls.return_value = mock_client
+            mock_client.get.return_value = mock_response
+
+            result = await call_http_endpoint(w, {"location": "Beijing", "format": "3"})
+
+            assert result == "Beijing: +30C"
+            mock_client.get.assert_called_once_with(
+                "https://wttr.in/Beijing", params={"format": "3"}, headers={"Content-Type": "application/json"}
             )
 
     @pytest.mark.asyncio
@@ -432,3 +464,93 @@ class TestHandleOpenBrowser:
         result = await handle_open_browser(w, {"url": "https://example.com"})
         parsed = json.loads(result)
         assert parsed["status"] == "ok"
+
+
+class TestExecutePythonAttachments:
+    @pytest.mark.asyncio
+    async def test_xlsx_generated_registers_attachment(self, tmp_path, monkeypatch):
+        """execute_python must register .xlsx files as session attachments."""
+        import os
+
+        import services.tool_handlers as th
+        from services.tool_config import _ToolWrapper
+
+        monkeypatch.setattr(th, "_AGENT_WORKSPACE", str(tmp_path))
+
+        # Stub repository lookups: run → session, attachment creation captured.
+        created: list[dict] = []
+
+        class FakeRun:
+            session_id = "sess-xlsx-test"
+
+        async def fake_get_run(run_id):
+            return FakeRun()
+
+        async def fake_create_attachment(**kwargs):
+            created.append(kwargs)
+            return None
+
+        fake_repo = MagicMock()
+        fake_repo.get_run = fake_get_run
+
+        fake_attachments = MagicMock()
+        fake_attachments.create_attachment = fake_create_attachment
+
+        import sys
+
+        sys.modules["repository"] = fake_repo
+        sys.modules["repository.attachments"] = fake_attachments
+
+        run_dir = tmp_path / "run-xyz"
+        run_dir.mkdir()
+        script = run_dir / "make_xlsx.py"
+        script.write_text(
+            "import openpyxl\n"
+            "wb = openpyxl.Workbook()\n"
+            "ws = wb.active\n"
+            "ws.append(['城市', '温度'])\n"
+            "ws.append(['广州白云', '30'])\n"
+            "wb.save('report.xlsx')\n"
+            "print('saved')\n"
+        )
+
+        w = _ToolWrapper(name="execute_python")
+        w._run_id = "run-xyz"
+        result = await th.handle_execute_python(w, {"code": script.read_text()})
+        parsed = json.loads(result)
+
+        assert parsed["ok"] is True, parsed
+        assert any(p.endswith("report.xlsx") for p in parsed["generated_files"])
+        assert len(created) == 1
+        assert created[0]["filename"] == "report.xlsx"
+        assert created[0]["content_type"] == (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert parsed["attachments"], parsed
+
+    @pytest.mark.asyncio
+    async def test_preexisting_xlsx_not_reported(self, tmp_path, monkeypatch):
+        """A file present before execution must not be reported as generated."""
+        import services.tool_handlers as th
+        from services.tool_config import _ToolWrapper
+
+        monkeypatch.setattr(th, "_AGENT_WORKSPACE", str(tmp_path))
+        run_dir = tmp_path / "run-pre"
+        run_dir.mkdir()
+        (run_dir / "old.xlsx").write_bytes(b"PK-preexisting")
+
+        async def fake_get_run(run_id):
+            return None
+
+        fake_repo = MagicMock()
+        fake_repo.get_run = fake_get_run
+        import sys
+
+        sys.modules["repository"] = fake_repo
+
+        w = _ToolWrapper(name="execute_python")
+        w._run_id = "run-pre"
+        result = await th.handle_execute_python(w, {"code": "print('hi')\n"})
+        parsed = json.loads(result)
+        assert parsed["ok"] is True
+        assert parsed["generated_files"] == []

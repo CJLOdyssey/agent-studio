@@ -57,6 +57,26 @@ describe('useTeamMemberManager', { tags: ['unit'] }, () => {
     });
   });
 
+  it('excludes existing members sent as snake_case agent_config_id', async () => {
+    mockListAgents.mockResolvedValue([
+      { id: 'a1', name: 'Agent 1' },
+      { id: 'a2', name: 'Agent 2' },
+    ]);
+    const teamWithAgent = { ...mockTeam, agents: [{ agent_config_id: 'a1', name: 'Agent 1' }] };
+    const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
+    await waitFor(() => {
+      expect(result.current.filteredAgents.map((a: any) => a.id)).toEqual(['a2']);
+    });
+  });
+
+  it('skips handleAdd when agent is already a member', async () => {
+    mockListAgents.mockResolvedValue([]);
+    const teamWithAgent = { ...mockTeam, agents: [{ agent_config_id: 'a1', name: 'Agent 1' }] };
+    const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
+    await act(async () => { await result.current.handleAdd({ id: 'a1', name: 'Agent 1' }); });
+    expect(mockAddTeamMember).not.toHaveBeenCalled();
+  });
+
   it('handles handleAdd', async () => {
     mockListAgents.mockResolvedValue([]);
     mockAddTeamMember.mockResolvedValue({});

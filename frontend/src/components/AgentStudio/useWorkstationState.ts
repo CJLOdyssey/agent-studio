@@ -263,17 +263,24 @@ export function useWorkstationState(
 
   const handleSendMessage = useCallback(
     (text: string, _files: AttachedFile[]) => {
+      const userMessage: import('../../types/AgentStudio').Message = {
+        id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
+        role: 'user',
+        content: text,
+        timestamp: Date.now(),
+      };
       if (!conv.activeConvId) {
-        const userMessage: import('../../types/AgentStudio').Message = {
-          id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
-          role: 'user',
-          content: text,
-          timestamp: Date.now(),
-        };
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
         const kind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : activeTeamId ? 'team' : 'normal';
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName, kind);
         if (convId) conv.setActiveConvId(convId);
+      } else {
+        // 续聊：把用户消息追加到当前会话，避免历史里只剩第一条用户消息
+        const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
+        const prevMessages = activeConv?.messages ?? [];
+        conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true, activeTeamId ?? undefined, activeTeamName);
+        const st = useChatStore.getState();
+        useChatStore.setState({ messages: [...st.messages, userMessage] });
       }
       window.dispatchEvent(new CustomEvent('clear-browser-url'));
       submitToApi(text, undefined, selectedAgentId ?? undefined, true).catch(() => {
@@ -281,7 +288,7 @@ export function useWorkstationState(
       });
       notify();
     },
-    [submitToApi, selectedAgentId, notify, conv, activeTeamId, teamMgmt.teams],
+    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams],
   );
 
   const handleHomeSend = useCallback(
@@ -293,8 +300,16 @@ export function useWorkstationState(
         timestamp: Date.now(),
       };
       const homeKind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : 'normal';
-      const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, undefined, undefined, homeKind);
-      if (convId) conv.setActiveConvId(convId);
+      if (!conv.activeConvId) {
+        const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, undefined, undefined, homeKind);
+        if (convId) conv.setActiveConvId(convId);
+      } else {
+        const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
+        const prevMessages = activeConv?.messages ?? [];
+        conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true);
+        const st = useChatStore.getState();
+        useChatStore.setState({ messages: [...st.messages, userMessage] });
+      }
       // saveConversation + setActiveConvId → useEffect loads msg into store → skip duplicate
       submitToApi(text, undefined, undefined, true).catch(() => {
         Logger.warn('API submission failed');
