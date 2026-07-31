@@ -2,6 +2,7 @@
 
 Uses FastAPI TestClient with in-memory SQLite and mocked dependencies.
 """
+import io
 import os
 
 import pytest
@@ -169,7 +170,7 @@ metadata:
 
 用 openpyxl 生成 xlsx 文件。
 """
-        resp = client.post("/api/skills/import", json={"markdown": markdown})
+        resp = client.post("/api/skills/import-text", json={"markdown": markdown})
         assert resp.status_code == 201
         data = resp.json()
         assert data["name"] == "import-me"
@@ -179,12 +180,40 @@ metadata:
 
     def test_import_skill_no_frontmatter_uses_heading(self, client):
         markdown = "# My Skill\n\n做点什么。"
-        resp = client.post("/api/skills/import", json={"markdown": markdown})
+        resp = client.post("/api/skills/import-text", json={"markdown": markdown})
         assert resp.status_code == 201
         assert resp.json()["name"] == "My Skill"
 
     def test_import_skill_empty_body_rejected(self, client):
-        resp = client.post("/api/skills/import", json={"markdown": "---\nname: x\n---\n"})
+        resp = client.post("/api/skills/import-text", json={"markdown": "---\nname: x\n---\n"})
+        assert resp.status_code == 400
+
+    def test_import_skill_directory_upload(self, client):
+        sk = (
+            "---\nname: 网络搜索\ndescription: 执行网络搜索\nallowed-tools:\n  - web_search\n"
+            "metadata:\n  category: 信息检索\n  author: odyssey\n---\n\n# 用法\n\n搜索时调用 web_search\n"
+        )
+        rec = "import requests\ndef search(q):\n    return requests.get('https://x', params={'q': q}).json()\n"
+        resp = client.post(
+            "/api/skills/import",
+            data={"category": "导入"},
+            files=[
+                ("files", ("SKILL.md", io.BytesIO(sk.encode()), "text/markdown")),
+                ("files", ("scripts/search.py", io.BytesIO(rec.encode()), "text/x-python")),
+            ],
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["name"] == "网络搜索"
+        assert body["tool_names"] == ["web_search"]
+        assert "scripts/search.py" in (body["script_files"] or {})
+
+    def test_import_skill_missing_skillmd_400(self, client):
+        resp = client.post(
+            "/api/skills/import",
+            data={"category": "导入"},
+            files=[("files", ("readme.txt", io.BytesIO(b"hi"), "text/plain"))],
+        )
         assert resp.status_code == 400
 
     # ── Exception handler paths ──

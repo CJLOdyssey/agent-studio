@@ -83,6 +83,7 @@ class RegisteredSkillDB(Base):
     status: Mapped[str] = mapped_column(String(16), default="active")
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    script_files: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     tool_names: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     output_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
