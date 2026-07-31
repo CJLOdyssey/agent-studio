@@ -239,11 +239,41 @@ async def _run_agent_pipeline(
             if name:
                 skill_match = next((s for s in all_skills if s.name == name), None)
                 if skill_match:
-                    skill_instructions = "\n\n".join(filter(None, [
-                        skill_match.instructions or "",
-                        f"输出约束：\n{skill_match.output_constraint}" if skill_match.output_constraint else "",
-                        f"可用的工具：{', '.join(skill_match.tool_names or [])}" if (skill_match.tool_names or []) else "",
-                    ]))
+                    script_files = getattr(skill_match, "script_files", None) or {}
+                    parts: list[str] = []
+                    if skill_match.instructions:
+                        parts.append(str(skill_match.instructions))
+                    if skill_match.output_constraint:
+                        parts.append(f"输出约束：\n{skill_match.output_constraint}")
+                    if skill_match.tool_names:
+                        parts.append(f"可用的工具：{', '.join(skill_match.tool_names)}")
+                    if script_files:
+                        ref_blocks = [
+                            f"### {path}\n```\n{content}\n```"
+                            for path, content in script_files.items()
+                        ]
+                        parts.append("## 参考脚本（按需用 execute_python 复现其逻辑）\n" + "\n".join(ref_blocks))
+                    skill_instructions = "\n\n".join(filter(None, parts))
+
+                    # 子工具真实注册：tool_names 中已存在的工具生成 ToolConfig
+                    for tname in (skill_match.tool_names or []):
+                        tmatch = next((t for t in all_tools if t.name == tname), None)
+                        if tmatch:
+                            params: dict[str, Any] = {}
+                            if getattr(tmatch, "parameters", None):
+                                try:
+                                    if isinstance(tmatch.parameters, str):
+                                        params = json.loads(tmatch.parameters)
+                                    else:
+                                        params = tmatch.parameters or {}
+                                except (json.JSONDecodeError, TypeError):
+                                    params = {}
+                            tool_configs.append(ToolConfig(
+                                name=tname,
+                                description=tmatch.description or tname,
+                                parameters=params or {"type": "object"},
+                            ))
+
                     tool_configs.append(
                         ToolConfig(
                             name=f"skill_{name}",
