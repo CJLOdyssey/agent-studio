@@ -1,4 +1,4 @@
-import { Input, Select, Button, Dropdown, Modal, message } from 'antd';
+import { Input, Select, Button, Dropdown, Modal, Tabs, Upload as AntdUpload, message } from 'antd';
 import type { MenuProps } from 'antd';
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -12,31 +12,39 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
-import { importSkillFromMarkdown } from '../../../../api/client/skills';
+import { importSkillFromMarkdown, importSkillDirectory } from '../../../../api/client/skills';
 import { t } from './locales';
 
 export default function SkillManagement() {
   const d = useSkillManagement();
   const { toast } = useToast();
   const [importOpen, setImportOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [importText, setImportText] = useState('');
+  const [importFiles, setImportFiles] = useState<File[]>([]);
   const [importing, setImporting] = useState(false);
 
   async function handleImport() {
-    if (!importText.trim()) return;
+    const hasFiles = activeTab === 'upload' && importFiles.length > 0;
+    const hasText = activeTab === 'paste' && importText.trim().length > 0;
+    if (!hasFiles && !hasText) return;
     setImporting(true);
     try {
-      const item = await importSkillFromMarkdown(importText);
+      const item = activeTab === 'upload'
+        ? await importSkillDirectory(importFiles)
+        : await importSkillFromMarkdown(importText);
       d.batchAdd([{
-        id: item.id, name: item.name, description: item.description, category: item.category,
+        id: item.id, name: item.name, description: item.description || '',
+        category: item.category,
         status: (item.status === 'installed' || item.status === 'available' ? item.status : 'installed'),
-        version: item.version, author: item.author,
+        version: item.version || 'v1.0.0', author: item.author || '',
         instructions: item.instructions || '',
         tool_names: Array.isArray(item.tool_names) ? item.tool_names : [],
-        output_constraint: item.output_constraint || '', createdAt: item.created_at.slice(0, 10),
+        output_constraint: item.output_constraint || '', createdAt: (item.created_at || '').slice(0, 10),
       }]);
       setImportOpen(false);
       setImportText('');
+      setImportFiles([]);
       toast(t('skill.toast_imported'), 'success');
     } catch {
       message.error(t('skill.import_failed'));
@@ -99,7 +107,7 @@ export default function SkillManagement() {
               {t('skill.batch_delete', String(d.selectedIds.size))}
             </Button>
           )}
-          <Button icon={<Upload size={16} />} onClick={() => { setImportText(''); setImportOpen(true); }}>
+          <Button icon={<Upload size={16} />} onClick={() => { setImportText(''); setImportFiles([]); setActiveTab('upload'); setImportOpen(true); }}>
             {t('skill.import_skill_md')}
           </Button>
           <Button type="primary" icon={<Plus size={16} />} onClick={d.openCreate}>
@@ -171,17 +179,49 @@ export default function SkillManagement() {
         okText={t('skill.import_confirm')}
         cancelText={t('skill.form_cancel')}
         confirmLoading={importing}
-        okButtonProps={{ disabled: !importText.trim() }}
+        okButtonProps={{ disabled: activeTab === 'upload' ? importFiles.length === 0 : !importText.trim() }}
       >
-        <p style={{ marginBottom: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>
-          {t('skill.import_hint')}
-        </p>
-        <Input.TextArea
-          value={importText}
-          onChange={(e) => setImportText(e.target.value)}
-          rows={10}
-          placeholder="---&#10;name: my-skill&#10;description: 技能描述&#10;allowed-tools:&#10;  - execute_python&#10;---&#10;&#10;# 用法&#10;..."
-          style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12 }}
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as 'upload' | 'paste')}
+          items={[
+            {
+              key: 'upload',
+              label: t('skill.import_upload_tab'),
+              children: (
+                <AntdUpload.Dragger
+                  multiple
+                  directory
+                  beforeUpload={() => false}
+                  onChange={({ fileList }) =>
+                    setImportFiles(fileList.map((f) => f.originFileObj).filter(Boolean) as File[])
+                  }
+                >
+                  <p className="ant-upload-drag-icon"><Upload size={24} /></p>
+                  <p className="ant-upload-text">{t('skill.import_upload_hint')}</p>
+                  <p className="ant-upload-hint">{t('skill.import_file_required')}</p>
+                </AntdUpload.Dragger>
+              ),
+            },
+            {
+              key: 'paste',
+              label: t('skill.import_paste_tab'),
+              children: (
+                <>
+                  <p style={{ marginBottom: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                    {t('skill.import_hint')}
+                  </p>
+                  <Input.TextArea
+                    value={importText}
+                    onChange={(e) => setImportText(e.target.value)}
+                    rows={10}
+                    placeholder="---&#10;name: my-skill&#10;description: 技能描述&#10;allowed-tools:&#10;  - execute_python&#10;---&#10;&#10;# 用法&#10;..."
+                    style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 12 }}
+                  />
+                </>
+              ),
+            },
+          ]}
         />
       </Modal>
     </div>

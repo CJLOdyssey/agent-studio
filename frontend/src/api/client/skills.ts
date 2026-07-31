@@ -54,6 +54,18 @@ export async function deleteSkill(id: string): Promise<void> {
 }
 
 export async function importSkillFromMarkdown(markdown: string, category = '导入'): Promise<SkillItem> {
-  const { data } = await api.post('/skills/import', { markdown, category });
+  const { data } = await api.post('/skills/import-text', { markdown, category });
+  return data;
+}
+
+export async function importSkillDirectory(files: File[], category = '导入'): Promise<SkillItem> {
+  const form = new FormData();
+  form.append('category', category);
+  for (const f of files) {
+    form.append('files', f, (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name);
+  }
+  const { data } = await api.post('/skills/import', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return data;
 }
