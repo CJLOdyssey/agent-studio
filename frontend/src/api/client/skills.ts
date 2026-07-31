@@ -64,8 +64,6 @@ export async function importSkillDirectory(files: File[], category = '导入'): 
   for (const f of files) {
     form.append('files', f, (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name);
   }
-  const { data } = await api.post('/skills/import', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await api.post('/skills/import', form);
   return data;
 }
