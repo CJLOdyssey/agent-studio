@@ -238,6 +238,35 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
     });
   });
 
+  describe('tool call cards', () => {
+    const toolThinking = '[skill] skill_code_review({})[result] skill_code_review → 输出约束：**markdown**';
+
+    it('renders badge and monospace call text', () => {
+      const { container } = render(
+        <TeamMessage msg={makeMsg({ thinking: toolThinking, thinkingDone: true })} allAgents={[mockAgent]} />
+      );
+      expect(container.textContent).toContain('skill');
+      expect(container.textContent).toContain('skill_code_review({})');
+    });
+
+    it('collapses result by default', () => {
+      const { container } = render(
+        <TeamMessage msg={makeMsg({ thinking: toolThinking, thinkingDone: true })} allAgents={[mockAgent]} />
+      );
+      expect(container.textContent).not.toContain('输出约束');
+    });
+
+    it('expands result on click and renders markdown', async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <TeamMessage msg={makeMsg({ thinking: toolThinking, thinkingDone: true })} allAgents={[mockAgent]} />
+      );
+      await user.click(screen.getByText('skill_code_review({})'));
+      expect(container.textContent).toContain('输出约束');
+      expect(container.querySelector('strong')?.textContent).toBe('markdown');
+    });
+  });
+
   describe('unknown agent fallback', () => {
     it('uses fallback agent info when agentId not found', () => {
       const { container } = render(

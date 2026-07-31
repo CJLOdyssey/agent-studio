@@ -155,35 +155,53 @@ function groupThinkingNodes(text: string): ThinkingItem[] {
   return items;
 }
 
-function ToolCallBranch(
-  { callText, resultText }: { callText: string; resultText: string },
-) {
+const TOOL_BADGE: Record<string, { label: string; className: string }> = {
+  skill: { label: 'skill', className: 'bg-[var(--color-accent)]/10 text-[var(--color-accent)]' },
+  mcp: { label: 'mcp', className: 'bg-[var(--color-info)]/10 text-[var(--color-info)]' },
+  tools: { label: 'tools', className: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]' },
+};
+
+function ToolCallCard({
+  callParsed,
+  resultParsed,
+  t,
+}: {
+  callParsed: NonNullable<ParsedNode>;
+  resultParsed: NonNullable<ParsedNode>;
+  t: (key: string) => string;
+}) {
   const [expanded, setExpanded] = useState(false);
-
-  const cp = parseNode(callText)!;
-  const rp = parseNode(resultText)!;
-
-  const callDisplay = cp.rest;
-  const resultDisplay = rp.rest.replace(/^\w+\s*(?:→|返回:)\s*/, '');
-  const prefix = cp.prefix;
+  const badge = TOOL_BADGE[callParsed.prefix] || TOOL_BADGE.tools;
+  const resultDisplay = resultParsed.rest.replace(/^\w+\s*(?:→|返回:)\s*/, '');
 
   return (
     <div>
       <div
-        className="cursor-pointer select-none rounded-sm hover:bg-[var(--color-surface-hover)] transition-colors duration-150"
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        className="inline-flex items-center gap-1.5 cursor-pointer select-none rounded-sm py-0.5 hover:bg-[var(--color-surface-hover)] transition-colors duration-150"
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
       >
-        <div className="text-sm leading-[1.65] text-[var(--color-text-secondary)]">
-          <span>[{prefix}]</span>
-          {' '}
-          <span>{linkify(callDisplay)}</span>
-        </div>
+        <span className={`inline-flex items-center py-0.5 px-2 rounded-full text-[10px] font-medium leading-none ${badge.className}`}>{badge.label}</span>
+        <code className="text-[0.85em] font-[var(--font-mono)] text-[var(--color-text-secondary)] break-all">{linkify(callParsed.rest)}</code>
+        <span className="text-[var(--color-text-tertiary)]">
+          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </span>
       </div>
 
       {expanded && (
-        <div className="flex mt-0.5 text-sm leading-[1.65] text-[var(--color-text-muted)]">
-          <span className="flex-none w-[1.2em] text-center select-none">⟶</span>
-          <span className="flex-1 min-w-0 whitespace-pre-wrap break-all pl-1">{linkify(resultDisplay)}</span>
+        <div className="mt-1 flex gap-1.5 text-sm leading-[1.65] text-[var(--color-text-muted)]">
+          <span className="flex-none select-none text-[var(--color-text-tertiary)]">⟶</span>
+          <div className="flex-1 min-w-0">
+            <ThinkingMarkdown t={t}>{resultDisplay}</ThinkingMarkdown>
+          </div>
         </div>
       )}
     </div>
@@ -199,7 +217,7 @@ function ThinkingNodeItem({ item, t }: { item: ThinkingItem; t: (key: string) =>
     return (
       <div className="relative mb-2.5 last:mb-0 pl-3">
         <Dot />
-        <ToolCallBranch callText={item.callNode} resultText={item.resultNode} />
+        <ToolCallCard callParsed={item.callParsed} resultParsed={item.resultParsed} t={t} />
       </div>
     );
   }
