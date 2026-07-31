@@ -13,7 +13,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientPro
 
 const baseFormData = {
   name: '', description: '', category: 'AI/ML', status: 'available' as const,
-  version: 'v1.0.0', author: '', instructions: '', prompt_id: '',
+  version: 'v1.0.0', author: '', instructions: '',
   tool_names: [] as string[], output_constraint: '',
 };
 
@@ -54,8 +54,6 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('skill.form_category')).toBeInTheDocument();
     expect(screen.getByText('skill.form_status')).toBeInTheDocument();
     expect(screen.getByText('skill.form_version')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_model')).toBeInTheDocument();
-    expect(screen.getByText(/skill\.form_prompt/)).toBeInTheDocument();
     expect(screen.getByText(/skill\.form_tools/)).toBeInTheDocument();
     expect(screen.getByText(/skill\.form_mcp/)).toBeInTheDocument();
     expect(screen.getByText(/skill\.form_output_constraint/)).toBeInTheDocument();

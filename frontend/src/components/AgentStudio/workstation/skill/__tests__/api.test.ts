@@ -28,7 +28,6 @@ describe('skill api', { tags: ['unit'] }, () => {
     status: 'installed',
     author: 'author1',
     instructions: 'do this',
-    prompt_id: 'p1',
     tool_names: ['tool1'],
     output_constraint: 'be concise',
     created_at: '2024-01-15T00:00:00Z',
@@ -57,7 +56,6 @@ describe('skill api', { tags: ['unit'] }, () => {
       status: 'installed',
       author: 'author',
       instructions: 'do it',
-      prompt_id: 'p1',
       tool_names: ['tool1'],
       output_constraint: 'be concise',
     };
@@ -71,7 +69,6 @@ describe('skill api', { tags: ['unit'] }, () => {
       status: 'installed',
       author: 'author',
       instructions: 'do it',
-      prompt_id: 'p1',
       tool_names: ['tool1'],
       output_constraint: 'be concise',
     });
@@ -109,7 +106,6 @@ describe('skill api', { tags: ['unit'] }, () => {
       version: 'v1',
       author: 'author',
       instructions: 'do it',
-      prompt_id: 'p1',
       tool_names: ['tool1'],
       output_constraint: 'be concise',
       createdAt: '2024-01-01',
@@ -158,7 +154,6 @@ describe('skill api', { tags: ['unit'] }, () => {
     mockListSkills.mockResolvedValue([{
       ...sampleRow,
       instructions: null,
-      prompt_id: null,
       output_constraint: null,
       tool_names: null,
     }]);
@@ -167,7 +162,6 @@ describe('skill api', { tags: ['unit'] }, () => {
     const result = await skillAPI.fetchAll();
 
     expect(result[0].instructions).toBe('');
-    expect(result[0].prompt_id).toBe('');
     expect(result[0].output_constraint).toBe('');
     expect(result[0].tool_names).toEqual([]);
   });
@@ -197,7 +191,6 @@ describe('skill api', { tags: ['unit'] }, () => {
       status: 'installed',
       author: '',
       instructions: '',
-      prompt_id: undefined,
       tool_names: [],
       output_constraint: '',
     });

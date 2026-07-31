@@ -5,12 +5,10 @@ export interface SkillItem {
   name: string;
   description: string;
   category: string;
-  model?: string;
   version: string;
   status: string;
   author: string;
   instructions: string;
-  prompt_id: string | null;
   tool_names: string[];
   output_constraint: string;
   created_at: string;
@@ -25,12 +23,10 @@ export async function createSkill(payload: {
   name: string;
   description: string;
   category: string;
-  model?: string;
   version?: string;
   status?: string;
   author?: string;
   instructions?: string;
-  prompt_id?: string;
   tool_names?: string[];
   output_constraint?: string;
 }): Promise<SkillItem> {
@@ -42,12 +38,10 @@ export async function updateSkill(id: string, payload: Partial<{
   name: string;
   description: string;
   category: string;
-  model: string;
   version: string;
   status: string;
   author: string;
   instructions: string;
-  prompt_id: string;
   tool_names: string[];
   output_constraint: string;
 }>): Promise<SkillItem> {

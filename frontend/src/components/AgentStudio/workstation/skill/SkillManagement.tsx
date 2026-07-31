@@ -29,9 +29,9 @@ export default function SkillManagement() {
       const item = await importSkillFromMarkdown(importText);
       d.batchAdd([{
         id: item.id, name: item.name, description: item.description, category: item.category,
-        status: (item.status === 'installed' || item.status === 'available' ? item.status : 'active'),
-        model: item.model || 'GPT-4o', version: item.version, author: item.author,
-        instructions: item.instructions || '', prompt_id: item.prompt_id || '',
+        status: (item.status === 'installed' || item.status === 'available' ? item.status : 'installed'),
+        version: item.version, author: item.author,
+        instructions: item.instructions || '',
         tool_names: Array.isArray(item.tool_names) ? item.tool_names : [],
         output_constraint: item.output_constraint || '', createdAt: item.created_at.slice(0, 10),
       }]);

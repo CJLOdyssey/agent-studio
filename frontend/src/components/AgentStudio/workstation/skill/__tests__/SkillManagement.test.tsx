@@ -11,7 +11,7 @@ const mockRemoveBatch = vi.fn();
 const mockImport = vi.fn().mockResolvedValue({
   id: 'imported-1', name: 'imported-skill', description: 'desc', category: '导入',
   status: 'active', version: 'v1.0.0', author: '', instructions: 'body text',
-  prompt_id: null, tool_names: ['execute_python'], output_constraint: '',
+  tool_names: ['execute_python'], output_constraint: '',
   created_at: '2024-01-01T00:00:00Z',
 });
 
@@ -31,7 +31,7 @@ function makeSkill(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'React Skill', description: 'React coding skill', category: '前端开发',
     status: 'installed' as const, version: 'v1.0.0', author: 'Alice', instructions: 'Do stuff',
-    prompt_id: '', tool_names: [], output_constraint: '', createdAt: '2024-01-01',
+    tool_names: [], output_constraint: '', createdAt: '2024-01-01',
     ...overrides,
   };
 }

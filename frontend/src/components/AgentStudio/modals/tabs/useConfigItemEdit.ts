@@ -100,11 +100,9 @@ export function useConfigItemEdit(
       description: (item.description as string) || '',
       category: (item.category as string) || 'AI/ML',
       status: (item.status as 'installed' | 'available') || 'available',
-      model: (item.model as string) || 'GPT-4o',
       version: (item.version as string) || 'v1.0.0',
       author: (item.author as string) || '',
       instructions: (item.instructions as string) || '',
-      prompt_id: (item.prompt_id as string) || '',
       tool_names: (item.tool_names as string[]) || [],
       output_constraint: (item.output_constraint as string) || '',
     };
@@ -235,7 +233,6 @@ export function useConfigItemEdit(
       version: (item.version as string) || 'v1.0.0',
       author: (item.author as string) || '',
       instructions: (item.instructions as string) || '',
-      prompt_id: (item.prompt_id as string) || '',
       tool_names: (item.tool_names as string[]) || [],
       output_constraint: (item.output_constraint as string) || '',
     }));
