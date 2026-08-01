@@ -85,14 +85,12 @@ class _ToolWrapper:
     def _resolve_handler(self) -> str | None:
         """Resolve handler discriminator from tool config fields.
 
-        Returns 'mcp', 'http', 'skill', 'code', or None if no match.
+        Returns 'mcp', 'http', 'skill', or None if no match.
         """
         if self.mcp_type or self.mcp_endpoint:
             return "mcp"
         if self.endpoint and self.endpoint.startswith(("http://", "https://")):
             return "http"
-        if self.name == "execute_python":
-            return "code"
         # Skill tools are bound as skill_<name>; route by prefix so an
         # unconfigured skill (empty instructions) gets a clear message from
         # handle_skill instead of silently falling through to llm_fallback.
@@ -114,15 +112,9 @@ class _ToolWrapper:
             except Exception:
                 continue
 
-        # 2) User-browser opener — publishes open_url event to frontend via WebSocket
-        if self.name.startswith("open_user_browser"):
-            from services.tool_handlers import handle_open_browser
-            return await handle_open_browser(self, args)
-
-        # 3) Field-based handler
+        # 2) Field-based handler
         from services.tool_handlers import (
             call_http_endpoint,
-            handle_execute_python,
             handle_mcp,
             handle_skill,
         )
@@ -132,12 +124,10 @@ class _ToolWrapper:
             return await handle_mcp(self, args)
         if kind == "http":
             return await call_http_endpoint(self, args)
-        if kind == "code":
-            return await handle_execute_python(self, args)
         if kind == "skill":
             return handle_skill(self, args)
 
-        # 4) LLM fallback
+        # 3) LLM fallback
         from services.tool_handlers import llm_fallback
         return await llm_fallback(self, args)
 
