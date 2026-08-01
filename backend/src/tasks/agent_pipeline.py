@@ -265,7 +265,7 @@ async def _run_agent_pipeline(
                             f"### {path}\n```\n{content}\n```"
                             for path, content in script_files.items()
                         ]
-                        parts.append("## 参考脚本（按需用 execute_python 复现其逻辑）\n" + "\n".join(ref_blocks))
+                        parts.append("## 参考脚本（按需复现其逻辑）\n" + "\n".join(ref_blocks))
                     skill_instructions = "\n\n".join(filter(None, parts))
 
                     # 子工具真实注册：tool_names 中已存在的工具生成 ToolConfig
@@ -303,7 +303,7 @@ async def _run_agent_pipeline(
                     )
 
     # Dedupe by tool name: agent tools, MCP sub-tools, and skill sub-tools can
-    # overlap (e.g. agent binds execute_python AND a skill lists it in
+    # overlap (e.g. agent binds the same tool AND a skill lists it in
     # allowed-tools). LLM APIs reject duplicate tool names — keep first config.
     seen: set[str] = set()
     unique_configs: list[ToolConfig] = []
