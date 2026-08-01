@@ -21,10 +21,14 @@ class TestKeys:
         assert data["usage_type"] == "vector"
 
     def test_create_key_both_type(self, client):
-        resp = client.post("/api/keys", json={
-            "provider": "openai", "usage_type": "general",
-            "label": "both-key", "api_key": "sk-both-test",
-        }, headers={"X-User-ID": "admin"})
+        # usage_type != vector → hits test_api_key_connection (real network).
+        # Mock it to avoid a 15s real connection attempt.
+        with patch("routers.keys.test_api_key_connection", new_callable=AsyncMock) as mock_test:
+            mock_test.return_value = {"success": True, "models": ["gpt-4"]}
+            resp = client.post("/api/keys", json={
+                "provider": "openai", "usage_type": "general",
+                "label": "both-key", "api_key": "sk-both-test",
+            }, headers={"X-User-ID": "admin"})
         assert resp.status_code == 201
         assert resp.json()["usage_type"] == "general"
 

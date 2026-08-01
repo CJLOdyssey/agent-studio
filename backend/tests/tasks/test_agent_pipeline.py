@@ -8,11 +8,6 @@ import pytest
 
 from tasks.agent_pipeline import _run_agent_pipeline
 
-# These tests share module/process-global state (mock patches, event loop
-# fixtures); keep them on a single xdist worker to avoid cross-worker
-# interference under --dist=worksteal.
-pytestmark = pytest.mark.xdist_group("agent_pipeline_serial")
-
 # =============================================================================
 # Fixtures
 # =============================================================================
@@ -38,6 +33,9 @@ def mock_agent_deps():
         patch("tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
         patch("tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
         patch("tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
+        # Don't let tests actually start tracemalloc (agent_pipeline starts it
+        # when not already tracing) — it slows every test significantly.
+        patch("tasks.agent_pipeline.tracemalloc"),
     ]
     mocks = {}
     for p in patchers:

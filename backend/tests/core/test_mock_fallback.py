@@ -7,6 +7,14 @@ import pytest
 
 
 class TestRunMock:
+
+    @pytest.fixture(autouse=True)
+    def _no_sleep(self):
+        """run_mock simulates response pacing with asyncio.sleep(0.5) ×5 per
+        call (2.5s/test). Tests don't need the pacing — neutralize it."""
+        with patch("core.mock_fallback.asyncio.sleep", new_callable=AsyncMock):
+            yield
+
     @pytest.mark.asyncio
     async def test_run_mock_produces_messages(self):
         from core.mock_fallback import run_mock

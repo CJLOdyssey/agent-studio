@@ -229,9 +229,15 @@ class TestExecuteTool:
 
     def test_execute_tool_command_timeout(self):
         w = _ToolWrapper(name="tool", mcp_endpoint="/usr/bin/sleep")
-        result = execute_tool(w, {"input": "60"})
+        # Mock subprocess.run to raise TimeoutExpired instantly — the real
+        # path would run `/usr/bin/sleep 60` and block for 30s.
+        import subprocess
+
+        with patch("services.tool_handlers.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["sleep"], timeout=30)):
+            result = execute_tool(w, {"input": "60"})
         parsed = json.loads(result)
         assert "error" in parsed
+        assert "timeout" in parsed["error"]
 
 
 class TestLlmFallback:
