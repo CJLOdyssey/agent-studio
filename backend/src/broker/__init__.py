@@ -146,17 +146,21 @@ async def buffer_run_messages(run_id: str) -> None:
 
     async def _worker() -> None:
         try:
-            # Wait for subscribe confirmation before entering message loop
-            while True:
-                init_msg = await pubsub.get_message()
-                if init_msg and init_msg["type"] == "subscribe":
-                    break
-            # Listen with idle timeout — auto-cleanup prevents buffer leaks when
-            # the run finishes without a WebSocket connection to drain it.
+            # subscribe() above has already consumed the subscription
+            # confirmation, so there is no "subscribe" message to wait for.
+            # Listen with an idle timeout — auto-cleanup prevents buffer leaks
+            # when the run finishes without a WebSocket connection to drain it.
+            #
+            # NOTE: get_message() MUST be given timeout=None (blocking). Its
+            # default timeout=0 is non-blocking: the outer wait_for would not
+            # fire and the loop would busy-spin ~100k iterations/sec, pegging
+            # a CPU core for the whole run. timeout=None + wait_for makes the
+            # idle timeout fire while health-check PONGs (also returning None)
+            # just resume the wait.
             while True:
                 try:
                     msg = await asyncio.wait_for(
-                        pubsub.get_message(ignore_subscribe_messages=True),
+                        pubsub.get_message(ignore_subscribe_messages=True, timeout=None),
                         timeout=60.0,
                     )
                 except TimeoutError:

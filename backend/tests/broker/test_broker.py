@@ -388,6 +388,23 @@ class TestBrokerFull:
         assert published["type"] == "client_action"
         assert published["action"] == {"type": "click"}
 
+    def _blocking_get_message(self, calls: list, responses: list | None = None):
+        """Return a get_message mock that records kwargs then blocks forever.
+
+        Blocking (rather than returning immediately) is essential: an
+        instantly-returning mock makes the worker's asyncio.wait_for resolve
+        immediately and the worker busy-spins, starving the event loop.
+        """
+        responses = responses or []
+
+        async def fake(*args, **kwargs):
+            calls.append(kwargs)
+            if responses:
+                return responses.pop(0)
+            await asyncio.Event().wait()
+
+        return fake
+
     @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_run_messages_starts_task(self, mock_get_redis):
@@ -397,8 +414,8 @@ class TestBrokerFull:
         mock_redis = MagicMock()
         mock_pubsub = MagicMock()
         mock_pubsub.subscribe = AsyncMock()
-        mock_pubsub.get_message = AsyncMock()
-        mock_pubsub.get_message.return_value = {"type": "subscribe"}
+        calls = []
+        mock_pubsub.get_message = AsyncMock(side_effect=self._blocking_get_message(calls))
         mock_redis.pubsub.return_value = mock_pubsub
         mock_get_redis.return_value = mock_redis
 
@@ -412,5 +429,69 @@ class TestBrokerFull:
 
         from broker import stop_buffer
         await stop_buffer("run-buf-task")
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_buffer_worker_uses_blocking_get_message(self, mock_get_redis):
+        """Regression: worker must call get_message in BLOCKING mode.
+
+        get_message() defaults to timeout=0 (non-blocking). Without timeout=None
+        the outer wait_for never fires and the worker busy-spins ~100k iter/sec,
+        pegging a CPU core for the whole run. This test pins the blocking call
+        signature so the busy-loop cannot regress.
+        """
+        from broker import _buffer_tasks, _buffers, buffer_run_messages, stop_buffer
+
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        calls = []
+        mock_pubsub.get_message = AsyncMock(side_effect=self._blocking_get_message(calls))
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        await buffer_run_messages("run-blocking")
+        await asyncio.sleep(0.05)
+        await stop_buffer("run-blocking")
+
+        assert calls, "worker never called get_message"
+        kwargs = calls[0]
+        assert kwargs.get("timeout") is None, (
+            f"get_message must block (timeout=None); got timeout={kwargs.get('timeout')!r}. "
+            "Without it the buffer worker busy-spins ~100k iter/sec and pegs a CPU core."
+        )
+        assert kwargs.get("ignore_subscribe_messages") is True
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_buffer_worker_buffers_messages(self, mock_get_redis):
+        """The worker accumulates published messages into the run's buffer."""
+        from broker import _buffer_tasks, _buffers, buffer_run_messages, stop_buffer
+
+        payload = {"type": "stream", "content": "hi"}
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        calls = []
+        mock_pubsub.get_message = AsyncMock(
+            side_effect=self._blocking_get_message(
+                calls, [{"type": "message", "data": json.dumps(payload)}]
+            )
+        )
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        await buffer_run_messages("run-buf-msg")
+        await asyncio.sleep(0.05)
+        buf = _buffers["run-buf-msg"]
+        await stop_buffer("run-buf-msg")
+
+        assert buf == [payload]
 
 
