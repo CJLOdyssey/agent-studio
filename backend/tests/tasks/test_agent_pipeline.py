@@ -444,11 +444,11 @@ class TestRunAgentPipeline:
     async def test_prepare_skills_dedup_tool_with_agent_tools(self, mock_agent_deps):
         """Skill allowed-tools overlapping agent's own tools must not duplicate."""
         ac, graph = _default_agent_mocks(mock_agent_deps)
-        ac.tools = '[{"name": "execute_python", "enabled": true}]'
+        ac.tools = '[{"name": "custom_python", "enabled": true}]'
         ac.skills = '[{"name": "xlsx"}]'
 
         tool_mock = MagicMock()
-        tool_mock.name = "execute_python"
+        tool_mock.name = "custom_python"
         tool_mock.description = "Execute Python"
         tool_mock.parameters = "{}"
         tool_mock.endpoint = ""
@@ -462,7 +462,7 @@ class TestRunAgentPipeline:
         skill_mock.instructions = "build xlsx"
         skill_mock.output_constraint = ""
         skill_mock.script_files = {}
-        skill_mock.tool_names = ["execute_python"]
+        skill_mock.tool_names = ["custom_python"]
         mock_agent_deps["get_skills"].return_value = [skill_mock]
 
         await _run_agent_pipeline(
@@ -474,7 +474,7 @@ class TestRunAgentPipeline:
 
         bound_tools = graph.bind_tools.call_args[0][0]
         names = [t.name for t in bound_tools]
-        assert names.count("execute_python") == 1, f"duplicate tool: {names}"
+        assert names.count("custom_python") == 1, f"duplicate tool: {names}"
         assert "skill_xlsx" in names
 
     async def test_prepare_skill_no_match_skipped(self, mock_agent_deps):

@@ -160,7 +160,7 @@ class TestSkills:
 name: import-me
 description: 导入的技能
 allowed-tools:
-  - execute_python
+  - custom_python
 metadata:
   category: 文档处理
   author: third-party
@@ -174,7 +174,7 @@ metadata:
         assert resp.status_code == 201
         data = resp.json()
         assert data["name"] == "import-me"
-        assert data["tool_names"] == ["execute_python"]
+        assert data["tool_names"] == ["custom_python"]
         # instructions = body
         assert "openpyxl" in data["instructions"]
 
@@ -190,8 +190,8 @@ metadata:
 
     def test_import_skill_directory_upload(self, client):
         sk = (
-            "---\nname: 网络搜索\ndescription: 执行网络搜索\nallowed-tools:\n  - web_search\n"
-            "metadata:\n  category: 信息检索\n  author: odyssey\n---\n\n# 用法\n\n搜索时调用 web_search\n"
+            "---\nname: 网络搜索\ndescription: 执行网络搜索\nallowed-tools:\n  - custom_search\n"
+            "metadata:\n  category: 信息检索\n  author: odyssey\n---\n\n# 用法\n\n搜索时调用 custom_search\n"
         )
         rec = "import requests\ndef search(q):\n    return requests.get('https://x', params={'q': q}).json()\n"
         resp = client.post(
@@ -205,7 +205,7 @@ metadata:
         assert resp.status_code == 200
         body = resp.json()
         assert body["name"] == "网络搜索"
-        assert body["tool_names"] == ["web_search"]
+        assert body["tool_names"] == ["custom_search"]
         assert "scripts/search.py" in (body["script_files"] or {})
 
     def test_import_skill_missing_skillmd_400(self, client):

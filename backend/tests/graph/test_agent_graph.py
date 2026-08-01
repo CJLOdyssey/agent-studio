@@ -30,12 +30,12 @@ async def test_bind_tools_initializes_correctly():
     )
     tool_configs = [
         ToolConfig(
-            name="web_search",
+            name="custom_search",
             description="Search the web",
             parameters={"type": "object", "properties": {"query": {"type": "string"}}},
         ),
         ToolConfig(
-            name="calculator",
+            name="custom_calc",
             description="Simple math",
             parameters={"type": "object", "properties": {"expr": {"type": "string"}}},
         ),
@@ -43,16 +43,16 @@ async def test_bind_tools_initializes_correctly():
     graph.bind_tools(tool_configs)
 
     assert len(graph._tool_map) == 2
-    assert "web_search" in graph._tool_map
-    assert "calculator" in graph._tool_map
+    assert "custom_search" in graph._tool_map
+    assert "custom_calc" in graph._tool_map
     assert len(graph._tool_definitions) == 2
-    assert graph._tool_definitions[0]["function"]["name"] == "web_search"
-    assert graph._tool_definitions[1]["function"]["name"] == "calculator"
+    assert graph._tool_definitions[0]["function"]["name"] == "custom_search"
+    assert graph._tool_definitions[1]["function"]["name"] == "custom_calc"
 
     # Verify wrapper is a _ToolWrapper instance
-    wrapper = graph._tool_map["web_search"]
+    wrapper = graph._tool_map["custom_search"]
     assert isinstance(wrapper, _ToolWrapper)
-    assert wrapper.name == "web_search"
+    assert wrapper.name == "custom_search"
     assert wrapper.description == "Search the web"
 
 
