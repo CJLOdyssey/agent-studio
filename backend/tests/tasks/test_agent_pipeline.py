@@ -8,6 +8,11 @@ import pytest
 
 from tasks.agent_pipeline import _run_agent_pipeline
 
+# These tests share module/process-global state (mock patches, event loop
+# fixtures); keep them on a single xdist worker to avoid cross-worker
+# interference under --dist=worksteal.
+pytestmark = pytest.mark.xdist_group("agent_pipeline_serial")
+
 # =============================================================================
 # Fixtures
 # =============================================================================

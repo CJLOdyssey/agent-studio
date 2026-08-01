@@ -26,7 +26,9 @@ logger = get_logger(__name__)
 # Queries exceeding this threshold (seconds) are logged as warnings
 SLOW_QUERY_THRESHOLD = 0.5
 
-# Load .env with override so project config takes precedence at import time
+# Load .env as fallback — never override already-set env vars (standard dotenv
+# semantics). Prevents test fixtures (which set e.g. AUTH_MODE=legacy before
+# core modules are imported) from being silently clobbered by backend/.env.
 _env_file = Path(__file__).resolve().parent.parent.parent / ".env"
 if _env_file.exists():
     for _line in _env_file.read_text().splitlines():
@@ -36,7 +38,7 @@ if _env_file.exists():
             _key = _key.strip()
             _value = _value.strip().strip('"').strip("'")
             if _key:
-                os.environ[_key] = _value
+                os.environ.setdefault(_key, _value)
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",

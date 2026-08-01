@@ -12,6 +12,19 @@ import pytest
 
 class TestLogMemoryDiff:
 
+    @pytest.fixture(autouse=True)
+    def _reset_global_baseline(self):
+        """log_memory_diff caches a module-global _baseline_snapshot.
+
+        Restore it after each test so the mock baseline never leaks into
+        other tests (e.g. test_agent_pipeline) that call log_memory_diff
+        on the same worker under --dist=worksteal.
+        """
+        import tasks.pipeline_utils as pu
+
+        yield
+        pu._baseline_snapshot = None
+
     @patch("tasks.pipeline_utils.tracemalloc")
     def test_log_memory_diff_not_tracing(self, mock_tracemalloc):
         mock_tracemalloc.is_tracing.return_value = False

@@ -58,7 +58,9 @@ async def get_current_user(request: Request) -> CurrentUser:
     In ``rbac`` mode uses the JWT-decoded user_id (from middleware or self-decoded).
     Raises 401 when no valid JWT token is present.
     """
-    if AUTH_MODE == "legacy":
+    # Read at call time, not import time: test fixtures set AUTH_MODE before
+    # requests but after this module may already be imported.
+    if os.environ.get("AUTH_MODE", "legacy") == "legacy":
         return CurrentUser()
 
     # Try middleware-decoded user_id first (set by AuthMiddleware for non-auth routes)
@@ -126,7 +128,7 @@ def require_role(*names: str) -> Any:
     """
 
     def _role_checker(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:  # noqa: B008
-        if AUTH_MODE == "legacy":
+        if os.environ.get("AUTH_MODE", "legacy") == "legacy":
             return current_user
         if not any(r in current_user.roles for r in names):
             logger.warning(
