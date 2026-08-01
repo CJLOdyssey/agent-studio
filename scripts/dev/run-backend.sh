@@ -65,6 +65,7 @@ echo "🚀 Starting backend on port $PORT${RELOAD_FLAG:+ with --reload}..."
 nohup /usr/bin/python3 -m uvicorn core.app:app \
   --port "$PORT" \
   --host "0.0.0.0" \
+  --loop asyncio \
   $RELOAD_FLAG \
   --log-level "${LOG_LEVEL:-info}" </dev/null >> /tmp/backend.log 2>&1 &
 

@@ -343,31 +343,30 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     params = _mcp_params(tool_self)
     run_key = tool_self._run_id or ""
 
-    # Reuse cached session for this run
-    if run_key in _mcp_sessions:
-        try:
-            result = await _call(_mcp_sessions[run_key], tool_self.mcp_tool_name, args)
-            if tool_self.name and "browser_" in tool_self.name:
-                await _push_mcp_screenshot(_mcp_sessions[run_key], tool_self._run_id)
+    # Create fresh session per call.  We deliberately do NOT cache the session
+    # across calls: anyio's cancel scopes used by stdio_client/ClientSession are
+    # task-scoped, and re-entering/exiting them from a different task raises
+    # "Attempted to exit cancel scope in a different task".  A fresh `async with`
+    # keeps enter/exit in the same task and is safe.
+    try:
+        async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
+            await session.initialize()
+            _mcp_sessions.pop(run_key, None)
+            result = await _call(session, tool_self.mcp_tool_name, args)
+            if tool_self.name and "browser_" in tool_self.name and tool_self._run_id:
+                await _push_mcp_screenshot(session, tool_self._run_id)
             texts = _extract_mcp_texts(result)
             return texts if texts else json.dumps({"result": "ok"})
-        except Exception as e:
-            logger.warning("MCP session %s failed, recreating: %s", run_key[:12], e)
-            await _cleanup_mcp_session(run_key)
-
-    # Create new session
-    try:
-        read, write = await stdio_client(params).__aenter__()
-        session = ClientSession(read, write)
-        await session.__aenter__()
-        await session.initialize()
-        _mcp_sessions[run_key] = session
-        result = await _call(session, tool_self.mcp_tool_name, args)
-        if tool_self.name and "browser_" in tool_self.name and tool_self._run_id:
-            await _push_mcp_screenshot(session, tool_self._run_id)
-        texts = _extract_mcp_texts(result)
-        return texts if texts else json.dumps({"result": "ok"})
+    except asyncio.CancelledError:
+        # Do NOT let CancelledError escape to the graph: agent_pipeline wraps
+        # graph.run in asyncio.timeout, whose cancel scope can collide with
+        # anyio's internal scope when spawning the MCP stdio subprocess. Swallow
+        # it and return an error string so the run can converge instead of crashing.
+        logger.warning("MCP call cancelled (run=%s tool=%s) — suppressing", run_key[:12], tool_self.name)
+        _mcp_sessions.pop(run_key, None)
+        return json.dumps({"tool": tool_self.name, "error": "MCP 调用被中断（子进程启动超时或取消）"})
     except Exception as e:
+        _mcp_sessions.pop(run_key, None)
         return json.dumps({"error": str(e)})
 
 
