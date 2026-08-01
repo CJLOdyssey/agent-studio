@@ -15,6 +15,7 @@ class PromptDB(Base):
     __tablename__ = "prompts"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(64), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
     category: Mapped[str] = mapped_column(String(32), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     model: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -84,6 +85,7 @@ class RegisteredSkillDB(Base):
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     script_files: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     tool_names: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
+    mcp_names: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     output_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)

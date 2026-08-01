@@ -190,6 +190,8 @@ async def test_create_skill(db_engine):
             "content": "A test skill",
             "instructions": "Write clean code.",
             "author": "test",
+            "tool_names": ["custom_python"],
+            "mcp_names": ["github"],
         }
     )
     assert skill is not None
@@ -197,6 +199,8 @@ async def test_create_skill(db_engine):
     assert skill.name.startswith("skill-")
     assert skill.category == "coding"
     assert skill.status == "active"
+    assert skill.tool_names == ["custom_python"]
+    assert skill.mcp_names == ["github"]
 
 
 @pytest.mark.asyncio

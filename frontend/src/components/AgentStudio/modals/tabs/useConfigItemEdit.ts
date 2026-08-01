@@ -147,42 +147,78 @@ export function useConfigItemEdit(
       form.setFormErrors(kind, [t('workstation.nameRequired')]);
       return;
     }
-    const data = f.data as Record<string, string>;
     const customId = `custom-${Date.now()}`;
     switch (kind) {
-      case 'tool':
+      case 'tool': {
+        const data = f.data as ToolFormData;
+        const updates = {
+          name: data.name,
+          description: data.description || '',
+          category: data.category,
+          status: data.status,
+          version: data.version,
+          endpoint: data.endpoint,
+          parameters: data.parameters || '',
+        } as Partial<AgentTool>;
         if (editingToolItem) {
-          tools.update(editingToolItem.id, { name: data.name, description: data.description || '', parameters: data.parameters || '' } as Partial<AgentTool>);
+          tools.update(editingToolItem.id, updates);
           setEditingToolItem(null);
           form.closeForm(kind);
         } else {
-          tools.addCustom(() => ({ id: customId, name: data.name, description: data.description || '', enabled: true, parameters: data.parameters || '' }) as AgentTool);
+          tools.addCustom(() => ({ id: customId, enabled: true, ...updates }) as AgentTool);
           form.closeForm(kind);
           setPendingArchive({ kind, kindName: '工具', name: data.name, customId, data: f.data as ToolFormData });
         }
         break;
-      case 'mcp':
+      }
+      case 'mcp': {
+        const data = f.data as MCPFormData;
+        const updates = {
+          name: data.name,
+          description: data.description || '',
+          type: data.type,
+          status: data.status,
+          version: data.version,
+          command: data.command,
+          url: data.url,
+          args: data.args,
+          env: data.env,
+        } as Partial<AgentMCP>;
         if (editingMcpItem) {
-          mcp.update(editingMcpItem.id, { name: data.name, description: data.description || '' } as Partial<AgentMCP>);
+          mcp.update(editingMcpItem.id, updates);
           setEditingMcpItem(null);
           form.closeForm(kind);
         } else {
-          mcp.addCustom(() => ({ id: customId, name: data.name, description: data.description || '', enabled: true }) as AgentMCP);
+          mcp.addCustom(() => ({ id: customId, enabled: true, ...updates }) as AgentMCP);
           form.closeForm(kind);
           setPendingArchive({ kind, kindName: 'MCP', name: data.name, customId, data: f.data as MCPFormData });
         }
         break;
-      case 'skill':
+      }
+      case 'skill': {
+        const data = f.data as SkillFormData;
+        const updates = {
+          name: data.name,
+          description: data.description || '',
+          category: data.category,
+          status: data.status,
+          version: data.version,
+          author: data.author,
+          instructions: data.instructions,
+          tool_names: data.tool_names,
+          output_constraint: data.output_constraint,
+        } as Partial<AgentSkill>;
         if (editingSkillItem) {
-          skills.update(editingSkillItem.id, { name: data.name, description: data.description || '' } as Partial<AgentSkill>);
+          skills.update(editingSkillItem.id, updates);
           setEditingSkillItem(null);
           form.closeForm(kind);
         } else {
-          skills.addCustom(() => ({ id: customId, name: data.name, description: data.description || '', enabled: true }) as AgentSkill);
+          skills.addCustom(() => ({ id: customId, enabled: true, ...updates }) as AgentSkill);
           form.closeForm(kind);
           setPendingArchive({ kind, kindName: 'Skill', name: data.name, customId, data: f.data as SkillFormData });
         }
         break;
+      }
     }
   }
 

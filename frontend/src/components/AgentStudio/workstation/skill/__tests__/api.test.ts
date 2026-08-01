@@ -29,6 +29,7 @@ describe('skill api', { tags: ['unit'] }, () => {
     author: 'author1',
     instructions: 'do this',
     tool_names: ['tool1'],
+    mcp_names: ['mcp1'],
     output_constraint: 'be concise',
     created_at: '2024-01-15T00:00:00Z',
   };
@@ -42,6 +43,18 @@ describe('skill api', { tags: ['unit'] }, () => {
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('Skill 1');
     expect(result[0].status).toBe('installed');
+    expect(result[0].tool_names).toEqual(['tool1']);
+    expect(result[0].mcp_names).toEqual(['mcp1']);
+  });
+
+  it('toEntry maps missing mcp_names to empty array', async () => {
+    const { mcp_names, ...row } = sampleRow;
+    mockListSkills.mockResolvedValue([row]);
+
+    const { skillAPI } = await import('../api');
+    const result = await skillAPI.fetchAll();
+
+    expect(result[0].mcp_names).toEqual([]);
   });
 
   it('create calls createSkill and returns entry', async () => {
@@ -57,6 +70,7 @@ describe('skill api', { tags: ['unit'] }, () => {
       author: 'author',
       instructions: 'do it',
       tool_names: ['tool1'],
+      mcp_names: ['mcp1'],
       output_constraint: 'be concise',
     };
     const result = await skillAPI.create(data);
@@ -70,6 +84,7 @@ describe('skill api', { tags: ['unit'] }, () => {
       author: 'author',
       instructions: 'do it',
       tool_names: ['tool1'],
+      mcp_names: ['mcp1'],
       output_constraint: 'be concise',
     });
     expect(result.name).toBe('Skill 1');
@@ -82,6 +97,15 @@ describe('skill api', { tags: ['unit'] }, () => {
     await skillAPI.update('s1', { name: 'Updated' });
 
     expect(mockUpdateSkill).toHaveBeenCalledWith('s1', { name: 'Updated' });
+  });
+
+  it('update maps mcp_names when provided', async () => {
+    mockUpdateSkill.mockResolvedValue(undefined);
+
+    const { skillAPI } = await import('../api');
+    await skillAPI.update('s1', { tool_names: ['t1'], mcp_names: ['m1'] });
+
+    expect(mockUpdateSkill).toHaveBeenCalledWith('s1', { tool_names: ['t1'], mcp_names: ['m1'] });
   });
 
   it('remove calls deleteSkill', async () => {
@@ -156,6 +180,7 @@ describe('skill api', { tags: ['unit'] }, () => {
       instructions: null,
       output_constraint: null,
       tool_names: null,
+      mcp_names: null,
     }]);
 
     const { skillAPI } = await import('../api');
@@ -164,6 +189,7 @@ describe('skill api', { tags: ['unit'] }, () => {
     expect(result[0].instructions).toBe('');
     expect(result[0].output_constraint).toBe('');
     expect(result[0].tool_names).toEqual([]);
+    expect(result[0].mcp_names).toEqual([]);
   });
 
   it('create handles optional fields as undefined', async () => {
@@ -179,6 +205,7 @@ describe('skill api', { tags: ['unit'] }, () => {
       author: '',
       instructions: '',
       tool_names: [],
+      mcp_names: [],
       output_constraint: '',
     };
     await skillAPI.create(data);
@@ -192,6 +219,7 @@ describe('skill api', { tags: ['unit'] }, () => {
       author: '',
       instructions: '',
       tool_names: [],
+      mcp_names: [],
       output_constraint: '',
     });
   });

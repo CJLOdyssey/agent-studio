@@ -13,10 +13,10 @@
     "toolbar": "Toolbar",
     "promptManage": "Prompt Management",
     "prompt": "Prompt",
-  "prompt_category_system": "System Prompt",
-  "prompt_category_user": "User Prompt",
-  "prompt_category_meta": "Meta Prompt",
-  "prompt_category_output_constraint": "Output Constraint",
+    "prompt_category_system": "System Prompt",
+    "prompt_category_user": "User Prompt",
+    "prompt_category_meta": "Meta Prompt",
+    "prompt_category_output_constraint": "Output Constraint",
     "apiManage": "API Management",
     "addKey": "Add Key",
     "provider": "Provider",
@@ -422,7 +422,9 @@
     "test_success": "Test Passed",
     "test_fail": "Test Failed",
     "test_result": "{status} — {duration}ms",
-    "test_no_endpoint": "Please enter an endpoint first"
+    "test_no_endpoint": "Please enter an endpoint first",
+    "form_method": "Method",
+    "form_headers": "Headers (JSON)"
   },
   "mcp": {
     "new": "New MCP",
@@ -488,7 +490,8 @@
     "confirm_delete_desc": "Delete \"{name}\"? This cannot be undone.",
     "confirm_batch_delete_title": "Confirm Batch Delete",
     "confirm_batch_delete_desc": "Delete {n} selected MCPs?",
-    "col_tool_count": "Tool Count"
+    "col_tool_count": "Tool Count",
+    "form_enabled": "Enabled"
   },
   "skill": {
     "new": "New Skill",
@@ -759,6 +762,8 @@
     "form_title_edit": "Edit Prompt",
     "form_name": "Name",
     "form_name_placeholder": "2-50 characters",
+    "form_description": "Description",
+    "form_description_placeholder": "Briefly describe what this prompt does…",
     "form_category": "Category",
     "form_model": "Model",
     "form_status": "Status",
@@ -766,6 +771,7 @@
     "form_version_placeholder": "v1.0.0",
     "form_content": "Content",
     "form_content_placeholder": "Enter prompt content...",
+    "form_content_hint": "Supports {{variable}} placeholders",
     "form_char_count": "{n}/5000",
     "form_token_est": "~{n} tokens",
     "form_var_detected": "{n} variable(s) detected",

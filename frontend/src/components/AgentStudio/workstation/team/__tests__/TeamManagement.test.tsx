@@ -159,8 +159,8 @@ describe('TeamManagement', { tags: ['unit'] }, () => {
     mockFetchAll.mockResolvedValue([makeTeam()]);
     render(<TeamManagement />, { wrapper: TestProviders });
     await waitFor(() => {
-      // Category uses t() from locales, which the mock returns as the key itself
-      expect(screen.getByText('team.category_dev')).toBeInTheDocument();
+      // Category is a free-text value rendered as-is
+      expect(screen.getByText('dev')).toBeInTheDocument();
     });
   });
 
@@ -168,7 +168,7 @@ describe('TeamManagement', { tags: ['unit'] }, () => {
     mockFetchAll.mockResolvedValue([makeTeam()]);
     render(<TeamManagement />, { wrapper: TestProviders });
     await waitFor(() => {
-      expect(screen.getByText('活跃')).toBeInTheDocument();
+      expect(screen.getByText('已启用')).toBeInTheDocument();
     });
   });
 

@@ -8,6 +8,7 @@ export interface SkillEntry {
   author: string;
   instructions: string;
   tool_names: string[];
+  mcp_names?: string[];
   output_constraint: string;
   createdAt: string;
 }

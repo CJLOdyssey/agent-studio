@@ -283,7 +283,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelectorAll('[class*="pl-5"][class*="mb-2.5"]').length).toBe(3);
+      expect(container.querySelectorAll('[class*="pl-3"][class*="mb-2.5"]').length).toBe(3);
     });
 
     it('toggles thinking expansion when header clicked', async () => {

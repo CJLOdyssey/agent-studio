@@ -48,6 +48,30 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('tool.form_parameters')).toBeInTheDocument();
   });
 
+  it('renders method select and headers field', () => {
+    render(<ToolFormModal {...baseProps} />);
+    expect(screen.getByLabelText('tool.form_method')).toBeInTheDocument();
+    expect(screen.getByText('GET')).toBeInTheDocument();
+    expect(screen.getByText('POST')).toBeInTheDocument();
+    expect(screen.getByText('tool.form_headers')).toBeInTheDocument();
+  });
+
+  it('calls setFormData on method select change', () => {
+    const setFormData = vi.fn();
+    render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
+    const select = screen.getByLabelText('tool.form_method');
+    fireEvent.change(select, { target: { value: 'POST' } });
+    expect(setFormData).toHaveBeenCalled();
+  });
+
+  it('calls setFormData on headers input change', () => {
+    const setFormData = vi.fn();
+    render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
+    const textarea = screen.getByPlaceholderText('{"Authorization": "Bearer ..."}');
+    fireEvent.change(textarea, { target: { value: '{"X-Key":"v"}' } });
+    expect(setFormData).toHaveBeenCalled();
+  });
+
   it('shows validation errors', () => {
     render(<ToolFormModal {...baseProps} errors={['Name is required', 'Version is required']} />);
     expect(screen.getByText('Name is required')).toBeInTheDocument();
@@ -81,7 +105,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('calls setFormData on status select change', () => {
     const setFormData = vi.fn();
     render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
-    const select = screen.getByRole('combobox');
+    const select = screen.getByLabelText('状态');
     fireEvent.change(select, { target: { value: 'disabled' } });
     expect(setFormData).toHaveBeenCalled();
   });

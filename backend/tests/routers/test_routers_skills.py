@@ -128,6 +128,26 @@ class TestSkills:
         assert resp.status_code == 201
         assert resp.json()["name"] == "new-skill"
 
+    def test_create_skill_with_mcp_names(self, client):
+        resp = client.post("/api/skills", json={
+            "name": "mcp-skill", "category": "general",
+            "tool_names": ["custom_python"],
+            "mcp_names": ["github", "filesystem"],
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["mcp_names"] == ["github", "filesystem"]
+        assert data["tool_names"] == ["custom_python"]
+
+    def test_update_skill_mcp_names(self, client):
+        resp = client.post("/api/skills", json={
+            "name": "upd-mcp-skill", "category": "general"
+        })
+        skill_id = resp.json()["id"]
+        resp = client.put(f"/api/skills/{skill_id}", json={"mcp_names": ["github"]})
+        assert resp.status_code == 200
+        assert resp.json()["mcp_names"] == ["github"]
+
     def test_update_skill(self, client):
         resp = client.post("/api/skills", json={
             "name": "upd-skill", "category": "general"

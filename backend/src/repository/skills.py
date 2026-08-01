@@ -26,6 +26,7 @@ class SkillRepository(BaseRepository[RegisteredSkillDB]):
             "instructions": obj.instructions,
             "script_files": obj.script_files or {},
             "tool_names": obj.tool_names or [],
+            "mcp_names": obj.mcp_names or [],
             "output_constraint": obj.output_constraint,
             "created_at": obj.created_at.isoformat() if obj.created_at else None,
         }

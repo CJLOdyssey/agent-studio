@@ -29,7 +29,7 @@ const mockUseOutputMgmt = {
   formErrors: [] as string[],
   editingItem: null as any,
   editingId: null as string | null,
-  formData: { name: '', content: '', category: '格式约束', model: '全部模型', status: 'draft', version: 'v1.0.0' } as any,
+  formData: { name: '', content: '', category: '格式约束', status: 'draft' } as any,
   openMenuId: null as string | null,
   menuAnchorEl: null as HTMLElement | null,
   setSearch: vi.fn(),
@@ -68,9 +68,7 @@ const makeItem = (overrides: Record<string, unknown> = {}) => ({
   name: 'JSON格式',
   content: '以JSON格式输出',
   category: '格式约束',
-  model: '全部模型',
   status: 'active',
-  version: 'v1.0.0',
   createdAt: '2024-01-01',
   ...overrides,
 });
@@ -406,7 +404,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.isFormOpen = true;
     mockUseOutputMgmt.editingItem = item;
     mockUseOutputMgmt.editingId = 'o1';
-    mockUseOutputMgmt.formData = { name: 'Test', content: 'Test', category: '格式约束', model: '全部模型', status: 'draft', version: 'v1.0.0' };
+    mockUseOutputMgmt.formData = { name: 'Test', content: 'Test', category: '格式约束', status: 'draft' };
     const handleSave = vi.fn().mockReturnValue(true);
     mockUseOutputMgmt.handleSave = handleSave;
     mockToast.mockClear();
@@ -429,7 +427,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.isFormOpen = true;
     mockUseOutputMgmt.editingItem = null;
     mockUseOutputMgmt.editingId = null;
-    mockUseOutputMgmt.formData = { name: 'New', content: 'New', category: '格式约束', model: '全部模型', status: 'draft', version: 'v1.0.0' };
+    mockUseOutputMgmt.formData = { name: 'New', content: 'New', category: '格式约束', status: 'draft' };
     const handleSave = vi.fn().mockReturnValue(true);
     mockUseOutputMgmt.handleSave = handleSave;
     mockToast.mockClear();
@@ -452,7 +450,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.isFormOpen = true;
     mockUseOutputMgmt.editingItem = null;
     mockUseOutputMgmt.editingId = null;
-    mockUseOutputMgmt.formData = { name: 'New', content: 'New', category: '格式约束', model: '全部模型', status: 'draft', version: 'v1.0.0' };
+    mockUseOutputMgmt.formData = { name: 'New', content: 'New', category: '格式约束', status: 'draft' };
     const handleSave = vi.fn().mockReturnValue(false);
     mockUseOutputMgmt.handleSave = handleSave;
     mockToast.mockClear();

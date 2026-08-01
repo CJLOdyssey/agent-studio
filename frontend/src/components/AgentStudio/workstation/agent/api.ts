@@ -47,12 +47,7 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
         'agent_' +
         (crypto.randomUUID?.()?.slice(0, 8) || Date.now().toString(36)),
       system_prompt,
-      output_constraints: JSON.stringify({
-        description: data.description,
-        team: data.team,
-        version: data.version,
-        systemPromptId: data.systemPromptId,
-      }),
+      output_constraints: '',
       tools,
       mcp,
       skills,
@@ -81,21 +76,19 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
       d.skillIds,
     );
 
-    await apiUpdateAgent(id, {
+    const payload: Parameters<typeof apiUpdateAgent>[1] = {
       name: d.name,
-      system_prompt,
-      output_constraints: JSON.stringify({
-        description: d.description,
-        team: d.team,
-        version: d.version,
-        systemPromptId: d.systemPromptId,
-      }),
+      output_constraints: '',
       tools,
       mcp,
       skills,
       is_active: d.status === 'running',
       model: d.model,
-    });
+    };
+    if (system_prompt) {
+      payload.system_prompt = system_prompt;
+    }
+    await apiUpdateAgent(id, payload);
   },
 
   remove: async (id) => {

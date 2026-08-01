@@ -13,11 +13,16 @@ vi.mock('../../../../../api/client', () => ({
 }));
 
 vi.mock('../WorkflowEditor', () => ({
-  default: function MockWorkflowEditor({ teamId, agents }: { teamId: string; agents: Array<{ id: string; name: string }> }) {
+  default: function MockWorkflowEditor({ teamId, agents, onDirtyChange }: {
+    teamId: string;
+    agents: Array<{ id: string; name: string }>;
+    onDirtyChange?: (dirty: boolean) => void;
+  }) {
     return (
       <div data-testid="workflow-editor">
         <span>Editor for team {teamId}</span>
         <span>{agents.length} agents</span>
+        <button onClick={() => onDirtyChange?.(true)}>mark-dirty</button>
       </div>
     );
   },
@@ -129,5 +134,35 @@ describe('WorkflowManagement', { tags: ['unit'] }, () => {
     });
 
     expect(screen.getByText('选择一个团队开始编排工作流')).toBeInTheDocument();
+  });
+
+  it('confirms before switching team when there are unsaved changes', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(<WorkflowManagement />, { wrapper: TestProviders });
+
+    await waitFor(() => {
+      expect(screen.getByText('Team Alpha')).toBeInTheDocument();
+    });
+
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'team-1' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Editor for team team-1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('mark-dirty'));
+    fireEvent.change(select, { target: { value: 'team-2' } });
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(screen.getByText('Editor for team team-1')).toBeInTheDocument();
+
+    confirmSpy.mockReturnValue(true);
+    fireEvent.change(select, { target: { value: 'team-2' } });
+    await waitFor(() => {
+      expect(screen.getByText('Editor for team team-2')).toBeInTheDocument();
+    });
+
+    confirmSpy.mockRestore();
   });
 });

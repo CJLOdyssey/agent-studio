@@ -5,8 +5,8 @@ import { usePickerState } from '../tabs/usePickerState';
 vi.mock('../../workstation/prompt/api', () => ({
   promptAPI: {
     fetchAll: vi.fn().mockResolvedValue([
-      { id: 'p1', name: 'Prompt 1', content: 'Hello' },
-      { id: 'p2', name: 'Prompt 2', content: 'World' },
+      { id: 'p1', name: 'Prompt 1', category: 'system', content: 'Hello' },
+      { id: 'p2', name: 'Prompt 2', category: 'system', content: 'World' },
     ]),
   },
 }));

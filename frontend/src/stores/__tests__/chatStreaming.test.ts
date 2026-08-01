@@ -248,30 +248,32 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
   });
 
   describe('open_url event', () => {
-    it('opens the provided URL', () => {
+    it('dispatches browser-open-url event with the URL', () => {
       const set = vi.fn();
       const get = vi.fn(() => makeBasicState());
-      const originalOpen = window.open;
-      window.open = vi.fn();
+      const dispatched: string[] = [];
+      const listener = (e: Event) => dispatched.push((e as CustomEvent<string>).detail);
+      window.addEventListener('browser-open-url', listener);
 
       const handler = createStreamHandler(set as never, get as never);
       handler({ type: 'open_url', url: 'https://example.com' });
 
-      expect(window.open).toHaveBeenCalledWith('https://example.com', '_blank');
-      window.open = originalOpen;
+      expect(dispatched).toEqual(['https://example.com']);
+      window.removeEventListener('browser-open-url', listener);
     });
 
     it('does nothing if url is missing', () => {
       const set = vi.fn();
       const get = vi.fn(() => makeBasicState());
-      const originalOpen = window.open;
-      window.open = vi.fn();
+      const dispatched: string[] = [];
+      const listener = (e: Event) => dispatched.push((e as CustomEvent<string>).detail);
+      window.addEventListener('browser-open-url', listener);
 
       const handler = createStreamHandler(set as never, get as never);
       handler({ type: 'open_url' });
 
-      expect(window.open).not.toHaveBeenCalled();
-      window.open = originalOpen;
+      expect(dispatched).toEqual([]);
+      window.removeEventListener('browser-open-url', listener);
     });
   });
 

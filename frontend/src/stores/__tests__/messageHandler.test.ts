@@ -127,23 +127,25 @@ describe('handleBalanceWarningEvent', { tags: ['unit'] }, () => {
 });
 
 describe('handleOpenUrlEvent', { tags: ['unit'] }, () => {
-  it('opens URL in new tab', () => {
-    const openMock = vi.fn();
-    vi.stubGlobal('open', openMock);
+  it('dispatches browser-open-url event with the URL', () => {
+    const dispatched: string[] = [];
+    const listener = (e: Event) => dispatched.push((e as CustomEvent<string>).detail);
+    window.addEventListener('browser-open-url', listener);
 
     handleOpenUrlEvent({ type: 'open_url', url: 'https://example.com' });
 
-    expect(openMock).toHaveBeenCalledWith('https://example.com', '_blank');
-    vi.unstubAllGlobals();
+    expect(dispatched).toEqual(['https://example.com']);
+    window.removeEventListener('browser-open-url', listener);
   });
 
   it('does nothing when url is empty', () => {
-    const openMock = vi.fn();
-    vi.stubGlobal('open', openMock);
+    const dispatched: string[] = [];
+    const listener = (e: Event) => dispatched.push((e as CustomEvent<string>).detail);
+    window.addEventListener('browser-open-url', listener);
 
     handleOpenUrlEvent({ type: 'open_url' });
 
-    expect(openMock).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+    expect(dispatched).toEqual([]);
+    window.removeEventListener('browser-open-url', listener);
   });
 });

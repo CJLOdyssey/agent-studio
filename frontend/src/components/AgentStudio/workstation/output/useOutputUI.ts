@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { OutputCategory, OutputEntry, OutputFormData } from './output.types';
 
 const EMPTY_FORM: OutputFormData = {
-  name: '', content: '', category: '格式约束' as OutputCategory, model: '全部模型', status: 'draft', version: 'v1.0.0',
+  name: '', content: '', category: '格式约束' as OutputCategory, status: 'draft',
 };
 
 function validateForm(data: OutputFormData): string[] {
@@ -46,7 +46,7 @@ export function useOutputUI(): OutputUI {
 
   const setFormData = useCallback((fn: (f: OutputFormData) => OutputFormData) => { setFormData_((p) => fn(p)); }, []);
   const openCreate = useCallback(() => { setEditingItem(null); setFormData_(EMPTY_FORM); setFormErrors([]); setIsFormOpen(true); }, []);
-  const openEdit = useCallback((item: OutputEntry) => { setEditingItem(item); setFormData_({ name: item.name, content: item.content, category: item.category, model: item.model, status: item.status, version: item.version }); setFormErrors([]); setIsFormOpen(true); }, []);
+  const openEdit = useCallback((item: OutputEntry) => { setEditingItem(item); setFormData_({ name: item.name, content: item.content, category: item.category, status: item.status }); setFormErrors([]); setIsFormOpen(true); }, []);
   const closeForm = useCallback(() => { setIsFormOpen(false); setFormErrors([]); }, []);
 
   const handleSave = useCallback((d: { addItem: (data: OutputFormData) => Promise<void>; updateItem: (id: string, data: Partial<OutputEntry>) => Promise<void>; editingId: string | null }): boolean => {

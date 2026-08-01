@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 vi.mock('reactflow', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -51,10 +51,11 @@ vi.mock('reactflow', () => {
 vi.mock('../../../../../api/client', () => ({
   saveWorkflow: vi.fn().mockResolvedValue({}),
   deleteWorkflow: vi.fn().mockResolvedValue(undefined),
+  submitRequirement: vi.fn().mockResolvedValue({ run_id: 'r1', status: 'pending' }),
 }));
 
 import WorkflowEditor from '../WorkflowEditor';
-import { saveWorkflow, deleteWorkflow } from '../../../../../api/client';
+import { saveWorkflow, deleteWorkflow, submitRequirement } from '../../../../../api/client';
 
 const defaultAgents = [
   { id: 'a1', name: 'Writer', agentConfigId: 'ac1' },
@@ -200,7 +201,7 @@ describe('WorkflowEditor', { tags: ['unit'] }, () => {
       edges: [],
     };
     render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
-    fireEvent.click(screen.getByTestId('node-Writer'));
+    fireEvent.click(screen.getByTestId('node-ac1'));
     expect(screen.getByText(/Delete/)).toBeInTheDocument();
   });
 
@@ -211,7 +212,7 @@ describe('WorkflowEditor', { tags: ['unit'] }, () => {
       edges: [],
     };
     render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
-    fireEvent.click(screen.getByTestId('node-Writer'));
+    fireEvent.click(screen.getByTestId('node-ac1'));
     expect(screen.getByText(/Delete/)).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('pane'));
     expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
@@ -264,7 +265,7 @@ describe('WorkflowEditor', { tags: ['unit'] }, () => {
       edges: [],
     };
     render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
-    fireEvent.click(screen.getByTestId('node-Writer'));
+    fireEvent.click(screen.getByTestId('node-ac1'));
     expect(screen.getByText(/Delete/)).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Delete' });
     expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
@@ -277,7 +278,7 @@ describe('WorkflowEditor', { tags: ['unit'] }, () => {
       edges: [],
     };
     render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
-    fireEvent.click(screen.getByTestId('node-Writer'));
+    fireEvent.click(screen.getByTestId('node-ac1'));
     expect(screen.getByText(/Delete/)).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Backspace' });
     expect(screen.queryByText(/Delete/)).not.toBeInTheDocument();
@@ -291,6 +292,78 @@ describe('WorkflowEditor', { tags: ['unit'] }, () => {
     />);
     fireEvent.click(screen.getByText('删除工作流'));
     expect(deleteWorkflow).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it('uses real agent id for nodes and reports dirty changes', () => {
+    const onDirtyChange = vi.fn();
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} onDirtyChange={onDirtyChange} />);
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    fireEvent.change(screen.getByPlaceholderText('工作流名称'), { target: { value: 'Renamed' } });
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it('blocks save when workflow contains a cycle', () => {
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Cycle', maxRounds: 3,
+      nodes: [
+        { id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 },
+        { id: 'n2', agentConfigId: 'ac2', roleIdentifier: 'Reviewer', strategy: 'reviewer', order: 1 },
+      ],
+      edges: [
+        { id: 'e1', fromNodeId: 'Writer', toNodeId: 'Reviewer', isDefault: true, priority: 0 },
+        { id: 'e2', fromNodeId: 'Reviewer', toNodeId: 'Writer', isDefault: true, priority: 0 },
+      ],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByText('保存工作流'));
+    expect(window.alert).toHaveBeenCalled();
+    expect(saveWorkflow).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it('blocks save when a node is connected to itself', () => {
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [{ id: 'e1', fromNodeId: 'Writer', toNodeId: 'Writer', isDefault: true, priority: 0 }],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByText('保存工作流'));
+    expect(window.alert).toHaveBeenCalled();
+    expect(saveWorkflow).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it('starts a test run after saving', async () => {
+    vi.spyOn(window, 'prompt').mockReturnValue('验证工作流');
+    vi.mocked(saveWorkflow).mockResolvedValue({} as never);
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByText('测试运行'));
+    await waitFor(() => {
+      expect(saveWorkflow).toHaveBeenCalled();
+      expect(submitRequirement).toHaveBeenCalledWith('验证工作流', undefined, undefined, undefined, undefined, 'team-1');
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('does not start test run when prompt is cancelled', async () => {
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    const config = {
+      id: 'wf-1', teamId: 'team-1', name: 'Test', maxRounds: 3,
+      nodes: [{ id: 'n1', agentConfigId: 'ac1', roleIdentifier: 'Writer', strategy: 'generator', order: 0 }],
+      edges: [],
+    };
+    render(<WorkflowEditor teamId="team-1" agents={defaultAgents} existingConfig={config} />);
+    fireEvent.click(screen.getByText('测试运行'));
+    expect(submitRequirement).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 });

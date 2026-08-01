@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import WorkflowEditor from './WorkflowEditor';
 import { fetchWorkflow } from '../../../../api/client';
 import { listTeams } from '../../../../api/client/teams';
@@ -20,6 +20,7 @@ export default function WorkflowManagement() {
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [config, setConfig] = useState<WorkflowConfig | null>(null);
   const [loading, setLoading] = useState(false);
+  const dirtyRef = useRef(false);
   const selectedTeam = teams.find((t) => t.id === selectedTeamId);
 
   useEffect(() => { listTeams().then((d) => setTeams(d as TeamItem[])).catch(() => {}); }, []);
@@ -41,10 +42,17 @@ export default function WorkflowManagement() {
     return () => { cancelled = true; };
   }, [selectedTeamId]);
 
+  const handleTeamChange = (teamId: string) => {
+    if (teamId === selectedTeamId) return;
+    if (dirtyRef.current && !window.confirm('有未保存的更改，确定切换团队？')) return;
+    dirtyRef.current = false;
+    setSelectedTeamId(teamId);
+  };
+
   return (
     <div className="agentstudio-page h-[calc(100dvh-120px)]">
       <div className="flex gap-2 mb-3">
-        <select className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)}>
+        <select className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" value={selectedTeamId} onChange={(e) => handleTeamChange(e.target.value)}>
           <option value="">选择团队</option>
           {teams.map((team) => (
             <option key={team.id} value={team.id}>{team.name}</option>
@@ -58,7 +66,8 @@ export default function WorkflowManagement() {
           agents={selectedTeam.agents}
           existingConfig={config}
           onSaved={() => fetchWorkflow(selectedTeamId).then(setConfig)}
-          onDeleted={() => { setConfig(null); setSelectedTeamId(''); }}
+          onDeleted={() => { dirtyRef.current = false; setConfig(null); setSelectedTeamId(''); }}
+          onDirtyChange={(dirty) => { dirtyRef.current = dirty; }}
         />
       )}
       {!selectedTeam && (

@@ -6,9 +6,7 @@ export interface OutputEntry {
   name: string;
   content: string;
   category: OutputCategory;
-  model: string;
   status: 'active' | 'draft' | 'archived';
-  version: string;
   createdAt: string;
 }
 

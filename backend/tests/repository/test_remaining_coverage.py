@@ -290,6 +290,8 @@ class TestSkillsDict:
         assert "name" in d
         assert "instructions" in d
         assert "created_at" in d
+        assert "mcp_names" in d
+        assert d["mcp_names"] == []
 
 
 # ── Keys Connectivity: /v1/ trailing slash ──────────────────────────────

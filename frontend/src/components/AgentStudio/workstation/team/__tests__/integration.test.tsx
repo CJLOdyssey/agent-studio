@@ -114,7 +114,7 @@ describe('Team Management Integration', { tags: ['integration'] }, () => {
     await waitFor(() => expect(screen.getByText('前端组')).toBeInTheDocument());
 
     fireEvent.mouseDown(document.querySelectorAll('.ant-select-selector')[0]);
-    const matches = await screen.findAllByText('team.category_dev');
+    const matches = await screen.findAllByText('dev');
     const optContent = matches.find(el => el.closest('.ant-select-item-option'));
     const optItem = optContent?.closest('.ant-select-item-option');
     if (optItem) {

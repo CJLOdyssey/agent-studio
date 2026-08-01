@@ -16,6 +16,7 @@ router = APIRouter(tags=["prompts"])
 
 class PromptCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
+    description: str = ""
     category: str = Field(..., min_length=1)
     content: str = Field(..., min_length=1)
     model: str | None = None
@@ -24,6 +25,7 @@ class PromptCreate(BaseModel):
 
 class PromptUpdate(BaseModel):
     name: str | None = None
+    description: str | None = None
     category: str | None = None
     content: str | None = None
     model: str | None = None
@@ -84,6 +86,7 @@ async def add_prompt(req: PromptCreate) -> Any:
         return {
             "id": p.id,
             "name": p.name,
+            "description": p.description,
             "category": p.category,
             "content": p.content,
             "model": p.model,
@@ -107,9 +110,12 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
         return {
             "id": p.id,
             "name": p.name,
+            "description": p.description,
             "category": p.category,
             "content": p.content,
+            "model": p.model,
             "status": p.status,
+            "version": p.version,
         }
     except HTTPException:
         raise

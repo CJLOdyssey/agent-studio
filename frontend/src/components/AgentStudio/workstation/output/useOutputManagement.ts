@@ -38,7 +38,7 @@ function validateOutputForm(data: OutputFormData): string[] {
 }
 
 const EMPTY_FORM: OutputFormData = {
-  name: '', content: '', category: '格式约束' as OutputCategory, model: '全部模型', status: 'draft', version: 'v1.0.0',
+  name: '', content: '', category: '格式约束' as OutputCategory, status: 'draft',
 };
 
 export function useOutputManagement(): OutputData {

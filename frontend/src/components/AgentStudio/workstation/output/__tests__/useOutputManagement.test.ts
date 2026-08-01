@@ -16,8 +16,8 @@ vi.mock('../api', () => ({
 import { outputAPI } from '../api';
 
 const MOCK_ITEMS = [
-  { id: 'o1', name: 'JSON格式', content: '以JSON格式输出', category: '格式约束', model: '', status: 'active', version: 'v1.0.0', createdAt: '2024-01-01' },
-  { id: 'o2', name: 'Markdown格式', content: '以Markdown输出', category: '格式约束', model: '', status: 'active', version: 'v1.0.0', createdAt: '2024-01-01' },
+  { id: 'o1', name: 'JSON格式', content: '以JSON格式输出', category: 'output_constraint', status: 'active', createdAt: '2024-01-01' },
+  { id: 'o2', name: 'Markdown格式', content: '以Markdown输出', category: 'output_constraint', status: 'active', createdAt: '2024-01-01' },
 ];
 
 describe('useOutputManagement', { tags: ['unit'] }, () => {
@@ -48,7 +48,7 @@ describe('useOutputManagement', { tags: ['unit'] }, () => {
   it('addItem calls api.create', async () => {
     const { result } = renderHook(() => useOutputManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    await act(async () => { await result.current.addItem({ name: 'Test', content: 'Content', category: '格式约束', model: 'GPT-4o', status: 'active', version: 'v1.0.0' }); });
+    await act(async () => { await result.current.addItem({ name: 'Test', content: 'Content', category: 'output_constraint', status: 'active' }); });
     expect(outputAPI.create).toHaveBeenCalled();
   });
 
@@ -108,7 +108,7 @@ describe('useOutputManagement', { tags: ['unit'] }, () => {
   it('addItems appends items', async () => {
     const { result } = renderHook(() => useOutputManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    act(() => { result.current.addItems([{ id: 'new1', name: 'New', content: 'New', category: '格式约束', model: '', status: 'active', version: 'v1.0.0', createdAt: '2024-01-01' } as any]); });
+    act(() => { result.current.addItems([{ id: 'new1', name: 'New', content: 'New', category: 'output_constraint', status: 'active', createdAt: '2024-01-01' }]); });
     expect(result.current.filtered.length).toBe(3);
   });
 

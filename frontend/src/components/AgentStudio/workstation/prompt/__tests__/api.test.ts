@@ -22,6 +22,7 @@ describe('prompt api', { tags: ['unit'] }, () => {
   const sampleRow = {
     id: 'p1',
     name: 'Prompt 1',
+    description: '用途说明',
     category: 'system',
     content: 'You are helpful',
     model: 'gpt-4',
@@ -45,15 +46,27 @@ describe('prompt api', { tags: ['unit'] }, () => {
     mockCreatePrompt.mockResolvedValue(sampleRow);
 
     const { promptAPI } = await import('../api');
-    const data: PromptFormData = { name: 'New', category: 'system', content: 'Hello' };
+    const data: PromptFormData = { name: 'New', description: 'desc', category: 'system', content: 'Hello' };
     const result = await promptAPI.create(data);
 
     expect(mockCreatePrompt).toHaveBeenCalledWith({
       name: 'New',
+      description: 'desc',
       category: 'system',
       content: 'Hello',
     });
     expect(result.name).toBe('Prompt 1');
+  });
+
+  it('create sends description', async () => {
+    mockCreatePrompt.mockResolvedValue(sampleRow);
+
+    const { promptAPI } = await import('../api');
+    const data: PromptFormData = { name: 'New', description: 'desc', category: 'system', content: 'Hello' };
+    await promptAPI.create(data);
+
+    const payload = mockCreatePrompt.mock.calls[0][0];
+    expect(payload.description).toBe('desc');
   });
 
   it('update calls updatePrompt', async () => {
@@ -63,6 +76,15 @@ describe('prompt api', { tags: ['unit'] }, () => {
     await promptAPI.update('p1', { name: 'Updated' });
 
     expect(mockUpdatePrompt).toHaveBeenCalledWith('p1', { name: 'Updated' });
+  });
+
+  it('update sends description', async () => {
+    mockUpdatePrompt.mockResolvedValue(undefined);
+
+    const { promptAPI } = await import('../api');
+    await promptAPI.update('p1', { name: 'Updated', description: 'new desc' });
+
+    expect(mockUpdatePrompt).toHaveBeenCalledWith('p1', { name: 'Updated', description: 'new desc' });
   });
 
   it('remove calls deletePrompt', async () => {
@@ -114,5 +136,17 @@ describe('prompt api', { tags: ['unit'] }, () => {
 
     expect(result[0].status).toBe('draft');
     expect(result[0].model).toBe('');
+  });
+
+  it('toEntry maps description, defaulting to empty string', async () => {
+    mockListPrompts.mockResolvedValue([{ ...sampleRow, description: 'desc' }]);
+    const { promptAPI } = await import('../api');
+    const result = await promptAPI.fetchAll();
+    expect(result[0].description).toBe('desc');
+
+    mockListPrompts.mockResolvedValue([{ ...sampleRow, description: null }]);
+    const { promptAPI: api2 } = await import('../api');
+    const result2 = await api2.fetchAll();
+    expect(result2[0].description).toBe('');
   });
 });

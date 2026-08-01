@@ -119,6 +119,21 @@ class TestPrompts:
         })
         assert resp.status_code == 201
 
+    def test_create_prompt_with_description(self, client):
+        resp = client.post("/api/prompts", json={
+            "name": "desc-prompt", "description": "用途说明", "category": "general", "content": "Be helpful."
+        })
+        assert resp.status_code == 201
+        assert resp.json()["description"] == "用途说明"
+
+    def test_list_prompts_include_description(self, client):
+        client.post("/api/prompts", json={
+            "name": "list-desc-prompt", "description": "desc-1", "category": "general", "content": "x"
+        })
+        resp = client.get("/api/prompts")
+        assert resp.status_code == 200
+        assert all("description" in p for p in resp.json())
+
     def test_update_prompt(self, client):
         resp = client.post("/api/prompts", json={
             "name": "upd-prompt", "category": "general", "content": "Original."
@@ -127,6 +142,15 @@ class TestPrompts:
         resp = client.put(f"/api/prompts/{prompt_id}", json={"name": "updated"})
         assert resp.status_code == 200
         assert resp.json()["name"] == "updated"
+
+    def test_update_prompt_description(self, client):
+        resp = client.post("/api/prompts", json={
+            "name": "upd-desc-prompt", "description": "old", "category": "general", "content": "Original."
+        })
+        prompt_id = resp.json()["id"]
+        resp = client.put(f"/api/prompts/{prompt_id}", json={"description": "new desc"})
+        assert resp.status_code == 200
+        assert resp.json()["description"] == "new desc"
 
     def test_update_prompt_not_found(self, client):
         resp = client.put("/api/prompts/nonexistent", json={"name": "x"})

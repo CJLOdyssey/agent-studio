@@ -3,6 +3,8 @@ import type { GenericCrudReturn } from '../shared/useGenericCrud';
 export interface PromptEntry {
   id: string;
   name: string;
+  /** 提示词用途说明。后端暂未提供 description 字段，为前端 UI 字段（仅编辑回显，不持久化）。 */
+  description?: string;
   content: string;
   category: PromptCategory;
   model: string;

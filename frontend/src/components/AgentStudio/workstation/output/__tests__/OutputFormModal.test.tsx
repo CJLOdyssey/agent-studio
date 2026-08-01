@@ -9,7 +9,6 @@ vi.mock('../locales', () => ({
       'output.form_title_edit': '编辑约束',
       'output.form_name': '名称',
       'output.form_content': '内容',
-      'output.form_category': '分类',
       'output.form_status': '状态',
       'output.form_cancel': '取消',
       'output.form_save_create': '创建',
@@ -234,25 +233,6 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
     expect(setFormData).toHaveBeenCalled();
   });
 
-  it('calls setFormData on category select change', () => {
-    const setFormData = vi.fn();
-    const { container } = render(
-      <OutputFormModal
-        editingItem={null}
-        formData={defaultFormData}
-        setFormData={setFormData}
-        onSave={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-
-    const selects = container.querySelectorAll('select');
-    expect(selects.length).toBeGreaterThanOrEqual(2);
-    const categorySelect = selects[0];
-    fireEvent.change(categorySelect, { target: { value: '长度约束' } });
-    expect(setFormData).toHaveBeenCalled();
-  });
-
   it('calls setFormData on status select change', () => {
     const setFormData = vi.fn();
     const { container } = render(
@@ -266,8 +246,8 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
     );
 
     const selects = container.querySelectorAll('select');
-    expect(selects.length).toBeGreaterThanOrEqual(2);
-    const statusSelect = selects[1];
+    expect(selects.length).toBe(1);
+    const statusSelect = selects[0];
     fireEvent.change(statusSelect, { target: { value: 'archived' } });
     expect(setFormData).toHaveBeenCalled();
   });
@@ -344,26 +324,6 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
     expect(container.querySelector('.wsta-form-errors')).toBeNull();
   });
 
-  it('renders category options correctly', () => {
-    const { container } = render(
-      <OutputFormModal
-        editingItem={null}
-        formData={defaultFormData}
-        setFormData={vi.fn()}
-        onSave={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-
-    const selects = container.querySelectorAll('select');
-    const categorySelect = selects[0];
-    const options = Array.from(categorySelect.querySelectorAll('option')).map((o) => o.textContent);
-    expect(options).toContain('格式约束');
-    expect(options).toContain('内容约束');
-    expect(options).toContain('语言约束');
-    expect(options).toContain('长度约束');
-  });
-
   it('renders status options correctly', () => {
     const { container } = render(
       <OutputFormModal
@@ -376,11 +336,26 @@ describe('OutputFormModal', { tags: ['unit'] }, () => {
     );
 
     const selects = container.querySelectorAll('select');
-    const statusSelect = selects[1];
+    const statusSelect = selects[0];
     const options = Array.from(statusSelect.querySelectorAll('option')).map((o) => o.value);
     expect(options).toContain('active');
     expect(options).toContain('draft');
     expect(options).toContain('archived');
+  });
+
+  it('renders no category field', () => {
+    const { container } = render(
+      <OutputFormModal
+        editingItem={null}
+        formData={defaultFormData}
+        setFormData={vi.fn()}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector('input[placeholder="输入分类"]')).toBeNull();
+    expect(container.querySelectorAll('select').length).toBe(1);
   });
 
   it('sets maxLength on name input', () => {

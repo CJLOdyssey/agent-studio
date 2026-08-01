@@ -15,7 +15,11 @@ vi.mock('../api', () => ({
   },
 }));
 
-vi.mock('../locales', () => ({ t: (k: string) => k, setLang: vi.fn(), getLang: () => 'zh' }));
+vi.mock('../locales', () => ({
+  t: (k: string) => (k === 'status.active' ? 'active' : k),
+  setLang: vi.fn(),
+  getLang: () => 'zh',
+}));
 vi.mock('../../shared/WstaPagination', () => ({ default: () => <div className="wsta-pagination" /> }));
 vi.mock('../../shared/LoadingSkeleton', () => ({ TableSkeleton: () => <div data-testid="skeleton" /> }));
 vi.mock('../PromptFormModal', () => ({ default: () => null }));

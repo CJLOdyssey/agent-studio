@@ -151,8 +151,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
             agents={teams.flatMap((t) => t.agents)}
             onSelect={handleConvSelect}
             onDelete={handleConvDelete}
-            onRename={(id) => {/* TODO */}}
-            onPin={(id) => {/* TODO */}}
+            onRename={(_id) => {/* TODO */}}
+            onPin={(_id) => {/* TODO */}}
           />
         </div>
       </div>

@@ -12,6 +12,7 @@ export function validateSkillForm(data: SkillFormData, skills: SkillEntry[], edi
   else if (t.length > 50) errors.push('Skill 名称最多 50 个字符');
   if (skills.some((p) => p.name === t && p.id !== editingId)) errors.push(`名称「${t}」已存在`);
   if (!/^v\d+\.\d+\.\d+$/.test(data.version.trim())) errors.push('版本格式应为 v1.0.0');
+  if (!data.description.trim()) errors.push('Skill 描述不能为空');
   if (!data.instructions.trim()) errors.push('Skill 指令不能为空');
   return errors;
 }

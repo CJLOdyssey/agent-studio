@@ -27,6 +27,8 @@ describe('tool api', { tags: ['unit'] }, () => {
     status: 'active',
     version: 'v1',
     endpoint: 'https://example.com',
+    method: 'POST',
+    headers: '{"Authorization":"Bearer xyz"}',
     parameters: '{"type":"object"}',
     created_at: '2024-01-15T00:00:00Z',
   };
@@ -42,6 +44,26 @@ describe('tool api', { tags: ['unit'] }, () => {
     expect(result[0].status).toBe('active');
   });
 
+  it('toEntry maps method and headers', async () => {
+    mockListTools.mockResolvedValue([sampleRow]);
+
+    const { toolAPI } = await import('../api');
+    const result = await toolAPI.fetchAll();
+
+    expect(result[0].method).toBe('POST');
+    expect(result[0].headers).toBe('{"Authorization":"Bearer xyz"}');
+  });
+
+  it('toEntry defaults method and headers when missing', async () => {
+    mockListTools.mockResolvedValue([{ ...sampleRow, method: undefined, headers: undefined }]);
+
+    const { toolAPI } = await import('../api');
+    const result = await toolAPI.fetchAll();
+
+    expect(result[0].method).toBe('GET');
+    expect(result[0].headers).toBe('{}');
+  });
+
   it('create calls createTool and returns entry', async () => {
     mockCreateTool.mockResolvedValue(sampleRow);
 
@@ -53,6 +75,8 @@ describe('tool api', { tags: ['unit'] }, () => {
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Api-Key":"k"}',
       parameters: '{"type":"object"}',
     };
     const result = await toolAPI.create(data);
@@ -64,6 +88,8 @@ describe('tool api', { tags: ['unit'] }, () => {
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Api-Key":"k"}',
       parameters: '{"type":"object"}',
     });
     expect(result.name).toBe('Tool 1');
@@ -99,6 +125,8 @@ describe('tool api', { tags: ['unit'] }, () => {
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Key":"v"}',
       parameters: '{"type":"object"}',
       createdAt: '2024-01-01',
     };
@@ -111,6 +139,8 @@ describe('tool api', { tags: ['unit'] }, () => {
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Key":"v"}',
       parameters: '{"type":"object"}',
     });
   });

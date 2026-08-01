@@ -14,7 +14,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientPro
 const baseFormData = {
   name: '', description: '', category: 'AI/ML', status: 'available' as const,
   version: 'v1.0.0', author: '', instructions: '',
-  tool_names: [] as string[], output_constraint: '',
+  tool_names: [] as string[], mcp_names: [] as string[], output_constraint: '',
 };
 
 const baseProps = {
@@ -29,6 +29,7 @@ const baseProps = {
 describe('SkillFormModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('renders create mode title', () => {
@@ -83,6 +84,29 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     const textarea = screen.getByPlaceholderText('skill.form_desc_placeholder');
     fireEvent.change(textarea, { target: { value: 'A skill description' } });
     expect(setFormData).toHaveBeenCalled();
+  });
+
+  it('marks description as required', () => {
+    render(<SkillFormModal {...baseProps} />, { wrapper: Wrapper });
+    const label = screen.getByText('skill.form_desc').parentElement;
+    expect(label?.querySelector('span')).toHaveTextContent('*');
+  });
+
+  it('renders separate tool and mcp selection counts', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 't1', name: 'tool_a' }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'm1', name: 'github' }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    );
+    render(
+      <SkillFormModal
+        {...baseProps}
+        formData={{ ...baseFormData, tool_names: ['tool_a'], mcp_names: ['github'] }}
+      />,
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => expect(screen.getByText('skill.form_tools (1)')).toBeInTheDocument());
+    expect(screen.getByText('skill.form_mcp (1)')).toBeInTheDocument();
   });
 
   it('calls setFormData on version input change', () => {

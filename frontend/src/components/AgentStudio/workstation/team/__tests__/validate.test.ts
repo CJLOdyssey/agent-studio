@@ -40,6 +40,21 @@ describe('validateTeamForm', { tags: ['unit'] }, () => {
     const errors = validateTeamForm({ name: 'A'.repeat(50) });
     expect(errors).toEqual([]);
   });
+
+  it('rejects duplicate name against items', () => {
+    const errors = validateTeamForm({ name: 'My Team' }, [{ id: 't1', name: 'My Team' }]);
+    expect(errors).toEqual(['名称「My Team」已存在']);
+  });
+
+  it('allows same name when editing itself', () => {
+    const errors = validateTeamForm({ name: 'My Team' }, [{ id: 't1', name: 'My Team' }], 't1');
+    expect(errors).toEqual([]);
+  });
+
+  it('rejects category with leading/trailing spaces', () => {
+    const errors = validateTeamForm({ name: 'My Team', category: ' 业务 ' });
+    expect(errors).toEqual(['分类首尾不能有空格']);
+  });
 });
 
 describe('EMPTY_FORM', { tags: ['unit'] }, () => {
@@ -47,6 +62,6 @@ describe('EMPTY_FORM', { tags: ['unit'] }, () => {
     expect(EMPTY_FORM.name).toBe('');
     expect(EMPTY_FORM.description).toBe('');
     expect(EMPTY_FORM.status).toBe('active');
-    expect(EMPTY_FORM.category).toBe('dev');
+    expect(EMPTY_FORM.category).toBe('');
   });
 });

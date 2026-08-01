@@ -40,17 +40,13 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
   }, []);
 
   const selectedToolNames = formData.tool_names.filter(n => tools.some(t => t.name === n));
-  const selectedMCPNames = formData.tool_names.filter(n => mcps.some(m => m.name === n));
+  const selectedMCPNames = (formData.mcp_names ?? []).filter(n => mcps.some(m => m.name === n));
 
   const handlePickerConfirm = (ids: string | string[]) => {
     if (activePicker === 'tools') {
-      const newTools = (ids as string[]);
-      const keptMCPs = formData.tool_names.filter(n => mcps.some(m => m.name === n));
-      setFormData(f => ({ ...f, tool_names: [...newTools, ...keptMCPs] }));
+      setFormData(f => ({ ...f, tool_names: ids as string[] }));
     } else if (activePicker === 'mcp') {
-      const newMCPs = (ids as string[]);
-      const keptTools = formData.tool_names.filter(n => tools.some(t => t.name === n));
-      setFormData(f => ({ ...f, tool_names: [...keptTools, ...newMCPs] }));
+      setFormData(f => ({ ...f, mcp_names: ids as string[] }));
     } else if (activePicker === 'constraint') {
       const selected = constraints.filter(c => (ids as string[]).includes(c.id)).map(c => c.name);
       setFormData(f => ({ ...f, output_constraint: selected.join('\n') }));
@@ -87,7 +83,7 @@ function SkillFormModal({ editingSkill, formData, setFormData, onSave, onClose, 
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_desc')}</label>
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('skill.form_desc')} <span className="text-[var(--color-danger)]">*</span></label>
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.description}
               onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('skill.form_desc_placeholder')} rows={2} maxLength={500} />

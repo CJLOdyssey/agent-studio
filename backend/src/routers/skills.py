@@ -24,6 +24,7 @@ class SkillCreate(BaseModel):
     description: str = ""
     instructions: str = ""
     tool_names: list[str] = []
+    mcp_names: list[str] = []
     output_constraint: str = ""
     version: str = "v1.0.0"
     author: str = ""
@@ -36,6 +37,7 @@ class SkillUpdate(BaseModel):
     description: str | None = None
     instructions: str | None = None
     tool_names: list[str] | None = None
+    mcp_names: list[str] | None = None
     output_constraint: str | None = None
     version: str | None = None
     author: str | None = None
@@ -74,6 +76,7 @@ async def get_skill(skill_id: str) -> Any:
             "status": s.status,
             "instructions": s.instructions,
             "tool_names": s.tool_names,
+            "mcp_names": s.mcp_names or [],
             "output_constraint": s.output_constraint,
             "created_at": str(s.created_at) if s.created_at else None,
             "updated_at": str(s.updated_at) if s.updated_at else None,
@@ -123,6 +126,7 @@ async def add_skill(req: SkillCreate) -> Any:
             "category": s.category,
             "status": s.status,
             "tool_names": s.tool_names,
+            "mcp_names": s.mcp_names or [],
             "output_constraint": s.output_constraint,
             "instructions": s.instructions,
             "created_at": s.created_at.isoformat() if s.created_at else None,
@@ -199,6 +203,7 @@ async def import_skill(
             "content": description,
             "instructions": instructions,
             "tool_names": tool_names,
+            "mcp_names": [],
             "version": "v1.0.0",
             "author": author,
             "status": "active",
@@ -214,6 +219,7 @@ async def import_skill(
             "status": s.status,
             "instructions": s.instructions,
             "tool_names": s.tool_names,
+            "mcp_names": s.mcp_names or [],
             "script_files": s.script_files,
             "created_at": s.created_at.isoformat() if s.created_at else None,
         }
@@ -280,6 +286,7 @@ async def import_skill_text(req: SkillImportRequest) -> Any:
             "content": description,
             "instructions": instructions,
             "tool_names": tool_names,
+            "mcp_names": [],
             "version": "v1.0.0",
             "author": author,
             "status": "active",
@@ -294,6 +301,7 @@ async def import_skill_text(req: SkillImportRequest) -> Any:
             "status": s.status,
             "instructions": s.instructions,
             "tool_names": s.tool_names,
+            "mcp_names": s.mcp_names or [],
             "created_at": s.created_at.isoformat() if s.created_at else None,
         }
     except HTTPException:
@@ -320,6 +328,7 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
             "category": s.category,
             "status": s.status,
             "tool_names": s.tool_names,
+            "mcp_names": s.mcp_names or [],
             "output_constraint": s.output_constraint,
             "instructions": s.instructions,
         }

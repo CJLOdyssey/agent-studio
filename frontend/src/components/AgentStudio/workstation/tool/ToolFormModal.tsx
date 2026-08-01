@@ -56,7 +56,7 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
             <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('tool.form_name_placeholder')} maxLength={50} />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_desc')}</label>
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_desc')} <span className="text-[var(--color-danger)]">*</span></label>
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('tool.form_desc_placeholder')} rows={3} maxLength={500} />
           </div>
           <div className="flex flex-col gap-1">
@@ -66,18 +66,22 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_status')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as ToolEntry['status'] }))}>
+              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as ToolEntry['status'] }))} aria-label="状态">
                 {Object.entries(TOOL_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_version')} <span className="text-[var(--color-danger)]">*</span></label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_version')}</label>
               <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version} onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))} placeholder={t('tool.form_version_placeholder')} />
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_endpoint')}</label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select className="py-2 px-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" style={{ width: 84, flexShrink: 0 }} value={formData.method || 'GET'} onChange={(e) => setFormData((f) => ({ ...f, method: e.target.value }))} aria-label={t('tool.form_method')}>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+              </select>
               <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" style={{ flex: 1 }} value={formData.endpoint} onChange={(e) => setFormData((f) => ({ ...f, endpoint: e.target.value }))} placeholder={t('tool.form_endpoint_placeholder')} />
               <button
                 className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
@@ -94,6 +98,10 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
                 {testResult.message}{testResult.duration_ms > 0 ? ` — ${testResult.duration_ms}ms` : ''}
               </div>
             )}
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_headers')}</label>
+            <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)] font-mono text-xs" value={formData.headers || ''} onChange={(e) => setFormData((f) => ({ ...f, headers: e.target.value }))} placeholder={'{"Authorization": "Bearer ..."}'} rows={2} />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_parameters')}</label>

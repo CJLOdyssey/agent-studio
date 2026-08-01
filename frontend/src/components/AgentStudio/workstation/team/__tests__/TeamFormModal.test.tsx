@@ -81,29 +81,24 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByPlaceholderText('team.form_desc_placeholder')).toBeInTheDocument();
   });
 
-  it('renders category dropdown with all options', () => {
+  it('renders category input with current form value', () => {
     render(
-      <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
+      <TeamFormModal editingItem={null} formData={{ ...EMPTY_FORM, category: 'dev' }} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    // Options are rendered as text nodes via option elements
-    const selects = screen.getAllByRole('combobox');
-    const categorySelect = selects[0] as HTMLSelectElement;
-    expect(categorySelect.value).toBe('dev');
-    // Check option text content exists
-    expect(categorySelect.textContent).toContain('team.category_dev');
-    expect(categorySelect.textContent).toContain('team.category_ops');
-    expect(categorySelect.textContent).toContain('team.category_test');
+    // Category is a free-text input (design: custom categories)
+    const categoryInput = screen.getByPlaceholderText('例如：业务、技术、数据') as HTMLInputElement;
+    expect(categoryInput).toBeInTheDocument();
+    expect(categoryInput.value).toBe('dev');
   });
 
-  it('renders status dropdown with active/inactive', () => {
+  it('renders status dropdown with active/disabled options', () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    const selects = screen.getAllByRole('combobox');
-    const statusSelect = selects[1] as HTMLSelectElement;
+    const statusSelect = screen.getByRole('combobox') as HTMLSelectElement;
     expect(statusSelect.value).toBe('active');
     expect(statusSelect.textContent).toContain('team.status_active');
-    expect(statusSelect.textContent).toContain('team.status_inactive');
+    expect(statusSelect.textContent).toContain('team.status_disabled');
   });
 
   it('displays validation errors', () => {

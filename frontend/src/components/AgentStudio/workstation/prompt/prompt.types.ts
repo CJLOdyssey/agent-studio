@@ -3,6 +3,7 @@ import type { SortDir } from '../types';
 export interface PromptEntry {
   id: string;
   name: string;
+  description?: string;
   content: string;
   category: PromptCategory;
   model: string;

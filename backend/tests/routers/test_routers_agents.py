@@ -132,6 +132,54 @@ class TestAgents:
         assert resp.status_code == 200
         assert resp.json()["tools"] == [{"name": "tool1"}]
 
+    def test_agent_output_constraints_roundtrip(self, client):
+        """X1-c: output constraints created in the management tab must round-trip
+        through the agents API so the runtime can consume them."""
+        resp = client.post("/api/agents", json={
+            "name": "oc-agent", "role_identifier": "oc_role",
+            "system_prompt": "test",
+            "output_constraints": "必须输出 JSON，不得包含 Markdown",
+        })
+        assert resp.status_code == 201
+        agent_id = resp.json()["id"]
+
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.status_code == 200
+        assert resp.json()["output_constraints"] == "必须输出 JSON，不得包含 Markdown"
+
+        resp = client.get("/api/agents")
+        assert resp.status_code == 200
+        match = next((a for a in resp.json() if a["id"] == agent_id), None)
+        assert match is not None
+        assert match["output_constraints"] == "必须输出 JSON，不得包含 Markdown"
+
+        resp = client.put(f"/api/agents/{agent_id}", json={
+            "output_constraints": "只返回纯文本结果",
+        })
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.json()["output_constraints"] == "只返回纯文本结果"
+
+    def test_agent_output_constraints_clear(self, client):
+        """X1-c: setting output_constraints to null/empty preserves the field
+        lifecycle — empty string clears, absent keeps the old value."""
+        resp = client.post("/api/agents", json={
+            "name": "oc-clear", "role_identifier": "oc_clear_role",
+            "system_prompt": "test",
+            "output_constraints": "约束 A",
+        })
+        agent_id = resp.json()["id"]
+
+        resp = client.put(f"/api/agents/{agent_id}", json={"name": "oc-clear"})
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.json()["output_constraints"] == "约束 A"
+
+        resp = client.put(f"/api/agents/{agent_id}", json={"output_constraints": ""})
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.json()["output_constraints"] == ""
+
     def test_get_agent_string_tools(self, client):
         resp = client.post("/api/agents", json={
             "name": "str-agent", "role_identifier": "str_role",

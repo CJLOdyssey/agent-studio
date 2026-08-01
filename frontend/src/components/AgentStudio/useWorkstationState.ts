@@ -280,7 +280,10 @@ export function useWorkstationState(
         const prevMessages = activeConv?.messages ?? [];
         conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true, activeTeamId ?? undefined, activeTeamName);
         const st = useChatStore.getState();
-        useChatStore.setState({ messages: [...st.messages, userMessage] });
+        useChatStore.setState({ messages: [...st.messages, {
+          id: userMessage.id, role: userMessage.role, agent_name: '用户',
+          content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
+        }] });
       }
       window.dispatchEvent(new CustomEvent('clear-browser-url'));
       submitToApi(text, undefined, selectedAgentId ?? undefined, true).catch(() => {
@@ -308,7 +311,10 @@ export function useWorkstationState(
         const prevMessages = activeConv?.messages ?? [];
         conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true);
         const st = useChatStore.getState();
-        useChatStore.setState({ messages: [...st.messages, userMessage] });
+        useChatStore.setState({ messages: [...st.messages, {
+          id: userMessage.id, role: userMessage.role, agent_name: '用户',
+          content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
+        }] });
       }
       // saveConversation + setActiveConvId → useEffect loads msg into store → skip duplicate
       submitToApi(text, undefined, undefined, true).catch(() => {

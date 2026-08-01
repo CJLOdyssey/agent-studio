@@ -39,6 +39,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
     expect(result[0].name).toBe('MCP 1');
     expect(result[0].type).toBe('stdio');
     expect(result[0].status).toBe('connected');
+    expect(result[0].enabled).toBe(true);
     expect(result[0].command).toBe('/usr/bin/cmd');
     expect(result[0].version).toBe('v1');
   });
@@ -56,6 +57,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
       version: 'v1',
       args: [],
       env: [],
+      enabled: true,
     };
     const result = await mcpAPI.create(data);
 
@@ -63,10 +65,30 @@ describe('mcp api', { tags: ['unit'] }, () => {
       name: 'New MCP',
       type: 'stdio',
       endpoint: '/usr/bin/cmd',
-      status: 'inactive',
+      status: 'active',
       config: JSON.stringify({ description: 'desc', version: 'v1', args: [], env: [] }),
     });
     expect(result.name).toBe('MCP 1');
+  });
+
+  it('create sends inactive status when enabled is false', async () => {
+    mockCreateMCP.mockResolvedValue(sampleRow);
+
+    const { mcpAPI } = await import('../api');
+    const data: MCPFormData = {
+      name: 'New MCP',
+      type: 'stdio',
+      command: '/usr/bin/cmd',
+      url: '',
+      description: 'desc',
+      version: 'v1',
+      args: [],
+      env: [],
+      enabled: false,
+    };
+    await mcpAPI.create(data);
+
+    expect(mockCreateMCP.mock.calls[0][0].status).toBe('inactive');
   });
 
   it('create uses url for sse type', async () => {
@@ -82,6 +104,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
       version: 'v1',
       args: [],
       env: [],
+      enabled: true,
     };
     await mcpAPI.create(data);
 
@@ -89,7 +112,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
       name: 'SSE MCP',
       type: 'sse',
       endpoint: 'https://example.com',
-      status: 'inactive',
+      status: 'active',
       config: JSON.stringify({ description: 'desc', version: 'v1', args: [], env: [] }),
     });
   });
@@ -131,6 +154,24 @@ describe('mcp api', { tags: ['unit'] }, () => {
     expect(call.config).toBe(JSON.stringify({ description: 'new desc', version: 'v2' }));
   });
 
+  it('update sends active status when enabled toggled on', async () => {
+    mockUpdateMCP.mockResolvedValue(undefined);
+
+    const { mcpAPI } = await import('../api');
+    await mcpAPI.update('m1', { enabled: true });
+
+    expect(mockUpdateMCP.mock.calls[0][1].status).toBe('active');
+  });
+
+  it('update sends inactive status when enabled toggled off', async () => {
+    mockUpdateMCP.mockResolvedValue(undefined);
+
+    const { mcpAPI } = await import('../api');
+    await mcpAPI.update('m1', { enabled: false });
+
+    expect(mockUpdateMCP.mock.calls[0][1].status).toBe('inactive');
+  });
+
   it('remove calls deleteMCP', async () => {
     mockDeleteMCP.mockResolvedValue(undefined);
 
@@ -150,6 +191,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
       description: 'desc',
       type: 'stdio',
       status: 'connected',
+      enabled: true,
       version: 'v1',
       command: '/usr/bin/cmd',
       url: '',
@@ -163,6 +205,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
       name: 'Original (副本)',
       type: 'stdio',
       endpoint: '/usr/bin/cmd',
+      status: 'active',
       config: JSON.stringify({ description: 'desc', version: 'v1', args: ['-y'], env: ['TOKEN=abc'] }),
     });
   });
@@ -183,6 +226,7 @@ describe('mcp api', { tags: ['unit'] }, () => {
     const result = await mcpAPI.fetchAll();
 
     expect(result[0].status).toBe('disconnected');
+    expect(result[0].enabled).toBe(false);
   });
 
   it('toEntry uses description from config when available', async () => {

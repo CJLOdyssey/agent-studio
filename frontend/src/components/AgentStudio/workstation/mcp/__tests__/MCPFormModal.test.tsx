@@ -7,7 +7,7 @@ import MCPFormModal from '../MCPFormModal';
 import type { MCPFormData } from '../mcp.types';
 
 const baseFormData: MCPFormData = {
-  name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [],
+  name: '', description: '', type: 'stdio', enabled: true, status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [],
 };
 
 function renderModal(overrides?: Record<string, unknown>) {
@@ -66,7 +66,7 @@ describe('MCPFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('mcp.form_name')).toBeInTheDocument();
     expect(screen.getByText('mcp.form_desc')).toBeInTheDocument();
     expect(screen.getByText('mcp.form_type')).toBeInTheDocument();
-    expect(screen.getByText('mcp.form_status')).toBeInTheDocument();
+    expect(screen.getByText('mcp.form_enabled')).toBeInTheDocument();
     expect(screen.getByText('mcp.form_version')).toBeInTheDocument();
   });
 
@@ -128,11 +128,15 @@ describe('MCPFormModal', { tags: ['unit'] }, () => {
     expect(props.setFormData).toHaveBeenCalled();
   });
 
-  it('calls setFormData when status select changes', () => {
+  it('calls setFormData when enabled toggle changes', () => {
     const { props } = renderModal();
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[1], { target: { value: 'connected' } });
+    fireEvent.click(screen.getByRole('checkbox'));
     expect(props.setFormData).toHaveBeenCalled();
+  });
+
+  it('enabled toggle defaults to checked when enabled is undefined', () => {
+    renderModal({ formData: { ...baseFormData, enabled: undefined } });
+    expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true);
   });
 
   it('calls setFormData when version input changes', () => {

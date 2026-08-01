@@ -22,6 +22,14 @@ const PromptFormModal = memo(function PromptFormModal({ editingItem, formData, s
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
+  // 创建模式下，若默认 model 不在可用模型列表中，对齐到第一个可用模型
+  // （emptyForm.model 硬编码为 GPT-4o，而选项来自 key vault，两者可能不一致）
+  useEffect(() => {
+    if (!editingItem && modelOptions.length > 0 && !modelOptions.includes(formData.model)) {
+      setFormData((f) => ({ ...f, model: modelOptions[0] }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingItem, modelOptions]);
   return (
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden" role="dialog" aria-modal="true" aria-label={editingItem ? t('prompt.form_title_edit') : t('prompt.form_title_new')} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
@@ -41,6 +49,10 @@ const PromptFormModal = memo(function PromptFormModal({ editingItem, formData, s
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_name')} <span className="text-[var(--color-danger)]">{t('prompt.required')}</span></label>
             <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('prompt.form_name_placeholder')} maxLength={50} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_description')} <span className="text-[var(--color-danger)]">{t('prompt.required')}</span></label>
+            <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.description ?? ''} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('prompt.form_description_placeholder')} maxLength={200} />
           </div>
           <div className="flex gap-4">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -64,13 +76,14 @@ const PromptFormModal = memo(function PromptFormModal({ editingItem, formData, s
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_version')} <span className="text-[var(--color-danger)]">{t('prompt.required')}</span></label>
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_version')}</label>
               <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version} onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))} placeholder={t('prompt.form_version_placeholder')} />
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('prompt.form_content')} <span className="text-[var(--color-danger)]">{t('prompt.required')}</span></label>
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.content} onChange={(e) => setFormData((f) => ({ ...f, content: e.target.value }))} placeholder={t('prompt.form_content_placeholder')} rows={6} maxLength={5000} />
+            <p className="text-xs text-[var(--color-text-muted)]">{t('prompt.form_content_hint')}</p>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 px-6 py-4">

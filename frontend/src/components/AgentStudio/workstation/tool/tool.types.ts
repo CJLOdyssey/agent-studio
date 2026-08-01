@@ -8,6 +8,8 @@ export interface ToolEntry {
   status: 'active' | 'disabled';
   version: string;
   endpoint: string;
+  method?: string;
+  headers?: string;
   parameters: string;
   createdAt: string;
   is_builtin?: boolean;

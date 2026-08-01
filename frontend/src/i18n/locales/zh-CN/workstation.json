@@ -13,10 +13,10 @@
     "toolbar": "操作工具栏",
     "promptManage": "提示词管理",
     "prompt": "提示词",
-  "prompt_category_system": "系统提示词",
-  "prompt_category_user": "用户提示词",
-  "prompt_category_meta": "元提示词",
-  "prompt_category_output_constraint": "输出约束",
+    "prompt_category_system": "系统提示词",
+    "prompt_category_user": "用户提示词",
+    "prompt_category_meta": "元提示词",
+    "prompt_category_output_constraint": "输出约束",
     "apiManage": "API 管理",
     "addKey": "添加 Key",
     "provider": "提供商",
@@ -422,7 +422,9 @@
     "test_success": "测试通过",
     "test_fail": "测试失败",
     "test_result": "{status} — {duration}ms",
-    "test_no_endpoint": "请先填写接口地址"
+    "test_no_endpoint": "请先填写接口地址",
+    "form_method": "请求方式",
+    "form_headers": "请求头（JSON）"
   },
   "mcp": {
     "new": "新建 MCP",
@@ -488,7 +490,8 @@
     "confirm_delete_desc": "确定要删除「{name}」吗？此操作不可撤销。",
     "confirm_batch_delete_title": "确认批量删除",
     "confirm_batch_delete_desc": "确定要删除选中的 {n} 个 MCP 吗？",
-    "col_tool_count": "工具数"
+    "col_tool_count": "工具数",
+    "form_enabled": "启用"
   },
   "skill": {
     "new": "新建 Skill",
@@ -759,6 +762,8 @@
     "form_title_edit": "编辑提示词",
     "form_name": "提示词名称",
     "form_name_placeholder": "2-50 个字符",
+    "form_description": "提示词描述",
+    "form_description_placeholder": "简述该提示词的用途，便于 Agent 选用时识别…",
     "form_category": "分类",
     "form_model": "模型",
     "form_status": "状态",
@@ -766,6 +771,7 @@
     "form_version_placeholder": "v1.0.0",
     "form_content": "提示词内容",
     "form_content_placeholder": "请输入提示词内容...",
+    "form_content_hint": "支持 {{变量}} 占位符，Agent 选用时会提示补充",
     "form_char_count": "{n}/5000",
     "form_token_est": "估算 {n} tokens",
     "form_var_detected": "已检测 {n} 个变量",

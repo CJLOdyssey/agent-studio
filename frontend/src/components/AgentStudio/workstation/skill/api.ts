@@ -2,7 +2,7 @@ import type { SkillEntry, SkillFormData } from './skill.types';
 import { defineCrudModule } from '../shared/api-base';
 import { listSkills, createSkill, updateSkill, deleteSkill } from '../../../../api/client/skills';
 
-function toEntry(item: { id: string; name: string; description: string; category: string; version: string; status: string; author: string; instructions: string; tool_names: unknown; output_constraint: string; created_at: string }): SkillEntry {
+function toEntry(item: { id: string; name: string; description: string; category: string; version: string; status: string; author: string; instructions: string; tool_names: unknown; mcp_names?: unknown; output_constraint: string; created_at: string }): SkillEntry {
   return {
     id: item.id,
     name: item.name,
@@ -13,6 +13,7 @@ function toEntry(item: { id: string; name: string; description: string; category
     author: item.author,
     instructions: item.instructions || '',
     tool_names: Array.isArray(item.tool_names) ? item.tool_names : [],
+    mcp_names: Array.isArray(item.mcp_names) ? item.mcp_names : [],
     output_constraint: item.output_constraint || '',
     createdAt: item.created_at.slice(0, 10),
   };
@@ -21,16 +22,18 @@ function toEntry(item: { id: string; name: string; description: string; category
 const { bind: skillAPI, setAPI: setSkillAPI } = defineCrudModule<SkillEntry, SkillFormData>({
   fetchAll: async () => { const items = await listSkills(); return items.map(toEntry); },
   create: async (data) => {
-    const item = await createSkill({
+    const payload = {
       name: data.name, description: data.description, category: data.category,
       version: data.version, status: data.status, author: data.author,
       instructions: data.instructions || '',
-      tool_names: data.tool_names, output_constraint: data.output_constraint || '',
-    });
+      tool_names: data.tool_names, mcp_names: data.mcp_names ?? [],
+      output_constraint: data.output_constraint || '',
+    };
+    const item = await createSkill(payload);
     return toEntry(item);
   },
   update: async (id, data) => {
-    await updateSkill(id, {
+    const payload = {
       ...(data.name !== undefined && { name: data.name }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.category !== undefined && { category: data.category }),
@@ -39,8 +42,10 @@ const { bind: skillAPI, setAPI: setSkillAPI } = defineCrudModule<SkillEntry, Ski
       ...(data.author !== undefined && { author: data.author }),
       ...(data.instructions !== undefined && { instructions: data.instructions }),
       ...(data.tool_names !== undefined && { tool_names: data.tool_names }),
+      ...(data.mcp_names !== undefined && { mcp_names: data.mcp_names }),
       ...(data.output_constraint !== undefined && { output_constraint: data.output_constraint }),
-    });
+    };
+    await updateSkill(id, payload);
   },
   remove: async (id) => { await deleteSkill(id); },
   clone: async (item) => {

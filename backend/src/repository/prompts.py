@@ -21,6 +21,7 @@ class PromptRepository(BaseRepository[PromptDB]):
         return {
             "id": obj.id,
             "name": obj.name,
+            "description": obj.description,
             "category": obj.category,
             "content": obj.content,
             "model": obj.model,

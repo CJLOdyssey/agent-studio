@@ -37,17 +37,11 @@ const OutputFormModal = memo(function OutputFormModal({ editingItem, formData, s
             <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('output.form_content')} <span className="text-[var(--color-danger)]">*</span></label>
             <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" rows={4} value={formData.content} onChange={(e) => setFormData((f) => ({ ...f, content: e.target.value }))} placeholder={t('output.form_content_placeholder')} />
           </div>
-          <div className="flex gap-4">
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('output.form_category')}</label>
-              <input className="w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))} placeholder={t('output.form_category_placeholder')} />
-            </div>
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('output.form_status')}</label>
-              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as OutputEntry['status'] }))}>
-                {Object.entries(OUTPUT_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('output.form_status')}</label>
+            <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as OutputEntry['status'] }))}>
+              {Object.entries(OUTPUT_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 px-6 py-4">

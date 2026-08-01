@@ -135,7 +135,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
   it('saveFormItem with valid name creates tool via addCustom', () => {
     const tools = makeItemList<AgentTool>();
     const form = makeForm();
-    form.forms.tool.data = { name: 'NewTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '' };
+    form.forms.tool.data = { name: 'NewTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: 'http://api.test', parameters: '{}' };
     const { result } = renderHook(() => useConfigItemEdit(
       tools,
       makeItemList<AgentMCP>(),
@@ -144,12 +144,21 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     ));
     act(() => result.current.saveFormItem('tool'));
     expect(tools.addCustom).toHaveBeenCalled();
+    const item = tools.items[0] as unknown as Record<string, unknown>;
+    expect(item.name).toBe('NewTool');
+    expect(item.description).toBe('desc');
+    expect(item.category).toBe('自定义工具');
+    expect(item.status).toBe('active');
+    expect(item.version).toBe('v1.0.0');
+    expect(item.endpoint).toBe('http://api.test');
+    expect(item.parameters).toBe('{}');
+    expect(item.enabled).toBe(true);
   });
 
-  it('saveFormItem with existing tool calls update', () => {
+  it('saveFormItem with existing tool calls update with full fields', () => {
     const tools = makeItemList<AgentTool>();
     const form = makeForm();
-    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' };
+    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v2.0.0', endpoint: 'http://api.test', parameters: '{}' };
     const { result } = renderHook(() => useConfigItemEdit(
       tools,
       makeItemList<AgentMCP>(),
@@ -158,14 +167,22 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     ));
     act(() => result.current.setEditingToolItem({ id: 'edit-1', name: 'Old', description: 'old', enabled: true } as AgentTool));
     act(() => result.current.saveFormItem('tool'));
-    expect(tools.update).toHaveBeenCalledWith('edit-1', expect.any(Object));
+    expect(tools.update).toHaveBeenCalledWith('edit-1', {
+      name: 'UpdatedTool',
+      description: 'desc',
+      category: '自定义工具',
+      status: 'active',
+      version: 'v2.0.0',
+      endpoint: 'http://api.test',
+      parameters: '{}',
+    });
     expect(result.current.editingToolItem).toBeNull();
   });
 
   it('saveFormItem with valid name creates mcp via addCustom', () => {
     const mcp = makeItemList<AgentMCP>();
     const form = makeForm();
-    form.forms.mcp.data = { name: 'NewMCP', description: 'mcp desc', type: 'stdio', command: 'npx start', url: '' };
+    form.forms.mcp.data = { name: 'NewMCP', description: 'mcp desc', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: 'npx start', url: '', args: ['--serve'], env: ['A=1'] };
     const { result } = renderHook(() => useConfigItemEdit(
       makeItemList<AgentTool>(),
       mcp,
@@ -174,12 +191,22 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     ));
     act(() => result.current.saveFormItem('mcp'));
     expect(mcp.addCustom).toHaveBeenCalled();
+    const item = mcp.items[0] as unknown as Record<string, unknown>;
+    expect(item.name).toBe('NewMCP');
+    expect(item.description).toBe('mcp desc');
+    expect(item.type).toBe('stdio');
+    expect(item.status).toBe('disconnected');
+    expect(item.version).toBe('v1.0.0');
+    expect(item.command).toBe('npx start');
+    expect(item.args).toEqual(['--serve']);
+    expect(item.env).toEqual(['A=1']);
+    expect(item.enabled).toBe(true);
   });
 
-  it('saveFormItem with existing mcp calls update', () => {
+  it('saveFormItem with existing mcp calls update with full fields', () => {
     const mcp = makeItemList<AgentMCP>();
     const form = makeForm();
-    form.forms.mcp.data = { name: 'UpdatedMCP', description: 'updated', type: 'stdio', command: 'npx', url: '' };
+    form.forms.mcp.data = { name: 'UpdatedMCP', description: 'updated', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: 'npx', url: '', args: ['-c'], env: [] };
     const { result } = renderHook(() => useConfigItemEdit(
       makeItemList<AgentTool>(),
       mcp,
@@ -188,14 +215,24 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     ));
     act(() => result.current.setEditingMcpItem({ id: 'mcp-1', name: 'Old', description: 'old', enabled: true } as AgentMCP));
     act(() => result.current.saveFormItem('mcp'));
-    expect(mcp.update).toHaveBeenCalledWith('mcp-1', expect.any(Object));
+    expect(mcp.update).toHaveBeenCalledWith('mcp-1', {
+      name: 'UpdatedMCP',
+      description: 'updated',
+      type: 'stdio',
+      status: 'disconnected',
+      version: 'v1.0.0',
+      command: 'npx',
+      url: '',
+      args: ['-c'],
+      env: [],
+    });
     expect(result.current.editingMcpItem).toBeNull();
   });
 
   it('saveFormItem with valid name creates skill via addCustom', () => {
     const skills = makeItemList<AgentSkill>();
     const form = makeForm();
-    form.forms.skill.data = { name: 'NewSkill', description: 'skill desc', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' };
+    form.forms.skill.data = { name: 'NewSkill', description: 'skill desc', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: 'me', instructions: 'do x', prompt_id: '', tool_names: ['toolA'], output_constraint: 'json' };
     const { result } = renderHook(() => useConfigItemEdit(
       makeItemList<AgentTool>(),
       makeItemList<AgentMCP>(),
@@ -204,12 +241,23 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     ));
     act(() => result.current.saveFormItem('skill'));
     expect(skills.addCustom).toHaveBeenCalled();
+    const item = skills.items[0] as unknown as Record<string, unknown>;
+    expect(item.name).toBe('NewSkill');
+    expect(item.description).toBe('skill desc');
+    expect(item.category).toBe('AI/ML');
+    expect(item.status).toBe('available');
+    expect(item.version).toBe('v1.0.0');
+    expect(item.author).toBe('me');
+    expect(item.instructions).toBe('do x');
+    expect(item.tool_names).toEqual(['toolA']);
+    expect(item.output_constraint).toBe('json');
+    expect(item.enabled).toBe(true);
   });
 
-  it('saveFormItem with existing skill calls update', () => {
+  it('saveFormItem with existing skill calls update with full fields', () => {
     const skills = makeItemList<AgentSkill>();
     const form = makeForm();
-    form.forms.skill.data = { name: 'UpdatedSkill', description: 'updated', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' };
+    form.forms.skill.data = { name: 'UpdatedSkill', description: 'updated', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: 'me', instructions: 'do y', prompt_id: '', tool_names: ['toolB'], output_constraint: 'text' };
     const { result } = renderHook(() => useConfigItemEdit(
       makeItemList<AgentTool>(),
       makeItemList<AgentMCP>(),
@@ -218,7 +266,17 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     ));
     act(() => result.current.setEditingSkillItem({ id: 'skill-1', name: 'Old', description: 'old', enabled: true } as AgentSkill));
     act(() => result.current.saveFormItem('skill'));
-    expect(skills.update).toHaveBeenCalledWith('skill-1', expect.any(Object));
+    expect(skills.update).toHaveBeenCalledWith('skill-1', {
+      name: 'UpdatedSkill',
+      description: 'updated',
+      category: 'AI/ML',
+      status: 'available',
+      version: 'v1.0.0',
+      author: 'me',
+      instructions: 'do y',
+      tool_names: ['toolB'],
+      output_constraint: 'text',
+    });
     expect(result.current.editingSkillItem).toBeNull();
   });
 
