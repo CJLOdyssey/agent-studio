@@ -38,6 +38,15 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
     listTeams().then((items) => setTeamOptions(items.map((t) => t.name))).catch(() => {});
   }, []);
 
+  // 创建模式下，若默认 model 不在可用模型列表中，对齐到第一个可用模型
+  // （EMPTY_FORM.model 是硬编码 GPT-4o，而选项来自 key vault，两者可能不一致）
+  useEffect(() => {
+    if (!editingAgent && modelOptions.length > 0 && !modelOptions.includes(formData.model)) {
+      setFormData({ ...formData, model: modelOptions[0] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingAgent, modelOptions]);
+
   const matchByIdOrName = (ids: string[], item: RefItem) =>
     ids.includes(item.id) || ids.includes(item.name);
   const selectedPrompt = availablePrompts.find((p) => p.id === formData.systemPromptId || p.name === formData.systemPromptId);
