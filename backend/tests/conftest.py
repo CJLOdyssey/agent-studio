@@ -212,11 +212,6 @@ def api() -> Any:
     a.close()
 
 
-@pytest.fixture(autouse=True)
-def _fresh_rate_limit() -> None:
-    _clear_rate_limits()
-
-
 @pytest.fixture(scope="session")
 def event_loop() -> Any:
     """Session-scoped event loop for async fixtures."""

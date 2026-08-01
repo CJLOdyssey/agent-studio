@@ -1,14 +1,17 @@
-.PHONY: test test-backend test-frontend lint-backend lint-frontend coverage
+.PHONY: test test-backend test-frontend lint-backend lint-frontend coverage e2e-env test-e2e
 
-IGNORE=--ignore=tests/e2e/ --ignore=tests/repository/ --ignore=tests/routers/auth/test_auth_api.py
+# 统一排除规则：integration 需要真后端+docker (有 @pytest.mark.integration)，
+# benchmark 是性能测试（locust 覆盖）。与 CI (pytest-split) 共用同一 marker 约定，
+# 不再维护目录黑名单清单。
+TEST_EXCLUDE=-m "not integration and not benchmark"
 
 test: test-backend test-frontend
 
 test-backend:
-	pytest --cov=backend $(IGNORE)
+	pytest --cov=backend $(TEST_EXCLUDE)
 
 test-backend-quick:
-	pytest -q -x --tb=short $(IGNORE)
+	pytest -q -x --tb=short $(TEST_EXCLUDE)
 
 test-frontend:
 	cd frontend && npx vitest run --coverage.enabled
@@ -23,7 +26,15 @@ format-backend:
 	ruff format backend/
 
 coverage:
-	pytest --cov=backend --cov-report=term-missing $(IGNORE)
+	pytest --cov=backend --cov-report=term-missing $(TEST_EXCLUDE)
+
+## E2E 测试环境一键拉起（postgres + redis，随后 make dev-backend 起后端）
+e2e-env:
+	bash scripts/dev/e2e-env.sh
+
+## 跑 API 级 E2E（需要 e2e-env + 后端已启动在 8080）
+test-e2e:
+	pytest backend/tests/e2e/ -m integration
 
 .PHONY: dev-backend dev-backend-logs health
 
