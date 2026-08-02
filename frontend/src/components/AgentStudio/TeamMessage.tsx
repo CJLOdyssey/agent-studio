@@ -202,15 +202,17 @@ function ToolCallCard({
   );
 }
 
-function ThinkingNodeItem({ item, t }: { item: ThinkingItem; t: (key: string) => string }) {
-  const Dot = () => (
+function ThinkingNodeDot() {
+  return (
     <div className="absolute -left-3 top-[6px] w-2 h-2 rounded-full bg-[var(--color-text-muted)] border-2 border-[var(--color-surface)] z-[1]" />
   );
+}
 
+function ThinkingNodeItem({ item, t }: { item: ThinkingItem; t: (key: string) => string }) {
   if (item.type === 'toolPair') {
     return (
       <div className="relative mb-2.5 last:mb-0 pl-3">
-        <Dot />
+        <ThinkingNodeDot />
         <ToolCallCard callParsed={item.callParsed} resultParsed={item.resultParsed} t={t} />
       </div>
     );
@@ -221,7 +223,7 @@ function ThinkingNodeItem({ item, t }: { item: ThinkingItem; t: (key: string) =>
   const displayText = parsed === null ? item.node.trim() : parsed.rest;
   return (
     <div className="relative mb-2.5 last:mb-0 leading-[1.65] pl-3">
-      <Dot />
+      <ThinkingNodeDot />
       <div className="text-[var(--color-text-muted)]">
         {isInfo && <span className="text-[var(--color-text-tertiary)]">[info] </span>}
         <ThinkingMarkdown t={t}>{displayText}</ThinkingMarkdown>
@@ -237,7 +239,7 @@ const TeamMessage = memo(function TeamMessage({
   onRegenerate,
   showContinue,
   onContinue,
-  onSwitchVersion,
+  onSwitchUserVersion,
   isContinuing,
   onThumbsFeedback,
 }: {
@@ -247,7 +249,7 @@ const TeamMessage = memo(function TeamMessage({
   onRegenerate?: (msgId: string) => void;
   showContinue?: boolean;
   onContinue?: () => void;
-  onSwitchVersion?: (msgId: string, direction: 'prev' | 'next') => void;
+  onSwitchUserVersion?: (msgId: string, direction: 'prev' | 'next') => void;
   isContinuing?: boolean;
   onThumbsFeedback?: (msgId: string, value: 'up' | 'down') => void;
 }) {
@@ -266,10 +268,9 @@ const TeamMessage = memo(function TeamMessage({
     }
   }, [msg.thinking?.length, isThinkingExpanded]);
 
-  const versions = msg.versions || [msg.content];
-  const currentVersion = msg.currentVersion ?? 0;
-
   if (isUser) {
+    const userVersions = msg.userVersions || [msg.content];
+    const currentUserVersion = msg.currentUserVersion ?? 0;
     const time = msg.timestamp
       ? new Date(msg.timestamp).toLocaleTimeString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
           hour: '2-digit',
@@ -344,6 +345,27 @@ const TeamMessage = memo(function TeamMessage({
               >
                 <Pencil size={12} />
               </button>
+              {userVersions.length > 1 && (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    onClick={() => onSwitchUserVersion?.(msg.id, 'prev')}
+                    disabled={currentUserVersion === 0}
+                    aria-label="Previous user version"
+                  >
+                    <ChevronRight size={12} className="rotate-180" />
+                  </button>
+                  <span className="text-xs text-[var(--color-text-muted)] min-w-7 text-center select-none">{currentUserVersion + 1}/{userVersions.length}</span>
+                  <button
+                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    onClick={() => onSwitchUserVersion?.(msg.id, 'next')}
+                    disabled={currentUserVersion === userVersions.length - 1}
+                    aria-label="Next user version"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              )}
               {time && <span className="block text-xs text-[var(--color-text-muted)] mt-1 ml-0">{time}</span>}
             </div>
           </div>
@@ -529,27 +551,6 @@ const TeamMessage = memo(function TeamMessage({
             )}
 
             <div className="flex items-center gap-2 mt-1 w-full">
-              {versions.length > 1 && (
-                <div className="flex items-center gap-0.5">
-                  <button
-                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
-                    onClick={() => onSwitchVersion?.(msg.id, 'prev')}
-                    disabled={currentVersion === 0}
-                    aria-label="Previous version"
-                  >
-                    <ChevronRight size={12} className="rotate-180" />
-                  </button>
-                  <span className="text-xs text-[var(--color-text-muted)] min-w-7 text-center select-none">{currentVersion + 1}/{versions.length}</span>
-                  <button
-                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
-                    onClick={() => onSwitchVersion?.(msg.id, 'next')}
-                    disabled={currentVersion === versions.length - 1}
-                    aria-label="Next version"
-                  >
-                    <ChevronRight size={12} />
-                  </button>
-                </div>
-              )}
               <CopyBtn text={msg.content} label={t('teamMessage.copy')} />
               <button
                 className="px-1 py-0.5 bg-transparent border-none rounded text-[var(--color-text-muted)] cursor-pointer flex items-center transition-colors duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]"

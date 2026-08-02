@@ -104,6 +104,28 @@ describe('handleStreamStart', { tags: ['unit'] }, () => {
     expect(result.messages![0].versions).toBeDefined();
     expect(result.messages![0].versions).toEqual(['v0', 'first']);
   });
+
+  it('merges edit-regenerate answer into the target message as a new version (keeps other messages)', () => {
+    const s = makeState({
+      editTargetId: 'a1',
+      messages: [
+        makeMsg('u1', { role: 'user', content: 'new question' }),
+        makeMsg('a1', { content: 'old answer', thinking: 'old think' }),
+        makeMsg('a2', { content: 'later message' }),
+      ],
+    });
+
+    const result = handleStreamStart(s as never, { type: 'stream', agent_name: 'Bot' }, ' fresh');
+
+    expect(result.editTargetId).toBeNull();
+    // Old answer archived as a version; the new stream starts FRESH (not old+new).
+    expect(result.messages![1].versions).toEqual(['old answer']);
+    expect(result.messages![1].content).toBe(' fresh');
+    expect(result.messages![1].thinking).toBe('');
+    expect(result.messages![1].currentVersion).toBe(0);
+    // Other messages preserved — nothing deleted.
+    expect(result.messages!.map((m) => m.id)).toEqual(['u1', result.messages![1].id, 'a2']);
+  });
 });
 
 describe('handleStreamEvent', { tags: ['unit'] }, () => {
@@ -201,6 +223,27 @@ describe('handleThinkingStreamNew', { tags: ['unit'] }, () => {
     expect(result.messages![0].versions).toBeDefined();
     expect(result.messages![0].thinkingVersions).toBeDefined();
     expect(result.messages![0].thinkingVersions).toEqual(['t0', 'new-think']);
+  });
+
+  it('merges edit-regenerate thinking into the target message (keeps other messages)', () => {
+    const s = makeState({
+      editTargetId: 'a1',
+      messages: [
+        makeMsg('u1', { role: 'user', content: 'new question' }),
+        makeMsg('a1', { content: 'old answer', thinking: 'old think' }),
+        makeMsg('a2', { content: 'later' }),
+      ],
+    });
+
+    const result = handleThinkingStreamNew(s as never, { type: 'thinking_stream' }, ' new think');
+
+    expect(result.editTargetId).toBeNull();
+    // New thinking starts fresh; old thinking archived into thinkingVersions.
+    expect(result.messages![1].thinking).toBe(' new think');
+    expect(result.messages![1].versions).toEqual(['old answer']);
+    expect(result.messages![1].thinkingVersions).toEqual(['old think']);
+    expect(result.messages![1].content).toBe('');
+    expect(result.messages!.map((m) => m.id)).toEqual(['u1', result.messages![1].id, 'a2']);
   });
 });
 

@@ -59,7 +59,13 @@ export function useWorkstationState(
   const [conversationKey, setConversationKey] = useState(0);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('code');
-  const [selectedModel, setSelectedModel] = useState('');
+  const [selectedModel, setSelectedModelState] = useState(() => {
+    try {
+      return localStorage.getItem('agentstudio-selected-model') || '';
+    } catch {
+      return '';
+    }
+  });
   const [isWorkstationOpen, setIsWorkstationOpen] = useState(false);
   const { settings, updateSettings } = useSettings();
   const isDarkMode = settings.theme === 'dark';
@@ -73,9 +79,19 @@ export function useWorkstationState(
   const filteredConversations = useMemo(() => conv.conversations, [conv.conversations]);
 
   const effectiveSelectedModel = useMemo(
-    () => selectedModel || (models.length > 0 ? models[0].id : ''),
+    () => (selectedModel && models.some((m) => m.id === selectedModel) ? selectedModel : (models.length > 0 ? models[0].id : '')),
     [selectedModel, models],
   );
+  // Persist the selected model so chatActions can route the request to the
+  // key whose models contain it (a SiliconFlow model must hit SiliconFlow).
+  const setSelectedModel = useCallback((id: string) => {
+    setSelectedModelState(id);
+    try {
+      localStorage.setItem('agentstudio-selected-model', id);
+    } catch {
+      // localStorage unavailable — routing falls back to the default key
+    }
+  }, []);
   const hasMessages = apiMessages.length > 0;
   const convRef = useRef(conv);
   useEffect(() => {
@@ -196,6 +212,11 @@ export function useWorkstationState(
                   thinking: m.thinking ?? undefined,
                   round_number: m.round_number ?? 0,
                   created_at: m.created_at || null,
+                  versions: m.versions,
+                  thinkingVersions: (m as unknown as Record<string, unknown>).thinking_versions as string[] | undefined,
+                  userVersions: (m as unknown as Record<string, unknown>).user_versions as string[] | undefined,
+                  currentVersion: m.versions && m.versions.length > 0 ? m.versions.length - 1 : undefined,
+                  currentUserVersion: (m as unknown as Record<string, unknown>).user_versions ? ((m as unknown as Record<string, unknown>).user_versions as string[]).length - 1 : undefined,
                 });
               }
             } else {
@@ -226,8 +247,13 @@ export function useWorkstationState(
           for (const m of msgs) {
             const local = snapshot.find((lm) => lm.content === m.content && (lm.role === 'user') === (m.role === 'user'));
             if (!local) continue;
-            m.versions = local.versions ?? undefined;
-            m.currentVersion = local.currentVersion ?? undefined;
+            // Server-persisted versions win; the local snapshot only fills gaps
+            // (thumbs/interrupted are UI-only and never persisted server-side).
+            m.versions = local.versions ?? m.versions;
+            m.thinkingVersions = local.thinkingVersions ?? m.thinkingVersions;
+            m.userVersions = local.userVersions ?? m.userVersions;
+            m.currentVersion = local.currentVersion ?? m.currentVersion;
+            m.currentUserVersion = local.currentUserVersion ?? m.currentUserVersion;
             m.thumbsFeedback = local.thumbsFeedback ?? undefined;
             m.interrupted = local.interrupted ?? undefined;
             m.thinkingDone = local.thinkingDone === true || Boolean(m.thinking && !m.interrupted);
@@ -403,6 +429,8 @@ export function useWorkstationState(
     timestamp: m.created_at ? new Date(m.created_at).getTime() : 0,
     versions: m.versions,
     currentVersion: m.currentVersion,
+    userVersions: m.userVersions,
+    currentUserVersion: m.currentUserVersion,
     thumbsFeedback: m.thumbsFeedback,
     interrupted: m.interrupted,
   }));

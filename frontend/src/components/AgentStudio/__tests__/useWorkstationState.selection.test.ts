@@ -189,8 +189,29 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
     it('effectiveSelectedModel uses selectedModel when set', () => {
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
-      act(() => { result.current.setSelectedModel('custom-model'); });
-      expect(result.current.effectiveSelectedModel).toBe('custom-model');
+      act(() => { result.current.setSelectedModel('model-b'); });
+      expect(result.current.effectiveSelectedModel).toBe('model-b');
+    });
+
+    it('setSelectedModel persists to localStorage for key routing', () => {
+      localStorage.removeItem('agentstudio-selected-model');
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      act(() => { result.current.setSelectedModel('Qwen/Qwen3-8B'); });
+      expect(localStorage.getItem('agentstudio-selected-model')).toBe('Qwen/Qwen3-8B');
+    });
+
+    it('initializes selectedModel from localStorage so refresh keeps the last pick', () => {
+      localStorage.setItem('agentstudio-selected-model', 'model-a');
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      expect(result.current.selectedModel).toBe('model-a');
+      expect(result.current.effectiveSelectedModel).toBe('model-a');
+    });
+
+    it('ignores a stale localStorage model that no key provides', () => {
+      localStorage.setItem('agentstudio-selected-model', 'retired-model');
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      expect(result.current.selectedModel).toBe('retired-model');
+      expect(result.current.effectiveSelectedModel).toBe('model-a');
     });
 
     it('effectiveSelectedModel falls back to first model', () => {

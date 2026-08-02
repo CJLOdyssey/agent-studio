@@ -30,6 +30,21 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       expect(container.textContent).toContain('Hello user');
     });
 
+    it('shows user version pagination when the message has an edit history', () => {
+      const { container } = render(
+        <TeamMessage msg={makeMsg({ role: 'user', userVersions: ['v1', 'v2'], currentUserVersion: 1 })} allAgents={[]} />
+      );
+      expect(container.querySelector('[aria-label="Previous user version"]')).toBeInTheDocument();
+      expect(container.textContent).toContain('2/2');
+    });
+
+    it('does not show user version pagination without an edit history', () => {
+      const { container } = render(
+        <TeamMessage msg={makeMsg({ role: 'user', content: 'single' })} allAgents={[]} />
+      );
+      expect(container.querySelector('[aria-label="Previous user version"]')).toBeNull();
+    });
+
     it('does not show agent action buttons for user messages', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'test' })} allAgents={[]} />
@@ -123,78 +138,26 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
     });
   });
 
-  describe('version pagination', () => {
-    it('shows version pagination when multiple versions', () => {
+  describe('answer version pagination', () => {
+    it('does not render pagination on agent answers even with multiple versions', () => {
       const { container } = render(
         <TeamMessage
           msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-        />
-      );
-      expect(container.querySelector('[aria-label="Previous version"]')).toBeInTheDocument();
-      expect(container.textContent).toContain('2/3');
-    });
-
-    it('does not show version pagination with single version', () => {
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1'], currentVersion: 0 })}
           allAgents={[mockAgent]}
         />
       );
       expect(container.querySelector('[aria-label="Previous version"]')).toBeNull();
+      expect(container.querySelector('[aria-label="Next version"]')).toBeNull();
     });
 
-    it('disables prev button at first version', () => {
+    it('renders the active version content', () => {
       const { container } = render(
         <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2'], currentVersion: 0 })}
+          msg={makeMsg({ content: 'v2 active', versions: ['v1', 'v2'], currentVersion: 1 })}
           allAgents={[mockAgent]}
         />
       );
-      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
-      expect(btns[0]).toBeDisabled();
-      expect(btns[1]).not.toBeDisabled();
-    });
-
-    it('disables next button at last version', () => {
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-        />
-      );
-      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
-      expect(btns[0]).not.toBeDisabled();
-      expect(btns[1]).toBeDisabled();
-    });
-
-    it('calls onSwitchVersion with prev when prev button clicked', async () => {
-      const onSwitch = vi.fn();
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-          onSwitchVersion={onSwitch}
-        />
-      );
-      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
-      await userEvent.click(btns[0]);
-      expect(onSwitch).toHaveBeenCalledWith('m1', 'prev');
-    });
-
-    it('calls onSwitchVersion with next when next button clicked', async () => {
-      const onSwitch = vi.fn();
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-          onSwitchVersion={onSwitch}
-        />
-      );
-      const btns = container.querySelectorAll('[aria-label="Previous version"], [aria-label="Next version"]');
-      await userEvent.click(btns[1]);
-      expect(onSwitch).toHaveBeenCalledWith('m1', 'next');
+      expect(container.textContent).toContain('v2 active');
     });
   });
 

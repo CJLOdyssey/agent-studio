@@ -1,5 +1,6 @@
 """Project run repository — CRUD for run lifecycle management."""
 
+import json
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
@@ -41,10 +42,17 @@ async def get_runs_by_session_ids(session_ids: list[str]) -> dict[str, list[Proj
         return grouped
 
 
-async def create_run(requirement: str, session_id: str | None = None) -> str:
+async def create_run(
+    requirement: str,
+    session_id: str | None = None,
+    parent_run_id: str | None = None,
+    requirement_versions: list[str] | None = None,
+) -> str:
     """Create a new project run and return its ID.
 
     Also touches the parent session's updated_at timestamp.
+    ``parent_run_id`` links an edit-regenerate to the run it replaces;
+    ``requirement_versions`` carries the user-message edit history chain.
     """
     run_id = str(uuid4())
     run = ProjectRun(
@@ -52,6 +60,8 @@ async def create_run(requirement: str, session_id: str | None = None) -> str:
         session_id=session_id,
         requirement=requirement,
         status="pending",
+        parent_run_id=parent_run_id,
+        requirement_versions=json.dumps(requirement_versions) if requirement_versions else None,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )

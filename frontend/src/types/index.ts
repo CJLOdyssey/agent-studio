@@ -55,6 +55,9 @@ export interface ChatMessage {
   versions?: string[];
   thinkingVersions?: string[];
   currentVersion?: number;
+  /** User-message edit history (older edits first; content is the active one) */
+  userVersions?: string[];
+  currentUserVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
 }

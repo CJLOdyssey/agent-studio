@@ -29,6 +29,7 @@ describe('MessagesPanel', { tags: ['integration'] }, () => {
 });
 
 const mockSwitchVersion = vi.fn();
+const mockSwitchUserVersion = vi.fn();
 const mockSetThumbsFeedback = vi.fn();
 
 vi.mock('../../../stores/chatStore', () => ({
@@ -37,6 +38,7 @@ vi.mock('../../../stores/chatStore', () => ({
       interruptedMessageId: null,
       continuingId: null,
       switchVersion: mockSwitchVersion,
+      switchUserVersion: mockSwitchUserVersion,
       setThumbsFeedback: mockSetThumbsFeedback,
     };
     return selector ? selector(state) : state;
@@ -44,10 +46,10 @@ vi.mock('../../../stores/chatStore', () => ({
 }));
 
 vi.mock('../TeamMessage', () => ({
-  default: ({ msg, onEditMessage, onRegenerate, onSwitchVersion, showContinue, onContinue, isContinuing, onThumbsFeedback }: any) => {
+  default: ({ msg, onEditMessage, onRegenerate, onSwitchUserVersion, showContinue, onContinue, isContinuing, onThumbsFeedback }: any) => {
     (globalThis as any).__lastEditMessageFn = onEditMessage;
     (globalThis as any).__lastRegenerateFn = onRegenerate;
-    (globalThis as any).__lastSwitchVersionFn = onSwitchVersion;
+    (globalThis as any).__lastSwitchUserVersionFn = onSwitchUserVersion;
     (globalThis as any).__lastThumbsFeedbackFn = onThumbsFeedback;
     return (
       <div data-testid={`team-msg-${msg.id}`} data-show-continue={showContinue} data-is-continuing={isContinuing}>
@@ -58,12 +60,12 @@ vi.mock('../TeamMessage', () => ({
 }));
 
 vi.mock('../../../stores/chatActions', () => ({
-  editMessage: vi.fn(),
+  editAndRegenerate: vi.fn(),
   regenerateMessage: vi.fn(),
   continueGeneration: vi.fn(),
 }));
 
-import { editMessage, regenerateMessage } from '../../../stores/chatActions';
+import { editAndRegenerate, regenerateMessage } from '../../../stores/chatActions';
 import type { Agent, Message } from '../../../types/AgentStudio';
 
 function makeMsg(id: string, overrides: Partial<Message> = {}): Message {
@@ -230,7 +232,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
   describe('handler execution', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
-  it('handleEditMessage calls editMessage with correct idx and content', () => {
+  it('handleEditMessage calls editAndRegenerate with msg id and content', () => {
     const msgs = [makeMsg('m1', { role: 'user' }), makeMsg('m2', { role: 'agent' })];
     render(<MessagesPanel {...properBaseProps({
       showAgentChat: true,
@@ -238,21 +240,21 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
     })} />);
 
     (globalThis as any).__lastEditMessageFn('m1', 'new text');
-    expect(editMessage).toHaveBeenCalledWith(0, 'new text');
+    expect(editAndRegenerate).toHaveBeenCalledWith('m1', 'new text');
   });
 
-  it('handleEditMessage auto-regenerates ai message after user msg edit', () => {
-    const msgs = [makeMsg('m1', { role: 'user' }), makeMsg('m2', { role: 'agent' })];
+  it('handleEditMessage triggers editAndRegenerate even without a following agent msg', () => {
+    const msgs = [makeMsg('m1', { role: 'user' })];
     render(<MessagesPanel {...properBaseProps({
       showAgentChat: true,
       displayMessages: msgs,
     })} />);
 
     (globalThis as any).__lastEditMessageFn('m1', 'edited');
-    expect(regenerateMessage).toHaveBeenCalledWith(1);
+    expect(editAndRegenerate).toHaveBeenCalledWith('m1', 'edited');
   });
 
-  it('handleEditMessage does not call editMessage when msg not found', () => {
+  it('handleEditMessage delegates to editAndRegenerate (missing msg handled inside the action)', () => {
     const msgs = [makeMsg('m1')];
     render(<MessagesPanel {...properBaseProps({
       showAgentChat: true,
@@ -260,7 +262,19 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
     })} />);
 
     (globalThis as any).__lastEditMessageFn('nonexistent', 'text');
-    expect(editMessage).not.toHaveBeenCalled();
+    expect(editAndRegenerate).toHaveBeenCalledWith('nonexistent', 'text');
+  });
+
+  it('handleSwitchUserVersion switches user version and linked answer version', () => {
+    const msgs = [makeMsg('v1', { role: 'user', userVersions: ['a', 'b'] }), makeMsg('v2', { role: 'agent', versions: ['a1', 'b1'], currentVersion: 1 })];
+    render(<MessagesPanel {...properBaseProps({
+      showAgentChat: true,
+      displayMessages: msgs,
+    })} />);
+
+    (globalThis as any).__lastSwitchUserVersionFn('v1', 'prev');
+    expect(mockSwitchUserVersion).toHaveBeenCalledWith('v1', 'prev');
+    expect(mockSwitchVersion).toHaveBeenCalledWith('v2', 'prev');
   });
 
   it('handleRegenerate calls regenerateMessage', () => {
@@ -272,17 +286,6 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
 
     (globalThis as any).__lastRegenerateFn('r1');
     expect(regenerateMessage).toHaveBeenCalledWith(0);
-  });
-
-  it('handleSwitchVersion calls mockSwitchVersion', () => {
-    const msgs = [makeMsg('v1')];
-    render(<MessagesPanel {...properBaseProps({
-      showAgentChat: true,
-      displayMessages: msgs,
-    })} />);
-
-    (globalThis as any).__lastSwitchVersionFn('v1', 'next');
-    expect(mockSwitchVersion).toHaveBeenCalledWith('v1', 'next');
   });
 
   it('handleThumbsFeedback calls mockSetThumbsFeedback', () => {
@@ -314,15 +317,6 @@ describe('handler functions', { tags: ['integration'] }, () => {
         displayMessages: msgs,
       })} />);
       expect((globalThis as any).__lastRegenerateFn).toBeInstanceOf(Function);
-    });
-
-    it('provides onSwitchVersion to TeamMessage', () => {
-      const msgs = [makeMsg('sw-1')];
-      render(<MessagesPanel {...properBaseProps({
-        showAgentChat: true,
-        displayMessages: msgs,
-      })} />);
-      expect((globalThis as any).__lastSwitchVersionFn).toBeInstanceOf(Function);
     });
 
     it('provides onThumbsFeedback to TeamMessage', () => {

@@ -266,11 +266,12 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
     it('effectiveSelectedModel uses selectedModel when set', () => {
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
-      act(() => { result.current.setSelectedModel('custom-model'); });
-      expect(result.current.effectiveSelectedModel).toBe('custom-model');
+      act(() => { result.current.setSelectedModel('model-b'); });
+      expect(result.current.effectiveSelectedModel).toBe('model-b');
     });
 
     it('effectiveSelectedModel falls back to first model', () => {
+      localStorage.removeItem('agentstudio-selected-model');
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
       expect(result.current.effectiveSelectedModel).toBe('model-a');
     });

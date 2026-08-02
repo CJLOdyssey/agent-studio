@@ -6,7 +6,7 @@ import type { Agent, Message } from '../../types/AgentStudio';
 import TeamMessage from './TeamMessage';
 import BrowserFrame from './BrowserFrame';
 import { useChatStore } from '../../stores/chatStore';
-import { editMessage, regenerateMessage, continueGeneration } from '../../stores/chatActions';
+import { editAndRegenerate, regenerateMessage, continueGeneration } from '../../stores/chatActions';
 
 interface Props {
   showAgentChat: boolean;
@@ -35,21 +35,12 @@ export default function MessagesPanel({
   const reduce = useReducedMotion();
   const interruptedMessageId = useChatStore((s) => s.interruptedMessageId);
   const switchVersion = useChatStore((s) => s.switchVersion);
+  const switchUserVersion = useChatStore((s) => s.switchUserVersion);
   const continuingId = useChatStore((s) => s.continuingId);
   const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);
   const handleEditMessage = (msgId: string, newContent: string) => {
-    const idx = displayMessages.findIndex((m) => m.id === msgId);
-    if (idx >= 0) {
-      editMessage(idx, newContent);
-      // 编辑用户消息后自动重新生成 AI 回复
-      const msg = displayMessages[idx];
-      if (msg.role === 'user' && idx + 1 < displayMessages.length) {
-        const aiMsg = displayMessages[idx + 1];
-        if (aiMsg.role === 'agent') {
-          regenerateMessage(idx + 1);
-        }
-      }
-    }
+    // Edit → save content + regenerate the following answer (merged into its versions).
+    void editAndRegenerate(msgId, newContent);
   };
 
   const handleRegenerate = (msgId: string) => {
@@ -59,8 +50,17 @@ export default function MessagesPanel({
     }
   };
 
-  const handleSwitchVersion = (msgId: string, direction: 'prev' | 'next') => {
-    switchVersion(msgId, direction);
+  const handleSwitchUserVersion = (msgId: string, direction: 'prev' | 'next') => {
+    // Switch the user message edit history AND the linked answer version together,
+    // so the visible pair stays consistent (user vN ↔ answer vN).
+    switchUserVersion(msgId, direction);
+    const idx = displayMessages.findIndex((m) => m.id === msgId);
+    if (idx >= 0) {
+      const linked = displayMessages.slice(idx + 1).find((m) => m.role === 'agent');
+      if (linked && linked.versions && linked.versions.length > 1) {
+        switchVersion(linked.id, direction);
+      }
+    }
   };
 
   const handleThumbsFeedback = (msgId: string, value: 'up' | 'down') => {
@@ -101,7 +101,7 @@ export default function MessagesPanel({
               onRegenerate={handleRegenerate}
               showContinue={msg.id === interruptedMessageId}
               onContinue={continueGeneration}
-              onSwitchVersion={handleSwitchVersion}
+              onSwitchUserVersion={handleSwitchUserVersion}
               isContinuing={msg.id === continuingId}
               onThumbsFeedback={handleThumbsFeedback}
             />
@@ -130,7 +130,7 @@ export default function MessagesPanel({
               onRegenerate={handleRegenerate}
               showContinue={msg.id === interruptedMessageId}
               onContinue={continueGeneration}
-              onSwitchVersion={handleSwitchVersion}
+              onSwitchUserVersion={handleSwitchUserVersion}
               isContinuing={msg.id === continuingId}
               onThumbsFeedback={handleThumbsFeedback}
             />

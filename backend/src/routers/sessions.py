@@ -16,12 +16,14 @@ from repository import (
     delete_memory_entry,
     delete_session,
     get_agent_config,
+    get_messages,
     get_runs_by_session_ids,
     get_session,
     get_session_memories,
     get_session_messages,
     get_session_runs,
     get_sessions,
+    update_message_versions,
     update_session_title,
 )
 
@@ -49,10 +51,63 @@ def _with_requirement_message(run: Any, messages: list[dict[str, Any]]) -> list[
             "content": req,
             "thinking": None,
             "round_number": 0,
-            "created_at": run.created_at.isoformat() if run.created_at else None,
+            "created_at": None,
+            "user_versions": _parse_json_list(getattr(run, "requirement_versions", None)),
         },
         *messages,
     ]
+
+
+def _parse_json_list(raw: str | None) -> list[str] | None:
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
+def _merge_edit_chains(
+    runs: list[Any], messages_by_run: dict[str, list[dict[str, Any]]]
+) -> list[tuple[Any, list[dict[str, Any]]]]:
+    """Fold edit-regenerate runs so only the newest run of each chain is shown.
+
+    Edit-regenerating a user message creates a NEW run whose ``parent_run_id``
+    points at the replaced run; a single user message may be edited multiple
+    times (multiple children). This groups every run that shares a common root
+    (via parent_run_id) and displays only the newest one, folding the older
+    answers into its final answer's ``versions``.
+    """
+    by_id = {r.id: r for r in runs}
+    groups: dict[str, list[Any]] = {}
+    for r in runs:
+        root = r
+        while root.parent_run_id and root.parent_run_id in by_id:
+            root = by_id[root.parent_run_id]
+        groups.setdefault(root.id, []).append(r)
+
+    result: list[tuple[Any, list[dict[str, Any]]]] = []
+    for group in groups.values():
+        group.sort(key=lambda x: x.created_at)
+        latest = group[-1]
+        msgs = [dict(m) for m in messages_by_run.get(latest.id, [])]
+        versions: list[str] = []
+        thinking_versions: list[str] = []
+        for cr in group[:-1]:
+            hist = [m for m in messages_by_run.get(cr.id, []) if m.get("role") != "user"]
+            if hist:
+                versions.append(hist[-1].get("content", ""))
+                thinking_versions.append(hist[-1].get("thinking") or "")
+        if versions and msgs:
+            agent_idx = next((i for i, m in enumerate(msgs) if m.get("role") != "user"), -1)
+            if agent_idx >= 0:
+                msgs[agent_idx]["versions"] = versions + list(msgs[agent_idx].get("versions") or [])
+                msgs[agent_idx]["thinking_versions"] = thinking_versions + list(msgs[agent_idx].get("thinking_versions") or [])
+        result.append((latest, msgs))
+    return result
+
+
+logger = get_logger(__name__)
 router = APIRouter(tags=["sessions"])
 
 
@@ -142,7 +197,11 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                 "thinking": m.thinking,
                 "round_number": m.round_number,
                 "created_at": m.created_at.isoformat() if m.created_at else None,
+                "versions": _parse_json_list(m.versions),
+                "thinking_versions": _parse_json_list(m.thinking_versions),
             })
+
+        merged = _merge_edit_chains(runs, messages_by_run)
 
         return {
             "id": sess.id,
@@ -160,11 +219,13 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                     "review": r.review,
                     "approved": r.approved,
                     "status": r.status,
+                    "parent_run_id": r.parent_run_id,
+                    "requirement_versions": _parse_json_list(r.requirement_versions),
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                     "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-                    "messages": _with_requirement_message(r, messages_by_run.get(r.id, [])),
+                    "messages": _with_requirement_message(r, msgs),
                 }
-                for r in runs
+                for r, msgs in merged
             ],
             "memories": [
                 {
@@ -333,3 +394,25 @@ async def export_session_memories(request: Request, session_id: str, format: str
     except Exception as e:
         logger.error("Error exporting memories for %s: %s", session_id, e, exc_info=True)
         raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+class AnswerVersionsRequest(BaseModel):
+    versions: list[str]
+    thinking_versions: list[str] | None = None
+
+
+@router.put("/api/runs/{run_id}/answer-versions")
+async def update_run_answer_versions(run_id: str, req: AnswerVersionsRequest, request: Request) -> Any:
+    """Persist an edit-regenerate's answer version history on the run's final answer."""
+    user_id = get_user_id(request)
+    msgs = await get_messages(run_id)
+    agent_msgs = [m for m in msgs if m.role != "user"]
+    if not agent_msgs:
+        raise HTTPException(status_code=404, detail="Run has no answer messages yet")
+    target = agent_msgs[-1]
+    await update_message_versions(target.id, req.versions, req.thinking_versions)
+    logger.info(
+        "Answer versions persisted | run=%s | message=%s | versions=%d | user=%s",
+        run_id, target.id, len(req.versions), user_id,
+    )
+    return {"ok": True, "versions": len(req.versions)}

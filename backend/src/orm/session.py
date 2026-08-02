@@ -65,6 +65,15 @@ class ProjectRun(Base):
         server_default="pending",
         comment="pending|running|converged|max_rounds_reached|error",
     )
+    parent_run_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
+        index=True,
+        comment="Edit-regenerate chain: the run whose answer this run replaces",
+    )
+    requirement_versions: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="JSON array of prior user-message edits"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
@@ -131,6 +140,12 @@ class ChatMessage(Base):
     agent_name: Mapped[str] = mapped_column(String(64), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     thinking: Mapped[str | None] = mapped_column(Text, nullable=True)
+    versions: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="JSON array of prior answer versions"
+    )
+    thinking_versions: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="JSON array of prior thinking versions"
+    )
     round_number: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

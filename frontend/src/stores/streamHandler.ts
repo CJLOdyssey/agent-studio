@@ -11,6 +11,41 @@ export function handleStreamStart(s: ChatState, msg: WsStreamEvent, chunk: strin
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
   const continuingId = s.continuingId;
+  if (s.editTargetId) {
+    // Edit-regenerate: the new answer REPLACES the target message. Old content
+    // is archived into versions; the stream starts fresh (not old+new).
+    const targetIdx = s.messages.findIndex((m) => m.id === s.editTargetId);
+    const oldMsg = targetIdx >= 0 ? s.messages[targetIdx] : null;
+    const oldContent = oldMsg?.content || '';
+    const oldThinking = oldMsg?.thinking || '';
+    const newVersions = oldMsg?.versions ? [...oldMsg.versions, oldContent] : [oldContent];
+    const newThinkingVersions = oldMsg?.thinkingVersions
+      ? [...oldMsg.thinkingVersions, oldThinking]
+      : (oldThinking ? [oldThinking] : undefined);
+    Logger.info('[chat] edit stream — merging into target msg %s', s.editTargetId);
+    return {
+      streamingId: newId,
+      editTargetId: null,
+      continuingId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
+      skipThinking: false,
+      messages: s.messages.map((m) => {
+        if (m.id !== s.editTargetId) return m;
+        return {
+          ...m,
+          id: newId,
+          content: chunk,
+          thinking: '',
+          versions: newVersions,
+          thinkingVersions: newThinkingVersions,
+          currentVersion: newVersions.length - 1,
+        };
+      }),
+      currentRole: msg.agent_name || 'Agent',
+      wsStatus: 'connected' as ChatState['wsStatus'],
+    };
+  }
   if (continuingId) {
     Logger.info('[chat] continue stream — replacing interrupted msg (continuingId=%s, newId=%s)', continuingId, newId);
     const contIdx = s.messages.findIndex((m) => m.id === continuingId);
@@ -44,6 +79,38 @@ export function handleThinkingStreamNew(s: ChatState, msg: WsThinkingStreamEvent
   const continuingId = s.continuingId;
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
+  if (s.editTargetId) {
+    const targetIdx = s.messages.findIndex((m) => m.id === s.editTargetId);
+    const oldMsg = targetIdx >= 0 ? s.messages[targetIdx] : null;
+    const oldContent = oldMsg?.content || '';
+    const oldThinking = oldMsg?.thinking || '';
+    const newVersions = oldMsg?.versions ? [...oldMsg.versions, oldContent] : [oldContent];
+    const newThinkingVersions = oldMsg?.thinkingVersions
+      ? [...oldMsg.thinkingVersions, oldThinking]
+      : (oldThinking ? [oldThinking] : undefined);
+    return {
+      streamingId: newId,
+      editTargetId: null,
+      continuingId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
+      skipThinking: false,
+      messages: s.messages.map((m) => {
+        if (m.id !== s.editTargetId) return m;
+        return {
+          ...m,
+          id: newId,
+          content: '',
+          thinking: chunk,
+          versions: newVersions,
+          thinkingVersions: newThinkingVersions,
+          currentVersion: newVersions.length - 1,
+        };
+      }),
+      currentRole: msg.agent_name || 'Agent',
+      wsStatus: 'connected' as ChatState['wsStatus'],
+    };
+  }
   if (continuingId) {
     const contIdx = s.messages.findIndex((m) => m.id === continuingId);
     const oldMsg = contIdx >= 0 ? s.messages[contIdx] : null;
@@ -163,6 +230,7 @@ export function handleThinkingStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
+  Logger.info('[chat] thinking stream entry — editTargetId=%s streamingId=%s runId=%s', s.editTargetId, s.streamingId, s.currentRunId);
   if (activeStreamMsgIds.has(s.currentRunId || '')) {
     set((prev) => {
       if (!prev.streamingId) return {};
