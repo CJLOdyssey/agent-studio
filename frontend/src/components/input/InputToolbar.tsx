@@ -162,7 +162,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div data-input-wrapper className="relative bg-[var(--color-surface-raised)] border-none rounded-[var(--da-input-radius)] overflow-hidden transition-shadow duration-200 shadow-none focus-within:shadow-[0 0 0 2px var(--color-accent)]">
+      <div data-input-wrapper className="relative bg-[var(--color-surface-raised)] border-none rounded-[var(--da-input-radius)] transition-shadow duration-200 shadow-none focus-within:shadow-[0 0 0 2px var(--color-accent)]">
         {palette.open && (
           <CommandDropdown
             commands={palette.filtered}

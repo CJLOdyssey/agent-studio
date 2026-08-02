@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Key, Server, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import Modal from '../../shared/Modal';
 import ProviderEditModal from './ProviderEditModal';
 import ApiProviderTab from './ApiProviderTab';
@@ -24,6 +25,7 @@ type ApiTab = 'keys' | 'models' | 'usage';
 
 export default function ApiManagementModal({ onClose }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ApiTab>('keys');
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +114,7 @@ export default function ApiManagementModal({ onClose }: Props) {
         is_default: false,
       });
       await loadKeys();
+      queryClient.invalidateQueries({ queryKey: ['keys'] });
       setEditingKey(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.saveFailed');
@@ -145,6 +148,7 @@ export default function ApiManagementModal({ onClose }: Props) {
         is_default: updates.isDefault,
       });
       await loadKeys();
+      queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.updateFailed');
       setError(msg);
@@ -162,6 +166,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     try {
       await api.deleteKey(confirmDeleteId);
       await loadKeys();
+      queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.deleteFailed');
       setError(msg);

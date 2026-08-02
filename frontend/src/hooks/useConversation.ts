@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
-import { listSessions } from '../api/client/sessions';
+import { listSessions, deleteSession } from '../api/client/sessions';
+import Logger from '../utils/logger';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
 const ACTIVE_CONV_KEY = 'agentstudio-active-conv-id';
@@ -192,8 +193,9 @@ export function useConversation() {
     });
   }, [persistConversations]);
 
-  /** Delete a conversation by ID. */
+  /** Delete a conversation by ID — removes the local record AND the server session. */
   const deleteConversation = useCallback((convId: string) => {
+    const conv = conversations.find((c) => c.id === convId);
     setConversations((prev) => {
       const next = prev.filter((c) => c.id !== convId);
       persistConversations(next);
@@ -206,7 +208,12 @@ export function useConversation() {
       }
       return current;
     });
-  }, [persistConversations]);
+    if (conv?.sessionId) {
+      deleteSession(conv.sessionId).catch((err) => {
+        Logger.warn('[conversation] failed to delete server session %s: %s', conv.sessionId, String(err));
+      });
+    }
+  }, [conversations, persistConversations]);
 
   return {
     activeConvId,

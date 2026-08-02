@@ -35,7 +35,7 @@ export default function AgentStudioWorkstation() {
           setSelectedAgentId={s.setSelectedAgentId}
           setActiveConvId={s.conv.setActiveConvId}
           setInputValue={() => {}}
-          setConversations={s.conv.setConversations}
+          onDeleteConversation={s.conv.deleteConversation}
           onNewChat={s.handleNewChat}
           toggleTeam={s.teamMgmt.toggleTeam}
           handleAddTeam={s.teamMgmt.handleAddTeam}

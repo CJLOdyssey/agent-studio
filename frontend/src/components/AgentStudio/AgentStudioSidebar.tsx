@@ -20,7 +20,7 @@ interface AgentStudioSidebarProps {
   setSelectedAgentId: (id: string | null) => void;
   setActiveConvId: (id: string | null) => void;
   setInputValue: (value: string) => void;
-  setConversations: (fn: (prev: Conversation[]) => Conversation[]) => void;
+  onDeleteConversation: (convId: string) => void;
   onNewChat: () => void;
   toggleTeam: (teamId: string) => void;
   handleAddTeam: () => void;
@@ -50,7 +50,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   setSelectedAgentId,
   setActiveConvId,
   setInputValue,
-  setConversations,
+  onDeleteConversation,
   onNewChat,
   toggleTeam,
   handleAddTeam,
@@ -84,13 +84,9 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
 
   const handleConvDelete = useCallback(
     (convId: string) => {
-      setConversations((prev) => prev.filter((c) => c.id !== convId));
-      if (activeConvId === convId) {
-        setActiveConvId(null);
-        useChatStore.getState().reset();
-      }
+      onDeleteConversation(convId);
     },
-    [activeConvId, setConversations, setActiveConvId],
+    [onDeleteConversation],
   );
 
   return (
