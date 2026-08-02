@@ -242,43 +242,19 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v4
-      - name: Download historical durations (if any)
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: test-durations
-          path: ./durations
-      - name: Prepare durations file
-        run: |
-          if [ -f durations/.test_durations ]; then
-            cp durations/.test_durations .test_durations
-            echo "Loaded $(wc -l < .test_durations) duration entries"
-          else
-            echo "No historical durations — pytest-split will shard by test count"
-          fi
       - name: Run unit tests (shard ${{ matrix.shard }} of 10)
         shell: bash
         env:
           COVERAGE_FILE: .coverage.${{ matrix.shard }}
         run: |
+          # .test_durations is committed to the repo (pytest-split official
+          # recommendation) — no artifact round-trip needed.
           PYTHONPATH=. python3 -m pytest backend/tests \
             -q --tb=short \
             --splits=10 --group=${{ matrix.shard }} \
-            --durations-path=.test_durations --store-durations \
+            --durations-path=.test_durations \
             -m 'not integration and not benchmark' \
             --cov=backend --cov-fail-under=0
-      - name: Store shard durations
-        shell: bash
-        run: |
-          if [ -f .test_durations ]; then
-            cp .test_durations durations-${{ matrix.shard }}.json
-          fi
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: durations-${{ matrix.shard }}
-          path: durations-${{ matrix.shard }}.json
-          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -312,32 +288,6 @@ jobs:
           name: coverage-report
           path: coverage.xml
           retention-days: 7
-      - name: Merge per-shard durations for next run
-        run: |
-          python3 - <<'EOF'
-          import json
-          from pathlib import Path
-
-          merged: dict[str, float] = {}
-          for p in Path('durations').glob('*.json'):
-              try:
-                  merged.update(json.loads(p.read_text()))
-              except (json.JSONDecodeError, OSError):
-                  pass
-          if merged:
-              out = Path('merged')
-              out.mkdir(exist_ok=True)
-              (out / '.test_durations').write_text(json.dumps(merged))
-              print(f"Merged {len(merged)} duration entries")
-          else:
-              print("No durations to merge")
-          EOF
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-durations
-          path: merged/.test_durations
-          if-no-files-found: ignore
 
   frontend-coverage-report:
     name: "Frontend: Coverage Report"

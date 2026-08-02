@@ -13,6 +13,16 @@ test-backend:
 test-backend-quick:
 	pytest -q -x --tb=short $(TEST_EXCLUDE)
 
+## 增量测试（pytest-testmon）：只跑受代码变更影响的测试。
+## 注意：testmon 不支持 xdist 并行（-n 0），且需先跑一次全量基线：
+##   make test-backend-incremental-baseline   # 首次/大改动后重建 .testmondata
+## 之后每次改动代码，跑 make test-backend-incremental 即可。
+test-backend-incremental:
+	pytest -n 0 $(TEST_EXCLUDE) --testmon --cov=backend
+
+test-backend-incremental-baseline:
+	pytest -n 0 $(TEST_EXCLUDE) --testmon --testmon-new-first --cov=backend
+
 test-frontend:
 	cd frontend && npx vitest run --coverage.enabled
 

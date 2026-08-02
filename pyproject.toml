@@ -28,7 +28,7 @@ exclude = ["backend/tests/", "backend/stubs/", "backend/alembic/", "backend/syst
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
 pythonpath = ["backend/src"]
-addopts = ["-n", "auto", "--dist", "worksteal"]
+addopts = ["-n", "auto", "--dist", "worksteal", "--reruns=2", "--reruns-delay=1"]
 asyncio_mode = "auto"
 markers = [
     "benchmark: marks performance benchmark tests (not run in default CI)",
