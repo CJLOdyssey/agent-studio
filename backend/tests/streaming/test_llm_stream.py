@@ -130,6 +130,18 @@ class TestBuildLlmRequestBody:
         assert body["temperature"] == 0.1
         assert body["max_tokens"] == 1024
 
+    def test_default_max_tokens_within_common_provider_limit(self):
+        # 65536 exceeds SiliconFlow Qwen models' max_seq_len (32768) → 400.
+        # The default must fit mainstream providers (DeepSeek/Qwen/Groq/OpenRouter).
+        from streaming.llm_stream import build_llm_request_body
+
+        url, headers, body = build_llm_request_body(
+            [{"role": "user", "content": "hi"}],
+            model="Qwen/Qwen3-8B",
+            api_key="sk-test",
+        )
+        assert body["max_tokens"] <= 16384
+
 
 class TestBuildToolCallsList:
     def test_consolidates_fragments(self):

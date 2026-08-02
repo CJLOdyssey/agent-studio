@@ -23,7 +23,7 @@ class DynamicTeamGraph:
         api_key: str = "",
         base_url: str | None = None,
         temperature: float = 0.7,
-        max_tokens: int = 65536,
+        max_tokens: int = 16384,
         checkpointer: Any | None = None,
     ):
         llm_kwargs: dict[str, Any] = {

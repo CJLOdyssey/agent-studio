@@ -60,7 +60,7 @@ def build_llm_request_body(
     api_key: str,
     base_url: str | None = None,
     temperature: float = 0.7,
-    max_tokens: int = 65536,
+    max_tokens: int = 16384,
     tool_definitions: list[dict[str, Any]] | None = None,
 ) -> tuple[str, dict[str, str], dict[str, Any]]:
     """Build the HTTP request URL, headers, and JSON body for LLM chat completion.

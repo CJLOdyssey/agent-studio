@@ -63,7 +63,7 @@ async def _complete_pipeline(
                 {"role": "assistant", "content": "", "reasoning_content": thinking, "prefix": True},
             ],
             "stream": True,
-            "max_tokens": 65536,
+            "max_tokens": 16384,
         }
         base_lower = (api_base or "").lower()
         model_lower = (effective_model or "").lower()
@@ -81,7 +81,7 @@ async def _complete_pipeline(
             "model": effective_model,
             "messages": [{"role": "user", "content": prompt}],
             "stream": True,
-            "max_tokens": 65536,
+            "max_tokens": 16384,
         }
 
     logger.info("[complete] Starting completion for run %s | model=%s", run_id, effective_model)
