@@ -76,7 +76,7 @@ export default function AgentManagement() {
     ];
   }
 
-  if (mgmt.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={7} /></div>;
+  if (mgmt.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('agent.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('agent.error_render')}</p></div>}>

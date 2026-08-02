@@ -55,7 +55,7 @@ export default function MCPManagement() {
     ];
   }
 
-  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={7} /></div>;
+  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('mcp.error_render')}</p></div>}>
