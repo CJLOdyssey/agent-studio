@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
+import { formatRelativeTime } from '../../../../../utils/relativeTime';
 
 const { mockFetchAll, mockCreate, mockUpdate, mockRemove, mockClone, mockRemoveBatch, mockBatchAdd, mockImport } = vi.hoisted(() => ({
   mockFetchAll: vi.fn().mockResolvedValue([]),
@@ -114,6 +115,14 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
     render(<SkillManagement />, { wrapper: TestProviders });
     await waitFor(() => {
       expect(screen.getByText('前端开发')).toBeInTheDocument();
+    });
+  });
+
+  it('renders createdAt column with relative time', async () => {
+    mockFetchAll.mockResolvedValue([makeSkill()]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText(formatRelativeTime('2024-01-01'))).toBeInTheDocument();
     });
   });
 
