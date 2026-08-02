@@ -11,6 +11,7 @@ import WstaPagination from '../shared/WstaPagination';
 import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
+import { getCategoryTagClass } from '../shared/categoryTag';
 import { useToast } from '../../../../utils/useToast';
 import { formatRelativeTime } from '../../../../utils/relativeTime';
 import { importSkillFromMarkdown, importSkillDirectory } from '../../../../api/client/skills';
@@ -141,7 +142,7 @@ export default function SkillManagement() {
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('skill.select_item', item.name)} /></td>
                 <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                 <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
-                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{item.category}</span></td>
+                <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />

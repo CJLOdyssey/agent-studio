@@ -6,6 +6,7 @@ import type { OutputEntry } from './output.types';
 import { useOutputManagement } from './useOutputManagement';
 import OutputFormModal from './OutputFormModal';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
+import { getCategoryTagClass } from '../shared/categoryTag';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import WstaPagination from '../shared/WstaPagination';
 import { useToast } from '../../../../utils/useToast';
@@ -89,7 +90,7 @@ export default function OutputConstraintManagement() {
                   <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('output.select_item', item.name)} /></td>
                   <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                   <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.content}>{item.content}</span></td>
-                  <td><span className="wsta-tag-pill wsta-tag-indigo">{item.category}</span></td>
+                  <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category}</span></td>
                   <td>
                     <span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}>
                       <span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />

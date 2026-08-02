@@ -10,6 +10,7 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import WstaPagination from '../shared/WstaPagination';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
+import { getCategoryTagClass } from '../shared/categoryTag';
 import { useToast } from '../../../../utils/useToast';
 import { formatRelativeTime } from '../../../../utils/relativeTime';
 
@@ -88,7 +89,7 @@ export default function PromptManagement() {
               <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('prompt.select_item', { n: item.name })} /></td>
                 <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
-                <td><span className="wsta-tag-pill wsta-tag-indigo">{getCategoryLabel(item.category)}</span></td>
+                <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{getCategoryLabel(item.category)}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${item.status === 'active' ? 'wsta-badge-dot-green' : item.status === 'draft' ? 'wsta-badge-dot-gray' : 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${item.status === 'active' ? 'wsta-dot-green' : 'wsta-dot-gray'}`} />

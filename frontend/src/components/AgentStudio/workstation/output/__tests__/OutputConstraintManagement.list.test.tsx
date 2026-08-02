@@ -315,7 +315,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-tag-indigo')).toBeDefined();
+    expect(container.querySelector('.wsta-tag-amber')).toBeDefined();
     expect(screen.getByText('格式约束')).toBeDefined();
   });
 
@@ -327,7 +327,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-tag-green')).toBeDefined();
+    expect(container.querySelector('.wsta-tag-pink')).toBeDefined();
   });
 
   it('renders dropdown action button for each row', () => {
