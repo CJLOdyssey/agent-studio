@@ -1,5 +1,5 @@
 import api from './instance';
-import type { WorkflowConfig } from '../../types/AgentStudio';
+import type { WorkflowConfig, WorkflowSummary } from '../../types/AgentStudio';
 
 export async function fetchWorkflow(teamId: string): Promise<WorkflowConfig | null> {
   try {
@@ -21,7 +21,7 @@ export async function deleteWorkflow(configId: string): Promise<void> {
   await api.delete(`/workflows/${configId}`);
 }
 
-export async function listWorkflows(): Promise<WorkflowConfig[]> {
+export async function listWorkflows(): Promise<WorkflowSummary[]> {
   const { data } = await api.get('/workflows');
   return data;
 }

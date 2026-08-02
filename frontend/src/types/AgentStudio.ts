@@ -88,6 +88,15 @@ export interface WorkflowConfig {
   edges: WorkflowEdge[];
 }
 
+export interface WorkflowSummary {
+  id: string;
+  teamId: string;
+  teamName: string;
+  name: string;
+  nodeCount: number;
+  createdAt: string;
+}
+
 // 对话历史记录
 export interface Conversation {
   id: string;

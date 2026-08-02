@@ -1,5 +1,6 @@
 """Workflow CRUD API endpoints."""
 
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter
@@ -10,7 +11,7 @@ from core.error_codes import ErrorCode, error_response
 from repository.workflows import (
     delete_workflow_config,
     get_workflow_config_by_team,
-    list_workflow_configs,
+    list_workflow_meta,
     save_workflow_config,
 )
 from workflow.models import (
@@ -60,6 +61,18 @@ class WorkflowConfigSchema(BaseModel):
     max_rounds: int
     nodes: list[WorkflowNodeSchema]
     edges: list[WorkflowEdgeSchema]
+
+
+class WorkflowListItemSchema(BaseModel):
+    """Lightweight workflow row for the workflow list page."""
+
+    model_config = {"alias_generator": to_camel, "populate_by_name": True}
+    id: str
+    team_id: str
+    team_name: str
+    name: str
+    node_count: int
+    created_at: datetime
 
 
 def _to_schema(config: WorkflowConfig) -> WorkflowConfigSchema:
@@ -136,11 +149,21 @@ async def get_team_workflow(team_id: str) -> Any:
     return _to_schema(config)
 
 
-@router.get("", response_model=list[WorkflowConfigSchema])
+@router.get("", response_model=list[WorkflowListItemSchema])
 async def list_workflows() -> Any:
-    """List all workflow configurations."""
-    configs = await list_workflow_configs()
-    return [_to_schema(c) for c in configs]
+    """List all workflow configurations as lightweight rows."""
+    rows = await list_workflow_meta()
+    return [
+        WorkflowListItemSchema(
+            id=r.id,
+            team_id=r.team_id,
+            team_name=r.team_name,
+            name=r.name,
+            node_count=r.node_count,
+            created_at=r.created_at,
+        )
+        for r in rows
+    ]
 
 
 @router.delete("/{config_id}")

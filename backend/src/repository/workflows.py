@@ -1,5 +1,7 @@
 """Workflow configuration repository — CRUD for DAG workflow configs, nodes, and edges."""
 
+from dataclasses import dataclass
+from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import delete, select
@@ -11,6 +13,7 @@ from core.infra.database import (
     WorkflowNodeDB,
     get_session_factory,
 )
+from orm.agent import TeamDB
 from workflow.models import (
     NodeStrategy,
     WorkflowConfig,
@@ -182,6 +185,47 @@ async def list_workflow_configs() -> list[WorkflowConfig]:
                 max_rounds=c.max_rounds,
                 nodes=[_node_to_domain(n) for n in c.nodes],
                 edges=[_edge_to_domain(e) for e in c.edges],
+            )
+            for c in configs
+        ]
+
+
+@dataclass
+class WorkflowMeta:
+    """Lightweight workflow row metadata for list views."""
+
+    id: str
+    team_id: str
+    team_name: str
+    name: str
+    node_count: int
+    created_at: datetime
+
+
+async def list_workflow_meta() -> list[WorkflowMeta]:
+    """Return all workflow configs as lightweight rows joined with team names.
+
+    Configs whose team no longer exists get an empty team name rather than
+    being dropped from the list.
+    """
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(WorkflowConfigDB)
+            .options(selectinload(WorkflowConfigDB.nodes))
+            .order_by(WorkflowConfigDB.created_at)
+        )
+        configs = (await session.execute(stmt)).scalars().all()
+        team_rows = (await session.execute(select(TeamDB.id, TeamDB.name))).all()
+        team_names = {row[0]: row[1] for row in team_rows}
+        return [
+            WorkflowMeta(
+                id=c.id,
+                team_id=c.team_id,
+                team_name=team_names.get(c.team_id, ""),
+                name=c.name,
+                node_count=len(c.nodes),
+                created_at=c.created_at,
             )
             for c in configs
         ]
