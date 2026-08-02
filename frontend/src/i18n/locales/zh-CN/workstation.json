@@ -788,5 +788,32 @@
     "active": "已启用",
     "draft": "草稿",
     "archived": "已归档"
+  },
+  "workflow": {
+    "new": "新建工作流",
+    "edit": "编辑",
+    "delete": "删除",
+    "batch_delete": "批量删除 ({n})",
+    "search_placeholder": "搜索工作流名称、团队...",
+    "all_status": "全部状态",
+    "status_active": "已启用",
+    "status_draft": "草稿",
+    "col_name": "工作流名称",
+    "col_team": "团队",
+    "col_nodes": "节点数",
+    "select_all": "全选本页",
+    "select_item": "选择 {name}",
+    "more_actions": "更多操作",
+    "empty_title": "暂无工作流{extra}",
+    "empty_desc_search": "尝试修改搜索关键词",
+    "empty_desc_general": "点击「新建工作流」创建第一个工作流",
+    "toast_deleted": "工作流已删除",
+    "toast_batch_deleted": "已删除 {n} 个工作流",
+    "loading": "加载中...",
+    "error_render": "模块出错了，请刷新页面重试",
+    "error_retry": "重试",
+    "error_loading": "加载失败",
+    "back_to_list": "返回列表",
+    "back_unsaved": "有未保存的更改，确定返回列表？"
   }
 }

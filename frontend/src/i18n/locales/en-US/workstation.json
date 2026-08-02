@@ -788,5 +788,32 @@
     "active": "Active",
     "draft": "Draft",
     "archived": "Archived"
+  },
+  "workflow": {
+    "new": "New Workflow",
+    "edit": "Edit",
+    "delete": "Delete",
+    "batch_delete": "Batch Delete ({n})",
+    "search_placeholder": "Search workflow name, team...",
+    "all_status": "All Status",
+    "status_active": "Active",
+    "status_draft": "Draft",
+    "col_name": "Workflow Name",
+    "col_team": "Team",
+    "col_nodes": "Nodes",
+    "select_all": "Select All",
+    "select_item": "Select {name}",
+    "more_actions": "More",
+    "empty_title": "No workflows{extra}",
+    "empty_desc_search": "Try different keywords",
+    "empty_desc_general": "Click \"New Workflow\" to create one",
+    "toast_deleted": "Workflow deleted",
+    "toast_batch_deleted": "{n} workflows deleted",
+    "loading": "Loading...",
+    "error_render": "Module error, please refresh",
+    "error_retry": "Retry",
+    "error_loading": "Load failed",
+    "back_to_list": "Back to list",
+    "back_unsaved": "Unsaved changes, return to list?"
   }
 }
