@@ -95,7 +95,7 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
       setDeleteTarget(null);
       reload();
     } catch {
-      toast(t('workflow.error_loading'), 'error');
+      toast(t('workflow.toast_delete_failed'), 'error');
       setDeleteTarget(null);
     }
   };
@@ -108,7 +108,7 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
       setSelectedIds(new Set());
       reload();
     } catch {
-      toast(t('workflow.error_loading'), 'error');
+      toast(t('workflow.toast_batch_delete_failed'), 'error');
       setBatchOpen(false);
     }
   };
@@ -148,7 +148,7 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
         {processed.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <GitBranch size={40} className="text-[var(--color-text-muted)] opacity-50" />
-            <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('workflow.empty_title', search ? '' : '')}</div>
+            <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('workflow.empty_title')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{search ? t('workflow.empty_desc_search') : t('workflow.empty_desc_general')}</div>
           </div>
         ) : (

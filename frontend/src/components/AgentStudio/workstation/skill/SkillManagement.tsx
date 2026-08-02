@@ -122,7 +122,7 @@ export default function SkillManagement() {
         {d.processed.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <Zap size={40} className="text-[var(--color-text-muted)] opacity-50" />
-            <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('skill.empty_title', d.search ? '' : '')}</div>
+            <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('skill.empty_title')}</div>
             <div className="text-sm text-[var(--color-text-muted)] max-w-80 leading-relaxed">{d.search ? t('skill.empty_desc_search') : t('skill.empty_desc_general')}</div>
           </div>
         ) : (

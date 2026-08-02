@@ -213,7 +213,7 @@ async def list_workflow_meta() -> list[WorkflowMeta]:
         stmt = (
             select(WorkflowConfigDB)
             .options(selectinload(WorkflowConfigDB.nodes))
-            .order_by(WorkflowConfigDB.created_at)
+            .order_by(WorkflowConfigDB.created_at.desc())
         )
         configs = (await session.execute(stmt)).scalars().all()
         team_rows = (await session.execute(select(TeamDB.id, TeamDB.name))).all()

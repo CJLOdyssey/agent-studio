@@ -60,6 +60,7 @@ vi.mock('../useOutputManagement', () => ({
 vi.mock('../shared/ResourcePickerModal', () => ({ default: () => null }));
 
 import OutputConstraintManagement from '../OutputConstraintManagement';
+import { getCategoryTagClass } from '../../shared/categoryTag';
 
 const makeItem = (overrides: Record<string, unknown> = {}) => ({
   id: 'o1',
@@ -315,7 +316,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-tag-amber')).toBeDefined();
+    expect(container.querySelector(`.${getCategoryTagClass('格式约束')}`)).toBeDefined();
     expect(screen.getByText('格式约束')).toBeDefined();
   });
 
@@ -327,7 +328,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-tag-pink')).toBeDefined();
+    expect(container.querySelector(`.${getCategoryTagClass('内容约束')}`)).toBeDefined();
   });
 
   it('renders dropdown action button for each row', () => {
