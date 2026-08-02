@@ -44,8 +44,10 @@ async def test_get_api_keys_with_fallback(db_engine):
     assert keys[0]["provider"] == "openai"
     assert "..." in keys[0]["key_masked"]
 
+    # "anonymous" never returns keys directly — it only serves as the fallback
+    # source for other users (see get_api_keys implementation).
     keys_direct = await get_api_keys("anonymous")
-    assert len(keys_direct) == 1
+    assert keys_direct == []
 
 
 @pytest.mark.asyncio

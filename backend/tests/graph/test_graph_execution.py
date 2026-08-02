@@ -318,9 +318,15 @@ class TestToolsNode:
         await graph._tools_node(state)
 
         events = [call[0][0]["event"] for call in cb.call_args_list]
-        assert "on_tool_result" in events
-        tool_events = [c for c in cb.call_args_list if c[0][0]["event"] == "on_tool_result"]
-        assert tool_events[0][0][0]["data"]["tool"] == "echo"
+        # Tool results are streamed into the thinking chain as on_custom_thinking
+        # with a "[result] <tool> → ..." prefix.
+        assert "on_custom_thinking" in events
+        result_thoughts = [
+            c[0][0]["data"]["content"]
+            for c in cb.call_args_list
+            if c[0][0]["event"] == "on_custom_thinking"
+        ]
+        assert any(t.startswith("[result] echo →") for t in result_thoughts)
 
 
 # ── set_stream_callback tests ─────────────────────────────────────────────────

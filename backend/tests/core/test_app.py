@@ -11,7 +11,7 @@ class TestAppCreation:
     def test_app_import(self):
         import core.app
 
-        assert backend.core.app.app is not None
+        assert core.app.app is not None
 
     def test_app_title(self):
         from core.app import app

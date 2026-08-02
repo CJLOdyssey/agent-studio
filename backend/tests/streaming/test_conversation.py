@@ -38,17 +38,23 @@ async def test_stream_emitter_buffers_chunks():
 
 @pytest.mark.asyncio
 async def test_stream_emitter_tool_events():
-    """Verify StreamEmitter saves tool start events."""
+    """Tool start is emitted by the graph as on_custom_thinking and streamed."""
     from streaming.emitter import StreamEmitter
 
     with (
-        patch("streaming.emitter.publish_run_message"),
+        patch("streaming.emitter.publish_run_message") as mock_pub,
         patch("streaming.emitter.save_message") as mock_save,
     ):
         emitter = StreamEmitter("test-run")
-        await emitter({"event": "on_tool_start", "name": "search", "data": {"input": "query"}})
-        args = mock_save.call_args[1]
-        assert "search" in args["content"]
+        await emitter({
+            "event": "on_custom_thinking",
+            "data": {"content": "search({\"input\": \"query\"})"},
+        })
+        mock_pub.assert_awaited()
+        payload = mock_pub.await_args[0][1]
+        assert payload["type"] == "thinking_stream"
+        assert "search" in payload["content"]
+        mock_save.assert_not_awaited()
 
 
 def test_run_status_valid_states():

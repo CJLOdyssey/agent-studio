@@ -161,9 +161,13 @@ class TestSessions:
         runs = resp.json()["runs"]
         assert len(runs) == 1
         messages = runs[0].get("messages", [])
-        assert len(messages) == 1
-        assert messages[0]["content"] == "已打开抖音"
-        assert messages[0]["thinking"] == "先想一下再回答"
+        # The run requirement is prepended as a synthetic user message so the
+        # user's input renders in the conversation (see _with_requirement_message).
+        assert len(messages) == 2
+        assert messages[0]["role"] == "user"
+        assert messages[0]["content"] == "打开抖音"
+        assert messages[1]["content"] == "已打开抖音"
+        assert messages[1]["thinking"] == "先想一下再回答"
 
     def test_get_session_not_found(self, client):
         resp = client.get("/api/sessions/nonexistent", headers={"X-User-ID": "admin"})

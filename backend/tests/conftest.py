@@ -1,6 +1,7 @@
 """Shared fixtures and helpers for E2E tests."""
 
 import contextlib
+import os
 import string
 import subprocess
 import sys
@@ -11,6 +12,21 @@ from typing import Any
 import httpx
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+# Force a clean test environment BEFORE any core module is imported.
+# core/infra/database.py reads DATABASE_URL (and other vars) at import time;
+# a polluted DATABASE_URL from the host shell (e.g. opencode's own
+# skill-tracker.db) would otherwise leak into every test worker.
+os.environ.update({
+    "AUTH_MODE": "legacy",
+    "AUTH_ENABLED": "0",
+    "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
+    "REDIS_URL": "redis://localhost:6379/0",
+    "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",
+    "RATE_LIMIT": "9999",
+    "CHECKPOINTER_BACKEND": "memory",
+    "DATABASE_POOL_SIZE": "0",
+})
 
 from core.infra.database import Base  # type: ignore[attr-defined]
 from core.infra.redis_sentinel import (

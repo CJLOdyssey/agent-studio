@@ -47,12 +47,13 @@ class TestCreateTeamRegression:
         assert resp.status_code == 201
         assert resp.json().get("category") in ("dev", None)
 
-    def test_invalid_category_rejected(self, client):
-        """R-04.2: 非法 category → 422"""
+    def test_custom_category_accepted(self, client):
+        """R-04.2: 分类为用户自定义（非枚举限制），任意值应被接受"""
         resp = client.post("/api/teams", json={
-            "name": "r-badcat", "category": "invalid"
+            "name": "r-customcat", "category": "research"
         })
-        assert resp.status_code == 422
+        assert resp.status_code == 201
+        assert resp.json().get("category") == "research"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -85,11 +86,11 @@ class TestUpdateTeamRegression:
         r = client.post("/api/teams", json={"name": "r-full"})
         tid = r.json()["id"]
         resp = client.put(f"/api/teams/{tid}", json={
-            "name": "fully-updated", "description": "d", "status": "inactive",
+            "name": "reg-full-updated", "description": "d", "status": "inactive",
         })
         assert resp.status_code == 200
         data = resp.json()
-        assert data["name"] == "fully-updated"
+        assert data["name"] == "reg-full-updated"
         assert data["description"] == "d"
         assert data["status"] == "inactive"
 

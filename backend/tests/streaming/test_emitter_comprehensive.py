@@ -373,23 +373,26 @@ class TestOnToolResults:
 
 @pytest.mark.requirement("REQ-RUN-002")
 class TestOnToolStart:
-    """Tests for on_tool_start event."""
+    """Tool start events are emitted by the graph as on_custom_thinking."""
 
     @pytest.mark.asyncio
-    async def test_emits_tool_call_message(self):
+    async def test_emits_tool_thought(self):
         from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-29")
         with (
-            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
             patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
-                "event": "on_tool_start",
-                "name": "search",
-                "data": {"input": {"query": "test"}},
+                "event": "on_custom_thinking",
+                "data": {"content": "search({\"query\": \"test\"})"},
             })
-            assert emitter._message_index == 1
+            payload = mock_pub.await_args[0][1]
+            assert payload["type"] == "thinking_stream"
+            assert "search" in payload["content"]
+            # Thinking is not a saved message — index must stay 0.
+            assert emitter._message_index == 0
 
     @pytest.mark.asyncio
     async def test_long_input_truncated(self):
@@ -402,33 +405,36 @@ class TestOnToolStart:
             patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
-                "event": "on_tool_start",
-                "name": "mytool",
-                "data": {"input": long_input},
+                "event": "on_custom_thinking",
+                "data": {"content": f"tool({long_input})"},
             })
             payload = mock_pub.await_args[0][1]
-            assert len(payload["content"]) < 300
+            assert payload["type"] == "thinking_stream"
+            # Buffer overflows drop oldest chunks but the latest stays intact.
+            assert payload["content"].endswith(")")
 
 
 @pytest.mark.requirement("REQ-RUN-002")
 class TestOnToolEnd:
-    """Tests for on_tool_end event."""
+    """Tool result events are emitted by the graph as on_custom_thinking."""
 
     @pytest.mark.asyncio
-    async def test_emits_tool_return_message(self):
+    async def test_emits_tool_result_thought(self):
         from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-31")
         with (
-            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
             patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
-                "event": "on_tool_end",
-                "name": "search",
-                "data": {"output": "search results here"},
+                "event": "on_custom_thinking",
+                "data": {"content": "[result] search → search results here"},
             })
-            assert emitter._message_index == 1
+            payload = mock_pub.await_args[0][1]
+            assert payload["type"] == "thinking_stream"
+            assert "[result]" in payload["content"]
+            assert emitter._message_index == 0
 
     @pytest.mark.asyncio
     async def test_long_output_truncated(self):
@@ -441,12 +447,14 @@ class TestOnToolEnd:
             patch("streaming.emitter.save_message", new_callable=AsyncMock),
         ):
             await emitter({
-                "event": "on_tool_end",
-                "name": "mytool",
-                "data": {"output": long_output},
+                "event": "on_custom_thinking",
+                "data": {"content": f"[result] mytool → {long_output}"},
             })
             payload = mock_pub.await_args[0][1]
-            assert len(payload["content"]) < 600
+            assert payload["type"] == "thinking_stream"
+            # Thinking is streamed verbatim (no truncation) — the full content
+            # is published so the frontend receives the complete tool result.
+            assert payload["content"] == f"[result] mytool → {long_output}"
 
 
 @pytest.mark.requirement("REQ-RUN-002")
@@ -786,25 +794,33 @@ class TestEventWithMissingData:
             mock_pub.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_on_tool_start_missing_name(self):
+    async def test_on_tool_start_is_noop(self):
+        """on_tool_start is handled at the graph level (as on_custom_thinking);
+        emitter must ignore the raw event entirely."""
         from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-56")
         with (
-            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
         ):
             await emitter({"event": "on_tool_start", "data": {"input": "test"}})
-            assert emitter._message_index == 1
+            mock_pub.assert_not_awaited()
+            mock_save.assert_not_awaited()
+            assert emitter._message_index == 0
 
     @pytest.mark.asyncio
-    async def test_on_tool_end_missing_name(self):
+    async def test_on_tool_end_is_noop(self):
+        """on_tool_end is handled at the graph level (as on_custom_thinking);
+        emitter must ignore the raw event entirely."""
         from streaming.emitter import StreamEmitter
 
         emitter = StreamEmitter("run-57")
         with (
-            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock),
-            patch("streaming.emitter.save_message", new_callable=AsyncMock),
+            patch("streaming.emitter.publish_run_message", new_callable=AsyncMock) as mock_pub,
+            patch("streaming.emitter.save_message", new_callable=AsyncMock) as mock_save,
         ):
             await emitter({"event": "on_tool_end", "data": {"output": "result"}})
-            assert emitter._message_index == 1
+            mock_pub.assert_not_awaited()
+            mock_save.assert_not_awaited()
+            assert emitter._message_index == 0

@@ -228,11 +228,15 @@ class TestTeamCategories:
         detail = client.get(f"/api/teams/{tid}")
         assert detail.json()["category"] == "dev"
 
-    def test_invalid_category_rejected_422(self, client: Any):
+    def test_custom_category_accepted(self, client: Any):
+        """分类允许用户自定义（非枚举限制）。"""
         resp = client.post("/api/teams", json={
-            "name": "bad", "category": "invalid"
+            "name": "custom-cat", "category": "research"
         })
-        assert resp.status_code == 422
+        assert resp.status_code == 201
+        tid = resp.json()["id"]
+        detail = client.get(f"/api/teams/{tid}")
+        assert detail.json()["category"] == "research"
 
     def test_update_team_category(self, client: Any):
         r = client.post("/api/teams", json={
