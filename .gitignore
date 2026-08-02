@@ -8,6 +8,11 @@ dist/
 .ruff_cache/
 *.whl
 
+# ── pytest-testmon 增量测试本地缓存（机器相关，不入库）─────────────────────
+.testmondata
+.testmondata-*
+.testmondata-shm
+
 # ── Node / Frontend ───────────────────────────────────────────────────────
 frontend/node_modules/
 frontend/dist/
@@ -113,4 +118,3 @@ scripts/sync-docs.sh
 scripts/run_mutmut.sh
 scripts/test_tools_in_ai_response.py
 scripts/test_tools_verified.py
-.test_durations

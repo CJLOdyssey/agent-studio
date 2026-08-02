@@ -203,13 +203,6 @@ export default function ApiProviderTab({
           </button>
         </div>
       )}
-      <style>{`
-        .api-key-table .ant-table-thead > tr > th { border-bottom: none !important; }
-        .api-key-table .ant-table-tbody > tr > td { border-bottom: none !important; }
-        .api-key-table .ant-table-tbody > tr.ant-table-row-selected > td { background: transparent !important; }
-        .api-key-table .ant-table-tbody > tr > td { padding-top: 6px !important; padding-bottom: 6px !important; }
-        .api-key-table .ant-table-thead > tr > th { padding-top: 6px !important; padding-bottom: 6px !important; }
-      `}</style>
       <div className="border-t border-[var(--color-border)] shrink-0" />
       <div className="flex-1 min-h-0 overflow-y-auto">
         {loading && keys.length === 0 ? (

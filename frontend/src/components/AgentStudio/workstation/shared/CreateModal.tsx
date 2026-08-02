@@ -33,7 +33,7 @@ export default function CreateModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <h3>{title}</h3>
           <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('workstation.close')}>
-            <CloseOutlined className="anticon-lg" />
+            <CloseOutlined style={{ fontSize: 20 }} />
           </button>
         </div>
 

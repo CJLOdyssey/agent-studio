@@ -399,12 +399,6 @@ export default function LoginModal({ onClose }: Props) {
           )}
         </div>
       </div>
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }

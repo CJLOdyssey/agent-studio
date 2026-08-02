@@ -564,3 +564,58 @@
   accent-color: var(--color-accent);
   border-radius: 4px;
 }
+
+/* ── Workstation root scoped overrides (previously inline in
+   WorkstationPage.tsx — consolidated here) ── */
+.wsta-root table,
+.wsta-root table th,
+.wsta-root table td { background: transparent !important; }
+.wsta-root table thead tr,
+.wsta-root table thead th { background: var(--color-surface) !important; }
+.wsta-root .wsta-row-selected td { background: transparent !important; }
+.wsta-root .ant-input-affix-wrapper,
+.wsta-root .ant-select-selector { background: var(--color-surface) !important; }
+
+/* ── API key table overrides (previously inline in ApiProviderTab.tsx) ── */
+.api-key-table .ant-table-thead > tr > th,
+.api-key-table .ant-table-tbody > tr > td { border-bottom: none !important; }
+.api-key-table .ant-table-tbody > tr.ant-table-row-selected > td { background: transparent !important; }
+.api-key-table .ant-table-thead > tr > th,
+.api-key-table .ant-table-tbody > tr > td { padding-top: 6px !important; padding-bottom: 6px !important; }
+
+/* ── Category/status badges (migrated from workstation-table.css) ──
+   Original pixel values preserved; colors mapped to current --color-* tokens. */
+.wsta-tag-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+.wsta-tag-indigo { background: color-mix(in srgb, var(--color-accent) 8%, transparent); color: var(--color-accent); }
+.wsta-tag-green  { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); }
+.wsta-tag-amber  { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); }
+.wsta-tag-red    { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }
+.wsta-tag-blue   { background: color-mix(in srgb, #3b82f6 15%, transparent); color: #3b82f6; }
+.wsta-tag-purple { background: color-mix(in srgb, #8b5cf6 15%, transparent); color: #8b5cf6; }
+.wsta-tag-pink   { background: color-mix(in srgb, #ec4899 15%, transparent); color: #ec4899; }
+
+/* ── Status dot badges (team status) ── */
+.wsta-badge-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+.wsta-badge-dot-green { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); }
+.wsta-badge-dot-gray  { background: color-mix(in srgb, var(--color-text-muted) 12%, transparent); color: var(--color-text-muted); }
+.wsta-badge-dot-red   { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }
+.wsta-badge-dot-amber { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); }
+.wsta-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.wsta-dot-green  { background: var(--color-success); }
+.wsta-dot-gray   { background: var(--color-text-muted); }
+.wsta-dot-red    { background: var(--color-danger); }
+.wsta-dot-amber  { background: var(--color-warning); }

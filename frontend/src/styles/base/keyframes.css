@@ -47,6 +47,18 @@
   to { opacity: 1; }
 }
 
+/* Workstation modal backdrop / tab transitions (previously inline in
+   WorkstationPage.tsx — consolidated here for single-source management) */
+@keyframes wstaFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wstaFadeSlideIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .spin {
   animation: spin 1s linear infinite;
 }

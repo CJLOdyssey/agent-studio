@@ -198,9 +198,9 @@ export default function SkillManagement() {
                     setImportFiles(fileList.map((f) => f.originFileObj).filter(Boolean) as File[])
                   }
                 >
-                  <p className="ant-upload-drag-icon"><Upload size={24} /></p>
-                  <p className="ant-upload-text">{t('skill.import_upload_hint')}</p>
-                  <p className="ant-upload-hint">{t('skill.import_file_required')}</p>
+                  <p><Upload size={24} /></p>
+                  <p>{t('skill.import_upload_hint')}</p>
+                  <p>{t('skill.import_file_required')}</p>
                 </AntdUpload.Dragger>
               ),
             },

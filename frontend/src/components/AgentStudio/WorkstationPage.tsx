@@ -34,16 +34,6 @@ export default function WorkstationPage({ onClose }: Props) {
       onClick={onClose}
       style={{ animation: 'wstaFadeIn 0.15s ease' }}
     >
-      <style>{`
-        .wsta-root table { background: transparent !important; }
-        .wsta-root table th,
-        .wsta-root table td { background: transparent !important; }
-        .wsta-root table thead tr,
-        .wsta-root table thead th { background: var(--color-surface) !important; }
-        .wsta-root .wsta-row-selected td { background: transparent !important; }
-        .wsta-root .ant-input-affix-wrapper { background: var(--color-surface) !important; }
-        .wsta-root .ant-select-selector { background: var(--color-surface) !important; }
-      `}</style>
       <div
         className="bg-[var(--color-surface-card)] rounded-xl w-[90vw] max-w-[1200px] h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -121,16 +111,6 @@ export default function WorkstationPage({ onClose }: Props) {
           </main>
         </div>
       </div>
-      <style>{`
-        @keyframes wstaFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes wstaFadeSlideIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
