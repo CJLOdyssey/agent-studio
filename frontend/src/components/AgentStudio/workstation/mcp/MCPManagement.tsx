@@ -12,7 +12,7 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
-import { formatRelativeTime } from '../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../utils/formatDateTime';
 import { t } from './locales';
 
 export default function MCPManagement() {
@@ -63,6 +63,11 @@ export default function MCPManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar">
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('mcp.search_placeholder')} value={d.search} onChange={(e) => d.setSearch(e.target.value)} />
+          <Select style={{ width: 120 }} value={d.typeFilter} onChange={(v) => d.setTypeFilter(v)} options={[
+            { value: 'all', label: t('mcp.all_types') },
+            { value: 'stdio', label: 'stdio' },
+            { value: 'sse', label: 'sse' },
+          ]} />
           <Select style={{ width: 130 }} value={d.statusFilter} onChange={(v) => d.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             { value: 'connected', label: MCP_STATUS_LABEL.connected },
@@ -106,7 +111,7 @@ export default function MCPManagement() {
                     {MCP_STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

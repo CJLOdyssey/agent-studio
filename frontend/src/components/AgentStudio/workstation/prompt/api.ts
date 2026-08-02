@@ -12,7 +12,7 @@ function toEntry(item: { id: string; name: string; description?: string | null; 
     model: item.model ?? '',
     status: (item.status === 'active' ? 'active' : 'draft') as 'active' | 'draft' | 'archived',
     version: item.version,
-    createdAt: item.created_at.slice(0, 10),
+    createdAt: item.created_at,
   };
 }
 

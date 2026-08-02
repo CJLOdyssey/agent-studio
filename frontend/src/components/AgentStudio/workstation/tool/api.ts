@@ -27,7 +27,7 @@ function toEntry(item: { id: string; name: string; description: string; category
     method: item.method || 'GET',
     headers: item.headers || '{}',
     parameters: item.parameters || '{"type":"object","properties":{}}',
-    createdAt: item.created_at.slice(0, 10),
+    createdAt: item.created_at,
   };
 }
 

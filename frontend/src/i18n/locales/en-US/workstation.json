@@ -357,7 +357,8 @@
     "form_section_bindings": "Resource Bindings",
     "form_cancel": "Cancel",
     "form_save_edit": "Save Changes",
-    "form_save_create": "Create Agent"
+    "form_save_create": "Create Agent",
+    "all_teams": "All Teams"
   },
   "tool": {
     "new": "New Tool",
@@ -483,7 +484,8 @@
     "confirm_batch_delete_title": "Confirm Batch Delete",
     "confirm_batch_delete_desc": "Delete {n} selected MCPs?",
     "col_tool_count": "Tool Count",
-    "form_enabled": "Enabled"
+    "form_enabled": "Enabled",
+    "col_desc": "Description"
   },
   "skill": {
     "new": "New Skill",
@@ -554,7 +556,8 @@
     "error_retry": "Retry",
     "loading": "Loading...",
     "status_installed": "Installed",
-    "status_available": "Available"
+    "status_available": "Available",
+    "col_binding": "Binding"
   },
   "team": {
     "new": "New Team",
@@ -606,7 +609,10 @@
     "category_test": "Testing",
     "manage_members": "Manage Members",
     "name_required": "Team name is required",
-    "name_length": "Name must be 2-50 characters"
+    "name_length": "Name must be 2-50 characters",
+    "col_workflow": "Workflow",
+    "workflow_bound": "Bound",
+    "workflow_unbound": "Not bound"
   },
   "output": {
     "new": "New Output Constraint",
@@ -656,7 +662,9 @@
     "loading": "Loading...",
     "status_active": "Active",
     "status_draft": "Draft",
-    "status_archived": "Archived"
+    "status_archived": "Archived",
+    "preview": "Preview",
+    "preview_title": "Content Preview"
   },
   "logs": {
     "module_agent": "Agent",
@@ -707,7 +715,8 @@
     "tools": "Tools",
     "mcps": "MCP Servers",
     "skills": "Skills",
-    "teams": "Teams"
+    "teams": "Teams",
+    "refresh": "Refresh"
   },
   "prompt": {
     "import": "Import",

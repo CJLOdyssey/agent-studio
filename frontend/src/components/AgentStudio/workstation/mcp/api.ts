@@ -24,7 +24,7 @@ function toEntry(item: { id: string; name: string; type: string; endpoint: strin
     url: item.type === 'sse' ? item.endpoint : '',
     args: Array.isArray(cfg.args) ? cfg.args as string[] : [],
     env: Array.isArray(cfg.env) ? cfg.env as string[] : [],
-    createdAt: item.created_at.slice(0, 10),
+    createdAt: item.created_at,
   };
 }
 

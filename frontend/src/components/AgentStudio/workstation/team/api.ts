@@ -20,7 +20,7 @@ function backendToEntry(item: {
     description: item.description || '',
     status: (item.status === 'inactive' || item.status === 'disabled' ? 'disabled' : 'active') as 'active' | 'disabled',
     category: item.category || '',
-    createdAt: item.created_at ? item.created_at.slice(0, 10) : '',
+    createdAt: item.created_at ?? '',
     agents: item.agents ?? [],
     memberCount: item.agents?.length ?? 0,
   };

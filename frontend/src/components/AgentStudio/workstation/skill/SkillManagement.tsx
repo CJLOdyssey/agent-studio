@@ -1,6 +1,6 @@
 import { Input, Select, Button, Dropdown, Modal, Tabs, Upload as AntdUpload, message } from 'antd';
 import type { MenuProps } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap, Upload } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, Trash2, Zap, Upload, Wrench, Radio } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSkillManagement } from './useSkillManagement';
 import { SKILL_STATUS_LABEL } from './skill.constants';
@@ -13,7 +13,7 @@ import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { getCategoryTagClass } from '../shared/categoryTag';
 import { useToast } from '../../../../utils/useToast';
-import { formatRelativeTime } from '../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../utils/formatDateTime';
 import { importSkillFromMarkdown, importSkillDirectory } from '../../../../api/client/skills';
 import { t } from './locales';
 
@@ -88,7 +88,7 @@ export default function SkillManagement() {
     ];
   }
 
-  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('skill.loading')}><TableSkeleton rows={5} cols={6} /></div>;
+  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('skill.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('skill.error_render')}</p></div>}>
@@ -133,6 +133,7 @@ export default function SkillManagement() {
             <th scope="col">{t('skill.col_desc')}</th>
             <th scope="col">{t('skill.col_category')}</th>
             <th scope="col">{t('skill.col_status')}</th>
+            <th scope="col">{t('skill.col_binding')}</th>
             <th scope="col">{t('workstation.createdAt')}</th>
             <th className="w-[100px] text-right" scope="col">{t('skill.col_actions')}</th>
           </tr></thead>
@@ -149,7 +150,14 @@ export default function SkillManagement() {
                     {SKILL_STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
+                <td>
+                  <span className="inline-flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                    {item.tool_names?.length ? <span className="inline-flex items-center gap-1"><Wrench size={12} />{item.tool_names.length}</span> : null}
+                    {item.mcp_names?.length ? <span className="inline-flex items-center gap-1"><Radio size={12} />{item.mcp_names.length}</span> : null}
+                    {!item.tool_names?.length && !item.mcp_names?.length ? <span className="text-[var(--color-text-muted)]">—</span> : null}
+                  </span>
+                </td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

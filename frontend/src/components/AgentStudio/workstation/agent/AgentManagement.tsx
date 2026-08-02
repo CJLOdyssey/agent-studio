@@ -1,5 +1,5 @@
 import { Search, Plus, MoreHorizontal, Edit3, Eye, Play, Trash2, X, Bot, RefreshCw } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAgentManagement } from './useAgentManagement';
@@ -12,7 +12,7 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
-import { formatRelativeTime } from '../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../utils/formatDateTime';
 import { t } from './locales';
 import { listPrompts } from '../../../../api/client/prompts';
 import { listTools, listToolPlugins } from '../../../../api/client/tools';
@@ -27,6 +27,18 @@ export default function AgentManagement() {
   const [availTools, setAvailTools] = useState<{ id: string; name: string }[]>([]);
   const [availMCPs, setAvailMCPs] = useState<{ id: string; name: string }[]>([]);
   const [availSkills, setAvailSkills] = useState<{ id: string; name: string }[]>([]);
+
+  const teamOptions = useMemo(() => {
+    const teams = new Set<string>();
+    for (const a of mgmt.processed) {
+      if (a.teams?.length) a.teams.forEach((tm) => teams.add(tm));
+      else if (a.team) teams.add(a.team);
+    }
+    return [
+      { value: 'all', label: t('agent.all_teams') },
+      ...[...teams].sort((x, y) => x.localeCompare(y, 'zh-CN')).map((tm) => ({ value: tm, label: tm })),
+    ];
+  }, [mgmt.processed]);
 
   useEffect(() => {
     listPrompts().then((items) => { const filtered = items.filter((p) => p.category !== 'output_constraint'); if (filtered.length > 0) setAvailPrompts(filtered.map((p) => ({ id: p.id, name: p.name }))); }).catch(() => {});
@@ -87,6 +99,7 @@ export default function AgentManagement() {
       <div className="flex items-center justify-between gap-3 py-4 px-6 shrink-0" role="toolbar" aria-label={t('agent.col_name')}>
         <div className="flex items-center gap-3 flex-1">
           <Input prefix={<Search size={14} />} allowClear style={{ maxWidth: 320 }} placeholder={t('agent.search_placeholder')} value={mgmt.search} onChange={(e) => mgmt.setSearch(e.target.value)} />
+          <Select style={{ width: 130 }} value={mgmt.teamFilter} onChange={(v) => mgmt.setTeamFilter(v)} options={teamOptions} />
           <Select style={{ width: 130 }} value={mgmt.statusFilter} onChange={(v) => mgmt.setStatusFilter(v)} options={[
             { value: 'all', label: '全部状态' },
             ...Object.entries(STATUS_LABEL).map(([k, v]) => ({ value: k, label: v })),
@@ -135,7 +148,7 @@ export default function AgentManagement() {
                     {STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

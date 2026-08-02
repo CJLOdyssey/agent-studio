@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { SortDir } from '../types';
 import type { AgentEntry, AgentFormData, SortField, StatusFilter } from './agent.types';
 import { agentAPI } from './api';
 import { validateForm } from './validate';
 import { useGenericCrud } from '../shared/useGenericCrud';
+import { PAGE_SIZE } from '../constants';
 
 const EMPTY_FORM: AgentFormData = {
   name: '', description: '', team: '前端团队', model: 'GPT-4o',
@@ -19,6 +20,8 @@ export interface AgentManagementReturn {
   totalPages: number;
   search: string;
   statusFilter: StatusFilter;
+  teamFilter: string;
+  setTeamFilter: (v: string) => void;
   sortField: SortField | null;
   sortDir: SortDir;
   selectedIds: Set<string>;
@@ -66,6 +69,7 @@ export interface AgentManagementReturn {
 export function useAgentManagement(): AgentManagementReturn {
   const [batchError, setBatchError] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [teamFilter, setTeamFilter] = useState('all');
 
   const crud = useGenericCrud<AgentEntry, AgentFormData>({
     api: agentAPI,
@@ -81,6 +85,27 @@ export function useAgentManagement(): AgentManagementReturn {
     crud.setExtraFilter('status', v);
     setStatusFilter(v);
   }, [crud]);
+
+  // Team filter: applied AFTER crud's search/sort/filter (teams is an array,
+  // so it can't ride the generic extraFilters string-equality path)
+  const wrappedSetTeamFilter = useCallback((v: string) => {
+    setTeamFilter(v);
+    crud.setPage(1);
+  }, [crud]);
+
+  const filteredProcessed = useMemo(() => {
+    if (teamFilter === 'all') return crud.processed;
+    return crud.processed.filter(
+      (a) => (a.teams?.length ? a.teams.includes(teamFilter) : a.team === teamFilter),
+    );
+  }, [crud.processed, teamFilter]);
+
+  const teamTotalPages = Math.max(1, Math.ceil(filteredProcessed.length / PAGE_SIZE));
+  const teamSafePage = Math.min(crud.page, teamTotalPages);
+  const teamPaged = filteredProcessed.slice(
+    (teamSafePage - 1) * PAGE_SIZE,
+    teamSafePage * PAGE_SIZE,
+  );
 
   const openDelete = useCallback((agent: AgentEntry) => {
     if (agent.status === 'running') { setBatchError('运行中 Agent 不可删除，请先停止'); setTimeout(() => setBatchError(''), 3000); return; }
@@ -119,12 +144,14 @@ export function useAgentManagement(): AgentManagementReturn {
   return {
     isLoading: crud.isLoading,
     error: crud.error,
-    paged: crud.paged as AgentEntry[],
-    processed: crud.processed as AgentEntry[],
-    page: crud.page,
-    totalPages: crud.totalPages,
+    paged: teamPaged as AgentEntry[],
+    processed: filteredProcessed as AgentEntry[],
+    page: teamSafePage,
+    totalPages: teamTotalPages,
     search: crud.search,
     statusFilter,
+    teamFilter,
+    setTeamFilter: wrappedSetTeamFilter,
     sortField: crud.sortField as SortField | null,
     sortDir: crud.sortDir,
     selectedIds: crud.selectedIds,

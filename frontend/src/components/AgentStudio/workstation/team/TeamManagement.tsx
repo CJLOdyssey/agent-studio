@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Eye, UserCog, Trash2, X, Users, RefreshCw } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Eye, UserCog, Trash2, X, Users, RefreshCw, GitBranch } from 'lucide-react';
 import { useTeamManagement } from './useTeamManagement';
 import { TEAM_STATUS_LABEL, getCategoryTagClass } from './team.constants';
 import TeamFormModal from './TeamFormModal';
@@ -12,9 +12,10 @@ import WstaPagination from '../shared/WstaPagination';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
-import { formatRelativeTime } from '../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../utils/formatDateTime';
 import { t } from './locales';
 import type { TeamEntry } from './team.types';
+import { listWorkflows } from '../../../../api/client/workflows';
 
 
 
@@ -22,6 +23,13 @@ export default function TeamManagement() {
   const d = useTeamManagement();
   const { toast } = useToast();
   const [memberMgmtTeam, setMemberMgmtTeam] = useState<TeamEntry | null>(null);
+  const [workflowTeamIds, setWorkflowTeamIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    listWorkflows()
+      .then((ws) => setWorkflowTeamIds(new Set(ws.map((w) => w.teamId))))
+      .catch(() => {});
+  }, []);
 
   const categoryOptions = useMemo(() => {
     const cats = Array.from(new Set(d.teams.map((t) => t.category).filter(Boolean)));
@@ -35,7 +43,7 @@ export default function TeamManagement() {
   function handleDeleteWrapper() { d.handleDelete(); toast(t('team.toast_deleted'), 'success'); }
   function handleBatchDeleteWrapper() { d.handleBatchDelete(); toast(t('team.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
 
-  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('team.loading')}><TableSkeleton rows={5} cols={6} /></div>;
+  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('team.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('team.error_render')}</p></div>}>
@@ -75,6 +83,7 @@ export default function TeamManagement() {
             <th scope="col">{t('workstation.name')}</th>
             <th scope="col">{t('workstation.memberCount')}</th>
             <th scope="col">{t('workstation.category')}</th>
+            <th scope="col">{t('team.col_workflow')}</th>
             <th scope="col">{t('workstation.status')}</th>
             <th scope="col">{t('workstation.createdAt')}</th>
             <th className="w-[100px] text-right" scope="col">{t('workstation.actions')}</th>
@@ -87,12 +96,19 @@ export default function TeamManagement() {
                 <td><span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-surface-raised)] text-xs font-semibold text-[var(--color-text-secondary)]">{item.memberCount}</span></td>
                 <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category || '—'}</span></td>
                 <td>
+                  {workflowTeamIds.has(item.id) ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]"><GitBranch size={12} />{t('team.workflow_bound')}</span>
+                  ) : (
+                    <span className="text-xs text-[var(--color-text-muted)]">— {t('team.workflow_unbound')}</span>
+                  )}
+                </td>
+                <td>
                   <span className={`wsta-badge-dot ${item.status === 'active' ? 'wsta-badge-dot-green' : 'wsta-badge-dot-gray'}`}>
                     <span className={`wsta-dot ${item.status === 'active' ? 'wsta-dot-green' : 'wsta-dot-gray'}`} />
                     {TEAM_STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: [
                     { key: 'edit', icon: <Edit3 size={14} />, label: t('team.edit'), onClick: () => d.openEdit(item) },

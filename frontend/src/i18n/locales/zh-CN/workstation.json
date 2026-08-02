@@ -357,7 +357,8 @@
     "form_section_bindings": "资源绑定",
     "form_cancel": "取消",
     "form_save_edit": "保存修改",
-    "form_save_create": "新建 Agent"
+    "form_save_create": "新建 Agent",
+    "all_teams": "全部团队"
   },
   "tool": {
     "new": "新建工具",
@@ -483,7 +484,8 @@
     "confirm_batch_delete_title": "确认批量删除",
     "confirm_batch_delete_desc": "确定要删除选中的 {n} 个 MCP 吗？",
     "col_tool_count": "工具数",
-    "form_enabled": "启用"
+    "form_enabled": "启用",
+    "col_desc": "描述"
   },
   "skill": {
     "new": "新建 Skill",
@@ -554,7 +556,8 @@
     "error_retry": "重试",
     "loading": "加载中...",
     "status_installed": "已安装",
-    "status_available": "未安装"
+    "status_available": "未安装",
+    "col_binding": "工具绑定"
   },
   "team": {
     "new": "新建团队",
@@ -606,7 +609,10 @@
     "category_test": "测试",
     "manage_members": "管理成员",
     "name_required": "团队名称不能为空",
-    "name_length": "团队名称长度需在 2-50 个字符之间"
+    "name_length": "团队名称长度需在 2-50 个字符之间",
+    "col_workflow": "工作流",
+    "workflow_bound": "已绑定",
+    "workflow_unbound": "未绑定"
   },
   "output": {
     "new": "新建输出约束",
@@ -656,7 +662,9 @@
     "loading": "加载中...",
     "status_active": "已启用",
     "status_draft": "草稿",
-    "status_archived": "已归档"
+    "status_archived": "已归档",
+    "preview": "预览",
+    "preview_title": "内容预览"
   },
   "logs": {
     "module_agent": "Agent",
@@ -707,7 +715,8 @@
     "tools": "工具",
     "mcps": "MCP 服务",
     "skills": "Skills",
-    "teams": "团队"
+    "teams": "团队",
+    "refresh": "刷新"
   },
   "prompt": {
     "import": "导入",

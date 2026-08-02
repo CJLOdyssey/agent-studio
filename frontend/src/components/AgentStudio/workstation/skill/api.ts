@@ -15,7 +15,7 @@ function toEntry(item: { id: string; name: string; description: string; category
     tool_names: Array.isArray(item.tool_names) ? item.tool_names : [],
     mcp_names: Array.isArray(item.mcp_names) ? item.mcp_names : [],
     output_constraint: item.output_constraint || '',
-    createdAt: item.created_at.slice(0, 10),
+    createdAt: item.created_at,
   };
 }
 

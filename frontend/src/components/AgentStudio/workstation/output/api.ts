@@ -14,7 +14,7 @@ function toEntry(item: PromptRow): OutputEntry {
     content: item.content,
     category: item.category,
     status: (item.status || 'active') as OutputEntry['status'],
-    createdAt: item.created_at.slice(0, 10),
+    createdAt: item.created_at,
   };
 }
 

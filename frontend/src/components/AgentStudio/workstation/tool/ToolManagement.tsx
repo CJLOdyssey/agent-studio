@@ -13,7 +13,7 @@ import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { getCategoryTagClass } from '../shared/categoryTag';
 import { useToast } from '../../../../utils/useToast';
-import { formatRelativeTime } from '../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../utils/formatDateTime';
 import { t } from './locales';
 
 export default function ToolManagement() {
@@ -103,7 +103,7 @@ export default function ToolManagement() {
                 <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category}</span></td>
                 <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
                 <td><span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}><span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />{TOOL_STATUS_LABEL[item.status]}</span></td>
-                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   {(item as any).is_builtin ? (
                     <span className="text-xs text-[var(--color-text-muted)]">—</span>

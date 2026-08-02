@@ -41,7 +41,7 @@ describe('team api', { tags: ['unit'] }, () => {
     expect(result[0].category).toBe('dev');
     expect(result[0].status).toBe('active');
     expect(result[0].memberCount).toBe(1);
-    expect(result[0].createdAt).toBe('2024-01-15');
+    expect(result[0].createdAt).toBe('2024-01-15T00:00:00Z');
   });
 
   it('fetchAll handles missing optional fields', async () => {

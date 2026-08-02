@@ -16,12 +16,13 @@ vi.mock('../api', () => ({
 }));
 
 import MCPManagement from '../MCPManagement';
+import { formatDateTime } from '../../../../../utils/formatDateTime';
 
 function makeMCP(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'File Server', description: 'MCP file server', type: 'sse' as const,
     status: 'connected' as const, enabled: true, version: 'v1.0.0', command: '', url: 'http://localhost:3000',
-    args: [], env: [], createdAt: '2024-01-01', ...overrides,
+    args: [], env: [], createdAt: '2024-01-01T00:00:00Z', ...overrides,
   };
 }
 
@@ -110,12 +111,12 @@ describe('MCPManagement', { tags: ['unit'] }, () => {
     });
   });
 
-  it('renders createdAt column with relative time', async () => {
+  it('renders createdAt column with absolute datetime', async () => {
     mockFetchAll.mockResolvedValue([makeMCP()]);
     render(<MCPManagement />, { wrapper: TestProviders });
     await waitFor(() => {
       expect(screen.getByText('创建时间')).toBeInTheDocument();
     });
-    expect(screen.getByText('2024-01-01')).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime('2024-01-01T00:00:00Z'))).toBeInTheDocument();
   });
 });

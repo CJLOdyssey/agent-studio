@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
-import { formatRelativeTime } from '../../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../../utils/formatDateTime';
 
 const mockOpenCreate = vi.fn();
 const mockOpenEdit = vi.fn();
@@ -104,7 +104,7 @@ import AgentManagement from '../AgentManagement';
 function makeAgent(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: '前端开发 Agent', team: '前端团队', model: 'Claude Sonnet 4',
-    status: 'running' as const, version: 'v2.1.0', createdAt: '2026-05-10',
+    status: 'running' as const, version: 'v2.1.0', createdAt: '2026-05-10T00:00:00Z',
     ...overrides,
   };
 }
@@ -183,10 +183,10 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
     expect(document.querySelector('.wsta-badge-dot-red')).toBeInTheDocument();
   });
 
-  it('renders createdAt column with relative time', () => {
+  it('renders createdAt column with absolute datetime', () => {
     mockProcessed = [makeAgent()];
     renderComponent();
-    expect(screen.getByText(formatRelativeTime('2026-05-10'))).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime('2026-05-10T00:00:00Z'))).toBeInTheDocument();
   });
 
   it('shows create button', () => {

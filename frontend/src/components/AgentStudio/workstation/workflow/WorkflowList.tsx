@@ -10,7 +10,7 @@ import BatchDeleteModal from '../shared/BatchDeleteModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
-import { formatRelativeTime } from '../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../utils/formatDateTime';
 import { t } from './locales';
 
 const PAGE_SIZE = 7;
@@ -175,7 +175,7 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
                     {statusLabel[item.derivedStatus]}
                   </span>
                 </td>
-                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right" onClick={(e) => e.stopPropagation()}>
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

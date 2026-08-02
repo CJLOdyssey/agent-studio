@@ -62,7 +62,7 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
       id: result.id,
       ...data,
       teams: [],
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
     };
   },
 

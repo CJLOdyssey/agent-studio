@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
-import { formatRelativeTime } from '../../../../../utils/relativeTime';
+import { formatDateTime } from '../../../../../utils/formatDateTime';
 
 const { mockFetchAll, mockCreate, mockUpdate, mockRemove, mockClone, mockRemoveBatch, mockBatchAdd, mockImport } = vi.hoisted(() => ({
   mockFetchAll: vi.fn().mockResolvedValue([]),
@@ -36,7 +36,7 @@ function makeSkill(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'React Skill', description: 'React coding skill', category: '前端开发',
     status: 'installed' as const, version: 'v1.0.0', author: 'Alice', instructions: 'Do stuff',
-    tool_names: [], output_constraint: '', createdAt: '2024-01-01',
+    tool_names: [], output_constraint: '', createdAt: '2024-01-01T00:00:00Z',
     ...overrides,
   };
 }
@@ -118,11 +118,11 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
     });
   });
 
-  it('renders createdAt column with relative time', async () => {
+  it('renders createdAt column with absolute datetime', async () => {
     mockFetchAll.mockResolvedValue([makeSkill()]);
     render(<SkillManagement />, { wrapper: TestProviders });
     await waitFor(() => {
-      expect(screen.getByText(formatRelativeTime('2024-01-01'))).toBeInTheDocument();
+      expect(screen.getByText(formatDateTime('2024-01-01T00:00:00Z'))).toBeInTheDocument();
     });
   });
 
