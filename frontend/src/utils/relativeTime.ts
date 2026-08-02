@@ -26,7 +26,7 @@ export function formatRelativeTime(iso: string): string {
   const calendarDays = Math.round((startOfToday.getTime() - startOfDate.getTime()) / DAY);
   if (calendarDays === 1) return '昨天';
 
-  if (diff < 7 * DAY) return `${calendarDays} 天前`;
+  if (calendarDays < 7) return `${calendarDays} 天前`;
 
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }

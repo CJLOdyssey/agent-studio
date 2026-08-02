@@ -32,6 +32,10 @@ describe('formatRelativeTime', { tags: ['unit'] }, () => {
     expect(formatRelativeTime('2026-08-02T09:01:00')).toBe('59 分钟前');
   });
 
+  it('returns 「1 分钟前」 for exactly 60 seconds ago', () => {
+    expect(formatRelativeTime('2026-08-02T09:59:00')).toBe('1 分钟前');
+  });
+
   it('returns 「N 小时前」 for under 24 hours, even crossing midnight', () => {
     expect(formatRelativeTime('2026-08-02T09:00:00')).toBe('1 小时前');
     expect(formatRelativeTime('2026-08-01T11:00:00')).toBe('23 小时前');
@@ -39,6 +43,7 @@ describe('formatRelativeTime', { tags: ['unit'] }, () => {
 
   it('returns 「昨天」 for the previous calendar day', () => {
     expect(formatRelativeTime('2026-08-01T08:00:00')).toBe('昨天');
+    expect(formatRelativeTime('2026-08-01T10:00:00')).toBe('昨天');
   });
 
   it('returns 「N 天前」 for 1-6 calendar days ago', () => {
@@ -46,8 +51,15 @@ describe('formatRelativeTime', { tags: ['unit'] }, () => {
     expect(formatRelativeTime('2026-07-27T09:00:00')).toBe('6 天前');
   });
 
-  it('returns local YYYY-MM-DD for 7+ days ago', () => {
+  it('returns local YYYY-MM-DD for 7+ calendar days ago', () => {
     const iso = '2026-07-25T09:00:00';
+    const d = new Date(iso);
+    const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    expect(formatRelativeTime(iso)).toBe(expected);
+  });
+
+  it('returns local YYYY-MM-DD when elapsed time < 7 days but spans 7 natural days', () => {
+    const iso = '2026-07-26T11:00:00';
     const d = new Date(iso);
     const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     expect(formatRelativeTime(iso)).toBe(expected);
