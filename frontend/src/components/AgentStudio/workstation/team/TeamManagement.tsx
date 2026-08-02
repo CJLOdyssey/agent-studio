@@ -12,6 +12,7 @@ import WstaPagination from '../shared/WstaPagination';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
+import { formatRelativeTime } from '../../../../utils/relativeTime';
 import { t } from './locales';
 import type { TeamEntry } from './team.types';
 
@@ -82,7 +83,7 @@ export default function TeamManagement() {
             {d.paged.map((item) => (
               <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('team.select_item', item.name)} /></td>
-                <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                 <td><span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-surface-raised)] text-xs font-semibold text-[var(--color-text-secondary)]">{item.memberCount}</span></td>
                 <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category || '—'}</span></td>
                 <td>
@@ -91,7 +92,7 @@ export default function TeamManagement() {
                     {TEAM_STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.createdAt}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: [
                     { key: 'edit', icon: <Edit3 size={14} />, label: t('team.edit'), onClick: () => d.openEdit(item) },
