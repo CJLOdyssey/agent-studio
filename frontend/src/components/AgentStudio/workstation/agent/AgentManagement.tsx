@@ -12,6 +12,7 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
+import { formatRelativeTime } from '../../../../utils/relativeTime';
 import { t } from './locales';
 import { listPrompts } from '../../../../api/client/prompts';
 import { listTools, listToolPlugins } from '../../../../api/client/tools';
@@ -71,7 +72,7 @@ export default function AgentManagement() {
       { key: 'view', icon: <Eye size={14} />, label: t('agent.history'), onClick: () => mgmt.openHistory(item) },
       { key: 'test', icon: <Play size={14} />, label: testingId === item.id ? t('agent.testing') : t('agent.test'), disabled: testingId === item.id, onClick: () => handleTestAgent(item.id) },
       { type: 'divider' },
-      { key: 'delete', icon: <Trash2 size={14} />, label: t('agent.delete'), onClick: () => mgmt.openDelete(item), danger: true },
+      { key: 'delete', icon: <Trash2 size={14} />, label: t('agent.delete'), disabled: item.status === 'running', onClick: () => mgmt.openDelete(item), danger: true },
     ];
   }
 
@@ -118,14 +119,14 @@ export default function AgentManagement() {
             <th scope="col">{t('agent.col_team')}</th>
             <th scope="col">{t('agent.col_model')}</th>
             <th scope="col">{t('agent.col_status')}</th>
-            <th scope="col">{t('agent.col.version')}</th>
+            <th scope="col">{t('workstation.createdAt')}</th>
             <th className="w-[100px] text-right" scope="col">{t('agent.col_actions')}</th>
           </tr></thead>
           <tbody>
             {mgmt.paged.map((item) => (
               <tr key={item.id} className={mgmt.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={mgmt.selectedIds.has(item.id)} onChange={() => mgmt.toggleSelect(item.id)} aria-label={t('agent.select_item', item.name)} /></td>
-                <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                 <td><span className="text-sm text-[var(--color-text-secondary)]">{item.teams?.length ? item.teams.join('、') : item.team || '—'}</span></td>
                 <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{item.model}</span></td>
                 <td>
@@ -134,7 +135,7 @@ export default function AgentManagement() {
                     {STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.version}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

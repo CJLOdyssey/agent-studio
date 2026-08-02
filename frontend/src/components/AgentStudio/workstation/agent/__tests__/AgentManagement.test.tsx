@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
+import { formatRelativeTime } from '../../../../../utils/relativeTime';
 
 const mockOpenCreate = vi.fn();
 const mockOpenEdit = vi.fn();
@@ -182,10 +183,10 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
     expect(document.querySelector('.wsta-badge-dot-red')).toBeInTheDocument();
   });
 
-  it('renders version text in monospace', () => {
+  it('renders createdAt column with relative time', () => {
     mockProcessed = [makeAgent()];
     renderComponent();
-    expect(document.querySelector('.font-mono')).toBeInTheDocument();
+    expect(screen.getByText(formatRelativeTime('2026-05-10'))).toBeInTheDocument();
   });
 
   it('shows create button', () => {
