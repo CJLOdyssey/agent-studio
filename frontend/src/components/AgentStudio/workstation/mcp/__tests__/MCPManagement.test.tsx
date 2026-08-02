@@ -109,4 +109,13 @@ describe('MCPManagement', { tags: ['unit'] }, () => {
       expect(screen.getByText('SSE')).toBeInTheDocument();
     });
   });
+
+  it('renders createdAt column with relative time', async () => {
+    mockFetchAll.mockResolvedValue([makeMCP()]);
+    render(<MCPManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('创建时间')).toBeInTheDocument();
+    });
+    expect(screen.getByText('2024-01-01')).toBeInTheDocument();
+  });
 });

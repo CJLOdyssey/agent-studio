@@ -12,6 +12,7 @@ import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
+import { formatRelativeTime } from '../../../../utils/relativeTime';
 import { t } from './locales';
 
 export default function MCPManagement() {
@@ -54,7 +55,7 @@ export default function MCPManagement() {
     ];
   }
 
-  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={6} /></div>;
+  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('mcp.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('mcp.error_render')}</p></div>}>
@@ -89,14 +90,14 @@ export default function MCPManagement() {
             <th scope="col">{t('mcp.col_desc')}</th>
             <th scope="col">{t('mcp.col_type')}</th>
             <th scope="col">{t('mcp.col_status')}</th>
-            <th scope="col">{t('mcp.col_version')}</th>
+            <th scope="col">{t('workstation.createdAt')}</th>
             <th className="w-[100px] text-right" scope="col">{t('mcp.col_actions')}</th>
           </tr></thead>
           <tbody>
             {d.paged.map((item) => (
               <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('mcp.select_item', item.name)} /></td>
-                <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                 <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.description}>{item.description}</span></td>
                 <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/15 text-[var(--color-accent)]">{item.type.toUpperCase()}</span></td>
                 <td>
@@ -105,7 +106,7 @@ export default function MCPManagement() {
                     {MCP_STATUS_LABEL[item.status]}
                   </span>
                 </td>
-                <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{item.version}</span></td>
+                <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                     <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
