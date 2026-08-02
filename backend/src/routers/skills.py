@@ -119,6 +119,7 @@ async def add_skill(req: SkillCreate) -> Any:
         data = req.model_dump()
         data["content"] = data.pop("description", "")
         s = await repo_create_skill(data)
+        await _snapshot_skill(s.id)
         await log_audit("create", "skill", s.name, "创建成功")
         return {
             "id": s.id,
@@ -211,6 +212,7 @@ async def import_skill(
             "script_files": contents,
         }
         s = await repo_create_skill(data)
+        await _snapshot_skill(s.id)
         await log_audit("create", "skill", s.name, "导入成功")
         return {
             "id": s.id,
@@ -293,6 +295,7 @@ async def import_skill_text(req: SkillImportRequest) -> Any:
             "output_constraint": "",
         }
         s = await repo_create_skill(data)
+        await _snapshot_skill(s.id)
         await log_audit("create", "skill", s.name, "导入成功")
         return {
             "id": s.id,
@@ -321,6 +324,7 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
         s = await update_skill(skill_id, data)
         if not s:
             raise error_response(ErrorCode.SKILL_NOT_FOUND, detail="Skill not found")
+        await _snapshot_skill(skill_id)
         await log_audit("update", "skill", s.name, "更新成功")
         return {
             "id": s.id,

@@ -89,16 +89,26 @@ async def list_teams(request: Request) -> Any:
 async def _snapshot_team(resource_id: str, session: AsyncSession | None = None) -> Any:
     """Create a version snapshot after team save."""
     try:
-        from repository.snapshot_helper import build_table_snapshot, with_session
-        from repository.versions import create_version as _cv
+        from repository.snapshot_helper import create_snapshot_from_dict, with_session
+
+        from repository.teams import get_team
 
         async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
-            from repository.teams import get_team
             item = await get_team(rid)
             if not item:
                 return
-            snapshot = build_table_snapshot(item)
-            await _cv(s, rt, rid, snapshot, "system")
+            snapshot = {
+                "name": item["name"],
+                "description": item["description"],
+                "status": item["status"],
+                "category": item["category"],
+                "order": item.get("order"),
+                "is_expanded": item.get("is_expanded"),
+                "member_count": len(item.get("agents") or []),
+            }
+            await create_snapshot_from_dict(
+                rt, rid, snapshot, created_by="system", session=s,
+            )
 
         await with_session(
             _save,
@@ -121,6 +131,7 @@ async def add_team(req: TeamCreateRequest, request: Request) -> Any:
         )
         if team is None:
             raise error_response(ErrorCode.TEAM_CONFLICT, detail="团队名称已存在")
+        await _snapshot_team(team.id)
         await log_audit("create", "team", req.name, "创建成功")
         return {
             "id": team.id,
@@ -163,6 +174,7 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest) -> Any:
         )
         if not team:
             raise error_response(ErrorCode.TEAM_NOT_FOUND, detail="团队不存在")
+        await _snapshot_team(team_id)
         await log_audit("update", "team", team.name, "更新成功")
         return {
             "id": team.id,

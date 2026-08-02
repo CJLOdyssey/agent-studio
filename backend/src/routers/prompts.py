@@ -82,6 +82,7 @@ async def add_prompt(req: PromptCreate) -> Any:
     """Create a new prompt."""
     try:
         p = await create_prompt(req.model_dump())
+        await _snapshot_prompt(p.id)
         await log_audit("create", "prompt", p.name, "创建成功")
         return {
             "id": p.id,
@@ -106,6 +107,7 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
         p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
         if not p:
             raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
+        await _snapshot_prompt(prompt_id)
         await log_audit("update", "prompt", p.name, "更新成功")
         return {
             "id": p.id,
