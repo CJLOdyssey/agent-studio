@@ -8,6 +8,7 @@ RunService holds the business process.
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any
 
 from broker import buffer_run_messages
@@ -15,6 +16,7 @@ from core.config import load_config
 from core.infra.logging_config import get_logger
 from repository import (
     create_session,
+    get_api_key_for_model,
     get_api_key_for_use,
     get_default_api_key,
     get_messages,
@@ -44,6 +46,15 @@ class RunService:
       - background task dispatching
     """
 
+    @staticmethod
+    def _parse_json_list(raw: str | None) -> list[str] | None:
+        if not raw:
+            return None
+        try:
+            return json.loads(raw)
+        except Exception:
+            return None
+
     async def create_run(
         self,
         requirement: str,
@@ -53,6 +64,7 @@ class RunService:
         agent_id: str | None = None,
         team_id: str | None = None,
         model: str | None = None,
+        parent_run_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a run, resolve credentials, subscribe to buffer, dispatch pipeline.
 
@@ -90,6 +102,11 @@ class RunService:
             if key_entry:
                 api_key = key_entry.get("api_key")
                 api_base = key_entry.get("base_url") or api_base
+        if not api_key and effective_model:
+            model_key = await get_api_key_for_model(effective_model, user_id)
+            if model_key:
+                api_key = model_key.get("api_key")
+                api_base = model_key.get("base_url") or api_base
         if not api_key:
             default_key = await get_default_api_key(user_id)
             if default_key:
@@ -101,7 +118,18 @@ class RunService:
 
         # ── Persist run ─────────────────────────────────────────────
         try:
-            run_id = await db_create_run(requirement, session_id=session_id)
+            req_versions: list[str] | None = None
+            if parent_run_id:
+                parent = await get_run(parent_run_id)
+                if parent:
+                    parent_versions = self._parse_json_list(parent.requirement_versions)
+                    req_versions = (parent_versions or []) + [parent.requirement]
+            run_id = await db_create_run(
+                requirement,
+                session_id=session_id,
+                parent_run_id=parent_run_id,
+                requirement_versions=req_versions,
+            )
         except Exception as e:
             logger.error("Failed to create run: %s", e, exc_info=True)
             raise
@@ -197,10 +225,16 @@ class RunService:
         effective_model = config.model
 
         try:
-            default_key = await get_default_api_key(user_id)
-            if default_key:
-                api_key = default_key["api_key"]
-                api_base = default_key["base_url"]
+            if effective_model:
+                model_key = await get_api_key_for_model(effective_model, user_id)
+                if model_key:
+                    api_key = model_key["api_key"]
+                    api_base = model_key["base_url"]
+            if not api_key:
+                default_key = await get_default_api_key(user_id)
+                if default_key:
+                    api_key = default_key["api_key"]
+                    api_base = default_key["base_url"]
         except Exception:
             logger.warning("Key vault lookup failed in continue_run — using env var fallback")
 

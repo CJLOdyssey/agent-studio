@@ -34,6 +34,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
         ):
             mock_load.return_value.model = "gpt-4"
@@ -41,6 +42,7 @@ class TestRunService:
             mock_sess.id = "sess-123"
             mock_create_sess.return_value = mock_sess
             mock_get_key.return_value = None
+            mock_get_model.return_value = None
             mock_get_default.return_value = None
 
             with pytest.raises(ValueError, match="API Key"):
@@ -93,6 +95,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.get_session") as mock_get_sess,
             patch("services.run_service.get_api_key_for_use"),
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task"),
@@ -104,6 +107,7 @@ class TestRunService:
             existing.id = "sess-existing"
             existing.title = "Existing Session"
             mock_get_sess.return_value = existing
+            mock_get_model.return_value = None
             mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}
             mock_db_create_run.return_value = "run-999"
 
@@ -124,6 +128,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.get_session") as mock_get_sess,
             patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task"),
@@ -135,6 +140,7 @@ class TestRunService:
             new_sess = MagicMock()
             new_sess.id = "sess-new"
             mock_create_sess.return_value = new_sess
+            mock_get_model.return_value = None
             mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}
             mock_db_create_run.return_value = "run-new"
 
@@ -153,6 +159,7 @@ class TestRunService:
         with (
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
             patch("repository.create_run") as mock_db_create_run,
         ):
@@ -160,6 +167,7 @@ class TestRunService:
             mock_sess = MagicMock()
             mock_sess.id = "sess-err"
             mock_create_sess.return_value = mock_sess
+            mock_get_model.return_value = None
             mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}
             mock_db_create_run.side_effect = Exception("DB down")
 
@@ -178,6 +186,7 @@ class TestRunService:
         with (
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task"),
@@ -187,6 +196,7 @@ class TestRunService:
             mock_sess = MagicMock()
             mock_sess.id = "sess-cont"
             mock_create_sess.return_value = mock_sess
+            mock_get_model.return_value = None
             mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}
             mock_db_create_run.return_value = "run-cont"
 
@@ -205,8 +215,10 @@ class TestRunService:
         svc = RunService()
         with (
             patch("services.run_service.load_config"),
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
         ):
+            mock_get_model.side_effect = Exception("vault down")
             mock_get_default.side_effect = Exception("vault down")
 
             with pytest.raises(ValueError, match="API Key"):

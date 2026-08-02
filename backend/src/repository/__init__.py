@@ -51,6 +51,7 @@ from repository.core import apply_owner_filter
 from repository.keys import (
     create_api_key,
     delete_api_key,
+    get_api_key_for_model,
     get_api_key_for_use,
     get_api_keys,
     get_default_api_key,
@@ -82,6 +83,7 @@ from repository.message_repo import (
     get_session_messages,
     save_message,
     update_message_content,
+    update_message_versions,
 )
 
 from repository.prompts import (

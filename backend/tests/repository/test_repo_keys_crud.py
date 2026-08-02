@@ -473,3 +473,41 @@ async def test_get_default_api_key_anonymous_user_no_keys(db_engine):
 
     result = await get_default_api_key("anonymous")
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_api_key_for_model_matches_models_list(db_engine):
+    """A key whose models list contains the requested model is returned."""
+    from repository.keys_crud import create_api_key, get_api_key_for_model
+
+    await create_api_key("user1", "custom", plaintext_key="sk-deepseek", base_url="https://api.deepseek.com", models=["deepseek-v4-flash"], is_default=False)
+    sf = await create_api_key("user1", "custom", plaintext_key="sk-siliconflow", base_url="https://api.siliconflow.cn/v1", models=["Qwen/Qwen3-8B", "deepseek-ai/DeepSeek-V4-Flash"], is_default=False)
+
+    result = await get_api_key_for_model("Qwen/Qwen3-8B", "user1")
+    assert result is not None
+    assert result["id"] == sf.id
+    assert result["base_url"] == "https://api.siliconflow.cn/v1"
+
+
+@pytest.mark.asyncio
+async def test_get_api_key_for_model_substring_does_not_match(db_engine):
+    """Model lookup must match a full comma-separated entry, not a substring."""
+    from repository.keys_crud import create_api_key, get_api_key_for_model
+
+    await create_api_key("user1", "custom", plaintext_key="sk-deepseek", base_url="https://api.deepseek.com", models=["deepseek-v4-flash"], is_default=False)
+
+    # "deepseek-v4-flash" as a substring would naively match "deepseek-v4-flash-x"
+    assert await get_api_key_for_model("deepseek-v4-flash-x", "user1") is None
+    assert await get_api_key_for_model("unknown-model", "user1") is None
+
+
+@pytest.mark.asyncio
+async def test_get_api_key_for_model_anonymous_fallback(db_engine):
+    """Non-guest users fall back to anonymous keys when they have none of their own."""
+    from repository.keys_crud import create_api_key, get_api_key_for_model
+
+    await create_api_key("anonymous", "custom", plaintext_key="sk-anon-sf", base_url="https://api.siliconflow.cn/v1", models=["Qwen/Qwen3-8B"], is_default=False)
+
+    result = await get_api_key_for_model("Qwen/Qwen3-8B", "some_user_123")
+    assert result is not None
+    assert result["base_url"] == "https://api.siliconflow.cn/v1"

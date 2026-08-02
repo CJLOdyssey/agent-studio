@@ -198,6 +198,53 @@ async def _resolve_key_row(session: Any, user_id: str) -> Any:
     return result.scalar_one_or_none()
 
 
+async def get_api_key_for_model(model: str, user_id: str) -> dict[str, Any] | None:
+    """Fetch an active key whose comma-separated models list contains ``model``.
+
+    Prefers the user's own keys, falling back to ``anonymous`` keys. Model
+    matching is exact per entry — substring matches are rejected so that a
+    ``deepseek-v4-flash`` key never serves a ``deepseek-v4-flash-x`` request.
+    """
+    if not model:
+        return None
+
+    factory = get_session_factory()
+    async with factory() as session:
+        row = await _match_model_in_session(session, user_id, model)
+        if row is None and user_id != "anonymous":
+            row = await _match_model_in_session(session, "anonymous", model)
+        if not row:
+            return None
+
+        row.last_used_at = datetime.now(UTC)
+        await session.commit()
+        return {
+            "id": row.id,
+            "provider": row.provider,
+            "usage_type": row.usage_type,
+            "api_key": decrypt_api_key(row.encrypted_key),
+            "base_url": row.base_url,
+            "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
+        }
+
+
+async def _match_model_in_session(session: Any, user_id: str, model: str) -> Any:
+    from sqlalchemy import func
+
+    stmt = (
+        select(UserApiKey)
+        .where(
+            UserApiKey.user_id == user_id,
+            UserApiKey.is_active,
+            func.concat(",", UserApiKey.models, ",").like(f"%,{model},%"),
+        )
+        .order_by(UserApiKey.created_at)
+        .limit(1)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def get_default_api_key(user_id: str) -> dict[str, Any] | None:
     """Fetch the user's default API key, with anonymous and system-wide fallbacks.
 
