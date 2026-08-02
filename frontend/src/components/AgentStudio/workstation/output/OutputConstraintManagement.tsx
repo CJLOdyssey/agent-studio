@@ -9,6 +9,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import WstaPagination from '../shared/WstaPagination';
 import { useToast } from '../../../../utils/useToast';
+import { formatRelativeTime } from '../../../../utils/relativeTime';
 import { t } from './locales';
 
 export default function OutputConstraintManagement() {
@@ -42,7 +43,7 @@ export default function OutputConstraintManagement() {
     ];
   }
 
-  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('output.loading')}><TableSkeleton rows={5} cols={5} /></div>;
+  if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('output.loading')}><TableSkeleton rows={5} cols={6} /></div>;
 
   return (
     <ErrorBoundary fallback={<div className="flex flex-col h-full flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert"><p>{t('output.error_render')}</p></div>}>
@@ -79,13 +80,14 @@ export default function OutputConstraintManagement() {
               <th scope="col">{t('output.col_content')}</th>
               <th scope="col">{t('output.col_category')}</th>
               <th scope="col">{t('output.col_status')}</th>
+              <th scope="col">{t('workstation.createdAt')}</th>
               <th className="w-[100px] text-right" scope="col">{t('output.col_actions')}</th>
             </tr></thead>
             <tbody>
               {d.paged.map((item) => (
                 <tr key={item.id} className={d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}>
                   <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('output.select_item', item.name)} /></td>
-                  <td><span className="font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]">{item.name}</span></td>
+                  <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                   <td><span className="text-sm text-[var(--color-text-secondary)] block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap" title={item.content}>{item.content}</span></td>
                   <td><span className="wsta-tag-pill wsta-tag-indigo">{item.category}</span></td>
                   <td>
@@ -94,6 +96,7 @@ export default function OutputConstraintManagement() {
                       {statusLabel[item.status] || item.status}
                     </span>
                   </td>
+                  <td><span className="text-xs text-[var(--color-text-muted)]">{formatRelativeTime(item.createdAt)}</span></td>
                   <td className="w-[100px] text-right">
                     <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                       <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>
