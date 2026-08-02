@@ -1,5 +1,6 @@
 """Workflow CRUD API endpoints."""
 
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -20,6 +21,8 @@ from workflow.models import (
     WorkflowEdge,
     WorkflowNode,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 
@@ -106,6 +109,27 @@ def _to_schema(config: WorkflowConfig) -> WorkflowConfigSchema:
     )
 
 
+async def _snapshot_workflow(config: WorkflowConfig) -> None:
+    """Create a version snapshot after workflow save (best-effort)."""
+    try:
+        from repository.snapshot_helper import with_session
+        from repository.versions import create_version as _cv
+
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
+            snapshot = {
+                "name": config.name,
+                "max_rounds": config.max_rounds,
+                "node_count": len(config.nodes),
+                "edge_count": len(config.edges),
+                "agents": [n.agent_config_id for n in config.nodes],
+            }
+            await _cv(s, rt, rid, snapshot, "system")
+
+        await with_session(_save, resource_type="workflow", resource_id=config.id)
+    except Exception:
+        logger.warning("Version snapshot failed for workflow %s", config.id, exc_info=True)
+
+
 @router.post("", response_model=WorkflowConfigSchema, status_code=201)
 async def create_workflow(req: WorkflowSaveRequest) -> Any:
     """Create or update a workflow configuration for a team."""
@@ -137,6 +161,7 @@ async def create_workflow(req: WorkflowSaveRequest) -> Any:
         ],
     )
     saved = await save_workflow_config(config)
+    await _snapshot_workflow(saved)
     return _to_schema(saved)
 
 

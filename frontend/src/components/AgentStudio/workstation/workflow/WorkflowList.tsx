@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Trash2, GitBranch, RefreshCw, X } from 'lucide-react';
-import { listWorkflows, deleteWorkflow } from '../../../../api/client';
+import { Search, Plus, MoreHorizontal, Edit3, Trash2, GitBranch, RefreshCw, X, Eye, Play } from 'lucide-react';
+import { listWorkflows, deleteWorkflow, submitRequirement } from '../../../../api/client';
 import type { WorkflowSummary } from '../../../../types/AgentStudio';
 import WstaPagination from '../shared/WstaPagination';
 import DeleteConfirmModal from '../shared/DeleteConfirmModal';
 import BatchDeleteModal from '../shared/BatchDeleteModal';
+import VersionHistoryModal from '../shared/VersionHistoryModal';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useToast } from '../../../../utils/useToast';
@@ -38,6 +39,8 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<WorkflowSummary | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
+  const [historyItem, setHistoryItem] = useState<WorkflowSummary | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   const reload = () => {
     setLoading(true);
@@ -113,9 +116,26 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
     }
   };
 
+  const handleTestRun = async (workflow: WorkflowSummary) => {
+    const requirement = window.prompt(t('workflow.test_prompt'), t('workflow.test_prompt_default'));
+    if (requirement === null || !requirement.trim()) return;
+    setTestingId(workflow.id);
+    try {
+      const res = await submitRequirement(requirement.trim(), undefined, undefined, undefined, undefined, workflow.teamId);
+      toast(`${t('workflow.test_started')} (${res.run_id})`, 'success');
+    } catch (e) {
+      const err = e as { response?: { data?: { detail?: string } }; message?: string };
+      toast(`❌ ${err.response?.data?.detail || err.message || t('workflow.test_failed')}`, 'error');
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   function makeMenuItems(workflow: WorkflowSummary): MenuProps['items'] {
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('workflow.edit'), onClick: () => onOpenWorkflow(workflow) },
+      { key: 'view', icon: <Eye size={14} />, label: t('workflow.history'), onClick: () => setHistoryItem(workflow) },
+      { key: 'test', icon: <Play size={14} />, label: testingId === workflow.id ? t('workflow.testing') : t('workflow.test'), disabled: testingId === workflow.id, onClick: () => handleTestRun(workflow) },
       { type: 'divider' },
       { key: 'delete', icon: <Trash2 size={14} />, label: t('workflow.delete'), danger: true, onClick: () => setDeleteTarget(workflow) },
     ];
@@ -192,6 +212,7 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
 
       {deleteTarget && <DeleteConfirmModal name={deleteTarget.name} label={t('workflow.col_name')} onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} />}
       {batchOpen && <BatchDeleteModal count={selectedIds.size} label={t('workflow.col_name')} onConfirm={handleBatchDelete} onClose={() => setBatchOpen(false)} />}
+      {historyItem && <VersionHistoryModal title={historyItem.name} resourceType="workflow" resourceId={historyItem.id} onClose={() => setHistoryItem(null)} />}
     </div>
     </ErrorBoundary>
   );

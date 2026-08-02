@@ -810,6 +810,13 @@
     "error_retry": "重试",
     "error_loading": "加载失败",
     "back_to_list": "返回列表",
-    "back_unsaved": "有未保存的更改，确定返回列表？"
+    "back_unsaved": "有未保存的更改，确定返回列表？",
+    "history": "版本历史",
+    "test": "测试运行",
+    "testing": "运行中...",
+    "test_prompt": "输入测试需求（将启动一次实际运行）:",
+    "test_prompt_default": "测试运行",
+    "test_started": "测试运行已启动",
+    "test_failed": "测试运行失败"
   }
 }

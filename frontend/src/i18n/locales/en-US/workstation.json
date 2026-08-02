@@ -810,6 +810,13 @@
     "error_retry": "Retry",
     "error_loading": "Load failed",
     "back_to_list": "Back to list",
-    "back_unsaved": "Unsaved changes, return to list?"
+    "back_unsaved": "Unsaved changes, return to list?",
+    "history": "Version History",
+    "test": "Test Run",
+    "testing": "Running...",
+    "test_prompt": "Enter a test requirement (starts a real run):",
+    "test_prompt_default": "Test Run",
+    "test_started": "Test run started",
+    "test_failed": "Test run failed"
   }
 }
