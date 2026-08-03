@@ -4,10 +4,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from core.base import Base
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
-
-from core.base import Base
 
 
 class UserDB(Base):

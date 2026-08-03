@@ -6,8 +6,6 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import or_, select, update
-
 from core.infra.database import (
     KeyUsageLog,
     RefreshTokenDB,
@@ -18,6 +16,7 @@ from core.infra.database import (
     UserRoleDB,
     get_session_factory,
 )
+from sqlalchemy import or_, select, update
 
 
 async def get_user_by_email(email: str) -> UserDB | None:

@@ -7,7 +7,6 @@ import contextlib
 import gc
 import os
 import platform
-import signal
 from typing import TYPE_CHECKING, Any, cast
 
 from broker import BROKER_URL, REDIS_URL, get_redis

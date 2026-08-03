@@ -2,9 +2,9 @@
 
 from typing import Any
 
+from core.infra.database import MCPServerDB
 from sqlalchemy import desc
 
-from core.infra.database import MCPServerDB
 from repository.base import BaseRepository
 
 

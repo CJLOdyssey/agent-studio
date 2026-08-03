@@ -9,20 +9,19 @@ import time
 from typing import Any
 
 import httpx
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-    ToolMessage,
-)
-
 from core.infra.circuit_breaker import CircuitBreakerOpenError, llm_circuit
 from core.infra.logging_config import get_logger
 from core.infra.metrics import (
     llm_request_duration_seconds,
     llm_requests_total,
     llm_tokens_total,
+)
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
 )
 
 logger = get_logger(__name__)

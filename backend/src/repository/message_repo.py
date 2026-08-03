@@ -4,9 +4,8 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import select
-
 from core.infra.database import ChatMessage, ProjectRun, get_session_factory
+from sqlalchemy import select
 
 
 async def save_message(run_id: str, role: str, agent_name: str, content: str, round_number: int, thinking: str | None = None) -> None:  # noqa: E501

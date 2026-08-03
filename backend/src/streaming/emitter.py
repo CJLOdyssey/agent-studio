@@ -209,10 +209,9 @@ class StreamEmitter:
 
         # Merge pending thinking from a previous tools-only flush with current thinking
         if self._pending_thinking:
-            if thinking_text:
-                thinking_text = self._pending_thinking + "\n\n" + thinking_text
-            else:
-                thinking_text = self._pending_thinking
+            thinking_text = (
+                self._pending_thinking + "\n\n" + thinking_text if thinking_text else self._pending_thinking
+            )
             self._pending_thinking = None
 
         saved_with_content = False

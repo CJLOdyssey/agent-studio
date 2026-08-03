@@ -2,9 +2,9 @@
 
 from typing import Any
 
+from core.infra.database import RegisteredToolDB
 from sqlalchemy import desc
 
-from core.infra.database import RegisteredToolDB
 from repository.base import BaseRepository
 
 

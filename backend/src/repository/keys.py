@@ -14,6 +14,7 @@ from repository.keys_crud import (  # noqa: F401
     get_default_api_key,
     get_embedding_api_key,
     get_key_usage_stats,
+    get_tool_api_key,
     log_key_usage,
     update_api_key,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "get_default_api_key",
     "get_embedding_api_key",
     "get_key_usage_stats",
+    "get_tool_api_key",
     "log_key_usage",
     "test_api_key_connection",
     "update_api_key",

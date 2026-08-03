@@ -20,9 +20,9 @@ Usage::
 from collections.abc import Callable
 from typing import Any
 
+from core.infra.logging_config import get_logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.infra.logging_config import get_logger
 from repository.versions import create_version
 
 logger = get_logger(__name__)

@@ -7,11 +7,10 @@ its configured models to the available list.
 
 from typing import Any
 
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
-
 from auth import get_user_id
 from core.infra.logging_config import get_logger
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
 from repository import get_api_keys
 
 logger = get_logger(__name__)

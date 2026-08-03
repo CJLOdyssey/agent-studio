@@ -2,14 +2,14 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
-
 from auth import get_user_id
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from routers.runs import RunResponse
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from services.run_service import run_service
+
+from routers.runs import RunResponse
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])

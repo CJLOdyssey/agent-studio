@@ -3,9 +3,8 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select
-
 from core.infra.database import SessionDB, get_session_factory
+from sqlalchemy import desc, select
 
 
 async def create_session(

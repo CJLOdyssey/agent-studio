@@ -19,11 +19,10 @@ import os
 import platform
 import uuid
 
+from core.infra.logging_config import get_logger
 from cryptography.fernet import Fernet, MultiFernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
-from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

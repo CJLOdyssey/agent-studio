@@ -5,10 +5,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, ClassVar, Generic, TypeVar, cast
 
+from core.infra.database import get_session_factory
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
-
-from core.infra.database import get_session_factory
 
 ModelT = TypeVar("ModelT", bound=DeclarativeBase)
 

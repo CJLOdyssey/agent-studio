@@ -6,18 +6,17 @@ Resource type and ID are passed as simple strings.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from auth import get_user_id
 from core.error_codes import ErrorCode, error_response
+from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel
 from repository.deps import get_session
 from repository.versions import (
     create_version,
     get_version,
     list_versions,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(tags=["versions"])
 

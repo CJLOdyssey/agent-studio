@@ -1,9 +1,9 @@
 """Default data seeding — roles and admin user bootstrap."""
 
+from orm import RoleDB, UserDB, UserRoleDB
 from sqlalchemy import select
 
 from core.infra.database import get_session_factory
-from orm import RoleDB, UserDB, UserRoleDB
 
 
 async def seed_default_roles_and_admin() -> None:
@@ -42,11 +42,13 @@ async def seed_default_roles_and_admin() -> None:
 async def seed_builtin_tools() -> None:
     """Sync registered plugins from ToolRegistry into registered_tools table."""
     import json
-    from sqlalchemy import select
-    from core.infra.database import get_session_factory
-    from orm import RegisteredToolDB
+
     import thinking_tree.tools  # noqa: F401 — triggers registration
+    from orm import RegisteredToolDB
+    from sqlalchemy import select
     from thinking_tree.registry import registry
+
+    from core.infra.database import get_session_factory
 
     factory = get_session_factory()
     plugins = registry.list_plugins()
@@ -56,7 +58,7 @@ async def seed_builtin_tools() -> None:
             result = await session.execute(
                 select(RegisteredToolDB).where(
                     RegisteredToolDB.name == name,
-                    RegisteredToolDB.is_builtin == True,
+                    RegisteredToolDB.is_builtin,
                 )
             )
             if result.scalar_one_or_none():

@@ -7,13 +7,12 @@ import shlex
 import tracemalloc
 from typing import Any
 
-from mcp import StdioServerParameters
-from mcp.client.session import ClientSession
-from mcp.client.stdio import stdio_client
-
 from broker import publish_run_message
 from core.infra.logging_config import get_logger
 from core.mock_fallback import run_mock
+from mcp import StdioServerParameters
+from mcp.client.session import ClientSession
+from mcp.client.stdio import stdio_client
 from repository import (
     create_memory_entry,
     update_run_result,

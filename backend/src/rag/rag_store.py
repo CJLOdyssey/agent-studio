@@ -2,9 +2,9 @@ from typing import Any
 
 """pgvector vector store for RAG pipeline."""
 
+from core.infra.logging_config import get_logger
 from sqlalchemy import text
 
-from core.infra.logging_config import get_logger
 from rag.rag_chunking import Chunk
 from rag.rag_embedding import EMBEDDING_DIM
 

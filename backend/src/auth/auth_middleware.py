@@ -2,13 +2,13 @@
 
 from typing import Any, cast
 
+from core.infra.logging_config import get_logger
 from fastapi import Request
 from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from auth.auth_jwt import AUTH_SECRET, decode_jwt
 from auth.auth_rbac import AUTH_ENABLED, PUBLIC_PATHS, PUBLIC_PREFIXES
-from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

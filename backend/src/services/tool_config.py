@@ -183,13 +183,19 @@ def build_tool_definition(
             props["topic"] = {
                 "type": "string",
                 "enum": ["general", "news", "finance"],
-                "description": "Search category. Use 'news' for current events/news searches, 'finance' for financial data, 'general' otherwise.",
+                "description": (
+                    "Search category. Use 'news' for current events/news searches, "
+                    "'finance' for financial data, 'general' otherwise."
+                ),
             }
         if "time_range" not in props:
             props["time_range"] = {
                 "type": "string",
                 "enum": ["day", "week", "month", "year"],
-                "description": "Time range back from today. Use 'day' or 'week' for recent news, 'month' or 'year' for broader historical search.",
+                "description": (
+                    "Time range back from today. Use 'day' or 'week' for recent news, "
+                    "'month' or 'year' for broader historical search."
+                ),
             }
         if "required" not in schema:
             schema["required"] = ["query"]

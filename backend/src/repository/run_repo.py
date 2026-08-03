@@ -5,9 +5,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import desc, select
-
 from core.infra.database import ProjectRun, SessionDB, get_session_factory
+from sqlalchemy import desc, select
 
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:

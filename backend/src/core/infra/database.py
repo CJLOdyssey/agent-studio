@@ -6,6 +6,8 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
+from core.base import Base
+from core.infra.logging_config import get_logger
 from sqlalchemy import (
     event,
     text,
@@ -17,9 +19,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.pool import NullPool
-
-from core.base import Base
-from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

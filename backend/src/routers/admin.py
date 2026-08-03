@@ -3,7 +3,6 @@
 from typing import Any
 
 from fastapi import APIRouter
-
 from repository.admin_stats import (
     get_command_logs as _get_command_logs,
 )

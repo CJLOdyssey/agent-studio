@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from sqlalchemy import text
-
 from core.infra.database import get_session_factory
+from sqlalchemy import text
 
 
 async def check_database() -> str:

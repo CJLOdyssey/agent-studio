@@ -2,17 +2,16 @@
 
 from typing import Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 from repository import create_skill as repo_create_skill
 from repository import delete_skill, update_skill
 from repository import get_skills as repo_get_skills
 from repository import get_skills_as_dicts as repo_get_skills_as_dicts
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["skills"])

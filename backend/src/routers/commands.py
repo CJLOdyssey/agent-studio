@@ -3,11 +3,10 @@
 import json
 from typing import Any
 
-from fastapi import APIRouter
-
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from core.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
+from fastapi import APIRouter
 from repository import get_session, log_command, update_session_title
 
 logger = get_logger(__name__)

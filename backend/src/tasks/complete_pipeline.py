@@ -6,7 +6,6 @@ import tracemalloc
 from typing import Any
 
 import httpx
-
 from broker import publish_run_message
 from core.config import load_config
 from core.infra.logging_config import get_logger

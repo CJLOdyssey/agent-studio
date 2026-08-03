@@ -3,12 +3,11 @@
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, Request, Response
-
 from auth.password_policy import validate_password
 from broker import get_redis
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
+from fastapi import APIRouter, Request, Response
 from repository.auth import create_user, get_user_by_email, mark_user_verified
 from services.email_service import build_verification_email, send_email
 

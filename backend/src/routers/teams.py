@@ -2,14 +2,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from auth import get_user_id
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from repository import (
     add_team_member,
     create_team,
@@ -21,6 +19,7 @@ from repository import (
     reorder_team_members,
     update_team,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["teams"])
@@ -90,7 +89,6 @@ async def _snapshot_team(resource_id: str, session: AsyncSession | None = None) 
     """Create a version snapshot after team save."""
     try:
         from repository.snapshot_helper import create_snapshot_from_dict, with_session
-
         from repository.teams import get_team
 
         async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:

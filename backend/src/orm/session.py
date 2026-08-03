@@ -4,10 +4,9 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from core.base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from core.base import Base
 
 
 class SessionDB(Base):

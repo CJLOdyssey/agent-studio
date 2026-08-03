@@ -7,31 +7,31 @@ Architecture:
 
 from __future__ import annotations
 
+import contextlib
 import json
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from typing import Any, cast
 
 import httpx
+from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
+from core.infra.logging_config import get_logger
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
-
-from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
-from core.infra.logging_config import get_logger
-from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
-from services.tool_config import ToolConfig, build_tool_definition
 from services.thinking_chain import format_result_preview, get_tool_prefix
-from streaming.emitter import StreamEmitter
+from services.tool_config import ToolConfig, build_tool_definition
 from streaming.llm_stream import (
     build_llm_request_body,
     build_tool_calls_list,
     convert_messages_to_api,
     stream_llm_response,
 )
+
+from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 
 # Balance/quota error keywords used to detect API billing failures
 _BALANCE_ERROR_KEYWORDS = [
@@ -58,13 +58,11 @@ async def _emit_balance_warning(stream_cb: Any) -> None:
         )
     else:
         # Fallback: emit as thinking event
-        try:
+        with contextlib.suppress(Exception):
             await stream_cb({
                 "event": "on_custom_thinking",
                 "data": {"content": "[warning] API 余额不足，请检查 API Key 配置"},
             })
-        except Exception:
-            pass
 
 
 class SingleAgentGraph:
