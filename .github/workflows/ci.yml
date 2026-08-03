@@ -207,7 +207,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
       # Use pre-warmed mypy cache from CI runner image
-      - run: MYPY_CACHE_DIR=/opt/mypy-cache mypy backend/ --strict --no-error-summary
+      - run: MYPY_CACHE_DIR=/opt/mypy-cache mypy backend/src --strict --explicit-package-bases --no-error-summary
       - name: Check .env.example for insecure defaults
         run: |
           if grep -qE 'change-me|example-secret' .env.example; then

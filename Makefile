@@ -1,4 +1,4 @@
-.PHONY: test test-backend test-frontend lint-backend lint-frontend coverage e2e-env test-e2e
+.PHONY: test test-backend test-frontend lint-backend typecheck-backend lint-frontend coverage e2e-env test-e2e
 
 # 统一排除规则：integration 需要真后端+docker (有 @pytest.mark.integration)，
 # benchmark 是性能测试（locust 覆盖）。与 CI (pytest-split) 共用同一 marker 约定，
@@ -28,6 +28,9 @@ test-frontend:
 
 lint-backend:
 	ruff check backend/
+
+typecheck-backend:
+	mypy backend/src --strict --explicit-package-bases
 
 lint-frontend:
 	cd frontend && npx eslint src/

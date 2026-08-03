@@ -22,8 +22,9 @@ strict = true
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
 warn_unused_ignores = true
-mypy_path = ["backend/stubs"]
-exclude = ["backend/tests/", "backend/stubs/", "backend/alembic/", "backend/system_team/"]
+# backend/src 作为顶层模块根（core/broker/repository 等，与运行时 PYTHONPATH=backend/src 一致）
+mypy_path = ["backend/src", "backend/stubs"]
+exclude = ["backend/tests/", "backend/stubs/", "backend/alembic/", "backend/src/system_team/"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
