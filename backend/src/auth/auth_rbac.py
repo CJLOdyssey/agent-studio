@@ -14,8 +14,9 @@ if TYPE_CHECKING:
     # Only for type checker — runtime uses deferred imports to avoid circular dep
     from orm.auth import RoleDB, UserDB, UserRoleDB
 
-from auth.auth_jwt import AUTH_SECRET, decode_jwt
 from core.infra.logging_config import get_logger
+
+from auth.auth_jwt import AUTH_SECRET, decode_jwt
 
 logger = get_logger(__name__)
 
@@ -167,7 +168,7 @@ def get_user_id(request: Any) -> str:
         payload = decode_jwt(token, AUTH_SECRET)
         if payload:
             uid = payload.get("sub")
-            if uid:
+            if isinstance(uid, str) and uid:
                 return uid
 
     return str(request.headers.get("X-User-ID", "anonymous"))

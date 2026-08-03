@@ -1,14 +1,12 @@
 """API key CRUD repository — encrypt, store, list, and manage user API keys."""
 
-from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import select
-
 from core.infra.database import KeyUsageLog, UserApiKey, get_session_factory
 from core.infra.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
+from sqlalchemy import select
 
 
 async def create_api_key(
@@ -74,7 +72,7 @@ async def get_api_keys(
         if fallback_ids:
             candidates.update(fbid for fbid in fallback_ids if fbid and fbid != user_id)
 
-        rows: Sequence[UserApiKey] = []
+        rows: list[UserApiKey] = []
         seen_ids: set[str] = set()
         # Search candidates in priority order, deduplicating by key id
         for cid in [user_id] + (fallback_ids or []):
@@ -99,7 +97,7 @@ async def get_api_keys(
                 .order_by(UserApiKey.created_at)
             )
             result = await session.execute(stmt)
-            rows = result.scalars().all()
+            rows = list(result.scalars().all())
 
         results = []
         for r in rows:

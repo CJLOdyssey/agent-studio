@@ -62,8 +62,8 @@ class TestHandleSkill:
     def test_skill_prefix_routes_unconfigured_to_handle_skill(self):
         from services.tool_config import _ToolWrapper as W
 
-        w = W(name="skill_xlsx")
-        result = handle_skill(w, {})
+        W = W(name="skill_xlsx")
+        result = handle_skill(W, {})
         parsed = json.loads(result)
         assert parsed["status"] == "unconfigured"
         assert "instructions" in parsed["content"]

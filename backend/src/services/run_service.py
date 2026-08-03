@@ -51,7 +51,8 @@ class RunService:
         if not raw:
             return None
         try:
-            return json.loads(raw)
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, list) else None
         except Exception:
             return None
 

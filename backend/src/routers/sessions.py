@@ -3,14 +3,12 @@
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
-from starlette.responses import Response
-
 from auth import get_user_id
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from core.models import SessionDetailResponse, SessionSummary
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from repository import (
     create_session,
     delete_memory_entry,
@@ -26,6 +24,7 @@ from repository import (
     update_message_versions,
     update_session_title,
 )
+from starlette.responses import Response
 
 logger = get_logger(__name__)
 
@@ -62,7 +61,8 @@ def _parse_json_list(raw: str | None) -> list[str] | None:
     if not raw:
         return None
     try:
-        return json.loads(raw)
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, list) else None
     except Exception:
         return None
 
@@ -102,7 +102,9 @@ def _merge_edit_chains(
             agent_idx = next((i for i, m in enumerate(msgs) if m.get("role") != "user"), -1)
             if agent_idx >= 0:
                 msgs[agent_idx]["versions"] = versions + list(msgs[agent_idx].get("versions") or [])
-                msgs[agent_idx]["thinking_versions"] = thinking_versions + list(msgs[agent_idx].get("thinking_versions") or [])
+                msgs[agent_idx]["thinking_versions"] = (
+                    thinking_versions + list(msgs[agent_idx].get("thinking_versions") or [])
+                )
         result.append((latest, msgs))
     return result
 

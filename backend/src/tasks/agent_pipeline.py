@@ -214,22 +214,22 @@ async def _run_agent_pipeline(
                         sub_tools = []
 
                     if sub_tools:
-                        mcp_config = {
+                        mcp_tool_config = {
                             **(mcp_params if isinstance(mcp_params, dict) else {}),
                             "command": mcp_endpoint,
                         }
                         for st in sub_tools:
-                            params = st.get("inputSchema") or {"type": "object"}
+                            sub_params = st.get("inputSchema") or {"type": "object"}
                             tool_configs.append(ToolConfig(
                                 name=f"{mcp_prefix}{st['name']}",
                                 description=st.get("description", "") or "",
-                                parameters=params,
+                                parameters=sub_params,
                                 endpoint="",
                                 method="MCP",
                                 mcp_type="stdio",
                                 mcp_endpoint=mcp_endpoint,
                                 mcp_tool_name=st["name"],
-                                mcp_config=mcp_config,
+                                mcp_config=mcp_tool_config,
                             ))
                 elif mcp_endpoint:
                     # Non-stdio MCP (like REST-based) → single tool
@@ -272,19 +272,19 @@ async def _run_agent_pipeline(
                     for tname in (skill_match.tool_names or []):
                         tmatch = next((t for t in all_tools if t.name == tname), None)
                         if tmatch:
-                            params: dict[str, Any] = {}
+                            skill_params: dict[str, Any] = {}
                             if getattr(tmatch, "parameters", None):
                                 try:
                                     if isinstance(tmatch.parameters, str):
-                                        params = json.loads(tmatch.parameters)
+                                        skill_params = json.loads(tmatch.parameters)
                                     else:
-                                        params = tmatch.parameters or {}
+                                        skill_params = tmatch.parameters or {}
                                 except (json.JSONDecodeError, TypeError):
-                                    params = {}
+                                    skill_params = {}
                             tool_configs.append(ToolConfig(
                                 name=tname,
                                 description=tmatch.description or tname,
-                                parameters=params or {"type": "object"},
+                                parameters=skill_params or {"type": "object"},
                                 endpoint=tmatch.endpoint or "",
                                 method=tmatch.method or "GET",
                                 headers=tmatch.headers or "{}",
@@ -293,7 +293,10 @@ async def _run_agent_pipeline(
                     tool_configs.append(
                         ToolConfig(
                             name=f"skill_{name}",
-                            description=f"{skill_match.content or skill_match.name}。当用户请求与该能力相关时调用此技能。",
+                            description=(
+                                f"{skill_match.content or skill_match.name}。"
+                                "当用户请求与该能力相关时调用此技能。"
+                            ),
                             instructions=skill_instructions,
                             parameters={"type": "object"},
                             endpoint="",
@@ -319,7 +322,7 @@ async def _run_agent_pipeline(
 
     # ── Intent detection: direct URL open for "打开XX" patterns ──
     # ponytail: manual mapping for common Chinese site names; expand as needed
-    _SITE_MAP = {
+    _site_map = {
         "百度": "https://www.baidu.com",
         "谷歌": "https://www.google.com",
         "google": "https://www.google.com",
@@ -332,7 +335,7 @@ async def _run_agent_pipeline(
     }
     _open_url = None
     _clean = requirement.strip().lower()
-    for _keyword, _site_url in _SITE_MAP.items():
+    for _keyword, _site_url in _site_map.items():
         if _keyword in _clean and ("打开" in _clean or "访问" in _clean or "去" in _clean):
             _open_url = _site_url
             break

@@ -11,18 +11,13 @@ import urllib.request
 from typing import TYPE_CHECKING, Any
 
 import httpx
-from langchain_core.messages import HumanMessage
-
 from core.infra.logging_config import get_logger
+from langchain_core.messages import HumanMessage
 
 if TYPE_CHECKING:
     from services.tool_config import _ToolWrapper
 
 logger = get_logger(__name__)
-
-# ponytail: per-run_id MCP session cache, avoids creating a new browser per tool call
-_mcp_sessions: dict[str, dict[str, Any]] = {}
-
 
 def handle_skill(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     """Return the skill's instruction text as the tool result.
@@ -178,7 +173,7 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     from mcp.client.session import ClientSession
     from mcp.client.stdio import stdio_client
 
-    async def _call(session: Any, name: str, arguments: dict[str, Any] | None, timeout: int = 45) -> Any:
+    async def _call(session: Any, name: str | None, arguments: dict[str, Any] | None, timeout: int = 45) -> Any:
         if name:
             return await asyncio.wait_for(session.call_tool(name, arguments=arguments or {}), timeout=timeout)
         return await asyncio.wait_for(session.list_tools(), timeout=20)
@@ -196,7 +191,7 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
         if tools:
             lines = []
             for t in tools:
-                props = {}
+                props: dict[str, Any] = {}
                 if hasattr(t, "inputSchema") and t.inputSchema:
                     props = t.inputSchema.get("properties", {}) or {}
                 desc = "; ".join(f"{k}: {v.get('description','')}" for k, v in props.items()) if props else ""
@@ -216,7 +211,6 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
     try:
         async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
             await session.initialize()
-            _mcp_sessions.pop(run_key, None)
             result = await _call(session, tool_self.mcp_tool_name, args)
             if tool_self.name and "browser_" in tool_self.name and tool_self._run_id:
                 await _push_mcp_screenshot(session, tool_self._run_id)
@@ -228,10 +222,8 @@ async def call_mcp_sdk(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
         # anyio's internal scope when spawning the MCP stdio subprocess. Swallow
         # it and return an error string so the run can converge instead of crashing.
         logger.warning("MCP call cancelled (run=%s tool=%s) — suppressing", run_key[:12], tool_self.name)
-        _mcp_sessions.pop(run_key, None)
         return json.dumps({"tool": tool_self.name, "error": "MCP 调用被中断（子进程启动超时或取消）"})
     except Exception as e:
-        _mcp_sessions.pop(run_key, None)
         return json.dumps({"error": str(e)})
 
 
@@ -256,16 +248,6 @@ async def _push_mcp_screenshot(session: Any, run_id: str | None) -> None:
                 return
     except Exception:
         pass
-
-
-async def _cleanup_mcp_session(run_key: str) -> None:
-    """Close and remove a cached MCP session."""
-    session = _mcp_sessions.pop(run_key, None)
-    if session:
-        try:
-            await session.__aexit__(None, None, None)
-        except Exception:
-            pass
 
 
 async def llm_fallback(tool_self: _ToolWrapper, args: dict[str, Any]) -> str:
