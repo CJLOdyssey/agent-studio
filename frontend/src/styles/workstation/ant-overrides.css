@@ -327,7 +327,7 @@
 .ant-pagination.ant-pagination .ant-pagination-total-text {
   font-size: 13px;
   color: var(--color-text-muted);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono), monospace;
   margin-right: 12px;
   height: 32px;
   line-height: 32px;
