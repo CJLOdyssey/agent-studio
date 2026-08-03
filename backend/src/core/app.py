@@ -127,9 +127,17 @@ else:
     # Development defaults only when CORS_ORIGINS is not explicitly set
     _cors_origins = [
         "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
         "http://localhost:8080",
+        "http://localhost:8081",
+        "http://localhost:8082",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
         "http://127.0.0.1:8080",
+        "http://127.0.0.1:8081",
+        "http://127.0.0.1:8082",
     ]
     _prod_origin = os.environ.get("CORS_ORIGIN")
     if _prod_origin:

@@ -9,9 +9,9 @@ import websockets
 
 pytestmark = pytest.mark.integration
 
-from tests.conftest import Api, _clear_rate_limits, _rid
+from tests.conftest import Api, _clear_rate_limits
 
-WS_BASE = "ws://localhost:8080"
+WS_BASE = "ws://localhost:8082"
 
 
 class TestWebSocketStream:
@@ -66,7 +66,7 @@ class TestWebSocketStream:
                         ), f"Unexpected message type: {data['type']}"
                         if data["type"] == "result":
                             break  # Run completed
-                except (asyncio.TimeoutError, websockets.ConnectionClosed):
+                except (TimeoutError, websockets.ConnectionClosed):
                     pass
 
         asyncio.run(_ws_test())

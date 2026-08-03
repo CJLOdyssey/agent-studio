@@ -39,7 +39,9 @@ if str(_base) not in sys.path:
 
 # Alias backend.X → X so mock patches like "broker.get_redis" resolve
 import importlib as _il
+
 import backend as _backend_mod
+
 _backend_src = _base / 'src'
 for _p in _backend_src.iterdir():
     if _p.is_dir() and (_p / '__init__.py').exists() and not _p.name.startswith('_'):
@@ -64,7 +66,7 @@ except (ImportError, SyntaxError):
         """No-op fallback when conftest_flaky is unavailable."""
         return lambda fn: fn
 
-BASE = "http://localhost:8080"
+BASE = "http://localhost:8082"
 
 # Test user credentials for rbac mode
 TEST_EMAIL = "e2e@test.com"
@@ -273,9 +275,8 @@ async def test_client() -> Any:
 
     # ── 3. Import the app (deps already patched) ────────────────────
     # ── 4. Create ASGI client ───────────────────────────────────────
-    from httpx import ASGITransport, AsyncClient
-
     from core.app import app
+    from httpx import ASGITransport, AsyncClient
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -304,7 +305,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     if item.get_closest_marker("integration") is None:
         return
     try:
-        resp = httpx.get("http://localhost:8080/api/models", timeout=3)
+        resp = httpx.get("http://localhost:8082/api/models", timeout=3)
         if resp.status_code != 200:
             pytest.skip(f"Backend not available (status {resp.status_code})")
     except Exception:

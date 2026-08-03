@@ -23,5 +23,5 @@ done
 
 echo "✅ E2E 环境就绪：postgres=5432, redis=6379"
 echo "   下一步:"
-echo "     make dev-backend        # 启动后端 (端口 8080, E2E 测试目标)"
+echo "     PORT=8082 make dev-backend   # 启动后端 (端口 8082, E2E 测试目标)"
 echo "     make test-e2e           # 运行 API 级 E2E 测试"

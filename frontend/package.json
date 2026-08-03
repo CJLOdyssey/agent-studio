@@ -27,7 +27,8 @@
     "test:visual": "echo 'Visual regression tests: use Chromatic or Lost Pixel for snapshot testing'",
     "docs:check": "node ../scripts/dev/check-docs.js",
     "docs:generate": "node ../scripts/dev/generate-docs.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dev:e2e": "VITE_DEV_PORT=5175 VITE_API_BASE_URL=http://localhost:8082 vite"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

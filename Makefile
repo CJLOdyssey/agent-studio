@@ -45,7 +45,7 @@ coverage:
 e2e-env:
 	bash scripts/dev/e2e-env.sh
 
-## 跑 API 级 E2E（需要 e2e-env + 后端已启动在 8080）
+## 跑 API 级 E2E（需要 e2e-env + 后端已启动在 8082）
 test-e2e:
 	pytest backend/tests/e2e/ -m integration
 
