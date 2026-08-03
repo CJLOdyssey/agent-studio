@@ -84,7 +84,8 @@ class LLMClient:
             logger.error("LLM code generation failed: %s", e)
             return None
 
-    def _extract_code(self, content: str) -> str:
+    @staticmethod
+    def _extract_code(content: str) -> str:
         """Extract code block from LLM response, stripping markdown fences."""
         if "```python" in content:
             start = content.index("```python") + 9

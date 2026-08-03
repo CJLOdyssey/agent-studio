@@ -126,7 +126,7 @@ class RequestLogMiddleware:
         )
 
         # If it was a client or server error, include a hint
-        if status_code >= 400 and status_code < 500:
+        if 400 <= status_code < 500:
             logger.warning(
                 "[RES] %s %s → %d | body[:500]=%s | rid=%s",
                 method,

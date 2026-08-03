@@ -112,6 +112,6 @@ def format_result_preview(result: str | Any, max_len: int = 0) -> str:
                 pass
     if not text:
         return "(empty)"
-    if max_len > 0 and len(text) > max_len:
+    if 0 < max_len < len(text):
         return text[:max_len] + "..."
     return text

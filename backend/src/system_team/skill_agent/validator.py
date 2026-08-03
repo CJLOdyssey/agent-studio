@@ -10,7 +10,8 @@ logger = get_logger(__name__)
 class SkillValidator:
     """Validates skill markdown content for structural completeness."""
 
-    def validate(self, content: str) -> dict[str, Any]:
+    @staticmethod
+    def validate(content: str) -> dict[str, Any]:
         """Validate skill markdown and return suggestions for improvement."""
         suggestions = []
 

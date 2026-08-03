@@ -25,7 +25,8 @@ class Router:
         default = next((e for e in matching if e.is_default), None)
         return default.to_node_id if default else END
 
-    def _matches(self, state: WorkflowState, edge: WorkflowEdge) -> bool:
+    @staticmethod
+    def _matches(state: WorkflowState, edge: WorkflowEdge) -> bool:
         if not edge.condition_key:
             return False
         keywords = [kw.strip().lower() for kw in edge.condition_key.split("|") if kw.strip()]

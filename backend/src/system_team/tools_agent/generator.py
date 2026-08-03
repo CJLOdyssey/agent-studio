@@ -52,7 +52,8 @@ class ToolGenerator:
 
         return self.generate(description, language)
 
-    def _extract_function_name(self, code: str) -> str | None:
+    @staticmethod
+    def _extract_function_name(code: str) -> str | None:
         """Extract the first function name from generated code."""
         import re
 
@@ -76,7 +77,8 @@ class ToolGenerator:
         """Generate a JavaScript tool from description."""
         return self._create_custom_tool(tool_id, description, language="javascript")
 
-    def _create_weather_tool(self, tool_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_weather_tool(tool_id: str, description: str) -> dict[str, Any]:
         """Create a weather-query tool definition."""
         code = """import requests
 from typing import Dict, Any
@@ -105,7 +107,8 @@ def get_weather(city: str) -> Dict[str, Any]:
             "is_valid": True,
         }
 
-    def _create_file_tool(self, tool_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_file_tool(tool_id: str, description: str) -> dict[str, Any]:
         """Create a file-reader tool definition."""
         code = """import os
 
@@ -128,7 +131,8 @@ def read_file(file_path: str, encoding: str = "utf-8") -> str:
             "is_valid": True,
         }
 
-    def _create_http_tool(self, tool_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_http_tool(tool_id: str, description: str) -> dict[str, Any]:
         """Create an HTTP-request tool definition."""
         code = """import requests
 from typing import Dict, Any
@@ -154,8 +158,9 @@ def http_request(url: str, method: str = "GET", headers: Dict = None) -> Dict[st
             "is_valid": True,
         }
 
+    @staticmethod
     def _create_custom_tool(
-        self, tool_id: str, description: str, language: str = "python"
+        tool_id: str, description: str, language: str = "python"
     ) -> dict[str, Any]:
         """Create a generic custom tool from description."""
         name = description.replace(" ", "_").lower()[:30]

@@ -24,7 +24,8 @@ class GeneratorStrategy:
 
     node_strategy = NodeStrategy.GENERATOR
 
-    def build_prompt_context(self, state: WorkflowState, node: WorkflowNode) -> str:
+    @staticmethod
+    def build_prompt_context(state: WorkflowState, node: WorkflowNode) -> str:
         """Build prompt context including upstream artifacts for the generator."""
         parts = [state.get("requirement", "")]
         artifacts = state.get("artifacts", {})
@@ -34,7 +35,8 @@ class GeneratorStrategy:
                 parts.append(f"[{role_id}]: {content[:500]}")
         return "\n".join(parts)
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
+    @staticmethod
+    def process_output(state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Store the generated output as an artifact in the state."""
         state["artifacts"][node.role_identifier] = output
         return {"artifacts": state["artifacts"]}
@@ -45,7 +47,8 @@ class ReviewerStrategy:
 
     node_strategy = NodeStrategy.REVIEWER
 
-    def build_prompt_context(self, state: WorkflowState, node: WorkflowNode) -> str:
+    @staticmethod
+    def build_prompt_context(state: WorkflowState, node: WorkflowNode) -> str:
         """Build review context from all current artifacts."""
         parts: list[str] = []
         artifacts = state.get("artifacts", {})
@@ -55,7 +58,8 @@ class ReviewerStrategy:
                 parts.append(f"=== {role_id} 的输出 ===\n{content}\n")
         return "\n".join(parts)
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
+    @staticmethod
+    def process_output(state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Store the review and determine approval status from output keywords."""
         state["artifacts"][node.role_identifier] = output
         approved = False
@@ -73,7 +77,8 @@ class ReporterStrategy:
 
     node_strategy = NodeStrategy.REPORTER
 
-    def build_prompt_context(self, state: WorkflowState, node: WorkflowNode) -> str:
+    @staticmethod
+    def build_prompt_context(state: WorkflowState, node: WorkflowNode) -> str:
         """Build summary context from all artifacts for final reporting."""
         parts = ["请汇总所有已生成的内容，输出最终结果:\n"]
         artifacts = state.get("artifacts", {})
@@ -81,7 +86,8 @@ class ReporterStrategy:
             parts.append(f"=== {role_id} ===\n{content}\n")
         return "\n".join(parts)
 
-    def process_output(self, state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
+    @staticmethod
+    def process_output(state: WorkflowState, node: WorkflowNode, output: str) -> dict[str, Any]:
         """Store the final report as a special artifact."""
         state["artifacts"]["_final_report"] = output
         state["artifacts"][node.role_identifier] = output

@@ -26,7 +26,8 @@ class ToolValidator:
             "suggestions": suggestions,
         }
 
-    def _validate_python(self, code: str) -> list[str]:
+    @staticmethod
+    def _validate_python(code: str) -> list[str]:
         """Check Python code for missing definitions, imports, and error handling."""
         suggestions = []
 
@@ -44,7 +45,8 @@ class ToolValidator:
 
         return suggestions
 
-    def _validate_javascript(self, code: str) -> list[str]:
+    @staticmethod
+    def _validate_javascript(code: str) -> list[str]:
         """Check JavaScript code for missing definitions and error handling."""
         suggestions = []
 

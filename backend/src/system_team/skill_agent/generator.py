@@ -39,7 +39,8 @@ class SkillGenerator:
 
         return self._create_custom_skill(skill_id, description, category)
 
-    def _create_code_review_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_code_review_skill(skill_id: str, description: str) -> dict[str, Any]:
         """Create a code-review skill definition."""
         content = """---
 name: code-review-standard
@@ -77,7 +78,8 @@ metadata:
             "is_valid": True,
         }
 
-    def _create_security_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_security_skill(skill_id: str, description: str) -> dict[str, Any]:
         """Create a security-audit skill definition."""
         content = """---
 name: security-audit
@@ -113,7 +115,8 @@ metadata:
             "is_valid": True,
         }
 
-    def _create_api_design_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_api_design_skill(skill_id: str, description: str) -> dict[str, Any]:
         """Create an API design guidelines skill definition."""
         content = """---
 name: api-design-guidelines
@@ -149,7 +152,8 @@ metadata:
             "is_valid": True,
         }
 
-    def _create_testing_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_testing_skill(skill_id: str, description: str) -> dict[str, Any]:
         """Create a testing-standards skill definition."""
         content = """---
 name: testing-standards
@@ -183,7 +187,8 @@ metadata:
             "is_valid": True,
         }
 
-    def _create_performance_skill(self, skill_id: str, description: str) -> dict[str, Any]:
+    @staticmethod
+    def _create_performance_skill(skill_id: str, description: str) -> dict[str, Any]:
         """Create a performance-optimization skill definition."""
         content = """---
 name: performance-optimization
@@ -218,8 +223,9 @@ metadata:
             "is_valid": True,
         }
 
+    @staticmethod
     def _create_custom_skill(
-        self, skill_id: str, description: str, category: str
+        skill_id: str, description: str, category: str
     ) -> dict[str, Any]:
         """Create a generic skill from description and category."""
         skill_name = description.replace(" ", "-").lower()[:30]
