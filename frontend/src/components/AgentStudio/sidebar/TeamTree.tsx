@@ -173,7 +173,7 @@ const TeamTree = memo(function TeamTree({
 
   return (
     <div>
-      <div className="flex items-center justify-between py-0.5" style={{ paddingLeft: 10, paddingRight: 9 }}>
+      <div className="flex items-center justify-between py-0.5" style={{ paddingLeft: 8, paddingRight: 9 }}>
         <div className="text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
           {t('sidebar.myTeams')}
         </div>
