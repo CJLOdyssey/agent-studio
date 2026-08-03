@@ -86,6 +86,7 @@
 :root {
   color-scheme: dark;
 
+  --body-font-size: 16px;
   --color-surface: #0f1117;
   --color-surface-sidebar: #111318;
   --color-surface-raised: #1c1e24;
