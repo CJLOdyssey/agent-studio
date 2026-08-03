@@ -5,6 +5,11 @@ ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
 
 FROM python:3.12-slim
 
+# ARG declared before FROM is only visible to FROM — redeclare inside the stage
+# so the pip RUN can resolve the variables (otherwise they expand to empty).
+ARG PIP_INDEX_URL
+ARG PIP_TRUSTED_HOST
+
 WORKDIR /app
 
 # System deps (pg_isready for healthcheck, libpq-dev for psycopg2)
@@ -38,5 +43,5 @@ COPY scripts/dev/health.py scripts/health.py
 
 EXPOSE 8080
 
-ENTRYPOINT ["scripts/docker-entrypoint.sh"]
+ENTRYPOINT ["scripts/dev/docker-entrypoint.sh"]
 CMD ["uvicorn", "core.app:app", "--host", "0.0.0.0", "--port", "8080"]

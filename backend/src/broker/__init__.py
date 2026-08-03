@@ -37,7 +37,7 @@ celery_app.conf.update(
     task_time_limit=900,
 )
 
-celery_app.autodiscover_tasks(["backend.tasks"])
+celery_app.autodiscover_tasks(["tasks"])
 
 # ---------------------------------------------------------------------------
 # Redis pub/sub
