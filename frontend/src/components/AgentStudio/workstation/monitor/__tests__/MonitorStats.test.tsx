@@ -36,7 +36,7 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
   });
 
   it('renders nothing when statCards is empty', () => {
-    const { container } = render(
+    render(
       <MonitorStats stats={{ agents: 5, prompts: 10, tools: 3, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }} statCards={[]} />,
     );
     expect(screen.queryByText('Agents')).not.toBeInTheDocument();

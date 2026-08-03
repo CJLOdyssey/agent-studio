@@ -201,7 +201,7 @@ describe('agent api', { tags: ['unit'] }, () => {
   });
 
   it('setAgentAPI replaces implementation', async () => {
-    const { agentAPI: origAPI, setAgentAPI } = await import('../api');
+    const { setAgentAPI } = await import('../api');
 
     const mockAPI = {
       fetchAll: vi.fn().mockResolvedValue([]),

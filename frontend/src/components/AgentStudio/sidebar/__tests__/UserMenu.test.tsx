@@ -10,7 +10,7 @@ const mockUseAuth = vi.hoisted(() => vi.fn());
 
 // Use correct relative path from __tests__/ to components/auth/
 vi.mock('../../../auth', () => ({
-  useAuth: (...args: any[]) => mockUseAuth(...args),
+  useAuth: (..._args: unknown[]) => mockUseAuth(..._args),
 }));
 
 import UserMenu from '../UserMenu';
@@ -127,7 +127,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
   describe('interaction', () => {
     it('does not render when closed', () => {
-      const { container } = render(<UserMenu {...defaultProps} isUserMenuOpen={false} />);
+      render(<UserMenu {...defaultProps} isUserMenuOpen={false} />);
       expect(screen.queryByText('API 管理')).not.toBeInTheDocument();
     });
 

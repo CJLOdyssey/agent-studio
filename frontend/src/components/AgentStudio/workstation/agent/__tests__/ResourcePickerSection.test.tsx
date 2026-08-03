@@ -19,13 +19,13 @@ const baseFormData = {
   systemPromptId: '', toolIds: [] as string[], mcpIds: [] as string[], skillIds: [] as string[],
 };
 
-function renderComponent(overrides: Record<string, any> = {}) {
+function renderComponent(overrides: Partial<React.ComponentProps<typeof ResourcePickerSection>> = {}) {
   const props = {
     formData: baseFormData,
     setFormData: mockSetFormData,
-    activePicker: null as string | null,
+    activePicker: null,
     setActivePicker: mockSetActivePicker,
-    selectedPrompt: null as { id: string; name: string } | null,
+    selectedPrompt: undefined,
     selectedTools: [] as { id: string; name: string }[],
     selectedMCPs: [] as { id: string; name: string }[],
     selectedSkills: [] as { id: string; name: string }[],

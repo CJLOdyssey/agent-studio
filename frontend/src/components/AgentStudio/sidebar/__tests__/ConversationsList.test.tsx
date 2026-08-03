@@ -7,7 +7,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 import ConversationsList from '../ConversationsList';
-import type { Conversation } from '../../../../types/AgentStudio';
+import type { Conversation, Agent } from '../../../../types/AgentStudio';
 
 function makeConv(overrides: Partial<Conversation> = {}): Conversation {
   return {
@@ -31,7 +31,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     onDelete: vi.fn(),
   };
 
-  function renderWithVirtuoso(conversations: Conversation[], props: any = {}) {
+  function renderWithVirtuoso(conversations: Conversation[], props: Partial<React.ComponentProps<typeof ConversationsList>> = {}) {
     return render(
       <VirtuosoMockContext.Provider value={{ viewportHeight: 300, itemHeight: 50 }}>
         <ConversationsList
@@ -186,7 +186,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   });
 
   it('shows replied status when agent messages exist', () => {
-    const conversations = [makeConv({ messages: [{ role: 'agent', content: 'hi' }] as any })];
+    const conversations = [makeConv({ messages: [{ id: 'm1', role: 'agent', content: 'hi' }] })];
     const { container } = renderWithVirtuoso(conversations);
     expect(container.textContent).toContain('sidebar.replied');
   });
@@ -212,7 +212,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
         <ConversationsList
           {...baseProps}
           conversations={conversations}
-          agents={[convAgent as any]}
+          agents={[convAgent as unknown as Agent]}
         />
       </VirtuosoMockContext.Provider>
     );

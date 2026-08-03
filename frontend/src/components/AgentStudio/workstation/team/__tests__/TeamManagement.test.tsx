@@ -16,10 +16,7 @@ vi.mock('../api', () => ({
   setTeamAPI: vi.fn(),
 }));
 
-vi.mock('../locales', () => {
-  const actual = vi.importActual('../locales');
-  return { t: (k: string) => k };
-});
+vi.mock('../locales', () => ({ t: (k: string) => k }));
 
 import TeamManagement from '../TeamManagement';
 

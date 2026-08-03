@@ -11,6 +11,7 @@ vi.mock('../../../../../api/client/tools', () => ({
 
 import { EMPTY_FORM } from '../validate';
 import ToolFormModal from '../ToolFormModal';
+import type { ToolEntry } from '../tool.types';
 import { testTool } from '../../../../../api/client/tools';
 
 const baseProps = {
@@ -33,7 +34,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   });
 
   it('renders edit mode title when editingItem is provided', () => {
-    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as any} />);
+    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as unknown as ToolEntry} />);
     expect(screen.getByText('tool.form_title_edit')).toBeInTheDocument();
   });
 
@@ -177,7 +178,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
       <ToolFormModal
         {...baseProps}
         formData={formData}
-        editingItem={{ id: 't1', name: 'Test' } as any}
+        editingItem={{ id: 't1', name: 'Test' } as unknown as ToolEntry}
       />,
     );
     fireEvent.click(screen.getByText('tool.test'));
@@ -193,7 +194,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
       <ToolFormModal
         {...baseProps}
         formData={formData}
-        editingItem={{ id: 't1', name: 'Test' } as any}
+        editingItem={{ id: 't1', name: 'Test' } as unknown as ToolEntry}
       />,
     );
     fireEvent.click(screen.getByText('tool.test'));
@@ -203,7 +204,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   });
 
   it('shows edit mode save button text', () => {
-    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as any} />);
+    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as unknown as ToolEntry} />);
     expect(screen.getByText('tool.form_save_edit')).toBeInTheDocument();
   });
 

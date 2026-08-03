@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 import { formatDateTime } from '../../../../../utils/formatDateTime';
+import type { ReactNode } from 'react';
 
 const mockOpenCreate = vi.fn();
 const mockOpenEdit = vi.fn();
@@ -26,11 +27,11 @@ const mockCloseMenu = vi.fn();
 let mockIsLoading = false;
 let mockError: string | null = null;
 let mockBatchError = '';
-let mockProcessed: any[] = [];
+let mockProcessed: unknown[] = [];
 let mockSelectedIds = new Set<string>();
-let mockEditingAgent: any = null;
-let mockDeletingAgent: any = null;
-let mockHistoryAgent: any = null;
+let mockEditingAgent: unknown = null;
+let mockDeletingAgent: unknown = null;
+let mockHistoryAgent: unknown = null;
 let mockIsFormOpen = false;
 let mockIsDeleteOpen = false;
 let mockIsBatchDeleteOpen = false;
@@ -97,7 +98,7 @@ vi.mock('../../shared/DeleteConfirmModal', () => ({ default: () => null }));
 vi.mock('../../shared/BatchDeleteModal', () => ({ default: () => null }));
 vi.mock('../../shared/VersionHistoryModal', () => ({ default: () => null }));
 vi.mock('../../shared/LoadingSkeleton', () => ({ TableSkeleton: () => <div data-testid="skeleton" /> }));
-vi.mock('../../shared/ErrorBoundary', () => ({ ErrorBoundary: ({ children }: any) => <>{children}</> }));
+vi.mock('../../shared/ErrorBoundary', () => ({ ErrorBoundary: ({ children }: { children: ReactNode }) => <>{children}</> }));
 
 import AgentManagement from '../AgentManagement';
 

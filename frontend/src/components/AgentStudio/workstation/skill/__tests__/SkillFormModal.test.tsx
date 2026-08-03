@@ -7,6 +7,7 @@ vi.mock('../../../../api/hooks', () => ({ useAvailableModels: () => [] }));
 vi.mock('../../shared/ResourcePickerModal', () => ({ default: () => null }));
 
 import SkillFormModal from '../SkillFormModal';
+import type { SkillEntry } from '../skill.types';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const Wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
@@ -41,7 +42,7 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     render(
       <SkillFormModal
         {...baseProps}
-        editingSkill={{ id: 's1', name: 'Test Skill' } as any}
+        editingSkill={{ id: 's1', name: 'Test Skill' } as unknown as SkillEntry}
       />,
       { wrapper: Wrapper },
     );
@@ -165,7 +166,7 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
 
   it('shows edit mode save button text', () => {
     render(
-      <SkillFormModal {...baseProps} editingSkill={{ id: 's1' } as any} />,
+      <SkillFormModal {...baseProps} editingSkill={{ id: 's1' } as unknown as SkillEntry} />,
       { wrapper: Wrapper },
     );
     expect(screen.getByText('skill.form_save_edit')).toBeInTheDocument();

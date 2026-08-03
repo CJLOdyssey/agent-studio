@@ -96,7 +96,9 @@ describe('Modal', { tags: ['unit'] }, () => {
         </Modal>
       </TestProviders>,
     );
-    fireEvent.click(screen.getByText('Test').closest('[role="dialog"]')?.parentElement!);
+    const overlay = screen.getByText('Test').closest('[role="dialog"]')?.parentElement;
+    if (!overlay) throw new Error('dialog overlay not found');
+    fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });
 

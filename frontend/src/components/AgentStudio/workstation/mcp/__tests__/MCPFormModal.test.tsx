@@ -147,7 +147,7 @@ describe('MCPFormModal', { tags: ['unit'] }, () => {
   });
 
   it('renders url input for sse and command input for stdio', () => {
-    const { rerender } = renderModal({ formData: { ...baseFormData, type: 'sse' } });
+    renderModal({ formData: { ...baseFormData, type: 'sse' } });
     expect(screen.getByPlaceholderText('mcp.form_url_placeholder')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('mcp.form_command_placeholder')).not.toBeInTheDocument();
   });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 vi.mock('react-i18next', () => ({
@@ -21,8 +21,8 @@ function makeItemList<T>() {
     get editingId() { return editingId; },
     setEditingId: (id: string | null) => { editingId = id; },
     addCustom: vi.fn((fn: () => T) => { items.push(fn()); }),
-    update: vi.fn((id: string, updates: Partial<T>) => {}),
-    remove: vi.fn((id: string) => {}),
+    update: vi.fn((_id: string, _updates: Partial<T>) => {}),
+    remove: vi.fn((_id: string) => {}),
   };
 }
 
@@ -36,7 +36,7 @@ function makeForm() {
     forms: state,
     openForm: vi.fn((kind: 'tool' | 'mcp' | 'skill') => { state[kind].show = true; }),
     closeForm: vi.fn((kind: 'tool' | 'mcp' | 'skill') => { state[kind].show = false; }),
-    updateFormData: vi.fn((kind: 'tool' | 'mcp' | 'skill', fn: (d: unknown) => unknown) => {}),
+    updateFormData: vi.fn((_kind: 'tool' | 'mcp' | 'skill', _fn: (d: unknown) => unknown) => {}),
     setFormErrors: vi.fn((kind: 'tool' | 'mcp' | 'skill', errors: string[]) => { state[kind].errors = errors; }),
   };
 }

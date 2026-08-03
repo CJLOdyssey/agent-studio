@@ -3,12 +3,26 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 import TeamManagement from '../TeamManagement';
 
+type StoreTeam = {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'inactive';
+  category: 'dev' | 'ops' | 'test';
+  createdAt: string;
+  agents: unknown[];
+  memberCount: number;
+};
+
+type TeamInput = {
+  name?: string;
+  description?: string;
+  status?: 'active' | 'inactive';
+  category?: 'dev' | 'ops' | 'test';
+};
+
 const { STORE, mockAPI, resetStore } = vi.hoisted(() => {
-  const STORE: Array<{
-    id: string; name: string; description: string;
-    status: 'active' | 'inactive'; category: 'dev' | 'ops' | 'test';
-    createdAt: string; agents: any[]; memberCount: number;
-  }> = [];
+  const STORE: StoreTeam[] = [];
   let _counter = 0;
 
   return {
@@ -17,19 +31,19 @@ const { STORE, mockAPI, resetStore } = vi.hoisted(() => {
     mockAPI: {
       teamAPI: {
         fetchAll: vi.fn(async () => [...STORE]),
-        create: vi.fn(async (data: any) => {
-          const created = {
+        create: vi.fn(async (data: TeamInput) => {
+          const created: StoreTeam = {
             id: `new-${++_counter}`, name: data.name || '',
             description: data.description || '',
-            status: (data.status as 'active' | 'inactive') || 'active',
-            category: (data.category as 'dev' | 'ops' | 'test') || 'dev',
+            status: data.status || 'active',
+            category: data.category || 'dev',
             createdAt: new Date().toISOString().slice(0, 10),
             agents: [], memberCount: 0,
           };
           STORE.push(created);
           return created;
         }),
-        update: vi.fn(async (id: string, data: any) => {
+        update: vi.fn(async (id: string, data: TeamInput) => {
           const item = STORE.find(t => t.id === id);
           if (item) {
             if (data.name !== undefined) item.name = data.name;
@@ -48,8 +62,8 @@ const { STORE, mockAPI, resetStore } = vi.hoisted(() => {
             if (idx >= 0) STORE.splice(idx, 1);
           }
         }),
-        clone: vi.fn(async (item: any) => {
-          const created = {
+        clone: vi.fn(async (item: StoreTeam) => {
+          const created: StoreTeam = {
             ...item,
             id: `new-${++_counter}`,
             name: `${item.name} (副本)`,

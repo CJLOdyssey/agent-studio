@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 // ── Mock react-i18next ─────────────────────────────────────────────
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
@@ -17,8 +17,8 @@ vi.mock('../../../../../utils/useToast', () => ({
 const mockUseOutputMgmt = {
   isLoading: false,
   error: null,
-  filtered: [] as any[],
-  paged: [] as any[],
+  filtered: [] as unknown[],
+  paged: [] as unknown[],
   page: 1,
   totalPages: 1,
   search: '',
@@ -27,9 +27,9 @@ const mockUseOutputMgmt = {
   allOnPageSelected: false,
   isFormOpen: false,
   formErrors: [] as string[],
-  editingItem: null as any,
+  editingItem: null as unknown,
   editingId: null as string | null,
-  formData: { name: '', content: '', category: '格式约束', status: 'draft' } as any,
+  formData: { name: '', content: '', category: '格式约束', status: 'draft' } as unknown,
   openMenuId: null as string | null,
   menuAnchorEl: null as HTMLElement | null,
   setSearch: vi.fn(),

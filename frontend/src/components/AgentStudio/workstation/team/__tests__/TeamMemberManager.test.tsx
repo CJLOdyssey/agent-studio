@@ -14,7 +14,6 @@ vi.mock('../../../../../api/client/teams', () => ({
 import TeamMemberManager from '../TeamMemberManager';
 import type { TeamEntry } from '../team.types';
 import { listAgents } from '../../../../../api/client/agents';
-import { addTeamMember, removeTeamMember } from '../../../../../api/client/teams';
 
 function makeTeam(overrides: Partial<TeamEntry> = {}): TeamEntry {
   return {
@@ -34,8 +33,6 @@ function makeTeam(overrides: Partial<TeamEntry> = {}): TeamEntry {
 }
 
 const listAgentsMock = listAgents as ReturnType<typeof vi.fn>;
-const addTeamMemberMock = addTeamMember as ReturnType<typeof vi.fn>;
-const removeTeamMemberMock = removeTeamMember as ReturnType<typeof vi.fn>;
 
 describe('TeamMemberManager', { tags: ['unit'] }, () => {
   beforeEach(() => {

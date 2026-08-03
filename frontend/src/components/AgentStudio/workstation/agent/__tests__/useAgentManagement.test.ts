@@ -14,11 +14,12 @@ vi.mock('../api', () => ({
 }));
 
 import { agentAPI } from '../api';
+import type { AgentEntry } from '../agent.types';
 
-const MOCK_AGENTS: any[] = [
-  { id: '1', name: '前端开发 Agent', description: '前端开发', team: '前端团队', model: 'Claude Sonnet 4', status: 'running', version: 'v2.1.0', systemPromptId: 'p1', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-10' },
-  { id: '2', name: '后端开发 Agent', description: '后端开发', team: '后端团队', model: 'GPT-4o', status: 'stopped', version: 'v1.8.3', systemPromptId: 'p2', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-12' },
-  { id: '3', name: '测试 Agent', description: '自动化测试', team: '质量团队', model: 'Gemini 2.5 Pro', status: 'stopped', version: 'v1.5.0', systemPromptId: 'p3', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-20' },
+const MOCK_AGENTS: AgentEntry[] = [
+  { id: '1', name: '前端开发 Agent', description: '前端开发', team: '前端团队', teams: [], model: 'Claude Sonnet 4', status: 'running', version: 'v2.1.0', systemPromptId: 'p1', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-10' },
+  { id: '2', name: '后端开发 Agent', description: '后端开发', team: '后端团队', teams: [], model: 'GPT-4o', status: 'stopped', version: 'v1.8.3', systemPromptId: 'p2', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-12' },
+  { id: '3', name: '测试 Agent', description: '自动化测试', team: '质量团队', teams: [], model: 'Gemini 2.5 Pro', status: 'stopped', version: 'v1.5.0', systemPromptId: 'p3', toolIds: [], mcpIds: [], skillIds: [], createdAt: '2026-05-20' },
 ];
 
 describe('useAgentManagement', { tags: ['unit'] }, () => {
@@ -67,7 +68,7 @@ describe('useAgentManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => useAgentManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     act(() => { result.current.setSearch('前端'); });
-    await waitFor(() => expect(result.current.processed.every((a: any) => a.name.includes('前端') || a.team.includes('前端') || a.model.includes('前端'))).toBe(true));
+    await waitFor(() => expect(result.current.processed.every((a) => a.name.includes('前端') || a.team.includes('前端') || a.model.includes('前端'))).toBe(true));
   });
 
   it('retry reloads data', async () => {

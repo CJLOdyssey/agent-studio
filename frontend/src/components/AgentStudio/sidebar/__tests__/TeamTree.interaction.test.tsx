@@ -9,13 +9,6 @@ vi.mock('../TeamTreeAgentItem', () => ({ default: () => <li data-testid="agent-i
 import TeamTree from '../TeamTree';
 import type { Team, Agent } from '../../../../types/AgentStudio';
 
-const mockAgent = (overrides: Partial<Agent> = {}): Agent =>
-  ({
-    id: 'a1', name: 'Agent One', role: 'assistant',
-    icon: 'Bot', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe',
-    ...overrides,
-  } as unknown as Agent);
-
 const mockTeam = (overrides: Partial<Team> = {}): Team => ({
   id: 't1', name: 'Team Alpha', isExpanded: false, isPinned: false, agents: [],
   ...overrides,

@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -42,11 +41,11 @@ const baseProps = () => ({
 
 function mockBoundingRect(el: HTMLElement, rect: DOMRectInit = {}) {
   const original = el.getBoundingClientRect;
-  // eslint-disable-next-line no-param-reassign
+   
   el.getBoundingClientRect = () =>
     ({ top: 0, bottom: 40, left: 0, right: 160, width: 160, height: 40, x: 0, y: 0, ...rect, toJSON: () => '' } as DOMRect);
   return () => {
-    // eslint-disable-next-line no-param-reassign
+     
     el.getBoundingClientRect = original;
   };
 }

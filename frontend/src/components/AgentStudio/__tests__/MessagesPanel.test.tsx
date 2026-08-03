@@ -1,6 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+type TeamMessageGlobals = {
+  __lastEditMessageFn?: unknown;
+  __lastRegenerateFn?: unknown;
+  __lastSwitchUserVersionFn?: unknown;
+  __lastThumbsFeedbackFn?: unknown;
+};
+const globals = globalThis as TeamMessageGlobals;
+
+function invoke(fn: unknown, ...args: unknown[]): void {
+  (fn as (...a: unknown[]) => void)(...args);
+}
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -8,7 +20,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('./TeamMessage', () => ({ default: () => null }));
 vi.mock('./GreetingAnimation', () => ({ default: () => null }));
 vi.mock('../stores/chatStore', () => ({
-  useChatStore: (s?: any) => {
+  useChatStore: (s?: unknown) => {
     const state = { messages: [], isRunning: false, status: 'idle', error: null };
     return s ? s(state) : state;
   },
@@ -33,7 +45,7 @@ const mockSwitchUserVersion = vi.fn();
 const mockSetThumbsFeedback = vi.fn();
 
 vi.mock('../../../stores/chatStore', () => ({
-  useChatStore: (selector?: (s: any) => any) => {
+  useChatStore: (selector?: (s: unknown) => unknown) => {
     const state = {
       interruptedMessageId: null,
       continuingId: null,
@@ -46,11 +58,11 @@ vi.mock('../../../stores/chatStore', () => ({
 }));
 
 vi.mock('../TeamMessage', () => ({
-  default: ({ msg, onEditMessage, onRegenerate, onSwitchUserVersion, showContinue, onContinue, isContinuing, onThumbsFeedback }: any) => {
-    (globalThis as any).__lastEditMessageFn = onEditMessage;
-    (globalThis as any).__lastRegenerateFn = onRegenerate;
-    (globalThis as any).__lastSwitchUserVersionFn = onSwitchUserVersion;
-    (globalThis as any).__lastThumbsFeedbackFn = onThumbsFeedback;
+  default: ({ msg, onEditMessage, onRegenerate, onSwitchUserVersion, showContinue, isContinuing, onThumbsFeedback }: React.ComponentProps<typeof TeamMessage>) => {
+    (globalThis as TeamMessageGlobals).__lastEditMessageFn = onEditMessage;
+    (globalThis as TeamMessageGlobals).__lastRegenerateFn = onRegenerate;
+    (globalThis as TeamMessageGlobals).__lastSwitchUserVersionFn = onSwitchUserVersion;
+    (globalThis as TeamMessageGlobals).__lastThumbsFeedbackFn = onThumbsFeedback;
     return (
       <div data-testid={`team-msg-${msg.id}`} data-show-continue={showContinue} data-is-continuing={isContinuing}>
         {msg.content}
@@ -66,6 +78,7 @@ vi.mock('../../../stores/chatActions', () => ({
 }));
 
 import { editAndRegenerate, regenerateMessage } from '../../../stores/chatActions';
+import type TeamMessage from '../TeamMessage';
 import type { Agent, Message } from '../../../types/AgentStudio';
 
 function makeMsg(id: string, overrides: Partial<Message> = {}): Message {
@@ -104,10 +117,10 @@ function properBaseProps(overrides: Record<string, unknown> = {}) {
 describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    delete (globalThis as any).__lastEditMessageFn;
-    delete (globalThis as any).__lastRegenerateFn;
-    delete (globalThis as any).__lastSwitchVersionFn;
-    delete (globalThis as any).__lastThumbsFeedbackFn;
+    delete globals.__lastEditMessageFn;
+    delete globals.__lastRegenerateFn;
+    delete globals.__lastSwitchUserVersionFn;
+    delete globals.__lastThumbsFeedbackFn;
   });
 
   describe('null render (no state)', () => {
@@ -186,7 +199,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
     });
 
     it('passes showContinue=true when msg id matches interruptedMessageId', async () => {
-      const mockStore = await vi.importActual<Record<string, unknown>>(
+      const _mockStore = await vi.importActual<Record<string, unknown>>(
         '../../../stores/chatStore'
       ).catch(() => null);
       render(<MessagesPanel {...properBaseProps({
@@ -239,7 +252,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       displayMessages: msgs,
     })} />);
 
-    (globalThis as any).__lastEditMessageFn('m1', 'new text');
+    invoke(globals.__lastEditMessageFn, 'm1', 'new text');
     expect(editAndRegenerate).toHaveBeenCalledWith('m1', 'new text');
   });
 
@@ -250,7 +263,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       displayMessages: msgs,
     })} />);
 
-    (globalThis as any).__lastEditMessageFn('m1', 'edited');
+    invoke(globals.__lastEditMessageFn, 'm1', 'edited');
     expect(editAndRegenerate).toHaveBeenCalledWith('m1', 'edited');
   });
 
@@ -261,7 +274,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       displayMessages: msgs,
     })} />);
 
-    (globalThis as any).__lastEditMessageFn('nonexistent', 'text');
+    invoke(globals.__lastEditMessageFn, 'nonexistent', 'text');
     expect(editAndRegenerate).toHaveBeenCalledWith('nonexistent', 'text');
   });
 
@@ -272,7 +285,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       displayMessages: msgs,
     })} />);
 
-    (globalThis as any).__lastSwitchUserVersionFn('v1', 'prev');
+    invoke(globals.__lastSwitchUserVersionFn, 'v1', 'prev');
     expect(mockSwitchUserVersion).toHaveBeenCalledWith('v1', 'prev');
     expect(mockSwitchVersion).toHaveBeenCalledWith('v2', 'prev');
   });
@@ -284,7 +297,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       displayMessages: msgs,
     })} />);
 
-    (globalThis as any).__lastRegenerateFn('r1');
+    invoke(globals.__lastRegenerateFn, 'r1');
     expect(regenerateMessage).toHaveBeenCalledWith(0);
   });
 
@@ -295,7 +308,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       displayMessages: msgs,
     })} />);
 
-    (globalThis as any).__lastThumbsFeedbackFn('fb1', 'up');
+    invoke(globals.__lastThumbsFeedbackFn, 'fb1', 'up');
     expect(mockSetThumbsFeedback).toHaveBeenCalledWith('fb1', 'up');
   });
 });
@@ -307,7 +320,7 @@ describe('handler functions', { tags: ['integration'] }, () => {
         showAgentChat: true,
         displayMessages: msgs,
       })} />);
-      expect((globalThis as any).__lastEditMessageFn).toBeInstanceOf(Function);
+      expect(globals.__lastEditMessageFn).toBeInstanceOf(Function);
     });
 
     it('provides onRegenerate to TeamMessage', () => {
@@ -316,7 +329,7 @@ describe('handler functions', { tags: ['integration'] }, () => {
         showAgentChat: true,
         displayMessages: msgs,
       })} />);
-      expect((globalThis as any).__lastRegenerateFn).toBeInstanceOf(Function);
+      expect(globals.__lastRegenerateFn).toBeInstanceOf(Function);
     });
 
     it('provides onThumbsFeedback to TeamMessage', () => {
@@ -325,7 +338,7 @@ describe('handler functions', { tags: ['integration'] }, () => {
         showAgentChat: true,
         displayMessages: msgs,
       })} />);
-      expect((globalThis as any).__lastThumbsFeedbackFn).toBeInstanceOf(Function);
+      expect(globals.__lastThumbsFeedbackFn).toBeInstanceOf(Function);
     });
   });
 });

@@ -6,11 +6,11 @@ const mockAddTeamMember = vi.fn();
 const mockRemoveTeamMember = vi.fn();
 
 vi.mock('../../../../../api/client/agents', () => ({
-  listAgents: (...args: any[]) => mockListAgents(...args),
+  listAgents: (...args: unknown[]) => mockListAgents(...args),
 }));
 vi.mock('../../../../../api/client/teams', () => ({
-  addTeamMember: (...args: any[]) => mockAddTeamMember(...args),
-  removeTeamMember: (...args: any[]) => mockRemoveTeamMember(...args),
+  addTeamMember: (...args: unknown[]) => mockAddTeamMember(...args),
+  removeTeamMember: (...args: unknown[]) => mockRemoveTeamMember(...args),
 }));
 
 import useTeamMemberManager from '../useTeamMemberManager';
@@ -53,7 +53,7 @@ describe('useTeamMemberManager', { tags: ['unit'] }, () => {
     const teamWithAgent = { ...mockTeam, agents: [{ agentConfigId: 'a1', name: 'Agent 1' }] };
     const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
     await waitFor(() => {
-      expect(result.current.filteredAgents.map((a: any) => a.id)).toEqual(['a2']);
+      expect(result.current.filteredAgents.map((a) => a.id)).toEqual(['a2']);
     });
   });
 
@@ -65,7 +65,7 @@ describe('useTeamMemberManager', { tags: ['unit'] }, () => {
     const teamWithAgent = { ...mockTeam, agents: [{ agent_config_id: 'a1', name: 'Agent 1' }] };
     const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
     await waitFor(() => {
-      expect(result.current.filteredAgents.map((a: any) => a.id)).toEqual(['a2']);
+      expect(result.current.filteredAgents.map((a) => a.id)).toEqual(['a2']);
     });
   });
 

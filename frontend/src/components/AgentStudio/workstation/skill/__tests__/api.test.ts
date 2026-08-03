@@ -48,7 +48,7 @@ describe('skill api', { tags: ['unit'] }, () => {
   });
 
   it('toEntry maps missing mcp_names to empty array', async () => {
-    const { mcp_names, ...row } = sampleRow;
+    const { mcp_names: _mcp_names, ...row } = sampleRow;
     mockListSkills.mockResolvedValue([row]);
 
     const { skillAPI } = await import('../api');

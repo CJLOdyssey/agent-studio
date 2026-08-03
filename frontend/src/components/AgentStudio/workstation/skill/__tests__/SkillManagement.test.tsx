@@ -88,7 +88,7 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
 
   it('shows loading skeleton while fetching', () => {
     mockFetchAll.mockReturnValue(new Promise(() => {}));
-    const { container } = render(<SkillManagement />, { wrapper: TestProviders });
+    render(<SkillManagement />, { wrapper: TestProviders });
     const statusElements = screen.getAllByRole('status');
     expect(statusElements.length).toBeGreaterThanOrEqual(1);
   });
