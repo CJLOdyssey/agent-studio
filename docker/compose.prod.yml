@@ -130,11 +130,11 @@ services:
     container_name: agent-studio-worker-prod
     <<: *restart-policy
     logging: *default-logging
-    command: celery -A broker.celery_app worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
+    command: celery -A broker worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
     environment:
       <<: *common-env
     healthcheck:
-      test: ["CMD-SHELL", "celery -A broker.celery_app inspect ping >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "celery -A broker inspect ping >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -164,7 +164,7 @@ services:
       backend:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:5173/"]
+      test: ["CMD", "wget", "--spider", "http://localhost:8080/"]
       interval: 15s
       timeout: 5s
       retries: 3
