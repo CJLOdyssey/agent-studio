@@ -41,7 +41,7 @@ export default function ToolManagement() {
   }, [d.processed]);
 
   const makeMenuItems = useCallback((item: (typeof d.processed)[0]): MenuProps['items'] => {
-    if ((item as any).is_builtin) return [];
+    if (item.is_builtin) return [];
     return [
       { key: 'edit', icon: <Edit3 size={14} />, label: t('tool.edit'), onClick: () => d.openEdit(item) },
       { key: 'view', icon: <Eye size={14} />, label: t('tool.history'), onClick: () => d.openHistory(item) },
@@ -90,14 +90,14 @@ export default function ToolManagement() {
           </tr></thead>
           <tbody>
             {pagedItems.map((item) => (
-              <tr key={item.id} className={`${!(item as any).is_builtin && d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}`}>
+              <tr key={item.id} className={`${!item.is_builtin && d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}`}>
                 <td className="w-10 text-center align-middle p-1 px-2">
-                  <input type="checkbox" checked={false} disabled={(item as any).is_builtin} aria-label={t('tool.select_item', item.name)} />
+                  <input type="checkbox" checked={false} disabled={item.is_builtin} aria-label={t('tool.select_item', item.name)} />
                 </td>
                 <td>
                   <span className="inline-flex items-center max-w-full">
                     <span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span>
-                    {(item as any).is_builtin && <span className="ml-1.5 inline-block shrink-0 py-0.5 px-1.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)] align-middle">内置</span>}
+                    {item.is_builtin && <span className="ml-1.5 inline-block shrink-0 py-0.5 px-1.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)] align-middle">内置</span>}
                   </span>
                 </td>
                 <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category}</span></td>
@@ -105,7 +105,7 @@ export default function ToolManagement() {
                 <td><span className={`wsta-badge-dot ${statusDotClass[item.status] || 'wsta-badge-dot-gray'}`}><span className={`wsta-dot ${dotClass[item.status] || 'wsta-dot-gray'}`} />{TOOL_STATUS_LABEL[item.status]}</span></td>
                 <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
-                  {(item as any).is_builtin ? (
+                  {item.is_builtin ? (
                     <span className="text-xs text-[var(--color-text-muted)]">—</span>
                   ) : (
                     <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>

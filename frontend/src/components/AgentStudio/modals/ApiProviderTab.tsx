@@ -69,16 +69,16 @@ export default function ApiProviderTab({
     setSelectedRowKeys([]);
   };
 
-  const usageLabel = (type: string) => {
-    if (type === 'tool') return t('api.type_tool');
-    if (type === 'general') return t('api.type_general');
-    if (type === 'vector') return t('api.type_vector');
-    if (type === 'image') return t('api.type_image');
-    if (type === 'audio') return t('api.type_audio');
-    return t('api.type_chat');
-  };
-
-  const columns: ColumnsType<KeyItem> = useMemo(() => [
+  const columns: ColumnsType<KeyItem> = useMemo(() => {
+    const usageLabel = (type: string) => {
+      if (type === 'tool') return t('api.type_tool');
+      if (type === 'general') return t('api.type_general');
+      if (type === 'vector') return t('api.type_vector');
+      if (type === 'image') return t('api.type_image');
+      if (type === 'audio') return t('api.type_audio');
+      return t('api.type_chat');
+    };
+    return [
     {
       title: '名称',
       dataIndex: 'label',
@@ -175,7 +175,8 @@ export default function ApiProviderTab({
         </Space>
       ),
     },
-  ], [testingId, onEdit, onTest, onDelete, onToggleActive, t]);
+    ];
+  }, [testingId, onEdit, onTest, onDelete, onToggleActive, t]);
 
   return (
     <div className="h-full flex flex-col">

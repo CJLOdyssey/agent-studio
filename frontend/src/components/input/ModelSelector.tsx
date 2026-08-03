@@ -21,20 +21,11 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   const current = models.find((m) => m.id === selectedModel);
   const isEmpty = models.length === 0;
 
-  // Once models have been loaded (even if empty), never go back to "loading" state.
-  // This prevents flashing "请配置API" on page refresh when the /api/keys query is still in flight.
-  useEffect(() => {
-    if (models.length > 0 || hasLoadedOnce) {
-      setHasLoadedOnce(true);
-    }
-  }, [models, hasLoadedOnce]);
-
-  // Also mark loaded once the selected model arrives (cached from localStorage).
-  useEffect(() => {
-    if (selectedModel && models.find((m) => m.id === selectedModel)) {
-      setHasLoadedOnce(true);
-    }
-  }, [selectedModel, models]);
+  // Latch once models are available: render-phase state adjustment (React-sanctioned
+  // pattern for deriving state from props). Prevents flashing "请配置API" on refresh.
+  if (!hasLoadedOnce && (models.length > 0 || models.some((m) => m.id === selectedModel))) {
+    setHasLoadedOnce(true);
+  }
 
   // Fallback: if models never arrive after 4s, mark as loaded so "请配置API" shows.
   useEffect(() => {

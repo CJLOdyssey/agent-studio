@@ -10,7 +10,7 @@ export default function LoadingSkeleton({ rows = 5, type = 'table' }: LoadingSke
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-3 px-4 border-b border-[var(--color-border)] animate-pulse">
             <div className="h-3 w-3 rounded bg-[var(--color-surface-hover)]" />
-            <div className="h-3.5 rounded bg-[var(--color-surface-hover)] flex-1" style={{ width: `${60 + Math.random() * 30}%` }} />
+            <div className="h-3.5 rounded bg-[var(--color-surface-hover)] flex-1" style={{ width: `${60 + (i % 4) * 10}%` }} />
             <div className="h-3.5 rounded bg-[var(--color-surface-hover)] w-16" />
             <div className="h-3.5 rounded bg-[var(--color-surface-hover)] w-20" />
             <div className="h-3.5 rounded bg-[var(--color-surface-hover)] w-12" />

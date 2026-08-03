@@ -10,6 +10,7 @@ export interface PickerItem {
   name: string;
   description: string;
   source?: string;
+  is_builtin?: boolean;
 }
 
 export interface PickerDeps {
@@ -73,7 +74,7 @@ export function usePickerState(deps: PickerDeps) {
               name: tool.name,
               description: tool.description || '',
               source: '工具管理',
-              is_builtin: (tool as any).is_builtin ?? false,
+              is_builtin: tool.is_builtin ?? false,
             })),
           }));
       })

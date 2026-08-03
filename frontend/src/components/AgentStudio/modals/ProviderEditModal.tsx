@@ -60,25 +60,29 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       .finally(() => setLoadingProviders(false));
   }, []);
 
-  useEffect(() => {
+  const [prevProviderType, setPrevProviderType] = useState<string | null>(null);
+  // Sync usageType/baseUrl to the selected provider's defaults when provider changes.
+  // Render-phase state adjustment (React-sanctioned) instead of setState-in-effect.
+  if (prevProviderType !== providerType) {
+    setPrevProviderType(providerType);
     const info = providers[providerType];
-    if (!info) return;
-    const caps = info.capabilities ?? ['chat'];
-    const isTool = caps.includes('tool');
-    if (isTool) {
-      setUsageType('tool');
-    } else {
-      const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
-      if (derived !== usageType) setUsageType(derived);
-    }
-    if (info.base_url && !isTool) {
-      const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
-      if (!baseUrl || knownDefaults.includes(baseUrl)) {
-        setBaseUrl(info.base_url);
+    if (info) {
+      const caps = info.capabilities ?? ['chat'];
+      const isTool = caps.includes('tool');
+      if (isTool) {
+        setUsageType('tool');
+      } else {
+        const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
+        if (derived !== usageType) setUsageType(derived);
+      }
+      if (info.base_url && !isTool) {
+        const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
+        if (!baseUrl || knownDefaults.includes(baseUrl)) {
+          setBaseUrl(info.base_url);
+        }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providerType]);
+  }
 
   const info = providers[providerType];
   const caps = info?.capabilities ?? [];

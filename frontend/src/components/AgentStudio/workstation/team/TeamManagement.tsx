@@ -37,7 +37,7 @@ export default function TeamManagement() {
       { value: 'all' as const, label: t('team.all_category') },
       ...cats.map((c) => ({ value: c, label: c })),
     ];
-  }, [d.teams, t]);
+  }, [d.teams]);
 
   function handleSaveWrapper() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('team.toast_updated') : t('team.toast_created'), 'success'); }
   function handleDeleteWrapper() { d.handleDelete(); toast(t('team.toast_deleted'), 'success'); }

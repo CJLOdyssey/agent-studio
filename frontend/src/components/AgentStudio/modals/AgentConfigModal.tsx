@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Wrench, Server, Sparkles } from 'lucide-react';
-import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/AgentStudio';
-import { useItemList } from '../../../hooks/useItemList';
-import { useAutoSave } from '../../../hooks/useAutoSave';
+import type { Agent, AgentTool, AgentMCP, AgentSkill } from '@/types/AgentStudio.ts';
+import { useItemList } from '@/hooks/useItemList.ts';
+import { useAutoSave } from '@/hooks/useAutoSave.ts';
 import { useAgentConfigForm } from './tabs/useAgentConfigForm';
 import { useConfigItemEdit } from './tabs/useConfigItemEdit';
 import { usePickerState } from './tabs/usePickerState';
@@ -95,7 +95,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
     setSystemPrompt,
     setOutputConstraints,
-    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: !(item as any).is_builtin } as AgentTool)),
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: !item.is_builtin } as AgentTool)),
     addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentMCP),
     addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentSkill),
   });
@@ -152,28 +152,28 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
+    <div className="fixed inset-0 bg-(--color-overlay) flex items-center justify-center z-(--z-modal-backdrop) backdrop-blur-xs" onClick={onClose}>
       <div
-        className="bg-[var(--color-surface-raised)] rounded-[16px] w-[min(80vw,760px)] h-[min(85vh,720px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
+        className="bg-surface-raised rounded-[16px] w-[min(80vw,760px)] h-[min(85vh,720px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         role="dialog"
         aria-modal="true"
       >
         <div className="flex items-center justify-between pt-5 px-6 border-b-0">
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] m-0">配置Agent</h3>
-          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
+          <h3 className="text-lg font-semibold text-text-primary m-0">配置Agent</h3>
+          <button className="bg-transparent border-none text-text-muted cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-surface-hover hover:text-text-primary active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>
 
         <div className="px-6">
           <div className="mt-0">
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.agentName')}</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
+            <label className="block text-sm font-medium text-text-secondary mb-2">{t('workstation.agentName')}</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-surface-raised border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:outline-none" />
           </div>
           <div className="mt-3">
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">{t('workstation.agentDesc')}</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">{t('workstation.agentDesc')}</label>
             <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
         </div>

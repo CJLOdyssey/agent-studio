@@ -108,17 +108,17 @@ export default function ConfigItemList<T extends ListItem>({
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-[var(--color-text-primary)]">
                   {item.name}
-                  {(item as any).is_builtin && <span className="ml-1.5 inline-block py-0.5 px-1.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)] align-middle">内置</span>}
+                  {item.is_builtin === true && <span className="ml-1.5 inline-block py-0.5 px-1.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)] align-middle">内置</span>}
                 </span>
                 {item.description && <span className="text-xs text-[var(--color-text-muted)]">{item.description}</span>}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <ItemMenu
-                onEdit={onEditFull && !(item as any).is_builtin ? () => onEditFull(item) : undefined}
-                onArchive={onArchive && !(item as any).is_builtin ? () => onArchive(item) : undefined}
-                archived={!!(item as any).archived}
-                onDelete={(item as any).is_builtin ? undefined : () => onRemove(item.id)}
+                onEdit={onEditFull && item.is_builtin !== true ? () => onEditFull(item) : undefined}
+                onArchive={onArchive && item.is_builtin !== true ? () => onArchive(item) : undefined}
+                archived={item.archived === true}
+                onDelete={item.is_builtin === true ? undefined : () => onRemove(item.id)}
               />
             </div>
           </div>

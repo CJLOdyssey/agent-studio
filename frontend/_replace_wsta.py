@@ -123,13 +123,13 @@ REPLACEMENTS = [
     (r'\bwsta-picker-empty\b', 'py-8 text-center text-sm text-muted-foreground'),
     (r'\bwsta-picker-item-check\b', 'shrink-0 text-primary'),
     (r'\bwsta-picker-item-info\b', 'flex-1 min-w-0'),
-    (r('\bwsta-picker-item-label\b', 'text-sm font-medium text-foreground truncate'),
-    (r('\bwsta-picker-item-secondary\b', 'text-xs text-muted-foreground truncate'),
+    (r'\bwsta-picker-item-label\b', 'text-sm font-medium text-foreground truncate'),
+    (r'\bwsta-picker-item-secondary\b', 'text-xs text-muted-foreground truncate'),
     (r'\bwsta-picker-item\b', 'flex items-center justify-between gap-2 px-3 py-2.5 cursor-pointer hover:bg-accent transition-colors border-b border-border last:border-b-0'),
-    (r('\bwsta-picker-search\b', 'flex items-center gap-2 px-3 py-2 border-b border-border'),
-    (r('\bwsta-picker-list\b', 'max-h-[300px] overflow-y-auto p-2'),
-    (r('\bwsta-picker-option\b', 'flex items-center justify-between gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors'),
-    (r('\bwsta-picker-option-selected\b', 'bg-accent/50 font-medium'),
+    (r'\bwsta-picker-search\b', 'flex items-center gap-2 px-3 py-2 border-b border-border'),
+    (r'\bwsta-picker-list\b', 'max-h-[300px] overflow-y-auto p-2'),
+    (r'\bwsta-picker-option\b', 'flex items-center justify-between gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-accent transition-colors'),
+    (r'\bwsta-picker-option-selected\b', 'bg-accent/50 font-medium'),
 
     # ===== SEARCHABLE SELECT =====
     (r'\bwsta-searchable-select\b', 'relative'),
@@ -213,8 +213,8 @@ REPLACEMENTS = [
     # ===== SEARCH =====
     (r'\bwsta-search-clear\b', 'absolute right-2 text-muted-foreground hover:text-foreground border-none bg-transparent cursor-pointer p-0.5 rounded-sm'),
     (r'\bwsta-search-input\b', 'flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm pl-9 outline-none'),
-    (r('\bwsta-search-icon\b', 'absolute left-3 text-muted-foreground pointer-events-none'),
-    (r('\bwsta-search-wrap\b', 'relative flex items-center'),
+    (r'\bwsta-search-icon\b', 'absolute left-3 text-muted-foreground pointer-events-none'),
+    (r'\bwsta-search-wrap\b', 'relative flex items-center'),
 
     # ===== FILTER =====
     (r'\bwsta-filter-select\b', 'flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none'),
@@ -237,7 +237,7 @@ REPLACEMENTS = [
     # ===== SORT =====
     (r'\bwsta-sort-icon-active\b', 'text-foreground'),
     (r'\bwsta-sort-icon-inactive\b', 'text-muted-foreground opacity-40'),
-    (r('\bwsta-sortable\b', 'cursor-pointer select-none'),
+    (r'\bwsta-sortable\b', 'cursor-pointer select-none'),
 
     # ===== ROW =====
     (r'\bwsta-row-selected\b', 'bg-accent/50'),
@@ -250,14 +250,14 @@ REPLACEMENTS = [
     (r'\bwsta-name-link\b', 'text-primary hover:underline cursor-pointer'),
     (r'\bwsta-link\b', 'text-primary hover:underline cursor-pointer'),
     (r'\bwsta-prompt-name\b', 'text-foreground'),
-    (r('\bwsta-text-muted\b', 'text-muted-foreground'),
-    (r('\bwsta-no-data\b', 'flex items-center justify-center py-8 text-muted-foreground text-sm'),
-    (r('\bwsta-confirm-text\b', 'text-sm text-muted-foreground leading-relaxed'),
+    (r'\bwsta-text-muted\b', 'text-muted-foreground'),
+    (r'\bwsta-no-data\b', 'flex items-center justify-center py-8 text-muted-foreground text-sm'),
+    (r'\bwsta-confirm-text\b', 'text-sm text-muted-foreground leading-relaxed'),
 
     # ===== PAGE HEADER =====
     (r'\bwsta-page-header\b', 'flex items-center justify-between mb-4'),
-    (r('\bwsta-page-title\b', 'text-lg font-semibold text-foreground'),
-    (r('\bwsta-page-desc\b', 'text-sm text-muted-foreground'),
+    (r'\bwsta-page-title\b', 'text-lg font-semibold text-foreground'),
+    (r'\bwsta-page-desc\b', 'text-sm text-muted-foreground'),
     (r'\bwsta-action-bar\b', 'flex items-center gap-2'),
 
     # ===== PANEL =====
@@ -280,28 +280,28 @@ REPLACEMENTS = [
     (r'\bwsta-plugins-section\b', 'px-2 py-2 border-b border-border mb-2'),
     (r'\bwsta-plugins-grid\b', 'flex gap-3 flex-wrap'),
     (r'\bwsta-plugin-card\b', 'flex items-center gap-3 px-4 py-3 rounded-lg border bg-card min-w-[280px] transition-colors hover:border-accent hover:bg-accent/5'),
-    (r('\bwsta-plugin-info\b', 'flex-1 min-w-0'),
-    (r('\bwsta-plugin-btn\b', 'shrink-0'),
+    (r'\bwsta-plugin-info\b', 'flex-1 min-w-0'),
+    (r'\bwsta-plugin-btn\b', 'shrink-0'),
 
     # ===== ACTIONS =====
     (r'\bwsta-action-group\b', 'flex justify-center gap-0.5'),
-    (r('\bwsta-action-btn\b', 'flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent text-muted-foreground cursor-pointer transition-colors hover:bg-accent hover:text-foreground'),
-    (r('\bwsta-action-btn-danger\b', 'hover:bg-destructive/10 hover:text-destructive'),
+    (r'\bwsta-action-btn\b', 'flex items-center justify-center w-7 h-7 rounded-md border-none bg-transparent text-muted-foreground cursor-pointer transition-colors hover:bg-accent hover:text-foreground'),
+    (r'\bwsta-action-btn-danger\b', 'hover:bg-destructive/10 hover:text-destructive'),
 
     # ===== MONITOR =====
     (r'\bwsta-monitor-card-change\b', 'text-xs'),
-    (r('\bwsta-monitor-card-value\b', 'text-2xl font-semibold tracking-tight text-foreground tabular-nums'),
-    (r('\bwsta-monitor-card-label\b', 'text-sm font-medium text-muted-foreground'),
-    (r('\bwsta-monitor-card-body\b', 'flex flex-col gap-0.5'),
-    (r('\bwsta-monitor-card-icon\b', 'flex items-center justify-center w-11 h-11 rounded-lg shrink-0 bg-primary/10'),
-    (r('\bwsta-monitor-card\b', 'flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors hover:border-accent hover:shadow-sm'),
-    (r('\bwsta-monitor-stats\b', 'grid grid-cols-2 gap-3 px-4 py-3'),
-    (r('\bwsta-monitor-time\b', 'flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums'),
-    (r('\bwsta-monitor-title\b', 'flex items-center gap-2 text-base font-semibold text-foreground'),
-    (r('\bwsta-monitor-header\b', 'flex items-center justify-between px-4 py-3 border-b border-border'),
-    (r('\bwsta-monitor-section\b', 'mb-4'),
-    (r('\bwsta-monitor-tables\b', 'space-y-4 px-4 py-3'),
-    (r('\bwsta-monitor\b', 'flex flex-col'),
+    (r'\bwsta-monitor-card-value\b', 'text-2xl font-semibold tracking-tight text-foreground tabular-nums'),
+    (r'\bwsta-monitor-card-label\b', 'text-sm font-medium text-muted-foreground'),
+    (r'\bwsta-monitor-card-body\b', 'flex flex-col gap-0.5'),
+    (r'\bwsta-monitor-card-icon\b', 'flex items-center justify-center w-11 h-11 rounded-lg shrink-0 bg-primary/10'),
+    (r'\bwsta-monitor-card\b', 'flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors hover:border-accent hover:shadow-sm'),
+    (r'\bwsta-monitor-stats\b', 'grid grid-cols-2 gap-3 px-4 py-3'),
+    (r'\bwsta-monitor-time\b', 'flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums'),
+    (r'\bwsta-monitor-title\b', 'flex items-center gap-2 text-base font-semibold text-foreground'),
+    (r'\bwsta-monitor-header\b', 'flex items-center justify-between px-4 py-3 border-b border-border'),
+    (r'\bwsta-monitor-section\b', 'mb-4'),
+    (r'\bwsta-monitor-tables\b', 'space-y-4 px-4 py-3'),
+    (r'\bwsta-monitor\b', 'flex flex-col'),
 
     # ===== PAGINATION / FOOTER =====
     (r'\bwsta-page-info\b', 'text-xs text-muted-foreground'),
