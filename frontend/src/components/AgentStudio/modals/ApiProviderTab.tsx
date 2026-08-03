@@ -6,6 +6,7 @@ import type { ColumnsType } from 'antd/es/table';
 import type { KeyItem } from '../../../api/client';
 import WstaPagination from '../workstation/shared/WstaPagination';
 import LoadingSkeleton from '../../shared/LoadingSkeleton';
+import type * as React from 'react';
 
 const USAGE_COLORS: Record<string, string> = {
   vector: 'var(--color-accent)',

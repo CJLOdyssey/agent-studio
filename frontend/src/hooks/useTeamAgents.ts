@@ -5,6 +5,7 @@ import { validateName, checkAgentLimit } from '../utils/validation';
 import { updateAgent } from '../api/client/agents';
 import { addTeamMember, linkAgentToMember, removeTeamMember } from '../api/client/teams';
 import { removeConversationsByAgentIds } from './useTeamData';
+import type * as React from 'react';
 
 type ToastFn = (msg: string, type: 'success' | 'info' | 'error') => void;
 

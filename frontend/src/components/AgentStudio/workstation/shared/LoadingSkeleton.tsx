@@ -1,3 +1,4 @@
+import type * as React from 'react';
 export function TableSkeleton({ rows = 5, cols = 6 }: { rows?: number; cols?: number }) {
   return (
     <div className="p-4 animate-[wsta-skeleton-fade_0.3s_ease-in]" role="status" aria-label="加载中">

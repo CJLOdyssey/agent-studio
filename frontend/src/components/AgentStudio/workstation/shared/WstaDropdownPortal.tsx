@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-export interface MenuItemConfig {
+interface MenuItemConfig {
   icon?: ReactNode;
   label?: string;
   onClick?: () => void;

@@ -3,7 +3,7 @@ import { uid } from './uid';
 import type { ChatState } from './chatTypes';
 import type { WsStreamEvent, WsThinkingStreamEvent } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
 export function handleStreamStart(s: ChatState, msg: WsStreamEvent, chunk: string): Partial<ChatState> {

@@ -3,7 +3,7 @@ import { uid } from './uid';
 import type { ChatState } from './chatTypes';
 import type { WsMessageEvent, WsInfoEvent, WsErrorEvent, WsBalanceWarningEvent, WsOpenUrlEvent, WsBrowserFrameEvent } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 
 export function handleMessageEvent(set: SetFn, msg: WsMessageEvent): void {
   set((s) => {

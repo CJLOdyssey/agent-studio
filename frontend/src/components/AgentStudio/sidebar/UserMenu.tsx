@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { Settings, Key, HelpCircle, LogOut, User, LayoutDashboard, LogIn, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth';
+import type * as React from 'react';
 
 interface Props {
   isUserMenuOpen: boolean;

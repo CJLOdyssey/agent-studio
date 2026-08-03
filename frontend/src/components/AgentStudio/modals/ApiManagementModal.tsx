@@ -114,7 +114,7 @@ export default function ApiManagementModal({ onClose }: Props) {
         is_default: false,
       });
       await loadKeys();
-      queryClient.invalidateQueries({ queryKey: ['keys'] });
+      void queryClient.invalidateQueries({ queryKey: ['keys'] });
       setEditingKey(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.saveFailed');
@@ -148,7 +148,7 @@ export default function ApiManagementModal({ onClose }: Props) {
         is_default: updates.isDefault,
       });
       await loadKeys();
-      queryClient.invalidateQueries({ queryKey: ['keys'] });
+      void queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.updateFailed');
       setError(msg);
@@ -166,7 +166,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     try {
       await api.deleteKey(confirmDeleteId);
       await loadKeys();
-      queryClient.invalidateQueries({ queryKey: ['keys'] });
+      void queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.deleteFailed');
       setError(msg);

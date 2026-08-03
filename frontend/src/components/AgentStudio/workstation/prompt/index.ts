@@ -7,6 +7,5 @@ export { PROMPT_STATUS_LABEL, PROMPT_CATEGORY_LABEL, getCategoryLabel } from './
 export { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from '@/mocks/prompt';
 export { promptAPI } from './api';
 export { t, setLang, getLang } from './locales';
-export type { Lang } from './locales';
 export { default as PromptManagement } from './PromptManagement';
 export { default as PromptFormModal } from './PromptFormModal';

@@ -18,9 +18,9 @@ export default function PromptManagement() {
   const d = usePromptManagement();
   const { toast } = useToast();
 
-  function handleSaveWrapper() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('prompt.toast_updated') : t('prompt.toast_created'), 'success'); }
-  function handleDeleteWrapper() { d.handleDelete(); toast(t('prompt.toast_deleted'), 'success'); }
-  function handleBatchDeleteWrapper() { d.handleBatchDelete(); toast(t('prompt.toast_batch_deleted'), 'success'); }
+  function handleSaveWrapper() { void d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('prompt.toast_updated') : t('prompt.toast_created'), 'success'); }
+  function handleDeleteWrapper() { void d.handleDelete(); toast(t('prompt.toast_deleted'), 'success'); }
+  function handleBatchDeleteWrapper() { void d.handleBatchDelete(); toast(t('prompt.toast_batch_deleted'), 'success'); }
 
   const categoryOptions = useMemo(() => {
     const cats = Array.from(new Set(d.processed.map((i) => i.category).filter(Boolean)));

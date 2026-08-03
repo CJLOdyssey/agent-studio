@@ -31,7 +31,7 @@ async function mergeGuest() {
 
 export type AuthModalView = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 
-export interface AuthUser {
+interface AuthUser {
   userId: string;
   email: string;
   username: string | null;
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-    init();
+    void init();
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'agentstudio_refresh_token' && !e.newValue) {

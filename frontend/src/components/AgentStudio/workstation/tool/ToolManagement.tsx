@@ -25,9 +25,9 @@ export default function ToolManagement() {
     return d.processed.slice(start, start + 7);
   }, [d.processed, d.page]);
 
-  function handleSave() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('tool.toast_updated') : t('tool.toast_created'), 'success'); }
-  function handleDelete() { d.handleDelete(); toast(t('tool.toast_deleted'), 'success'); }
-  function handleBatchDelete() { d.handleBatchDelete(); toast(t('tool.toast_batch_deleted'), 'success'); }
+  function handleSave() { void d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('tool.toast_updated') : t('tool.toast_created'), 'success'); }
+  function handleDelete() { void d.handleDelete(); toast(t('tool.toast_deleted'), 'success'); }
+  function handleBatchDelete() { void d.handleBatchDelete(); toast(t('tool.toast_batch_deleted'), 'success'); }
 
   const statusDotClass: Record<string, string> = { active: 'wsta-badge-dot-green', disabled: 'wsta-badge-dot-gray' };
   const dotClass: Record<string, string> = { active: 'wsta-dot-green', disabled: 'wsta-dot-gray' };

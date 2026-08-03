@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { CommandOption } from '../types/input';
+import type * as React from 'react';
 
 interface UseCommandPaletteReturn {
   open: boolean;

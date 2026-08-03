@@ -38,9 +38,9 @@ export default function MCPManagement() {
     }
   }
 
-  function handleSave() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('mcp.toast_updated') : t('mcp.toast_created'), 'success'); }
-  function handleDelete() { d.handleDelete(); toast(t('mcp.toast_deleted'), 'success'); }
-  function handleBatchDelete() { d.handleBatchDelete(); toast(t('mcp.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
+  function handleSave() { void d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('mcp.toast_updated') : t('mcp.toast_created'), 'success'); }
+  function handleDelete() { void d.handleDelete(); toast(t('mcp.toast_deleted'), 'success'); }
+  function handleBatchDelete() { void d.handleBatchDelete(); toast(t('mcp.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
 
   const statusDotClass: Record<string, string> = { connected: 'wsta-badge-dot-green', disconnected: 'wsta-badge-dot-gray', error: 'wsta-badge-dot-red' };
   const dotClass: Record<string, string> = { connected: 'wsta-dot-green', disconnected: 'wsta-dot-gray', error: 'wsta-dot-red' };

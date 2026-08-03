@@ -8,6 +8,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { fetchCommandLogs } from '../../../../api/client/admin';
 import { t } from './locales';
 import WstaPagination from '../shared/WstaPagination';
+import type * as React from 'react';
 
 type LogLevel = 'info' | 'warn' | 'error';
 type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' | 'system';

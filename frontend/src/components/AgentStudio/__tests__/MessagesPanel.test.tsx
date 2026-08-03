@@ -80,6 +80,7 @@ vi.mock('../../../stores/chatActions', () => ({
 import { editAndRegenerate, regenerateMessage } from '../../../stores/chatActions';
 import type TeamMessage from '../TeamMessage';
 import type { Agent, Message } from '../../../types/AgentStudio';
+import type * as React from 'react';
 
 function makeMsg(id: string, overrides: Partial<Message> = {}): Message {
   return {
@@ -199,9 +200,6 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
     });
 
     it('passes showContinue=true when msg id matches interruptedMessageId', async () => {
-      const _mockStore = await vi.importActual<Record<string, unknown>>(
-        '../../../stores/chatStore'
-      ).catch(() => null);
       render(<MessagesPanel {...properBaseProps({
         showAgentChat: true,
         displayMessages: [makeMsg('int-1')],

@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FileRejection } from '../../types/input';
+import type * as React from 'react';
 
 interface Props {
   onAdd: (files: File[]) => void;

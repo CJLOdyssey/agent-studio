@@ -10,6 +10,7 @@ import { useMessageComposer } from '../../hooks/useMessageComposer';
 import { useCommandPalette } from '../../hooks/useCommandPalette';
 import { useToast } from '../../utils/useToast';
 import { useSettings } from '../../contexts/SettingsContext';
+import type * as React from 'react';
 
 export interface InputToolbarHandle {
   addFiles: (files: File[]) => void;

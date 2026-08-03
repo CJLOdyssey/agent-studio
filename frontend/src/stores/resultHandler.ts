@@ -9,7 +9,7 @@ function makeRunResult(code: string): RunResult {
 }
 import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
 export function handleThinkingDone(s: ChatState, msg: WsThinkingDoneEvent): Partial<ChatState> {

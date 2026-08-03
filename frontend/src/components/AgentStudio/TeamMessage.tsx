@@ -21,6 +21,7 @@ import type { Message, Agent } from '../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
 import { CopyBtn, CodeBlock } from './messages';
+import type * as React from 'react';
 
 function linkify(text: string): React.ReactNode {
   const parts = text.split(/(https?:\/\/[^\s"',)\]}]+)/g);

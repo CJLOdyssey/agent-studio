@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react';
 import { X, Users } from 'lucide-react';
 import type { TeamEntry, TeamFormData } from './team.types';
 import { t } from './locales';
+import type * as React from 'react';
 
 interface Props {
   editingItem: TeamEntry | null;

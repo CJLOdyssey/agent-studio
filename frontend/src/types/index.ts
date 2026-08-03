@@ -1,4 +1,4 @@
-export type AgentRole = string;
+type AgentRole = string;
 
 export interface AgentConfig {
   id: string;
@@ -86,7 +86,7 @@ export interface SessionItem {
   updated_at: string | null;
 }
 
-export interface MemoryEntry {
+interface MemoryEntry {
   id: string;
   agent_role: string;
   content_type: string;

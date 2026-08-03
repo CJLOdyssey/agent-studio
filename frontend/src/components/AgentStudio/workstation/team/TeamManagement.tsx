@@ -39,9 +39,9 @@ export default function TeamManagement() {
     ];
   }, [d.teams]);
 
-  function handleSaveWrapper() { d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('team.toast_updated') : t('team.toast_created'), 'success'); }
-  function handleDeleteWrapper() { d.handleDelete(); toast(t('team.toast_deleted'), 'success'); }
-  function handleBatchDeleteWrapper() { d.handleBatchDelete(); toast(t('team.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
+  function handleSaveWrapper() { void d.handleSave(); if (!d.formErrors.length) toast(d.editingItem ? t('team.toast_updated') : t('team.toast_created'), 'success'); }
+  function handleDeleteWrapper() { void d.handleDelete(); toast(t('team.toast_deleted'), 'success'); }
+  function handleBatchDeleteWrapper() { void d.handleBatchDelete(); toast(t('team.toast_batch_deleted', String(d.selectedIds.size)), 'success'); }
 
   if (d.isLoading) return <div className="flex flex-col h-full" role="region" aria-label={t('team.loading')}><TableSkeleton rows={5} cols={7} /></div>;
 

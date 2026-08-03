@@ -8,6 +8,7 @@ vi.mock('react-i18next', () => ({
 
 import ConversationsList from '../ConversationsList';
 import type { Conversation, Agent } from '../../../../types/AgentStudio';
+import type * as React from 'react';
 
 function makeConv(overrides: Partial<Conversation> = {}): Conversation {
   return {

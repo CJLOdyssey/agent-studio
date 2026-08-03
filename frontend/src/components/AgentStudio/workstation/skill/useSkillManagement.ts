@@ -11,8 +11,7 @@ import { validateSkillForm } from './validate';
 import { useGenericCrud } from '../shared/useGenericCrud';
 import type { GenericCrudReturn } from '../shared/useGenericCrud';
 
-export type SkillSortField = 'name' | 'category' | 'status';
-export type CategoryFilter = 'all' | string;
+type CategoryFilter = 'all' | string;
 
 export interface SkillData extends GenericCrudReturn<SkillEntry, SkillFormData> {
   categoryFilter: CategoryFilter;

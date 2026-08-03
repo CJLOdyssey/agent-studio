@@ -14,6 +14,7 @@ import { submitRequirement, retry } from '../../stores/chatActions';
 import { getSessionDetail } from '../../api/client/sessions';
 import { useDragAndDrop } from './useDragAndDrop';
 import Logger from '../../utils/logger';
+import type * as React from 'react';
 
 export function useWorkstationState(
   messagesContainerRef: React.RefObject<HTMLDivElement | null>,
@@ -387,7 +388,7 @@ export function useWorkstationState(
             const team = teamMgmt.teams.find((t) => t.agents.some((a) => a.id === oldId));
             agent.id = created.id;
             teamMgmt.replaceAgentId(oldId, created.id);
-            if (team) teamMgmt.linkMemberAgent(team.id, oldId, created.id);
+            if (team) void teamMgmt.linkMemberAgent(team.id, oldId, created.id);
           } else { throw updateErr; }
         }
         setConfiguringAgent(null);

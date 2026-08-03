@@ -165,7 +165,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   });
 
   it('test button is enabled when endpoint has value', () => {
-    const formData = { ...EMPTY_FORM, endpoint: 'http://api.example.com' };
+    const formData = { ...EMPTY_FORM, endpoint: 'https://api.example.com' };
     render(<ToolFormModal {...baseProps} formData={formData} />);
     const testBtn = screen.getByText('tool.test').closest('button');
     expect(testBtn).not.toBeDisabled();
@@ -173,7 +173,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
 
   it('calls testTool when test button clicked with editingItem', async () => {
     vi.mocked(testTool).mockResolvedValue({ success: true, status_code: 200, duration_ms: 150, message: 'OK', body: null });
-    const formData = { ...EMPTY_FORM, endpoint: 'http://api.example.com' };
+    const formData = { ...EMPTY_FORM, endpoint: 'https://api.example.com' };
     render(
       <ToolFormModal
         {...baseProps}
@@ -189,7 +189,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
 
   it('shows test result after successful test', async () => {
     vi.mocked(testTool).mockResolvedValue({ success: true, status_code: 200, duration_ms: 150, message: 'OK', body: null });
-    const formData = { ...EMPTY_FORM, endpoint: 'http://api.example.com' };
+    const formData = { ...EMPTY_FORM, endpoint: 'https://api.example.com' };
     render(
       <ToolFormModal
         {...baseProps}

@@ -5,6 +5,7 @@ import type { Team, Agent } from '../../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { validateName } from '../../../utils/validation';
 import TeamTreeAgentItem from './TeamTreeAgentItem';
+import type * as React from 'react';
 
 interface TeamTreeProps {
   teams: Team[];

@@ -117,7 +117,7 @@ export function useAgentManagement(): AgentManagementReturn {
   }, [crud]);
 
   const handleCopy = useCallback((agent: AgentEntry) => {
-    crud.cloneItem(agent);
+    void crud.cloneItem(agent);
   }, [crud]);
 
   const openBatchDelete = useCallback(() => {

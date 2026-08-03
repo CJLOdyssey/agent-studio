@@ -29,7 +29,7 @@ installGlobalErrorHandlers();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js');
+    void navigator.serviceWorker.register('/sw.js');
   });
 }
 

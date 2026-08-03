@@ -9,6 +9,7 @@ import { useConfigItemEdit } from './tabs/useConfigItemEdit';
 import { usePickerState } from './tabs/usePickerState';
 import TabRenderer from './tabs/TabRenderer';
 import PickerSection from './PickerSection';
+import type * as React from 'react';
 
 interface Props {
   agent: Agent;

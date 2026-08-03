@@ -135,7 +135,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
   it('saveFormItem with valid name creates tool via addCustom', () => {
     const tools = makeItemList<AgentTool>();
     const form = makeForm();
-    form.forms.tool.data = { name: 'NewTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: 'http://api.test', parameters: '{}' };
+    form.forms.tool.data = { name: 'NewTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: 'https://api.test', parameters: '{}' };
     const { result } = renderHook(() => useConfigItemEdit(
       tools,
       makeItemList<AgentMCP>(),
@@ -150,7 +150,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
     expect(item.category).toBe('自定义工具');
     expect(item.status).toBe('active');
     expect(item.version).toBe('v1.0.0');
-    expect(item.endpoint).toBe('http://api.test');
+    expect(item.endpoint).toBe('https://api.test');
     expect(item.parameters).toBe('{}');
     expect(item.enabled).toBe(true);
   });
@@ -158,7 +158,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
   it('saveFormItem with existing tool calls update with full fields', () => {
     const tools = makeItemList<AgentTool>();
     const form = makeForm();
-    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v2.0.0', endpoint: 'http://api.test', parameters: '{}' };
+    form.forms.tool.data = { name: 'UpdatedTool', description: 'desc', category: '自定义工具', status: 'active', version: 'v2.0.0', endpoint: 'https://api.test', parameters: '{}' };
     const { result } = renderHook(() => useConfigItemEdit(
       tools,
       makeItemList<AgentMCP>(),
@@ -173,7 +173,7 @@ describe('useConfigItemEdit', { tags: ['integration'] }, () => {
       category: '自定义工具',
       status: 'active',
       version: 'v2.0.0',
-      endpoint: 'http://api.test',
+      endpoint: 'https://api.test',
       parameters: '{}',
     });
     expect(result.current.editingToolItem).toBeNull();

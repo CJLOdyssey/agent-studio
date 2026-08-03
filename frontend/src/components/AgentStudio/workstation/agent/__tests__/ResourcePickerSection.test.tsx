@@ -12,6 +12,7 @@ vi.mock('../../shared/ResourcePickerModal', () => ({
 
 import { ResourcePickerSection } from '../ResourcePickerSection';
 import ResourcePickerModal from '../../shared/ResourcePickerModal';
+import type * as React from 'react';
 
 const baseFormData = {
   name: '', description: '', team: '前端团队', model: 'GPT-4o',

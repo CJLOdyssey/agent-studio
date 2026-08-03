@@ -10,6 +10,7 @@ import AgentStudioWorkstation from './components/AgentStudio/AgentStudioWorkstat
 import { prefetchAgents } from './api/hooks';
 import Logger from './utils/logger';
 import { useSettings } from './contexts/SettingsContext';
+import type * as React from 'react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +41,7 @@ function AppInit() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    prefetchAgents(queryClient);
+    void prefetchAgents(queryClient);
   }, [queryClient]);
   return null;
 }

@@ -6,7 +6,7 @@ vi.mock('reactflow', () => {
   const React = require('react');
   const RF = {
     __esModule: true,
-    default: function MockReactFlow({ nodes, edges, _onConnect, onNodeClick, onEdgeClick, onPaneClick, _nodeTypes }: Record<string, unknown>) {
+    default: function MockReactFlow({ nodes, edges, onNodeClick, onEdgeClick, onPaneClick }: Record<string, unknown>) {
       return (
         <div data-testid="reactflow-canvas">
           {Array.isArray(nodes) && (nodes as Array<{ id: string; data: { label: string } }>).map((n: { id: string; data: { label: string } }) => (

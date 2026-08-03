@@ -40,7 +40,7 @@ const LANG_TO_HTML: Record<string, string> = {
   'en-US': 'en',
 };
 
-i18n.use(initReactI18next).init({
+void i18n.use(initReactI18next).init({
   resources: {
     'zh-CN': { translation: zh },
     'en-US': { translation: en },
@@ -60,7 +60,7 @@ if (typeof document !== 'undefined') {
 
 export function changeLanguage(lng: string) {
   localStorage.setItem('language', lng);
-  i18n.changeLanguage(lng);
+  void i18n.changeLanguage(lng);
   if (typeof document !== 'undefined') {
     document.documentElement.lang = LANG_TO_HTML[lng] || lng;
   }

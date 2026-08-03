@@ -1,6 +1,6 @@
 import client from './instance';
 
-export interface ProviderInfo {
+interface ProviderInfo {
   name: string;
   base_url: string;
   capabilities: ('chat' | 'vector' | 'tool')[];

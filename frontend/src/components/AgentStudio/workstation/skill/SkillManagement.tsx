@@ -49,22 +49,22 @@ export default function SkillManagement() {
       setImportFiles([]);
       toast(t('skill.toast_imported'), 'success');
     } catch {
-      message.error(t('skill.import_failed'));
+      void message.error(t('skill.import_failed'));
     } finally {
       setImporting(false);
     }
   }
 
   function handleSaveWrapper() {
-    d.handleSave();
+    void d.handleSave();
     if (!d.formErrors.length) toast(d.editingItem ? t('skill.toast_updated') : t('skill.toast_created'), 'success');
   }
   function handleDeleteWrapper() {
-    d.handleDelete();
+    void d.handleDelete();
     toast(t('skill.toast_deleted'), 'success');
   }
   function handleBatchDeleteWrapper() {
-    d.handleBatchDelete();
+    void d.handleBatchDelete();
     toast(t('skill.toast_batch_deleted', String(d.selectedIds.size)), 'success');
   }
 

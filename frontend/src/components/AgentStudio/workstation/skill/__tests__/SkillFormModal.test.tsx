@@ -8,6 +8,7 @@ vi.mock('../../shared/ResourcePickerModal', () => ({ default: () => null }));
 
 import SkillFormModal from '../SkillFormModal';
 import type { SkillEntry } from '../skill.types';
+import type * as React from 'react';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const Wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;

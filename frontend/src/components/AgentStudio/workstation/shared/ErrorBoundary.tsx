@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import i18n from '../../../../i18n';
+import type * as React from 'react';
 
 interface Props { children: React.ReactNode; fallback?: React.ReactNode; onError?: (error: Error) => void; }
 interface State { hasError: boolean; error: Error | null; }

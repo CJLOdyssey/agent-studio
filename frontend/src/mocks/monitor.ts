@@ -1,10 +1,10 @@
 import { Bot, MessageSquare, Wrench, Server, Zap, Users } from 'lucide-react';
 
-export interface StatCard { key: string; icon: typeof Bot; label: string; value: number; delta: number; unit: string; }
+interface StatCard { key: string; icon: typeof Bot; label: string; value: number; delta: number; unit: string; }
 
-export interface ActivityEntry { id: string; time: string; user: string; action: string; target: string; type: 'success' | 'warning' | 'info'; }
+interface ActivityEntry { id: string; time: string; user: string; action: string; target: string; type: 'success' | 'warning' | 'info'; }
 
-export interface HealthItem { label: string; value: string; status: 'normal' | 'warning'; }
+interface HealthItem { label: string; value: string; status: 'normal' | 'warning'; }
 
 export const MOCK_STATS: StatCard[] = [
   { key: 'agents', icon: Bot, label: '运行中 Agent', value: 7, delta: 2, unit: '' },

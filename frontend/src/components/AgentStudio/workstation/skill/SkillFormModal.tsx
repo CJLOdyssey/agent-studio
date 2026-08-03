@@ -4,6 +4,7 @@ import type { SkillEntry, SkillFormData } from './skill.types';
 import { SKILL_STATUS_LABEL } from './skill.constants';
 import { t } from './locales';
 import ResourcePickerModal from '../shared/ResourcePickerModal';
+import type * as React from 'react';
 
 interface CompositionOption {
   id: string;

@@ -59,10 +59,10 @@ export function useOutputManagement(): OutputData {
   const handleSave = useCallback((): boolean => {
     const errs = validateOutputForm(crud.formData);
     if (errs.length > 0) {
-      crud.handleSave(); // sets formErrors via useGenericCrud
+      void crud.handleSave(); // sets formErrors via useGenericCrud
       return false;
     }
-    crud.handleSave();
+    void crud.handleSave();
     return true;
   }, [crud]);
 
@@ -96,9 +96,9 @@ export function useOutputManagement(): OutputData {
     toggleSelectAll: crud.toggleSelectAll,
     addItem: ((data: OutputFormData) => crud.createItem(data).then(() => undefined)) as (data: OutputFormData) => Promise<void>,
     updateItem: crud.updateItem as (id: string, data: Partial<OutputEntry>) => Promise<void>,
-    removeItem: (id) => { crud.removeItem(id); },
-    copyItem: (item) => { crud.cloneItem(item); },
-    removeMultiple: (ids) => { crud.removeMultipleItems(ids); },
+    removeItem: (id) => { void crud.removeItem(id); },
+    copyItem: (item) => { void crud.cloneItem(item); },
+    removeMultiple: (ids) => { void crud.removeMultipleItems(ids); },
     getAllItems,
     addItems,
     clearError: crud.clearError,

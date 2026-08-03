@@ -4,6 +4,7 @@ import { VirtuosoMockContext } from 'react-virtuoso';
 import LogAudit from '../LogAudit';
 import { fetchCommandLogs } from '../../../../../api/client/admin';
 import { t } from '../locales';
+import type * as React from 'react';
 
 vi.mock('../../../../../api/client/admin', () => ({
   fetchCommandLogs: vi.fn(),

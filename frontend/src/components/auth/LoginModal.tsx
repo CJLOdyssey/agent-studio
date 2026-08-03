@@ -3,6 +3,7 @@ import { X, Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth, type AuthModalView } from './AuthContext';
 import ForgotPasswordForm from './ForgotPasswordForm';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
+import type * as React from 'react';
 
 interface Props {
   onClose: () => void;

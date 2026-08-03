@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useMessageComposer } from '../useMessageComposer';
+import type * as React from 'react';
 
 vi.mock('../../utils/validation', () => ({
   validateInput: (text: string) => {

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 
-export interface TestResult {
+interface TestResult {
   success: boolean;
   message: string;
   latency?: number;

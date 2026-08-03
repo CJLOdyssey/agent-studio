@@ -6,6 +6,7 @@ import { getAllAgents } from '../utils/agentMapper';
 import { validateName, checkTeamLimit } from '../utils/validation';
 import { listTeams, createTeam, updateTeam, deleteTeam } from '../api/client/teams';
 import { ApiError } from '../api/client/errors';
+import type * as React from 'react';
 
 const STORAGE_KEY = 'agentstudio-conversations';
 
@@ -207,7 +208,7 @@ export function useTeamData(toast?: ToastFn) {
   const handleTeamNameKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-        saveEditTeam();
+        void saveEditTeam();
       }
       if (e.key === 'Escape') {
         cancelEditTeam();

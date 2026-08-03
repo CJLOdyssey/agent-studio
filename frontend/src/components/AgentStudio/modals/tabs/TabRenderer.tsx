@@ -11,6 +11,7 @@ import type { MCPFormData } from '../../workstation/mcp/mcp.types';
 import type { SkillFormData } from '../../workstation/skill/skill.types';
 import type { PendingArchiveState } from './useConfigItemEdit';
 import type { ReactNode } from 'react';
+import type * as React from 'react';
 
 function toRecord(v: unknown): Record<string, unknown> {
   return v as Record<string, unknown>;

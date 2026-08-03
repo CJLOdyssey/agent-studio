@@ -46,7 +46,7 @@ export default function MessagesPanel({
   const handleRegenerate = (msgId: string) => {
     const idx = displayMessages.findIndex((m) => m.id === msgId);
     if (idx >= 0) {
-      regenerateMessage(idx);
+      void regenerateMessage(idx);
     }
   };
 

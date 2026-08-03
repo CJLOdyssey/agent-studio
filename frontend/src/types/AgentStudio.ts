@@ -138,13 +138,13 @@ export interface Message {
 }
 
 // 计划步骤
-export interface PlanStep {
+interface PlanStep {
   step: string;
   status: 'completed' | 'running' | 'pending';
 }
 
 // 消息动作
-export interface MessageAction {
+interface MessageAction {
   type: string;
   label: string;
 }
@@ -160,16 +160,6 @@ export type WorkspaceTab =
   | 'frontend-preview'
   | 'backend-code'
   | 'backend-test';
-
-// 文件节点
-export interface FileNode {
-  id: string;
-  name: string;
-  type: 'file' | 'folder';
-  children?: FileNode[];
-  content?: string;
-  language?: string;
-}
 
 // Agent 类型
 export type AgentType = 'ui' | 'frontend' | 'backend';

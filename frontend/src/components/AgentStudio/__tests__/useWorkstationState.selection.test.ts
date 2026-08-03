@@ -133,6 +133,7 @@ vi.mock('./useDragAndDrop', () => ({
 vi.mock('../../../utils/logger', () => ({ default: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
 
 import { useWorkstationState } from '../useWorkstationState';
+import type * as React from 'react';
 
 function createRef() {
   return { current: null } as React.RefObject<HTMLDivElement | null>;

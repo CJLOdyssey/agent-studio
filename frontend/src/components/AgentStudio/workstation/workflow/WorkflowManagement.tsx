@@ -44,7 +44,7 @@ export default function WorkflowManagement() {
         if (!cancelled) setLoading(false);
       }
     };
-    load();
+    void load();
     return () => { cancelled = true; };
   }, [editing]);
 

@@ -15,7 +15,7 @@ const LogAudit = React.lazy(() => import('./logs/LogAudit'));
 
 export type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'workflow' | 'monitor' | 'logs';
 
-export interface NavTab {
+interface NavTab {
   id: WorkstationTab;
   label: string;
   icon: typeof Bot;

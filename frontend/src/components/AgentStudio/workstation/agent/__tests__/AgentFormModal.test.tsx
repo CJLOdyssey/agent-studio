@@ -12,6 +12,7 @@ vi.mock('../../shared/ResourcePickerModal', () => ({ default: () => null }));
 import AgentFormModal from '../AgentFormModal';
 import type { AgentFormData, AgentEntry } from '../agent.types';
 import { ResourcePickerSection } from '../ResourcePickerSection';
+import type * as React from 'react';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const Wrapper = ({ children }: { children: React.ReactNode }) => (

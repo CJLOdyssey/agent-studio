@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { MoreVertical, Pencil, Trash2, Settings, Lock } from 'lucide-react';
 import type { Agent } from '../../../types/AgentStudio';
 import type { TFunction } from 'i18next';
+import type * as React from 'react';
 
 interface TeamTreeAgentItemProps {
   agent: Agent;

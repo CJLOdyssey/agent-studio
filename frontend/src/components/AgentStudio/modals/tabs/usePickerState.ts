@@ -4,6 +4,7 @@ import { outputAPI } from '../../workstation/output/api';
 import { toolAPI } from '../../workstation/tool/api';
 import { mcpAPI } from '../../workstation/mcp/api';
 import { skillAPI } from '../../workstation/skill/api';
+import type * as React from 'react';
 
 export interface PickerItem {
   id: string;

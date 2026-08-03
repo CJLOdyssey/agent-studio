@@ -1,6 +1,6 @@
 import i18n from '../../../../i18n';
 
-export type Lang = 'zh' | 'en';
+type Lang = 'zh' | 'en';
 
 export function t(key: string, ...args: string[]): string {
   const v: string = i18n.t(key) as string;
@@ -12,7 +12,7 @@ export function t(key: string, ...args: string[]): string {
 const LANG_MAP: Record<string, string> = { zh: 'zh-CN', en: 'en-US' };
 
 export function setLang(l: Lang): void {
-  i18n.changeLanguage(LANG_MAP[l] || l);
+  void i18n.changeLanguage(LANG_MAP[l] || l);
 }
 
 export function getLang(): Lang {

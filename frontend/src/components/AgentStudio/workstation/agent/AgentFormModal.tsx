@@ -6,6 +6,7 @@ import { listTeams } from '../../../../api/client/teams';
 import { ResourcePickerSection } from './ResourcePickerSection';
 import { STATUS_LABEL } from './agent.constants';
 import { t } from './locales';
+import type * as React from 'react';
 
 /** Minimal reference shape — agent module owns its own reference interface. */
 interface RefItem {

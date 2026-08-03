@@ -5,6 +5,7 @@ import { axe } from 'vitest-axe';
 import { TestProviders } from '../../../../test/setup';
 import AgentConfigModal from '../AgentConfigModal';
 import type { Agent } from '../../../types/AgentStudio';
+import type * as React from 'react';
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<TestProviders>{ui}</TestProviders>);

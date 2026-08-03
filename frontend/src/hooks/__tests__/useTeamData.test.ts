@@ -23,6 +23,7 @@ vi.mock('../../utils/validation', () => ({
 import { useTeamData, removeConversationsByAgentIds, teamMemberToAgent } from '../useTeamData';
 import { listTeams, updateTeam, deleteTeam } from '../../api/client/teams';
 import type { TeamMember } from '../../types/team';
+import type * as React from 'react';
 
 describe('removeConversationsByAgentIds', { tags: ['unit'] }, () => {
   beforeEach(() => {
