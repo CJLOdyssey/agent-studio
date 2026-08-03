@@ -166,12 +166,9 @@ def build_tool_definition(
         wrapper.set_llm(llm)
 
     schema: dict[str, Any] = {"type": "object"}
-    if tc.parameters:
-        if isinstance(tc.parameters, dict):
-            props = tc.parameters.get("properties", {}) or {}
-            schema = tc.parameters if props else {"type": tc.parameters.get("type", "object")}
-        else:
-            schema = tc.parameters
+    if isinstance(tc.parameters, dict) and tc.parameters:
+        props = tc.parameters.get("properties", {}) or {}
+        schema = tc.parameters if props else {"type": tc.parameters.get("type", "object")}
 
     # Enrich search tools with optional Tavily parameters (topic, time_range)
     # so the LLM can pass them when time-sensitive or topic-specific search is needed.

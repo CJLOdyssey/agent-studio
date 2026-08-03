@@ -27,7 +27,7 @@ async def create_api_key(
             result = await session.execute(
                 select(UserApiKey).where(
                     UserApiKey.user_id == user_id,
-                    UserApiKey.is_default,
+                    UserApiKey.is_default.is_(True),
                 )
             )
             for row in result.scalars().all():
@@ -142,7 +142,7 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict[str, Any] | Non
         stmt = select(UserApiKey).where(
             UserApiKey.id == key_id,
             UserApiKey.user_id == user_id,
-            UserApiKey.is_active,
+            UserApiKey.is_active.is_(True),
         )
         result = await session.execute(stmt)
         row = result.scalar_one_or_none()
@@ -151,7 +151,7 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict[str, Any] | Non
             stmt = select(UserApiKey).where(
                 UserApiKey.id == key_id,
                 UserApiKey.user_id == "anonymous",
-                UserApiKey.is_active,
+                UserApiKey.is_active.is_(True),
             )
             result = await session.execute(stmt)
             row = result.scalar_one_or_none()
@@ -175,8 +175,8 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict[str, Any] | Non
 async def _resolve_key_row(session: Any, user_id: str) -> Any:
     stmt = select(UserApiKey).where(
         UserApiKey.user_id == user_id,
-        UserApiKey.is_active,
-        UserApiKey.is_default,
+        UserApiKey.is_active.is_(True),
+        UserApiKey.is_default.is_(True),
     )
     result = await session.execute(stmt)
     row = result.scalar_one_or_none()
@@ -187,7 +187,7 @@ async def _resolve_key_row(session: Any, user_id: str) -> Any:
         select(UserApiKey)
         .where(
             UserApiKey.user_id == user_id,
-            UserApiKey.is_active,
+            UserApiKey.is_active.is_(True),
         )
         .order_by(UserApiKey.created_at)
         .limit(1)
@@ -233,7 +233,7 @@ async def _match_model_in_session(session: Any, user_id: str, model: str) -> Any
         select(UserApiKey)
         .where(
             UserApiKey.user_id == user_id,
-            UserApiKey.is_active,
+            UserApiKey.is_active.is_(True),
             func.concat(",", UserApiKey.models, ",").like(f"%,{model},%"),
         )
         .order_by(UserApiKey.created_at)
@@ -261,8 +261,8 @@ async def get_default_api_key(user_id: str) -> dict[str, Any] | None:
             stmt = (
                 select(UserApiKey)
                 .where(
-                    UserApiKey.is_active,
-                    UserApiKey.is_default,
+                    UserApiKey.is_active.is_(True),
+                    UserApiKey.is_default.is_(True),
                 )
                 .limit(1)
             )
@@ -325,7 +325,7 @@ async def update_api_key(
                 result = await session.execute(
                     select(UserApiKey).where(
                         UserApiKey.user_id == user_id,
-                        UserApiKey.is_default,
+                        UserApiKey.is_default.is_(True),
                         UserApiKey.id != key_id,
                     )
                 )
@@ -373,7 +373,7 @@ async def get_embedding_api_key() -> str | None:
             select(UserApiKey)
             .where(
                 UserApiKey.usage_type.in_(["embedding", "both"]),
-                UserApiKey.is_active,
+                UserApiKey.is_active.is_(True),
             )
             .limit(1)
         )
@@ -396,7 +396,7 @@ async def get_tool_api_key(provider: str) -> str | None:
             .where(
                 UserApiKey.provider == provider,
                 UserApiKey.usage_type == "tool",
-                UserApiKey.is_active,
+                UserApiKey.is_active.is_(True),
             )
             .limit(1)
         )
