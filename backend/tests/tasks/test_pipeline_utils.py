@@ -1,6 +1,7 @@
 """Tests for backend.tasks.pipeline_utils — all helper functions."""
 import asyncio
 import json
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -302,9 +303,11 @@ class TestDiscoverMcpTools:
 
         pu._MCP_DISCOVERY_CACHE.clear()
         pu._MCP_DISCOVERY_LOCKS.clear()
+        pu._MCP_DISCOVERY_TIMEOUTS.clear()
         yield
         pu._MCP_DISCOVERY_CACHE.clear()
         pu._MCP_DISCOVERY_LOCKS.clear()
+        pu._MCP_DISCOVERY_TIMEOUTS.clear()
 
     def _fake_session(self, tools=None):
         session = AsyncMock()
@@ -421,18 +424,74 @@ class TestDiscoverMcpTools:
         assert session_a.list_tools.await_count == 1
         assert session_b.list_tools.await_count == 1
 
-    async def test_discover_caches_empty_timeout_result(self):
-        """A timed-out discovery is cached so later runs fail fast, not 25s."""
+    async def test_discover_timeout_negative_ttl_reused(self):
+        """A timed-out discovery is reused inside the negative TTL window.
+
+        It must NOT enter the permanent process-wide cache, and a second call
+        must not re-spawn the subprocess while the TTL is active.
+        """
         import tasks.pipeline_utils as pu
 
-        with patch("tasks.pipeline_utils.stdio_client", side_effect=TimeoutError()):
+        with patch(
+            "tasks.pipeline_utils.stdio_client",
+            side_effect=TimeoutError(),
+        ) as mock_stdio:
             first = await pu._discover_mcp_tools("cache-timeout-cmd")
             second = await pu._discover_mcp_tools("cache-timeout-cmd")
 
         assert first == []
         assert second == []
         key = pu._discovery_cache_key("cache-timeout-cmd", None, None)
+        assert key not in pu._MCP_DISCOVERY_CACHE
+        assert key in pu._MCP_DISCOVERY_TIMEOUTS
+        assert mock_stdio.call_count == 1
+
+    async def test_discover_timeout_rediscovers_after_ttl(self):
+        """Once the negative TTL elapses, a run re-discovers and the MCP's
+        tools become available again instead of staying disabled."""
+        import tasks.pipeline_utils as pu
+
+        tool = MagicMock()
+        tool.name = "read"
+        tool.description = "Read file"
+        tool.inputSchema = {"type": "object"}
+        session = self._fake_session(tools=[tool])
+        stdio_cm, session_cm = self._fake_cms(session)
+
+        with patch(
+            "tasks.pipeline_utils.stdio_client",
+            side_effect=[TimeoutError(), stdio_cm],
+        ) as mock_stdio, \
+             patch("tasks.pipeline_utils.ClientSession", return_value=session_cm):
+            await pu._discover_mcp_tools("cache-timeout-cmd")
+            key = pu._discovery_cache_key("cache-timeout-cmd", None, None)
+            assert key in pu._MCP_DISCOVERY_TIMEOUTS
+            pu._MCP_DISCOVERY_TIMEOUTS[key] = time.monotonic() - 1
+            recovered = await pu._discover_mcp_tools("cache-timeout-cmd")
+
+        assert recovered[0]["name"] == "read"
+        assert mock_stdio.call_count == 2
+        assert key not in pu._MCP_DISCOVERY_TIMEOUTS
+        assert pu._MCP_DISCOVERY_CACHE[key][0]["name"] == "read"
+
+    async def test_discover_legit_empty_cached_permanently(self):
+        """A real empty tool list (no timeout) is cached permanently."""
+        import tasks.pipeline_utils as pu
+
+        session = self._fake_session(tools=[])
+        stdio_cm, session_cm = self._fake_cms(session)
+
+        with patch("tasks.pipeline_utils.stdio_client", return_value=stdio_cm), \
+             patch("tasks.pipeline_utils.ClientSession", return_value=session_cm):
+            first = await pu._discover_mcp_tools("empty-cmd")
+            second = await pu._discover_mcp_tools("empty-cmd")
+
+        assert first == []
+        assert second == []
+        key = pu._discovery_cache_key("empty-cmd", None, None)
         assert pu._MCP_DISCOVERY_CACHE[key] == []
+        assert key not in pu._MCP_DISCOVERY_TIMEOUTS
+        assert session.list_tools.await_count == 1
 
     def test_store_discovery_evicts_over_capacity(self):
         """Cache evicts all entries when exceeding the cap — bounded memory."""
