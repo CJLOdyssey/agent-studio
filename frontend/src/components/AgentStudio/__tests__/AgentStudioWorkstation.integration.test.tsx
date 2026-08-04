@@ -382,17 +382,20 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
     emitWs('run-team', { type: 'stream', content: '审查意见', agent_name: 'reviewer' });
     await waitFor(() => expect(messagesArea().textContent).toContain('需求设计产出'));
 
+    const display = '## pm\n\n需求设计产出\n\n---\n\n## reviewer\n\n审查意见';
     emitWs('run-team', {
       type: 'team_result',
       status: 'completed',
       artifacts: { pm: '需求设计产出', reviewer: '审查意见' },
-      display: '## pm\n\n需求设计产出\n\n---\n\n## reviewer\n\n审查意见',
+      display,
     });
 
     await waitFor(() => {
-      const el = messagesArea();
-      expect(el.textContent).toContain('需求设计产出');
-      expect(el.textContent).toContain('审查意见');
+      expect(screen.getByRole('heading', { name: 'pm' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'reviewer' })).toBeInTheDocument();
+      expect(messagesArea().textContent).not.toContain('需求设计产出审查意见');
+      const agentMsg = useChatStore.getState().messages.find((m) => m.role === 'agent');
+      expect(agentMsg?.content).toBe(display);
     });
   });
 });
