@@ -92,7 +92,7 @@ export default function ToolManagement() {
             {pagedItems.map((item) => (
               <tr key={item.id} className={`${!item.is_builtin && d.selectedIds.has(item.id) ? 'wsta-row-selected' : ''}`}>
                 <td className="w-10 text-center align-middle p-1 px-2">
-                  <input type="checkbox" checked={false} disabled={item.is_builtin} aria-label={t('tool.select_item', item.name)} />
+                  <input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} disabled={item.is_builtin} aria-label={t('tool.select_item', item.name)} />
                 </td>
                 <td>
                   <span className="inline-flex items-center max-w-full">
