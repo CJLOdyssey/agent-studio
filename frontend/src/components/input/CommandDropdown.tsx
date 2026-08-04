@@ -46,14 +46,14 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
 
   if (commands.length === 0) {
     return (
-      <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref}>
+      <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref}>
         <div className="p-4 text-center text-sm text-[var(--color-text-muted)]">{t('model.noCommands')}</div>
       </div>
     );
   }
 
   return (
-    <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref} role="listbox">
+    <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref} role="listbox">
       <div ref={listRef}>
         {commands.map((opt, idx) => (
           <button

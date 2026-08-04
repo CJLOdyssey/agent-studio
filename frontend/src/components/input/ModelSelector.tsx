@@ -133,7 +133,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
       </button>
 
       {open && !isEmpty && (
-        <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
+        <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
           {providers.length > 1
             ? providers.map(([provider, list]) => (
                 <div key={provider} className="flex flex-col">
