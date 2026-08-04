@@ -185,7 +185,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onPaste={handlePaste}
         />
 
-        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-raised)] border-t-0 min-h-[var(--da-toolbar-height)]">
+        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-raised)] border-t-0 min-h-[var(--da-toolbar-height)] rounded-b-[var(--da-input-radius)]">
           <div className="flex items-center gap-2">
             <ModelSelector
               models={models}
