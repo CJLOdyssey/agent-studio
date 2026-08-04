@@ -1,18 +1,39 @@
 """Team pipeline — orchestrates multi-agent workflow execution."""
 
 import gc
+from typing import Any
 
 from broker import publish_run_message
 from checkpoint import create_checkpointer_async
 from core.config import load_config
 from core.infra.logging_config import get_logger
-from repository import update_run_result, update_run_status
+from repository import save_message, update_run_result, update_run_status
 from repository.workflows import get_workflow_config_by_team
 from workflow.dynamic_team_graph import DynamicTeamGraph
 
 from .pipeline_utils import log_memory_diff
 
 logger = get_logger(__name__)
+
+
+def _compose_team_output(artifacts: dict[str, Any], fallback: str) -> str:
+    """Compose per-node artifacts into labeled markdown blocks for display.
+
+    Each node's independent output (generator content, reviewer opinion) becomes
+    its own ``## <role_identifier>`` block so the UI can present them separately.
+    The internal ``_final_report`` key is excluded — a reporter node stores the
+    same content under its own role_identifier. Falls back to *fallback* (the
+    run's final code) when there are no per-node artifacts.
+    """
+    blocks: list[str] = []
+    for role, content in artifacts.items():
+        if role == "_final_report":
+            continue
+        text = str(content or "").strip()
+        if not text:
+            continue
+        blocks.append(f"## {role}\n\n{text}")
+    return "\n\n---\n\n".join(blocks) if blocks else fallback
 
 
 async def _run_team_pipeline(
@@ -54,13 +75,22 @@ async def _run_team_pipeline(
                 last_content = str(m.content)
                 break
         final = artifacts.get("_final_report", last_content)
+        display = _compose_team_output(artifacts, final)
 
         await update_run_result(
             run_id=run_id, pm_document="", code=final,
             review=f"Team done: {len(artifacts)} outputs",
             approved=True, status="converged",
         )
-        await publish_run_message(run_id, {"type": "team_result", "status": "completed", "artifacts": artifacts})
+        if display:
+            try:
+                await save_message(run_id, "agent", "team", display, 1)
+            except Exception:
+                logger.warning("[TEAM] failed to persist display message for run=%s", run_id, exc_info=True)
+        await publish_run_message(
+            run_id,
+            {"type": "team_result", "status": "completed", "artifacts": artifacts, "display": display},
+        )
         logger.info("[TEAM] completed run=%s artifacts=%d", run_id, len(artifacts))
     except Exception as e:
         logger.error("[TEAM] fatal run=%s error=%s", run_id, str(e), exc_info=True)

@@ -63,6 +63,8 @@ export interface WsResultEvent {
 
 export interface WsTeamResultEvent {
   type: 'team_result';
+  artifacts?: Record<string, unknown>;
+  display?: string;
   [key: string]: unknown;
 }
 

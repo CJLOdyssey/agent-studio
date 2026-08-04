@@ -363,4 +363,36 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
       expect(convB.messages.map((m: { content: string }) => m.content)).not.toContain('运行中的回复。');
     });
   });
+
+  it('团队 run 结束后按节点展示独立产物', async () => {
+    mockSubmitRequirement.mockResolvedValue({ run_id: 'run-team', status: 'running', session_id: 'sess-team' });
+
+    render(
+      <TestProviders>
+        <AgentStudioWorkstation />
+      </TestProviders>,
+    );
+
+    await sendMessage('帮我设计一个登录页');
+
+    await waitFor(() => expect(wsCallbacks.has('run-team')).toBe(true));
+
+    emitWs('run-team', { type: 'thinking_stream', content: 'pm 正在拆解需求', agent_name: 'pm' });
+    emitWs('run-team', { type: 'stream', content: '需求设计产出', agent_name: 'pm' });
+    emitWs('run-team', { type: 'stream', content: '审查意见', agent_name: 'reviewer' });
+    await waitFor(() => expect(messagesArea().textContent).toContain('需求设计产出'));
+
+    emitWs('run-team', {
+      type: 'team_result',
+      status: 'completed',
+      artifacts: { pm: '需求设计产出', reviewer: '审查意见' },
+      display: '## pm\n\n需求设计产出\n\n---\n\n## reviewer\n\n审查意见',
+    });
+
+    await waitFor(() => {
+      const el = messagesArea();
+      expect(el.textContent).toContain('需求设计产出');
+      expect(el.textContent).toContain('审查意见');
+    });
+  });
 });

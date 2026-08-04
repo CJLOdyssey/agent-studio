@@ -123,15 +123,23 @@ export function handleTeamResultEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  _msg: WsTeamResultEvent,
+  msg: WsTeamResultEvent,
 ): void {
   const runId = get().currentRunId;
+  const display = typeof msg.display === 'string' && msg.display.trim() ? msg.display : '';
+  const artifactCount = msg.artifacts && typeof msg.artifacts === 'object' && !Array.isArray(msg.artifacts)
+    ? Object.keys(msg.artifacts).length
+    : 0;
   set((_s) => {
     let msgs = _s.messages;
     if (_s.streamingId) {
       msgs = _s.messages.map((m) => {
         if (m.id !== _s.streamingId) return m;
-        return { ...m, thinkingDone: true } as ChatMessage;
+        // Replace the unlabeled concatenated stream output with the composed
+        // per-node artifact blocks so each node's result is presented separately.
+        const updated: Record<string, unknown> = { thinkingDone: true };
+        if (display) updated.content = display;
+        return { ...m, ...updated } as ChatMessage;
       });
     }
     return {
@@ -141,7 +149,7 @@ export function handleTeamResultEvent(
       skipThinking: false,
     };
   });
-  Logger.info('[chat] team_result received — status set to idle');
+  Logger.info('[chat] team_result received — surfaced %d node artifacts, status set to idle', artifactCount);
   activeStreamMsgIds.delete(runId || '');
 }
 
