@@ -126,7 +126,7 @@ export default function ApiProviderTab({
       width: 80,
       render: (val: string | null) => (
         <span style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-          {val ? new Date(val).toLocaleDateString() : '-'}
+          {val ? new Date(val).toLocaleDateString() : ''}
         </span>
       ),
     },
@@ -137,7 +137,7 @@ export default function ApiProviderTab({
       width: 80,
       render: (val: string | null) => (
         <span style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-          {val ? new Date(val).toLocaleDateString() : '-'}
+          {val ? new Date(val).toLocaleDateString() : ''}
         </span>
       ),
     },

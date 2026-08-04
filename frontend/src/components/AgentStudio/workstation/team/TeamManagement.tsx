@@ -94,12 +94,12 @@ export default function TeamManagement() {
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={d.selectedIds.has(item.id)} onChange={() => d.toggleSelect(item.id)} aria-label={t('team.select_item', item.name)} /></td>
                 <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
                 <td><span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-surface-raised)] text-xs font-semibold text-[var(--color-text-secondary)]">{item.memberCount}</span></td>
-                <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category || '—'}</span></td>
+                <td><span className={`wsta-tag-pill ${getCategoryTagClass(item.category)}`}>{item.category || ''}</span></td>
                 <td>
                   {workflowTeamIds.has(item.id) ? (
                     <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)]"><GitBranch size={12} />{t('team.workflow_bound')}</span>
                   ) : (
-                    <span className="text-xs text-[var(--color-text-muted)]">— {t('team.workflow_unbound')}</span>
+                    <span className="text-xs text-[var(--color-text-muted)]">{t('team.workflow_unbound')}</span>
                   )}
                 </td>
                 <td>

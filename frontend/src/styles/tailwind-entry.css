@@ -66,7 +66,6 @@
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);
   --color-text-tertiary: var(--color-text-tertiary);
-  --color-text-on-accent: var(--color-text-on-accent);
 
   /* ── 边框色 ── */
   --color-border: var(--color-border);
@@ -182,6 +181,8 @@
   --color-text-secondary: #495057;
   --color-text-muted: #868e96;
   --color-text-tertiary: #adb5bd;
+
+  --color-text-on-accent: #1a1a2e;
 
   --color-border: rgba(0, 0, 0, 0.08);
   --color-border-subtle: rgba(0, 0, 0, 0.05);

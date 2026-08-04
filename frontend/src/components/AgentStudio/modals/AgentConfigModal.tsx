@@ -161,7 +161,7 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between pt-5 px-6 border-b-0">
+        <div className="flex items-center justify-between pt-5 pb-6 px-6 border-b-0">
           <h3 className="text-lg font-semibold text-text-primary m-0">配置Agent</h3>
           <button className="bg-transparent border-none text-text-muted cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-surface-hover hover:text-text-primary active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />

@@ -154,7 +154,6 @@ export default function SkillManagement() {
                   <span className="inline-flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                     {item.tool_names?.length ? <span className="inline-flex items-center gap-1"><Wrench size={12} />{item.tool_names.length}</span> : null}
                     {item.mcp_names?.length ? <span className="inline-flex items-center gap-1"><Radio size={12} />{item.mcp_names.length}</span> : null}
-                    {!item.tool_names?.length && !item.mcp_names?.length ? <span className="text-[var(--color-text-muted)]">—</span> : null}
                   </span>
                 </td>
                 <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>

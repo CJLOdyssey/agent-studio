@@ -94,7 +94,7 @@ function AgentFormModal({ editingAgent, formData, setFormData, onSave, onClose, 
               <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_team')}</label>
                 <select className="w-full py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })}>
-                  <option value="">—</option>
+                  <option value=""></option>
                   {teamOptions.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>

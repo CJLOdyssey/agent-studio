@@ -17,11 +17,11 @@ describe('formatDateTime', { tags: ['unit'] }, () => {
     expect(formatDateTime('2024-01-15T10:30:45Z')).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
   });
 
-  it('returns — for empty string', () => {
-    expect(formatDateTime('')).toBe('—');
+  it('returns empty string for empty input', () => {
+    expect(formatDateTime('')).toBe('');
   });
 
-  it('returns — for invalid input', () => {
-    expect(formatDateTime('not-a-date')).toBe('—');
+  it('returns empty string for invalid input', () => {
+    expect(formatDateTime('not-a-date')).toBe('');
   });
 });

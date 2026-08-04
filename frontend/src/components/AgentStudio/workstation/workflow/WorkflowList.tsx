@@ -187,7 +187,7 @@ export default function WorkflowList({ teams, onCreateWorkflow, onOpenWorkflow }
               <tr key={item.id} className={`cursor-pointer ${selectedIds.has(item.id) ? 'wsta-row-selected' : ''}`} onClick={() => onOpenWorkflow(item)}>
                 <td className="w-10 text-center align-middle p-1 px-2"><input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)} onClick={(e) => e.stopPropagation()} aria-label={t('workflow.select_item', item.name)} /></td>
                 <td><span className="block max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[var(--color-text-primary)] -tracking-[0.01em]" title={item.name}>{item.name}</span></td>
-                <td><span className="text-sm text-[var(--color-text-secondary)]">{item.teamName || '—'}</span></td>
+                <td><span className="text-sm text-[var(--color-text-secondary)]">{item.teamName || ''}</span></td>
                 <td><span className="inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-full bg-[var(--color-surface-raised)] text-xs font-semibold text-[var(--color-text-secondary)]">{item.nodeCount}</span></td>
                 <td>
                   <span className={`wsta-badge-dot ${statusDotClass[item.derivedStatus]}`}>

@@ -106,7 +106,7 @@ export default function ToolManagement() {
                 <td><span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(item.createdAt)}</span></td>
                 <td className="w-[100px] text-right">
                   {item.is_builtin ? (
-                    <span className="text-xs text-[var(--color-text-muted)]">—</span>
+                    <span className="text-xs text-[var(--color-text-muted)]"></span>
                   ) : (
                     <Dropdown menu={{ items: makeMenuItems(item) }} trigger={['click']}>
                       <button className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-md text-[var(--color-text-muted)] cursor-pointer transition-all hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"><MoreHorizontal size={14} /></button>

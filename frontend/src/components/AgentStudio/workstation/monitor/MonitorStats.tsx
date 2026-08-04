@@ -18,7 +18,7 @@ export default function MonitorStats({ stats, statCards, onNavigate }: Props) {
   return (
     <div className="grid grid-cols-3 gap-4">
       {statCards.map((cfg) => {
-        const value = stats?.[cfg.key] ?? '-';
+        const value = stats?.[cfg.key] ?? '';
         return (
           <div
             key={cfg.key}

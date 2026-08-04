@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
   addEdge,
-  Background,
   Connection,
   Controls,
   MarkerType,
@@ -111,8 +110,8 @@ function CustomNode({ id, data, selected }: NodeProps) {
       style={{
         padding: '10px 14px',
         borderRadius: 'var(--radius-card)',
-        border: `2px solid ${selected ? '#3b82f6' : '#e5e7eb'}`,
-        background: '#fff',
+        border: `2px solid ${selected ? '#3b82f6' : 'var(--color-border-strong)'}`,
+        background: 'var(--color-surface-raised)',
         minWidth: 130,
         cursor: 'pointer',
         boxShadow: selected ? '0 0 0 3px rgba(59,130,246,0.2)' : '0 1px 3px rgba(0,0,0,0.1)',
@@ -121,7 +120,7 @@ function CustomNode({ id, data, selected }: NodeProps) {
         overflow: 'visible',
       }}
     >
-      <Handle type="target" position={Position.Top} style={{ background: '#94a3b8' }} />
+      <Handle type="target" position={Position.Top} style={{ background: 'var(--color-border-strong)' }} />
 
       {data.isEntry && (
         <div
@@ -143,7 +142,7 @@ function CustomNode({ id, data, selected }: NodeProps) {
         </div>
       )}
 
-      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, paddingRight: 20 }}>
+      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, paddingRight: 20, color: 'var(--color-text-primary)' }}>
         {data.label}
       </div>
 
@@ -165,7 +164,7 @@ function CustomNode({ id, data, selected }: NodeProps) {
         {strategyLabels[data.strategy as string] || data.strategy}
       </div>
 
-      <Handle type="source" position={Position.Bottom} style={{ background: '#94a3b8' }} />
+      <Handle type="source" position={Position.Bottom} style={{ background: 'var(--color-border-strong)' }} />
 
       {hovered && (
         <div
@@ -179,7 +178,7 @@ function CustomNode({ id, data, selected }: NodeProps) {
             borderRadius: '50%',
             background: '#ef4444',
             color: '#fff',
-            border: '2px solid #fff',
+            border: '2px solid var(--color-surface-raised)',
             fontSize: 14,
             cursor: 'pointer',
             display: 'flex',
@@ -202,8 +201,8 @@ function CustomNode({ id, data, selected }: NodeProps) {
             top: '100%',
             left: 0,
             marginTop: 4,
-            background: '#fff',
-            border: '1px solid #e5e7eb',
+            background: 'var(--color-surface-elevated)',
+            border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-btn)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             zIndex: 1000,
@@ -221,10 +220,10 @@ function CustomNode({ id, data, selected }: NodeProps) {
                 padding: '6px 12px',
                 cursor: 'pointer',
                 fontSize: 13,
-                background: data.strategy === s.value ? '#f3f4f6' : 'transparent',
+                background: data.strategy === s.value ? 'var(--color-surface-hover)' : 'transparent',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = data.strategy === s.value ? '#f3f4f6' : 'transparent')}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = data.strategy === s.value ? 'var(--color-surface-hover)' : 'transparent')}
             >
               {s.label}
             </div>
@@ -456,7 +455,7 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '0 8px', flexWrap: 'wrap' }}>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="工作流名称" className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" style={{ width: 200 }} />
-        <label style={{ fontSize: 13, color: '#6b7280' }}>最大轮次:</label>
+        <label style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>最大轮次:</label>
         <input type="number" value={maxRounds} onChange={(e) => setMaxRounds(Number(e.target.value))} min={1} max={10} className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" style={{ width: 60 }} />
         <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={saving || testing || nodes.length === 0}>
           {saving ? '保存中...' : '保存工作流'}
@@ -484,12 +483,12 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
           </button>
         ))}
         {hasSelection && (
-          <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 8 }}>
-            按 <kbd style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: 4, border: '1px solid #e5e7eb' }}>Delete</kbd> 删除
+          <span style={{ fontSize: 12, color: 'var(--color-text-muted)', marginLeft: 8 }}>
+            按 <kbd style={{ background: 'var(--color-surface-hover)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--color-border-strong)' }}>Delete</kbd> 删除
           </span>
         )}
       </div>
-      <div style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 'var(--radius-card)' }}>
+      <div style={{ flex: 1, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
         <ReactFlow
           nodes={nodesWithCallbacks}
           edges={edges.map((e) => ({
@@ -509,7 +508,6 @@ export default function WorkflowEditor({ teamId, agents, existingConfig, onSaved
           onPaneClick={onPaneClick}
           fitView
         >
-          <Background />
           <Controls />
           <MiniMap />
         </ReactFlow>

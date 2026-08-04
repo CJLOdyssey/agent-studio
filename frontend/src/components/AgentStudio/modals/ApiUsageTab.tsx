@@ -67,8 +67,8 @@ export default function ApiUsageTab({ usage, keyUsage }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-[var(--color-text-muted)] shrink-0">
-                  <span>今日: <strong className="text-[var(--color-text-primary)]">{k.today_requests ?? '-'}</strong></span>
-                  <span>本月: <strong className="text-[var(--color-text-primary)]">{k.month_requests ?? '-'}</strong></span>
+                  <span>今日: <strong className="text-[var(--color-text-primary)]">{k.today_requests ?? ''}</strong></span>
+                  <span>本月: <strong className="text-[var(--color-text-primary)]">{k.month_requests ?? ''}</strong></span>
                   {k.last_used_at && <span>最后使用: {new Date(k.last_used_at).toLocaleDateString()}</span>}
                 </div>
               </div>

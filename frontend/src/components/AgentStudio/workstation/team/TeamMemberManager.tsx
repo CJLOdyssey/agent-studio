@@ -75,6 +75,8 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
         </div>
       }
       onClose={onClose}
+      hideHeaderBorder
+      hideFooterBorder
       width={480}
       bodyClassName="p-5 pt-0"
     >
@@ -87,7 +89,6 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
 
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-2.5 text-sm font-medium text-[var(--color-text-secondary)]">
-              <span className="w-3.5 h-0.5 bg-[var(--color-border-strong)] rounded-[1px]" />
               添加成员
             </div>
             <div className="flex items-center gap-2 py-2 px-3 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface-raised)] mb-1.5 transition-[border-color] duration-200">
@@ -131,11 +132,8 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
             )}
           </div>
 
-          <div className="h-px bg-[var(--color-border)] mb-4" />
-
           <div>
             <div className="flex items-center gap-2 mb-2.5 text-sm font-medium text-[var(--color-text-secondary)]">
-              <span className="w-3.5 h-0.5 bg-[var(--color-border-strong)] rounded-[1px]" />
               当前成员
               <span className="text-xs text-[var(--color-text-tertiary)] font-normal">
                 {members.length}

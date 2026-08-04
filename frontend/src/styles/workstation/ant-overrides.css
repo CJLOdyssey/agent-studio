@@ -177,8 +177,7 @@
 }
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-primary:hover {
-  background: var(--color-surface-elevated);
-  border-color: var(--color-surface-elevated);
+  color: var(--color-text-on-accent) !important;
 }
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-text {

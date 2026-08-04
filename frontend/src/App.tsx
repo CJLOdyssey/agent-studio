@@ -89,6 +89,10 @@ function ThemedApp() {
           fontSize: 14,
         },
         components: {
+          Button: {
+            defaultBg: bgElevated,
+            colorBgContainer: bgElevated,
+          },
           Pagination: {
             itemBg: 'transparent',
             itemActiveBg: '#6366f1',

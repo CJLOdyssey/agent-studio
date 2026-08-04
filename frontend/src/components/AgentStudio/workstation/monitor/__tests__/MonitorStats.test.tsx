@@ -27,12 +27,11 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
     expect(screen.getByText('1')).toBeInTheDocument();
   });
 
-  it('renders dash for null stats', () => {
+  it('renders empty for null stats', () => {
     render(
       <MonitorStats stats={null} statCards={statCards} />,
     );
-    const dashes = screen.getAllByText('-');
-    expect(dashes.length).toBeGreaterThanOrEqual(3);
+    expect(screen.queryByText('-')).not.toBeInTheDocument();
   });
 
   it('renders nothing when statCards is empty', () => {
@@ -51,7 +50,7 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
     expect(onNavigate).toHaveBeenCalledWith('agents');
   });
 
-  it('renders stats with partial null fields as dash', () => {
+  it('renders stats with partial null fields as empty', () => {
     render(
       <MonitorStats
         stats={{ agents: 5, prompts: 10, tools: null as unknown as number, mcps: 2, skills: 4, teams: 1, logs_today: 0, updated_at: '2024-01-01' }}
@@ -59,7 +58,7 @@ describe('MonitorStats', { tags: ['integration'] }, () => {
       />,
     );
     expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('-')).toBeInTheDocument();
+    expect(screen.queryByText('-')).not.toBeInTheDocument();
   });
 
   it('does not crash when onNavigate is not provided', () => {
