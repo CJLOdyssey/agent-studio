@@ -1,162 +1,18 @@
-/* workstation.css — Phase 4 cleanup */
-/* .wsta-* / .ws-* / custom classes removed (migrated to Tailwind). */
-/* Only .ant-* component overrides retained (cannot be expressed via className). */
+/* workstation.css — Phase 4 cleanup, antd v6 pass.
+   antd v6: all antd styles live in @layer antd (StyleProvider layer); this
+   file is unlayered, so it wins the cascade regardless of specificity —
+   !important is only kept where we must beat OUR OWN non-important rules. */
 
-/* ── Antd component overrides for workstation modal ── */
-/* Modal header: dark bg, bottom border */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-header {
-  background: var(--color-surface-card);
-  border-bottom: 1px solid var(--color-border);
-  padding: 14px 20px;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-title {
-  color: var(--color-text-primary);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-close {
-  color: var(--color-text-muted);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-close:hover {
-  color: var(--color-text-primary);
-  background: var(--color-surface-hover);
-}
-
-/* Modal body: fixed height, flex column, no body-level overflow */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-body {
-  height: 700px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-}
-
-/* Modal content: dark bg + no padding (handled by WorkstationPage) */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-content {
-  background: var(--color-surface-card);
-  overflow: hidden;
-  padding: 0;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-container {
-  background: var(--color-surface-card);
-  padding: 0;
-}
-
-/* ProCard: flat structural wrapper (not a visual card) */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card {
-  background: transparent;
-  color: var(--color-text-primary);
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card .ant-pro-card-body {
-  padding: 24px 20px;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card .ant-pro-card-header {
-  border-bottom: 1px solid var(--color-border);
-  padding: 24px 20px;
-  background: transparent;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-pro-card .ant-pro-card-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table {
-  background: var(--color-surface-card);
-  color: var(--color-text-primary);
-  font-size: 13px;
-  border-radius: var(--radius-card);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-wrapper .ant-table-container {
-  border-radius: var(--radius-card);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table table {
-  width: 100%;
-  table-layout: fixed;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th {
-  background: color-mix(in srgb, var(--color-surface-card) 98%, var(--color-text-primary));
-  color: var(--color-text-tertiary);
-  border-bottom: 1px solid var(--color-border);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding-top: 18px;
-  padding-bottom: 18px;
-  padding-left: 24px;
-  padding-right: 24px;
-  vertical-align: middle;
-  line-height: 1.4;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th::before {
-  display: none;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-column-sorters {
-  align-items: center;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td {
-  background: transparent;
-  color: var(--color-text-primary);
-  border-bottom: 1px solid var(--color-border-subtle);
-  padding-top: 20px;
-  padding-bottom: 20px;
-  padding-left: 24px;
-  padding-right: 24px;
-  vertical-align: middle;
-  line-height: 1.6;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:last-child > td {
-  border-bottom: none;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td::before {
-  display: none;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:hover > td,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row:hover > td,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td.ant-table-cell-row-hover {
-  @apply bg-[var(--color-surface-hover)] text-[var(--color-text-primary)];
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:hover > td a,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row:hover > td a,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr:hover > td span,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row:hover > td span {
-  @apply text-inherit;
-}
-
-/* Prevent header text turning white on hover */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th:hover,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr.ant-table-row:hover > th {
-  @apply text-[var(--color-text-muted)];
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-column-sorters:hover {
-  @apply text-[var(--color-text-muted)];
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr.ant-table-row-selected > td {
-  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
-}
+/* ── Antd component overrides for workstation ──
+   NOTE (v6): the `.ant-modal-*` block scoped to `:where(.wsta-root,
+   .workstation-modal.ant-modal)` was REMOVED — it never matched: antd Modal
+   portals to document.body with no .wsta-root/.workstation-modal ancestor
+   (verified v5+v6; v6 DOM: .ant-modal-root > .ant-modal-wrap > .ant-modal >
+   .ant-modal-container, no .ant-modal-content). The only antd Modal (Skill
+   import, SkillManagement.tsx) renders pure antd defaults via ConfigProvider
+   tokens = v5 baseline parity (pixel-diff 99.5%+, 05b). A future Modal that
+   needs custom styling must pass className="workstation-modal" and re-verify
+   the baseline. */
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-default {
   background: var(--color-surface-raised);
@@ -177,9 +33,9 @@
 }
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-primary:hover {
-  /* Intentional !important: antd hashed styles force white text on hover;
-     no Component Token exists for it — keep text-on-accent in both themes. */
-  color: var(--color-text-on-accent) !important;
+  /* !important was dropped (v6): antd hover text comes from a CSS var inside
+     @layer antd; this unlayered rule wins at normal priority. */
+  color: var(--color-text-on-accent);
 }
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-text {
@@ -188,20 +44,6 @@
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-text:hover {
   background: var(--color-surface-hover);
-  color: var(--color-text-primary);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-checkbox-inner {
-  background-color: var(--color-surface-raised);
-  border-color: var(--color-border);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-checkbox-wrapper {
   color: var(--color-text-primary);
 }
 
@@ -338,10 +180,6 @@
   content: none;
 }
 
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-empty-description {
-  color: var(--color-text-muted);
-}
-
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-input,
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-input-affix-wrapper {
   background: var(--color-surface-raised);
@@ -360,6 +198,13 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
+/* Select — v6 DOM: `.ant-select-selector` removed; bg/border live on
+   `.ant-select`. Only background overridden (border = same token value;
+   untouched to preserve v6 focus/hover accent borders). */
+.ant-select-single.ant-select.ant-select {
+  background: var(--color-surface-raised);
+}
+
 .ant-select-dropdown.ant-select-dropdown {
   background: var(--color-surface-overlay);
 }
@@ -376,15 +221,6 @@
   background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
-.ant-select-single .ant-select-selector.ant-select-selector {
-  background: var(--color-surface-raised);
-  border-color: var(--color-border);
-}
-
-.ant-select-single .ant-select-selection-item.ant-select-selection-item {
-  color: var(--color-text-primary);
-}
-
 /* ── Native element focus effects (used by tab components) ── */
 :where(.wsta-root, .workstation-modal.ant-modal) input[type="text"]:focus,
 :where(.wsta-root, .workstation-modal.ant-modal) input[type="search"]:focus,
@@ -394,7 +230,7 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
-/* ── Dropdown menus (Ant Design v5) ── */
+/* ── Dropdown menus ── */
 .ant-dropdown .ant-dropdown-menu.ant-dropdown-menu {
   background: var(--color-surface-overlay);
   border-color: var(--color-border);
@@ -425,72 +261,6 @@
 .ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item-divider {
   margin: 4px 0;
   border-color: var(--color-border-subtle);
-}
-
-/* ── Status Badge (Ant Design) ── */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-badge-status-dot {
-  width: 6px;
-  height: 6px;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-badge-status-text {
-  color: var(--color-text-primary);
-  font-size: 13px;
-}
-
-/* ── Table row spacing ── */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td:first-child,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody .ant-table-cell:first-child {
-  padding-left: 24px;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody > tr > td:last-child,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody .ant-table-cell:last-child {
-  padding-right: 24px;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th:first-child,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead .ant-table-cell:first-child {
-  padding-left: 24px;
-}
-
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead > tr > th:last-child,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead .ant-table-cell:last-child {
-  padding-right: 24px;
-}
-
-/* Override antd default cell padding */
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-cell,
-:where(.wsta-root, .workstation-modal.ant-modal) td.ant-table-cell,
-:where(.wsta-root, .workstation-modal.ant-modal) th.ant-table-cell,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-tbody td.ant-table-cell,
-:where(.wsta-root, .workstation-modal.ant-modal) .ant-table-thead th.ant-table-cell {
-  padding-top: 20px;
-  padding-bottom: 20px;
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-block: 20px;
-  padding-inline: 24px;
-}
-
-/* ── Responsive design ── */
-@media (max-width: 1200px) {
-  :where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-content {
-    width: 100%;
-    height: min(700px, 90vh);
-  }
-}
-
-@media (max-width: 768px) {
-  :where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-content {
-    width: 100%;
-    height: 100dvh;
-    border-radius: 0;
-  }
-
-  :where(.wsta-root, .workstation-modal.ant-modal) .ant-modal-body {
-    height: 100dvh;
-  }
 }
 
 /* ── Custom HTML tables (used by AgentMgmt, TeamMgmt, etc.) ── */
@@ -568,24 +338,28 @@
 
 /* ── Workstation root scoped overrides (previously inline in
    WorkstationPage.tsx — consolidated here) ──
-   Intentional !important: antd v5 CSS-in-JS hashed rules match these elements;
-   we must win the cascade to enforce the --color-* token theme. */
+   NOTE (v6): antd v6 styles sit inside @layer antd; this unlayered file wins
+   at normal priority. !important is kept only to beat OUR OWN rules for v5
+   baseline parity:
+   - table td: transparent vs tbody tr:hover td (row hover disabled in v5);
+   - table thead: surface-raised vs the custom-table color-mix(98%) rule;
+   - wsta-row-selected td: selected rows stay transparent when hovered. */
 .wsta-root table,
 .wsta-root table th,
 .wsta-root table td { background: transparent !important; }
 .wsta-root table thead tr,
 .wsta-root table thead th { background: var(--color-surface-raised) !important; }
 .wsta-root .wsta-row-selected td { background: transparent !important; }
-.wsta-root .ant-input-affix-wrapper,
-.wsta-root .ant-select-selector { background: var(--color-surface-raised) !important; }
 
 /* ── API key table overrides (previously inline in ApiProviderTab.tsx) ──
-   Intentional !important: antd table borders/padding come from hashed CSS-in-JS rules. */
+   NOTE (v6 migration): !important removed — `.api-key-table` (0,2,1)+ is
+   unlayered and beats antd's layered .ant-table rules at normal priority.
+   v6 keeps the .ant-table-thead/tbody/row-selected class names. */
 .api-key-table .ant-table-thead > tr > th,
-.api-key-table .ant-table-tbody > tr > td { border-bottom: none !important; }
-.api-key-table .ant-table-tbody > tr.ant-table-row-selected > td { background: transparent !important; }
+.api-key-table .ant-table-tbody > tr > td { border-bottom: none; }
+.api-key-table .ant-table-tbody > tr.ant-table-row-selected > td { background: transparent; }
 .api-key-table .ant-table-thead > tr > th,
-.api-key-table .ant-table-tbody > tr > td { padding-top: 6px !important; padding-bottom: 6px !important; }
+.api-key-table .ant-table-tbody > tr > td { padding-top: 6px; padding-bottom: 6px; }
 
 /* ── Category/status badges (migrated from workstation-table.css) ──
    Original pixel values preserved; colors mapped to current --color-* tokens. */
