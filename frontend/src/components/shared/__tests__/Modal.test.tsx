@@ -213,4 +213,27 @@ describe('Modal', { tags: ['unit'] }, () => {
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: false });
     expect(document.activeElement).toBe(first);
   });
+
+  it('sets aria-label when provided', () => {
+    render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose} ariaLabel="Custom Dialog">
+          <p>Content</p>
+        </Modal>
+      </TestProviders>,
+    );
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'Custom Dialog');
+  });
+
+  it('applies width style when provided', () => {
+    const { container } = render(
+      <TestProviders>
+        <Modal title="Test" onClose={onClose} width={480}>
+          <p>Content</p>
+        </Modal>
+      </TestProviders>,
+    );
+    const dialog = container.querySelector('[role="dialog"]');
+    expect(dialog).toHaveStyle({ maxWidth: '480px' });
+  });
 });

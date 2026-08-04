@@ -11,9 +11,11 @@ interface Props {
   hideHeaderBorder?: boolean;
   hideFooterBorder?: boolean;
   bodyClassName?: string;
+  ariaLabel?: string;
+  width?: number;
 }
 
-export default function Modal({ title, onClose, children, footer, className = '', hideHeaderBorder, hideFooterBorder, bodyClassName }: Props) {
+export default function Modal({ title, onClose, children, footer, className = '', hideHeaderBorder, hideFooterBorder, bodyClassName, ariaLabel, width }: Props) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,10 +60,12 @@ export default function Modal({ title, onClose, children, footer, className = ''
     <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
       <div
         className={`bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] ${className}`}
+        style={width ? { maxWidth: width } : undefined}
         onClick={(e) => e.stopPropagation()}
         ref={contentRef}
         role="dialog"
         aria-modal="true"
+        aria-label={ariaLabel}
       >
         <div className={`flex items-center justify-between px-6 py-4 ${hideHeaderBorder ? '' : 'border-b border-[var(--color-border)]'}`}>
           {typeof title === 'string'
