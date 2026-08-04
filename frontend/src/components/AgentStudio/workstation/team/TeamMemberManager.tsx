@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { X, Plus, Loader2, Search, Minus } from 'lucide-react';
 import type { TeamEntry } from './team.types';
 import useTeamMemberManager from './useTeamMemberManager';
+import Modal from '@/components/shared/Modal';
 
 interface Props {
   team: TeamEntry;
@@ -56,28 +57,28 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
   } = useTeamMemberManager(team);
 
   return (
-    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-w-[480px] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] flex items-center justify-center text-[var(--color-accent)] text-base">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </span>
-            <div>
-              <h3 className="m-0 text-base font-semibold">管理成员</h3>
-              <p className="mt-px mb-0 text-xs text-[var(--color-text-muted)]">{team.name}</p>
-            </div>
+    <Modal
+      title={
+        <div className="flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-lg bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] flex items-center justify-center text-[var(--color-accent)] text-base">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </span>
+          <div>
+            <h3 className="m-0 text-base font-semibold">管理成员</h3>
+            <p className="mt-px mb-0 text-xs text-[var(--color-text-muted)]">{team.name}</p>
           </div>
-          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label="关闭"><X size={18} /></button>
         </div>
-
-        <div className="p-5 pt-0 overflow-y-auto flex-1 min-h-0 flex flex-col">
-          {error && (
+      }
+      onClose={onClose}
+      width={480}
+      bodyClassName="p-5 pt-0"
+    >
+      {error && (
             <div className="flex items-center gap-2 py-2 px-3 mb-3 bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] rounded-lg text-sm text-[var(--color-danger)]">
               <span className="flex-1">{error}</span>
               <button onClick={() => setError(null)} className="bg-transparent border-none cursor-pointer text-inherit p-0.5 flex"><X size={14} /></button>
@@ -170,13 +171,11 @@ export default memo(function TeamMemberManager({ team, onClose }: Props) {
                         : <Minus size={14} />
                       }
                     </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 });

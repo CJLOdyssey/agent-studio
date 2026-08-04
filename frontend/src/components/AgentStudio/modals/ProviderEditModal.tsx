@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Tag, Loader2, Save, AlertCircle } from 'lucide-react';
- 
- import { fetchModelsFromProvider } from '../../../api/client/keys';
- import { listProviders } from '../../../api/client/providers';
- import type { ProvidersMap } from '../../../api/client/providers';
- import ProviderSelector from './ProviderSelector';
- import CredentialsSection from './CredentialsSection';
- import ModelSection from './ModelSection';
+import { fetchModelsFromProvider } from '../../../api/client/keys';
+import { listProviders } from '../../../api/client/providers';
+import type { ProvidersMap } from '../../../api/client/providers';
+import ProviderSelector from './ProviderSelector';
+import CredentialsSection from './CredentialsSection';
+import ModelSection from './ModelSection';
+import Modal from '@/components/shared/Modal';
 
 export interface ApiProviderForm {
   id: string;
@@ -40,7 +40,6 @@ interface Props {
 
 export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError }: Props) {
   const { t } = useTranslation();
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
@@ -114,22 +113,31 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   };
 
   return (
-    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[480px] max-h-[600px] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)]" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-3">
-            <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
-              {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
-            </div>
-            <div>
-              <h3 className="m-0">{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-            </div>
+    <Modal
+      title={
+        <div className="flex items-center gap-3">
+          <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
+            {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
           </div>
-          <button type="button" className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
+          <div>
+            <h3 className="m-0">{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
+          </div>
         </div>
-
-        <div className="flex-1 px-6 py-5 overflow-y-auto space-y-5">
-          {error && (
+      }
+      onClose={onClose}
+      width={480}
+      bodyClassName="px-6 py-5 space-y-5"
+      footer={
+        <>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {saving ? '...' : t('providerEdit.save')}
+          </button>
+        </>
+      }
+    >
+      {error && (
             <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
               <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
               <span className="text-[var(--color-danger)] text-sm flex-1">{error}</span>
@@ -168,17 +176,6 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
               />
             </div>
           )}
-
-        </div>
-
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[var(--color-border)]">
-          <button type="button" className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            {saving ? '...' : t('providerEdit.save')}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
