@@ -5,6 +5,7 @@ import type { Team, Agent } from '../../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { validateName } from '../../../utils/validation';
 import TeamTreeAgentItem from './TeamTreeAgentItem';
+import ConfirmDialog from '../../shared/ConfirmDialog';
 import type * as React from 'react';
 
 interface TeamTreeProps {
@@ -338,96 +339,31 @@ const TeamTree = memo(function TeamTree({
         ))}
       </div>
 
-      {confirmDelete && createPortal(
-        <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={() => setConfirmDelete(null)}>
-          <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-lg max-w-[400px] w-full overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
-            <div className="flex items-center justify-between px-5 py-[18px_20px_14px] shrink-0">
-              <h3 id="confirm-delete-title">{t('confirm.title')}</h3>
-              <button
-                className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-[var(--radius-btn)] text-[var(--color-text-secondary)] cursor-pointer transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
-                onClick={() => setConfirmDelete(null)}
-                aria-label={t('common.close')}
-              >
-                ×
-              </button>
-            </div>
-            <div className="px-5 py-4">
-              <div className="flex items-center gap-3 py-1">
-                <span style={{ color: confirmDelete.type === 'team' ? 'var(--color-danger)' : 'var(--color-warning)' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p>
-                    {confirmDelete.type === 'team'
-                      ? t('confirm.deleteTeamConfirm')
-                      : t('confirm.deleteAgentConfirm')}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2.5 mt-5 px-5 py-3.5">
-              <button
-                className="inline-flex items-center justify-center min-w-[68px] h-9 px-3.5 rounded-[var(--radius-btn)] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium cursor-pointer transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_4%,transparent)]"
-                onClick={() => setConfirmDelete(null)}
-                autoFocus
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                className="inline-flex items-center justify-center min-w-[68px] h-9 px-3.5 rounded-[var(--radius-btn)] border-none text-white text-sm font-medium cursor-pointer transition-colors bg-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger),#000)] shadow-[0_1px_3px_color-mix(in_srgb,var(--color-danger)_15%,transparent)]"
-                onClick={confirmDeleteAction}
-              >
-                {t('sidebar.delete')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
+      {confirmDelete && (
+        <ConfirmDialog
+          title={t('confirm.title')}
+          message={
+            confirmDelete.type === 'team'
+              ? t('confirm.deleteTeamConfirm')
+              : t('confirm.deleteAgentConfirm')
+          }
+          confirmLabel={t('sidebar.delete')}
+          cancelLabel={t('common.cancel')}
+          danger
+          onConfirm={confirmDeleteAction}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
-      {validationWarning && createPortal(
-        <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={() => setValidationWarning(null)}>
-          <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-lg max-w-[400px] w-full overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="flex items-center justify-between px-5 py-[18px_20px_14px] shrink-0">
-              <h3>{t('confirm.tip')}</h3>
-              <button
-                className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-[var(--radius-btn)] text-[var(--color-text-secondary)] cursor-pointer transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
-                onClick={() => setValidationWarning(null)}
-                aria-label={t('common.close')}
-              >
-                ×
-              </button>
-            </div>
-            <div className="px-5 py-4">
-              <div className="flex items-center gap-3 py-1">
-                <span style={{ color: 'var(--color-warning)' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p>{validationWarning.message}</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2.5 mt-5 px-5 py-3.5">
-              <button
-                className="inline-flex items-center justify-center min-w-[68px] h-9 px-3.5 rounded-[var(--radius-btn)] border-none text-white text-sm font-medium cursor-pointer transition-colors bg-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger),#000)] shadow-[0_1px_3px_color-mix(in_srgb,var(--color-danger)_15%,transparent)]"
-                onClick={() => setValidationWarning(null)}
-                autoFocus
-              >
-                {t('confirm.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
+      {validationWarning && (
+        <ConfirmDialog
+          title={t('confirm.tip')}
+          message={validationWarning.message}
+          confirmLabel={t('confirm.confirm')}
+          danger
+          onConfirm={() => setValidationWarning(null)}
+          onCancel={() => setValidationWarning(null)}
+        />
       )}
     </div>
   );

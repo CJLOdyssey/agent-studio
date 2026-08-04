@@ -551,7 +551,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     expect(document.body.textContent).toContain('sidebar.nameNotEmpty');
 
     // Dismiss by clicking close button
-    fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
     expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
     restore();
     vi.useRealTimers();

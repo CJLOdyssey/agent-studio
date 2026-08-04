@@ -214,7 +214,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
     expect(document.body.textContent).toContain('sidebar.nameNotEmpty');
-    fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
     expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
     vi.useRealTimers();
