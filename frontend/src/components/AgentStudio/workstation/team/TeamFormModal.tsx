@@ -1,8 +1,8 @@
-import { memo, useCallback } from 'react';
-import { X, Users } from 'lucide-react';
+import { memo } from 'react';
+import { Users } from 'lucide-react';
 import type { TeamEntry, TeamFormData } from './team.types';
 import { t } from './locales';
-import type * as React from 'react';
+import Modal from '@/components/shared/Modal';
 
 interface Props {
   editingItem: TeamEntry | null;
@@ -14,23 +14,31 @@ interface Props {
 }
 
 function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, errors }: Props) {
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => { if (e.key === 'Escape') onClose(); }, [onClose]);
-
   return (
-    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} onKeyDown={handleKeyDown}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden max-w-[var(--modal-sm)] animate-[agentFormIn_0.25s_ease-out]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Users size={16} className="text-[var(--color-accent)]" />
-            <h3>{editingItem ? t('team.form_title_edit') : t('team.form_title_new')}</h3>
-          </div>
-          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
+    <Modal
+      title={
+        <div className="flex items-center gap-3">
+          <Users size={16} className="text-[var(--color-accent)]" />
+          <h3>{editingItem ? t('team.form_title_edit') : t('team.form_title_new')}</h3>
         </div>
+      }
+      onClose={onClose}
+      hideHeaderBorder
+      hideFooterBorder
+      width={400}
+      bodyClassName="px-5 pb-5"
+      footer={
+        <>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('team.form_cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>
+            {editingItem ? t('team.form_save_edit') : t('team.form_save_create')}
+          </button>
+        </>
+      }
+    >
+      {errors.length > 0 && <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs">{errors.map((e, i) => <p key={i}>{e}</p>)}</div>}
 
-        <div className="px-5 pb-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
-          {errors.length > 0 && <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs">{errors.map((e, i) => <p key={i}>{e}</p>)}</div>}
-
-          <div className="pt-4">
+      <div className="pt-4">
             <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">基本信息</div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('team.form_name')} <span className="text-[var(--color-danger)]">*</span></label>
@@ -54,18 +62,7 @@ function TeamFormModal({ editingItem, formData, setFormData, onSave, onClose, er
               </div>
             </div>
           </div>
-
-
-        </div>
-
-        <div className="flex items-center justify-end gap-2 px-6 py-4">
-          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('team.form_cancel')}</button>
-          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>
-            {editingItem ? t('team.form_save_edit') : t('team.form_save_create')}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

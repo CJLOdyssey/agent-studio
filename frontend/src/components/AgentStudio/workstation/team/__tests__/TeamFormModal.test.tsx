@@ -241,7 +241,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
     expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument();
-    expect(container.querySelector('[class*="max-w-\\[var\\(--modal-sm\\)\\]"]')).toBeInTheDocument();
+    expect(container.querySelector('[role="dialog"]')).toBeInTheDocument();
   });
 
   it('renders team avatar icon in header', () => {
