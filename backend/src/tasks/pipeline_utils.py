@@ -1,6 +1,7 @@
 """Task helper utilities."""
 import asyncio
 import contextlib
+import hashlib
 import json
 import os
 import shlex
@@ -130,14 +131,90 @@ def _parse_json_field(field: Any) -> list[Any]:
     return field or []
 
 
+# In-process cache for MCP stdio discovery results. Spawning a stdio subprocess
+# (and its up-to-25s timeout) is expensive and is repeated on every workflow run
+# (per agent, per run). The discovered tool list is cached per (endpoint, args,
+# env) config so repeated single-agent/team runs reuse it. A config change
+# produces a different cache key and re-discovers automatically. Empty results
+# are cached too — a broken MCP then fails fast instead of hanging each run.
+_MCP_DISCOVERY_CACHE: dict[str, list[dict[str, Any]]] = {}
+_MCP_DISCOVERY_LOCKS: dict[str, tuple[asyncio.AbstractEventLoop, asyncio.Lock]] = {}
+_MCP_DISCOVERY_MAX_ENTRIES = 32
+
+
+def _discovery_cache_key(
+    endpoint: str,
+    args: list[str] | None,
+    env: dict[str, str] | None,
+) -> str:
+    payload = json.dumps(
+        {"endpoint": endpoint, "args": args, "env": env},
+        sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+    )
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()
+
+
+def _get_discovery_lock(key: str) -> asyncio.Lock:
+    """Return the per-key discovery lock bound to the current event loop.
+
+    ``asyncio.Lock`` is loop-bound; Celery prefork workers run each task on a
+    fresh event loop (via ``asyncio.run``), so a lock created on a dead loop
+    must never be reused — it would raise "Future attached to a different loop".
+    """
+    loop = asyncio.get_running_loop()
+    entry = _MCP_DISCOVERY_LOCKS.get(key)
+    if entry is None or entry[0] is not loop:
+        lock = asyncio.Lock()
+        _MCP_DISCOVERY_LOCKS[key] = (loop, lock)
+        return lock
+    return entry[1]
+
+
+def _store_discovery(key: str, result: list[dict[str, Any]]) -> None:
+    """Store a discovery result, evicting all entries when the cap is reached."""
+    if len(_MCP_DISCOVERY_CACHE) >= _MCP_DISCOVERY_MAX_ENTRIES:
+        _MCP_DISCOVERY_CACHE.clear()
+        _MCP_DISCOVERY_LOCKS.clear()
+    _MCP_DISCOVERY_CACHE[key] = result
+
+
 async def _discover_mcp_tools(
     endpoint: str,
     args: list[str] | None = None,
     env: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
+    """Discover MCP stdio tools, caching the result per (endpoint, args, env).
+
+    Discovery spawns a stdio subprocess and can block up to 25s, so the result
+    (including an empty one after a timeout) is cached in-process. The cache is
+    shared by single-agent and team execution paths, so repeated runs reuse the
+    tool list instead of re-spawning the subprocess every time. A config change
+    yields a different key and re-discovers. Concurrent discoveries of the same
+    config are deduped with a per-key ``asyncio.Lock``.
+    """
     from services.tool_handlers import _normalize_mcp_env
 
     env = _normalize_mcp_env(env)
+    key = _discovery_cache_key(endpoint, args, env)
+    cached = _MCP_DISCOVERY_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    lock = _get_discovery_lock(key)
+    async with lock:
+        cached = _MCP_DISCOVERY_CACHE.get(key)
+        if cached is not None:
+            return cached
+        result = await _discover_mcp_tools_uncached(endpoint, args, env)
+        _store_discovery(key, result)
+        return result
+
+
+async def _discover_mcp_tools_uncached(
+    endpoint: str,
+    args: list[str] | None = None,
+    env: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     if args:
         params = StdioServerParameters(command=endpoint, args=list(args), env=env)
     else:

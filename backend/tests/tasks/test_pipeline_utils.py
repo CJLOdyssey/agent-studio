@@ -291,6 +291,35 @@ class TestTryMockFallback:
 
 class TestDiscoverMcpTools:
 
+    @pytest.fixture(autouse=True)
+    def _reset_discovery_cache(self):
+        """Clear the module-level MCP discovery cache around every test.
+
+        The cache persists for the whole worker process, so tests must not
+        share discovered tool lists with each other.
+        """
+        import tasks.pipeline_utils as pu
+
+        pu._MCP_DISCOVERY_CACHE.clear()
+        pu._MCP_DISCOVERY_LOCKS.clear()
+        yield
+        pu._MCP_DISCOVERY_CACHE.clear()
+        pu._MCP_DISCOVERY_LOCKS.clear()
+
+    def _fake_session(self, tools=None):
+        session = AsyncMock()
+        session.list_tools = AsyncMock(return_value=MagicMock(tools=tools or []))
+        return session
+
+    def _fake_cms(self, session):
+        stdio_cm = AsyncMock()
+        stdio_cm.__aenter__ = AsyncMock(return_value=(MagicMock(), MagicMock()))
+        stdio_cm.__aexit__ = AsyncMock(return_value=False)
+        session_cm = AsyncMock()
+        session_cm.__aenter__ = AsyncMock(return_value=session)
+        session_cm.__aexit__ = AsyncMock(return_value=False)
+        return stdio_cm, session_cm
+
     async def test_discover_timeout(self):
         with patch("tasks.pipeline_utils.stdio_client", side_effect=TimeoutError()):
             from tasks.pipeline_utils import _discover_mcp_tools
@@ -354,6 +383,67 @@ class TestDiscoverMcpTools:
             result = await _discover_mcp_tools("mcp-server")
 
         assert result == []
+
+    async def test_discover_cached_across_calls(self):
+        """Same (endpoint, args, env) config spawns the stdio subprocess once."""
+        from tasks.pipeline_utils import _discover_mcp_tools
+
+        tool = MagicMock()
+        tool.name = "read"
+        tool.description = "Read file"
+        tool.inputSchema = {"type": "object"}
+        session = self._fake_session(tools=[tool])
+        stdio_cm, session_cm = self._fake_cms(session)
+
+        with patch("tasks.pipeline_utils.stdio_client", return_value=stdio_cm), \
+             patch("tasks.pipeline_utils.ClientSession", return_value=session_cm):
+            first = await _discover_mcp_tools("cache-cmd", args=["--port", "1"])
+            second = await _discover_mcp_tools("cache-cmd", args=["--port", "1"])
+
+        assert first == second
+        assert first[0]["name"] == "read"
+        assert session.list_tools.await_count == 1
+
+    async def test_discover_cache_key_varies_with_config(self):
+        """Different args produce separate discovery — no cross-config hits."""
+        from tasks.pipeline_utils import _discover_mcp_tools
+
+        session_a = self._fake_session()
+        session_b = self._fake_session()
+        stdio_cm_a, session_cm_a = self._fake_cms(session_a)
+        stdio_cm_b, session_cm_b = self._fake_cms(session_b)
+
+        with patch("tasks.pipeline_utils.stdio_client", side_effect=[stdio_cm_a, stdio_cm_b]), \
+             patch("tasks.pipeline_utils.ClientSession", side_effect=[session_cm_a, session_cm_b]):
+            await _discover_mcp_tools("cache-cmd", args=["--port", "1"])
+            await _discover_mcp_tools("cache-cmd", args=["--port", "2"])
+
+        assert session_a.list_tools.await_count == 1
+        assert session_b.list_tools.await_count == 1
+
+    async def test_discover_caches_empty_timeout_result(self):
+        """A timed-out discovery is cached so later runs fail fast, not 25s."""
+        import tasks.pipeline_utils as pu
+
+        with patch("tasks.pipeline_utils.stdio_client", side_effect=TimeoutError()):
+            first = await pu._discover_mcp_tools("cache-timeout-cmd")
+            second = await pu._discover_mcp_tools("cache-timeout-cmd")
+
+        assert first == []
+        assert second == []
+        key = pu._discovery_cache_key("cache-timeout-cmd", None, None)
+        assert pu._MCP_DISCOVERY_CACHE[key] == []
+
+    def test_store_discovery_evicts_over_capacity(self):
+        """Cache evicts all entries when exceeding the cap — bounded memory."""
+        import tasks.pipeline_utils as pu
+
+        for i in range(pu._MCP_DISCOVERY_MAX_ENTRIES):
+            pu._MCP_DISCOVERY_CACHE[f"k{i}"] = []
+        pu._store_discovery("overflow", [])
+        assert len(pu._MCP_DISCOVERY_CACHE) == 1
+        assert pu._MCP_DISCOVERY_CACHE["overflow"] == []
+        assert pu._MCP_DISCOVERY_LOCKS == {}
 
 
 # =============================================================================

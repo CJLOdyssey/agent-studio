@@ -348,6 +348,69 @@ class TestNodeFnToolExecution:
             assert "artifacts" in result
 
     @pytest.mark.asyncio
+    @patch("workflow.node_factory.publish_run_message", new_callable=AsyncMock)
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    async def test_node_fn_tool_round_exhausted_publishes_warning(self, mock_stream, mock_publish):
+        """Every tool round capped → [info] warning published to the broker."""
+        wrapper = AsyncMock()
+        wrapper.invoke.return_value = "tool out"
+        wrapper.set_run_id = MagicMock()
+        wrapper.name = "loop_tool"
+        with patch(
+            "workflow.node_factory.build_tool_definition",
+            return_value=("loop_tool", wrapper, {"type": "function", "function": {"name": "loop_tool"}}),
+        ):
+            factory = self._factory(
+                node_tools={"pm": [ToolConfig(name="loop_tool", instructions="loop")]},
+                run_id="run-1",
+            )
+            node = WorkflowNode(id="n1", role_identifier="pm", strategy=NodeStrategy.GENERATOR)
+            fn = factory.create(node)
+
+            def tool_call_turn(*_args, **_kwargs):
+                return ([""], [], {0: {"id": "c", "name": "loop_tool", "arguments": "{}"}}, "tool_calls", {})
+
+            mock_stream.side_effect = tool_call_turn
+
+            await fn(create_initial_state("req"))
+
+        thinking_msgs = [
+            c[0][1]["content"]
+            for c in mock_publish.call_args_list
+            if c[0][1]["type"] == "thinking_stream"
+        ]
+        assert any("[info]" in m and "上限" in m for m in thinking_msgs)
+        assert mock_stream.await_count == 9
+
+    @pytest.mark.asyncio
+    @patch("workflow.node_factory.publish_run_message", new_callable=AsyncMock)
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    async def test_node_fn_tool_round_exhausted_no_run_id_skips_warning(self, mock_stream, mock_publish):
+        wrapper = AsyncMock()
+        wrapper.invoke.return_value = "tool out"
+        wrapper.set_run_id = MagicMock()
+        wrapper.name = "loop_tool"
+        with patch(
+            "workflow.node_factory.build_tool_definition",
+            return_value=("loop_tool", wrapper, {"type": "function", "function": {"name": "loop_tool"}}),
+        ):
+            factory = self._factory(
+                node_tools={"pm": [ToolConfig(name="loop_tool", instructions="loop")]},
+            )
+            node = WorkflowNode(id="n1", role_identifier="pm", strategy=NodeStrategy.GENERATOR)
+            fn = factory.create(node)
+
+            def tool_call_turn(*_args, **_kwargs):
+                return ([""], [], {0: {"id": "c", "name": "loop_tool", "arguments": "{}"}}, "tool_calls", {})
+
+            mock_stream.side_effect = tool_call_turn
+
+            result = await fn(create_initial_state("req"))
+
+        mock_publish.assert_not_called()
+        assert "artifacts" in result
+
+    @pytest.mark.asyncio
     @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
     async def test_node_fn_no_tools_single_call(self, mock_stream):
         mock_stream.return_value = (["hello world"], None, None, None, None)

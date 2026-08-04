@@ -137,6 +137,7 @@ class NodeFactory:
                     )
 
             full_content = ""
+            tool_round_exhausted = False
             for _ in range(_MAX_TOOL_ROUNDS + 1):
                 url, headers, body = self._build_request(api_msgs, tool_definitions)
                 content_chunks, _, tool_calls_map, _, _ = await stream_llm_response(
@@ -180,6 +181,22 @@ class NodeFactory:
                     ))
                 messages.extend(tool_messages)
                 api_msgs = convert_messages_to_api(messages)
+            else:
+                tool_round_exhausted = True
+
+            if tool_round_exhausted:
+                # Every tool round returned tool_calls — the appended ToolMessages
+                # are never re-sent, so the node output may be incomplete/empty.
+                # Surface that to the user via the thinking chain ([info] node).
+                await cb({
+                    "event": "on_custom_thinking",
+                    "data": {
+                        "content": (
+                            f"[info] 工具调用轮数已达上限（{_MAX_TOOL_ROUNDS + 1} 轮），"
+                            "本轮输出可能不完整"
+                        )
+                    },
+                })
 
             result = strategy.process_output(state, node, full_content)
             result["messages"] = state.get("messages", []) + [AIMessage(content=full_content)]
