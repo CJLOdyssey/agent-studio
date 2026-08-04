@@ -1,7 +1,31 @@
 """Unit tests for _ToolWrapper init and build_tool_definition."""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from services.tool_config import ToolConfig, _ToolWrapper, build_tool_definition, sanitize_tool_name
+
+_API_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+def _sanitize_under_seed(seed: str, name: str) -> str:
+    """Run sanitize_tool_name in a fresh process under a fixed PYTHONHASHSEED."""
+    src_dir = Path(__file__).resolve().parents[2] / "src"
+    env = dict(os.environ, PYTHONPATH=str(src_dir), PYTHONHASHSEED=seed)
+    code = (
+        "from services.tool_config import sanitize_tool_name as s; "
+        "import sys; print(s(sys.argv[1]))"
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", code, name],
+        capture_output=True, text=True, env=env, timeout=30,
+    )
+    assert proc.returncode == 0, proc.stderr
+    return proc.stdout.strip()
 
 
 class TestSanitizeToolName:
@@ -11,9 +35,23 @@ class TestSanitizeToolName:
     def test_strips_special_chars(self):
         assert sanitize_tool_name("foo@bar#baz") == "foobarbaz"
 
-    def test_empty_fallback(self):
+    def test_empty_fallback_is_regex_compliant(self):
         name = sanitize_tool_name("!!!")
         assert name.startswith("tool_")
+        assert _API_NAME_RE.fullmatch(name)
+
+    def test_cjk_fallback_matches_known_digest(self):
+        out = sanitize_tool_name("中文工具")
+        assert out == f"tool_{hashlib.sha256('中文工具'.encode()).hexdigest()[:8]}"
+        assert _API_NAME_RE.fullmatch(out)
+
+    def test_cjk_fallback_is_stable_across_calls(self):
+        assert sanitize_tool_name("中文工具") == sanitize_tool_name("中文工具")
+
+    def test_cjk_fallback_is_stable_across_hash_seeds(self):
+        outputs = {_sanitize_under_seed(str(seed), "中文工具") for seed in (1, 2, 42, 314159)}
+        assert len(outputs) == 1
+        assert _API_NAME_RE.fullmatch(next(iter(outputs)))
 
 
 class TestToolWrapperInit:

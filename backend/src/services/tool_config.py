@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -136,9 +137,16 @@ class _ToolWrapper:
 
 
 def sanitize_tool_name(name: str) -> str:
-    """DeepSeek requires tool names matching ``^[a-zA-Z0-9_-]+$``."""
+    """DeepSeek requires tool names matching ``^[a-zA-Z0-9_-]+$``.
+
+    Pure non-ASCII names fall back to ``tool_<sha256-8>`` — a deterministic
+    digest (``hash()`` is process-seed-dependent, so the same name would map
+    to different API names across workers/restarts).
+    """
     sanitized = "".join(c for c in name if c.isascii() and (c.isalnum() or c in "_-"))
-    return sanitized or f"tool_{hash(name) & 0xFFFFFFFF}"
+    if sanitized:
+        return sanitized
+    return f"tool_{hashlib.sha256(name.encode()).hexdigest()[:8]}"
 
 
 def build_tool_definition(

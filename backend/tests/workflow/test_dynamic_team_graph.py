@@ -213,7 +213,9 @@ class TestDynamicTeamGraphSetWorkflowAsync:
     @patch("workflow.dynamic_team_graph.ChatOpenAI")
     async def test_set_workflow_builds_tools_per_agent(self, mock_chat_cls, mock_get_agents, mock_build_tools):
         graph = DynamicTeamGraph()
-        tools = [MagicMock(name="web_search")]
+        tool = MagicMock()
+        tool.name = "web_search"
+        tools = [tool]
         mock_build_tools.return_value = tools
 
         mock_agent = MagicMock()
