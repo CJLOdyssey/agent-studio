@@ -173,7 +173,9 @@ class TestApiEndpoints:
     def test_admin_logs(self, client):
         resp = client.get("/api/admin/logs")
         assert resp.status_code == 200
-        assert isinstance(resp.json(), list)
+        data = resp.json()
+        assert isinstance(data.get("items"), list)
+        assert "total" in data
 
     def test_admin_activity(self, client):
         resp = client.get("/api/admin/activity")

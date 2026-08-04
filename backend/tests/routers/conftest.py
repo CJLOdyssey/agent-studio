@@ -32,6 +32,25 @@ from core.app import app
 from core.base import Base
 
 
+@pytest.fixture(autouse=True)
+async def _reset_db():
+    """Drop and recreate all tables before every test for cross-file isolation.
+
+    All router tests share a single module-level in-memory SQLite engine (one
+    per xdist worker), so rows created by one test file persist into the next
+    on the same worker. That leaks users/agents/roles across files and causes
+    UNIQUE username / role_identifier collisions and mutated seed passwords.
+    Mirror the repository tests' pattern (tests/repository/conftest.py): reset
+    the schema before each test so every test starts with a clean slate.
+    """
+    import core.infra.database as db_mod
+
+    engine = db_mod.get_async_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
 @pytest.fixture
 def client():
     import core.app_lifespan as lifespan_mod
