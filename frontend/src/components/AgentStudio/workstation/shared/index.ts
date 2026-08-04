@@ -1,5 +1,4 @@
 export { default as BatchDeleteModal } from './BatchDeleteModal';
-export { default as CreateModal } from './CreateModal';
 export { default as DeleteConfirmModal } from './DeleteConfirmModal';
 export { default as EmptyState } from './EmptyState';
 export { ErrorBoundary } from './ErrorBoundary';

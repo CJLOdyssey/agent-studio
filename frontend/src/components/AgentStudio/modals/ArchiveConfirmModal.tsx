@@ -1,6 +1,6 @@
 import { Archive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import ConfirmDialog from '../../shared/ConfirmDialog';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 
 interface Props {
   kindName: string;

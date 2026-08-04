@@ -1,4 +1,4 @@
-import ConfirmDialog from '../../shared/ConfirmDialog';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import type { ReactNode } from 'react';
 
 interface Props {
