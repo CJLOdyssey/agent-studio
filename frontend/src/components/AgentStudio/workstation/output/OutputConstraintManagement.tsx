@@ -1,6 +1,6 @@
 import { Input, Select, Button, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
-import { Search, Plus, MoreHorizontal, Edit3, Trash2, FileText, Eye, X } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, Edit3, Trash2, FileText, Eye } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { OutputEntry } from './output.types';
 import { useOutputManagement } from './useOutputManagement';
@@ -9,6 +9,7 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { getCategoryTagClass } from '../shared/categoryTag';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
 import WstaPagination from '../shared/WstaPagination';
+import Modal from '@/components/shared/Modal';
 import { useToast } from '../../../../utils/useToast';
 import { formatDateTime } from '../../../../utils/formatDateTime';
 import { t } from './locales';
@@ -126,24 +127,26 @@ export default function OutputConstraintManagement() {
       {d.isFormOpen && <OutputFormModal editingItem={d.editingItem} formData={d.formData} setFormData={d.setFormData} onSave={handleSave} onClose={d.closeForm} formErrors={d.formErrors} />}
 
       {previewItem && (
-        <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={() => setPreviewItem(null)}>
-          <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-w-[560px] max-h-[80vh] flex flex-col [box-shadow:var(--shadow-lg)] overflow-hidden" role="dialog" aria-modal="true" aria-label={t('output.preview_title')} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-3">
-                <FileText size={16} />
-                <h3>{previewItem.name}</h3>
-              </div>
-              <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={() => setPreviewItem(null)} aria-label={t('workstation.close')}><X size={18} /></button>
+        <Modal
+          title={
+            <div className="flex items-center gap-3">
+              <FileText size={16} />
+              <h3>{previewItem.name}</h3>
             </div>
-            <div className="px-6 pb-6 overflow-y-auto flex-1 min-h-0">
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`wsta-tag-pill ${getCategoryTagClass(previewItem.category)}`}>{previewItem.category}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(previewItem.createdAt)}</span>
-              </div>
-              <pre className="whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--color-text-primary)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 font-sans">{previewItem.content}</pre>
-            </div>
+          }
+          onClose={() => setPreviewItem(null)}
+          hideHeaderBorder
+          hideFooterBorder
+          width={560}
+          ariaLabel={t('output.preview_title')}
+          bodyClassName="px-6 pb-6"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className={`wsta-tag-pill ${getCategoryTagClass(previewItem.category)}`}>{previewItem.category}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">{formatDateTime(previewItem.createdAt)}</span>
           </div>
-        </div>
+          <pre className="whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--color-text-primary)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 font-sans">{previewItem.content}</pre>
+        </Modal>
       )}
     </div>
     </ErrorBoundary>
