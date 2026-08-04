@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, GitCompare, Loader2 } from 'lucide-react';
+import { GitCompare, Loader2 } from 'lucide-react';
 import { listVersions } from '../../../../api/client/versions';
 import type { VersionEntry as ApiVersionEntry } from '../../../../api/client/versions';
+import Modal from '@/components/shared/Modal';
 
 interface Props {
   title: string;
@@ -87,9 +88,9 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
   }, [sortedSelection, versions]);
 
   return (
-    <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose}>
-      <div className="bg-[var(--color-surface-raised)] rounded-xl w-[90%] max-h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] max-w-[var(--modal-m)] max-h-[calc(100dvh/1.618)] overflow-hidden max-w-[420px]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
+    <Modal
+      title={
+        <div className="flex items-center gap-2">
           <h3>{t('workstation.versionHistory')} - {title}</h3>
           <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-toolbar">
             {hasContent && (
@@ -98,12 +99,14 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
                 <span>{compareMode ? '退出对比' : '版本对比'}</span>
               </button>
             )}
-            <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose} aria-label={t('common.close')}><X size={18} /></button>
           </div>
         </div>
-
-        <div className="p-5 overflow-y-auto flex-1 min-h-0 flex flex-col">
-          {loading ? (
+      }
+      onClose={onClose}
+      width={420}
+      bodyClassName="p-5"
+    >
+      {loading ? (
             <div className="flex flex-col items-center gap-3 py-16 px-4 text-center"><Loader2 size={32} className="animate-spin" /><p>{t('common.loading')}</p></div>
           ) : versions.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 px-4 text-center"><p>暂无版本历史</p></div>
@@ -154,8 +157,6 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
