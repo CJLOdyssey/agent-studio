@@ -118,23 +118,25 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
 
       {/* Scrollable content */}
       <div className="flex-1 pt-7 px-4 flex flex-col">
-        <TeamTree
-          teams={teams}
-          selectedAgentId={selectedAgentId}
-          isAuthenticated={isAuthenticated}
-          openLoginModal={openLoginModal}
-          toggleTeam={toggleTeam}
-          handleAddTeam={handleAddTeam}
-          handleAddAgent={handleAddAgent}
-          handleDeleteTeam={handleDeleteTeam}
-          handleDeleteAgent={handleDeleteAgent}
-          handleRenameTeam={handleRenameTeam}
-          handleRenameAgent={handleRenameAgent}
-          handleTogglePinTeam={handleTogglePinTeam}
-          handleAgentClick={handleAgentClick}
-          onEditAgent={onEditAgent}
-          onTeamChat={onTeamChat}
-        />
+        <div className="shrink-0 max-h-[35vh] overflow-y-auto overflow-x-hidden">
+          <TeamTree
+            teams={teams}
+            selectedAgentId={selectedAgentId}
+            isAuthenticated={isAuthenticated}
+            openLoginModal={openLoginModal}
+            toggleTeam={toggleTeam}
+            handleAddTeam={handleAddTeam}
+            handleAddAgent={handleAddAgent}
+            handleDeleteTeam={handleDeleteTeam}
+            handleDeleteAgent={handleDeleteAgent}
+            handleRenameTeam={handleRenameTeam}
+            handleRenameAgent={handleRenameAgent}
+            handleTogglePinTeam={handleTogglePinTeam}
+            handleAgentClick={handleAgentClick}
+            onEditAgent={onEditAgent}
+            onTeamChat={onTeamChat}
+          />
+        </div>
 
         <div className="flex flex-col min-h-0 flex-1">
           <div className="px-2 py-0.5 text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)] shrink-0">
