@@ -1,26 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { X, Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useAuth, type AuthModalView } from './AuthContext';
 import ForgotPasswordForm from './ForgotPasswordForm';
-import PasswordStrengthIndicator from './PasswordStrengthIndicator';
-import type * as React from 'react';
+import { LoginFormFields, RegisterFormFields } from './LoginFormFields';
 
 interface Props {
   onClose: () => void;
 }
-
-const inputBase = 'w-full pl-9 pr-10 py-[10px] rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] text-sm outline-none box-border transition-[border-color,box-shadow] duration-200';
-
-const iconBase: React.CSSProperties = {
-  position: 'absolute',
-  left: 10,
-  top: '50%',
-  transform: 'translateY(-50%)',
-  pointerEvents: 'none',
-  color: 'var(--color-text-tertiary)',
-  width: 16,
-  height: 16,
-};
 
 export default function LoginModal({ onClose }: Props) {
   const {
@@ -122,13 +108,6 @@ export default function LoginModal({ onClose }: Props) {
     }
   }
 
-  function inputDynamicStyle(field: string): React.CSSProperties {
-    return {
-      borderColor: focusedField === field ? 'var(--color-accent)' : 'var(--color-border)',
-      boxShadow: focusedField === field ? '0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'none',
-    };
-  }
-
   if (view === 'forgot' || view === 'reset') {
     return (
       <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={onClose} style={{ animation: 'fadeIn 0.15s ease' }}>
@@ -187,154 +166,38 @@ export default function LoginModal({ onClose }: Props) {
         <div className="px-6 pt-5 pb-6 overflow-y-auto flex-1 min-h-0 flex flex-col">
           <form onSubmit={handleSubmit}>
             {isRegister ? (
-              <>
-                <div className="relative mb-3.5">
-                  <Mail style={iconBase} size={16} />
-                  <input
-                    type="email"
-                    placeholder="邮箱地址"
-                    value={email}
-                    onChange={(e) => setLocalEmail(e.target.value)}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    className={inputBase}
-                    style={inputDynamicStyle('email')}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <div className="relative">
-                    <Lock style={iconBase} size={16} />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="密码"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onFocus={() => setFocusedField('password')}
-                      onBlur={() => { setFocusedField(null); setPasswordTouched(true); }}
-                      className={inputBase}
-                      style={inputDynamicStyle('password')}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', color: 'var(--color-text-tertiary)',
-                        cursor: 'pointer', padding: 0, display: 'flex',
-                      }}
-                      tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  {password && !passwordTouched && (
-                    <div className="text-xs text-[var(--color-text-tertiary)] mt-1 opacity-60">
-                      至少8位 · 数字 · 小写 · 大写 · 特殊字符
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative mb-4">
-                  <Lock style={iconBase} size={16} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="确认密码"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    onFocus={() => setFocusedField('confirm')}
-                    onBlur={() => { setFocusedField(null); setPasswordTouched(true); }}
-                    className={inputBase}
-                    style={inputDynamicStyle('confirm')}
-                    autoComplete="new-password"
-                  />
-                  {confirmPassword && passwordTouched && confirmPassword !== password && (
-                    <div className="text-xs text-[var(--color-danger)] mt-1">
-                      ○ 与密码不一致
-                    </div>
-                  )}
-                </div>
-
-                <PasswordStrengthIndicator password={password} validated={passwordTouched} />
-
-                <div className="flex gap-2 items-start mb-3">
-                  <div className="relative flex-1">
-                    <ShieldCheck style={iconBase} size={16} />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="验证码"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      onFocus={() => setFocusedField('code')}
-                      onBlur={() => setFocusedField(null)}
-                      className={inputBase}
-                      style={inputDynamicStyle('code')}
-                      autoComplete="one-time-code"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSendCode}
-                    disabled={submitting || codeCooldown > 0}
-                    className="h-10 px-3.5 rounded-[var(--radius-btn)] border text-xs font-semibold whitespace-nowrap shrink-0 transition-all duration-200"
-                    style={{
-                      borderColor: codeCooldown > 0 ? 'var(--color-border)' : 'var(--color-accent)',
-                      background: codeCooldown > 0 ? 'var(--color-surface-raised)' : 'transparent',
-                      color: codeCooldown > 0 ? 'var(--color-text-tertiary)' : 'var(--color-accent)',
-                      cursor: codeCooldown > 0 ? 'default' : 'pointer',
-                    }}
-                  >
-                    {codeCooldown > 0 ? `${codeCooldown}s` : '获取验证码'}
-                  </button>
-                </div>
-              </>
+              <RegisterFormFields
+                email={email}
+                onEmailChange={setLocalEmail}
+                password={password}
+                onPasswordChange={setPassword}
+                confirmPassword={confirmPassword}
+                onConfirmPasswordChange={setConfirmPassword}
+                code={code}
+                onCodeChange={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+                showPassword={showPassword}
+                onToggleShowPassword={() => setShowPassword(!showPassword)}
+                passwordTouched={passwordTouched}
+                onPasswordBlur={() => { setFocusedField(null); setPasswordTouched(true); }}
+                codeCooldown={codeCooldown}
+                onSendCode={handleSendCode}
+                submitting={submitting}
+                focusedField={focusedField}
+                onFocusField={setFocusedField}
+                onBlurField={() => setFocusedField(null)}
+              />
             ) : (
-              <>
-                <div className="relative mb-3.5">
-                  <Mail style={iconBase} size={16} />
-                  <input
-                    type="email"
-                    placeholder="邮箱地址"
-                    value={email}
-                    onChange={(e) => setLocalEmail(e.target.value)}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    className={inputBase}
-                    style={inputDynamicStyle('email')}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="relative mb-3.5">
-                  <Lock style={iconBase} size={16} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="密码"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    className={inputBase}
-                    style={inputDynamicStyle('password')}
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', color: 'var(--color-text-tertiary)',
-                      cursor: 'pointer', padding: 0, display: 'flex',
-                    }}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </>
+              <LoginFormFields
+                email={email}
+                onEmailChange={setLocalEmail}
+                password={password}
+                onPasswordChange={setPassword}
+                showPassword={showPassword}
+                onToggleShowPassword={() => setShowPassword(!showPassword)}
+                focusedField={focusedField}
+                onFocusField={setFocusedField}
+                onBlurField={() => setFocusedField(null)}
+              />
             )}
 
             {error && (
