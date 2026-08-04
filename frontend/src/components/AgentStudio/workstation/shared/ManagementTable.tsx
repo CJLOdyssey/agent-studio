@@ -41,6 +41,8 @@ interface ManagementTableProps<T extends { id: string }, F> {
 
   createLabel: string;
   onCreate: () => void;
+  /** Extra buttons rendered in the right toolbar group, between batch-delete and create. */
+  toolbarActions?: ReactNode;
   /** Pre-formatted label incl. count, e.g. t('tool.batch_delete', String(size)). Shown when size > 0. */
   batchDeleteLabel?: string;
   onBatchDelete?: () => void;
@@ -75,6 +77,7 @@ export default function ManagementTable<T extends { id: string }, F>({
   onStatusChange,
   createLabel,
   onCreate,
+  toolbarActions,
   batchDeleteLabel,
   onBatchDelete,
   selectAllLabel,
@@ -115,6 +118,7 @@ export default function ManagementTable<T extends { id: string }, F>({
             {onBatchDelete && crud.selectedIds.size > 0 && (
               <Button danger icon={<Trash2 size={16} />} onClick={onBatchDelete}>{batchDeleteLabel}</Button>
             )}
+            {toolbarActions}
             {onCreate && (
               <Button type="primary" icon={<Plus size={16} />} onClick={onCreate}>{createLabel}</Button>
             )}

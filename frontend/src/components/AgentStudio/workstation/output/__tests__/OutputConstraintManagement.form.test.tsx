@@ -17,6 +17,7 @@ const mockUseOutputMgmt = {
   error: null,
   filtered: [] as unknown[],
   paged: [] as unknown[],
+  get processed() { return this.filtered; },
   page: 1,
   totalPages: 1,
   search: '',

@@ -19,6 +19,7 @@ const mockUseOutputMgmt = {
   error: null,
   filtered: [] as unknown[],
   paged: [] as unknown[],
+  get processed() { return this.filtered; },
   page: 1,
   totalPages: 1,
   search: '',
@@ -353,7 +354,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-action-btn')).toBeDefined();
+    expect(container.querySelector('.lucide-more-horizontal')).toBeDefined();
   });
 
   // ─── 13. Form modal ─────────────────────────────────────────────

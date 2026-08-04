@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { OutputEntry, OutputFormData, OutputCategory } from './output.types';
 import { outputAPI } from './api';
 import { useGenericCrud } from '../shared/useGenericCrud';
@@ -66,46 +66,25 @@ export function useOutputManagement(): OutputData {
     return true;
   }, [crud]);
 
-  return {
-    isLoading: crud.isLoading,
-    error: crud.error,
-    filtered: crud.processed as OutputEntry[],
-    paged: crud.paged as OutputEntry[],
-    page: crud.page,
-    totalPages: crud.totalPages,
-    search: crud.search,
+  return useMemo(() => ({
+    ...crud,
+    filtered: crud.processed,
+    paged: crud.paged,
     statusFilter: crud.extraFilterValues.status ?? 'all',
     categoryFilter: crud.extraFilterValues.category ?? 'all',
-    selectedIds: crud.selectedIds,
-    allOnPageSelected: crud.allOnPageSelected,
-    isFormOpen: crud.isFormOpen,
-    formErrors: crud.formErrors,
-    editingItem: crud.editingItem as OutputEntry | null,
+    editingItem: crud.editingItem,
     editingId: crud.editingItem?.id ?? null,
-    formData: crud.formData as OutputFormData,
-    openMenuId: crud.openMenuId,
-    menuAnchorEl: crud.menuAnchorEl,
-    setSearch: crud.setSearch,
+    formData: crud.formData,
     setStatusFilter: (v) => crud.setExtraFilter('status', v),
     setCategoryFilter: (v) => crud.setExtraFilter('category', v),
-    setPage: crud.setPage,
     setFormData: (fn) => crud.setFormData(fn),
-    setOpenMenuId: crud.setOpenMenuId,
-    setMenuAnchorEl: crud.setMenuAnchorEl,
-    toggleSelect: crud.toggleSelect,
-    toggleSelectAll: crud.toggleSelectAll,
-    addItem: ((data: OutputFormData) => crud.createItem(data).then(() => undefined)) as (data: OutputFormData) => Promise<void>,
-    updateItem: crud.updateItem as (id: string, data: Partial<OutputEntry>) => Promise<void>,
+    addItem: ((data: OutputFormData) => crud.createItem(data).then(() => undefined)),
+    updateItem: crud.updateItem,
     removeItem: (id) => { void crud.removeItem(id); },
     copyItem: (item) => { void crud.cloneItem(item); },
     removeMultiple: (ids) => { void crud.removeMultipleItems(ids); },
     getAllItems,
     addItems,
-    clearError: crud.clearError,
-    retry: crud.retry,
-    openCreate: crud.openCreate,
-    openEdit: (item) => crud.openEdit(item),
-    closeForm: crud.closeForm,
     handleSave,
-  };
+  }), [crud, getAllItems, addItems, handleSave]);
 }
