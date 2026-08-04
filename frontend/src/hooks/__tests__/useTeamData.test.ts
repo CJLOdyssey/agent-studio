@@ -357,3 +357,26 @@ describe('useTeamData - editing flow', { tags: ['unit'] }, () => {
     expect(result.current.teams[0].name).toBe('Renamed');
   });
 });
+
+describe('useTeamData - disabled team filtering (homepage)', { tags: ['unit'] }, () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('filters out disabled teams when loading from API', async () => {
+    (listTeams as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 't1', name: 'Active Team', is_expanded: false, agents: [], status: 'active' },
+      { id: 't2', name: 'Disabled Team', is_expanded: false, agents: [], status: 'disabled' },
+      { id: 't3', name: 'Another Active', is_expanded: false, agents: [], status: 'active' },
+    ]);
+
+    const { result } = renderHook(() => useTeamData());
+
+    await waitFor(() => {
+      expect(result.current.teams).toHaveLength(2);
+    });
+
+    expect(result.current.teams.map((t) => t.name).sort()).toEqual(['Active Team', 'Another Active']);
+  });
+});

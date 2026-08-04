@@ -46,13 +46,17 @@ export function teamMemberToAgent(a: TeamMember): Agent {
 async function fetchTeams(): Promise<Team[]> {
   try {
     const items = await listTeams();
-    return items.map((t) => ({
-      id: t.id,
-      name: t.name,
-      isExpanded: t.is_expanded,
-      isPinned: false,
-      agents: (t.agents ?? []).map(teamMemberToAgent),
-    }));
+    // Homepage shows only active teams; disabled teams stay manageable
+    // in the workstation (TeamManagement renders all statuses).
+    return items
+      .filter((t) => t.status !== 'disabled')
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        isExpanded: t.is_expanded,
+        isPinned: false,
+        agents: (t.agents ?? []).map(teamMemberToAgent),
+      }));
   } catch {
     return [];
   }
