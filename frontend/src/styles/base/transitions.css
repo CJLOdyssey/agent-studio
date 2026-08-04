@@ -25,14 +25,16 @@
   }
 }
 
-/* ── High contrast mode (accessibility) ── */
+/* ── High contrast mode (accessibility) ──
+   Intentional !important: user contrast preference must override all author styles. */
 @media (prefers-contrast: more) {
   * {
     border-color: currentColor !important;
   }
 }
 
-/* ── Reduced transparency (accessibility) ── */
+/* ── Reduced transparency (accessibility) ──
+   Intentional !important: user transparency preference must override component styles. */
 @media (prefers-reduced-transparency: reduce) {
   .agentstudio-modal-overlay,
   .backdrop-blur-\[4px\] {

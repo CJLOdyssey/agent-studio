@@ -177,6 +177,8 @@
 }
 
 :where(.wsta-root, .workstation-modal.ant-modal) .ant-btn-primary:hover {
+  /* Intentional !important: antd hashed styles force white text on hover;
+     no Component Token exists for it — keep text-on-accent in both themes. */
   color: var(--color-text-on-accent) !important;
 }
 
@@ -565,7 +567,9 @@
 }
 
 /* ── Workstation root scoped overrides (previously inline in
-   WorkstationPage.tsx — consolidated here) ── */
+   WorkstationPage.tsx — consolidated here) ──
+   Intentional !important: antd v5 CSS-in-JS hashed rules match these elements;
+   we must win the cascade to enforce the --color-* token theme. */
 .wsta-root table,
 .wsta-root table th,
 .wsta-root table td { background: transparent !important; }
@@ -575,7 +579,8 @@
 .wsta-root .ant-input-affix-wrapper,
 .wsta-root .ant-select-selector { background: var(--color-surface-raised) !important; }
 
-/* ── API key table overrides (previously inline in ApiProviderTab.tsx) ── */
+/* ── API key table overrides (previously inline in ApiProviderTab.tsx) ──
+   Intentional !important: antd table borders/padding come from hashed CSS-in-JS rules. */
 .api-key-table .ant-table-thead > tr > th,
 .api-key-table .ant-table-tbody > tr > td { border-bottom: none !important; }
 .api-key-table .ant-table-tbody > tr.ant-table-row-selected > td { background: transparent !important; }
