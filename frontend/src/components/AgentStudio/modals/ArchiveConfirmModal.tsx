@@ -26,7 +26,7 @@ export default function ArchiveConfirmModal({ kindName, name, onArchive, onCance
             {t('workstation.archiveConfirmDesc', { tool: kindName, name })}
           </p>
         </div>
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-end gap-2 px-5 py-4">
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onCancel}>{t('workstation.cancel')}</button>
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90" onClick={onArchive}>
             <Archive size={14} />

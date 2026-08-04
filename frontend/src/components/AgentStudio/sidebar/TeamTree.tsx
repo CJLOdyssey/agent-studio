@@ -341,7 +341,7 @@ const TeamTree = memo(function TeamTree({
       {confirmDelete && createPortal(
         <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={() => setConfirmDelete(null)}>
           <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-lg max-w-[400px] w-full overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
-            <div className="flex items-center justify-between px-5 py-[18px_20px_14px] border-b border-[var(--color-border-subtle)] shrink-0">
+            <div className="flex items-center justify-between px-5 py-[18px_20px_14px] shrink-0">
               <h3 id="confirm-delete-title">{t('confirm.title')}</h3>
               <button
                 className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-[var(--radius-btn)] text-[var(--color-text-secondary)] cursor-pointer transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
@@ -369,7 +369,7 @@ const TeamTree = memo(function TeamTree({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2.5 mt-5 px-5 py-3.5 border-t border-[var(--color-border-subtle)]">
+            <div className="flex justify-end gap-2.5 mt-5 px-5 py-3.5">
               <button
                 className="inline-flex items-center justify-center min-w-[68px] h-9 px-3.5 rounded-[var(--radius-btn)] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-sm font-medium cursor-pointer transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_4%,transparent)]"
                 onClick={() => setConfirmDelete(null)}
@@ -392,7 +392,7 @@ const TeamTree = memo(function TeamTree({
       {validationWarning && createPortal(
         <div className="fixed inset-0 bg-[var(--color-overlay)] flex items-center justify-center z-[var(--z-modal-backdrop)] backdrop-blur-[4px]" onClick={() => setValidationWarning(null)}>
           <div className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-[var(--radius-card)] shadow-lg max-w-[400px] w-full overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="flex items-center justify-between px-5 py-[18px_20px_14px] border-b border-[var(--color-border-subtle)] shrink-0">
+            <div className="flex items-center justify-between px-5 py-[18px_20px_14px] shrink-0">
               <h3>{t('confirm.tip')}</h3>
               <button
                 className="flex items-center justify-center w-7 h-7 bg-transparent border-none rounded-[var(--radius-btn)] text-[var(--color-text-secondary)] cursor-pointer transition-colors hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
@@ -416,7 +416,7 @@ const TeamTree = memo(function TeamTree({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2.5 mt-5 px-5 py-3.5 border-t border-[var(--color-border-subtle)]">
+            <div className="flex justify-end gap-2.5 mt-5 px-5 py-3.5">
               <button
                 className="inline-flex items-center justify-center min-w-[68px] h-9 px-3.5 rounded-[var(--radius-btn)] border-none text-white text-sm font-medium cursor-pointer transition-colors bg-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger),#000)] shadow-[0_1px_3px_color-mix(in_srgb,var(--color-danger)_15%,transparent)]"
                 onClick={() => setValidationWarning(null)}
