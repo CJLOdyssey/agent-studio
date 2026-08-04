@@ -173,8 +173,8 @@ const TeamTree = memo(function TeamTree({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between py-0.5" style={{ paddingLeft: 8, paddingRight: 9 }}>
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between py-0.5 shrink-0" style={{ paddingLeft: 8, paddingRight: 9 }}>
         <div className="text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
           {t('sidebar.myTeams')}
         </div>
@@ -186,7 +186,7 @@ const TeamTree = memo(function TeamTree({
           {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
         </button>
       </div>
-      <div className="p-0 flex flex-col gap-0.5">
+      <div className="p-0 flex flex-col gap-0.5 shrink-0 max-h-[35vh] overflow-y-auto overflow-x-hidden">
         {teams.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center py-8 px-4">
             <p className="text-sm text-[var(--color-text-muted)] m-0">
