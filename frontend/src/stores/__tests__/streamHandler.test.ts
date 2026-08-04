@@ -175,18 +175,19 @@ describe('handleStreamEvent', { tags: ['unit'] }, () => {
     expect(result.messages![0].content).toBe('hi');
   });
 
-  it('returns empty state when active but no streamingId', () => {
+  it('starts a NEW message when run id is stale but streamingId is cleared', () => {
+    // A leftover run id (result event lost / state reset) must not swallow the
+    // first chunk of a stream; only treat it as continuation while streaming.
     const s = makeState({ streamingId: null, currentRunId: 'run-1' });
     const get = vi.fn(() => s);
-    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => {
-      fn(s);
-      return {};
-    });
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
     const activeStreams = new Set<string>(['run-1']);
 
     handleStreamEvent(set as never, get, activeStreams, { type: 'stream', content: 'x' } as never);
 
-    expect(set).toHaveBeenCalled();
+    const updateFn = set.mock.calls[0][0] as (state: typeof s) => Partial<typeof s>;
+    const result = updateFn(s) as { messages: Array<{ content: string }> };
+    expect(result.messages![0].content).toBe('x');
   });
 });
 

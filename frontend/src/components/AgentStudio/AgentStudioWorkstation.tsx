@@ -33,7 +33,6 @@ export default function AgentStudioWorkstation() {
           setIsSettingsOpen={s.setIsSettingsOpen}
           setIsApiOpen={s.setIsApiOpen}
           setSelectedAgentId={s.setSelectedAgentId}
-          setActiveConvId={s.conv.setActiveConvId}
           setInputValue={() => {}}
           onDeleteConversation={s.conv.deleteConversation}
           onNewChat={s.handleNewChat}
@@ -46,7 +45,7 @@ export default function AgentStudioWorkstation() {
           handleRenameAgent={s.teamMgmt.handleRenameAgent}
           handleTogglePinTeam={s.teamMgmt.handleTogglePinTeam}
           handleAgentClick={(_agent) => {
-            if (s.apiMessages.length > 0 && s.conv.activeConvId) { s.conv.updateConversationMessages(s.conv.activeConvId, s.apiMessages); }
+            s.syncActiveConversation();
             s.resetApi();
             useChatStore.getState().setActiveTeam(null);
             s.conv.setActiveConvId(null);
@@ -54,7 +53,7 @@ export default function AgentStudioWorkstation() {
           }}
           onEditAgent={(agent) => { s.setConfiguringAgent(agent); }}
           onTeamChat={(teamId) => {
-            if (s.apiMessages.length > 0 && s.conv.activeConvId) { s.conv.updateConversationMessages(s.conv.activeConvId, s.apiMessages); }
+            s.syncActiveConversation();
             s.resetApi();
             useChatStore.getState().setActiveTeam(teamId);
             s.conv.setActiveConvId(null);
@@ -63,6 +62,12 @@ export default function AgentStudioWorkstation() {
           isSidebarOpen={s.isSidebarOpen}
           onToggleSidebar={() => s.setIsSidebarOpen(false)}
           onOpenWorkstation={() => { s.setIsWorkstationOpen(true); }}
+          setActiveConvId={(id) => {
+            // Sync the current run's messages into its owning conversation
+            // BEFORE the store gets replaced by the newly selected one.
+            s.syncActiveConversation();
+            s.conv.setActiveConvId(id);
+          }}
         />
 
           <div className="flex flex-col flex-1 overflow-hidden">

@@ -98,6 +98,24 @@ export function useWorkstationState(
   useEffect(() => {
     convRef.current = conv;
   });
+  // Conversation that owns the currently running run — sync must write back to
+  // it even if the user switches away mid-run, never to the newly active one.
+  const runConvIdRef = useRef<string | null>(null);
+
+  // Persist in-flight store messages into a conversation. Must run BEFORE a
+  // switch takes effect (while the store still holds the old run's messages).
+  const syncActiveConversation = useCallback((convId?: string) => {
+    const targetId = convId ?? convRef.current.activeConvId;
+    if (!targetId) return;
+    const state = useChatStore.getState();
+    if (state.messages.length > 0) {
+      convRef.current.updateConversationMessages(targetId, state.messages, false, activeTeamId ?? undefined, activeTeamName);
+    }
+    if (state.currentSessionId) {
+      convRef.current.updateConversationSessionId(targetId, state.currentSessionId, false);
+    }
+    runConvIdRef.current = null;
+  }, [activeTeamId, activeTeamName, convRef]);
 
   const lastMsgLen = apiMessages.length;
   const lastMsgStream = useMemo(() => {
@@ -125,18 +143,9 @@ export function useWorkstationState(
     if (apiStatus === 'loading') return;
     if (apiStatus === 'running' && wsStatus !== 'disconnected') return;
 
-    const activeId = convRef.current.activeConvId;
-    if (activeId) {
-      const state = useChatStore.getState();
-      if (state.messages.length > 0) {
-        convRef.current.updateConversationMessages(activeId, state.messages, false, activeTeamId ?? undefined, activeTeamName);
-      }
-      if (state.currentSessionId) {
-        convRef.current.updateConversationSessionId(activeId, state.currentSessionId, false);
-      }
-    }
+    syncActiveConversation(runConvIdRef.current ?? undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiMessages, apiStatus, wsStatus]);
+  }, [apiMessages, apiStatus, wsStatus, syncActiveConversation]);
 
   useEffect(() => {
     const activeId = conv.activeConvId;
@@ -279,14 +288,12 @@ export function useWorkstationState(
   }, [conv.activeConvId]);
 
   const handleNewChat = useCallback(() => {
-    if (apiMessages.length > 0 && conv.activeConvId) {
-      conv.updateConversationMessages(conv.activeConvId, apiMessages);
-    }
+    syncActiveConversation();
     resetApi();
     setSelectedAgentId(null);
     conv.setActiveConvId(null);
     setConversationKey((prev) => prev + 1);
-  }, [apiMessages, conv, resetApi]);
+  }, [syncActiveConversation, conv, resetApi]);
 
   const handleSendMessage = useCallback(
     (text: string, _files: AttachedFile[]) => {
@@ -300,15 +307,16 @@ export function useWorkstationState(
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
         const kind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : activeTeamId ? 'team' : 'normal';
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName, kind);
-        if (convId) conv.setActiveConvId(convId);
+        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; }
       } else {
+        runConvIdRef.current = conv.activeConvId;
         // 续聊：把用户消息追加到当前会话，避免历史里只剩第一条用户消息
         const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
         const prevMessages = activeConv?.messages ?? [];
         conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true, activeTeamId ?? undefined, activeTeamName);
         const st = useChatStore.getState();
         useChatStore.setState({ messages: [...st.messages, {
-          id: userMessage.id, role: userMessage.role, agent_name: '用户',
+          id: userMessage.id, role: userMessage.role, agent_name: '我',
           content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
         }] });
       }
@@ -332,14 +340,15 @@ export function useWorkstationState(
       const homeKind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : 'normal';
       if (!conv.activeConvId) {
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, undefined, undefined, homeKind);
-        if (convId) conv.setActiveConvId(convId);
+        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; }
       } else {
+        runConvIdRef.current = conv.activeConvId;
         const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
         const prevMessages = activeConv?.messages ?? [];
         conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true);
         const st = useChatStore.getState();
         useChatStore.setState({ messages: [...st.messages, {
-          id: userMessage.id, role: userMessage.role, agent_name: '用户',
+          id: userMessage.id, role: userMessage.role, agent_name: '我',
           content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
         }] });
       }
@@ -512,6 +521,7 @@ export function useWorkstationState(
     handlePageDrop,
     toggleWorkspaceFullscreen,
     handleNewChat,
+    syncActiveConversation,
     handleSendMessage,
     handleHomeSend,
     handleSaveAgent,

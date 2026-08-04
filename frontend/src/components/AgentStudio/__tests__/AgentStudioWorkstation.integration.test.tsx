@@ -331,4 +331,36 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
     fireEvent.click(screen.getByText('重试'));
     await waitFor(() => expect(mockSubmitRequirement).toHaveBeenCalledTimes(2));
   });
+
+  it('运行中切换会话 → 流式消息写回原会话而非新会话', async () => {
+    mockSubmitRequirement.mockResolvedValue({ run_id: 'run-mid', status: 'running', session_id: 'sess-3' });
+    seedConversations();
+
+    render(
+      <TestProviders>
+        <AgentStudioWorkstation />
+      </TestProviders>,
+    );
+
+    await waitFor(() => expect(messagesArea().textContent).toContain('对话A的用户消息'));
+
+    await sendMessage('运行中的新消息');
+    await waitFor(() => expect(wsCallbacks.has('run-mid')).toBe(true));
+
+    emitWs('run-mid', { type: 'stream', content: '运行中的回复。', agent_name: 'Agent' });
+    await waitFor(() => expect(messagesArea().textContent).toContain('运行中的回复。'));
+
+    fireEvent.click(screen.getByText('第二段对话'));
+    await waitFor(() => expect(messagesArea().textContent).toContain('对话B的用户消息'));
+
+    emitWs('run-mid', { type: 'result', run_id: 'run-mid', code: '' });
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('agentstudio-conversations') || '[]');
+      const convA = saved.find((c: { id: string }) => c.id === 'conv-a');
+      const convB = saved.find((c: { id: string }) => c.id === 'conv-b');
+      expect(convA.messages.map((m: { content: string }) => m.content)).toContain('运行中的回复。');
+      expect(convB.messages.map((m: { content: string }) => m.content)).not.toContain('运行中的回复。');
+    });
+  });
 });

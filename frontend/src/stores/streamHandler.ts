@@ -184,7 +184,10 @@ export function handleStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
-  if (activeStreamMsgIds.has(s.currentRunId || '')) {
+  const runId = s.currentRunId || '';
+  // Continuation is only valid while a message is streaming: a leftover run id
+  // (result event lost / state reset mid-run) must not swallow the first chunk.
+  if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
       return {
@@ -199,7 +202,7 @@ export function handleStreamEvent(
     });
     return;
   }
-  activeStreamMsgIds.add(s.currentRunId || '');
+  activeStreamMsgIds.add(runId);
   // If streamingId already set (from prior thinking_stream), use that message
   if (s.streamingId) {
     set((prev) => {
@@ -231,7 +234,8 @@ export function handleThinkingStreamEvent(
   if (!chunk) return;
   const s = get();
   Logger.info('[chat] thinking stream entry — editTargetId=%s streamingId=%s runId=%s', s.editTargetId, s.streamingId, s.currentRunId);
-  if (activeStreamMsgIds.has(s.currentRunId || '')) {
+  const runId = s.currentRunId || '';
+  if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
       return {
@@ -243,7 +247,7 @@ export function handleThinkingStreamEvent(
     });
     return;
   }
-  activeStreamMsgIds.add(s.currentRunId || '');
+  activeStreamMsgIds.add(runId);
   set((s) => {
     if (s.streamingId) {
       return {
