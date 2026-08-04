@@ -46,7 +46,7 @@
     "@sentry/browser": "^10.55.0",
     "@sentry/react": "^10.55.0",
     "@tanstack/react-query": "^5.100.14",
-    "antd": "^5.29.3",
+    "antd": "^6.5.3",
     "axios": "^1.7.0",
     "dompurify": "^3.4.7",
     "geist": "^1.7.2",

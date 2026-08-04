@@ -127,7 +127,7 @@ describe('Team Management Integration', { tags: ['integration'] }, () => {
     render(<TeamManagement />, { wrapper: TestProviders });
     await waitFor(() => expect(screen.getByText('前端组')).toBeInTheDocument());
 
-    fireEvent.mouseDown(document.querySelectorAll('.ant-select-selector')[0]);
+    fireEvent.mouseDown(screen.getAllByRole('combobox')[0]);
     const matches = await screen.findAllByText('dev');
     const optContent = matches.find(el => el.closest('.ant-select-item-option'));
     const optItem = optContent?.closest('.ant-select-item-option');
