@@ -2,16 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 
-const mockFetchAll = vi.fn().mockResolvedValue([]);
-const mockCreate = vi.fn();
-const mockUpdate = vi.fn();
-const mockRemove = vi.fn();
-const mockClone = vi.fn();
-const mockRemoveBatch = vi.fn();
+const { mockFetchAll, mockCreate, mockUpdate, mockRemove, mockClone, mockRemoveBatch } = vi.hoisted(() => ({
+  mockFetchAll: vi.fn().mockResolvedValue([]),
+  mockCreate: vi.fn(),
+  mockUpdate: vi.fn(),
+  mockRemove: vi.fn(),
+  mockClone: vi.fn(),
+  mockRemoveBatch: vi.fn(),
+}));
 
 vi.mock('../api', () => ({
-  get promptAPI() {
-    return { fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove, clone: mockClone, removeBatch: mockRemoveBatch };
+  promptAPI: {
+    fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove,
+    clone: mockClone, removeBatch: mockRemoveBatch,
   },
 }));
 
@@ -158,6 +161,11 @@ describe('PromptManagement', { tags: ['unit'] }, () => {
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     if (checkboxes.length >= 2) {
       fireEvent.click(checkboxes[1]);
+      expect(checkboxes[1]).toBeChecked();
+      expect(screen.getByText('prompt.batch_delete')).toBeInTheDocument();
+      fireEvent.click(checkboxes[1]);
+      expect(checkboxes[1]).not.toBeChecked();
+      expect(screen.queryByText('prompt.batch_delete')).not.toBeInTheDocument();
     }
   });
 

@@ -5,6 +5,8 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { default as FormField } from './FormField';
 export { default as FormSelect } from './FormSelect';
 export { default as FormTextarea } from './FormTextarea';
+export { default as ManagementTable } from './ManagementTable';
+export type { Column as ManagementColumn, SelectOption as ManagementSelectOption } from './ManagementTable';
 export { TableSkeleton, CardSkeleton } from './LoadingSkeleton';
 export { default as ResourcePickerModal } from './ResourcePickerModal';
 export { default as VersionHistoryModal } from './VersionHistoryModal';

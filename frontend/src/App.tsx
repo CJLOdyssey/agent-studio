@@ -12,6 +12,16 @@ import Logger from './utils/logger';
 import { useSettings } from './contexts/SettingsContext';
 import type * as React from 'react';
 
+const CSS_VARS = {
+  accent: '--color-accent',
+  surface: '--color-surface',
+  surfaceRaised: '--color-surface-raised',
+  textPrimary: '--color-text-primary',
+  textSecondary: '--color-text-secondary',
+  border: '--color-border',
+  surfaceHover: '--color-surface-hover',
+} as const;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 2, staleTime: 30_000, refetchOnWindowFocus: false },
@@ -65,12 +75,13 @@ function getCssVar(name: string): string {
 function ThemedApp() {
   const { settings } = useSettings();
   const isDark = settings.theme === 'dark';
-  const bgColor = getCssVar('--color-surface') || (isDark ? '#0f1117' : '#ffffff');
-  const bgElevated = getCssVar('--color-surface-raised') || (isDark ? '#1c1e24' : '#f7f8fa');
-  const txtColor = getCssVar('--color-text-primary') || (isDark ? '#f1f1f1' : '#1a1a2e');
-  const txtSecondary = getCssVar('--color-text-secondary') || (isDark ? '#a0a5b0' : '#495057');
-  const borderColor = getCssVar('--color-border') || (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)');
-  const surfaceHover = getCssVar('--color-surface-hover') || (isDark ? 'rgba(255,255,255,0.08)' : '#f1f3f5');
+  const bgColor = getCssVar(CSS_VARS.surface) || (isDark ? '#0f1117' : '#ffffff');
+  const bgElevated = getCssVar(CSS_VARS.surfaceRaised) || (isDark ? '#1c1e24' : '#f7f8fa');
+  const txtColor = getCssVar(CSS_VARS.textPrimary) || (isDark ? '#f1f1f1' : '#1a1a2e');
+  const txtSecondary = getCssVar(CSS_VARS.textSecondary) || (isDark ? '#a0a5b0' : '#495057');
+  const borderColor = getCssVar(CSS_VARS.border) || (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)');
+  const surfaceHover = getCssVar(CSS_VARS.surfaceHover) || (isDark ? 'rgba(255,255,255,0.08)' : '#f1f3f5');
+  const accentColor = getCssVar(CSS_VARS.accent) || '#6366f1';
 
   return (
     <StyleProvider layer={{ name: 'antd' } as unknown as boolean}>
@@ -78,7 +89,7 @@ function ThemedApp() {
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#6366f1',
+          colorPrimary: accentColor,
           colorBgContainer: bgColor,
           colorBgElevated: bgElevated,
           colorText: txtColor,
@@ -95,7 +106,7 @@ function ThemedApp() {
           },
           Pagination: {
             itemBg: 'transparent',
-            itemActiveBg: '#6366f1',
+            itemActiveBg: accentColor,
             itemInputBg: 'transparent',
           },
         },
@@ -103,7 +114,7 @@ function ThemedApp() {
     >
       <a className="skip-link" href="#main-content" style={{
         position: 'absolute', top: '-100%', left: 8, zIndex: 9999,
-        padding: '8px 16px', background: '#6366f1', color: '#fff',
+        padding: '8px 16px', background: accentColor, color: '#fff',
         borderRadius: '0 0 var(--radius-btn) var(--radius-btn)', fontSize: 14, textDecoration: 'none',
       }} onFocus={(e) => { (e.target as HTMLElement).style.top = '0'; }}
        onBlur={(e) => { (e.target as HTMLElement).style.top = '-100%'; }}>

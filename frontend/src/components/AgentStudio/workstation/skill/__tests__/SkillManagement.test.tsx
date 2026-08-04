@@ -100,6 +100,11 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThanOrEqual(2);
     fireEvent.click(checkboxes[1]);
+    expect(checkboxes[1]).toBeChecked();
+    expect(screen.getByText('批量删除 (1)')).toBeInTheDocument();
+    fireEvent.click(checkboxes[1]);
+    expect(checkboxes[1]).not.toBeChecked();
+    expect(screen.queryByText('批量删除 (1)')).not.toBeInTheDocument();
   });
 
   it('renders installed status badge', async () => {
