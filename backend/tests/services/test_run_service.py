@@ -179,6 +179,61 @@ class TestRunService:
                 )
 
     @pytest.mark.asyncio
+    async def test_create_run_team_with_workflow_dispatches_team_pipeline(self):
+        """F1: team + workflow must schedule _run_team_pipeline, not _run_agent_pipeline."""
+        from services.run_service import RunService
+
+        svc = RunService()
+        mock_workflow = MagicMock()
+        mock_workflow.nodes = ["n1", "n2"]
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.buffer_run_messages") as mock_buffer,
+            patch("services.run_service.asyncio.create_task") as mock_create_task,
+            patch("services.run_service.get_session") as mock_get_sess,
+            patch("services.run_service.update_session_title"),
+            patch("repository.create_run") as mock_db_create_run,
+            patch("repository.workflows.get_workflow_config_by_team") as mock_get_wf,
+            patch("tasks.team_pipeline._run_team_pipeline", new_callable=MagicMock) as mock_team_pipeline,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-team"
+            mock_create_sess.return_value = mock_sess
+            mock_get_key.return_value = {"api_key": "sk-team", "base_url": None}
+            mock_get_sess.return_value = mock_sess
+            mock_db_create_run.return_value = "run-team"
+            mock_buffer.return_value = None
+            mock_get_wf.return_value = mock_workflow
+
+            result = await svc.create_run(
+                requirement="team task",
+                session_id=None,
+                user_id="user-1",
+                team_id="team-1",
+                key_id="key-1",
+            )
+            assert result["run_id"] == "run-team"
+            assert result["status"] == "pending"
+            assert result["session_id"] == "sess-team"
+            mock_get_wf.assert_called_once_with("team-1")
+            mock_create_task.assert_called_once()
+            called_task = mock_create_task.call_args[0][0]
+            assert called_task is mock_team_pipeline.return_value
+            mock_team_pipeline.assert_called_once_with(
+                requirement="team task",
+                run_id="run-team",
+                session_id="sess-team",
+                team_id="team-1",
+                key_id="key-1",
+                model="gpt-4",
+                api_key="sk-team",
+                api_base=None,
+            )
+
+    @pytest.mark.asyncio
     async def test_continue_run_creates_session_when_none(self):
         from services.run_service import RunService
 

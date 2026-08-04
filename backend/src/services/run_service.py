@@ -153,17 +153,18 @@ class RunService:
 
                 workflow = await get_workflow_config_by_team(team_id)
                 if workflow:
-                    from tasks import _run_agent_pipeline
+                    from tasks.team_pipeline import _run_team_pipeline
 
                     asyncio.create_task(
-                        _run_agent_pipeline(
+                        _run_team_pipeline(
                             requirement=requirement,
                             run_id=run_id,
                             session_id=session_id,
-                            agent_id=None,
+                            team_id=team_id,
+                            key_id=key_id,
+                            model=effective_model,
                             api_key=api_key,
                             api_base=api_base,
-                            model=effective_model,
                         )
                     )
                     logger.info(
