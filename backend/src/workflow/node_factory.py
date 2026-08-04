@@ -1,15 +1,25 @@
 """Node factory — creates callable LangGraph nodes from workflow definitions."""
 
 import contextlib
+import json
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
 from broker import publish_run_message
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from streaming.llm_stream import convert_messages_to_api, stream_llm_response
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from services.thinking_chain import format_result_preview, get_tool_prefix
+from services.tool_config import ToolConfig, build_tool_definition
+from streaming.llm_stream import (
+    build_tool_calls_list,
+    convert_messages_to_api,
+    stream_llm_response,
+)
 
 from .models import WorkflowNode, WorkflowState
 from .strategies import get_strategy
+
+# Cap tool-call turns inside a single node so a misbehaving model can't loop.
+_MAX_TOOL_ROUNDS = 8
 
 
 class LLMConfig(Protocol):
@@ -34,16 +44,26 @@ class NodeFactory:
         self,
         llm: LLMConfig,
         agent_prompts: dict[str, str],
-        tools: list[Any] | None = None,
+        tools: list[ToolConfig] | None = None,
+        node_tools: dict[str, list[ToolConfig]] | None = None,
         run_id: str = "",
     ):
-        """Initialize the node factory with LLM config, prompts, and optional tools."""
+        """Initialize the node factory with LLM config, prompts, and optional tools.
+
+        ``tools`` applies to every node as a fallback; ``node_tools`` maps a
+        ``role_identifier`` to its own ToolConfig list, which takes precedence.
+        """
         self.llm = llm
         self.agent_prompts = agent_prompts
         self.tools = tools or []
+        self.node_tools = node_tools or {}
         self.run_id = run_id
 
-    def _build_request(self, api_messages: list[dict[str, Any]]) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    def _build_request(
+        self,
+        api_messages: list[dict[str, Any]],
+        tool_definitions: list[dict[str, Any]] | None = None,
+    ) -> tuple[str, dict[str, Any], dict[str, Any]]:
         """Build the HTTP request for the LLM streaming API."""
         raw_key = getattr(self.llm, "openai_api_key", "")
         actual_key = raw_key.get_secret_value() if hasattr(raw_key, "get_secret_value") else str(raw_key)
@@ -58,21 +78,50 @@ class NodeFactory:
             "temperature": getattr(self.llm, "temperature", 0.7),
             "max_tokens": getattr(self.llm, "max_tokens", 16384),
         }
-        if "deepseek" in (base.lower() + body["model"].lower()):
+        if tool_definitions:
+            body["tools"] = tool_definitions
+            body["tool_choice"] = "auto"
+        elif "deepseek" in (base.lower() + body["model"].lower()):
+            # DeepSeek's native thinking mode conflicts with tool calling —
+            # only enable it when no tools are bound (matches build_llm_request_body).
             body["thinking"] = {"type": "enabled"}
         return url, headers, body
+
+    def _node_tool_configs(
+        self, node: WorkflowNode
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Resolve and register tool definitions + wrappers for a node.
+
+        Returns ``(definitions, tool_map)`` where ``tool_map`` maps the API tool
+        name to a ``_ToolWrapper``. Node-specific configs win over the fallback
+        ``tools`` list.
+        """
+        configs = self.node_tools.get(node.role_identifier)
+        if configs is None:
+            configs = self.tools
+        if not configs:
+            return [], {}
+        definitions: list[dict[str, Any]] = []
+        tool_map: dict[str, Any] = {}
+        for tc in configs:
+            api_name, wrapper, definition = build_tool_definition(tc, llm=self.llm)
+            if self.run_id:
+                wrapper.set_run_id(self.run_id)
+            tool_map[api_name] = wrapper
+            definitions.append(definition)
+        return definitions, tool_map
 
     def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict[str, Any] | Awaitable[dict[str, Any]]]:
         """Create a callable node function for a workflow node."""
         strategy = get_strategy(node)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")
         run_id = self.run_id
+        tool_definitions, tool_map = self._node_tool_configs(node)
 
         async def node_fn(state: WorkflowState) -> dict[str, Any]:
             context = strategy.build_prompt_context(state, node)
             messages = [SystemMessage(content=system_prompt), HumanMessage(content=context)]
             api_msgs = convert_messages_to_api(messages)
-            url, headers, body = self._build_request(api_msgs)
 
             async def cb(ev: dict[str, Any]) -> Any:
                 if not run_id:
@@ -87,8 +136,51 @@ class NodeFactory:
                         {"type": mt, "agent_name": node.role_identifier, "content": chunk},
                     )
 
-            content_chunks, _, _, _, _ = await stream_llm_response(url, headers, body, cb)
-            full_content = "".join(content_chunks)
+            full_content = ""
+            for _ in range(_MAX_TOOL_ROUNDS + 1):
+                url, headers, body = self._build_request(api_msgs, tool_definitions)
+                content_chunks, _, tool_calls_map, _, _ = await stream_llm_response(
+                    url, headers, body, cb, tool_definitions
+                )
+                full_content = "".join(content_chunks)
+                tool_calls = build_tool_calls_list(tool_calls_map or {})
+                if not tool_calls:
+                    break
+
+                messages.append(AIMessage(
+                    content=full_content,
+                    tool_calls=[
+                        {"name": tc["name"], "args": tc["args"], "id": tc["id"]}
+                        for tc in tool_calls
+                    ],
+                ))
+                tool_messages = []
+                for tc in tool_calls:
+                    name = tc.get("name", "")
+                    args = tc.get("args", {}) or {}
+                    fn = tool_map.get(name)
+                    prefix = get_tool_prefix(name)
+                    args_preview = json.dumps(args, ensure_ascii=False)[:200]
+                    await cb({"event": "on_custom_thinking", "data": {"content": f"{prefix} {name}({args_preview})"}})
+                    if fn:
+                        try:
+                            result = await fn.invoke(args)
+                        except Exception as exc:
+                            result = f"Error: {exc}"
+                    else:
+                        result = f"Unknown tool: {name}"
+                    await cb({
+                        "event": "on_custom_thinking",
+                        "data": {"content": f"[result] {name} → {format_result_preview(result)}"},
+                    })
+                    tool_messages.append(ToolMessage(
+                        content=str(result or ""),
+                        tool_call_id=tc.get("id", ""),
+                        name=name,
+                    ))
+                messages.extend(tool_messages)
+                api_msgs = convert_messages_to_api(messages)
+
             result = strategy.process_output(state, node, full_content)
             result["messages"] = state.get("messages", []) + [AIMessage(content=full_content)]
             return result

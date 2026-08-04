@@ -6,6 +6,8 @@ from typing import Any
 from core.infra.logging_config import get_logger
 from langchain_openai import ChatOpenAI
 from repository import get_agent_configs
+from services.tool_config import ToolConfig
+from tasks.tool_bindings import build_agent_tool_configs
 
 from .graph_builder import GraphBuilder
 from .models import WorkflowConfig, create_initial_state
@@ -39,21 +41,28 @@ class DynamicTeamGraph:
         self._config: WorkflowConfig | None = None
         self._graph: Any = None
         self._agent_prompts: dict[str, str] = {}
+        self._node_tools: dict[str, list[ToolConfig]] = {}
 
     async def set_workflow(self, config: WorkflowConfig) -> None:
         self._config = config
         self._agent_prompts = {}
+        self._node_tools = {}
         agents = await get_agent_configs()
+        agent_tools: dict[str, list[ToolConfig]] = {}
         for node in config.nodes:
             for agent in agents:
                 if agent.id == node.agent_config_id:
                     self._agent_prompts[node.role_identifier] = agent.system_prompt
+                    if agent.id not in agent_tools:
+                        agent_tools[agent.id] = await build_agent_tool_configs(agent)
+                    self._node_tools[node.role_identifier] = agent_tools[agent.id]
                     break
         self._build()
 
     def set_workflow_sync(self, config: WorkflowConfig, agents: list[Any]) -> None:
         self._config = config
         self._agent_prompts = {}
+        self._node_tools = {}
         for node in config.nodes:
             for agent in agents:
                 if hasattr(agent, "id") and agent.id == node.agent_config_id:
@@ -65,7 +74,12 @@ class DynamicTeamGraph:
     def _build(self) -> None:
         if not self._config:
             return
-        factory = NodeFactory(self.llm, self._agent_prompts, run_id=getattr(self, "_run_id", ""))
+        factory = NodeFactory(
+            self.llm,
+            self._agent_prompts,
+            node_tools=self._node_tools,
+            run_id=getattr(self, "_run_id", ""),
+        )
         router = Router()
         builder = GraphBuilder(factory, router, checkpointer=self.checkpointer)
         self._graph = builder.build(self._config)

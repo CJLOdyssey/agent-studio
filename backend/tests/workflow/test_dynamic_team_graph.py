@@ -134,6 +134,22 @@ class TestDynamicTeamGraphBuild:
 
     @patch("workflow.dynamic_team_graph.ChatOpenAI")
     @patch("workflow.dynamic_team_graph.GraphBuilder")
+    @patch("workflow.dynamic_team_graph.NodeFactory")
+    def test_build_passes_node_tools_to_factory(self, mock_factory_cls, mock_builder_cls, mock_chat_cls):
+        graph = DynamicTeamGraph()
+        node_tools = {"pm": [MagicMock()]}
+        graph._node_tools = node_tools
+        config = WorkflowConfig(
+            id="c1",
+            nodes=[WorkflowNode(id="n1", role_identifier="pm", order=0)],
+            edges=[],
+        )
+        graph._config = config
+        graph._build()
+        assert mock_factory_cls.call_args[1]["node_tools"] is node_tools
+
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.GraphBuilder")
     def test_build_creates_graph(self, mock_builder_cls, mock_chat_cls):
         graph = DynamicTeamGraph()
         mock_builder = MagicMock()
@@ -153,9 +169,10 @@ class TestDynamicTeamGraphBuild:
 @pytest.mark.unit
 class TestDynamicTeamGraphSetWorkflowAsync:
     @pytest.mark.asyncio
+    @patch("workflow.dynamic_team_graph.build_agent_tool_configs", new_callable=AsyncMock, return_value=[])
     @patch("workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
     @patch("workflow.dynamic_team_graph.ChatOpenAI")
-    async def test_set_workflow_fetches_agents(self, mock_chat_cls, mock_get_agents):
+    async def test_set_workflow_fetches_agents(self, mock_chat_cls, mock_get_agents, mock_build_tools):
         graph = DynamicTeamGraph()
         mock_agent = MagicMock()
         mock_agent.id = "ag1"
@@ -169,11 +186,13 @@ class TestDynamicTeamGraphSetWorkflowAsync:
         )
         await graph.set_workflow(config)
         assert graph._agent_prompts["pm"] == "prompt text"
+        mock_build_tools.assert_called_once_with(mock_agent)
 
     @pytest.mark.asyncio
+    @patch("workflow.dynamic_team_graph.build_agent_tool_configs", new_callable=AsyncMock, return_value=[])
     @patch("workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
     @patch("workflow.dynamic_team_graph.ChatOpenAI")
-    async def test_set_workflow_no_matching_agents(self, mock_chat_cls, mock_get_agents):
+    async def test_set_workflow_no_matching_agents(self, mock_chat_cls, mock_get_agents, mock_build_tools):
         graph = DynamicTeamGraph()
         mock_agent = MagicMock()
         mock_agent.id = "ag_other"
@@ -186,6 +205,35 @@ class TestDynamicTeamGraphSetWorkflowAsync:
         )
         await graph.set_workflow(config)
         assert "pm" not in graph._agent_prompts
+        mock_build_tools.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("workflow.dynamic_team_graph.build_agent_tool_configs", new_callable=AsyncMock)
+    @patch("workflow.dynamic_team_graph.get_agent_configs", new_callable=AsyncMock)
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
+    async def test_set_workflow_builds_tools_per_agent(self, mock_chat_cls, mock_get_agents, mock_build_tools):
+        graph = DynamicTeamGraph()
+        tools = [MagicMock(name="web_search")]
+        mock_build_tools.return_value = tools
+
+        mock_agent = MagicMock()
+        mock_agent.id = "ag1"
+        mock_agent.system_prompt = "prompt text"
+        mock_get_agents.return_value = [mock_agent]
+
+        config = WorkflowConfig(
+            id="c1",
+            nodes=[
+                WorkflowNode(id="n1", agent_config_id="ag1", role_identifier="pm", order=0),
+                WorkflowNode(id="n2", agent_config_id="ag1", role_identifier="dev", order=1),
+            ],
+            edges=[],
+        )
+        await graph.set_workflow(config)
+        # Same agent on two nodes → builder called once, config shared by both roles.
+        mock_build_tools.assert_called_once_with(mock_agent)
+        assert graph._node_tools["pm"] is tools
+        assert graph._node_tools["dev"] is tools
 
 
 @pytest.mark.unit

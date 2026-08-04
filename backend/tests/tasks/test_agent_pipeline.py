@@ -20,9 +20,9 @@ def mock_agent_deps():
         patch("tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
-        patch("tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
-        patch("tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
-        patch("tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
+        patch("tasks.tool_bindings.get_tools", new_callable=AsyncMock),
+        patch("tasks.tool_bindings.get_skills", new_callable=AsyncMock),
+        patch("tasks.tool_bindings.get_mcps", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
@@ -262,7 +262,7 @@ class TestRunAgentPipeline:
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
         with patch(
-            "tasks.agent_pipeline._discover_mcp_tools",
+            "tasks.tool_bindings._discover_mcp_tools",
             new_callable=AsyncMock,
             return_value=[
                 {
@@ -302,7 +302,7 @@ class TestRunAgentPipeline:
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
         with patch(
-            "tasks.agent_pipeline._discover_mcp_tools",
+            "tasks.tool_bindings._discover_mcp_tools",
             new_callable=AsyncMock,
             return_value=[
                 {
@@ -507,7 +507,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "node server.js"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("tasks.tool_bindings._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.return_value = [
                 {"name": "read_file", "description": "Read a file", "inputSchema": {"type": "object"}},
             ]
@@ -534,7 +534,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "nonexistent"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("tasks.tool_bindings._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.side_effect = Exception("Connection refused")
             await _run_agent_pipeline(
                 requirement="test",
@@ -969,7 +969,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "node server.js"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("tasks.tool_bindings._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.return_value = [
                 {"name": "tool1", "description": "A tool", "inputSchema": {"type": "object"}},
             ]
