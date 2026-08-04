@@ -500,7 +500,7 @@
 }
 
 .wsta-root table.w-full.table-fixed.border-collapse.text-sm thead tr th {
-  background: color-mix(in srgb, var(--color-surface-card) 98%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--color-surface-raised) 98%, var(--color-text-primary));
   color: var(--color-text-tertiary);
   border-bottom: 1px solid var(--color-border);
   font-size: 11px;
@@ -571,10 +571,10 @@
 .wsta-root table th,
 .wsta-root table td { background: transparent !important; }
 .wsta-root table thead tr,
-.wsta-root table thead th { background: var(--color-surface) !important; }
+.wsta-root table thead th { background: var(--color-surface-raised) !important; }
 .wsta-root .wsta-row-selected td { background: transparent !important; }
 .wsta-root .ant-input-affix-wrapper,
-.wsta-root .ant-select-selector { background: var(--color-surface) !important; }
+.wsta-root .ant-select-selector { background: var(--color-surface-raised) !important; }
 
 /* ── API key table overrides (previously inline in ApiProviderTab.tsx) ── */
 .api-key-table .ant-table-thead > tr > th,

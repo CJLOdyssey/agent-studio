@@ -35,11 +35,11 @@ export default function WorkstationPage({ onClose }: Props) {
       style={{ animation: 'wstaFadeIn 0.15s ease' }}
     >
       <div
-        className="bg-[var(--color-surface-card)] rounded-xl w-[90vw] max-w-[1200px] h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] overflow-hidden"
+        className="bg-[var(--color-surface-raised)] rounded-xl w-[90vw] max-w-[1200px] h-[85vh] flex flex-col [box-shadow:var(--shadow-lg)] z-[var(--z-modal)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-1 flex-row min-h-0">
-          <nav className="w-[200px] flex-shrink-0 flex flex-col overflow-y-auto bg-[var(--color-surface)] p-5 px-3">
+          <nav className="w-[200px] flex-shrink-0 flex flex-col overflow-y-auto bg-[var(--color-surface-raised)] p-5 px-3">
             <div className="text-sm font-semibold text-[var(--color-text-primary)] px-2 mb-1 tracking-tight" style={{ paddingBottom: 28 }}>
               管理工作台
             </div>
@@ -65,8 +65,8 @@ export default function WorkstationPage({ onClose }: Props) {
               </div>
             ))}
           </nav>
-          <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--color-surface)]">
-            <header className="flex items-center justify-between px-6 pt-5 pb-4 bg-[var(--color-surface)] flex-shrink-0">
+          <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--color-surface-raised)]">
+            <header className="flex items-center justify-between px-6 pt-5 pb-4 bg-[var(--color-surface-raised)] flex-shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 {currentTab && (
                   <>
@@ -103,7 +103,7 @@ export default function WorkstationPage({ onClose }: Props) {
                 </button>
               </div>
             </header>
-            <div className="flex-1 min-h-0 overflow-hidden bg-[var(--color-surface)]" style={{ paddingBottom: 30, animation: activeTab !== prevTab ? 'wstaFadeSlideIn 0.2s ease' : undefined }}>
+            <div className="flex-1 min-h-0 overflow-hidden bg-[var(--color-surface-raised)]" style={{ paddingBottom: 30, animation: activeTab !== prevTab ? 'wstaFadeSlideIn 0.2s ease' : undefined }}>
               <ErrorBoundary key={activeTab} FallbackComponent={ModuleFallback}>
                 {TAB_RENDERERS[activeTab]({ onNavigate: (tab) => handleTabChange(tab as WorkstationTab) })}
               </ErrorBoundary>

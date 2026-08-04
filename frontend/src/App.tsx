@@ -66,7 +66,7 @@ function ThemedApp() {
   const { settings } = useSettings();
   const isDark = settings.theme === 'dark';
   const bgColor = getCssVar('--color-surface') || (isDark ? '#0f1117' : '#ffffff');
-  const bgElevated = getCssVar('--color-surface-overlay') || (isDark ? '#24252d' : '#ffffff');
+  const bgElevated = getCssVar('--color-surface-raised') || (isDark ? '#1c1e24' : '#f7f8fa');
   const txtColor = getCssVar('--color-text-primary') || (isDark ? '#f1f1f1' : '#1a1a2e');
   const txtSecondary = getCssVar('--color-text-secondary') || (isDark ? '#a0a5b0' : '#495057');
   const borderColor = getCssVar('--color-border') || (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)');
