@@ -200,7 +200,11 @@
 
 /* Select — v6 DOM: `.ant-select-selector` removed; bg/border live on
    `.ant-select`. Only background overridden (border = same token value;
-   untouched to preserve v6 focus/hover accent borders). */
+   untouched to preserve v6 focus/hover accent borders).
+   `.ant-select-selection-item` still exists in v6 (select/style): the old
+   color override was dropped because selected-text color comes from the
+   antd `colorText` token (App.tsx ConfigProvider passes the
+   `--color-text-primary` value), which already matches the theme vars. */
 .ant-select-single.ant-select.ant-select {
   background: var(--color-surface-raised);
 }
