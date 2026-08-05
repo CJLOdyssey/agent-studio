@@ -511,30 +511,39 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: pip install --no-compile -r requirements.txt --quiet
-      - run: pip install playwright --quiet
-      - run: python3 -m playwright install chromium --with-deps
       - run: npm ci --prefer-offline --no-audit
+        working-directory: frontend
+      - run: npx playwright install chromium --with-deps
         working-directory: frontend
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend-e2e.log 2>&1 &
+            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8081 > /tmp/backend-e2e.log 2>&1 &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/api/models > /dev/null 2>&1; then break; fi
+            if curl -sf http://localhost:8081/api/models > /dev/null 2>&1; then break; fi
             sleep 1
           done
+      - name: Seed E2E user
+        run: |
+          curl -sf -X POST http://localhost:8081/api/auth/send-register-code \
+            -H 'Content-Type: application/json' -d '{"email":"cjlodyssey@outlook.com"}' > /dev/null
+          code=$(docker exec agent-studio-redis redis-cli -n 1 GET 'auth:verify:cjlodyssey@outlook.com' | tr -d '"')
+          curl -sf -X POST http://localhost:8081/api/auth/register \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"cjlodyssey@outlook.com\",\"code\":\"$code\",\"password\":\"Test1234!\"}" > /dev/null
       - name: Start frontend dev server
         working-directory: frontend
         run: |
-          npx vite --port 5173 --host 0.0.0.0 &
+          npx vite --port 5174 --host 0.0.0.0 &
           echo "FRONTEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5173 > /dev/null 2>&1; then break; fi
+            if curl -sf http://localhost:5174 > /dev/null 2>&1; then break; fi
             sleep 1
           done
-      - name: Run smoke tests
-        run: PYTHONPATH=. python3 frontend/e2e/smoke_tests.py 2>&1 | tail -30
+      - name: Run Playwright E2E smoke tests
+        working-directory: frontend
+        run: PLAYWRIGHT_BASE_URL=http://localhost:5174 npx playwright test --project=chromium 2>&1 | tail -30
       - name: Stop services
         if: always()
         run: kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
