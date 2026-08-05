@@ -37,8 +37,8 @@ jobs:
           exit $rc
       - name: Enforce score threshold
         run: |
-          # mutmut 3.7 的 `results` 无 "Mutation score" 行，须用 `--all true` 全量统计。
-          # score = killed / (killed + survived)；no tests 视为未覆盖，不计入分母。
+          # mutmut results 需遍历 source_paths=src/，须重建 symlink（Run 步骤已删除）。
+          ln -s backend/src src
           python3 - <<'PY'
           import subprocess, re
           out = subprocess.run(
@@ -60,3 +60,4 @@ jobs:
               raise SystemExit(1)
           print(f"✅ Mutation score {score:.1f}% >= {threshold:.1f}%")
           PY
+          rm -f src
