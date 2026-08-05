@@ -1,412 +1,280 @@
 import { test, expect } from '@playwright/test';
 
-// 设为首个要运行的用例名，前面步骤自动跳过（调试用）
-const RUN_FROM = ''; // '' = 全量运行。失败时设 'E1-14' 等从该步骤开始调试
-
 let seq = 0;
-function uid() { return `${++seq}-${Date.now().toString(36).slice(-4)}`; }
-
-/** 学习13：根据 RUN_FROM 决定是否跳过当前 step */
-const stepNames = ['E1-01', 'E1-04', 'E1-02', 'E1-03', 'E1-06', 'E1-07', 'E1-08', 'E1-09', 'E1-10', 'E1-05', 'E1-14', 'E1-15', 'E1-11', 'E1-12', 'E1-16'];
-function shouldSkip(name: string): boolean {
-  if (!RUN_FROM) return false;
-  return stepNames.indexOf(name) < stepNames.indexOf(RUN_FROM);
+function uid(prefix: string): string {
+  return `${prefix}-${++seq}-${Date.now().toString(36).slice(-4)}`;
 }
 
-/** 学习9：检查并移除遮挡按钮的遮罩层（getComputedStyle + pointerEvents） */
-/** 学习13：带跳过的 test.step 包装（含步骤标记） */
-async function runStep(fullName: string, fn: () => Promise<void>) {
-  await test.step(fullName, async () => {
-    const code = fullName.split(':')[0].trim();
-    if (shouldSkip(code)) { console.log(`⏭ 跳过 ${fullName}`); return; }
-    console.log(`▶ ${fullName}`);
-    await fn();
-  });
-}
+type TeamStatus = 'active' | 'disabled';
 
-async function clearOverlays(page: import('@playwright/test').Page) {
-  const hasBlockingOverlay = await page.evaluate(() => {
-    const overlays = document.querySelectorAll<HTMLElement>('.fixed.inset-0');
-    return Array.from(overlays).some(el => getComputedStyle(el).pointerEvents !== 'none');
-  });
-  if (hasBlockingOverlay) {
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-    await page.evaluate(() => {
-      document.querySelectorAll<HTMLElement>('.fixed.inset-0').forEach(el => {
-        if (getComputedStyle(el).pointerEvents !== 'none') el.remove();
-      });
-    });
-    await page.waitForTimeout(200);
-  }
-}
-
-async function createTeam(page: import('@playwright/test').Page, name: string, category?: string, status?: string) {
-  await page.getByRole('button', { name: '新建团队' }).click();
-  await page.waitForTimeout(500);
-  await page.getByRole('textbox', { name: '输入团队名称' }).fill(name);
-  if (category) await page.getByRole('combobox').nth(2).selectOption(category);
-  if (status) await page.getByRole('combobox').nth(3).selectOption(status);
-  await page.getByText('创建团队').click();
-  await page.waitForTimeout(1500);
-  const stillOpen = await page.getByRole('heading', { name: '新建团队' }).isVisible().catch(() => false);
-  if (stillOpen) await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
-}
-
-/** 重置所有筛选条件（搜索框 + 分类 + 状态） */
-async function resetFilters(page: import('@playwright/test').Page) {
-  await page.getByRole('textbox', { name: '搜索团队名称、描述' }).fill('');
-  await page.waitForTimeout(300);
-  await page.locator('.ant-select-selector').first().click();
-  await page.locator('.ant-select-item-option').filter({ hasText: '全部分类' }).first().click();
-  await page.waitForTimeout(200);
-  await page.locator('.ant-select-selector').nth(1).click();
-  await page.locator('.ant-select-item-option').filter({ hasText: '全部状态' }).first().click();
-  await page.waitForTimeout(500);
-}
-
-async function clickRowAction(page: import('@playwright/test').Page, teamName: string) {
-  const row = page.locator('tr', { hasText: teamName });
-  await expect(row).toBeVisible({ timeout: 10000 });
-  const modalOpen = await page.evaluate(() => !!document.querySelector('.ant-modal'));
-  if (modalOpen) await page.keyboard.press('Escape');
-  await row.hover();
-  await page.waitForTimeout(300);
-  await row.locator('button.ant-dropdown-trigger').click({ timeout: 8000 });
-}
-
-test('团队管理 E2E', async ({ page }) => {
-  // 学习9+22：全量操作日志（浏览器错误 + API 响应 + 控制台）
-  page.on('pageerror', err => console.log(`[JS错误] ${err.message}`));
-  page.on('response', resp => {
-    if (resp.url().includes('/api/teams')) {
-      console.log(`[API] ${resp.status()} ${resp.url().split('/api')[1]}`);
-    }
-  });
-  page.on('console', msg => {
-    if (msg.type() === 'error' || msg.type() === 'warning') {
-      console.log(`[浏览器] ${msg.type()}: ${msg.text()}`);
-    }
-  });
-
-  // ─── 一次性登录 ──────────────────────────────
+/** 进入团队管理工作台 Tab */
+async function gotoTeamTab(page: import('@playwright/test').Page) {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
-  const loggedIn = await page.getByRole('button', { name: /在线状态/ }).isVisible().catch(() => false);
-  if (!loggedIn) {
-    await page.getByRole('button', { name: /游客|登录/ }).first().click();
-    await page.waitForTimeout(500);
-    await page.getByRole('button', { name: '登录', exact: true }).first().click();
-    await page.getByRole('textbox', { name: '邮箱地址' }).fill('cjlodyssey@outlook.com');
-    await page.getByRole('textbox', { name: '密码' }).fill('Test1234!');
-    await page.locator('form').getByRole('button', { name: '登录' }).click();
-    await page.getByRole('button', { name: /在线状态/ }).waitFor({ timeout: 15000 });
-  }
+  await page.getByRole('button', { name: /在线状态/ }).waitFor({ timeout: 15000 });
   await page.getByRole('button', { name: /在线状态/ }).click();
-  await page.getByRole('button', { name: '管理工作台' }).click();
-  await page.waitForTimeout(1500);
+  await page.getByRole('button', { name: '管理工作台', exact: true }).click();
+  await page.getByRole('button', { name: '团队管理', exact: true }).click();
+  await expect(page.getByRole('button', { name: '新建团队', exact: true })).toBeVisible();
+}
 
-  // ─── 清空旧数据 ────────────────────────────
-  for (let i = 0; i < 3; i++) {
-    const cb = page.getByRole('checkbox', { name: '全选本页' });
+/** 打开新建团队弹窗并返回 dialog 定位器 */
+async function openCreateTeamForm(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: '新建团队', exact: true }).first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByPlaceholder('输入团队名称')).toBeVisible();
+  return dialog;
+}
+
+/** 关闭当前弹窗（点右上角关闭按钮，比 Escape 可靠） */
+async function closeAnyDialog(page: import('@playwright/test').Page) {
+  const closeBtn = page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true });
+  if (await closeBtn.isVisible().catch(() => false)) {
+    await closeBtn.first().click({ timeout: 3000 }).catch(() => {});
+    await page.waitForTimeout(300);
+  }
+}
+
+/** 创建团队：分类为文本输入，状态为表单内唯一 select */
+async function createTeam(
+  page: import('@playwright/test').Page,
+  name: string,
+  opts: { category?: string; status?: TeamStatus } = {},
+) {
+  const dialog = await openCreateTeamForm(page);
+  await dialog.getByPlaceholder('输入团队名称').fill(name);
+  if (opts.category) await dialog.getByPlaceholder('例如：业务、技术、数据').fill(opts.category);
+  if (opts.status) await dialog.getByRole('combobox').selectOption(opts.status);
+  await dialog.getByRole('button', { name: '创建团队', exact: true }).click();
+  await expect(page.getByText('团队已创建').first()).toBeVisible();
+  await expect(dialog).not.toBeVisible();
+}
+
+/** 点击表格行操作菜单 */
+async function clickRowAction(page: import('@playwright/test').Page, name: string) {
+  const row = page.locator('tr', { hasText: name }).first();
+  await expect(row).toBeVisible({ timeout: 10000 });
+  await row.hover();
+  await row.getByRole('button').click();
+}
+
+/** 搜索并等待该团队行出现 */
+async function searchForTeam(page: import('@playwright/test').Page, name: string) {
+  await page.getByPlaceholder('搜索团队名称、描述').fill(name);
+  await expect(page.locator('tr', { hasText: name }).first()).toBeVisible({ timeout: 10000 });
+}
+
+/** 重置搜索 + 分类筛选 + 状态筛选 */
+async function resetFilters(page: import('@playwright/test').Page) {
+  await page.getByPlaceholder('搜索团队名称、描述').fill('');
+  const selects = page.getByRole('toolbar').locator('.ant-select');
+  await selects.nth(0).click();
+  await page.locator('.ant-select-item-option').filter({ hasText: '全部分类' }).click();
+  await selects.nth(1).click();
+  await page.locator('.ant-select-item-option').filter({ hasText: '全部状态' }).click();
+  await page.waitForTimeout(300);
+}
+
+/** 批量删除当前页全部团队（清空数据） */
+async function deleteAllTeams(page: import('@playwright/test').Page) {
+  for (let i = 0; i < 10; i++) {
+    const cb = page.getByRole('checkbox', { name: '全选本页', exact: true });
     if (!(await cb.isVisible().catch(() => false))) break;
     await cb.check();
-    await page.waitForTimeout(300);
     const btn = page.getByRole('button', { name: /批量删除/ });
     if (!(await btn.isVisible().catch(() => false))) break;
     await btn.click();
-    await page.getByRole('button', { name: '确认删除' }).click();
+    await page.getByRole('button', { name: '确认删除', exact: true }).click();
     await page.waitForTimeout(500);
   }
+}
 
-  // ─── E1-01 创建团队 ──────────────────────────
-  await runStep('E1-01: 创建团队', async () => {
-    const name = `E2E-创建-${uid()}`;
+test('团队管理 E2E', async ({ page }) => {
+  page.on('pageerror', (err) => console.log(`[JS错误] ${err.message}`));
+
+  await gotoTeamTab(page);
+
+  // ═══ E1-01 创建团队 ═══
+  await test.step('E1-01 创建团队', async () => {
+    const name = uid('E2E-创建');
     await createTeam(page, name);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-    await expect(page.getByText(name)).toBeVisible();
+    await searchForTeam(page, name);
   });
 
-  // ─── E1-04 删除团队 ──────────────────────────
-  await runStep('E1-04: 删除团队', async () => {
-    const name = `E2E-删除-${uid()}`;
+  // ═══ E1-04 删除团队 ═══
+  await test.step('E1-04 删除团队', async () => {
+    const name = uid('E2E-删除');
     await createTeam(page, name);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
+    await searchForTeam(page, name);
     await clickRowAction(page, name);
     await page.getByRole('menuitem', { name: '删除' }).click();
-    await page.getByRole('button', { name: '确认删除' }).click();
-    await expect(page.getByText('团队已删除')).toBeVisible();
+    await page.getByRole('button', { name: '确认删除', exact: true }).click();
+    await expect(page.getByText('团队已删除').first()).toBeVisible();
   });
 
-  // ─── E1-02 编辑名称 ──────────────────────────
-  await runStep('E1-02: 编辑名称', async () => {
-    const name = `E2E-待编辑-${uid()}`;
+  // ═══ E1-02 编辑名称 ═══
+  await test.step('E1-02 编辑名称', async () => {
+    const name = uid('E2E-待编辑');
     await createTeam(page, name);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
+    await searchForTeam(page, name);
     await clickRowAction(page, name);
     await page.getByRole('menuitem', { name: '编辑团队' }).click();
-    await page.waitForTimeout(500);
-    await page.getByRole('textbox', { name: '输入团队名称' }).fill(`E2E-已重命名-${uid()}`);
-    await page.getByRole('button', { name: '保存修改' }).click();
-    await page.waitForTimeout(500);
-    await expect(page.getByText('团队已更新')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByPlaceholder('输入团队名称')).toBeVisible();
+    await dialog.getByPlaceholder('输入团队名称').fill(uid('E2E-已重命名'));
+    await dialog.getByRole('button', { name: '保存修改', exact: true }).click();
+    await expect(page.getByText('团队已更新').first()).toBeVisible();
   });
 
-  // ─── E1-03 编辑分类/状态 ──────────────────────
-  await runStep('E1-03: 编辑分类/状态', async () => {
-    const name = `E2E-待修改-${uid()}`;
+  // ═══ E1-03 编辑分类/状态 ═══
+  await test.step('E1-03 编辑分类/状态', async () => {
+    const name = uid('E2E-待修改');
     await createTeam(page, name);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
+    await searchForTeam(page, name);
     await clickRowAction(page, name);
     await page.getByRole('menuitem', { name: '编辑团队' }).click();
-    await page.waitForTimeout(500);
-    await page.getByRole('combobox').nth(2).selectOption('test');
-    await page.waitForTimeout(300);
-    await page.getByRole('combobox').nth(3).selectOption('inactive');
-    await page.getByRole('button', { name: '保存修改' }).click();
-    await page.waitForTimeout(500);
-    await expect(page.getByText('团队已更新')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByPlaceholder('输入团队名称')).toBeVisible();
+    await dialog.getByPlaceholder('例如：业务、技术、数据').fill('test');
+    await dialog.getByRole('combobox').selectOption('disabled');
+    await dialog.getByRole('button', { name: '保存修改', exact: true }).click();
+    await expect(page.getByText('团队已更新').first()).toBeVisible();
+    await expect(page.locator('tr', { hasText: name }).getByText('已停用')).toBeVisible();
   });
 
-  // ─── E1-06 分类筛选 ──────────────────────────
-  await runStep('E1-06: 分类筛选', async () => {
-    const devName = `E2E-开发-${uid()}`;
-    await createTeam(page, devName);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
-    await createTeam(page, `E2E-运维-${uid()}`, 'ops');
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
-    await page.locator('.ant-select-selector').first().click();
-    await page.waitForTimeout(500);
-    await page.locator('.ant-select-item-option').filter({ hasText: '开发' }).first().click();
-    await page.waitForTimeout(800);
-    await expect(page.getByText(devName)).toBeVisible();
-  });
-
-  // ─── E1-07 状态筛选 ──────────────────────────
-  await runStep('E1-07: 状态筛选', async () => {
-    const inactiveName = `E2E-停用-${uid()}`;
-    await createTeam(page, inactiveName, undefined, 'inactive');
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
-    await page.locator('.ant-select-selector').nth(1).click();
-    await page.waitForTimeout(500);
-    await page.locator('.ant-select-item-option').filter({ hasText: '停用' }).first().click();
-    await page.waitForTimeout(500);
-    await expect(page.getByText(inactiveName)).toBeVisible();
-  });
-
-  // ─── E1-08 批量删除 ──────────────────────────
-  await runStep('E1-08: 批量删除', async () => {
+  // ═══ E1-06 分类筛选 ═══
+  await test.step('E1-06 分类筛选', async () => {
     await resetFilters(page);
-    // 清理前序步骤残留的团队，避免分页影响
-    for (let i = 0; i < 3; i++) {
-      const cb = page.getByRole('checkbox', { name: '全选本页' });
-      if (!(await cb.isVisible().catch(() => false))) break;
-      await cb.check();
-      await page.waitForTimeout(200);
-      const btn = page.getByRole('button', { name: /批量删除/ });
-      if (!(await btn.isVisible().catch(() => false))) break;
-      await btn.click();
-      await page.getByRole('button', { name: '确认删除' }).click();
-      await page.waitForTimeout(500);
-    }
-    const teamA = `E2E-批量A-${uid()}`;
-    const teamB = `E2E-批量B-${uid()}`;
-    await createTeam(page, teamA);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-    await createTeam(page, teamB);
-    await expect(page.getByText('团队已创建')).toBeVisible();
+    const devName = uid('E2E-开发');
+    await createTeam(page, devName, { category: '开发' });
+    await createTeam(page, uid('E2E-运维'), { category: '运维' });
 
-    // 勾选两行
-    await page.locator('tr', { hasText: teamA }).locator('input[type="checkbox"]').check();
-    await page.locator('tr', { hasText: teamB }).locator('input[type="checkbox"]').check();
-    await page.waitForTimeout(300);
+    const toolbar = page.getByRole('toolbar');
+    await toolbar.locator('.ant-select').nth(0).click();
+    await page.locator('.ant-select-item-option').filter({ hasText: '开发' }).click();
+    await page.getByPlaceholder('搜索团队名称、描述').fill(devName);
+    await expect(page.locator('tr', { hasText: devName })).toBeVisible();
+    await page.getByPlaceholder('搜索团队名称、描述').fill('');
+    await expect(page.locator('tr', { hasText: 'E2E-运维' })).not.toBeVisible();
+  });
+
+  // ═══ E1-07 状态筛选 ═══
+  await test.step('E1-07 状态筛选', async () => {
+    await resetFilters(page);
+    const inactiveName = uid('E2E-停用');
+    await createTeam(page, inactiveName, { status: 'disabled' });
+    await createTeam(page, uid('E2E-启用'), { status: 'active' });
+
+    const toolbar = page.getByRole('toolbar');
+    await toolbar.locator('.ant-select').nth(1).click();
+    await page.locator('.ant-select-item-option').filter({ hasText: '已停用' }).click();
+    await page.getByPlaceholder('搜索团队名称、描述').fill(inactiveName);
+    await expect(page.locator('tr', { hasText: inactiveName })).toBeVisible();
+    await page.getByPlaceholder('搜索团队名称、描述').fill('');
+    await expect(page.locator('tr', { hasText: 'E2E-启用' })).not.toBeVisible();
+  });
+
+  // ═══ E1-08 批量删除 ═══
+  await test.step('E1-08 批量删除', async () => {
+    await resetFilters(page);
+    const a = uid('E2E-批量A');
+    const b = uid('E2E-批量B');
+    await createTeam(page, a);
+    await createTeam(page, b);
+    // 用公共前缀搜索，把两行固定在同一页
+    await page.getByPlaceholder('搜索团队名称、描述').fill('E2E-批量');
+    await page.getByRole('checkbox', { name: `选择 ${a}` }).check();
+    await page.getByRole('checkbox', { name: `选择 ${b}` }).check();
     await page.getByRole('button', { name: /批量删除/ }).click();
-    await page.getByRole('button', { name: '确认删除' }).click();
-    await page.waitForTimeout(500);
-    await expect(page.getByText('团队已删除')).toBeVisible();
+    await page.getByRole('button', { name: '确认删除', exact: true }).click();
+    await expect(page.getByText(/已删除 \d+ 个团队/)).toBeVisible();
   });
 
-  // ─── E1-09 全选 ──────────────────────────────
-  await runStep('E1-09: 全选', async () => {
+  // ═══ E1-09 全选 ═══
+  await test.step('E1-09 全选', async () => {
     await resetFilters(page);
-    await createTeam(page, `E2E-全选A-${uid()}`);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-    await createTeam(page, `E2E-全选B-${uid()}`);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-    await createTeam(page, `E2E-全选C-${uid()}`);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
-    await page.getByRole('checkbox', { name: '全选本页' }).check();
-    await page.waitForTimeout(300);
-    // 三行都应选中的验证：批量删除按钮显示数量
-    await expect(page.getByRole('button', { name: /批量删除.*3/ })).toBeVisible();
+    for (let i = 0; i < 3; i++) await createTeam(page, uid('E2E-全选'));
+    // 固定在同一页后全选
+    await page.getByPlaceholder('搜索团队名称、描述').fill('E2E-全选');
+    await page.getByRole('checkbox', { name: '全选本页', exact: true }).check();
+    await expect(page.getByRole('button', { name: '批量删除 (3)' })).toBeVisible();
   });
 
-  // ─── E1-10 空状态 ──────────────────────────
-  await runStep('E1-10: 空状态', async () => {
+  // ═══ E1-10 空状态 ═══
+  await test.step('E1-10 空状态', async () => {
     await resetFilters(page);
-    // 清空所有团队
-    for (let i = 0; i < 3; i++) {
-      const cb = page.getByRole('checkbox', { name: '全选本页' });
-      if (!(await cb.isVisible().catch(() => false))) break;
-      await cb.check();
-      await page.waitForTimeout(200);
-      const btn = page.getByRole('button', { name: /批量删除/ });
-      if (!(await btn.isVisible().catch(() => false))) break;
-      await btn.click();
-      await page.getByRole('button', { name: '确认删除' }).click();
-      await page.waitForTimeout(500);
-    }
+    await deleteAllTeams(page);
     await expect(page.getByText('暂无团队', { exact: true })).toBeVisible();
   });
 
-  // ─── E1-05 搜索筛选 ──────────────────────────
-  await runStep('E1-05: 搜索筛选', async () => {
-    await resetFilters(page);
-
-    const searchName = `搜索${uid()}`;
-    await createTeam(page, searchName);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-
-    await page.getByRole('textbox', { name: '搜索团队名称、描述' }).fill('搜索');
-    await expect(page.getByText(searchName)).toBeVisible();
+  // ═══ E1-05 搜索筛选 ═══
+  await test.step('E1-05 搜索筛选', async () => {
+    const name = uid('搜索');
+    await createTeam(page, name);
+    await page.getByPlaceholder('搜索团队名称、描述').fill('搜索');
+    await expect(page.locator('tr', { hasText: name })).toBeVisible();
+    await page.getByPlaceholder('搜索团队名称、描述').fill('');
   });
 
-  // ─── E1-14 成员管理弹窗 ──────────────────────
-  await runStep('E1-14: 成员管理弹窗', async () => {
+  // ═══ E1-14 成员管理弹窗 ═══
+  await test.step('E1-14 成员管理弹窗', async () => {
     await resetFilters(page);
-    const name = `E2E-成员-${uid()}`;
+    const name = uid('E2E-成员');
     await createTeam(page, name);
-    await expect(page.getByText('团队已创建')).toBeVisible();
-    await page.waitForTimeout(500);
-    await expect(page.getByText(name)).toBeVisible();
-
+    await searchForTeam(page, name);
     await clickRowAction(page, name);
     await page.getByRole('menuitem', { name: '管理成员' }).click();
     await expect(page.getByRole('heading', { name: '管理成员' })).toBeVisible();
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-    await clearOverlays(page);
+    await closeAnyDialog(page);
   });
 
-  // ─── E1-15 表单验证 ──────────────────────────
-  await runStep('E1-15: 表单验证 - 名称为空', async () => {
-    await clearOverlays(page);
-    // 确保在工作台
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /在线状态/ }).click();
-    await page.getByRole('button', { name: '管理工作台' }).click();
-    await page.waitForTimeout(1500);
-    // 清搜索框（避免干扰）
-    await page.getByRole('textbox', { name: '搜索团队名称、描述' }).fill('');
-    await page.waitForTimeout(300);
-    await page.getByRole('button', { name: '新建团队' }).click();
-    await page.waitForTimeout(500);
-    // 确认名称输入框为空
-    const nameInput = page.getByRole('textbox', { name: '输入团队名称' });
-    await expect(nameInput).toBeVisible();
-    const val = await nameInput.inputValue();
-    console.log('E1-15 名称输入框值:', JSON.stringify(val));
-    // 提交空表单
-    await page.getByText('创建团队').click();
-    await page.waitForTimeout(800);
-    // 学习9：获取页面反馈（验证提示或成功 toast）
-    const feedback = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('[class*="error"],[class*="help"],[role="alert"],.ant-message'))
-        .map(e => e.textContent?.trim()).filter(Boolean)
-    );
-    console.log('E1-15 反馈:', feedback);
-    // 关弹窗
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
-    await clearOverlays(page);
+  // ═══ E1-15 表单验证 - 名称为空 ═══
+  await test.step('E1-15 表单验证', async () => {
+    await gotoTeamTab(page);
+    const dialog = await openCreateTeamForm(page);
+    await dialog.getByRole('button', { name: '创建团队', exact: true }).click();
+    await expect(dialog.getByText('团队名称不能为空')).toBeVisible();
+    await expect(dialog).toBeVisible();
+    await closeAnyDialog(page);
   });
 
-  // ─── E1-08/09 批量删除 + 全选（清理循环已隐式覆盖）──────────
-  // cleanup 循环已覆盖：全选 → 批量删除 → 确认
-
-  // ─── E1-10 空状态（清理后已隐式覆盖）─────────────────────
-  // cleanup 后表格为空即验证空状态
-
-  // ─── E1-11 搜索空状态 ──────────────────────────
-  await runStep('E1-11: 搜索空状态', async () => {
-    await clearOverlays(page);
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /在线状态/ }).click();
-    await page.getByRole('button', { name: '管理工作台' }).click();
-    await page.waitForTimeout(1500);
-    await page.getByRole('textbox', { name: '搜索团队名称、描述' }).fill('__NONEXISTENT__');
-    await page.waitForTimeout(500);
+  // ═══ E1-11 搜索空状态 ═══
+  await test.step('E1-11 搜索空状态', async () => {
+    await gotoTeamTab(page);
+    await resetFilters(page);
+    await page.getByPlaceholder('搜索团队名称、描述').fill('__NONEXISTENT__');
     await expect(page.getByText('暂无团队', { exact: true })).toBeVisible({ timeout: 5000 });
-    // 清空搜索框恢复
-    await page.getByRole('textbox', { name: '搜索团队名称、描述' }).fill('');
-    await page.waitForTimeout(300);
+    await page.getByPlaceholder('搜索团队名称、描述').fill('');
   });
 
-  // ─── E1-12 分页 ────────────────────────────────
-  await runStep('E1-12: 分页', async () => {
+  // ═══ E1-12 分页 ═══
+  await test.step('E1-12 分页', async () => {
     await resetFilters(page);
-    for (let i = 0; i < 8; i++) {
-      await createTeam(page, `E2E-分页-${uid()}`);
-      await expect(page.getByText('团队已创建')).toBeVisible();
-    }
-    await page.waitForTimeout(500);
-    // 验证有分页控件
-    const hasPagination = await page.locator('.ant-pagination').isVisible().catch(() => false);
-    expect(hasPagination).toBeTruthy();
+    for (let i = 0; i < 8; i++) await createTeam(page, uid('E2E-分页'));
+    await expect(page.locator('.ant-pagination')).toBeVisible();
   });
 
-  // ─── E1-13 复制团队 ────────────────────────────
-  // ⚠️ UI 无菜单入口，已移除死代码（useTeamManagement.copyTeam / team.types.copyTeam）
-
-  // ─── E1-16 错误处理 ────────────────────────────
-  await runStep('E1-16: 错误处理', async () => {
-    await clearOverlays(page);
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /在线状态/ }).click();
-    await page.getByRole('button', { name: '管理工作台' }).click();
-    await page.waitForTimeout(1500);
-    await resetFilters(page);
-
-    // 学习11：拦截 POST /api/teams 返回 500 模拟后端错误
+  // ═══ E1-16 错误处理 - 创建接口 500 ═══
+  await test.step('E1-16 错误处理', async () => {
+    await gotoTeamTab(page);
     await page.route('**/api/teams', async (route) => {
       if (route.request().method() === 'POST') {
-        await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ detail: '模拟服务端错误' }) });
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ detail: '模拟服务端错误' }),
+        });
       } else {
         await route.continue();
       }
     });
 
-    // 打开创建弹窗并提交
-    await page.getByRole('button', { name: '新建团队' }).click();
-    await page.waitForTimeout(500);
-    await page.getByRole('textbox', { name: '输入团队名称' }).fill(`E2E-错误-${uid()}`);
-    await page.getByText('创建团队').click();
-    await page.waitForTimeout(1000);
+    const dialog = await openCreateTeamForm(page);
+    await dialog.getByPlaceholder('输入团队名称').fill(uid('E2E-错误'));
+    await dialog.getByRole('button', { name: '创建团队', exact: true }).click();
 
-    // 验证错误处理：等待 toast 或 error banner
-    await page.waitForTimeout(1000);
-    // 重试按钮存在即表明错误处理生效
-    const hasRetry = await page.getByRole('button', { name: /重试/ }).isVisible().catch(() => false);
-    const hasErrorText = await page.getByText(/失败|错误|模拟/).isVisible().catch(() => false);
-    console.log('E1-16 错误提示可见:', { retry: hasRetry, errorText: hasErrorText });
-    if (hasRetry) {
-      // 有关闭按钮
-      await page.getByRole('button', { name: /重试/ }).click();
-      await page.waitForTimeout(500);
-    }
-
-    // 恢复正常 API
+    await expect(page.getByRole('button', { name: '重试', exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(dialog).toBeVisible();
+    await closeAnyDialog(page);
     await page.unroute('**/api/teams');
   });
 });
