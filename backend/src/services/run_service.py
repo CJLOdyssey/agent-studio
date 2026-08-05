@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from typing import Any
 
 from broker import buffer_run_messages
@@ -28,6 +29,9 @@ from repository import (
 )
 
 logger = get_logger(__name__)
+
+# "thread"（默认，进程内 asyncio.create_task，适合 dev）| "celery"（走 worker）
+RUN_DISPATCH = os.environ.get("RUN_DISPATCH", "thread")
 
 
 class RunService:
@@ -148,6 +152,30 @@ class RunService:
 
         # ── Dispatch pipeline ───────────────────────────────────────
         try:
+            if RUN_DISPATCH == "celery":
+                from tasks import registry as _reg
+
+                if team_id:
+                    from repository.workflows import get_workflow_config_by_team
+
+                    workflow = await get_workflow_config_by_team(team_id)
+                    if workflow:
+                        _reg.run_team.delay(
+                            requirement=requirement, run_id=run_id, session_id=session_id,
+                            team_id=team_id, key_id=key_id, api_key=api_key,
+                            api_base=api_base, model=effective_model,
+                        )
+                        logger.info("Team task -> celery | run=%s | team=%s", run_id, team_id)
+                        return {"run_id": run_id, "status": "pending", "session_id": session_id}
+                _reg.run_agent.delay(
+                    requirement=requirement, run_id=run_id, session_id=session_id,
+                    agent_id=agent_id, api_key=api_key, api_base=api_base,
+                    model=effective_model, user_id=user_id,
+                )
+                logger.info("Task -> celery | run=%s", run_id)
+                return {"run_id": run_id, "status": "pending", "session_id": session_id}
+
+            # thread 模式：进程内后台任务
             if team_id:
                 from repository.workflows import get_workflow_config_by_team
 
@@ -168,7 +196,7 @@ class RunService:
                         )
                     )
                     logger.info(
-                        "Team task started | run=%s | team=%s | nodes=%d",
+                        "Team task started (thread) | run=%s | team=%s | nodes=%d",
                         run_id, team_id, len(workflow.nodes),
                     )
                     return {"run_id": run_id, "status": "pending", "session_id": session_id}
@@ -188,7 +216,7 @@ class RunService:
                 )
             )
             logger.info(
-                "Task started | run_id=%s | session_id=%s | model=%s",
+                "Task started (thread) | run_id=%s | session_id=%s | model=%s",
                 run_id, session_id, effective_model,
             )
         except Exception:
@@ -250,6 +278,16 @@ class RunService:
         await buffer_run_messages(run_id)
 
         # ── Dispatch background pipeline ────────────────────────────
+        if RUN_DISPATCH == "celery":
+            from tasks import registry as _reg
+
+            _reg.complete_agent.delay(
+                content=content, run_id=run_id, api_key=api_key,
+                api_base=api_base, model=effective_model, thinking=thinking,
+            )
+            logger.info("Complete -> celery | run=%s", run_id)
+            return {"run_id": run_id, "status": "running", "session_id": session_id}
+
         async def _run_pipeline() -> Any:
             try:
                 from tasks import _complete_pipeline

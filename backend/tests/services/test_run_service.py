@@ -363,6 +363,147 @@ class TestRunService:
             await svc.list_runs(limit=999)
             mock_get_runs.assert_called_once_with(limit=100)
 
+    @pytest.mark.asyncio
+    async def test_create_run_dispatches_agent_to_celery_when_enabled(self, monkeypatch):
+        """RUN_DISPATCH=celery → run_agent.delay, no in-process create_task."""
+        from services import run_service as rs
+        from tasks import registry as _reg
+
+        monkeypatch.setenv("RUN_DISPATCH", "celery")
+        monkeypatch.setattr(rs, "RUN_DISPATCH", "celery")
+
+        captured: dict = {}
+        monkeypatch.setattr(
+            _reg, "run_agent",
+            type("FakeTask", (), {"delay": lambda *a, **kw: captured.update(kw) or None})(),
+        )
+
+        svc = rs.RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.asyncio.create_task") as mock_create_task,
+            patch("services.run_service.get_session") as mock_get_sess,
+            patch("services.run_service.update_session_title"),
+            patch("repository.create_run") as mock_db_create_run,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-celery"
+            mock_create_sess.return_value = mock_sess
+            mock_get_key.return_value = {"api_key": "sk-test", "base_url": None}
+            mock_get_sess.return_value = mock_sess
+            mock_db_create_run.return_value = "run-celery"
+
+            result = await svc.create_run(
+                requirement="hi",
+                session_id=None,
+                user_id="user-1",
+                key_id="key-1",
+                agent_id="agent-1",
+            )
+
+        assert result == {"run_id": "run-celery", "status": "pending", "session_id": "sess-celery"}
+        assert captured["agent_id"] == "agent-1"
+        assert captured["user_id"] == "user-1"
+        assert captured["model"] == "gpt-4"
+        assert captured["run_id"] == "run-celery"
+        mock_create_task.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_create_run_team_dispatches_run_team_to_celery_when_enabled(self, monkeypatch):
+        """RUN_DISPATCH=celery + team workflow → run_team.delay (no user_id), not run_agent."""
+        from services import run_service as rs
+        from tasks import registry as _reg
+
+        monkeypatch.setenv("RUN_DISPATCH", "celery")
+        monkeypatch.setattr(rs, "RUN_DISPATCH", "celery")
+
+        captured: dict = {}
+        monkeypatch.setattr(
+            _reg, "run_team",
+            type("FakeTeam", (), {"delay": lambda *a, **kw: captured.update(kw) or None})(),
+        )
+        agent_delayed: list = []
+        monkeypatch.setattr(
+            _reg, "run_agent",
+            type("FakeAgent", (), {"delay": lambda *a, **kw: agent_delayed.append(kw)})(),
+        )
+
+        mock_workflow = MagicMock()
+        mock_workflow.nodes = ["n1"]
+        svc = rs.RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.get_session") as mock_get_sess,
+            patch("services.run_service.update_session_title"),
+            patch("repository.create_run") as mock_db_create_run,
+            patch("repository.workflows.get_workflow_config_by_team") as mock_get_wf,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-celery-team"
+            mock_create_sess.return_value = mock_sess
+            mock_get_key.return_value = {"api_key": "sk-team", "base_url": None}
+            mock_get_sess.return_value = mock_sess
+            mock_db_create_run.return_value = "run-celery-team"
+            mock_get_wf.return_value = mock_workflow
+
+            result = await svc.create_run(
+                requirement="team task",
+                session_id=None,
+                user_id="user-1",
+                key_id="key-1",
+                team_id="team-1",
+            )
+
+        assert result == {"run_id": "run-celery-team", "status": "pending", "session_id": "sess-celery-team"}
+        assert captured["team_id"] == "team-1"
+        assert captured["key_id"] == "key-1"
+        assert "user_id" not in captured
+        assert agent_delayed == []
+
+    @pytest.mark.asyncio
+    async def test_create_run_uses_in_process_task_by_default(self):
+        """RUN_DISPATCH 缺省 thread → asyncio.create_task, no .delay()."""
+        from services import run_service as rs
+
+        assert rs.RUN_DISPATCH == "thread"
+        svc = rs.RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.asyncio.create_task") as mock_create_task,
+            patch("services.run_service.get_session") as mock_get_sess,
+            patch("services.run_service.update_session_title"),
+            patch("repository.create_run") as mock_db_create_run,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-thread"
+            mock_create_sess.return_value = mock_sess
+            mock_get_key.return_value = {"api_key": "sk-test", "base_url": None}
+            mock_get_sess.return_value = mock_sess
+            mock_db_create_run.return_value = "run-thread"
+
+            result = await svc.create_run(
+                requirement="hi",
+                session_id=None,
+                user_id="user-1",
+                key_id="key-1",
+                agent_id="agent-1",
+            )
+
+        assert result == {"run_id": "run-thread", "status": "pending", "session_id": "sess-thread"}
+        mock_create_task.assert_called_once()
+
 
 # ─────────────────────────────────────────────────────────────────────
 # 8. backend/services/generators/_models.py — GeneratedTool
