@@ -171,6 +171,22 @@ class TestDecodeJWT:
         expected_exp = payload["iat"] + 7200
         assert abs(payload["exp"] - expected_exp) <= 1
 
+    def test_rejects_header_alg_forgery(self):
+        """Header alg: none 篡改必须被拒（PyJWT algorithms 强制校验）。"""
+        import base64
+        import json
+
+        from auth.auth_jwt import create_token, decode_jwt
+
+        secret = "my-secret-key-for-alg-test"
+        tok = create_token("u1", secret)
+        _, payload, sig = tok.split(".")
+        forged_header = base64.urlsafe_b64encode(
+            json.dumps({"alg": "none", "typ": "JWT"}).encode()
+        ).rstrip(b"=").decode()
+        forged = f"{forged_header}.{payload}.{sig}"
+        assert decode_jwt(forged, secret) is None
+
 
 # ─────────────────────────────────────────────────────────────────────
 # 4. backend.core.infra.database.py — Engine & session factory
