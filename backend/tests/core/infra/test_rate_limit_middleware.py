@@ -8,28 +8,28 @@ import pytest
 class TestMiddlewareExempt:
     @pytest.mark.asyncio
     async def test_non_http_scope(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         app = AsyncMock()
         await RateLimitMiddleware(app)({"type": "websocket"}, AsyncMock(), AsyncMock())
         app.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_health_check(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         app = AsyncMock()
         await RateLimitMiddleware(app)({"type": "http", "path": "/api/health", "headers": []}, AsyncMock(), AsyncMock())
         app.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_ws_path(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         app = AsyncMock()
         await RateLimitMiddleware(app)({"type": "http", "path": "/ws/session-1", "headers": []}, AsyncMock(), AsyncMock())
         app.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_allowed_passes(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         app = AsyncMock()
         mw = RateLimitMiddleware(app, rate=1000)
         with patch.object(mw.limiter, "is_allowed", return_value=True):
@@ -39,7 +39,7 @@ class TestMiddlewareExempt:
 
     @pytest.mark.asyncio
     async def test_rate_limited_returns_429(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         app = AsyncMock()
         mw = RateLimitMiddleware(app)
         send = AsyncMock()
@@ -53,7 +53,7 @@ class TestMiddlewareExempt:
 class TestIPExtraction:
     @pytest.mark.asyncio
     async def test_x_forwarded_for(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         mw = RateLimitMiddleware(AsyncMock(), rate=1000)
         with patch.object(mw.limiter, "is_allowed") as m:
             m.return_value = True
@@ -63,7 +63,7 @@ class TestIPExtraction:
 
     @pytest.mark.asyncio
     async def test_x_real_ip(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         mw = RateLimitMiddleware(AsyncMock(), rate=1000)
         with patch.object(mw.limiter, "is_allowed") as m:
             m.return_value = True
@@ -73,7 +73,7 @@ class TestIPExtraction:
 
     @pytest.mark.asyncio
     async def test_client_addr_fallback(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         mw = RateLimitMiddleware(AsyncMock(), rate=1000)
         with patch.object(mw.limiter, "is_allowed") as m:
             m.return_value = True
@@ -83,7 +83,7 @@ class TestIPExtraction:
 
     @pytest.mark.asyncio
     async def test_unknown_fallback(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         mw = RateLimitMiddleware(AsyncMock(), rate=1000)
         with patch.object(mw.limiter, "is_allowed") as m:
             m.return_value = True
@@ -93,7 +93,7 @@ class TestIPExtraction:
 
     @pytest.mark.asyncio
     async def test_xff_priority_over_xri(self):
-        from backend.core.infra.rate_limit import RateLimitMiddleware
+        from core.infra.rate_limit import RateLimitMiddleware
         mw = RateLimitMiddleware(AsyncMock(), rate=1000)
         with patch.object(mw.limiter, "is_allowed") as m:
             m.return_value = True

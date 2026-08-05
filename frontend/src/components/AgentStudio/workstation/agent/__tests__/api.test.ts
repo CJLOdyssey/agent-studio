@@ -7,6 +7,7 @@ const mockDeleteAgent = vi.fn();
 const mockListTeams = vi.fn().mockResolvedValue([]);
 const mockListPrompts = vi.fn().mockResolvedValue([]);
 const mockListTools = vi.fn().mockResolvedValue([]);
+const mockListToolPlugins = vi.fn().mockResolvedValue([]);
 const mockListMCPs = vi.fn().mockResolvedValue([]);
 const mockListSkills = vi.fn().mockResolvedValue([]);
 
@@ -27,6 +28,7 @@ vi.mock('../../../../../api/client/prompts', () => ({
 
 vi.mock('../../../../../api/client/tools', () => ({
   listTools: mockListTools,
+  listToolPlugins: mockListToolPlugins,
 }));
 
 vi.mock('../../../../../api/client/mcps', () => ({
@@ -103,6 +105,83 @@ describe('agent api', { tags: ['unit'] }, () => {
     expect(result[0].teams).toEqual(['Team Alpha', 'Team Beta']);
   });
 
+  it('create sends empty output_constraints (no metadata packing)', async () => {
+    mockCreateAgent.mockResolvedValue({ id: 'new1' });
+    mockListPrompts.mockResolvedValue([{ id: 'sp1', name: 'Sys Prompt', content: 'You are X' }]);
+
+    const { agentAPI } = await import('../api');
+    await agentAPI.create({
+      name: 'New Agent',
+      description: 'Some desc',
+      team: 'Team A',
+      model: 'gpt-4',
+      status: 'running',
+      version: 'v1.0.0',
+      systemPromptId: 'sp1',
+      toolIds: [],
+      mcpIds: [],
+      skillIds: [],
+    });
+
+    expect(mockCreateAgent).toHaveBeenCalledTimes(1);
+    const arg = mockCreateAgent.mock.calls[0][0];
+    expect(arg.output_constraints).toBe('');
+    expect(arg.system_prompt).toBe('You are X');
+    const serialized = JSON.stringify(arg);
+    expect(serialized).not.toContain('"description"');
+    expect(serialized).not.toContain('"team"');
+    expect(serialized).not.toContain('"version"');
+    expect(serialized).not.toContain('"systemPromptId"');
+  });
+
+  it('update sends empty output_constraints and resolves system_prompt', async () => {
+    mockUpdateAgent.mockResolvedValue(undefined);
+    mockListPrompts.mockResolvedValue([{ id: 'sp1', name: 'Sys Prompt', content: 'You are X' }]);
+
+    const { agentAPI } = await import('../api');
+    await agentAPI.update('a1', {
+      name: 'Agent 1',
+      description: '',
+      team: '',
+      model: 'gpt-4',
+      status: 'stopped',
+      version: 'v1.0.0',
+      systemPromptId: 'sp1',
+      toolIds: [],
+      mcpIds: [],
+      skillIds: [],
+    });
+
+    expect(mockUpdateAgent).toHaveBeenCalledTimes(1);
+    const arg = mockUpdateAgent.mock.calls[0][1];
+    expect(arg.output_constraints).toBe('');
+    expect(arg.system_prompt).toBe('You are X');
+    expect(JSON.stringify(arg)).not.toContain('"team"');
+  });
+
+  it('update omits system_prompt when none resolved (avoids wiping stored prompt)', async () => {
+    mockUpdateAgent.mockResolvedValue(undefined);
+
+    const { agentAPI } = await import('../api');
+    await agentAPI.update('a1', {
+      name: 'Agent 1',
+      description: '',
+      team: '',
+      model: 'gpt-4',
+      status: 'stopped',
+      version: 'v1.0.0',
+      systemPromptId: '',
+      toolIds: [],
+      mcpIds: [],
+      skillIds: [],
+    });
+
+    expect(mockUpdateAgent).toHaveBeenCalledTimes(1);
+    const arg = mockUpdateAgent.mock.calls[0][1];
+    expect(arg).not.toHaveProperty('system_prompt');
+    expect(arg.output_constraints).toBe('');
+  });
+
   it('remove calls deleteAgent', async () => {
     mockDeleteAgent.mockResolvedValue(undefined);
 
@@ -122,7 +201,7 @@ describe('agent api', { tags: ['unit'] }, () => {
   });
 
   it('setAgentAPI replaces implementation', async () => {
-    const { agentAPI: origAPI, setAgentAPI } = await import('../api');
+    const { setAgentAPI } = await import('../api');
 
     const mockAPI = {
       fetchAll: vi.fn().mockResolvedValue([]),

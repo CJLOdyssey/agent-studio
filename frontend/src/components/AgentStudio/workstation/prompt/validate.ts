@@ -7,7 +7,10 @@ export function validatePromptForm(data: PromptFormData, items: PromptEntry[], e
   else if (t.length < 2) errors.push('提示词名称至少 2 个字符');
   else if (t.length > 50) errors.push('提示词名称最多 50 个字符');
   if (items.some((p) => p.name === t && p.id !== editingId)) errors.push(`名称「${t}」已存在`);
+  if (!(data.description?.trim() ?? '')) errors.push('提示词描述不能为空');
   if (!data.content.trim()) errors.push('提示词内容不能为空');
-  if (!/^v\d+\.\d+\.\d+$/.test(data.version.trim())) errors.push('版本格式应为 v1.0.0');
+  // 后端 PromptCreate 不收 version（由 DB 默认 v1.0.0 生成），故版本为选填：空串不校验，非空才校验格式
+  const v = data.version.trim();
+  if (v && !/^v\d+\.\d+\.\d+$/.test(v)) errors.push('版本格式应为 v1.0.0');
   return errors;
 }

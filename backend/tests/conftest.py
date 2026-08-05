@@ -1,22 +1,59 @@
 """Shared fixtures and helpers for E2E tests."""
 
 import contextlib
+import os
 import string
 import subprocess
+import sys
 import uuid
+from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from backend.core.infra.database import Base  # type: ignore[attr-defined]
-from backend.core.infra.redis_sentinel import (
+# Force a clean test environment BEFORE any core module is imported.
+# core/infra/database.py reads DATABASE_URL (and other vars) at import time;
+# a polluted DATABASE_URL from the host shell (e.g. opencode's own
+# skill-tracker.db) would otherwise leak into every test worker.
+os.environ.update({
+    "AUTH_MODE": "legacy",
+    "AUTH_ENABLED": "0",
+    # auth 流程（register/login）无条件签发 token（_create_auth_response），
+    # 空 AUTH_SECRET 会让 PyJWT>=2.12 抛 InvalidKeyError。测试统一给足长密钥。
+    "AUTH_SECRET": "test-secret-0123456789abcdef0123456789",
+    "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
+    "REDIS_URL": "redis://localhost:6379/0",
+    "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",
+    "RATE_LIMIT": "9999",
+    "CHECKPOINTER_BACKEND": "memory",
+    "DATABASE_POOL_SIZE": "0",
+})
+
+from core.infra.database import Base  # type: ignore[attr-defined]
+from core.infra.redis_sentinel import (
     create_redis as _original_create_redis,  # noqa: F401 — saved before test_client patches it
 )
 
+_base = Path(__file__).parent.parent
+if str(_base) not in sys.path:
+    sys.path.insert(0, str(_base))
+
+# Alias backend.X → X so mock patches like "broker.get_redis" resolve
+import importlib as _il
+
+import backend as _backend_mod
+
+_backend_src = _base / 'src'
+for _p in _backend_src.iterdir():
+    if _p.is_dir() and (_p / '__init__.py').exists() and not _p.name.startswith('_'):
+        _mod = _il.import_module(_p.name)
+        sys.modules[f'backend.{_p.name}'] = _mod
+        setattr(_backend_mod, _p.name, _mod)
+
 # Register the requirement coverage plugin
-from backend.tests.requirement_coverage import (  # noqa: F401
+from .requirement_coverage import (  # noqa: F401
     pytest_addoption,
     pytest_collection_modifyitems,
     pytest_configure,
@@ -26,13 +63,13 @@ from backend.tests.requirement_coverage import (  # noqa: F401
 
 # flaky_test may be unavailable in merge/test contexts — import gracefully
 try:
-    from backend.tests.conftest_flaky import flaky_test  # noqa: F401
+    from conftest_flaky import flaky_test  # noqa: F401
 except (ImportError, SyntaxError):
     def flaky_test(**kwargs):  # type: ignore[no-redef]
         """No-op fallback when conftest_flaky is unavailable."""
         return lambda fn: fn
 
-BASE = "http://localhost:8080"
+BASE = os.environ.get("E2E_BASE_URL", "http://localhost:8082")
 
 # Test user credentials for rbac mode
 TEST_EMAIL = "e2e@test.com"
@@ -196,11 +233,6 @@ def api() -> Any:
     a.close()
 
 
-@pytest.fixture(autouse=True)
-def _fresh_rate_limit() -> None:
-    _clear_rate_limits()
-
-
 @pytest.fixture(scope="session")
 def event_loop() -> Any:
     """Session-scoped event loop for async fixtures."""
@@ -221,7 +253,7 @@ async def test_client() -> Any:
     # ── 1. Patch Redis BEFORE app import ────────────────────────────
     # Patch create_redis (the low-level connection factory) instead of
     # get_redis — some callers (login.py, password.py, register.py)
-    # import get_redis via `from backend.broker import get_redis` at
+    # import get_redis via `from broker import get_redis` at
     # module level, creating local references that a later patch on
     # backend.broker.get_redis cannot override.  create_redis is always
     # looked up from its module at call time, so a single patch covers
@@ -233,7 +265,7 @@ async def test_client() -> Any:
     session_redis.expire.return_value = True
     session_redis.publish.return_value = 1
 
-    patch_redis = patch("backend.core.infra.redis_sentinel.create_redis", return_value=session_redis)
+    patch_redis = patch("core.infra.redis_sentinel.create_redis", return_value=session_redis)
     patch_redis.start()
 
     # ── 2. Set up in-memory SQLite database ─────────────────────────
@@ -241,14 +273,13 @@ async def test_client() -> Any:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    import backend.core.infra.database as db_mod
+    import core.infra.database as db_mod
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────
     # ── 4. Create ASGI client ───────────────────────────────────────
+    from core.app import app
     from httpx import ASGITransport, AsyncClient
-
-    from backend.core.app import app
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -277,7 +308,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     if item.get_closest_marker("integration") is None:
         return
     try:
-        resp = httpx.get("http://localhost:8080/api/models", timeout=3)
+        resp = httpx.get(f"{BASE}/api/models", timeout=3)
         if resp.status_code != 200:
             pytest.skip(f"Backend not available (status {resp.status_code})")
     except Exception:
@@ -285,7 +316,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 
 # ── Test data factories ──────────────────────────────────────────────────────
-from backend.tests.factories import (  # noqa: E402
+from tests.factories import (  # noqa: E402
     agent_factory,
     mcp_factory,
     prompt_factory,

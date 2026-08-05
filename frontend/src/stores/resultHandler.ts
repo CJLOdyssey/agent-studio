@@ -1,5 +1,6 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
+import { updateAnswerVersions } from '../api/client/sessions';
 import type { ChatState } from './chatTypes';
 import type { ChatMessage, RunResult } from '../types';
 
@@ -8,7 +9,7 @@ function makeRunResult(code: string): RunResult {
 }
 import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
 export function handleThinkingDone(s: ChatState, msg: WsThinkingDoneEvent): Partial<ChatState> {
@@ -63,7 +64,13 @@ export function handleThinkingDoneEvent(set: SetFn, msg: WsThinkingDoneEvent): v
     if (s.streamingId) {
       return {
         messages: s.messages.map((m) =>
-          m.id === s.streamingId ? { ...m, thinkingDone: true } : m,
+          m.id === s.streamingId
+            ? {
+                ...m,
+                thinkingDone: true,
+                ...(msg.thinking ? { thinking: msg.thinking } : {}),
+              }
+            : m,
         ),
       };
     }
@@ -78,6 +85,7 @@ export function handleResultEvent(
   msg: WsResultEvent,
 ): void {
   const runId = get().currentRunId;
+  const streamMsgId = get().streamingId;
     const codeContent: string = msg.code ? String(msg.code) : '';
   set((_s) => {
     let msgs = _s.messages;
@@ -98,6 +106,15 @@ export function handleResultEvent(
       skipThinking: false,
     };
   });
+  // Edit-regenerate: persist the merged answer versions so they survive a reload.
+  if (streamMsgId && runId) {
+    const done = get().messages.find((m) => m.id === streamMsgId);
+    if (done && done.versions && done.versions.length > 0) {
+      updateAnswerVersions(runId, done.versions, done.thinkingVersions).catch((err) => {
+        Logger.warn('[chat] failed to persist answer versions for run %s: %s', runId, String(err));
+      });
+    }
+  }
   Logger.info('[chat] result received — status set to idle');
   activeStreamMsgIds.delete(runId || '');
 }
@@ -106,15 +123,23 @@ export function handleTeamResultEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  _msg: WsTeamResultEvent,
+  msg: WsTeamResultEvent,
 ): void {
   const runId = get().currentRunId;
+  const display = typeof msg.display === 'string' && msg.display.trim() ? msg.display : '';
+  const artifactCount = msg.artifacts && typeof msg.artifacts === 'object' && !Array.isArray(msg.artifacts)
+    ? Object.keys(msg.artifacts).length
+    : 0;
   set((_s) => {
     let msgs = _s.messages;
     if (_s.streamingId) {
       msgs = _s.messages.map((m) => {
         if (m.id !== _s.streamingId) return m;
-        return { ...m, thinkingDone: true } as ChatMessage;
+        // Replace the unlabeled concatenated stream output with the composed
+        // per-node artifact blocks so each node's result is presented separately.
+        const updated: Record<string, unknown> = { thinkingDone: true };
+        if (display) updated.content = display;
+        return { ...m, ...updated } as ChatMessage;
       });
     }
     return {
@@ -124,7 +149,7 @@ export function handleTeamResultEvent(
       skipThinking: false,
     };
   });
-  Logger.info('[chat] team_result received — status set to idle');
+  Logger.info('[chat] team_result received — surfaced %d node artifacts, status set to idle', artifactCount);
   activeStreamMsgIds.delete(runId || '');
 }
 

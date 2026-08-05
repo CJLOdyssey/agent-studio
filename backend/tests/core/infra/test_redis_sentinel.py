@@ -9,7 +9,7 @@ import pytest
 def _reload(monkeypatch, **env):
     for k, v in env.items():
         monkeypatch.setenv(k, v)
-    mod = importlib.import_module("backend.core.infra.redis_sentinel")
+    mod = importlib.import_module("core.infra.redis_sentinel")
     importlib.reload(mod)
     return mod
 

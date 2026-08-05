@@ -4,6 +4,10 @@ import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+pytestmark = pytest.mark.unit
+
+import pytest
 from starlette.testclient import TestClient
 
 os.environ["AUTH_MODE"] = "legacy"
@@ -16,7 +20,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -28,23 +32,23 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    import backend.core.app_lifespan as lifespan_mod
+    import core.app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
+        from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             existing = await session.execute(
@@ -86,11 +90,11 @@ def client():
     mock_redis.set.side_effect = _redis_set
     mock_redis.delete.side_effect = _redis_delete
 
-    with patch("backend.broker.get_redis", return_value=mock_redis), \
-         patch("backend.core.app_lifespan.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.login.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+    with patch("broker.get_redis", return_value=mock_redis), \
+         patch("core.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("routers.auth.login.get_redis", return_value=mock_redis), \
+         patch("routers.auth.register.get_redis", return_value=mock_redis), \
+         patch("routers.auth.password.get_redis", return_value=mock_redis):
         with TestClient(app) as c:
             yield c
 
@@ -114,7 +118,7 @@ class TestRuns:
         }, headers={"X-User-ID": "admin"})
         assert resp.status_code == 422
 
-    @patch("backend.routers.runs.load_config")
+    @patch("routers.runs.load_config")
     def test_create_run_max_config_length(self, mock_config, client):
         mock_cfg = MagicMock()
         mock_cfg.max_requirement_length = 10
@@ -124,7 +128,7 @@ class TestRuns:
         }, headers={"X-User-ID": "admin"})
         assert resp.status_code == 400
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_create_run_success(self, mock_service, client):
         mock_service.create_run = AsyncMock(return_value={
             "run_id": "r-1", "status": "running", "session_id": "s-1",
@@ -135,20 +139,20 @@ class TestRuns:
         assert data["run_id"] == "r-1"
         assert data["status"] == "running"
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_create_run_value_error(self, mock_service, client):
         mock_service.create_run = AsyncMock(side_effect=ValueError("bad input"))
         resp = client.post("/api/runs", json={"requirement": "test"}, headers={"X-User-ID": "admin"})
         assert resp.status_code == 400
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_create_run_http_exception_reraise(self, mock_service, client):
         from fastapi import HTTPException
         mock_service.create_run = AsyncMock(side_effect=HTTPException(status_code=400, detail="bad"))
         resp = client.post("/api/runs", json={"requirement": "test"}, headers={"X-User-ID": "admin"})
         assert resp.status_code == 400
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_create_run_generic_error(self, mock_service, client):
         mock_service.create_run = AsyncMock(side_effect=RuntimeError("something broke"))
         resp = client.post("/api/runs", json={"requirement": "test"}, headers={"X-User-ID": "admin"})
@@ -156,7 +160,7 @@ class TestRuns:
 
     # ── Get run detail ───────────────────────────────────────────────────
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_get_run_detail_found(self, mock_service, client):
         mock_service.get_run = AsyncMock(return_value={
             "id": "r-1", "requirement": "test", "status": "converged",
@@ -165,20 +169,20 @@ class TestRuns:
         resp = client.get("/api/runs/r-1")
         assert resp.status_code == 200
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_get_run_detail_not_found(self, mock_service, client):
         mock_service.get_run = AsyncMock(return_value=None)
         resp = client.get("/api/runs/nonexistent")
         assert resp.status_code == 404
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_get_run_detail_http_exception(self, mock_service, client):
         from fastapi import HTTPException
         mock_service.get_run = AsyncMock(side_effect=HTTPException(status_code=404, detail="not found"))
         resp = client.get("/api/runs/notfound")
         assert resp.status_code == 404
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_get_run_detail_error(self, mock_service, client):
         mock_service.get_run = AsyncMock(side_effect=RuntimeError("db error"))
         resp = client.get("/api/runs/r-error")
@@ -186,7 +190,7 @@ class TestRuns:
 
     # ── List runs ────────────────────────────────────────────────────────
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_list_runs_success(self, mock_service, client):
         mock_service.list_runs = AsyncMock(return_value=[
             {"id": "r-1", "requirement": "t1", "status": "converged", "session_id": "s1"},
@@ -195,13 +199,13 @@ class TestRuns:
         assert resp.status_code == 200
         assert len(resp.json()) == 1
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_list_runs_error(self, mock_service, client):
         mock_service.list_runs = AsyncMock(side_effect=RuntimeError("error"))
         resp = client.get("/api/runs")
         assert resp.status_code == 500
 
-    @patch("backend.routers.runs.run_service", new_callable=MagicMock)
+    @patch("routers.runs.run_service", new_callable=MagicMock)
     def test_list_runs_exception(self, mock_service, client):
         mock_service.list_runs = AsyncMock(side_effect=RuntimeError("db error"))
         resp = client.get("/api/runs?limit=10")
@@ -210,23 +214,23 @@ class TestRuns:
     # ── Model tests ──────────────────────────────────────────────────────
 
     def test_run_request_validation(self):
-        from backend.routers.runs import RunRequest
+        from routers.runs import RunRequest
         req = RunRequest(requirement="hello")
         assert req.requirement == "hello"
         assert req.session_id is None
 
     def test_run_request_camel_case_aliases(self):
-        from backend.routers.runs import RunRequest
+        from routers.runs import RunRequest
         req = RunRequest(requirement="test", sessionId="s1", keyId="k1")
         assert req.session_id == "s1"
         assert req.key_id == "k1"
 
     def test_run_response_model(self):
-        from backend.routers.runs import RunResponse
+        from routers.runs import RunResponse
         resp = RunResponse(run_id="r1", status="running")
         assert resp.run_id == "r1"
 
     def test_run_response_optional_fields(self):
-        from backend.routers.runs import RunResponse
+        from routers.runs import RunResponse
         resp = RunResponse(run_id="r1", status="running", session_id="s1")
         assert resp.session_id == "s1"

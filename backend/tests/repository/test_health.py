@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from backend.repository.health import check_database, check_redis
+from repository.health import check_database, check_redis
 
 
 class TestCheckDatabase:
@@ -14,7 +14,7 @@ class TestCheckDatabase:
         assert result == "ok"
 
     async def test_returns_error_message_on_failure(self):
-        with patch("backend.repository.health.get_session_factory", side_effect=RuntimeError("DB down")):
+        with patch("repository.health.get_session_factory", side_effect=RuntimeError("DB down")):
             result = await check_database()
             assert "DB down" in result
 
@@ -23,11 +23,11 @@ class TestCheckRedis:
     async def test_returns_ok_on_success(self):
         mock_redis = AsyncMock()
         mock_redis.ping = AsyncMock(return_value=True)
-        with patch("backend.broker.get_redis", return_value=mock_redis):
+        with patch("broker.get_redis", return_value=mock_redis):
             result = await check_redis()
             assert result == "ok"
 
     async def test_returns_error_message_on_failure(self):
-        with patch("backend.broker.get_redis", side_effect=ConnectionError("Redis unreachable")):
+        with patch("broker.get_redis", side_effect=ConnectionError("Redis unreachable")):
             result = await check_redis()
             assert "Redis unreachable" in result

@@ -31,7 +31,7 @@ async function mergeGuest() {
 
 export type AuthModalView = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 
-export interface AuthUser {
+interface AuthUser {
   userId: string;
   email: string;
   username: string | null;
@@ -81,14 +81,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isLegacy = !config.enabled || config.mode === 'legacy';
         setLegacyMode(isLegacy);
 
-        if (isLegacy) {
+        // Skip /me call if no refresh token exists — avoids 401 console noise for guests
+        const rt = localStorage.getItem('agentstudio_refresh_token');
+        if (!rt) {
           setLoading(false);
           return;
         }
 
-        // Skip /me call if no refresh token exists — avoids 401 console noise for guests
-        const rt = localStorage.getItem('agentstudio_refresh_token');
-        if (!rt) {
+        // Legacy mode: still try to restore session from stored token
+        if (isLegacy) {
+          try {
+            const me = await getMe();
+            if (!cancelled && me) {
+              authenticated = true;
+              setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
+              localStorage.setItem('agentstudio_user_id', me.id);
+              window.dispatchEvent(new CustomEvent('auth:login'));
+              await mergeGuest();
+            }
+          } catch {
+            clearTokens();
+          }
           setLoading(false);
           return;
         }
@@ -98,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!cancelled && me) {
             authenticated = true;
             setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
+            localStorage.setItem('agentstudio_user_id', me.id);
             window.dispatchEvent(new CustomEvent('auth:login'));
             await mergeGuest();
           }
@@ -120,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (me) {
                 authenticated = true;
                 setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
+                localStorage.setItem('agentstudio_user_id', me.id);
                 window.dispatchEvent(new CustomEvent('auth:login'));
                 await mergeGuest();
               }
@@ -139,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-    init();
+    void init();
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'agentstudio_refresh_token' && !e.newValue) {
@@ -157,12 +172,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const isAuthenticated = !legacyMode && user !== null;
+  const isAuthenticated = user !== null;
 
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await apiLogin(email, password, rememberMe);
     setTokens(res.access_token, res.refresh_token);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
+    localStorage.setItem('agentstudio_user_id', res.user.id);
     window.dispatchEvent(new CustomEvent('auth:login'));
     void mergeGuest();
   }, []);
@@ -171,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await apiRegister(email, code, password);
     setTokens(res.access_token, res.refresh_token);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
+    localStorage.setItem('agentstudio_user_id', res.user.id);
     window.dispatchEvent(new CustomEvent('auth:login'));
     void mergeGuest();
   }, []);
@@ -179,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await apiVerify(email, code);
     setTokens(res.access_token, res.refresh_token);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
+    localStorage.setItem('agentstudio_user_id', res.user.id);
     window.dispatchEvent(new CustomEvent('auth:login'));
     void mergeGuest();
   }, []);
@@ -195,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     clearTokens();
     clearLocalConversations();
+    localStorage.removeItem('agentstudio_user_id');
     useChatStore.getState().reset();
     window.dispatchEvent(new CustomEvent('auth:logout'));
   }, []);

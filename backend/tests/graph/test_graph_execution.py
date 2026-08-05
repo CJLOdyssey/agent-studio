@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END
 
-from backend.graph.graph import SingleAgentGraph
+from graph.graph import SingleAgentGraph
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ class _FakeToolExecutor:
 @pytest.fixture
 def graph() -> SingleAgentGraph:
     """Create a SingleAgentGraph with MemorySaver and mocked ChatOpenAI."""
-    with patch("backend.graph.graph.ChatOpenAI") as MockLLM:
+    with patch("graph.graph.ChatOpenAI") as MockLLM:
         MockLLM.return_value = MagicMock()
         g = SingleAgentGraph(
             model="test-model",
@@ -60,7 +60,7 @@ def graph() -> SingleAgentGraph:
 @pytest.fixture
 def graph_with_tools(graph: SingleAgentGraph) -> SingleAgentGraph:
     """Graph with two fake tools bound."""
-    from backend.services.tool_config import ToolConfig
+    from services.tool_config import ToolConfig
 
     tool1 = ToolConfig(
         name="search",
@@ -318,9 +318,15 @@ class TestToolsNode:
         await graph._tools_node(state)
 
         events = [call[0][0]["event"] for call in cb.call_args_list]
-        assert "on_tool_result" in events
-        tool_events = [c for c in cb.call_args_list if c[0][0]["event"] == "on_tool_result"]
-        assert tool_events[0][0][0]["data"]["tool"] == "echo"
+        # Tool results are streamed into the thinking chain as on_custom_thinking
+        # with a "[result] <tool> → ..." prefix.
+        assert "on_custom_thinking" in events
+        result_thoughts = [
+            c[0][0]["data"]["content"]
+            for c in cb.call_args_list
+            if c[0][0]["event"] == "on_custom_thinking"
+        ]
+        assert any(t.startswith("[result] echo →") for t in result_thoughts)
 
 
 # ── set_stream_callback tests ─────────────────────────────────────────────────

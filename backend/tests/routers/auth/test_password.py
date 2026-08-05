@@ -16,10 +16,10 @@ class TestAuthPassword:
         mock_user.id = "u-change"
         mock_user.password_hash = bcrypt.hashpw(b"OldStr0ng@Pass", bcrypt.gensalt()).decode()
         mock_user.email = "change@test.com"
-        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user), \
-             patch("backend.routers.auth.password.update_password", new_callable=AsyncMock), \
-             patch("backend.routers.auth.password.revoke_all_user_tokens", new_callable=AsyncMock), \
-             patch("backend.routers.auth.password.send_email", new_callable=AsyncMock):
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.password.update_password", new_callable=AsyncMock), \
+             patch("routers.auth.password.revoke_all_user_tokens", new_callable=AsyncMock), \
+             patch("routers.auth.password.send_email", new_callable=AsyncMock):
             resp = client.post("/api/auth/change-password", json={
                 "old_password": "OldStr0ng@Pass",
                 "new_password": "NewStr0ng@Pass",
@@ -29,7 +29,7 @@ class TestAuthPassword:
 
     def test_change_password_user_not_found(self, client):
         """Line 128: user not found in change-password."""
-        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=None):
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=None):
             resp = client.post("/api/auth/change-password", json={
                 "old_password": "Old@Pass123",
                 "new_password": "New@Pass456",
@@ -42,7 +42,7 @@ class TestAuthPassword:
         mock_user.id = "u-cp-wrong"
         mock_user.password_hash = bcrypt.hashpw(b"Old@Pass123", bcrypt.gensalt()).decode()
         mock_user.email = "cp-wrong@test.com"
-        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user):
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user):
             resp = client.post("/api/auth/change-password", json={
                 "old_password": "Wrong@Pass999",
                 "new_password": "New@Pass456",
@@ -56,7 +56,7 @@ class TestAuthPassword:
         mock_user.id = "u-cp-same"
         mock_user.password_hash = bcrypt.hashpw(pwd.encode(), bcrypt.gensalt()).decode()
         mock_user.email = "cp-same@test.com"
-        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user):
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user):
             resp = client.post("/api/auth/change-password", json={
                 "old_password": pwd,
                 "new_password": pwd,
@@ -69,7 +69,7 @@ class TestAuthPassword:
         mock_user.id = "u-cp-weak"
         mock_user.password_hash = bcrypt.hashpw(b"Old@Pass123", bcrypt.gensalt()).decode()
         mock_user.email = "cp-weak@test.com"
-        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user):
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user):
             resp = client.post("/api/auth/change-password", json={
                 "old_password": "Old@Pass123",
                 "new_password": "123",
@@ -84,7 +84,7 @@ class TestAuthPassword:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=4)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+        with patch("routers.auth.password.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/forgot-password", json={
                 "email": "fp-rl@test.com"
             })
@@ -99,7 +99,7 @@ class TestAuthPassword:
         mock_redis.incr = AsyncMock(return_value=4)
         mock_redis.expire = AsyncMock(return_value=True)
         mock_redis.delete = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+        with patch("routers.auth.password.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/reset-password", json={
                 "email": "rp-exh@test.com", "code": "123456",
                 "new_password": "Strong@1abc"
@@ -112,7 +112,7 @@ class TestAuthPassword:
         mock_redis.get = AsyncMock(return_value=b"123456")
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+        with patch("routers.auth.password.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/reset-password", json={
                 "email": "rp-weak@test.com", "code": "123456",
                 "new_password": "123"
@@ -126,8 +126,8 @@ class TestAuthPassword:
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
         mock_redis.delete = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.password.get_redis", return_value=mock_redis), \
-             patch("backend.routers.auth.password.get_user_by_email", new_callable=AsyncMock, return_value=None):
+        with patch("routers.auth.password.get_redis", return_value=mock_redis), \
+             patch("routers.auth.password.get_user_by_email", new_callable=AsyncMock, return_value=None):
             resp = client.post("/api/auth/reset-password", json={
                 "email": "rp-nouser@test.com", "code": "123456",
                 "new_password": "Strong@1abc"

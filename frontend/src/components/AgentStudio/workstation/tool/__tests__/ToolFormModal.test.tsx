@@ -5,16 +5,13 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }
 
 vi.mock('../locales', () => ({ t: (key: string) => key }));
 
-vi.mock('../../constants', () => ({
-  useModelOptions: () => ['GPT-4o', 'Claude Opus 4', 'DeepSeek V3'],
-}));
-
 vi.mock('../../../../../api/client/tools', () => ({
   testTool: vi.fn(),
 }));
 
 import { EMPTY_FORM } from '../validate';
 import ToolFormModal from '../ToolFormModal';
+import type { ToolEntry } from '../tool.types';
 import { testTool } from '../../../../../api/client/tools';
 
 const baseProps = {
@@ -37,7 +34,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   });
 
   it('renders edit mode title when editingItem is provided', () => {
-    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as any} />);
+    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as unknown as ToolEntry} />);
     expect(screen.getByText('tool.form_title_edit')).toBeInTheDocument();
   });
 
@@ -46,11 +43,34 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('tool.form_name')).toBeInTheDocument();
     expect(screen.getByText('tool.form_desc')).toBeInTheDocument();
     expect(screen.getByText('tool.form_category')).toBeInTheDocument();
-    expect(screen.getByText('tool.form_model')).toBeInTheDocument();
     expect(screen.getByText('tool.form_status')).toBeInTheDocument();
     expect(screen.getByText('tool.form_version')).toBeInTheDocument();
     expect(screen.getByText('tool.form_endpoint')).toBeInTheDocument();
     expect(screen.getByText('tool.form_parameters')).toBeInTheDocument();
+  });
+
+  it('renders method select and headers field', () => {
+    render(<ToolFormModal {...baseProps} />);
+    expect(screen.getByLabelText('tool.form_method')).toBeInTheDocument();
+    expect(screen.getByText('GET')).toBeInTheDocument();
+    expect(screen.getByText('POST')).toBeInTheDocument();
+    expect(screen.getByText('tool.form_headers')).toBeInTheDocument();
+  });
+
+  it('calls setFormData on method select change', () => {
+    const setFormData = vi.fn();
+    render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
+    const select = screen.getByLabelText('tool.form_method');
+    fireEvent.change(select, { target: { value: 'POST' } });
+    expect(setFormData).toHaveBeenCalled();
+  });
+
+  it('calls setFormData on headers input change', () => {
+    const setFormData = vi.fn();
+    render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
+    const textarea = screen.getByPlaceholderText('{"Authorization": "Bearer ..."}');
+    fireEvent.change(textarea, { target: { value: '{"X-Key":"v"}' } });
+    expect(setFormData).toHaveBeenCalled();
   });
 
   it('shows validation errors', () => {
@@ -75,19 +95,19 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
     expect(setFormData).toHaveBeenCalled();
   });
 
-  it('calls setFormData on category select change', () => {
+  it('calls setFormData on category change', () => {
     const setFormData = vi.fn();
     render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[0], { target: { value: 'API 工具' } });
+    const input = screen.getByPlaceholderText('例如：内置工具、自定义工具');
+    fireEvent.change(input, { target: { value: 'API 工具' } });
     expect(setFormData).toHaveBeenCalled();
   });
 
-  it('calls setFormData on model select change', () => {
+  it('calls setFormData on status select change', () => {
     const setFormData = vi.fn();
     render(<ToolFormModal {...baseProps} setFormData={setFormData} />);
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[1], { target: { value: 'DeepSeek V3' } });
+    const select = screen.getByLabelText('状态');
+    fireEvent.change(select, { target: { value: 'disabled' } });
     expect(setFormData).toHaveBeenCalled();
   });
 
@@ -116,7 +136,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when X button clicked', () => {
     const onClose = vi.fn();
     render(<ToolFormModal {...baseProps} onClose={onClose} />);
-    const closeBtn = document.querySelector('.modal-close') as HTMLElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -124,7 +144,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when overlay clicked', () => {
     const onClose = vi.fn();
     render(<ToolFormModal {...baseProps} onClose={onClose} />);
-    const overlay = document.querySelector('.modal-overlay') as HTMLElement;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -132,7 +152,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose when modal content clicked', () => {
     const onClose = vi.fn();
     render(<ToolFormModal {...baseProps} onClose={onClose} />);
-    const modal = document.querySelector('.wsta-modal') as HTMLElement;
+    const modal = document.querySelector('.fixed.inset-0 > div') as HTMLElement;
     fireEvent.click(modal);
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -145,7 +165,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   });
 
   it('test button is enabled when endpoint has value', () => {
-    const formData = { ...EMPTY_FORM, endpoint: 'http://api.example.com' };
+    const formData = { ...EMPTY_FORM, endpoint: 'https://api.example.com' };
     render(<ToolFormModal {...baseProps} formData={formData} />);
     const testBtn = screen.getByText('tool.test').closest('button');
     expect(testBtn).not.toBeDisabled();
@@ -153,12 +173,12 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
 
   it('calls testTool when test button clicked with editingItem', async () => {
     vi.mocked(testTool).mockResolvedValue({ success: true, status_code: 200, duration_ms: 150, message: 'OK', body: null });
-    const formData = { ...EMPTY_FORM, endpoint: 'http://api.example.com' };
+    const formData = { ...EMPTY_FORM, endpoint: 'https://api.example.com' };
     render(
       <ToolFormModal
         {...baseProps}
         formData={formData}
-        editingItem={{ id: 't1', name: 'Test' } as any}
+        editingItem={{ id: 't1', name: 'Test' } as unknown as ToolEntry}
       />,
     );
     fireEvent.click(screen.getByText('tool.test'));
@@ -169,12 +189,12 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
 
   it('shows test result after successful test', async () => {
     vi.mocked(testTool).mockResolvedValue({ success: true, status_code: 200, duration_ms: 150, message: 'OK', body: null });
-    const formData = { ...EMPTY_FORM, endpoint: 'http://api.example.com' };
+    const formData = { ...EMPTY_FORM, endpoint: 'https://api.example.com' };
     render(
       <ToolFormModal
         {...baseProps}
         formData={formData}
-        editingItem={{ id: 't1', name: 'Test' } as any}
+        editingItem={{ id: 't1', name: 'Test' } as unknown as ToolEntry}
       />,
     );
     fireEvent.click(screen.getByText('tool.test'));
@@ -184,7 +204,7 @@ describe('ToolFormModal', { tags: ['unit'] }, () => {
   });
 
   it('shows edit mode save button text', () => {
-    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as any} />);
+    render(<ToolFormModal {...baseProps} editingItem={{ id: 't1' } as unknown as ToolEntry} />);
     expect(screen.getByText('tool.form_save_edit')).toBeInTheDocument();
   });
 

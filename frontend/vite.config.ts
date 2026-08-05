@@ -9,9 +9,13 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const isDev = mode === 'development';
-  const apiOrigin = env.VITE_API_BASE_URL || 'http://localhost:8080';
+  // Shell env takes precedence over .env files, then defaults.
+  // Ports per mode: hybrid 5174, full-container 5173, E2E 5175.
+  const devPort = Number(process.env.VITE_DEV_PORT ?? env.VITE_DEV_PORT) || 5174;
+  const apiOrigin =
+    process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8081';
   // Derive WS origin from API origin or use env override
-  const wsOrigin = env.VITE_WS_URL || apiOrigin.replace(/^http/, 'ws');
+  const wsOrigin = process.env.VITE_WS_URL || env.VITE_WS_URL || apiOrigin.replace(/^http/, 'ws');
 
   return {
     resolve: {
@@ -46,7 +50,7 @@ export default defineConfig(({ mode }) => {
       visualizer({ open: false, filename: 'dist/stats.html', gzipSize: true }),
     ],
     server: {
-      port: 5173,
+      port: devPort,
       proxy: {
         '/api': {
           target: apiOrigin,

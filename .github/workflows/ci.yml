@@ -185,14 +185,14 @@ jobs:
           scan-type: config
           scan-ref: docker/Dockerfile
           severity: CRITICAL,HIGH
-          exit-code: 0
+          exit-code: 1
       - name: Scan frontend/Dockerfile
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: frontend/Dockerfile
           severity: CRITICAL,HIGH
-          exit-code: 0
+          exit-code: 1
 
   # ── Backend Lint & Security ──────────────────────────────────────────────
   backend-lint:
@@ -205,9 +205,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      # ci-runner 镜像预装 ruff 版本可能与 requirements 不一致（旧版 isort 规则差异
+      # 导致大量误报 I001），显式对齐项目锁定的 ruff 版本。
+      - run: pip install ruff==0.15.14 --quiet
       - run: ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
       # Use pre-warmed mypy cache from CI runner image
-      - run: MYPY_CACHE_DIR=/opt/mypy-cache mypy backend/ --strict --no-error-summary
+      - run: pip install types-PyYAML --quiet
+      - run: MYPY_CACHE_DIR=/opt/mypy-cache mypy backend/src --strict --explicit-package-bases --no-error-summary
       - name: Check .env.example for insecure defaults
         run: |
           if grep -qE 'change-me|example-secret' .env.example; then
@@ -227,7 +231,7 @@ jobs:
       - run: pip-audit --strict --progress-spinner=off -r requirements.txt
       - run: bandit -c pyproject.toml -r backend/ -ll
 
-  # ── Backend Tests (sharded for speed, each ~60s) ─────────────────────────
+  # ── Backend Tests (pytest-split 按历史耗时自动分片, 每个 shard 内 xdist worksteal 并行) ──
   backend-test:
     name: "Backend: Tests (${{ matrix.shard }})"
     needs: [changes]
@@ -235,32 +239,30 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        shard: [routers, repository, core-infra, services, tasks-1a-1, tasks-1a-2, tasks-1a-3, tasks-1a-4, tasks-1b, tasks-2]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v4
-      - name: Run unit tests (${{ matrix.shard }})
+      - name: Install pytest-split
+        run: pip install pytest-split --quiet
+      - name: Run unit tests (shard ${{ matrix.shard }} of 10)
         shell: bash
         env:
           COVERAGE_FILE: .coverage.${{ matrix.shard }}
         run: |
-          case "${{ matrix.shard }}" in
-            routers)     ARGS=(backend/tests/routers/) ;;
-            repository)  ARGS=(backend/tests/repository/ backend/tests/orm/) ;;
-            core-infra)  ARGS=(backend/tests/ --ignore=backend/tests/routers/ --ignore=backend/tests/repository/ --ignore=backend/tests/orm/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/benchmark/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py --ignore=backend/tests/services/ --ignore=backend/tests/tasks/) ;;
-            services)    ARGS=(backend/tests/services/ --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
-            tasks-1a-1)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_successful_result_with_messages or test_success or test_empty_messages_fallback_content or test_last_message_with_content_is_used or test_with_session_context or test_first_session_triggers_rag_ingest or test_no_session_no_messages or test_session_no_memories or test_session_no_rag or test_session_memories_load_exception or test_chat_history_load_exception or test_agent_config_load_exception or test_chat_history_user_and_agent_roles or test_get_agent_config_returns_none_still_succeeds") ;;
-            tasks-1a-2)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_output_constraints_appended or test_custom_model_from_agent_config or test_model_from_parameter_override or test_api_key_passed_to_graph or test_error_handling or test_no_agent_id or test_key_usage_logging or test_log_key_usage_exception_is_nonfatal or test_rag_ingest_failure_is_nonfatal or test_mcp_endpoint or test_mcp_config_as_dict or test_mcp_no_match or test_mcp_no_name_skipped or test_mcp_no_endpoint_non_stdio") ;;
-            tasks-1a-3)  ARGS=(backend/tests/tasks/test_agent_pipeline.py -k "test_prepare_tools or test_prepare_skill or test_prepare_mcp or test_tool_params_invalid or test_tool_no_name_skipped or test_skill_no_name_skipped") ;;
-            tasks-1a-4)  ARGS=(backend/tests/tasks/test_complete_pipeline.py -k "test_success or test_http_error or test_general_error_in_stream or test_save_error or test_custom_model_and_base or test_proc_read_error or test_tracemalloc_starts_when_not_tracing") ;;
-            tasks-1b)    ARGS=(backend/tests/tasks/test_mcp_executor.py backend/tests/tasks/test_pipeline_complete.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
-            tasks-2)     ARGS=(backend/tests/tasks/test_pipeline_utils.py backend/tests/tasks/test_prefix_completion.py backend/tests/tasks/test_registry.py backend/tests/tasks/test_team_pipeline.py --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/) ;;
-          esac
-          PYTHONPATH=. python3 -m pytest "${ARGS[@]}" -q --tb=short -m 'not integration' --cov=backend --cov-fail-under=0 --ignore=backend/tests/e2e/ --ignore=backend/tests/broker/ --ignore=backend/tests/test_requirement_markers.py --ignore=backend/tests/routers/auth/test_auth_routers.py
+          # .test_durations is committed to the repo (pytest-split official
+          # recommendation) — no artifact round-trip needed.
+          PYTHONPATH=. python3 -m pytest backend/tests \
+            -q --tb=short \
+            --splits=10 --group=${{ matrix.shard }} \
+            --durations-path=.test_durations \
+            -m 'not integration and not benchmark' \
+            --cov=backend --cov-fail-under=0
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: backend-coverage-${{ matrix.shard }}
           path: .coverage.${{ matrix.shard }}
@@ -402,6 +404,8 @@ jobs:
     strategy:
       matrix:
         auth_mode: [legacy, rbac]
+    env:
+      E2E_BASE_URL: http://localhost:8080
     services:
       redis:
         image: redis:7-alpine
@@ -435,11 +439,11 @@ jobs:
           cache-dependency-path: requirements.txt
       - run: pip install --no-compile -r requirements.txt --quiet
       - name: Preflight check
-        run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. python3 scripts/preflight.py
+        run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=backend/src python3 scripts/dev/preflight.py
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
+          PYTHONPATH=backend/src AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
           BACKEND_PID=$!
           echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
           for i in $(seq 1 30); do
@@ -449,8 +453,17 @@ jobs:
             fi
             sleep 1
           done
+      - name: Seed RBAC test user
+        if: matrix.auth_mode == 'rbac'
+        run: |
+          curl -sf -X POST http://localhost:8080/api/auth/send-register-code \
+            -H 'Content-Type: application/json' -d '{"email":"e2e@test.com"}' > /dev/null
+          code=$(docker exec agent-studio-redis redis-cli -n 1 GET 'auth:verify:e2e@test.com' | tr -d '"')
+          curl -sf -X POST http://localhost:8080/api/auth/register \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"e2e@test.com\",\"code\":\"$code\",\"password\":\"Test@1234\"}" > /dev/null
       - name: Run E2E tests
-        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest backend/tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
+        run: PYTHONPATH=backend/src AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret E2E_BASE_URL=http://localhost:8080 E2E_WS_URL=ws://localhost:8080 python3 -m pytest backend/tests/e2e/ -v --tb=short --reruns 2 --reruns-delay 5
       - name: Validate OpenAPI schema
         run: |
           curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; exit 1; }
@@ -515,30 +528,39 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: pip install --no-compile -r requirements.txt --quiet
-      - run: pip install playwright --quiet
-      - run: python3 -m playwright install chromium --with-deps
       - run: npm ci --prefer-offline --no-audit
+        working-directory: frontend
+      - run: npx playwright install chromium --with-deps
         working-directory: frontend
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend-e2e.log 2>&1 &
+          PYTHONPATH=backend/src AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn core.app:app --host 0.0.0.0 --port 8081 > /tmp/backend-e2e.log 2>&1 &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/api/models > /dev/null 2>&1; then break; fi
+            if curl -sf http://localhost:8081/api/models > /dev/null 2>&1; then break; fi
             sleep 1
           done
+      - name: Seed E2E user
+        run: |
+          curl -sf -X POST http://localhost:8081/api/auth/send-register-code \
+            -H 'Content-Type: application/json' -d '{"email":"e2e-user@example.com"}' > /dev/null
+          code=$(docker exec agent-studio-redis redis-cli -n 1 GET 'auth:verify:e2e-user@example.com' | tr -d '"')
+          curl -sf -X POST http://localhost:8081/api/auth/register \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"e2e-user@example.com\",\"code\":\"$code\",\"password\":\"Test1234!\"}" > /dev/null
       - name: Start frontend dev server
         working-directory: frontend
         run: |
-          npx vite --port 5173 --host 0.0.0.0 &
+          npx vite --port 5174 --host 0.0.0.0 &
           echo "FRONTEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5173 > /dev/null 2>&1; then break; fi
+            if curl -sf http://localhost:5174 > /dev/null 2>&1; then break; fi
             sleep 1
           done
-      - name: Run smoke tests
-        run: PYTHONPATH=. python3 frontend/e2e/smoke_tests.py 2>&1 | tail -30
+      - name: Run Playwright E2E smoke tests
+        working-directory: frontend
+        run: PLAYWRIGHT_BASE_URL=http://localhost:5174 npx playwright test --project=chromium 2>&1 | tail -30
       - name: Stop services
         if: always()
         run: kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
@@ -555,8 +577,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "${{ env.PYTHON_VERSION }}"
-      - run: node scripts/check-docs.js
-      - run: python3 scripts/check-ci-docs.py
+      - run: node scripts/dev/check-docs.js
+      - run: python3 scripts/ci/check-ci-docs.py
 
   # ── Requirement Coverage ─────────────────────────────────────────────────
   requirement-coverage:
@@ -651,8 +673,8 @@ jobs:
       - run: pip install locust --quiet
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
+          PYTHONPATH=backend/src AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
           BACKEND_PID=$!
           echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
           for i in $(seq 1 30); do
@@ -732,6 +754,7 @@ jobs:
           check "secrets-scan" "${{ needs.secrets-scan.result }}" || FAIL=1
           check "backend-lint" "${{ needs.backend-lint.result }}" || FAIL=1
           check "backend-security" "${{ needs.backend-security.result }}" || FAIL=1
+          check "requirement-coverage" "${{ needs.requirement-coverage.result }}" || FAIL=1
           check "backend-test" "${{ needs.backend-test.result }}" || FAIL=1
           check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
           check "frontend-coverage-report" "${{ needs.frontend-coverage-report.result }}" || FAIL=1

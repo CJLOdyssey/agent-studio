@@ -1,28 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Key, Server, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import Modal from '../../shared/Modal';
 import ProviderEditModal from './ProviderEditModal';
 import ApiProviderTab from './ApiProviderTab';
 import ApiUsageTab from './ApiUsageTab';
 import ModelSelector from './ModelSelector';
+import ConfirmModal from './ConfirmModal';
 import * as api from '../../../api/client';
 import type { KeyItem } from '../../../api/client';
 import Logger from '../../../utils/logger';
+
+function maskKey(raw: string): string {
+  if (raw.length <= 8) return raw.slice(0, 2) + '***';
+  return raw.slice(0, 3) + '...' + raw.slice(-4);
+}
 
 interface Props {
   onClose: () => void;
 }
 
-type ApiTab = 'providers' | 'models' | 'usage';
+type ApiTab = 'keys' | 'models' | 'usage';
 
 export default function ApiManagementModal({ onClose }: Props) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<ApiTab>('providers');
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<ApiTab>('keys');
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingKey, setEditingKey] = useState<KeyItem | null>(null);
-  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
+
   const [testingId, setTestingId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     try {
@@ -32,9 +40,11 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   });
   const [usage, setUsage] = useState({ today_requests: 0, today_tokens: 0, month_requests: 0, month_tokens: 0 });
-  const [usageTypeFilter, setUsageTypeFilter] = useState<'all' | 'llm' | 'embedding' | 'both'>('all');
+
   const [error, setError] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadKeys = async () => {
     try {
@@ -84,9 +94,14 @@ export default function ApiManagementModal({ onClose }: Props) {
     apiKey: string;
     baseUrl: string;
     models: string[];
-    isDefault: boolean;
   }) => {
-    setError(null);
+    setModalError(null);
+    const maskedNew = maskKey(keyData.apiKey);
+    const dup = keys.find((k) => k.key_masked === maskedNew);
+    if (dup) {
+      setModalError(`密钥已存在于「${dup.label || dup.provider}」中，请勿重复添加`);
+      return;
+    }
     setSaving(true);
     try {
       await api.createKey({
@@ -96,9 +111,10 @@ export default function ApiManagementModal({ onClose }: Props) {
         api_key: keyData.apiKey,
         base_url: keyData.baseUrl || undefined,
         models: keyData.models,
-        is_default: keyData.isDefault,
+        is_default: false,
       });
       await loadKeys();
+      void queryClient.invalidateQueries({ queryKey: ['keys'] });
       setEditingKey(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.saveFailed');
@@ -132,6 +148,7 @@ export default function ApiManagementModal({ onClose }: Props) {
         is_default: updates.isDefault,
       });
       await loadKeys();
+      void queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.updateFailed');
       setError(msg);
@@ -139,17 +156,23 @@ export default function ApiManagementModal({ onClose }: Props) {
     }
   };
 
-  const handleDeleteKey = async (id: string) => {
-    if (!confirm('确定要删除此 API Key 吗？此操作不可撤销。')) return;
+  const handleDeleteKey = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDeleteId) return;
     setError(null);
     try {
-      await api.deleteKey(id);
+      await api.deleteKey(confirmDeleteId);
       await loadKeys();
+      void queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.deleteFailed');
       setError(msg);
       Logger.error('Failed to delete API key', err);
     }
+    setConfirmDeleteId(null);
   };
 
   const handleTestConnection = async (key: KeyItem) => {
@@ -167,18 +190,14 @@ export default function ApiManagementModal({ onClose }: Props) {
     setTestingId(null);
   };
 
-  const toggleApiKeyVisibility = (id: string) => {
-    setShowApiKey((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id })));
 
   const showAddForm = () => {
     setEditingKey({
       id: '',
       provider: 'custom',
-      usage_type: 'llm',
-      label: '',
+            usage_type: 'chat',
+            label: '',
       key_masked: '',
       base_url: '',
       models: [],
@@ -195,20 +214,20 @@ export default function ApiManagementModal({ onClose }: Props) {
     window.dispatchEvent(new Event('agentstudio-model-changed'));
   };
 
-  const TABS = ['providers', 'models', 'usage'] as const;
-  const TAB_ICONS: Record<ApiTab, typeof Server> = { providers: Server, models: Globe, usage: Key };
+const TABS = ['keys', 'models', 'usage'] as const;
+const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, usage: Key };
 
   return (
-    <Modal title="API 管理" onClose={onClose} className="api-modal">
-      <div className="settings-body">
-        <div className="settings-sidebar">
+    <Modal title="API 管理" onClose={onClose} className="api-modal" hideHeaderBorder bodyClassName="p-3">
+      <div className="flex h-full min-h-0 overflow-hidden">
+        <div className="w-[160px] px-4 py-5 flex flex-col gap-1 overflow-hidden min-h-0">
           {TABS.map((tab) => {
             const Icon = TAB_ICONS[tab];
-            const label = tab === 'providers' ? t('api.tab_provider') : tab === 'models' ? t('api.tab_model') : t('api.tab_usage');
+            const label = tab === 'keys' ? t('api.tab_api') : tab === 'models' ? t('api.tab_model') : t('api.tab_usage');
             return (
               <button
                 key={tab}
-                className={`settings-tab ${activeTab === tab ? 'active' : ''}`}
+                className={`flex items-center gap-3 p-2 px-3 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-sm cursor-pointer transition-[background,color] duration-150 text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] ${activeTab === tab ? 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)]' : ''}`}
                 onClick={() => setActiveTab(tab)}
               >
                 <Icon size={16} />
@@ -217,23 +236,18 @@ export default function ApiManagementModal({ onClose }: Props) {
             );
           })}
         </div>
-        <div className="settings-content">
-          {activeTab === 'providers' && (
+            <div className="flex-1 px-6 overflow-hidden min-h-0">
+          {activeTab === 'keys' && (
             <ApiProviderTab
               keys={keys}
               loading={loading}
               error={error}
-              usageTypeFilter={usageTypeFilter}
               testingId={testingId}
-              showApiKey={showApiKey}
-              saving={saving}
-              onFilterChange={setUsageTypeFilter}
               onAdd={showAddForm}
               onEdit={setEditingKey}
               onToggleActive={(id, active) => handleUpdateKey(id, { isActive: active })}
               onTest={handleTestConnection}
               onDelete={handleDeleteKey}
-              onToggleVisibility={toggleApiKeyVisibility}
               onDismissError={() => setError(null)}
             />
           )}
@@ -254,7 +268,7 @@ export default function ApiManagementModal({ onClose }: Props) {
           provider={{
             id: editingKey.id,
             provider: editingKey.provider,
-            usage_type: editingKey.usage_type || 'llm',
+            usage_type: editingKey.usage_type || 'chat',
             name: editingKey.label || editingKey.provider,
             baseUrl: editingKey.base_url || '',
             apiKey: '',
@@ -263,31 +277,44 @@ export default function ApiManagementModal({ onClose }: Props) {
             status: 'untested' as const,
           }}
           saving={saving}
+          error={modalError}
+          onCloseError={() => setModalError(null)}
           onSave={async (form) => {
+            const label = form.name.trim() || (() => {
+              const count = keys.filter((k) => k.provider === form.provider).length + 1;
+              return `${form.provider}-${count}`;
+            })();
             if (editingKey.id) {
               await handleUpdateKey(editingKey.id, {
-                label: form.name,
+                label,
                 usage_type: form.usage_type,
                 apiKey: form.apiKey || undefined,
                 baseUrl: form.baseUrl || undefined,
                 models: form.models,
-                isDefault: editingKey.is_default,
               });
             } else {
               await handleSaveKey({
                 provider: form.provider,
                 usage_type: form.usage_type,
-                label: form.name,
+                label,
                 apiKey: form.apiKey,
                 baseUrl: form.baseUrl,
                 models: form.models,
-                isDefault: keys.length === 0,
               });
             }
           }}
           onClose={() => {
-            if (!saving) setEditingKey(null);
+            if (!saving) { setEditingKey(null); setModalError(null); }
           }}
+        />
+      )}
+      {confirmDeleteId && (
+        <ConfirmModal
+          title={t('confirm.title', '确认删除')}
+          message={t('api.deleteKeyConfirm', '确定要删除此 API Key 吗？此操作不可撤销。')}
+          onConfirm={confirmDeleteAction}
+          onCancel={() => setConfirmDeleteId(null)}
+          danger
         />
       )}
     </Modal>

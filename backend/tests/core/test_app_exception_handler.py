@@ -12,7 +12,7 @@ class TestExceptionHandler:
         os.environ['AUTH_ENABLED'] = '0'
         os.environ['RATE_LIMIT'] = '9999'
         os.environ['REDIS_URL'] = 'redis://localhost:6379/0'
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             yield c
 

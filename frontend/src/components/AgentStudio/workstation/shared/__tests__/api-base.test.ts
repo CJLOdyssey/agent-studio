@@ -148,11 +148,11 @@ describe('defineCrudModule', { tags: ['unit'] }, () => {
     it('allows reading non-function properties from the implementation', () => {
       const impl = {
         ...makeImpl(),
-        baseURL: 'http://example.com/api',
+        baseURL: 'https://example.com/api',
       };
       const { bind } = defineCrudModule<TestEntry, TestForm>(impl);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((bind as any).baseURL).toBe('http://example.com/api');
+      expect((bind as any).baseURL).toBe('https://example.com/api');
     });
 
     it('preserves this binding for methods accessing instance state', async () => {

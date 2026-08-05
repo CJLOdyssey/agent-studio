@@ -15,7 +15,7 @@
     "updateFailed": "Update failed",
     "deleteFailed": "Delete failed",
     "confirmDelete": "Are you sure you want to delete this API Key? This action cannot be undone.",
-    "tab_provider": "Provider",
+    "tab_api": "API",
     "tab_embed": "Embedding",
     "tab_model": "Model",
     "tab_usage": "Usage",
@@ -27,7 +27,6 @@
     "todayTokens": "Today Tokens",
     "monthTokens": "Month Tokens",
     "configureProviderFirst": "Configure at least one valid API Key in the Provider tab first",
-    "encryptHint": "Keys are encrypted server-side and never leave. Only masked preview shown.",
     "noKeys": "No API Keys configured",
     "testSuccess": "Connection successful",
     "testFail": "Connection failed",
@@ -39,9 +38,12 @@
     "todayRequests": "Today Requests",
     "monthRequests": "Month Requests",
     "selectModel": "Select default model",
-    "type_llm": "LLM",
-    "type_embed": "Embed",
-    "type_both": "LLM+Embed",
+    "type_chat": "Chat",
+    "type_vector": "Vector",
+    "type_image": "Image",
+    "type_audio": "Audio",
+    "type_general": "LLM",
+    "type_tool": "Tool",
     "edit": "Edit"
   }
 }

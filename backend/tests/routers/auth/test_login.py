@@ -15,7 +15,7 @@ class TestAuthLogin:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=11)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.login.get_redis", return_value=mock_redis):
+        with patch("routers.auth.login.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/login", json={
                 "email": "iprl@test.com", "password": "pass"
             })
@@ -36,7 +36,7 @@ class TestAuthLogin:
             return 1
 
         mock_redis.incr = AsyncMock(side_effect=_incr_side_effect)
-        with patch("backend.routers.auth.login.get_redis", return_value=mock_redis):
+        with patch("routers.auth.login.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/login", json={
                 "email": "emailrl@test.com", "password": "pass"
             })
@@ -51,7 +51,7 @@ class TestAuthLogin:
         mock_user.is_active = True
         mock_user.locked_until = datetime.now(UTC) + timedelta(hours=1)
         mock_user.username = "locked"
-        with patch("backend.routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user):
+        with patch("routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user):
             resp = client.post("/api/auth/login", json={
                 "email": "locked@test.com", "password": "pass"
             })
@@ -59,7 +59,7 @@ class TestAuthLogin:
 
     def test_login_locked_account_expired(self, client):
         """Lines 57-64: locked account with expired lock."""
-        from backend.routers.auth.schemas import AuthResponse, UserResponse
+        from routers.auth.schemas import AuthResponse, UserResponse
         mock_user = MagicMock()
         mock_user.email = "locked-exp@test.com"
         mock_user.password_hash = bcrypt.hashpw(b"pass", bcrypt.gensalt()).decode()
@@ -69,9 +69,9 @@ class TestAuthLogin:
         mock_user.username = "locked"
         user_resp = UserResponse(id="u1", email="locked-exp@test.com", username="locked", roles=[], is_verified=True)
         auth_resp = AuthResponse(access_token="tok", refresh_token="ref", expires_in=900, user=user_resp)
-        with patch("backend.routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
-             patch("backend.routers.auth.login.reset_failed_logins", new_callable=AsyncMock), \
-             patch("backend.routers.auth.login._create_auth_response", new_callable=AsyncMock, return_value=auth_resp):
+        with patch("routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.login.reset_failed_logins", new_callable=AsyncMock), \
+             patch("routers.auth.login._create_auth_response", new_callable=AsyncMock, return_value=auth_resp):
             resp = client.post("/api/auth/login", json={
                 "email": "locked-exp@test.com", "password": "pass"
             })
@@ -85,7 +85,7 @@ class TestAuthLogin:
         mock_user.is_verified = False
         mock_user.is_active = True
         mock_user.locked_until = None
-        with patch("backend.routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user):
+        with patch("routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user):
             resp = client.post("/api/auth/login", json={
                 "email": "unverified@test.com", "password": "pass"
             })
@@ -99,7 +99,7 @@ class TestAuthLogin:
         mock_user.is_verified = True
         mock_user.is_active = False
         mock_user.locked_until = None
-        with patch("backend.routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user):
+        with patch("routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user):
             resp = client.post("/api/auth/login", json={
                 "email": "disabled@test.com", "password": "pass"
             })
@@ -113,8 +113,8 @@ class TestAuthLogin:
         mock_user.is_verified = True
         mock_user.is_active = True
         mock_user.locked_until = None
-        with patch("backend.routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
-             patch("backend.routers.auth.login.increment_failed_logins", new_callable=AsyncMock) as mock_incr:
+        with patch("routers.auth.login.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.login.increment_failed_logins", new_callable=AsyncMock) as mock_incr:
             resp = client.post("/api/auth/login", json={
                 "email": "wrong@test.com", "password": "incorrect"
             })

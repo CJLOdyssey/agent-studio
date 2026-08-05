@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.core.seed import seed_default_roles_and_admin
+from core.seed import seed_default_roles_and_admin
 
 
 # =============================================================================
@@ -33,8 +33,8 @@ class TestSeedDefaultRolesAndAdmin:
         mock_session.execute.return_value = MagicMock(scalar_one_or_none=MagicMock(return_value=None))
 
         with (
-            patch("backend.core.seed.get_session_factory", return_value=mock_factory),
-            patch("backend.core.seed.select", side_effect=lambda *a: MagicMock()),
+            patch("core.seed.get_session_factory", return_value=mock_factory),
+            patch("core.seed.select", side_effect=lambda *a: MagicMock()),
             patch("bcrypt.hashpw", return_value=b"$2b$12$hashedpassword"),
             patch("bcrypt.gensalt", return_value=b"$2b$12$globalsalt"),
         ):
@@ -56,8 +56,8 @@ class TestSeedDefaultRolesAndAdmin:
         mock_session.execute.return_value = MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role))
 
         with (
-            patch("backend.core.seed.get_session_factory", return_value=mock_factory),
-            patch("backend.core.seed.select", side_effect=lambda *a: MagicMock()),
+            patch("core.seed.get_session_factory", return_value=mock_factory),
+            patch("core.seed.select", side_effect=lambda *a: MagicMock()),
         ):
             await seed_default_roles_and_admin()
 
@@ -86,8 +86,8 @@ class TestSeedDefaultRolesAndAdmin:
         ]
 
         with (
-            patch("backend.core.seed.get_session_factory", return_value=mock_factory),
-            patch("backend.core.seed.select", side_effect=lambda *a: MagicMock()),
+            patch("core.seed.get_session_factory", return_value=mock_factory),
+            patch("core.seed.select", side_effect=lambda *a: MagicMock()),
             patch("bcrypt.hashpw", return_value=b"$2b$12$hashed"),
             patch("bcrypt.gensalt", return_value=b"$2b$12$salt"),
         ):
@@ -113,8 +113,8 @@ class TestSeedDefaultRolesAndAdmin:
         ]
 
         with (
-            patch("backend.core.seed.get_session_factory", return_value=mock_factory),
-            patch("backend.core.seed.select", side_effect=lambda *a: MagicMock()),
+            patch("core.seed.get_session_factory", return_value=mock_factory),
+            patch("core.seed.select", side_effect=lambda *a: MagicMock()),
             patch("bcrypt.hashpw", return_value=b"$2b$12$hashed"),
             patch("bcrypt.gensalt", return_value=b"$2b$12$salt"),
         ):
@@ -123,7 +123,7 @@ class TestSeedDefaultRolesAndAdmin:
         # Roles + user added, but no UserRoleDB link (admin_role_db is None)
         add_calls = mock_session.add.call_args_list
         assert len(add_calls) == 3  # admin role + member role + user
-        from backend.orm.auth import UserRoleDB
+        from orm.auth import UserRoleDB
 
         for call in add_calls:
             assert not isinstance(call[0][0], UserRoleDB)

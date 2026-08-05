@@ -20,6 +20,6 @@ class TestProviders:
     def test_provider_capabilities(self, client):
         resp = client.get("/api/providers")
         data = resp.json()
-        assert "llm" in data["openai"]["capabilities"]
-        assert "embedding" in data["openai"]["capabilities"]
-        assert "llm" in data["deepseek"]["capabilities"]
+        assert "chat" in data["openai"]["capabilities"]
+        assert "vector" in data["openai"]["capabilities"]
+        assert "chat" in data["deepseek"]["capabilities"]

@@ -2,7 +2,7 @@
 
 感谢你对 AgentStudio 的关注。本文档说明如何参与项目开发。
 
-> **注意**：详细安装和启动步骤见 [QUICKSTART.md](QUICKSTART.md)，项目架构见 [AGENTS.md](AGENTS.md)。
+> **注意**：详细安装和启动步骤见 [QUICKSTART.md](QUICKSTART.md)，项目架构见 QUICKSTART.md。
 
 ## 贡献方式
 

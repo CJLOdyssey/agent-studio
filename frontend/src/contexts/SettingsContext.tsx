@@ -17,7 +17,7 @@ interface SettingsContextType {
 
 const defaultSettings: Settings = {
   theme: 'dark',
-  fontSize: 14,
+  fontSize: 16,
   sendMode: 'enter',
   autoSave: true,
   streamOutput: true,
@@ -57,7 +57,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--da-font-size-base', `${settings.fontSize}px`);
+    document.documentElement.style.setProperty('--body-font-size', `${settings.fontSize}px`);
   }, [settings.fontSize]);
 
   useEffect(() => {

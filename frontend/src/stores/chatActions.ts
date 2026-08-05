@@ -12,6 +12,7 @@ export async function submitRequirement(
   agent_id?: string,
   skipAddUserMessage?: boolean,
   submissionConvId?: string | null,
+  parent_run_id?: string,
 ) {
   const s = useChatStore.getState();
   const effectiveSessionId = session_id || s.currentSessionId || undefined;
@@ -24,13 +25,22 @@ export async function submitRequirement(
   let model: string | undefined;
   try {
     const keys = await listKeys();
-    const defaultKey = keys.find((k) => k.is_default && k.is_active) || keys.find((k) => k.is_active);
-    if (defaultKey) {
-      keyId = defaultKey.id;
-      const persistedModel = localStorage.getItem('devagents-selected-model');
-      model = (persistedModel && defaultKey.models.includes(persistedModel))
-        ? persistedModel
-        : defaultKey.models[0];
+    const activeKeys = keys.filter((k) => k.is_active);
+    const persistedModel = localStorage.getItem('agentstudio-selected-model');
+    // Route to the key whose models contain the model the user actually selected in the UI,
+    // so a SiliconFlow/Groq model is never sent to a DeepSeek base URL.
+    const owningKey = persistedModel ? activeKeys.find((k) => k.models.includes(persistedModel)) : undefined;
+    if (owningKey) {
+      keyId = owningKey.id;
+      model = persistedModel ?? undefined;
+    } else {
+      const defaultKey = activeKeys.find((k) => k.is_default && k.is_active) || activeKeys[0];
+      if (defaultKey) {
+        keyId = defaultKey.id;
+        model = (persistedModel && defaultKey.models.includes(persistedModel))
+          ? persistedModel
+          : defaultKey.models[0];
+      }
     }
   } catch {
     // Key vault unavailable
@@ -62,10 +72,22 @@ export async function submitRequirement(
     const currentState = useChatStore.getState();
     const teamId = currentState.activeTeamId ?? undefined;
     Logger.info('[chat] submitRequirement — team_id=%s | agent_id=%s | session_id=%s', teamId, agent_id, effectiveSessionId);
-    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId);
+    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId, parent_run_id);
     const run_id = resp.run_id;
     const returnedSessionId = resp.session_id || effectiveSessionId || null;
     useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
+    // Bind the freshly-added user message to its run so edit-regenerate can
+    // resolve the parent_run_id from "run-{run_id}-requirement" on a later edit.
+    if (!skipAddUserMessage) {
+      useChatStore.setState((prev) => {
+        const msgs = [...prev.messages];
+        const last = msgs[msgs.length - 1];
+        if (last && last.role === 'user' && !last.id.startsWith('run-')) {
+          msgs[msgs.length - 1] = { ...last, id: `run-${run_id}-requirement` };
+        }
+        return { messages: msgs };
+      });
+    }
     connectRun(run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
   } catch (err: unknown) {
     Logger.error('[chat] submitRequirement failed:', err);
@@ -92,6 +114,57 @@ export async function regenerateMessage(msgIndex: number) {
   if (s.currentRunId) disconnectRun(s.currentRunId);
   useChatStore.setState({ status: 'loading', error: null, result: null, messages: s.messages.slice(0, msgIndex) });
   await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true);
+}
+
+/**
+ * Edit a user message and regenerate the following answer.
+ *
+ * Semantics (edit → model rethinks, old answers kept as versions):
+ *  - The user message keeps its edit history in `userVersions` (content becomes the new edit).
+ *  - The first agent answer after the edited message becomes the merge target: the streamed
+ *    new answer is appended to that message's `versions` instead of inserting a new message,
+ *    so older answers are never deleted and can be browsed with the pagination arrows.
+ */
+export async function editAndRegenerate(userMsgId: string, newContent: string) {
+  const s = useChatStore.getState();
+  const idx = s.messages.findIndex((m) => m.id === userMsgId);
+  if (idx < 0) return;
+  const old = s.messages[idx];
+  const trimmed = newContent.trim();
+  if (!trimmed || old.content === trimmed) return;
+  if (s.currentRunId) disconnectRun(s.currentRunId);
+
+  // The synthetic user message id is "run-{run_id}-requirement" — parse the run
+  // this edit replaces so the backend can link the edit chain (parent_run_id).
+  let parentRunId: string | undefined;
+  if (old.id && old.id.startsWith('run-') && old.id.endsWith('-requirement')) {
+    parentRunId = old.id.slice(4, -'-requirement'.length);
+  }
+
+  const userVersions = old.userVersions ? [...old.userVersions] : [];
+  if (old.content !== trimmed) userVersions.push(old.content);
+
+  // First non-user message after the edit is the merge target (agent roles are
+  // 'pm'|'programmer'|'tester' in the store; displayMessages normalizes them to 'agent').
+  const nextAgentIdx = s.messages.findIndex((m, i) => i > idx && m.role !== 'user');
+  const editTargetId = nextAgentIdx >= 0 ? s.messages[nextAgentIdx].id : null;
+
+  useChatStore.setState({
+    status: 'loading',
+    error: null,
+    result: null,
+    streamingId: null,
+    continuingId: null,
+    editTargetId,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
+    skipThinking: false,
+    messages: s.messages.map((m, i) =>
+      i === idx ? { ...m, content: trimmed, userVersions, currentUserVersion: userVersions.length - 1 } : m,
+    ),
+  });
+
+  await submitRequirement(trimmed, s.currentSessionId ?? undefined, undefined, true, null, parentRunId);
 }
 
 export async function retry() {

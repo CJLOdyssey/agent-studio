@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import { Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FileRejection } from '../../types/input';
+import type * as React from 'react';
 
 interface Props {
   onAdd: (files: File[]) => void;
@@ -85,7 +86,7 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
       const active = document.activeElement;
       // Only intercept when focus is NOT on another file/text input
       if (active instanceof HTMLInputElement && active.type === 'file') return;
-      if (active?.closest('.agentstudio-input-wrapper')) return; // handled by InputToolbar
+      if (active?.closest('[data-input-wrapper]')) return; // handled by InputToolbar
     };
     document.addEventListener('paste', handler);
     return () => document.removeEventListener('paste', handler);
@@ -96,21 +97,21 @@ export default function FileAttach({ onAdd, onReject, fileCount = 0 }: Props) {
       <input
         ref={inputRef}
         type="file"
-        className="agentstudio-file-input"
+        className="hidden"
         multiple
         onChange={handleChange}
         accept={[...ALLOWED_TYPES, ...ALLOWED_EXTENSIONS].join(',')}
         aria-label={t('fileAttach.attach')}
       />
       <button
-        className="agentstudio-tool-btn agentstudio-attach-btn"
+        className="p-2 bg-transparent border-none rounded-lg text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 flex items-center justify-center hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] relative"
         onClick={handleClick}
         title={fileCount > 0 ? `${fileCount} 个文件已选择` : t('fileAttach.attach')}
         type="button"
         aria-label={fileCount > 0 ? `${fileCount} files attached` : t('fileAttach.attach')}
       >
         <Paperclip size={16} />
-        {fileCount > 0 && <span className="agentstudio-attach-badge">{fileCount}</span>}
+        {fileCount > 0 && <span className="absolute -top-0.5 -right-1 min-w-[14px] h-[14px] px-1 rounded-[7px] bg-[var(--color-accent)] text-[var(--color-text-on-accent)] text-xs font-bold leading-[14px] text-center pointer-events-none">{fileCount}</span>}
       </button>
     </>
   );

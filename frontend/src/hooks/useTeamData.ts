@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Bot } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import type { Team, Agent } from '../types/AgentStudio';
 import type { TeamMember } from '../types/team';
 import { getAllAgents } from '../utils/agentMapper';
 import { validateName, checkTeamLimit } from '../utils/validation';
 import { listTeams, createTeam, updateTeam, deleteTeam } from '../api/client/teams';
+import { ApiError } from '../api/client/errors';
+import type * as React from 'react';
 
 const STORAGE_KEY = 'agentstudio-conversations';
 
@@ -34,7 +36,7 @@ export function teamMemberToAgent(a: TeamMember): Agent {
     tools: parseJsonArray(a.tools).map((t: { name: string; enabled?: boolean }) => ({ id: t.name, name: t.name, description: '', enabled: t.enabled ?? true })),
     mcp: parseJsonArray(a.mcp).map((m: { name: string; enabled?: boolean }) => ({ id: m.name, name: m.name, description: '', serverUrl: '', enabled: m.enabled ?? true })),
     skills: parseJsonArray(a.skills).map((s: { name: string; enabled?: boolean }) => ({ id: s.name, name: s.name, description: '', enabled: s.enabled ?? true })),
-    icon: Bot,
+    icon: Cpu,
     color: 'text-[var(--da-text-muted)]',
     bg: 'bg-[var(--da-bg-surface)]',
     border: 'border-[var(--da-border)]',
@@ -44,13 +46,17 @@ export function teamMemberToAgent(a: TeamMember): Agent {
 async function fetchTeams(): Promise<Team[]> {
   try {
     const items = await listTeams();
-    return items.map((t) => ({
-      id: t.id,
-      name: t.name,
-      isExpanded: t.is_expanded,
-      isPinned: false,
-      agents: (t.agents ?? []).map(teamMemberToAgent),
-    }));
+    // Homepage shows only active teams; disabled teams stay manageable
+    // in the workstation (TeamManagement renders all statuses).
+    return items
+      .filter((t) => t.status !== 'disabled')
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        isExpanded: t.is_expanded,
+        isPinned: false,
+        agents: (t.agents ?? []).map(teamMemberToAgent),
+      }));
   } catch {
     return [];
   }
@@ -110,7 +116,19 @@ export function useTeamData(toast?: ToastFn) {
       const res = await createTeam({ name: teamName });
       setTeams((prev) => [...prev, { id: res.id, name: res.name, isExpanded: false, isPinned: false, agents: [] }]);
       toast?.('团队已创建', 'success');
-    } catch {
+    } catch (err: unknown) {
+      const isConflict = err instanceof ApiError && err.status === 409;
+      if (isConflict) {
+        let counter = 2;
+        while (counter <= 20) {
+          try {
+            const res = await createTeam({ name: `新团队 (${counter})` });
+            setTeams((prev) => [...prev, { id: res.id, name: res.name, isExpanded: false, isPinned: false, agents: [] }]);
+            toast?.(`团队已创建（新团队 (${counter})）`, 'success');
+            return;
+          } catch { counter++; }
+        }
+      }
       toast?.('创建团队失败', 'error');
     }
   }, [teams, toast]);
@@ -194,7 +212,7 @@ export function useTeamData(toast?: ToastFn) {
   const handleTeamNameKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-        saveEditTeam();
+        void saveEditTeam();
       }
       if (e.key === 'Escape') {
         cancelEditTeam();

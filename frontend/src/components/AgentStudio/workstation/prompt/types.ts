@@ -3,6 +3,8 @@ import type { GenericCrudReturn } from '../shared/useGenericCrud';
 export interface PromptEntry {
   id: string;
   name: string;
+  /** 提示词用途说明。后端暂未提供 description 字段，为前端 UI 字段（仅编辑回显，不持久化）。 */
+  description?: string;
   content: string;
   category: PromptCategory;
   model: string;
@@ -13,7 +15,7 @@ export interface PromptEntry {
 
 export type PromptFormData = Omit<PromptEntry, 'id' | 'createdAt'>;
 
-export type PromptCategory = '系统提示词' | '用户提示词' | '任务模板' | '角色定义';
+export type PromptCategory = string;
 
 export type PromptSortField = 'name' | 'category' | 'status';
 
@@ -23,6 +25,8 @@ export type CategoryFilter = 'all' | PromptCategory;
 export interface PromptData extends GenericCrudReturn<PromptEntry, PromptFormData> {
   categoryFilter: CategoryFilter;
   setCategoryFilter: (v: CategoryFilter) => void;
+  statusFilter: string;
+  setStatusFilter: (v: string) => void;
   addPrompt: (data: PromptFormData) => void;
   updatePrompt: (id: string, data: Partial<PromptEntry>) => void;
   removePrompt: (id: string) => void;

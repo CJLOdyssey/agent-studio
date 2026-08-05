@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
-import { Bot } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import type { Agent, Team } from '../types/AgentStudio';
 import { validateName, checkAgentLimit } from '../utils/validation';
 import { updateAgent } from '../api/client/agents';
 import { addTeamMember, linkAgentToMember, removeTeamMember } from '../api/client/teams';
 import { removeConversationsByAgentIds } from './useTeamData';
+import type * as React from 'react';
 
 type ToastFn = (msg: string, type: 'success' | 'info' | 'error') => void;
 
@@ -40,7 +41,7 @@ export function useTeamAgents(
           id: member.id,
           name: member.name,
           role: member.role || '待配置角色',
-          icon: Bot,
+          icon: Cpu,
           color: 'text-[var(--da-text-muted)]',
           bg: 'bg-[var(--da-bg-surface)]',
           border: 'border-[var(--da-border)]',

@@ -1,6 +1,5 @@
 from langchain_core.messages import HumanMessage
-
-from backend.workflow.models import (
+from workflow.models import (
     NodeStrategy,
     WorkflowConfig,
     WorkflowEdge,

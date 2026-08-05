@@ -8,6 +8,7 @@ interface MockEntry {
   description: string;
   type: 'stdio' | 'sse';
   status: 'connected' | 'disconnected' | 'error';
+  enabled?: boolean;
   version: string;
   command: string;
   url: string;
@@ -15,8 +16,8 @@ interface MockEntry {
 }
 
 const STORE: MockEntry[] = [
-  { id: 'm1', name: '文件系统MCP', description: '文件系统访问', type: 'stdio', status: 'connected', version: 'v1.0.0', command: 'node', url: '', createdAt: '2024-01-01' },
-  { id: 'm2', name: '数据库MCP', description: '数据库查询', type: 'sse', status: 'disconnected', version: 'v1.0.0', command: 'python', url: 'http://localhost:8080', createdAt: '2024-01-01' },
+  { id: 'm1', name: '文件系统MCP', description: '文件系统访问', type: 'stdio', status: 'connected', enabled: true, version: 'v1.0.0', command: 'node', url: '', createdAt: '2024-01-01' },
+  { id: 'm2', name: '数据库MCP', description: '数据库查询', type: 'sse', status: 'disconnected', enabled: false, version: 'v1.0.0', command: 'python', url: 'http://localhost:8080', createdAt: '2024-01-01' },
 ];
 
 vi.mock('../api', () => ({
@@ -59,7 +60,7 @@ describe('useMcpManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => useMcpManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    act(() => { result.current.addMCP({ name: 'Test MCP', description: 'Test', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: 'test', url: '' }); });
+    act(() => { result.current.addMCP({ name: 'Test MCP', description: 'Test', type: 'stdio', status: 'disconnected', enabled: true, version: 'v1.0.0', command: 'test', url: '', args: [], env: [] }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 

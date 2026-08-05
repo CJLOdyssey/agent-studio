@@ -45,6 +45,18 @@ export async function getRun(runId: string): Promise<ProjectRun> {
   return data;
 }
 
+export async function updateAnswerVersions(
+  runId: string,
+  versions: string[],
+  thinking_versions?: string[],
+): Promise<{ ok: boolean; versions: number }> {
+  const { data } = await api.put(`/runs/${runId}/answer-versions`, {
+    versions,
+    thinking_versions: thinking_versions?.length ? thinking_versions : undefined,
+  });
+  return data;
+}
+
 export async function listRuns(limit = 20, offset?: number): Promise<ProjectRun[]> {
   const { data } = await api.get('/runs', { params: { limit, ...(offset !== undefined && { offset }) } });
   return data;

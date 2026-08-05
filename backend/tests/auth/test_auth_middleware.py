@@ -6,8 +6,8 @@ import pytest
 from starlette.requests import Request
 from starlette.testclient import TestClient
 
-from backend.auth.auth_middleware import AuthMiddleware
-from backend.core.app import app
+from auth.auth_middleware import AuthMiddleware
+from core.app import app
 
 
 @pytest.fixture
@@ -70,7 +70,7 @@ class TestAuthMiddleware:
         """Token from query param is extracted for WebSocket upgrade."""
         # This tests the query param branch
         from urllib.parse import parse_qs
-        from backend.auth.auth_rbac import PUBLIC_PREFIXES
+        from auth.auth_rbac import PUBLIC_PREFIXES
         # Just ensure PUBLIC_PREFIXES is iterable
         assert isinstance(PUBLIC_PREFIXES, (tuple, list))
 
@@ -108,7 +108,7 @@ class TestAuthMiddlewareDispatch:
         """Lines 27-28: AUTH_ENABLED is False → passes through."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models")
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", False):
+        with patch("auth.auth_middleware.AUTH_ENABLED", False):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
 
@@ -117,7 +117,7 @@ class TestAuthMiddlewareDispatch:
         """Lines 44-46: no token → guest mode, is_authenticated=False."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models")
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.is_authenticated is False
@@ -127,8 +127,8 @@ class TestAuthMiddlewareDispatch:
         """Lines 31-34: Bearer token extracted from header."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer test.jwt.token"})
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("backend.auth.auth_middleware.decode_jwt", return_value={"sub": "user-123"}):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "user-123"}):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.user_id == "user-123"
@@ -139,8 +139,8 @@ class TestAuthMiddlewareDispatch:
         """Lines 48-55: invalid token → guest mode with warning."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer bad.token"})
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("backend.auth.auth_middleware.decode_jwt", return_value=None):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value=None):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.is_authenticated is False
@@ -153,8 +153,8 @@ class TestAuthMiddlewareDispatch:
             path="/api/models",
             query_string="token=ws.jwt.token&other=1",
         )
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("backend.auth.auth_middleware.decode_jwt", return_value={"sub": "ws-user"}):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "ws-user"}):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.user_id == "ws-user"
@@ -176,7 +176,7 @@ class TestAuthMiddlewareDispatch:
             "state": {},
         }
         request = Request(scope)
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
 
@@ -185,7 +185,7 @@ class TestAuthMiddlewareDispatch:
         """Lines 31-34: Authorization header without Bearer prefix → no token."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Basic abc123"})
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.is_authenticated is False
@@ -195,8 +195,8 @@ class TestAuthMiddlewareDispatch:
         """Lines 57-60: user_id extracted from JWT sub claim."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer real.jwt"})
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("backend.auth.auth_middleware.decode_jwt", return_value={"sub": "uid-42"}):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "uid-42"}):
             resp = await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "uid-42"
 
@@ -205,7 +205,7 @@ class TestAuthMiddlewareDispatch:
         """Line 57: JWT without 'sub' claim → user_id='unknown'."""
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer no.sub.jwt"})
-        with patch("backend.auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("backend.auth.auth_middleware.decode_jwt", return_value={"iat": 123}):
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"iat": 123}):
             resp = await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "unknown"

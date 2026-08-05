@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.rag.rag_chunking import Chunk
-from backend.rag.rag_store import PgVectorStore
+from rag.rag_chunking import Chunk
+from rag.rag_store import PgVectorStore
 
 
 class _AsyncSessionCtx:
@@ -33,7 +33,7 @@ class _SessionFactory:
 def _patch_db(session: AsyncMock):
     """Patch get_session_factory to return a factory yielding the given session."""
     factory = _SessionFactory(session)
-    return patch("backend.core.infra.database.get_session_factory", return_value=factory)
+    return patch("core.infra.database.get_session_factory", return_value=factory)
 
 
 class TestPgVectorStore:
@@ -383,5 +383,5 @@ class TestPgVectorStore:
 
 class TestSearchFormat:
     def test_dimension_constant(self):
-        from backend.rag.rag_embedding import EMBEDDING_DIM
+        from rag.rag_embedding import EMBEDDING_DIM
         assert EMBEDDING_DIM == 1024

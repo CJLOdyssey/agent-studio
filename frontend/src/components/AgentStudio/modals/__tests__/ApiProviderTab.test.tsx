@@ -11,10 +11,9 @@ vi.mock('react-i18next', async () => {
       t: (key: string) => {
         const map: Record<string, string> = {
           'api.manage': '管理',
-          'api.type_embed': 'Embed',
-          'api.type_both': 'Both',
-          'api.type_llm': 'LLM',
-          'api.encryptHint': 'Keys are encrypted',
+          'api.type_vector': 'Vector',
+          'api.type_general': 'General',
+          'api.type_chat': 'Chat',
           'api.noKeys': 'No keys',
           'api.addKeyHint': 'Add one',
           'api.test': 'Test',
@@ -45,17 +44,13 @@ const baseProps = {
   keys: [mockKey] as KeyItem[],
   loading: false as boolean,
   error: null as string | null,
-  usageTypeFilter: 'all' as 'all' | 'llm' | 'embedding' | 'both',
   testingId: null as string | null,
-  showApiKey: {} as Record<string, boolean>,
   saving: false as boolean,
-  onFilterChange: vi.fn(),
   onAdd: vi.fn(),
   onEdit: vi.fn(),
   onToggleActive: vi.fn(),
   onTest: vi.fn(),
   onDelete: vi.fn(),
-  onToggleVisibility: vi.fn(),
   onDismissError: vi.fn(),
 };
 
@@ -68,9 +63,10 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
     vi.clearAllMocks();
   });
 
-  it('renders loading state', () => {
+  it('renders loading skeleton when loading and no keys', () => {
     renderTab({ loading: true, keys: [] });
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    // Should show skeleton, not the table with empty text
+    expect(screen.queryByText(/No keys/i)).toBeNull();
   });
 
   it('renders empty state when no keys', () => {
@@ -102,15 +98,16 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
   it('calls onEdit when edit button clicked', () => {
     const onEdit = vi.fn();
     renderTab({ onEdit });
-    fireEvent.click(screen.getByText('编辑'));
+    const editBtn = document.querySelector('.lucide-pencil')?.closest('button');
+    expect(editBtn).toBeTruthy();
+    fireEvent.click(editBtn!);
     expect(onEdit).toHaveBeenCalledWith(mockKey);
   });
 
   it('calls onDelete when delete button clicked', () => {
     const onDelete = vi.fn();
     renderTab({ onDelete });
-    const trashBtns = screen.getAllByRole('button');
-    const trashBtn = trashBtns.find((b) => b.querySelector('.lucide-trash2'));
+    const trashBtn = document.querySelector('.lucide-trash2')?.closest('button');
     expect(trashBtn).toBeTruthy();
     fireEvent.click(trashBtn!);
     expect(onDelete).toHaveBeenCalledWith('k1');
@@ -119,41 +116,19 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
   it('calls onTest when test button clicked', () => {
     const onTest = vi.fn();
     renderTab({ onTest });
-    fireEvent.click(screen.getByText('Test'));
+    const testBtn = document.querySelector('.lucide-refresh-cw')?.closest('button');
+    expect(testBtn).toBeTruthy();
+    fireEvent.click(testBtn!);
     expect(onTest).toHaveBeenCalledWith(mockKey);
   });
 
-  it('calls onToggleVisibility', () => {
-    const onToggleVisibility = vi.fn();
-    renderTab({ onToggleVisibility });
-    fireEvent.click(screen.getByLabelText('Show full key hint'));
-    expect(onToggleVisibility).toHaveBeenCalledWith('k1');
-  });
-
-  it('calls onFilterChange', () => {
-    const onFilterChange = vi.fn();
-    renderTab({ onFilterChange });
-    fireEvent.click(screen.getAllByText('LLM')[0]);
-    expect(onFilterChange).toHaveBeenCalledWith('llm');
-  });
-
-  it('hides keys not matching filter', () => {
-    renderTab({ usageTypeFilter: 'embedding' });
-    expect(screen.queryByText('My OpenAI Key')).not.toBeInTheDocument();
-  });
-
-  it('shows last used date', () => {
+  it('shows last used date header', () => {
     renderTab();
-    expect(screen.getByText(/Last used/)).toBeInTheDocument();
+    expect(screen.getByText('上次使用')).toBeInTheDocument();
   });
 
   it('shows inactive badge', () => {
     renderTab({ keys: [{ ...mockKey, is_active: false }] });
     expect(screen.getByText('My OpenAI Key')).toBeInTheDocument();
-  });
-
-  it('shows provider and base_url', () => {
-    renderTab();
-    expect(screen.getByText(/openai · https:\/\/api\.openai\.com\/v1/)).toBeInTheDocument();
   });
 });

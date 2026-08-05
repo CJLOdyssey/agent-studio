@@ -6,7 +6,7 @@ import pytest
 
 class TestAttachments:
 
-    @patch("backend.routers.attachments.get_session", new_callable=AsyncMock, return_value=None)
+    @patch("routers.attachments.get_session", new_callable=AsyncMock, return_value=None)
     async def test_upload_session_not_found(self, mock_get, client):
         resp = client.post(
             "/api/attachments",
@@ -20,8 +20,8 @@ class TestAttachments:
         assert resp.status_code == 201
         session_id = resp.json()["id"]
 
-        from backend.core.error_codes import ErrorCode, error_response
-        with patch("backend.routers.attachments._validate_upload",
+        from core.error_codes import ErrorCode, error_response
+        with patch("routers.attachments._validate_upload",
                    side_effect=error_response(ErrorCode.ATTACHMENT_TOO_LARGE, detail="文件超过 10MB 限制")):
             large_content = b"x" * 100
             resp = client.post(
@@ -186,21 +186,21 @@ class TestAttachments:
             assert resp.json()["success"] is True
 
     def test_extract_text_failure(self):
-        from backend.routers.attachments import _extract_text
+        from routers.attachments import _extract_text
         with patch("pathlib.Path.read_text", side_effect=Exception("IO error")):
             result = _extract_text(Path("/fake/path.txt"), "text/plain")
             assert result == ""
 
     def test_validate_upload_too_large(self):
-        from backend.routers.attachments import _validate_upload
+        from routers.attachments import _validate_upload
         with pytest.raises(Exception):
             _validate_upload("text/plain", 11 * 1024 * 1024)
 
     def test_validate_upload_invalid_type(self):
-        from backend.routers.attachments import _validate_upload
+        from routers.attachments import _validate_upload
         with pytest.raises(Exception):
             _validate_upload("application/x-executable", 100)
 
     def test_upload_dir_creation(self):
-        from backend.routers.attachments import UPLOAD_DIR
+        from routers.attachments import UPLOAD_DIR
         assert UPLOAD_DIR.exists()

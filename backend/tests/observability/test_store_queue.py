@@ -8,14 +8,14 @@ import time
 import threading
 from unittest.mock import MagicMock, patch
 
-from backend.observability.schema import Event, SCHEMA_SQL
+from observability.schema import Event, SCHEMA_SQL
 
 
 class TestStoreQueueFull:
     """Cover store.py lines 66-67: queue.Full exception in write()."""
 
     def test_write_increments_errors_on_queue_full(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -33,7 +33,7 @@ class TestStoreQueueFull:
             os.unlink(db_path)
 
     def test_write_after_close_then_queue_full(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -54,7 +54,7 @@ class TestWriterLoopException:
 
     def test_writer_loop_survives_bad_path(self):
         """The writer loop should exit gracefully on connection errors."""
-        from backend.observability.store import _writer_loop
+        from observability.store import _writer_loop
 
         q = queue.SimpleQueue()
         q.put({"timestamp": 1, "trace_id": "t", "span_id": "", "parent_span_id": "",
@@ -71,7 +71,7 @@ class TestWriterLoopException:
 
     def test_writer_loop_commits_batch(self):
         """Verify the writer loop batch-inserts multiple items into SQLite."""
-        from backend.observability.store import _writer_loop
+        from observability.store import _writer_loop
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -106,8 +106,8 @@ class TestWriterLoopException:
         First executemany raises Exception (covered by except:pass),
         then SystemExit exits the while True loop (covered by finally:conn.close()).
         """
-        import backend.observability.store as store_mod
-        from backend.observability.store import _writer_loop
+        import observability.store as store_mod
+        from observability.store import _writer_loop
 
         mock_conn = MagicMock()
         call_count = 0
@@ -149,7 +149,7 @@ class TestStoreWriteDiscardZeroDisk:
 
     def test_write_allows_when_disk_free_is_zero(self):
         """When _disk_free returns 0, the check 0 < 0 < MIN is false, so write proceeds."""
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -167,7 +167,7 @@ class TestStoreWriteDiscardZeroDisk:
 
     def test_write_allows_when_disk_free_is_negative(self):
         """When _disk_free returns -1 (error), write proceeds."""
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -188,7 +188,7 @@ class TestStoreSelfCheckDiskFreeNegative:
     """Cover store.py line 76: disk_free_mb when free <= 0."""
 
     def test_self_check_disk_free_negative(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -207,7 +207,7 @@ class TestStoreWriterSize:
     """Cover store.py _writer_size helper."""
 
     def test_writer_size_returns_qsize(self):
-        from backend.observability.store import _writer_size
+        from observability.store import _writer_size
         q = queue.SimpleQueue()
         assert _writer_size(q) == 0
         q.put("item")

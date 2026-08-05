@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { validateInput } from '../utils/validation';
+import type * as React from 'react';
 
 interface UseMessageComposerOptions {
   /** External submit handler — receives sanitized text */

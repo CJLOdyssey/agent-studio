@@ -30,7 +30,7 @@ describe('ModelSelector', { tags: ['integration'] }, () => {
 
   it('renders empty state when no models', () => {
     render(<ModelSelector models={[]} selectedModel="" onSelect={vi.fn()} />);
-    expect(screen.getByText(/请先/)).toBeInTheDocument();
+    expect(screen.getByText('api.noKeys')).toBeInTheDocument();
   });
 
   it('highlights selected model', () => {

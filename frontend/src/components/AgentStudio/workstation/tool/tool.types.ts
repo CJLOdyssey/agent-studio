@@ -5,12 +5,14 @@ export interface ToolEntry {
   name: string;
   description: string;
   category: string;
-  model: string;
   status: 'active' | 'disabled';
   version: string;
   endpoint: string;
+  method?: string;
+  headers?: string;
   parameters: string;
   createdAt: string;
+  is_builtin?: boolean;
 }
 
 export type ToolFormData = Omit<ToolEntry, 'id' | 'createdAt'>;

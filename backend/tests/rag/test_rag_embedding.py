@@ -4,7 +4,7 @@ import json
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
-from backend.rag.rag_embedding import EMBEDDING_DIM, EmbeddingProvider, _fallback_embed
+from rag.rag_embedding import EMBEDDING_DIM, EmbeddingProvider, _fallback_embed
 
 
 class TestEmbeddingProvider:
@@ -94,7 +94,7 @@ class TestEmbeddingProvider:
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
+        with patch("rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
             result = p._embed_sync(["hello", "world"])
             assert len(result) == 2
             assert len(result[0]) == EMBEDDING_DIM
@@ -108,7 +108,7 @@ class TestEmbeddingProvider:
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
+        with patch("rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
             result = p._embed_sync(["text"])
             assert len(result) == 1
             assert result[0] == [0.0] * EMBEDDING_DIM
@@ -121,7 +121,7 @@ class TestEmbeddingProvider:
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
+        with patch("rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
             result = p._embed_sync(["text"])
             assert len(result) == 1
             assert result[0] == [0.0] * EMBEDDING_DIM
@@ -134,7 +134,7 @@ class TestEmbeddingProvider:
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
+        with patch("rag.rag_embedding.urllib.request.urlopen", return_value=mock_response):
             result = p._embed_sync(["text"])
             assert len(result) == 1
             assert result[0] == [0.0] * EMBEDDING_DIM
@@ -148,7 +148,7 @@ class TestEmbeddingProvider:
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
+        with patch("rag.rag_embedding.urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
             p._embed_sync(["text"])
             req = mock_urlopen.call_args[0][0]
             assert req.get_header("Authorization") == "Bearer sk-test-key"
@@ -156,7 +156,7 @@ class TestEmbeddingProvider:
 
     def test_embed_sync_exception_propagates(self):
         p = EmbeddingProvider(api_key="sk-test")
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", side_effect=Exception("network error")):
+        with patch("rag.rag_embedding.urllib.request.urlopen", side_effect=Exception("network error")):
             with pytest.raises(Exception, match="network error"):
                 p._embed_sync(["text"])
 
@@ -178,7 +178,7 @@ class TestEmbeddingProvider:
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch("backend.rag.rag_embedding.urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
+        with patch("rag.rag_embedding.urllib.request.urlopen", return_value=mock_response) as mock_urlopen:
             p._embed_sync(["hello"])
             req = mock_urlopen.call_args[0][0]
             body = json.loads(req.data.decode("utf-8"))

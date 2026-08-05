@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ModelOption } from '../../types/input';
 
@@ -15,10 +15,24 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const current = models.find((m) => m.id === selectedModel);
   const isEmpty = models.length === 0;
+
+  // Latch once models are available: render-phase state adjustment (React-sanctioned
+  // pattern for deriving state from props). Prevents flashing "请配置API" on refresh.
+  if (!hasLoadedOnce && (models.length > 0 || models.some((m) => m.id === selectedModel))) {
+    setHasLoadedOnce(true);
+  }
+
+  // Fallback: if models never arrive after 4s, mark as loaded so "请配置API" shows.
+  useEffect(() => {
+    if (hasLoadedOnce) return;
+    const timer = setTimeout(() => setHasLoadedOnce(true), 4000);
+    return () => clearTimeout(timer);
+  }, [hasLoadedOnce]);
 
   // Memoize grouped models — not called in render path anymore
   const providers = useMemo(() => {
@@ -91,9 +105,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   );
 
   return (
-    <div className="agentstudio-model-selector" ref={ref}>
+    <div className="relative inline-flex items-center" ref={ref}>
       <button
-        className={`agentstudio-model-trigger ${isEmpty ? 'agentstudio-model-trigger-empty' : ''}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] ${isEmpty ? 'border-[var(--color-accent-soft)] text-[var(--color-accent-soft)] hover:bg-[color-mix(in_srgb,var(--color-accent-soft)_10%,transparent)] hover:border-[var(--color-accent-soft)] hover:text-[var(--color-accent-soft)]' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)]'}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -107,25 +121,30 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         aria-expanded={isEmpty ? undefined : open}
         aria-haspopup={isEmpty ? undefined : 'listbox'}
       >
-        <span className="agentstudio-model-label">
-          {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+          {!hasLoadedOnce ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Loader2 size={10} className="animate-spin" />
+              {selectedModel || t('model.loading') || '加载中'}
+            </span>
+          ) : isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
         </span>
-        <ChevronDown size={10} className={`agentstudio-model-chevron ${open ? 'open' : ''}`} />
+        {hasLoadedOnce && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
       </button>
 
       {open && !isEmpty && (
-        <div className="agentstudio-model-popover" ref={listRef} role="listbox">
+        <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
           {providers.length > 1
             ? providers.map(([provider, list]) => (
-                <div key={provider} className="agentstudio-model-group">
-                  <div className="agentstudio-model-group-label">{provider}</div>
+                <div key={provider} className="flex flex-col">
+                  <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">{provider}</div>
                   {list.map((m) => {
                     const globalIdx = allOptions.indexOf(m);
                     return (
                       <button
                         key={m.id}
                         data-model-option
-                        className={`agentstudio-model-option ${m.id === selectedModel ? 'selected' : ''} ${globalIdx === focusIdx ? 'focused' : ''}`}
+                        className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${globalIdx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
                         onClick={() => handleSelect(m.id)}
                         role="option"
                         aria-selected={m.id === selectedModel}
@@ -133,10 +152,10 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                       >
                         <span>{m.label}</span>
                         {m.status === 'deprecated' && (
-                          <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
                         )}
                         {m.status === 'sunset' && (
-                          <span className="agentstudio-model-status">{t('model.statusSunset')}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>
                         )}
                       </button>
                     );
@@ -147,7 +166,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 <button
                   key={m.id}
                   data-model-option
-                  className={`agentstudio-model-option ${m.id === selectedModel ? 'selected' : ''} ${idx === focusIdx ? 'focused' : ''}`}
+                  className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${idx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
                   onClick={() => handleSelect(m.id)}
                   role="option"
                   aria-selected={m.id === selectedModel}
@@ -155,9 +174,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
                 >
                   <span>{m.label}</span>
                   {m.status === 'deprecated' && (
-                    <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
                   )}
-                  {m.status === 'sunset' && <span className="agentstudio-model-status">{t('model.statusSunset')}</span>}
+                  {m.status === 'sunset' && <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>}
                 </button>
               ))}
         </div>

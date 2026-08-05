@@ -19,13 +19,13 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     after the test ends (monkeypatch restores the env var, but the module-level
     constant is not re-evaluated).
     """
-    import backend.broker as mod_broker
-    import backend.core.infra.redis_sentinel as rsmod
+    import broker as mod_broker
+    import core.infra.redis_sentinel as rsmod
 
     rsmod.SENTINEL_ENABLED = False
     rsmod._sentinel = None
 
-    from backend.tests.conftest import _original_create_redis
+    from tests.conftest import _original_create_redis
 
     _real_create_redis = _original_create_redis
 
@@ -38,32 +38,32 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
             mod_broker._pools[loop_id] = pool
         return pool
 
-    monkeypatch.setattr("backend.broker.get_redis", real_get_redis)
+    monkeypatch.setattr("broker.get_redis", real_get_redis)
     monkeypatch.setattr(
-        "backend.core.infra.redis_sentinel.create_redis", _real_create_redis
+        "core.infra.redis_sentinel.create_redis", _real_create_redis
     )
 
 
 class TestBrokerRedis:
     def test_redis_url_has_valid_format(self):
         """REDIS_URL should be a valid redis URL (depends on .env / env var)."""
-        from backend.broker import REDIS_URL
+        from broker import REDIS_URL
 
         assert REDIS_URL.startswith("redis://")
         assert "localhost" in REDIS_URL or "redis" in REDIS_URL
 
     def test_broker_url_default(self):
-        from backend.broker import BROKER_URL
+        from broker import BROKER_URL
 
         assert BROKER_URL == "redis://localhost:6379/0"
 
     def test_channel_format(self):
-        from backend.broker import _channel
+        from broker import _channel
 
         assert _channel("run-abc") == "run:run-abc"
 
-    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
-    @patch("backend.broker.asyncio.get_running_loop")
+    @patch("core.infra.redis_sentinel.AsyncRedis.from_url")
+    @patch("broker.asyncio.get_running_loop")
     def test_get_redis_creates_pool(self, mock_loop, mock_from_url):
         mock_loop.return_value = loop = MagicMock()
         loop_id = id(loop)
@@ -71,11 +71,11 @@ class TestBrokerRedis:
         mock_from_url.return_value = mock_redis
 
         # Clean up any existing pools
-        from backend.broker import REDIS_URL, _pools
+        from broker import REDIS_URL, _pools
 
         _pools.clear()
 
-        from backend.broker import get_redis
+        from broker import get_redis
 
         result = get_redis()
         mock_from_url.assert_called_once_with(
@@ -90,15 +90,15 @@ class TestBrokerRedis:
         assert result == mock_redis
         assert _pools[loop_id] == mock_redis
 
-    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
-    @patch("backend.broker.asyncio.get_running_loop")
+    @patch("core.infra.redis_sentinel.AsyncRedis.from_url")
+    @patch("broker.asyncio.get_running_loop")
     def test_get_redis_reuses_pool(self, mock_loop, mock_from_url):
         mock_loop.return_value = loop = MagicMock()
         loop_id = id(loop)
         mock_redis = MagicMock()
         mock_from_url.return_value = mock_redis
 
-        from backend.broker import _pools, get_redis
+        from broker import _pools, get_redis
 
         _pools.clear()
         _pools[loop_id] = existing = MagicMock()
@@ -106,10 +106,10 @@ class TestBrokerRedis:
         assert result == existing
         mock_from_url.assert_not_called()
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -121,24 +121,24 @@ class TestBrokerRedis:
             "run:run-123", json.dumps(msg, ensure_ascii=False)
         )
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis(self, mock_get_redis):
-        from backend.broker import close_redis
+        from broker import close_redis
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
 
-        from backend.broker import _pools
+        from broker import _pools
 
         _pools.clear()
         loop = MagicMock()
-        _pools[id(loop)] = mock_redis
+        _pools[loop] = mock_redis
 
-        with patch("backend.broker.asyncio.get_running_loop", return_value=loop):
+        with patch("broker.asyncio.get_running_loop", return_value=loop):
             await close_redis()
             mock_redis.aclose.assert_awaited_once()
-            assert id(loop) not in _pools
+            assert loop not in _pools
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -156,26 +156,26 @@ import pytest
 
 class TestBrokerFull:
     def test_broker_url_default_value(self):
-        from backend.broker import BROKER_URL
+        from broker import BROKER_URL
         assert BROKER_URL == "redis://localhost:6379/0"
 
     def test_result_backend_default_value(self):
-        from backend.broker import RESULT_BACKEND
+        from broker import RESULT_BACKEND
         assert RESULT_BACKEND == "redis://localhost:6379/0"
 
     def test_channel_prefix(self):
-        from backend.broker import CHANNEL_PREFIX
+        from broker import CHANNEL_PREFIX
         assert CHANNEL_PREFIX == "run:"
 
     def test_channel_format(self):
-        from backend.broker import _channel
+        from broker import _channel
         assert _channel("abc-123") == "run:abc-123"
         assert _channel("") == "run:"
 
-    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
-    @patch("backend.broker.asyncio.get_running_loop")
+    @patch("core.infra.redis_sentinel.AsyncRedis.from_url")
+    @patch("broker.asyncio.get_running_loop")
     def test_get_redis_uses_correct_url(self, mock_loop, mock_from_url, monkeypatch):
-        from backend.broker import _pools, get_redis
+        from broker import _pools, get_redis
 
         monkeypatch.setenv("REDIS_URL", "redis://custom-host:7777/5")
         mock_loop.return_value = MagicMock()
@@ -195,10 +195,10 @@ class TestBrokerFull:
         )
         assert result == mock_redis
 
-    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
-    @patch("backend.broker.asyncio.get_running_loop")
+    @patch("core.infra.redis_sentinel.AsyncRedis.from_url")
+    @patch("broker.asyncio.get_running_loop")
     def test_get_redis_creates_pool_on_new_loop(self, mock_loop, mock_from_url):
-        from backend.broker import _pools, get_redis
+        from broker import _pools, get_redis
 
         loop1 = MagicMock()
         loop2 = MagicMock()
@@ -218,10 +218,10 @@ class TestBrokerFull:
         assert pool1 is not pool2
         assert mock_from_url.call_count == 2
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_structure(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -234,10 +234,10 @@ class TestBrokerFull:
             json.dumps(msg, ensure_ascii=False),
         )
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_with_chinese(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -249,10 +249,10 @@ class TestBrokerFull:
         published = json.loads(mock_redis.publish.call_args[0][1])
         assert published["content"] == "你好世界"
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_empty_content(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -260,23 +260,22 @@ class TestBrokerFull:
         await publish_run_message("run-empty", {"content": ""})
         mock_redis.publish.assert_awaited_once()
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis_removes_pool(self, mock_get_redis):
-        from backend.broker import _pools, close_redis
+        from broker import _pools, close_redis
 
         loop = MagicMock()
-        loop_id = id(loop)
         mock_pool = AsyncMock()
-        _pools[loop_id] = mock_pool
+        _pools[loop] = mock_pool
 
-        with patch("backend.broker.asyncio.get_running_loop", return_value=loop):
+        with patch("broker.asyncio.get_running_loop", return_value=loop):
             await close_redis()
-            assert loop_id not in _pools
+            assert loop not in _pools
             mock_pool.aclose.assert_awaited_once()
 
     def test_celery_app_config(self):
-        from backend.broker import celery_app
+        from broker import celery_app
 
         assert celery_app.main == "backend"
         assert celery_app.conf.task_serializer == "json"
@@ -284,7 +283,7 @@ class TestBrokerFull:
         assert celery_app.conf.task_acks_late is True
 
     def test_drain_buffer(self):
-        from backend.broker import _buffers, drain_buffer
+        from broker import _buffers, drain_buffer
 
         _buffers["run-buf"] = [{"type": "test"}]
         result = drain_buffer("run-buf")
@@ -292,7 +291,7 @@ class TestBrokerFull:
         assert "run-buf" not in _buffers
 
     def test_drain_buffer_non_existent(self):
-        from backend.broker import drain_buffer
+        from broker import drain_buffer
 
         result = drain_buffer("non-existent")
         assert result == []
@@ -300,7 +299,7 @@ class TestBrokerFull:
     @pytest.mark.asyncio
     async def test_stop_buffer_cancels_task(self):
 
-        from backend.broker import _buffer_tasks, stop_buffer
+        from broker import _buffer_tasks, stop_buffer
 
         async def cancelled_coro():
             raise asyncio.CancelledError()
@@ -312,25 +311,25 @@ class TestBrokerFull:
         assert "run-stop" not in _buffer_tasks
 
     def test_channel_with_special_chars(self):
-        from backend.broker import _channel
+        from broker import _channel
 
         assert _channel("run-123_abc") == "run:run-123_abc"
         assert _channel("run/test") == "run:run/test"
 
-    @patch("backend.core.infra.redis_sentinel.AsyncRedis.from_url")
-    @patch("backend.broker.asyncio.get_running_loop")
+    @patch("core.infra.redis_sentinel.AsyncRedis.from_url")
+    @patch("broker.asyncio.get_running_loop")
     def test_get_redis_raises_on_no_loop(self, mock_loop, mock_from_url):
-        from backend.broker import _pools, get_redis
+        from broker import _pools, get_redis
 
         mock_loop.side_effect = RuntimeError("No loop")
         _pools.clear()
         with pytest.raises(RuntimeError):
             get_redis()
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_with_thinking_type(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -343,10 +342,10 @@ class TestBrokerFull:
         assert published["type"] == "thinking_stream"
         assert published["content"] == "思考中"
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_balance_warning(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -358,10 +357,10 @@ class TestBrokerFull:
         published = json.loads(mock_redis.publish.call_args[0][1])
         assert published["type"] == "balance_warning"
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_tool_complete(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -373,10 +372,10 @@ class TestBrokerFull:
         published = json.loads(mock_redis.publish.call_args[0][1])
         assert published["type"] == "tool_complete"
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_publish_run_message_client_action(self, mock_get_redis):
-        from backend.broker import publish_run_message
+        from broker import publish_run_message
 
         mock_redis = AsyncMock()
         mock_get_redis.return_value = mock_redis
@@ -388,17 +387,34 @@ class TestBrokerFull:
         assert published["type"] == "client_action"
         assert published["action"] == {"type": "click"}
 
-    @patch("backend.broker.get_redis")
+    def _blocking_get_message(self, calls: list, responses: list | None = None):
+        """Return a get_message mock that records kwargs then blocks forever.
+
+        Blocking (rather than returning immediately) is essential: an
+        instantly-returning mock makes the worker's asyncio.wait_for resolve
+        immediately and the worker busy-spins, starving the event loop.
+        """
+        responses = responses or []
+
+        async def fake(*args, **kwargs):
+            calls.append(kwargs)
+            if responses:
+                return responses.pop(0)
+            await asyncio.Event().wait()
+
+        return fake
+
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_run_messages_starts_task(self, mock_get_redis):
 
-        from backend.broker import _buffer_tasks, _buffers, buffer_run_messages
+        from broker import _buffer_tasks, _buffers, buffer_run_messages
 
         mock_redis = MagicMock()
         mock_pubsub = MagicMock()
         mock_pubsub.subscribe = AsyncMock()
-        mock_pubsub.get_message = AsyncMock()
-        mock_pubsub.get_message.return_value = {"type": "subscribe"}
+        calls = []
+        mock_pubsub.get_message = AsyncMock(side_effect=self._blocking_get_message(calls))
         mock_redis.pubsub.return_value = mock_pubsub
         mock_get_redis.return_value = mock_redis
 
@@ -410,7 +426,71 @@ class TestBrokerFull:
         assert "run-buf-task" in _buffers
         mock_pubsub.subscribe.assert_awaited_once_with("run:run-buf-task")
 
-        from backend.broker import stop_buffer
+        from broker import stop_buffer
         await stop_buffer("run-buf-task")
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_buffer_worker_uses_blocking_get_message(self, mock_get_redis):
+        """Regression: worker must call get_message in BLOCKING mode.
+
+        get_message() defaults to timeout=0 (non-blocking). Without timeout=None
+        the outer wait_for never fires and the worker busy-spins ~100k iter/sec,
+        pegging a CPU core for the whole run. This test pins the blocking call
+        signature so the busy-loop cannot regress.
+        """
+        from broker import _buffer_tasks, _buffers, buffer_run_messages, stop_buffer
+
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        calls = []
+        mock_pubsub.get_message = AsyncMock(side_effect=self._blocking_get_message(calls))
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        await buffer_run_messages("run-blocking")
+        await asyncio.sleep(0.05)
+        await stop_buffer("run-blocking")
+
+        assert calls, "worker never called get_message"
+        kwargs = calls[0]
+        assert kwargs.get("timeout") is None, (
+            f"get_message must block (timeout=None); got timeout={kwargs.get('timeout')!r}. "
+            "Without it the buffer worker busy-spins ~100k iter/sec and pegs a CPU core."
+        )
+        assert kwargs.get("ignore_subscribe_messages") is True
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_buffer_worker_buffers_messages(self, mock_get_redis):
+        """The worker accumulates published messages into the run's buffer."""
+        from broker import _buffer_tasks, _buffers, buffer_run_messages, stop_buffer
+
+        payload = {"type": "stream", "content": "hi"}
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        calls = []
+        mock_pubsub.get_message = AsyncMock(
+            side_effect=self._blocking_get_message(
+                calls, [{"type": "message", "data": json.dumps(payload)}]
+            )
+        )
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        await buffer_run_messages("run-buf-msg")
+        await asyncio.sleep(0.05)
+        buf = _buffers["run-buf-msg"]
+        await stop_buffer("run-buf-msg")
+
+        assert buf == [payload]
 
 

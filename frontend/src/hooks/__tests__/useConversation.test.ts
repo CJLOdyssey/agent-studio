@@ -124,4 +124,61 @@ describe('useConversation', { tags: ['unit'] }, () => {
     const updated = result.current.conversations.find((c) => c.id === convId);
     expect(updated?.messages).toHaveLength(2);
   });
+
+  it('immediately persists conversation to localStorage on save', () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useConversation());
+
+    act(() => {
+      result.current.saveConversation('Persist Test', [{ role: 'user', content: 'hello' }]);
+    });
+
+    const raw = localStorage.getItem('agentstudio-conversations');
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw!);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].title).toBe('Persist Test');
+  });
+
+  it('immediately persists updated messages to localStorage', () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useConversation());
+
+    let convId = '';
+    act(() => {
+      convId = result.current.saveConversation('MsgSync', [{ role: 'user', content: 'a' }]);
+    });
+
+    act(() => {
+      result.current.updateConversationMessages(convId, [
+        { role: 'user', content: 'a' },
+        { role: 'agent', content: 'reply' },
+      ]);
+    });
+
+    const raw = localStorage.getItem('agentstudio-conversations');
+    const parsed = JSON.parse(raw!);
+    const conv = parsed.find((c: { id: string }) => c.id === convId);
+    expect(conv?.messages).toHaveLength(2);
+    expect(conv?.messages[1].content).toBe('reply');
+  });
+
+  it('immediately persists session ID to localStorage', () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useConversation());
+
+    let convId = '';
+    act(() => {
+      convId = result.current.saveConversation('SessionTest', []);
+    });
+
+    act(() => {
+      result.current.updateConversationSessionId(convId, 'session-abc-123');
+    });
+
+    const raw = localStorage.getItem('agentstudio-conversations');
+    const parsed = JSON.parse(raw!);
+    const conv = parsed.find((c: { id: string }) => c.id === convId);
+    expect(conv?.sessionId).toBe('session-abc-123');
+  });
 });

@@ -34,9 +34,9 @@ function renderSelectedChips(items: RefItem[], onRemove: (id: string) => void) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
       {items.map((item) => (
-        <span key={item.id} className="wsta-picker-chip">
+        <span key={item.id} className="inline-flex items-center gap-1 py-0.5 px-2 bg-[var(--color-surface-hover)] rounded text-xs text-[var(--color-text-primary)]">
           {item.name}
-          <button className="wsta-picker-chip-remove" onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}>&times;</button>
+          <button className="cursor-pointer text-[var(--color-text-muted)] flex items-center" onClick={(e) => { e.stopPropagation(); onRemove(item.id); }}>&times;</button>
         </span>
       ))}
     </div>
@@ -84,7 +84,8 @@ function getResourcePicker(
     if (pickerType === 'prompt') {
       setFormData({ ...formData, systemPromptId: ids as string });
     } else {
-      setFormData({ ...formData, [`${pickerType}Ids`]: ids });
+      const idField = pickerType === 'tools' ? 'toolIds' : pickerType === 'skills' ? 'skillIds' : 'mcpIds';
+      setFormData({ ...formData, [idField]: ids });
     }
     setActivePicker(null);
   };
@@ -111,24 +112,23 @@ export function ResourcePickerSection({
   return (
     <>
       {/* ═══ Section: Resource Bindings ═══ */}
-      <div className="wsta-form-section">
-        <div className="wsta-form-section-title">
-          <Puzzle size={14} />
+      <div className="pt-4">
+        <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
           {t('agent.form_section_bindings')}
         </div>
 
-        <div className="wsta-resource-grid">
+        <div className="grid grid-cols-2 gap-4">
           {/* Prompt */}
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('agent.form_prompt')} <span className="wsta-required">*</span></label>
-            <div className="wsta-picker-trigger" onClick={() => setActivePicker('prompt')}>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_prompt')} <span className="text-[var(--color-danger)]">*</span> ({selectedPrompt ? 1 : 0})</label>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('prompt')}>
               {selectedPrompt ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <MessageSquareText size={14} /> {selectedPrompt.name}
                 </span>
               ) : (
                 <span className="placeholder" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <MessageSquareText size={14} /> {t('agent.form_prompt_empty')}
+                  <MessageSquareText size={14} /> {t('agent.form_prompt_select')}
                 </span>
               )}
               <ChevronRight size={14} />
@@ -136,11 +136,11 @@ export function ResourcePickerSection({
           </div>
 
           {/* Tools */}
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('agent.form_tools')} ({selectedTools.length})</label>
-            <div className="wsta-picker-trigger" onClick={() => setActivePicker('tools')}>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_tools')} ({selectedTools.length})</label>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('tools')}>
               {selectedTools.length > 0 ? (
-                <div className="wsta-picker-trigger-tags">
+                  <div className="inline-flex items-center gap-1 py-0.5 px-2 bg-[var(--color-surface-hover)] rounded text-xs text-[var(--color-text-primary)]">
                   {renderSelectedChips(selectedTools, (id) => setFormData({ ...formData, toolIds: formData.toolIds.filter((tid) => tid !== id) }))}
                 </div>
               ) : (
@@ -151,30 +151,30 @@ export function ResourcePickerSection({
           </div>
 
           {/* MCP */}
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('agent.form_mcp')} ({selectedMCPs.length})</label>
-            <div className="wsta-picker-trigger" onClick={() => setActivePicker('mcp')}>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_mcp')} ({selectedMCPs.length})</label>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('mcp')}>
               {selectedMCPs.length > 0 ? (
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {renderSelectedChips(selectedMCPs, (id) => setFormData({ ...formData, mcpIds: formData.mcpIds.filter((mid) => mid !== id) }))}
                 </div>
               ) : (
-                <span className="placeholder"><Server size={14} /> {t('agent.form_mcp_select')}</span>
+                <span className="placeholder" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Server size={14} /> {t('agent.form_mcp_select')}</span>
               )}
               <ChevronRight size={14} />
             </div>
           </div>
 
           {/* Skills */}
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('agent.form_skills')} ({selectedSkills.length})</label>
-            <div className="wsta-picker-trigger" onClick={() => setActivePicker('skills')}>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('agent.form_skills')} ({selectedSkills.length})</label>
+            <div className="flex items-center justify-between w-full py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans cursor-pointer text-left transition-colors hover:border-[var(--color-accent)]" onClick={() => setActivePicker('skills')}>
               {selectedSkills.length > 0 ? (
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {renderSelectedChips(selectedSkills, (id) => setFormData({ ...formData, skillIds: formData.skillIds.filter((sid) => sid !== id) }))}
                 </div>
               ) : (
-                <span className="placeholder"><Puzzle size={14} /> {t('agent.form_skill_select')}</span>
+                <span className="placeholder" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Puzzle size={14} /> {t('agent.form_skill_select')}</span>
               )}
               <ChevronRight size={14} />
             </div>

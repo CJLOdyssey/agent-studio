@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -10,7 +9,7 @@ const mockUseAuth = vi.hoisted(() => vi.fn());
 
 // Use correct relative path from __tests__/ to components/auth/
 vi.mock('../../../auth', () => ({
-  useAuth: (...args: any[]) => mockUseAuth(...args),
+  useAuth: (..._args: unknown[]) => mockUseAuth(..._args),
 }));
 
 import UserMenu from '../UserMenu';
@@ -56,7 +55,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
       expect(screen.getByText('sidebar.workstation')).toBeInTheDocument();
       expect(screen.getByText('sidebar.settings')).toBeInTheDocument();
       expect(screen.getByText('sidebar.help')).toBeInTheDocument();
-      expect(screen.getByText('API Key')).toBeInTheDocument();
+      expect(screen.getByText('API 管理')).toBeInTheDocument();
     });
 
     it('shows login button when not authenticated', () => {
@@ -127,8 +126,8 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
   describe('interaction', () => {
     it('does not render when closed', () => {
-      const { container } = render(<UserMenu {...defaultProps} isUserMenuOpen={false} />);
-      expect(container.querySelector('.agentstudio-user-popover')).not.toBeInTheDocument();
+      render(<UserMenu {...defaultProps} isUserMenuOpen={false} />);
+      expect(screen.queryByText('API 管理')).not.toBeInTheDocument();
     });
 
     it('Escape key closes menu', () => {
@@ -163,14 +162,14 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
     it('trigger button closes menu when open', () => {
       render(<UserMenu {...defaultProps} />);
-      const trigger = document.querySelector('.agentstudio-user-trigger') as HTMLButtonElement;
+      const trigger = document.querySelector('[aria-haspopup="menu"]') as HTMLButtonElement;
       fireEvent.click(trigger);
       expect(mockSetIsUserMenuOpen).toHaveBeenCalledWith(false);
     });
 
     it('clicking API Key triggers setIsApiOpen', () => {
       render(<UserMenu {...defaultProps} />);
-      fireEvent.click(screen.getByText('API Key'));
+      fireEvent.click(screen.getByText('API 管理'));
       expect(mockSetIsApiOpen).toHaveBeenCalledWith(true);
     });
 
@@ -182,7 +181,7 @@ describe('UserMenu', { tags: ['integration'] }, () => {
 
     it('trigger has aria attributes', () => {
       render(<UserMenu {...defaultProps} />);
-      const trigger = document.querySelector('.agentstudio-user-trigger');
+      const trigger = document.querySelector('[aria-haspopup="menu"]');
       expect(trigger?.getAttribute('aria-expanded')).toBe('true');
       expect(trigger?.getAttribute('aria-haspopup')).toBe('menu');
     });

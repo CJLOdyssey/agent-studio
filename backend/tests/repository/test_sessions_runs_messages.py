@@ -7,13 +7,13 @@ Uses conftest fixtures (db_engine, async_session) against in-memory SQLite.
 
 import uuid
 
-from backend.repository.message_repo import (
+from repository.message_repo import (
     get_messages,
     get_run_messages,
     get_session_messages,
     save_message,
 )
-from backend.repository.run_repo import (
+from repository.run_repo import (
     create_run,
     get_run,
     get_runs,
@@ -22,7 +22,7 @@ from backend.repository.run_repo import (
     update_run_result,
     update_run_status,
 )
-from backend.repository.session_repo import (
+from repository.session_repo import (
     create_session,
     delete_session,
     get_session,

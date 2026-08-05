@@ -1,4 +1,4 @@
-export interface LogEntry { id: string; timestamp: string; level: 'info' | 'warn' | 'error'; module: string; user: string; action: string; details: string; ip: string; }
+interface LogEntry { id: string; timestamp: string; level: 'info' | 'warn' | 'error'; module: string; user: string; action: string; details: string; ip: string; }
 
 function generateMockLogs(): LogEntry[] {
   const logs: LogEntry[] = [];

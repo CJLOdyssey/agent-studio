@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { ReactNode } from 'react';
 
 const {
   mockToast,
@@ -10,7 +9,6 @@ const {
   mockSetConversations,
   mockUpdateConversationSessionId,
   mockUpdateSettings,
-  mockExecuteCommand,
   mockStoreReset,
   mockStoreCancelRun,
   mockStoreLoadConversation,
@@ -20,7 +18,7 @@ const {
   mockRetry,
 } = vi.hoisted(() => {
   const store = {
-    messages: [] as any[],
+    messages: [] as unknown[],
     status: 'idle' as string,
     error: null as string | null,
     wsStatus: 'disconnected' as string,
@@ -36,7 +34,6 @@ const {
     mockSetConversations: vi.fn(),
     mockUpdateConversationSessionId: vi.fn(),
     mockUpdateSettings: vi.fn(),
-    mockExecuteCommand: vi.fn(),
     mockStoreReset: vi.fn(),
     mockStoreCancelRun: vi.fn(),
     mockStoreLoadConversation: vi.fn(),
@@ -97,7 +94,7 @@ vi.mock('../../../hooks/useAgentCommands', () => ({
 }));
 
 vi.mock('../../../stores/chatStore', () => ({
-  useChatStore: (selector?: (s: any) => any) => {
+  useChatStore: (selector?: (s: unknown) => unknown) => {
     const state = {
       messages: mockStore.messages,
       status: mockStore.status,
@@ -136,6 +133,7 @@ vi.mock('./useDragAndDrop', () => ({
 vi.mock('../../../utils/logger', () => ({ default: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
 
 import { useWorkstationState } from '../useWorkstationState';
+import type * as React from 'react';
 
 function createRef() {
   return { current: null } as React.RefObject<HTMLDivElement | null>;
@@ -266,11 +264,12 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
     it('effectiveSelectedModel uses selectedModel when set', () => {
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
-      act(() => { result.current.setSelectedModel('custom-model'); });
-      expect(result.current.effectiveSelectedModel).toBe('custom-model');
+      act(() => { result.current.setSelectedModel('model-b'); });
+      expect(result.current.effectiveSelectedModel).toBe('model-b');
     });
 
     it('effectiveSelectedModel falls back to first model', () => {
+      localStorage.removeItem('agentstudio-selected-model');
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
       expect(result.current.effectiveSelectedModel).toBe('model-a');
     });

@@ -50,8 +50,8 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'test' })} allAgents={[]} />
       );
-      expect(container.querySelector('.agentstudio-msg-regenerate')).toBeNull();
-      expect(container.querySelector('.agentstudio-msg-thumb')).toBeNull();
+      expect(container.querySelector('[aria-label="teamMessage.regenerate"]')).toBeNull();
+      expect(container.querySelector('[aria-label="teamMessage.thumbsUp"]')).toBeNull();
     });
 
     it('shows edit button for user messages', () => {
@@ -85,14 +85,19 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'x', timestamp: ts })} allAgents={[]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeInTheDocument();
+      // time renders as a span with text-xs class containing time HH:MM format
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(true);
     });
 
     it('does not show time when timestamp is missing', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ role: 'user', content: 'x', timestamp: undefined })} allAgents={[]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeNull();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(false);
     });
 
     it('prefills edit textarea with current message content', async () => {
@@ -152,7 +157,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-process-panel')).toBeNull();
+      expect(container.querySelector('#process-steps')).toBeNull();
     });
   });
 
@@ -175,7 +180,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-process-step')).toBeInTheDocument();
+      expect(container.querySelector('#process-steps')).toBeInTheDocument();
     });
 
     it('renders running step with spinner', () => {
@@ -185,7 +190,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-process-step')).toBeInTheDocument();
+      expect(container.querySelector('#process-steps')).toBeInTheDocument();
     });
 
     it('toggles plan expansion when header clicked', async () => {
@@ -195,7 +200,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      const header = container.querySelector('.agentstudio-process-header') as HTMLElement;
+      const header = container.querySelector('[role="button"][aria-controls="process-steps"]') as HTMLElement;
       // Initially expanded
       expect(container.querySelector('#process-steps')).toBeInTheDocument();
       await userEvent.click(header);
@@ -237,7 +242,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thinking: '' })} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.ds-thinking-block')).toBeNull();
+      expect(container.textContent).not.toContain('teamMessage.thinkingComplete');
     });
 
     it('renders thinking complete state with expand button', () => {
@@ -278,7 +283,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelectorAll('.ds-think-node').length).toBe(3);
+      expect(container.querySelectorAll('[class*="pl-3"][class*="mb-2.5"]').length).toBe(3);
     });
 
     it('toggles thinking expansion when header clicked', async () => {
@@ -288,12 +293,10 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      const header = container.querySelector('.ds-thinking-header') as HTMLElement;
-      // Initially expanded
-      expect(container.querySelector('.ds-thinking-body')).toBeInTheDocument();
+      const header = container.querySelector('button[aria-expanded]') as HTMLElement;
+      expect(container.querySelector('[class*="max-h-[420px]"]')).toBeInTheDocument();
       await userEvent.click(header);
-      // After collapse
-      expect(container.querySelector('.ds-thinking-body')).toBeNull();
+      expect(container.querySelector('[class*="max-h-[420px]"]')).toBeNull();
     });
 
     it('thinking stopped header is not clickable (no toggle)', () => {
@@ -304,8 +307,8 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           showContinue
         />
       );
-      const header = container.querySelector('.ds-thinking-header') as HTMLElement;
-      expect(header.style.cursor).toBe('default');
+      const header = container.querySelector('[class*="cursor-default"]') as HTMLElement;
+      expect(header).not.toBeNull();
     });
   });
 
@@ -322,79 +325,28 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
     });
   });
 
-  // ────────────── version pagination ──────────────
-  describe('version pagination', () => {
-    it('shows version pagination when multiple versions', () => {
+  // ────────────── answer version pagination ──────────────
+  describe('answer version pagination', () => {
+    it('does not render pagination on agent answers even with multiple versions', () => {
       const { container } = render(
         <TeamMessage
           msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-version-pagination')).toBeInTheDocument();
-      expect(container.querySelector('.agentstudio-version-count')?.textContent).toBe('2/3');
+      expect(container.querySelector('[aria-label="Previous version"]')).toBeNull();
+      expect(container.querySelector('[aria-label="Next version"]')).toBeNull();
     });
 
-    it('does not show version pagination with single version', () => {
+    it('renders the active version content without pagination controls', () => {
       const { container } = render(
         <TeamMessage
-          msg={makeMsg({ versions: ['v1'], currentVersion: 0 })}
+          msg={makeMsg({ content: 'v2 active', versions: ['v1', 'v2'], currentVersion: 1 })}
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('.agentstudio-version-pagination')).toBeNull();
-    });
-
-    it('disables prev button at first version', () => {
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2'], currentVersion: 0 })}
-          allAgents={[mockAgent]}
-        />
-      );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
-      expect(btns[0]).toBeDisabled();
-      expect(btns[1]).not.toBeDisabled();
-    });
-
-    it('disables next button at last version', () => {
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-        />
-      );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
-      expect(btns[0]).not.toBeDisabled();
-      expect(btns[1]).toBeDisabled();
-    });
-
-    it('calls onSwitchVersion with prev when prev button clicked', async () => {
-      const onSwitch = vi.fn();
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-          onSwitchVersion={onSwitch}
-        />
-      );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
-      await userEvent.click(btns[0]);
-      expect(onSwitch).toHaveBeenCalledWith('m1', 'prev');
-    });
-
-    it('calls onSwitchVersion with next when next button clicked', async () => {
-      const onSwitch = vi.fn();
-      const { container } = render(
-        <TeamMessage
-          msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
-          allAgents={[mockAgent]}
-          onSwitchVersion={onSwitch}
-        />
-      );
-      const btns = container.querySelectorAll('.agentstudio-version-btn');
-      await userEvent.click(btns[1]);
-      expect(onSwitch).toHaveBeenCalledWith('m1', 'next');
+      expect(container.textContent).toContain('v2 active');
+      expect(container.textContent).not.toContain('/');
     });
   });
 
@@ -411,7 +363,6 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue />
       );
-      expect(container.querySelector('.agentstudio-msg-interrupted')).toBeInTheDocument();
       expect(container.textContent).toContain('teamMessage.interrupted');
     });
 
@@ -420,7 +371,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue isContinuing />
       );
       expect(container.textContent).toContain('teamMessage.continuing');
-      const btn = container.querySelector('.agentstudio-msg-continue') as HTMLButtonElement;
+      const btn = container.querySelector('[aria-label="teamMessage.continuing"]') as HTMLButtonElement;
       expect(btn).toBeDisabled();
     });
 
@@ -428,7 +379,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue isContinuing />
       );
-      expect(container.querySelector('.agentstudio-msg-interrupted')).toBeNull();
+      expect(container.textContent).not.toContain('teamMessage.interrupted');
     });
 
     it('calls onContinue when continue button clicked', async () => {
@@ -436,7 +387,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} showContinue onContinue={onContinue} />
       );
-      const btn = container.querySelector('.agentstudio-msg-continue') as HTMLElement;
+      const btn = container.querySelector('[aria-label="teamMessage.continue"]') as HTMLElement;
       await userEvent.click(btn);
       expect(onContinue).toHaveBeenCalled();
     });
@@ -448,23 +399,23 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.agentstudio-msg-thumb')).toBeInTheDocument();
+      expect(container.querySelector('[aria-label="teamMessage.thumbsUp"]')).toBeInTheDocument();
     });
 
     it('adds active class when thumbsFeedback is up', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'up' })} allAgents={[mockAgent]} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
-      expect(thumbs[0].className).toContain('active');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
+      expect(thumbs[0].className).toContain('bg-[var(--color-accent)]');
     });
 
     it('adds active class when thumbsFeedback is down', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'down' })} allAgents={[mockAgent]} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
-      expect(thumbs[1].className).toContain('active');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
+      expect(thumbs[1].className).toContain('bg-[var(--color-accent)]');
     });
 
     it('calls onThumbsFeedback when thumbs up clicked', async () => {
@@ -472,7 +423,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} onThumbsFeedback={onThumbs} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
       await userEvent.click(thumbs[0]);
       expect(onThumbs).toHaveBeenCalledWith('m1', 'up');
     });
@@ -482,7 +433,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ thumbsFeedback: 'up' })} allAgents={[mockAgent]} onThumbsFeedback={onThumbs} />
       );
-      const thumbs = container.querySelectorAll('.agentstudio-msg-thumb');
+      const thumbs = container.querySelectorAll('button[aria-label*="thumbsUp"], button[aria-label*="removeFeedback"]');
       await userEvent.click(thumbs[0]);
       expect(onThumbs).toHaveBeenCalledWith('m1', 'down');
     });
@@ -495,7 +446,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg()} allAgents={[mockAgent]} onRegenerate={onRegen} />
       );
-      const btn = container.querySelector('.agentstudio-msg-regenerate') as HTMLElement;
+      const btn = container.querySelector('[aria-label="teamMessage.regenerate"]') as HTMLElement;
       await userEvent.click(btn);
       expect(onRegen).toHaveBeenCalledWith('m1');
     });
@@ -508,14 +459,18 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ timestamp: ts })} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeInTheDocument();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(true);
     });
 
     it('does not show time when timestamp is missing', () => {
       const { container } = render(
         <TeamMessage msg={makeMsg({ timestamp: undefined })} allAgents={[mockAgent]} />
       );
-      expect(container.querySelector('.agentstudio-message-time')).toBeNull();
+      const timeEls = container.querySelectorAll('span[class*="text-xs"]');
+      const hasTime = Array.from(timeEls).some(el => /\d{1,2}:\d{2}/.test(el.textContent || ''));
+      expect(hasTime).toBe(false);
     });
   });
 });

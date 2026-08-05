@@ -5,10 +5,13 @@ export interface MCPEntry {
   name: string;
   description: string;
   type: 'stdio' | 'sse';
+  enabled?: boolean;
   status: 'connected' | 'disconnected' | 'error';
   version: string;
   command: string;
   url: string;
+  args: string[];
+  env: string[];
   createdAt: string;
 }
 

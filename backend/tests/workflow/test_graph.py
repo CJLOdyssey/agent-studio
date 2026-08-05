@@ -13,10 +13,9 @@ os.environ["RATE_LIMIT"] = "9999"
 os.environ["CHECKPOINTER_BACKEND"] = "memory"
 os.environ["DATABASE_POOL_SIZE"] = "0"
 
+from graph.graph import SingleAgentGraph
+from graph.graph_state import AgentState
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-
-from backend.graph.graph import SingleAgentGraph
-from backend.graph.graph_state import AgentState
 
 
 @pytest.fixture
@@ -28,7 +27,7 @@ def mock_llm():
 
 @pytest.fixture
 def graph(mock_llm):
-    with patch("backend.graph.ChatOpenAI", return_value=mock_llm):
+    with patch("graph.ChatOpenAI", return_value=mock_llm):
         g = SingleAgentGraph(
             model="test-model",
             api_key="test-key",
@@ -38,7 +37,7 @@ def graph(mock_llm):
 
 @pytest.fixture
 def graph_with_base_url(mock_llm):
-    with patch("backend.graph.ChatOpenAI", return_value=mock_llm):
+    with patch("graph.ChatOpenAI", return_value=mock_llm):
         g = SingleAgentGraph(
             model="test-model",
             api_key="test-key",
@@ -221,7 +220,7 @@ class TestGraphCore:
         tool_config.mcp_endpoint = ""
         tool_config.mcp_tool_name = ""
 
-        with patch("backend.graph.build_tool_definition") as mock_build:
+        with patch("graph.build_tool_definition") as mock_build:
             mock_build.return_value = ("my_tool", MagicMock(), {"name": "my_tool"})
             graph.bind_tools([tool_config])
 

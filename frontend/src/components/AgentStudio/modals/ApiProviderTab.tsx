@@ -1,158 +1,264 @@
-import { Key, Plus, Trash2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Key, Plus, AlertCircle, Loader2, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import ToggleSwitch from '../../shared/ToggleSwitch';
+import { ConfigProvider, Table, Switch, Tag, Button, Space, Tooltip } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import type { KeyItem } from '../../../api/client';
+import WstaPagination from '../workstation/shared/WstaPagination';
+import LoadingSkeleton from '../../shared/LoadingSkeleton';
+import type * as React from 'react';
+
+const USAGE_COLORS: Record<string, string> = {
+  vector: 'var(--color-accent)',
+  general: 'var(--color-success)',
+  tool: 'var(--color-warning)',
+};
 
 interface Props {
   keys: KeyItem[];
   loading: boolean;
   error: string | null;
-  usageTypeFilter: 'all' | 'llm' | 'embedding' | 'both';
   testingId: string | null;
-  showApiKey: Record<string, boolean>;
-  saving: boolean;
-  onFilterChange: (filter: 'all' | 'llm' | 'embedding' | 'both') => void;
   onAdd: () => void;
   onEdit: (key: KeyItem) => void;
   onToggleActive: (id: string, active: boolean) => void;
   onTest: (key: KeyItem) => void;
   onDelete: (id: string) => void;
-  onToggleVisibility: (id: string) => void;
   onDismissError: () => void;
+  onBatchDelete?: (ids: string[]) => void;
+  onBatchToggleActive?: (ids: string[], active: boolean) => void;
 }
-
-const FILTERS = ['all', 'llm', 'embedding', 'both'] as const;
 
 export default function ApiProviderTab({
   keys,
   loading,
   error,
-  usageTypeFilter,
   testingId,
-  showApiKey,
-  onFilterChange,
   onAdd,
   onEdit,
   onToggleActive,
   onTest,
   onDelete,
-  onToggleVisibility,
   onDismissError,
+  onBatchDelete,
+  onBatchToggleActive,
 }: Props) {
   const { t } = useTranslation();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
 
-  const typeLabel = (type: (typeof FILTERS)[number]) => {
-    switch (type) {
-      case 'all': return '全部';
-      case 'llm': return 'LLM';
-      case 'embedding': return t('api.type_embed');
-      case 'both': return t('api.type_both');
-    }
+  const paginatedKeys = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return keys.slice(start, start + pageSize);
+  }, [keys, page]);
+
+  const onPageChange = useCallback((p: number) => {
+    setPage(p);
+    setSelectedRowKeys([]);
+  }, []);
+
+  const handleBatchDelete = () => {
+    if (onBatchDelete) onBatchDelete(selectedRowKeys as string[]);
+    else selectedRowKeys.forEach((id) => onDelete(id as string));
+    setSelectedRowKeys([]);
   };
 
+  const handleBatchActivate = (active: boolean) => {
+    if (onBatchToggleActive) onBatchToggleActive(selectedRowKeys as string[], active);
+    else selectedRowKeys.forEach((id) => onToggleActive(id as string, active));
+    setSelectedRowKeys([]);
+  };
+
+  const columns: ColumnsType<KeyItem> = useMemo(() => {
+    const usageLabel = (type: string) => {
+      if (type === 'tool') return t('api.type_tool');
+      if (type === 'general') return t('api.type_general');
+      if (type === 'vector') return t('api.type_vector');
+      if (type === 'image') return t('api.type_image');
+      if (type === 'audio') return t('api.type_audio');
+      return t('api.type_chat');
+    };
+    return [
+    {
+      title: '名称',
+      dataIndex: 'label',
+      key: 'label',
+      width: 90,
+      render: (label: string, record: KeyItem) => (
+        <span style={{ fontWeight: 500, color: 'var(--color-text-primary)', maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}>
+          {label || record.provider}
+        </span>
+      ),
+    },
+    {
+      title: '密钥',
+      dataIndex: 'key_masked',
+      key: 'key_masked',
+      width: 110,
+      render: (val: string) => (
+        <code style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-text-muted)' }}>{val}</code>
+      ),
+    },
+    {
+      title: '用途',
+      dataIndex: 'usage_type',
+      key: 'usage_type',
+      width: 64,
+      render: (type: string) => (
+        <Tag color={USAGE_COLORS[type] ? undefined : 'default'}
+          style={{
+            fontSize: 11, lineHeight: '20px', padding: '0 8px',
+            ...(USAGE_COLORS[type] ? {
+              background: `color-mix(in srgb, ${USAGE_COLORS[type]} 12%, transparent)`,
+              color: USAGE_COLORS[type],
+              borderColor: `color-mix(in srgb, ${USAGE_COLORS[type]} 25%, transparent)`,
+            } : {}),
+          }}>
+          {usageLabel(type)}
+        </Tag>
+      ),
+    },
+    {
+      title: '上次使用',
+      dataIndex: 'last_used_at',
+      key: 'last_used_at',
+      width: 80,
+      render: (val: string | null) => (
+        <span style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+          {val ? new Date(val).toLocaleDateString() : ''}
+        </span>
+      ),
+    },
+    {
+      title: '创建日期',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 80,
+      render: (val: string | null) => (
+        <span style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+          {val ? new Date(val).toLocaleDateString() : ''}
+        </span>
+      ),
+    },
+    {
+      title: '状态',
+      key: 'status',
+      width: 56,
+      align: 'center',
+      render: (_: unknown, record: KeyItem) => (
+        <Switch
+          checked={record.is_active}
+          size="small"
+          onChange={(v) => onToggleActive(record.id, v)}
+        />
+      ),
+    },
+    {
+      title: '',
+      key: 'actions',
+      width: 88,
+      align: 'right',
+      render: (_: unknown, record: KeyItem) => (
+        <Space size={2}>
+          <Tooltip title="编辑">
+            <Button type="text" size="small" icon={<Pencil size={13} />} onClick={() => onEdit(record)} />
+          </Tooltip>
+          <Tooltip title="测试">
+            <Button type="text" size="small"
+              icon={testingId === record.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+              onClick={() => onTest(record)}
+              disabled={testingId === record.id} />
+          </Tooltip>
+          <Tooltip title="删除">
+            <Button type="text" size="small" danger icon={<Trash2 size={13} />} onClick={() => onDelete(record.id)} />
+          </Tooltip>
+        </Space>
+      ),
+    },
+    ];
+  }, [testingId, onEdit, onTest, onDelete, onToggleActive, t]);
+
   return (
-    <div className="api-providers-tab">
-      <div className="api-section-header">
-        <h4>API Key {t('api.manage')}</h4>
-        <button className="btn btn-sm btn-primary" onClick={onAdd}>
-          <Plus size={14} />
-          添加 Key
-        </button>
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <h4>密钥管理</h4>
+        <div className="flex items-center gap-2">
+          {selectedRowKeys.length > 0 && (
+            <>
+              <Button size="small" onClick={() => handleBatchActivate(true)} style={{ fontSize: 12, height: 28 }}>启用 ({selectedRowKeys.length})</Button>
+              <Button size="small" onClick={() => handleBatchActivate(false)} style={{ fontSize: 12, height: 28 }}>禁用 ({selectedRowKeys.length})</Button>
+              <Button size="small" danger icon={<Trash2 size={12} />} onClick={handleBatchDelete} style={{ fontSize: 12, height: 28 }}>删除 ({selectedRowKeys.length})</Button>
+            </>
+          )}
+          <Button type="primary" icon={<Plus size={14} />} onClick={onAdd} style={{ fontSize: 12, height: 28 }}>
+            添加 Key
+          </Button>
+        </div>
       </div>
       {error && (
-        <div className="api-error-banner">
-          <AlertCircle size={16} className="api-error-icon" />
-          <span className="api-error-text">{error}</span>
-          <button className="api-error-close" onClick={onDismissError}>
+        <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 mb-4 flex items-center gap-2.5">
+          <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0" />
+          <span className="text-[var(--color-danger)] text-sm flex-1">{error}</span>
+          <button className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-1 rounded hover:bg-[var(--color-surface-hover)] transition-colors" onClick={onDismissError}>
             ✕
           </button>
         </div>
       )}
-      <p className="api-hint-row">
-        {t('api.encryptHint')}
-      </p>
-      <div className="api-filter-bar">
-        {FILTERS.map((type) => (
-          <button
-            key={type}
-            className={`api-filter-btn ${usageTypeFilter === type ? 'active' : ''}`}
-            onClick={() => onFilterChange(type)}
-          >
-            {typeLabel(type)}
-          </button>
-        ))}
+      <div className="border-t border-[var(--color-border)] shrink-0" />
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {loading && keys.length === 0 ? (
+          <LoadingSkeleton type="table" rows={4} />
+        ) : (
+        <ConfigProvider
+          theme={{
+            token: {
+              colorBgContainer: 'var(--color-surface-raised)',
+              colorBorderSecondary: 'transparent',
+              colorText: 'var(--color-text-primary)',
+              colorTextSecondary: 'var(--color-text-secondary)',
+            },
+            components: {
+              Table: {
+                headerBg: 'var(--color-surface-raised)',
+                headerColor: 'var(--color-text-muted)',
+                rowHoverBg: 'var(--color-surface-hover)',
+                borderColor: 'transparent',
+              },
+            },
+          }}
+        >
+        <Table<KeyItem> className="api-key-table"
+          rowKey="id"
+          columns={columns}
+          dataSource={paginatedKeys}
+          pagination={false}
+          size="small"
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys),
+            columnWidth: 36,
+          }}
+          locale={{
+            emptyText: (
+              <div className="flex flex-col items-center py-10 text-[var(--color-text-muted)] text-center gap-3">
+                <Key size={28} className="opacity-30" />
+                <p className="text-sm">{t('api.noKeys')}<br />{t('api.addKeyHint')}</p>
+              </div>
+            ),
+          }}
+        />
+        </ConfigProvider>
+        )}
       </div>
-      {loading ? (
-        <div className="api-empty-state">
-          <Loader2 size={32} className="animate-spin" />
-          <p>{t('common.loading')}</p>
-        </div>
-      ) : keys.length === 0 ? (
-        <div className="api-empty-state">
-          <Key size={32} />
-          <p>
-            {t('api.noKeys')}
-            <br />
-            {t('api.addKeyHint')}
-          </p>
-        </div>
-      ) : (
-        <div className="api-providers-list">
-          {keys.filter((k) => usageTypeFilter === 'all' || k.usage_type === usageTypeFilter).map((key) => (
-            <div key={key.id} className={`api-provider-card ${key.is_active ? 'active' : ''}`}>
-              <div className="api-provider-header">
-                <div className="api-provider-info">
-                  <div className="api-provider-name">
-                    {key.label || key.provider}
-                    <span className={`api-type-badge api-type-${key.usage_type || 'llm'}`}>
-                      {key.usage_type === 'both' ? t('api.type_both') : key.usage_type === 'embedding' ? t('api.type_embed') : t('api.type_llm')}
-                    </span>
-                    {key.is_active && <CheckCircle2 size={14} className="text-green-500" />}
-                    {!key.is_active && <AlertCircle size={14} className="text-red-500" />}
-                  </div>
-                  <div className="api-provider-url">
-                    {key.provider} {key.base_url ? `· ${key.base_url}` : ''}
-                  </div>
-                </div>
-                <div className="api-provider-actions">
-                  <ToggleSwitch
-                    checked={key.is_active}
-                    size="sm"
-                    onChange={(v) => onToggleActive(key.id, v)}
-                  />
-                  <button className="btn btn-sm btn-ghost" onClick={() => onEdit(key)}>
-                    编辑
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => onTest(key)}
-                    disabled={testingId === key.id}
-                  >
-                    {testingId === key.id ? <Loader2 size={14} className="animate-spin" /> : t('api.test')}
-                  </button>
-                  <button className="btn btn-sm btn-ghost" onClick={() => onDelete(key.id)}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-              <div className="api-key-row">
-                <label>Key</label>
-                <div className="api-key-display">
-                  <code>{key.key_masked}</code>
-                  <button
-                    className="api-key-toggle"
-                    onClick={() => onToggleVisibility(key.id)}
-                    aria-label="Show full key hint"
-                  >
-                    {showApiKey[key.id] ? '🔒' : '👁'}
-                  </button>
-                </div>
-              </div>
-              {key.last_used_at && (
-                <div className="api-key-meta">{t('api.lastUsed')}: {new Date(key.last_used_at).toLocaleString()}</div>
-              )}
-            </div>
-          ))}
+      {keys.length > 0 && (
+        <div>
+          <WstaPagination
+            total={keys.length}
+            current={page}
+            pageSize={pageSize}
+            onChange={onPageChange}
+          />
         </div>
       )}
     </div>

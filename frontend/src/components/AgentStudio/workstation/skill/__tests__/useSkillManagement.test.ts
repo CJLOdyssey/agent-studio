@@ -4,8 +4,8 @@ import { useSkillManagement } from '../useSkillManagement';
 
 /** Shared mutable store so create/remove/clone reflect in fetchAll. */
 const STORE = [
-  { id: 's1', name: '代码审查', description: '审查代码质量', category: '开发', status: 'installed' as const, version: 'v1.0.0', author: 'admin', instructions: '审查代码', prompt_id: '', tool_names: [] as string[], output_constraint: '', createdAt: '2024-01-01' },
-  { id: 's2', name: '文档生成', description: '生成文档', category: '文档', status: 'installed' as const, version: 'v1.0.0', author: 'admin', instructions: '生成文档', prompt_id: '', tool_names: [] as string[], output_constraint: '', createdAt: '2024-01-01' },
+  { id: 's1', name: '代码审查', description: '审查代码质量', category: '开发', status: 'installed' as const, version: 'v1.0.0', author: 'admin', instructions: '审查代码', tool_names: [] as string[], output_constraint: '', createdAt: '2024-01-01' },
+  { id: 's2', name: '文档生成', description: '生成文档', category: '文档', status: 'installed' as const, version: 'v1.0.0', author: 'admin', instructions: '生成文档', tool_names: [] as string[], output_constraint: '', createdAt: '2024-01-01' },
 ];
 
 vi.mock('../api', () => ({
@@ -48,7 +48,7 @@ describe('useSkillManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => useSkillManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    act(() => { result.current.addSkill({ name: 'Test Skill', description: 'Test', category: '前端开发', status: 'installed', version: 'v1.0.0', author: 'me', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' }); });
+    act(() => { result.current.addSkill({ name: 'Test Skill', description: 'Test', category: '前端开发', status: 'installed', version: 'v1.0.0', author: 'me', instructions: '', tool_names: [], output_constraint: '' }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 

@@ -38,6 +38,16 @@ describe('useItemList', { tags: ['unit'] }, () => {
     expect(result.current.items[0].enabled).toBe(false);
   });
 
+  it('addCustom does not duplicate an existing id', () => {
+    const { result } = renderHook(() => useItemList(presets));
+
+    act(() => result.current.addCustom(() => ({ id: 'custom-1', enabled: true, name: 'Custom' })));
+    act(() => result.current.addCustom(() => ({ id: 'custom-1', enabled: true, name: 'Custom' })));
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].id).toBe('custom-1');
+  });
+
   it('adds custom item', () => {
     const { result } = renderHook(() => useItemList(presets));
 
@@ -47,7 +57,7 @@ describe('useItemList', { tags: ['unit'] }, () => {
 
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0].id).toBe('custom-1');
-    expect(result.current.editingId).toBe('custom-1');
+    expect(result.current.editingId).toBeNull();
   });
 
   it('updates item', () => {

@@ -1,6 +1,7 @@
 import { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Send, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion, useReducedMotion } from 'motion/react';
 import type { ModelOption, AttachedFile, CommandOption, FileRejection } from '../../types/input';
 import ModelSelector from './ModelSelector';
 import FileAttach from './FileAttach';
@@ -9,6 +10,7 @@ import { useMessageComposer } from '../../hooks/useMessageComposer';
 import { useCommandPalette } from '../../hooks/useCommandPalette';
 import { useToast } from '../../utils/useToast';
 import { useSettings } from '../../contexts/SettingsContext';
+import type * as React from 'react';
 
 export interface InputToolbarHandle {
   addFiles: (files: File[]) => void;
@@ -49,6 +51,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   ref,
 ) {
   const { t } = useTranslation();
+  const reduce = useReducedMotion();
   const { toast } = useToast();
   const [files, setFiles] = useState<AttachedFile[]>([]);
   const { settings } = useSettings();
@@ -154,8 +157,13 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   );
 
   return (
-    <div className="agentstudio-input-container">
-      <div className="agentstudio-input-wrapper">
+    <motion.div
+      className="px-6 py-4 pb-5 max-w-[900px] mx-auto w-full"
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div data-input-wrapper className="relative bg-[var(--color-surface-raised)] border-none rounded-[var(--da-input-radius)] transition-shadow duration-200 shadow-none focus-within:shadow-[0 0 0 2px var(--color-accent)]">
         {palette.open && (
           <CommandDropdown
             commands={palette.filtered}
@@ -167,7 +175,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         )}
 
         <textarea
-          className="agentstudio-textarea"
+          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none text-lg font-normal text-[var(--color-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--color-border)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal" style={{ outline: 'none' }}
           placeholder={placeholder ?? t('home.placeholder')}
           value={composer.value}
           maxLength={maxLength}
@@ -177,8 +185,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onPaste={handlePaste}
         />
 
-        <div className="agentstudio-input-toolbar">
-          <div className="agentstudio-input-tools">
+        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-raised)] border-t-0 min-h-[var(--da-toolbar-height)] rounded-b-[var(--da-input-radius)]">
+          <div className="flex items-center gap-2">
             <ModelSelector
               models={models}
               selectedModel={selectedModel}
@@ -191,7 +199,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           {isRunning ? (
             <button
               onClick={onStop}
-              className="agentstudio-send-btn running"
+              className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 bg-red-500/20 text-[var(--color-danger)] shadow-sm hover:bg-red-500/30 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm"
               aria-label={t('home.stop', '停止')}
             >
               <Square size={14} fill="currentColor" />
@@ -201,7 +209,11 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
             <button
               onClick={composer.submit}
               disabled={!composer.hasContent}
-              className={`agentstudio-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
+              className={`flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 ${
+                composer.hasContent
+                  ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm'
+                  : 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] cursor-not-allowed opacity-70'
+              }`}
               aria-label={t('home.send')}
             >
               <span>{t('home.send')}</span>
@@ -210,7 +222,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           )}
         </div>
       </div>
-    </div>
+      </motion.div>
   );
 });
 

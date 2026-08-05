@@ -104,6 +104,23 @@ def _fresh_state():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _skip_if_backend_down():
+    """Skip live-backend tests when the auth backend is unreachable.
+
+    These are real integration tests that require a running backend on
+    ``AUTH_TEST_BASE`` (default 8081) with AUTH_MODE=rbac, AUTH_ENABLED=1 and
+    Redis + PostgreSQL. When that backend is not up the tests cannot pass, so
+    they skip — matching the root conftest's integration-skip convention.
+    """
+    try:
+        resp = httpx.get(f"{BASE}/api/auth/config", timeout=3)
+        if resp.status_code != 200:
+            pytest.skip(f"Auth backend not available (status {resp.status_code})")
+    except Exception:
+        pytest.skip("Auth backend not available (connection failed)")
+
+
 # ── Tests ──────────────────────────────────────────────────────────────────
 
 

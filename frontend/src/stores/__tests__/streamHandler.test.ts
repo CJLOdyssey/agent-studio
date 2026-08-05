@@ -104,6 +104,28 @@ describe('handleStreamStart', { tags: ['unit'] }, () => {
     expect(result.messages![0].versions).toBeDefined();
     expect(result.messages![0].versions).toEqual(['v0', 'first']);
   });
+
+  it('merges edit-regenerate answer into the target message as a new version (keeps other messages)', () => {
+    const s = makeState({
+      editTargetId: 'a1',
+      messages: [
+        makeMsg('u1', { role: 'user', content: 'new question' }),
+        makeMsg('a1', { content: 'old answer', thinking: 'old think' }),
+        makeMsg('a2', { content: 'later message' }),
+      ],
+    });
+
+    const result = handleStreamStart(s as never, { type: 'stream', agent_name: 'Bot' }, ' fresh');
+
+    expect(result.editTargetId).toBeNull();
+    // Old answer archived as a version; the new stream starts FRESH (not old+new).
+    expect(result.messages![1].versions).toEqual(['old answer']);
+    expect(result.messages![1].content).toBe(' fresh');
+    expect(result.messages![1].thinking).toBe('');
+    expect(result.messages![1].currentVersion).toBe(0);
+    // Other messages preserved — nothing deleted.
+    expect(result.messages!.map((m) => m.id)).toEqual(['u1', result.messages![1].id, 'a2']);
+  });
 });
 
 describe('handleStreamEvent', { tags: ['unit'] }, () => {
@@ -153,18 +175,19 @@ describe('handleStreamEvent', { tags: ['unit'] }, () => {
     expect(result.messages![0].content).toBe('hi');
   });
 
-  it('returns empty state when active but no streamingId', () => {
+  it('starts a NEW message when run id is stale but streamingId is cleared', () => {
+    // A leftover run id (result event lost / state reset) must not swallow the
+    // first chunk of a stream; only treat it as continuation while streaming.
     const s = makeState({ streamingId: null, currentRunId: 'run-1' });
     const get = vi.fn(() => s);
-    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => {
-      fn(s);
-      return {};
-    });
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
     const activeStreams = new Set<string>(['run-1']);
 
     handleStreamEvent(set as never, get, activeStreams, { type: 'stream', content: 'x' } as never);
 
-    expect(set).toHaveBeenCalled();
+    const updateFn = set.mock.calls[0][0] as (state: typeof s) => Partial<typeof s>;
+    const result = updateFn(s) as { messages: Array<{ content: string }> };
+    expect(result.messages![0].content).toBe('x');
   });
 });
 
@@ -201,6 +224,27 @@ describe('handleThinkingStreamNew', { tags: ['unit'] }, () => {
     expect(result.messages![0].versions).toBeDefined();
     expect(result.messages![0].thinkingVersions).toBeDefined();
     expect(result.messages![0].thinkingVersions).toEqual(['t0', 'new-think']);
+  });
+
+  it('merges edit-regenerate thinking into the target message (keeps other messages)', () => {
+    const s = makeState({
+      editTargetId: 'a1',
+      messages: [
+        makeMsg('u1', { role: 'user', content: 'new question' }),
+        makeMsg('a1', { content: 'old answer', thinking: 'old think' }),
+        makeMsg('a2', { content: 'later' }),
+      ],
+    });
+
+    const result = handleThinkingStreamNew(s as never, { type: 'thinking_stream' }, ' new think');
+
+    expect(result.editTargetId).toBeNull();
+    // New thinking starts fresh; old thinking archived into thinkingVersions.
+    expect(result.messages![1].thinking).toBe(' new think');
+    expect(result.messages![1].versions).toEqual(['old answer']);
+    expect(result.messages![1].thinkingVersions).toEqual(['old think']);
+    expect(result.messages![1].content).toBe('');
+    expect(result.messages!.map((m) => m.id)).toEqual(['u1', result.messages![1].id, 'a2']);
   });
 });
 

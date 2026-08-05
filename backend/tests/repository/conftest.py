@@ -22,11 +22,11 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from backend.core.infra.database import (
+from core.infra.database import (
     AgentConfigDB,
     Base,
 )
-from backend.core.infra.database import (
+from core.infra.database import (
     _async_session_factory as _real_factory,
 )
 
@@ -51,7 +51,7 @@ async def _setup_db(db_engine):
     then sets ``_async_session_factory`` to the test engine. This prevents
     cross-test contamination when other fixtures monkey-patch the factory.
     """
-    import backend.core.infra.database as db
+    import core.infra.database as db
 
     async with db_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

@@ -5,6 +5,7 @@ vi.mock('../../../../../api/client/prompts', () => ({
 }));
 vi.mock('../../../../../api/client/tools', () => ({
   listTools: vi.fn().mockResolvedValue([]),
+  listToolPlugins: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../../../../../api/client/mcps', () => ({
   listMCPs: vi.fn().mockResolvedValue([]),
@@ -183,5 +184,30 @@ describe('resolveLists', { tags: ['unit'] }, () => {
     expect(result.mcp).toHaveLength(1);
     expect(result.mcp[0].serverUrl).toBe('https://mcp.example.com');
     expect(result.skills).toHaveLength(1);
+  });
+
+  it('matches by name when stored ids are display names', async () => {
+    const { listTools } = await import('../../../../../api/client/tools');
+    const { listMCPs } = await import('../../../../../api/client/mcps');
+    const { listSkills } = await import('../../../../../api/client/skills');
+
+    (listTools as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 't1', name: 'Tool1', description: 'T1' },
+    ]);
+    (listMCPs as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'm1', name: 'Playwright MCP', endpoint: 'https://mcp.example.com' },
+    ]);
+    (listSkills as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 's1', name: 'Skill1', description: 'S1' },
+    ]);
+
+    const result = await resolveLists('', ['Tool1'], ['Playwright MCP'], ['Skill1']);
+
+    expect(result.tools).toHaveLength(1);
+    expect(result.tools[0].id).toBe('t1');
+    expect(result.mcp).toHaveLength(1);
+    expect(result.mcp[0].name).toBe('Playwright MCP');
+    expect(result.skills).toHaveLength(1);
+    expect(result.skills[0].id).toBe('s1');
   });
 });

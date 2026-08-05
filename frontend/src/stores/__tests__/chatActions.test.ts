@@ -93,8 +93,7 @@ describe('editMessage', { tags: ['unit'] }, () => {
 });
 
 describe('regenerateMessage', { tags: ['unit'] }, () => {
-  it('does nothing if msgIndex < 1', async () => {
-    const msg = makeMsg({ id: 'm2', content: 'hello' });
+  it('does nothing if msgIndex < 1', async () => {    const msg = makeMsg({ id: 'm2', content: 'hello' });
     useChatStore.setState({ messages: [msg], currentSessionId: 'sess-1' });
 
     await regenerateMessage(0);
@@ -133,7 +132,121 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       'deepseek-chat',
       undefined,
       undefined,
+      undefined,
     );
+  });
+
+  it('routes to the key whose models contain the UI-selected model (SiliconFlow case)', async () => {
+    // Two active keys, neither default: an earlier DeepSeek key and a newer SiliconFlow key.
+    mockListKeys.mockResolvedValue([
+      { id: 'deepseek-key', is_default: false, is_active: true, models: ['deepseek-v4-flash'] },
+      { id: 'siliconflow-key', is_default: false, is_active: true, models: ['Qwen/Qwen3-8B', 'deepseek-ai/DeepSeek-V4-Flash'] },
+    ]);
+    localStorage.setItem('agentstudio-selected-model', 'Qwen/Qwen3-8B');
+
+    const userMsg = makeMsg({ id: 'u1', role: 'user', content: 'original' });
+    const agentMsg = makeMsg({ id: 'a1', role: 'agent', content: 'response' });
+    useChatStore.setState({
+      messages: [userMsg, agentMsg],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    await regenerateMessage(1);
+
+    expect(mockSubmitReq).toHaveBeenCalledWith(
+      'original',
+      'sess-1',
+      'siliconflow-key',
+      'Qwen/Qwen3-8B',
+      undefined,
+      undefined,
+      undefined,
+    );
+  });
+});
+
+describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the following agent answer and keeps the user edit history', async () => {
+    const userMsg = makeMsg({ id: 'u1', role: 'user', content: 'old question' });
+    // Real store agent roles are 'pm'|'programmer'|'tester', not 'agent'.
+    const agentMsg = makeMsg({ id: 'a1', role: 'pm', content: 'old answer' });
+    useChatStore.setState({
+      messages: [userMsg, agentMsg],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    const { editAndRegenerate } = await import('../chatActions');
+    await editAndRegenerate('u1', 'new question');
+
+    const s = useChatStore.getState();
+    expect(s.editTargetId).toBe('a1');
+    const updatedUser = s.messages[0];
+    expect(updatedUser.content).toBe('new question');
+    expect(updatedUser.userVersions).toEqual(['old question']);
+    expect(updatedUser.currentUserVersion).toBe(0);
+    // The old answer is NOT deleted — it stays as the merge target for the stream.
+    expect(s.messages.map((m) => m.id)).toEqual(['u1', 'a1']);
+    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, undefined);
+  });
+
+  it('regenerates even when the edited user message has no following agent answer', async () => {
+    useChatStore.setState({
+      messages: [makeMsg({ id: 'u1', role: 'user', content: 'solo' })],
+      currentSessionId: 'sess-1',
+    });
+
+    const { editAndRegenerate } = await import('../chatActions');
+    await editAndRegenerate('u1', 'edited solo');
+
+    const s = useChatStore.getState();
+    expect(s.editTargetId).toBeNull();
+    expect(s.messages[0].content).toBe('edited solo');
+    expect(s.messages[0].userVersions).toEqual(['solo']);
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, undefined);
+  });
+
+  it('does nothing when content is unchanged', async () => {
+    useChatStore.setState({
+      messages: [makeMsg({ id: 'u1', role: 'user', content: 'same' })],
+      currentSessionId: 'sess-1',
+    });
+
+    const { editAndRegenerate } = await import('../chatActions');
+    await editAndRegenerate('u1', '  same  ');
+
+    expect(mockSubmitReq).not.toHaveBeenCalled();
+    expect(useChatStore.getState().messages[0].userVersions).toBeUndefined();
+  });
+
+  it('parses parent_run_id from the synthetic user message id', async () => {
+    useChatStore.setState({
+      messages: [makeMsg({ id: 'run-abc123-requirement', role: 'user', content: 'old' })],
+      currentSessionId: 'sess-1',
+    });
+
+    const { editAndRegenerate } = await import('../chatActions');
+    await editAndRegenerate('run-abc123-requirement', 'edited');
+
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123');
+  });
+});
+
+describe('submitRequirement user-message binding', { tags: ['unit'] }, () => {
+  it('rewrites the added user message id to run-{run_id}-requirement for edit routing', async () => {
+    useChatStore.setState({
+      messages: [makeMsg({ id: 'existing', role: 'agent', content: 'prev' })],
+      currentSessionId: 'sess-1',
+    });
+    mockSubmitReq.mockResolvedValue({ run_id: 'e69b278c-1234-4b6c-994c-f83084d5b4f3', status: 'running', session_id: 'sess-1' });
+
+    const { submitRequirement } = await import('../chatActions');
+    await submitRequirement('hello new session');
+
+    const msgs = useChatStore.getState().messages;
+    const last = msgs[msgs.length - 1];
+    expect(last.role).toBe('user');
+    expect(last.id).toBe('run-e69b278c-1234-4b6c-994c-f83084d5b4f3-requirement');
   });
 });
 

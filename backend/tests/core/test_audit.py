@@ -6,10 +6,10 @@ import pytest
 
 
 class TestLogAudit:
-    @patch("backend.repository.audit.get_session_factory")
+    @patch("repository.audit.get_session_factory")
     @pytest.mark.asyncio
     async def test_log_audit_creates_entry(self, mock_get_factory):
-        from backend.core.audit import log_audit
+        from core.audit import log_audit
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()
@@ -18,7 +18,7 @@ class TestLogAudit:
 
         await log_audit("create", "agent", "my-agent", "创建成功")
 
-        from backend.orm import AuditLogDB
+        from orm import AuditLogDB
 
         mock_session.add.assert_called_once()
         added = mock_session.add.call_args[0][0]
@@ -29,10 +29,10 @@ class TestLogAudit:
         assert added.detail == "创建成功"
         mock_session.commit.assert_awaited_once()
 
-    @patch("backend.repository.audit.get_session_factory")
+    @patch("repository.audit.get_session_factory")
     @pytest.mark.asyncio
     async def test_log_audit_minimal_args(self, mock_get_factory):
-        from backend.core.audit import log_audit
+        from core.audit import log_audit
 
         mock_factory = MagicMock()
         mock_session = AsyncMock()

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import LogAudit from '../LogAudit';
 import { fetchCommandLogs } from '../../../../../api/client/admin';
 import { t } from '../locales';
+import type * as React from 'react';
 
 vi.mock('../../../../../api/client/admin', () => ({
   fetchCommandLogs: vi.fn(),
@@ -138,7 +138,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
-    expect(document.querySelector('.wsta-pagination')).toBeInTheDocument();
+    expect(screen.getByText(/共 \d+ 条/)).toBeInTheDocument();
   });
 
   it('renders level filter select', async () => {

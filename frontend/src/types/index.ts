@@ -1,4 +1,4 @@
-export type AgentRole = string;
+type AgentRole = string;
 
 export interface AgentConfig {
   id: string;
@@ -55,6 +55,9 @@ export interface ChatMessage {
   versions?: string[];
   thinkingVersions?: string[];
   currentVersion?: number;
+  /** User-message edit history (older edits first; content is the active one) */
+  userVersions?: string[];
+  currentUserVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
 }
@@ -76,12 +79,14 @@ export interface ProjectRun {
 export interface SessionItem {
   id: string;
   title: string;
+  kind: string;
+  agent_id: string | null;
   run_count: number;
   created_at: string | null;
   updated_at: string | null;
 }
 
-export interface MemoryEntry {
+interface MemoryEntry {
   id: string;
   agent_role: string;
   content_type: string;

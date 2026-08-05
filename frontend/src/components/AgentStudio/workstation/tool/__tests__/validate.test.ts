@@ -36,8 +36,38 @@ describe('validateToolForm', { tags: ['unit'] }, () => {
     expect(errors).toContain('版本格式应为 v1.0.0');
   });
 
+  it('allows empty version (optional field)', () => {
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', version: '' }, []);
+    expect(errors).not.toContain('版本格式应为 v1.0.0');
+  });
+
+  it('returns error for empty description', () => {
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', description: '' }, []);
+    expect(errors).toContain('工具描述不能为空');
+  });
+
+  it('returns error for whitespace-only description', () => {
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', description: '   ' }, []);
+    expect(errors).toContain('工具描述不能为空');
+  });
+
+  it('returns error for invalid parameters JSON', () => {
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', parameters: '{not json' }, []);
+    expect(errors).toContain('参数必须为合法 JSON');
+  });
+
+  it('allows valid parameters JSON', () => {
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', parameters: '{"type":"object","properties":{"q":{"type":"string"}}}' }, []);
+    expect(errors).not.toContain('参数必须为合法 JSON');
+  });
+
+  it('returns error for category with surrounding whitespace', () => {
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', category: '自定义工具 ' }, []);
+    expect(errors).toContain('分类首尾不能有空格');
+  });
+
   it('returns no errors for valid form', () => {
-    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', version: 'v1.0.0' }, []);
+    const errors = validateToolForm({ ...EMPTY_FORM, name: 'ValidName', description: 'A tool', version: 'v1.0.0' }, []);
     expect(errors).toHaveLength(0);
   });
 });

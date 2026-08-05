@@ -15,10 +15,13 @@ export interface ChatState {
   lastAbandonedRunId: string | null;
   interruptedMessageId: string | null;
   continuingId: string | null;
+  /** When set, the next streamed answer merges into this agent message as a new version (edit-regenerate) */
+  editTargetId: string | null;
   skipThinking: boolean;
   pendingVersions: string[] | null;
   pendingThinkingVersions: string[] | null;
   switchVersion: (msgId: string, direction: 'prev' | 'next') => void;
+  switchUserVersion: (msgId: string, direction: 'prev' | 'next') => void;
   setThumbsFeedback: (msgId: string, value: 'up' | 'down' | null) => void;
   wsStatus: WsConnectionStatus;
   /** Conversation ID at submission time */

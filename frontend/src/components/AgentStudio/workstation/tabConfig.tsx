@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText, GitBranch } from 'lucide-react';
+import { Bot, MessageSquare, FileCheck, Wrench, Server, Zap, Users, BarChart3, FileText, GitBranch, Cpu } from 'lucide-react';
 import { TableSkeleton } from './shared/LoadingSkeleton';
 
 const AgentManagement = React.lazy(() => import('./agent/AgentManagement'));
@@ -15,7 +15,7 @@ const LogAudit = React.lazy(() => import('./logs/LogAudit'));
 
 export type WorkstationTab = 'agents' | 'prompts' | 'outputs' | 'tools' | 'mcp' | 'skills' | 'teams' | 'workflow' | 'monitor' | 'logs';
 
-export interface NavTab {
+interface NavTab {
   id: WorkstationTab;
   label: string;
   icon: typeof Bot;
@@ -32,7 +32,7 @@ export const navGroups: NavGroup[] = [
     tabs: [
       { id: 'teams', label: '团队管理', icon: Users },
       { id: 'workflow', label: '工作流', icon: GitBranch },
-      { id: 'agents', label: 'Agent 管理', icon: Bot },
+      { id: 'agents', label: 'Agent 管理', icon: Cpu },
       { id: 'prompts', label: '提示词管理', icon: MessageSquare },
       { id: 'outputs', label: '输出约束', icon: FileCheck },
     ],

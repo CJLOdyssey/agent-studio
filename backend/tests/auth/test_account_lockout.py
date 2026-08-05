@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from backend.repository.auth import (
+from repository.auth import (
     create_user,
     get_user_by_email,
     increment_failed_logins,
@@ -170,7 +170,7 @@ class TestLoginWithLockout:
         """Login returns error when account is locked."""
         # This test requires the full app setup with database
         # The lockout check happens in the login endpoint
-        from backend.repository.auth import create_user
+        from repository.auth import create_user
 
         user = await create_user(
             email="locked_login@example.com",
@@ -179,8 +179,8 @@ class TestLoginWithLockout:
         )
 
         # Manually lock the account
-        from backend.core.infra.database import get_session_factory
-        from backend.orm.auth import UserDB
+        from core.infra.database import get_session_factory
+        from orm.auth import UserDB
         from sqlalchemy import update
 
         factory = get_session_factory()

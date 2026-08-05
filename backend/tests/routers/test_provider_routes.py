@@ -2,6 +2,9 @@ import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+pytestmark = pytest.mark.unit
+
 from starlette.testclient import TestClient
 
 os.environ['AUTH_MODE'] = 'legacy'
@@ -15,7 +18,7 @@ os.environ['DATABASE_POOL_SIZE'] = '0'
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
@@ -27,19 +30,19 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    from backend.core import app_lifespan as lifespan_mod
+    from core import app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
 
     lifespan_mod.init_db = _safe_init_db
@@ -77,19 +80,19 @@ class TestProviderRoutes:
             assert "capabilities" in provider_info
             assert isinstance(provider_info["capabilities"], list)
 
-    def test_openai_has_llm_and_embedding(self, client):
+    def test_openai_has_chat_and_vector(self, client):
         resp = client.get("/api/providers")
         data = resp.json()
         caps = data["openai"]["capabilities"]
-        assert "llm" in caps
-        assert "embedding" in caps
+        assert "chat" in caps
+        assert "vector" in caps
 
-    def test_deepseek_only_llm(self, client):
+    def test_deepseek_only_chat(self, client):
         resp = client.get("/api/providers")
         data = resp.json()
         caps = data["deepseek"]["capabilities"]
-        assert "llm" in caps
-        assert "embedding" not in caps
+        assert "chat" in caps
+        assert "vector" not in caps
 
     def test_provider_has_base_url(self, client):
         resp = client.get("/api/providers")
