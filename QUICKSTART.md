@@ -18,7 +18,7 @@
 cp .env.example .env
 # 编辑 .env，DEEPSEEK_API_KEY 必须配置
 
-docker compose -f docker/compose.local.yml up -d
+docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d
 ```
 
 | 服务 | 访问地址 |
@@ -40,7 +40,7 @@ docker compose -f docker/compose.local.yml up -d
 
 ```bash
 # ① 启动数据库
-docker compose -f docker/compose.local.yml up -d postgres redis
+docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d postgres redis
 
 # ② 复制环境变量
 cp .env.example .env
@@ -83,8 +83,8 @@ fuser -k 8081/tcp
 > 部署到远程服务器。
 
 ```bash
-docker compose -f docker/compose.prod.yml pull
-docker compose -f docker/compose.prod.yml up -d --force-recreate
+docker compose -f docker/compose.base.yml -f docker/compose.prod.yml pull
+docker compose -f docker/compose.base.yml -f docker/compose.prod.yml up -d --force-recreate
 ```
 
 | 服务 | 地址 |

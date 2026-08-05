@@ -38,7 +38,7 @@
 git clone https://github.com/CJLOdyssey/agent-studio.git
 cd agent-studio
 cp .env.example .env  # 填入 DEEPSEEK_API_KEY
-docker compose -f docker/compose.local.yml up -d
+docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d
 ```
 
 访问 http://localhost:5173
@@ -119,9 +119,9 @@ graph TB
 
 | 方式 | 说明 |
 |------|------|
-| Docker | `docker compose -f docker/compose.local.yml up -d` |
+| Docker | `docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d` |
 | 混合模式 | Docker PG/Redis + 本地热重载 |
-| 生产部署 | `docker compose -f docker/compose.prod.yml up -d` |
+| 生产部署 | `docker compose -f docker/compose.base.yml -f docker/compose.prod.yml up -d` |
 | Kubernetes | `helm install agent-studio ./helm` |
 
 ### 环境变量

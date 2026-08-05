@@ -26,17 +26,17 @@
 
 ### 方式一：全容器（Docker Compose）
 ```bash
-docker compose -f docker/compose.local.yml up -d
+docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d
 ```
 服务：postgres(5432) / redis(6379) / backend(8080) / celery / frontend(5173)。首次构建镜像（pip 用清华镜像）。前端 `http://localhost:5173`，后端 `http://localhost:8080`。
 
 ### 方式二：混合模式（开发推荐）
 ```bash
-docker compose -f docker/compose.local.yml up -d postgres redis
+docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d postgres redis
 DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/backend" make dev-backend  # 后端 8081，须显式注入 DATABASE_URL
 cd frontend && npm run dev  # 前端 5174（vite.config.ts 固定，勿用 --port 覆盖；CORS 只认 5174）
 ```
-前端 `http://localhost:5174`，后端 `http://localhost:8081`（`make health` 探活）。redis 容器缺 6379 端口映射时用 `docker compose -f docker/compose.local.yml up -d redis` 重建。
+前端 `http://localhost:5174`，后端 `http://localhost:8081`（`make health` 探活）。redis 容器缺 6379 端口映射时用 `docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d redis` 重建。
 
 ### 方式三：E2E 测试环境
 ```bash
@@ -48,8 +48,8 @@ make test-e2e         # pytest backend/tests/e2e/ -m integration
 
 ### 方式四：生产部署（docker/compose.prod.yml，预留）
 ```bash
-docker compose -f docker/compose.prod.yml build   # 可省略，直接拉 ACR latest
-POSTGRES_PASSWORD=... CORS_ORIGIN=https://your-domain docker compose -f docker/compose.prod.yml up -d
+docker compose -f docker/compose.base.yml -f docker/compose.prod.yml build   # 可省略，直接拉 ACR latest
+POSTGRES_PASSWORD=... CORS_ORIGIN=https://your-domain docker compose -f docker/compose.base.yml -f docker/compose.prod.yml up -d
 ```
 ACR 镜像 `crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio/*`；独立网络/`-prod` 容器名、子网 `172.28.0.0/16`、默认 `CHECKPOINTER_BACKEND=postgres`；复用同一 `docker/Dockerfile`（已含 ARG 重声明/entrypoint/pid/celery `-A broker` 修复）；Redis Sentinel 切换见 compose 内注释。
 
