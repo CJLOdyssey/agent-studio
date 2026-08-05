@@ -118,3 +118,8 @@ scripts/sync-docs.sh
 scripts/run_mutmut.sh
 scripts/test_tools_in_ai_response.py
 scripts/test_tools_verified.py
+
+# Web prototype leftovers (never commit)
+index.html
+script.js
+styles.css
