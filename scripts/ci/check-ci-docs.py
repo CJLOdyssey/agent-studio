@@ -4,7 +4,7 @@ import re
 import pathlib
 import sys
 
-root = pathlib.Path(__file__).resolve().parent.parent
+root = pathlib.Path(__file__).resolve().parent.parent.parent
 errors = 0
 
 
@@ -17,7 +17,7 @@ def _extract_int(pattern: str, text: str, label: str) -> int:
 
 # ── 1. .env.example coverage ──────────────────────────────────────────────
 code_vars = set()
-for py in sorted(root.rglob("backend/*.py")):
+for py in sorted(root.rglob("backend/src/*.py")):
     for m in re.finditer(r'os\.environ\.get\(["\']([A-Z_]+)', py.read_text()):
         code_vars.add(m.group(1))
 
@@ -35,13 +35,13 @@ else:
     print("✅ All env vars covered in .env.example")
 
 # ── 2. Routers count ──────────────────────────────────────────────────────
-router_dir = root.joinpath("backend/routers")
+router_dir = root.joinpath("backend/src/routers")
 actual_routers = len([f for f in sorted(router_dir.glob("*.py")) if f.name != "__init__.py" and f.is_file()]) + \
          len([d for d in sorted(router_dir.iterdir()) if d.is_dir() and d.joinpath("__init__.py").exists()])
 print(f"✅ Routers: {actual_routers}")
 
 # ── 3. Repository count ───────────────────────────────────────────────────
-actual_repos = len([f for f in sorted(root.joinpath("backend/repository").glob("*.py")) if f.name != "__init__.py"])
+actual_repos = len([f for f in sorted(root.joinpath("backend/src/repository").glob("*.py")) if f.name != "__init__.py"])
 print(f"✅ Repository: {actual_repos}")
 
 # ── 4. Workstation modules ────────────────────────────────────────────────

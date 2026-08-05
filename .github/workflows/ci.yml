@@ -243,6 +243,8 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v4
+      - name: Install pytest-split
+        run: pip install pytest-split --quiet
       - name: Run unit tests (shard ${{ matrix.shard }} of 10)
         shell: bash
         env:
@@ -434,7 +436,7 @@ jobs:
           cache-dependency-path: requirements.txt
       - run: pip install --no-compile -r requirements.txt --quiet
       - name: Preflight check
-        run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=. python3 scripts/dev/preflight.py
+        run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=backend/src python3 scripts/dev/preflight.py
       - name: Start backend
         run: |
           PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \

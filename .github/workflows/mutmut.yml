@@ -24,7 +24,7 @@ jobs:
       - name: Run mutation tests (core/infra)
         run: |
           mutmut run \
-            --paths-to-mutate backend/src/core/infra \
+            --source-paths backend/src/core/infra \
             --runner "env PYTHONPATH=backend/src python3 -m pytest -p no:cacheprovider -q --no-header" 2>&1 | tail -40
       - name: Enforce score threshold (60%)
         run: |
