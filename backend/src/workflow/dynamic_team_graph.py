@@ -81,7 +81,7 @@ class DynamicTeamGraph:
             run_id=getattr(self, "_run_id", ""),
         )
         router = Router()
-        builder = GraphBuilder(factory, router, checkpointer=self.checkpointer)
+        builder = GraphBuilder(factory, router, checkpointer=self.checkpointer, llm=self.llm)
         self._graph = builder.build(self._config)
         logger.info(
             "dynamic_team_graph built: nodes=%d edges=%d max_rounds=%d",
@@ -102,9 +102,12 @@ class DynamicTeamGraph:
             self._build()
         if self._graph is None:
             raise RuntimeError("Graph not built — call set_workflow() first")
+        # Iteration rounds loop through the entry node, so the recursion budget
+        # scales with max_rounds instead of the hardcoded 100.
+        recursion_limit = max(self._config.max_rounds * 20, 100) if self._config else 100
         config = {
             "configurable": {"thread_id": thread_id},
-            "recursion_limit": 100,
+            "recursion_limit": recursion_limit,
         }
         initial_state = create_initial_state(requirement)
         if stream_callback:
@@ -114,7 +117,7 @@ class DynamicTeamGraph:
                 if event.get("event") == "on_chain_end" and event.get("name") == "LangGraph":
                     result = event.get("data", {}).get("output")
                     if isinstance(result, dict):
-                        for k in ["messages", "requirement", "artifacts", "round_number", "approved"]:
+                        for k in ["messages", "requirement", "artifacts", "round_number", "approved", "verdicts"]:
                             result.setdefault(k, initial_state.get(k))
                 if stream_callback is not None:
                     try:

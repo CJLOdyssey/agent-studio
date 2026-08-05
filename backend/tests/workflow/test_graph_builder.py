@@ -1,7 +1,7 @@
 """Tests for backend/workflow/graph_builder.py."""
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -16,7 +16,6 @@ os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 
 from workflow.graph_builder import GraphBuilder
 from workflow.models import (
-    NodeStrategy,
     WorkflowConfig,
     WorkflowEdge,
     WorkflowNode,
