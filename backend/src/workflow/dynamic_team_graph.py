@@ -81,7 +81,13 @@ class DynamicTeamGraph:
             run_id=getattr(self, "_run_id", ""),
         )
         router = Router()
-        builder = GraphBuilder(factory, router, checkpointer=self.checkpointer, llm=self.llm)
+        builder = GraphBuilder(
+            factory,
+            router,
+            checkpointer=self.checkpointer,
+            llm=self.llm,
+            run_id=getattr(self, "_run_id", ""),
+        )
         self._graph = builder.build(self._config)
         logger.info(
             "dynamic_team_graph built: nodes=%d edges=%d max_rounds=%d",
