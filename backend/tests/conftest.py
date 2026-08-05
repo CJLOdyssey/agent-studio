@@ -66,7 +66,7 @@ except (ImportError, SyntaxError):
         """No-op fallback when conftest_flaky is unavailable."""
         return lambda fn: fn
 
-BASE = "http://localhost:8082"
+BASE = os.environ.get("E2E_BASE_URL", "http://localhost:8082")
 
 # Test user credentials for rbac mode
 TEST_EMAIL = "e2e@test.com"
@@ -305,7 +305,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     if item.get_closest_marker("integration") is None:
         return
     try:
-        resp = httpx.get("http://localhost:8082/api/models", timeout=3)
+        resp = httpx.get(f"{BASE}/api/models", timeout=3)
         if resp.status_code != 200:
             pytest.skip(f"Backend not available (status {resp.status_code})")
     except Exception:
