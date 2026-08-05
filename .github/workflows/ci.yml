@@ -448,7 +448,7 @@ jobs:
             sleep 1
           done
       - name: Run E2E tests
-        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest backend/tests/e2e/test_e2e_full_flow.py -v --tb=short --reruns 2 --reruns-delay 5
+        run: PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret python3 -m pytest backend/tests/e2e/ -v --tb=short --reruns 2 --reruns-delay 5
       - name: Validate OpenAPI schema
         run: |
           curl -sf http://localhost:8080/openapi.json | python3 -m json.tool > /dev/null || { echo "❌ Invalid OpenAPI JSON"; exit 1; }
