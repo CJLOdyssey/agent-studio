@@ -101,6 +101,7 @@ services:
       - "8080"
     environment:
       <<: *common-env
+      RUN_DISPATCH: celery
     depends_on:
       postgres:
         condition: service_healthy
