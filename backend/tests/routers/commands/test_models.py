@@ -9,7 +9,7 @@ class TestModels:
         assert isinstance(resp.json(), list)
 
     def test_models_from_keys(self, client):
-        with patch("backend.routers.models.get_api_keys", new_callable=AsyncMock) as mock_keys:
+        with patch("routers.models.get_api_keys", new_callable=AsyncMock) as mock_keys:
             mock_keys.return_value = [
                 {"is_active": True, "provider": "openai", "models": ["gpt-4", "gpt-3.5-turbo"]},
                 {"is_active": False, "provider": "deepseek", "models": ["deepseek-chat"]},
@@ -25,7 +25,7 @@ class TestModels:
             assert "deepseek-chat" not in ids
 
     def test_models_dedup(self, client):
-        with patch("backend.routers.models.get_api_keys", new_callable=AsyncMock) as mock_keys:
+        with patch("routers.models.get_api_keys", new_callable=AsyncMock) as mock_keys:
             mock_keys.return_value = [
                 {"is_active": True, "provider": "openai", "models": ["gpt-4"]},
                 {"is_active": True, "provider": "custom", "models": ["gpt-4"]},
@@ -35,7 +35,7 @@ class TestModels:
             assert len(data) == 1
 
     def test_models_error(self, client):
-        with patch("backend.routers.models.get_api_keys", new_callable=AsyncMock, side_effect=Exception("error")):
+        with patch("routers.models.get_api_keys", new_callable=AsyncMock, side_effect=Exception("error")):
             resp = client.get("/api/models")
             assert resp.status_code == 200
             assert resp.json() == []

@@ -37,24 +37,19 @@ export default function PasswordStrengthIndicator({ password, validated }: Props
   const failed = items.filter(c => !c.pass);
 
   return (
-    <div style={{ marginTop: 6, marginBottom: 10 }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+    <div className="mt-1.5 mb-2.5">
+      <div className="flex gap-1 mb-1.5">
         {items.map((c, i) => (
           <div
             key={i}
-            style={{
-              flex: 1,
-              height: 3,
-              borderRadius: 2,
-              background: c.pass ? 'var(--da-success)' : 'var(--da-border)',
-              transition: 'background 0.2s',
-            }}
+            className="flex-1 h-[3px] rounded-sm transition-[background] duration-200"
+            style={{ background: c.pass ? 'var(--color-success)' : 'var(--color-border)' }}
           />
         ))}
       </div>
 
       {validated && failed.length > 0 && (
-        <div style={{ fontSize: 11, color: 'var(--da-text-tertiary)', lineHeight: 1.6 }}>
+        <div className="text-xs text-[var(--color-text-tertiary)] leading-relaxed">
           {failed.map((c, i) => (
             <span key={i}>
               {i > 0 && ' · '}○ {c.label}
@@ -64,7 +59,7 @@ export default function PasswordStrengthIndicator({ password, validated }: Props
       )}
 
       {validated && passed === total && (
-        <div style={{ fontSize: 11, color: 'var(--da-success)' }}>
+        <div className="text-xs text-[var(--color-success)]">
           全部满足 ✓
         </div>
       )}

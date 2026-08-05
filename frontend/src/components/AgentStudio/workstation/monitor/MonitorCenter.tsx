@@ -142,8 +142,8 @@ function MonitorCenter({ onNavigate }: Props) {
 
   if (isLoading)
     return (
-      <div className="wsta-monitor">
-        <div style={{ padding: 24 }}>
+      <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="p-6">
           <CardSkeleton count={6} />
         </div>
       </div>
@@ -152,34 +152,20 @@ function MonitorCenter({ onNavigate }: Props) {
   return (
     <ErrorBoundary
       fallback={
-        <div className="wsta-monitor wsta-error-state" role="alert">
+        <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center" role="alert">
           <p>{t('monitor.error_render')}</p>
         </div>
       }
     >
-      <div className="wsta-monitor">
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 24,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 13, color: 'var(--da-text-muted)' }}>
+      <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="flex flex-col flex-1 p-6 gap-6 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-[var(--color-text-muted)]">
               {lastUpdated ? `上次更新: ${lastUpdated}` : ''}
             </div>
             <button
               onClick={load}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 14px', borderRadius: 6, border: '1px solid var(--da-border-subtle)',
-                background: 'var(--da-bg-card)', color: 'var(--da-text-secondary)',
-                cursor: 'pointer', fontSize: 12, fontWeight: 500,
-              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-overlay)] text-[var(--color-text-secondary)] cursor-pointer text-xs font-medium"
               title={t('monitor.refresh')}
             >
               <RefreshCw size={14} />
@@ -189,9 +175,9 @@ function MonitorCenter({ onNavigate }: Props) {
 
           <MonitorStats stats={stats} statCards={statCards} onNavigate={onNavigate} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, flex: 1, minHeight: 0 }}>
-            <div style={{ background: 'var(--da-bg-card)', border: '1px solid var(--da-border-subtle)', borderRadius: 10, padding: 20, overflowY: 'auto' }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--da-text-primary)', marginBottom: 16 }}>
+          <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+            <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-5 overflow-y-auto">
+              <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
                 {t('monitor.activity')}
               </h3>
               <MonitorActivity activities={activities} />

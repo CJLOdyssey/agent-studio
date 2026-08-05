@@ -9,7 +9,6 @@ export interface SkillItem {
   status: string;
   author: string;
   instructions: string;
-  prompt_id: string | null;
   tool_names: string[];
   output_constraint: string;
   created_at: string;
@@ -28,7 +27,6 @@ export async function createSkill(payload: {
   status?: string;
   author?: string;
   instructions?: string;
-  prompt_id?: string;
   tool_names?: string[];
   output_constraint?: string;
 }): Promise<SkillItem> {
@@ -44,7 +42,6 @@ export async function updateSkill(id: string, payload: Partial<{
   status: string;
   author: string;
   instructions: string;
-  prompt_id: string;
   tool_names: string[];
   output_constraint: string;
 }>): Promise<SkillItem> {
@@ -54,4 +51,19 @@ export async function updateSkill(id: string, payload: Partial<{
 
 export async function deleteSkill(id: string): Promise<void> {
   await api.delete(`/skills/${id}`);
+}
+
+export async function importSkillFromMarkdown(markdown: string, category = '导入'): Promise<SkillItem> {
+  const { data } = await api.post('/skills/import-text', { markdown, category });
+  return data;
+}
+
+export async function importSkillDirectory(files: File[], category = '导入'): Promise<SkillItem> {
+  const form = new FormData();
+  form.append('category', category);
+  for (const f of files) {
+    form.append('files', f, (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name);
+  }
+  const { data } = await api.post('/skills/import', form);
+  return data;
 }

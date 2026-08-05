@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.observability.startup_guard import (
+from observability.startup_guard import (
     _CRASH_LOG,
     _MARKER_DIR,
     _MARKER_FILE,
@@ -26,9 +26,9 @@ def temp_marker_dir():
         marker_dir = Path(td) / "agentstudio"
         marker_file = marker_dir / "startup.marker"
         crash_log = marker_dir / "startup_crash.log"
-        with patch("backend.observability.startup_guard._MARKER_DIR", marker_dir), \
-             patch("backend.observability.startup_guard._MARKER_FILE", marker_file), \
-             patch("backend.observability.startup_guard._CRASH_LOG", crash_log):
+        with patch("observability.startup_guard._MARKER_DIR", marker_dir), \
+             patch("observability.startup_guard._MARKER_FILE", marker_file), \
+             patch("observability.startup_guard._CRASH_LOG", crash_log):
             yield marker_dir, marker_file, crash_log
 
 

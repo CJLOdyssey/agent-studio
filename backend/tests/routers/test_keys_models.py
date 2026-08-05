@@ -3,6 +3,8 @@
 from unittest.mock import patch
 
 import pytest
+
+pytestmark = pytest.mark.unit
 from pydantic import ValidationError
 
 
@@ -10,7 +12,7 @@ class TestKeysModels:
     """Test KeyCreateRequest/KeyUpdateRequest validation, Fernet encryption roundtrip."""
 
     def test_key_create_request_valid(self):
-        from backend.routers.keys import KeyCreateRequest
+        from routers.keys import KeyCreateRequest
 
         req = KeyCreateRequest(
             provider="openai",
@@ -20,16 +22,16 @@ class TestKeysModels:
         assert req.provider == "openai"
         assert req.label == "My OpenAI Key"
         assert req.api_key == "sk-test123"
-        assert req.usage_type == "llm"
+        assert req.usage_type == "chat"
         assert req.models == []
         assert req.is_default is False
 
     def test_key_create_request_with_all_fields(self):
-        from backend.routers.keys import KeyCreateRequest
+        from routers.keys import KeyCreateRequest
 
         req = KeyCreateRequest(
             provider="deepseek",
-            usage_type="both",
+            usage_type="general",
             label="DeepSeek Key",
             api_key="sk-ds-test",
             base_url="https://api.deepseek.com",
@@ -37,13 +39,13 @@ class TestKeysModels:
             is_default=True,
         )
         assert req.provider == "deepseek"
-        assert req.usage_type == "both"
+        assert req.usage_type == "general"
         assert req.base_url == "https://api.deepseek.com"
         assert len(req.models) == 2
         assert req.is_default is True
 
     def test_key_create_request_invalid_provider_pattern(self):
-        from backend.routers.keys import KeyCreateRequest
+        from routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -53,7 +55,7 @@ class TestKeysModels:
             )
 
     def test_key_create_request_invalid_usage_type(self):
-        from backend.routers.keys import KeyCreateRequest
+        from routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -64,7 +66,7 @@ class TestKeysModels:
             )
 
     def test_key_create_request_empty_provider(self):
-        from backend.routers.keys import KeyCreateRequest
+        from routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -74,7 +76,7 @@ class TestKeysModels:
             )
 
     def test_key_create_request_label_max_length(self):
-        from backend.routers.keys import KeyCreateRequest
+        from routers.keys import KeyCreateRequest
 
         with pytest.raises(ValidationError):
             KeyCreateRequest(
@@ -84,7 +86,7 @@ class TestKeysModels:
             )
 
     def test_key_update_request_partial(self):
-        from backend.routers.keys import KeyUpdateRequest
+        from routers.keys import KeyUpdateRequest
 
         req = KeyUpdateRequest(label="Updated Label")
         assert req.label == "Updated Label"
@@ -92,13 +94,13 @@ class TestKeysModels:
         assert req.is_active is None
 
     def test_key_update_request_invalid_usage_type(self):
-        from backend.routers.keys import KeyUpdateRequest
+        from routers.keys import KeyUpdateRequest
 
         with pytest.raises(ValidationError):
             KeyUpdateRequest(usage_type="bad_type")
 
     def test_fetch_models_request(self):
-        from backend.routers.keys import FetchModelsRequest
+        from routers.keys import FetchModelsRequest
 
         req = FetchModelsRequest(api_key="sk-test", base_url="https://api.test.com")
         assert req.api_key == "sk-test"
@@ -106,7 +108,7 @@ class TestKeysModels:
         assert req.provider == "custom"
 
     def test_key_response_model_fields(self):
-        from backend.routers.keys import KeyResponse
+        from routers.keys import KeyResponse
 
         resp = KeyResponse(
             id="key-1",
@@ -126,7 +128,7 @@ class TestKeysModels:
         assert resp.models == ["gpt-4"]
 
     def test_encrypt_decrypt_roundtrip(self):
-        from backend.core.infra.key_vault import decrypt_api_key, encrypt_api_key
+        from core.infra.key_vault import decrypt_api_key, encrypt_api_key
 
         with patch.dict("os.environ", {"KEY_VAULT_SECRET": "a" * 32}):
             plaintext = "sk-my-secret-api-key-12345"
@@ -136,31 +138,31 @@ class TestKeysModels:
             assert decrypted == plaintext
 
     def test_mask_api_key(self):
-        from backend.core.infra.key_vault import mask_api_key
+        from core.infra.key_vault import mask_api_key
 
         masked = mask_api_key("sk-my-secret-key-xyz")
         assert masked == "sk-...-xyz"
 
     def test_mask_short_key(self):
-        from backend.core.infra.key_vault import mask_api_key
+        from core.infra.key_vault import mask_api_key
 
         masked = mask_api_key("abc")
         assert masked == "ab***"
 
     def test_encrypt_empty_key_raises(self):
-        from backend.core.infra.key_vault import encrypt_api_key
+        from core.infra.key_vault import encrypt_api_key
 
         with pytest.raises(ValueError, match="must not be empty"):
             encrypt_api_key("")
 
     def test_decrypt_empty_key_raises(self):
-        from backend.core.infra.key_vault import decrypt_api_key
+        from core.infra.key_vault import decrypt_api_key
 
         with pytest.raises(ValueError, match="must not be empty"):
             decrypt_api_key("")
 
     def test_user_api_key_model_columns(self):
-        from backend.core.infra.database import UserApiKey
+        from core.infra.database import UserApiKey
 
         cols = {c.name for c in UserApiKey.__table__.columns}
         assert "encrypted_key" in cols
@@ -170,10 +172,10 @@ class TestKeysModels:
         assert "is_active" in cols
 
     def test_user_api_key_defaults(self):
-        from backend.core.infra.database import UserApiKey
+        from core.infra.database import UserApiKey
 
         c_map = {c.name: c for c in UserApiKey.__table__.columns}
-        assert c_map["usage_type"].default.arg == "llm"
+        assert c_map["usage_type"].default.arg == "chat"
         assert c_map["is_active"].default.arg is True
         assert c_map["is_default"].default.arg is False
 

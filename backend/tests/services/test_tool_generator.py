@@ -3,7 +3,7 @@
 
 import pytest
 
-from backend.services.tool_generator import (
+from services.tool_generator import (
     ToolValidateRequest,
     ToolValidateResponse,
     _execute_tool_sandbox,

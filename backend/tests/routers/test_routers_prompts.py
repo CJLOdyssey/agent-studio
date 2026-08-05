@@ -5,6 +5,10 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+pytestmark = pytest.mark.unit
+
+import pytest
 from starlette.testclient import TestClient
 
 os.environ["AUTH_MODE"] = "legacy"
@@ -17,7 +21,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -29,23 +33,23 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    import backend.core.app_lifespan as lifespan_mod
+    import core.app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
+        from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             existing = await session.execute(
@@ -87,11 +91,11 @@ def client():
     mock_redis.set.side_effect = _redis_set
     mock_redis.delete.side_effect = _redis_delete
 
-    with patch("backend.broker.get_redis", return_value=mock_redis), \
-         patch("backend.core.app_lifespan.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.login.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+    with patch("broker.get_redis", return_value=mock_redis), \
+         patch("core.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("routers.auth.login.get_redis", return_value=mock_redis), \
+         patch("routers.auth.register.get_redis", return_value=mock_redis), \
+         patch("routers.auth.password.get_redis", return_value=mock_redis):
         with TestClient(app) as c:
             yield c
 
@@ -115,6 +119,21 @@ class TestPrompts:
         })
         assert resp.status_code == 201
 
+    def test_create_prompt_with_description(self, client):
+        resp = client.post("/api/prompts", json={
+            "name": "desc-prompt", "description": "用途说明", "category": "general", "content": "Be helpful."
+        })
+        assert resp.status_code == 201
+        assert resp.json()["description"] == "用途说明"
+
+    def test_list_prompts_include_description(self, client):
+        client.post("/api/prompts", json={
+            "name": "list-desc-prompt", "description": "desc-1", "category": "general", "content": "x"
+        })
+        resp = client.get("/api/prompts")
+        assert resp.status_code == 200
+        assert all("description" in p for p in resp.json())
+
     def test_update_prompt(self, client):
         resp = client.post("/api/prompts", json={
             "name": "upd-prompt", "category": "general", "content": "Original."
@@ -123,6 +142,15 @@ class TestPrompts:
         resp = client.put(f"/api/prompts/{prompt_id}", json={"name": "updated"})
         assert resp.status_code == 200
         assert resp.json()["name"] == "updated"
+
+    def test_update_prompt_description(self, client):
+        resp = client.post("/api/prompts", json={
+            "name": "upd-desc-prompt", "description": "old", "category": "general", "content": "Original."
+        })
+        prompt_id = resp.json()["id"]
+        resp = client.put(f"/api/prompts/{prompt_id}", json={"description": "new desc"})
+        assert resp.status_code == 200
+        assert resp.json()["description"] == "new desc"
 
     def test_update_prompt_not_found(self, client):
         resp = client.put("/api/prompts/nonexistent", json={"name": "x"})
@@ -143,31 +171,31 @@ class TestPrompts:
     # ── Exception handler paths ──────────────────────────────────────────
 
     def test_list_prompts_exception(self, client):
-        with patch("backend.routers.prompts.get_prompts_as_dicts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.prompts.get_prompts_as_dicts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.get("/api/prompts")
             assert resp.status_code == 500
 
     def test_create_prompt_exception(self, client):
-        with patch("backend.routers.prompts.create_prompt", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.prompts.create_prompt", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.post("/api/prompts", json={"name": "x", "category": "c", "content": "y"})
             assert resp.status_code == 500
 
     def test_update_prompt_exception(self, client):
-        with patch("backend.routers.prompts.update_prompt", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.prompts.update_prompt", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/prompts/t", json={"name": "x"})
             assert resp.status_code == 500
 
     def test_delete_prompt_exception(self, client):
-        with patch("backend.repository.get_prompts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("repository.get_prompts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/prompts/t")
             assert resp.status_code == 500
 
     # ── Edge cases ───────────────────────────────────────────────────────
 
     def test_snapshot_prompt_item_not_found(self, client):
-        from backend.routers.prompts import _snapshot_prompt
-        with patch("backend.repository.prompts.get_prompt", new_callable=AsyncMock, return_value=None), \
-             patch("backend.repository.snapshot_helper.with_session", new_callable=AsyncMock) as mock_ws:
+        from routers.prompts import _snapshot_prompt
+        with patch("repository.prompts.get_prompt", new_callable=AsyncMock, return_value=None), \
+             patch("repository.snapshot_helper.with_session", new_callable=AsyncMock) as mock_ws:
             async def capture_call(fn, **kwargs):
                 await fn(MagicMock(), "prompt", "p-1")
             mock_ws.side_effect = capture_call
@@ -178,7 +206,7 @@ class TestPrompts:
             "name": "exc-prompt", "category": "general", "content": "x"
         })
         prompt_id = resp.json()["id"]
-        with patch("backend.routers.prompts.update_prompt", new_callable=AsyncMock, side_effect=Exception("err")):
+        with patch("routers.prompts.update_prompt", new_callable=AsyncMock, side_effect=Exception("err")):
             resp = client.put(f"/api/prompts/{prompt_id}", json={"name": "y"})
             assert resp.status_code == 500
 
@@ -187,6 +215,6 @@ class TestPrompts:
             "name": "del-exc-prompt", "category": "general", "content": "x"
         })
         prompt_id = resp.json()["id"]
-        with patch("backend.repository.get_prompts", new_callable=AsyncMock, side_effect=Exception("err")):
+        with patch("repository.get_prompts", new_callable=AsyncMock, side_effect=Exception("err")):
             resp = client.delete(f"/api/prompts/{prompt_id}")
             assert resp.status_code == 500

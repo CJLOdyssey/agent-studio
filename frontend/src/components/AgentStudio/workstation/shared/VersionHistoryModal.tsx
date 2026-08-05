@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, GitCompare, Loader2 } from 'lucide-react';
+import { GitCompare, Loader2 } from 'lucide-react';
 import { listVersions } from '../../../../api/client/versions';
 import type { VersionEntry as ApiVersionEntry } from '../../../../api/client/versions';
+import Modal from '@/components/shared/Modal';
 
 interface Props {
   title: string;
@@ -87,31 +88,33 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
   }, [sortedSelection, versions]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content wsta-modal wsta-modal-md" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <Modal
+      title={
+        <div className="flex items-center gap-2">
           <h3>{t('workstation.versionHistory')} - {title}</h3>
-          <div className="wsta-version-compare-toolbar">
+          <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-toolbar">
             {hasContent && (
-              <button className={`btn btn-sm ${compareMode ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setCompareMode(!compareMode); setSelectedIndices([]); }}>
+              <button className={`inline-flex items-center justify-center gap-2 px-2 py-2 rounded-[var(--radius-btn)] text-sm cursor-pointer transition-colors ${compareMode ? 'bg-[var(--color-accent)] text-white border-none hover:bg-[color-mix(in_srgb,var(--color-accent),#000)]' : 'bg-transparent border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]'}`} onClick={() => { setCompareMode(!compareMode); setSelectedIndices([]); }}>
                 <GitCompare size={14} />
                 <span>{compareMode ? '退出对比' : '版本对比'}</span>
               </button>
             )}
-            <button className="modal-close" onClick={onClose}><X size={18} /></button>
           </div>
         </div>
-
-        <div className="modal-body">
-          {loading ? (
-            <div className="wsta-empty-state"><Loader2 size={32} className="animate-spin" /><p>{t('common.loading')}</p></div>
+      }
+      onClose={onClose}
+      width={420}
+      bodyClassName="p-5"
+    >
+      {loading ? (
+            <div className="flex flex-col items-center gap-3 py-16 px-4 text-center"><Loader2 size={32} className="animate-spin" /><p>{t('common.loading')}</p></div>
           ) : versions.length === 0 ? (
-            <div className="wsta-empty-state"><p>暂无版本历史</p></div>
+            <div className="flex flex-col items-center gap-3 py-16 px-4 text-center"><p>暂无版本历史</p></div>
           ) : compareMode && (
-            <p className="wsta-version-compare-hint">
+            <p className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-hint">
               点击选择两个版本进行对比
               {selectedIndices.length === 2 && (
-                <span className="wsta-version-compare-selected">
+                <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-compare-selected">
                   — 已选: {versions[selectedIndices[0]]?.version} vs {versions[selectedIndices[1]]?.version}
                 </span>
               )}
@@ -119,43 +122,41 @@ export default function VersionHistoryModal({ title, resourceType, resourceId, o
           )}
 
           {diffResult ? (
-            <div className="wsta-version-diff">
-              <div className="wsta-version-diff-pane">
+            <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff">
+              <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[0]]?.version}</h5>
                 {diffResult.old.map((line, idx) => (
-                  <div key={idx} className={`wsta-diff-line wsta-diff-${line.type}`}>{line.text}</div>
+                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--color-success)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
-              <div className="wsta-version-diff-pane">
+              <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-diff-pane">
                 <h5>{versions[sortedSelection[1]]?.version}</h5>
                 {diffResult.new.map((line, idx) => (
-                  <div key={idx} className={`wsta-diff-line wsta-diff-${line.type}`}>{line.text}</div>
+                  <div key={idx} className={`flex px-2.5 py-0.5 min-h-[1.4em] ${line.type === 'added' ? 'bg-[color-mix(in_srgb,var(--color-success)_12%,transparent)]' : line.type === 'removed' ? 'bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]' : ''}`}>{line.text}</div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="wsta-version-list">
+            <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-list">
               {versions.map((v, i) => (
-                <div key={i} className={`wsta-version-item ${compareMode ? 'wsta-version-item-selectable' : ''} ${selectedIndices.includes(i) ? 'wsta-version-item-selected' : ''}`}
+                <div key={i} className={`p-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md transition-colors duration-150${compareMode ? ' cursor-pointer hover:border-[var(--color-accent)]' : ''}${selectedIndices.includes(i) ? ' border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)]' : ''}`}
                   onClick={() => compareMode && setSelectedIndices((prev) => {
                     if (prev.includes(i)) return prev.filter((x) => x !== i);
                     if (prev.length >= 2) return [prev[1], i];
                     return [...prev, i];
                   })}>
-                  <div className="wsta-version-header">
-                    <span className="wsta-version-tag">{v.version}</span>
-                    <span className="wsta-version-date">{v.date}</span>
-                    <span className="wsta-version-author">{v.author}</span>
-                    {selectedIndices.includes(i) && <span className="wsta-version-check">✓</span>}
+                  <div className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-header">
+                    <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-tag">{v.version}</span>
+                    <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-date">{v.date}</span>
+                    <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-author">{v.author}</span>
+                    {selectedIndices.includes(i) && <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-check">✓</span>}
                   </div>
-                  <p className="wsta-version-changes">{v.changes}</p>
-                  {v.content && <p className="wsta-version-content">{v.content.length > 120 ? v.content.slice(0, 120) + '…' : v.content}</p>}
+                  <p className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-changes">{v.changes}</p>
+                  {v.content && <p className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-raised)] py-px px-2 rounded-content">{v.content.length > 120 ? v.content.slice(0, 120) + '…' : v.content}</p>}
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

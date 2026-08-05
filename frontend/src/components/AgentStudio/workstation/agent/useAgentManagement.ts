@@ -1,71 +1,36 @@
-import { useState, useCallback } from 'react';
-import type { SortDir } from '../types';
-import type { AgentEntry, AgentFormData, SortField, StatusFilter } from './agent.types';
+import { useState, useCallback, useMemo } from 'react';
+import type { AgentEntry, AgentFormData, StatusFilter } from './agent.types';
 import { agentAPI } from './api';
 import { validateForm } from './validate';
 import { useGenericCrud } from '../shared/useGenericCrud';
+import type { GenericCrudReturn } from '../shared/useGenericCrud';
+import { PAGE_SIZE } from '../constants';
 
 const EMPTY_FORM: AgentFormData = {
   name: '', description: '', team: '前端团队', model: 'GPT-4o',
   status: 'stopped', version: 'v1.0.0', systemPromptId: '', toolIds: [], mcpIds: [], skillIds: [],
 };
 
-export interface AgentManagementReturn {
-  isLoading: boolean;
-  error: string | null;
-  paged: AgentEntry[];
-  processed: AgentEntry[];
-  page: number;
-  totalPages: number;
-  search: string;
+export interface AgentManagementReturn extends GenericCrudReturn<AgentEntry, AgentFormData> {
   statusFilter: StatusFilter;
-  sortField: SortField | null;
-  sortDir: SortDir;
-  selectedIds: Set<string>;
-  allOnPageSelected: boolean;
-  formErrors: string[];
+  setStatusFilter: (v: StatusFilter) => void;
+  teamFilter: string;
+  setTeamFilter: (v: string) => void;
   batchError: string;
-  isFormOpen: boolean;
-  isDeleteOpen: boolean;
-  isBatchDeleteOpen: boolean;
-  isHistoryOpen: boolean;
   editingAgent: AgentEntry | null;
   deletingAgent: AgentEntry | null;
   historyAgent: AgentEntry | null;
-  formData: AgentFormData;
-  openMenuId: string | null;
-  menuAnchorEl: HTMLElement | null;
-  setFormData: (d: AgentFormData) => void;
-  setSearch: (v: string) => void;
-  setStatusFilter: (v: StatusFilter) => void;
-  setPage: (v: number) => void;
-  setSelectedIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
-  setOpenMenuId: (v: string | null) => void;
-  setMenuAnchorEl: (v: HTMLElement | null) => void;
-  handleSort: (field: SortField) => void;
-  toggleSelectAll: () => void;
-  toggleSelect: (id: string) => void;
-  openCreate: () => void;
-  openEdit: (agent: AgentEntry) => void;
-  handleSave: () => void;
-  openDelete: (agent: AgentEntry) => void;
-  handleDelete: () => void;
   handleCopy: (agent: AgentEntry) => void;
-  openHistory: (agent: AgentEntry) => void;
-  openBatchDelete: () => void;
-  handleBatchDelete: () => void;
-  closeMenu: () => void;
   setIsFormOpen: (v: boolean) => void;
   setIsDeleteOpen: (v: boolean) => void;
   setIsBatchDeleteOpen: (v: boolean) => void;
   setIsHistoryOpen: (v: boolean) => void;
-  retry: () => void;
-  clearError: () => void;
 }
 
 export function useAgentManagement(): AgentManagementReturn {
   const [batchError, setBatchError] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [teamFilter, setTeamFilter] = useState('all');
 
   const crud = useGenericCrud<AgentEntry, AgentFormData>({
     api: agentAPI,
@@ -73,31 +38,47 @@ export function useAgentManagement(): AgentManagementReturn {
     itemName: 'Agent',
     validate: validateForm,
     sortFields: ['name', 'team', 'status'],
-    extraFilters: { statusFilter: 'all' },
+    extraFilters: { status: 'all' },
   });
 
   // Wrap extra filter to match AgentManagementReturn's setStatusFilter
   const wrappedSetStatusFilter = useCallback((v: StatusFilter) => {
-    crud.setExtraFilter('statusFilter', v);
+    crud.setExtraFilter('status', v);
     setStatusFilter(v);
   }, [crud]);
+
+  // Team filter: applied AFTER crud's search/sort/filter (teams is an array,
+  // so it can't ride the generic extraFilters string-equality path)
+  const wrappedSetTeamFilter = useCallback((v: string) => {
+    setTeamFilter(v);
+    crud.setPage(1);
+  }, [crud]);
+
+  const filteredProcessed = useMemo(() => {
+    if (teamFilter === 'all') return crud.processed;
+    return crud.processed.filter(
+      (a) => (a.teams?.length ? a.teams.includes(teamFilter) : a.team === teamFilter),
+    );
+  }, [crud.processed, teamFilter]);
+
+  const teamTotalPages = Math.max(1, Math.ceil(filteredProcessed.length / PAGE_SIZE));
+  const teamSafePage = Math.min(crud.page, teamTotalPages);
+  const teamPaged = filteredProcessed.slice(
+    (teamSafePage - 1) * PAGE_SIZE,
+    teamSafePage * PAGE_SIZE,
+  );
 
   const openDelete = useCallback((agent: AgentEntry) => {
     if (agent.status === 'running') { setBatchError('运行中 Agent 不可删除，请先停止'); setTimeout(() => setBatchError(''), 3000); return; }
     crud.openDelete(agent);
   }, [crud]);
 
-  const handleDelete = useCallback(async () => {
-    try {
-      if (crud.deletingItem) {
-        await crud.removeItem(crud.deletingItem.id);
-        crud.closeDelete();
-      }
-    } catch (e) { setBatchError(`删除失败：${(e as Error).message}`); }
+  const handleDelete = useCallback((): Promise<void> | undefined => {
+    return crud.handleDelete();
   }, [crud]);
 
   const handleCopy = useCallback((agent: AgentEntry) => {
-    crud.cloneItem(agent);
+    void crud.cloneItem(agent);
   }, [crud]);
 
   const openBatchDelete = useCallback(() => {
@@ -106,70 +87,46 @@ export function useAgentManagement(): AgentManagementReturn {
     crud.openBatchDelete();
   }, [crud]);
 
-  const handleBatchDelete = useCallback(async () => {
-    try {
-      await crud.removeMultipleItems(crud.selectedIds);
-      crud.closeBatchDelete();
-    } catch (e) { setBatchError(`批量删除失败：${(e as Error).message}`); }
+  const handleBatchDelete = useCallback((): Promise<void> | undefined => {
+    return crud.handleBatchDelete();
   }, [crud]);
 
-  const handleSave = useCallback(() => {
-    crud.handleSave();
-    if (crud.formErrors.length === 0) {
-      // close happens inside useGenericCrud's handleSave on success
+  const handleSave = useCallback((): Promise<void> | undefined => {
+    return crud.handleSave();
+  }, [crud]);
+
+  const openEdit = useCallback((agent: AgentEntry) => {
+    crud.openEdit(agent);
+    if (agent.teams?.length) {
+      crud.setFormData((prev) => ({ ...prev, team: agent.teams[0] }));
     }
   }, [crud]);
 
-  return {
-    isLoading: crud.isLoading,
-    error: crud.error,
-    paged: crud.paged as AgentEntry[],
-    processed: crud.processed as AgentEntry[],
-    page: crud.page,
-    totalPages: crud.totalPages,
-    search: crud.search,
+  return useMemo(() => ({
+    ...crud,
+    processed: filteredProcessed,
+    paged: teamPaged,
+    page: teamSafePage,
+    totalPages: teamTotalPages,
     statusFilter,
-    sortField: crud.sortField as SortField | null,
-    sortDir: crud.sortDir,
-    selectedIds: crud.selectedIds,
-    allOnPageSelected: crud.allOnPageSelected,
-    formErrors: crud.formErrors,
-    batchError,
-    isFormOpen: crud.isFormOpen,
-    isDeleteOpen: crud.isDeleteOpen,
-    isBatchDeleteOpen: crud.isBatchDeleteOpen,
-    isHistoryOpen: crud.isHistoryOpen,
-    editingAgent: crud.editingItem as AgentEntry | null,
-    deletingAgent: crud.deletingItem as AgentEntry | null,
-    historyAgent: crud.historyItem as AgentEntry | null,
-    formData: crud.formData as AgentFormData,
-    openMenuId: crud.openMenuId,
-    menuAnchorEl: crud.menuAnchorEl,
-    setFormData: (d: AgentFormData) => crud.setFormData(() => d),
-    setSearch: crud.setSearch,
+    teamFilter,
     setStatusFilter: wrappedSetStatusFilter,
-    setPage: crud.setPage,
-    setSelectedIds: crud.setSelectedIds,
-    setOpenMenuId: crud.setOpenMenuId,
-    setMenuAnchorEl: crud.setMenuAnchorEl,
-    handleSort: (field: SortField) => crud.handleSort(field as keyof AgentEntry),
-    toggleSelectAll: crud.toggleSelectAll,
-    toggleSelect: crud.toggleSelect,
-    openCreate: crud.openCreate,
-    openEdit: (agent: AgentEntry) => crud.openEdit(agent),
+    setTeamFilter: wrappedSetTeamFilter,
+    batchError,
+    editingAgent: crud.editingItem,
+    deletingAgent: crud.deletingItem,
+    historyAgent: crud.historyItem,
+    handleSort: (field: keyof AgentEntry) => crud.handleSort(field),
+    openEdit,
     handleSave,
     openDelete,
     handleDelete,
     handleCopy,
-    openHistory: (agent: AgentEntry) => crud.openHistory(agent),
     openBatchDelete,
     handleBatchDelete,
-    closeMenu: crud.closeMenu,
     setIsFormOpen: () => crud.closeForm(),
     setIsDeleteOpen: () => crud.closeDelete(),
     setIsBatchDeleteOpen: () => crud.closeBatchDelete(),
     setIsHistoryOpen: () => crud.closeHistory(),
-    retry: crud.retry,
-    clearError: crud.clearError,
-  };
+  }), [crud, filteredProcessed, teamPaged, teamSafePage, teamTotalPages, statusFilter, teamFilter, wrappedSetStatusFilter, wrappedSetTeamFilter, batchError, openEdit, handleSave, openDelete, handleDelete, handleCopy, openBatchDelete, handleBatchDelete]);
 }

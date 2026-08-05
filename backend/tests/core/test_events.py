@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from backend.core.infra.events import EventBus, Events, bus
+from core.infra.events import EventBus, Events, bus
 
 
 class TestEventBus:

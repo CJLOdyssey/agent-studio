@@ -43,8 +43,8 @@ class TestCommands:
         resp = client.get("/api/commands/nonexistent")
         assert resp.status_code == 404
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_clear_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -55,8 +55,8 @@ class TestCommands:
         assert data["success"] is True
         assert data["data"]["action"] == "clear_conversation"
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_export_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -66,8 +66,8 @@ class TestCommands:
         assert resp.json()["data"]["action"] == "export_conversation"
         assert resp.json()["data"]["format"] == "markdown"
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_rename_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -78,8 +78,8 @@ class TestCommands:
         assert resp.json()["success"] is True
         assert resp.json()["data"]["new_title"] == "New Title"
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_rename_empty_title(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -90,8 +90,8 @@ class TestCommands:
         assert resp.json()["success"] is False
         assert "不能为空" in resp.json()["message"]
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_rename_long_title(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -102,9 +102,9 @@ class TestCommands:
         assert resp.json()["success"] is False
         assert "过长" in resp.json()["message"]
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
-    @patch("backend.routers.commands.update_session_title", new_callable=AsyncMock, side_effect=Exception("db error"))
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.update_session_title", new_callable=AsyncMock, side_effect=Exception("db error"))
     async def test_execute_rename_exception(self, mock_update, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -115,8 +115,8 @@ class TestCommands:
         assert resp.json()["success"] is False
         assert "重命名失败" in resp.json()["message"]
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_model_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -126,8 +126,8 @@ class TestCommands:
         assert resp.json()["data"]["action"] == "open_settings"
         assert resp.json()["data"]["panel"] == "model"
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_agents_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -136,8 +136,8 @@ class TestCommands:
         assert resp.status_code == 200
         assert resp.json()["data"]["panel"] == "agents"
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_help_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -147,8 +147,8 @@ class TestCommands:
         assert resp.json()["data"]["action"] == "show_help"
         assert "commands" in resp.json()["data"]
 
-    @patch("backend.routers.commands.log_command", new_callable=AsyncMock)
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.log_command", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_shortcuts_command(self, mock_log, mock_get_session, client):
         mock_get_session.return_value = MagicMock()
         resp = client.post("/api/commands/execute", json={
@@ -164,7 +164,7 @@ class TestCommands:
         })
         assert resp.status_code == 404
 
-    @patch("backend.routers.commands.get_session", new_callable=AsyncMock)
+    @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_command_session_not_found(self, mock_get_session, client):
         mock_get_session.return_value = None
         resp = client.post("/api/commands/execute", json={

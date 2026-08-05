@@ -1,16 +1,102 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
+import { create } from 'zustand';
 import type { ChatState } from './chatTypes';
-import type { WsStreamEvent, WsThinkingStreamEvent } from './wsEvents';
+import type { ChatMessage } from '../types';
+import type { WsStreamEvent, WsThinkingStreamEvent, WsTeamResultEvent, WsApprovalRequestEvent, TeamVerdict } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
+
+interface ApprovalRequest {
+  runId: string;
+  node: string;
+}
+
+interface ApprovalStoreState {
+  request: ApprovalRequest | null;
+  setRequest: (request: ApprovalRequest | null) => void;
+}
+
+export const useApprovalStore = create<ApprovalStoreState>((set) => ({
+  request: null,
+  setRequest: (request) => set({ request }),
+}));
+
+type TeamMessageMeta = ChatMessage & {
+  verdicts?: Record<string, TeamVerdict>;
+  round?: number;
+  approvalRequest?: ApprovalRequest;
+};
+
+export function handleTeamResultMeta(set: SetFn, msg: WsTeamResultEvent): void {
+  const verdicts = msg.verdicts;
+  const rounds = msg.rounds;
+  if (!verdicts || typeof verdicts !== 'object' || Array.isArray(verdicts)) return;
+  set((s) => ({
+    messages: s.messages.map((m) =>
+      ({ ...m, verdicts, ...(rounds !== undefined ? { round: rounds } : {}) }) as TeamMessageMeta,
+    ),
+  }));
+}
+
+export function handleApprovalRequest(set: SetFn, msg: WsApprovalRequestEvent): void {
+  const runId = msg.run_id;
+  const node = msg.node;
+  if (!runId || !node) return;
+  useApprovalStore.getState().setRequest({ runId, node });
+  set((s) => {
+    const targetId = s.streamingId || s.messages[s.messages.length - 1]?.id;
+    if (!targetId) return {};
+    return {
+      messages: s.messages.map((m) =>
+        m.id === targetId ? { ...m, approvalRequest: { runId, node } } as TeamMessageMeta : m,
+      ),
+    };
+  });
+}
+
 
 export function handleStreamStart(s: ChatState, msg: WsStreamEvent, chunk: string): Partial<ChatState> {
   const newId = crypto.randomUUID?.() || uid();
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
   const continuingId = s.continuingId;
+  if (s.editTargetId) {
+    // Edit-regenerate: the new answer REPLACES the target message. Old content
+    // is archived into versions; the stream starts fresh (not old+new).
+    const targetIdx = s.messages.findIndex((m) => m.id === s.editTargetId);
+    const oldMsg = targetIdx >= 0 ? s.messages[targetIdx] : null;
+    const oldContent = oldMsg?.content || '';
+    const oldThinking = oldMsg?.thinking || '';
+    const newVersions = oldMsg?.versions ? [...oldMsg.versions, oldContent] : [oldContent];
+    const newThinkingVersions = oldMsg?.thinkingVersions
+      ? [...oldMsg.thinkingVersions, oldThinking]
+      : (oldThinking ? [oldThinking] : undefined);
+    Logger.info('[chat] edit stream — merging into target msg %s', s.editTargetId);
+    return {
+      streamingId: newId,
+      editTargetId: null,
+      continuingId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
+      skipThinking: false,
+      messages: s.messages.map((m) => {
+        if (m.id !== s.editTargetId) return m;
+        return {
+          ...m,
+          id: newId,
+          content: chunk,
+          thinking: '',
+          versions: newVersions,
+          thinkingVersions: newThinkingVersions,
+          currentVersion: newVersions.length - 1,
+        };
+      }),
+      currentRole: msg.agent_name || 'Agent',
+      wsStatus: 'connected' as ChatState['wsStatus'],
+    };
+  }
   if (continuingId) {
     Logger.info('[chat] continue stream — replacing interrupted msg (continuingId=%s, newId=%s)', continuingId, newId);
     const contIdx = s.messages.findIndex((m) => m.id === continuingId);
@@ -44,6 +130,38 @@ export function handleThinkingStreamNew(s: ChatState, msg: WsThinkingStreamEvent
   const continuingId = s.continuingId;
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
+  if (s.editTargetId) {
+    const targetIdx = s.messages.findIndex((m) => m.id === s.editTargetId);
+    const oldMsg = targetIdx >= 0 ? s.messages[targetIdx] : null;
+    const oldContent = oldMsg?.content || '';
+    const oldThinking = oldMsg?.thinking || '';
+    const newVersions = oldMsg?.versions ? [...oldMsg.versions, oldContent] : [oldContent];
+    const newThinkingVersions = oldMsg?.thinkingVersions
+      ? [...oldMsg.thinkingVersions, oldThinking]
+      : (oldThinking ? [oldThinking] : undefined);
+    return {
+      streamingId: newId,
+      editTargetId: null,
+      continuingId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
+      skipThinking: false,
+      messages: s.messages.map((m) => {
+        if (m.id !== s.editTargetId) return m;
+        return {
+          ...m,
+          id: newId,
+          content: '',
+          thinking: chunk,
+          versions: newVersions,
+          thinkingVersions: newThinkingVersions,
+          currentVersion: newVersions.length - 1,
+        };
+      }),
+      currentRole: msg.agent_name || 'Agent',
+      wsStatus: 'connected' as ChatState['wsStatus'],
+    };
+  }
   if (continuingId) {
     const contIdx = s.messages.findIndex((m) => m.id === continuingId);
     const oldMsg = contIdx >= 0 ? s.messages[contIdx] : null;
@@ -117,7 +235,10 @@ export function handleStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
-  if (activeStreamMsgIds.has(s.currentRunId || '')) {
+  const runId = s.currentRunId || '';
+  // Continuation is only valid while a message is streaming: a leftover run id
+  // (result event lost / state reset mid-run) must not swallow the first chunk.
+  if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
       return {
@@ -132,7 +253,23 @@ export function handleStreamEvent(
     });
     return;
   }
-  activeStreamMsgIds.add(s.currentRunId || '');
+  activeStreamMsgIds.add(runId);
+  // If streamingId already set (from prior thinking_stream), use that message
+  if (s.streamingId) {
+    set((prev) => {
+      if (!prev.streamingId) return {};
+      return {
+        skipThinking: false,
+        messages: prev.messages.map((m) => {
+          if (m.id !== prev.streamingId) return m;
+          return { ...m, content: m.content + chunk, thinking: m.thinking ?? '' };
+        }),
+        currentRole: msg.agent_name || 'Agent',
+        wsStatus: 'connected' as ChatState['wsStatus'],
+      };
+    });
+    return;
+  }
   set((prev) => {
     return handleStreamStart(prev, msg, chunk);
   });
@@ -147,7 +284,9 @@ export function handleThinkingStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
-  if (activeStreamMsgIds.has(s.currentRunId || '')) {
+  Logger.info('[chat] thinking stream entry — editTargetId=%s streamingId=%s runId=%s', s.editTargetId, s.streamingId, s.currentRunId);
+  const runId = s.currentRunId || '';
+  if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
       return {
@@ -159,7 +298,7 @@ export function handleThinkingStreamEvent(
     });
     return;
   }
-  activeStreamMsgIds.add(s.currentRunId || '');
+  activeStreamMsgIds.add(runId);
   set((s) => {
     if (s.streamingId) {
       return {

@@ -68,7 +68,7 @@ backend:
       cpu: "250m"
   # Non-secret environment variables — stored in ConfigMap
   env:
-    PYTHONPATH: /app
+    PYTHONPATH: /app/backend/src
     DB_HOST: ""  # auto-set to postgres service name if empty
     DB_PORT: "5432"
     DB_USER: postgres
@@ -106,6 +106,16 @@ celery:
     requests:
       memory: "1Gi"
       cpu: "500m"
+
+# ── Alembic migration Job ─────────────────────────────────────────────────────
+migrations:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 # ── Frontend (Nginx SPA) ───────────────────────────────────────────────────────
 frontend:

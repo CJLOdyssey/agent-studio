@@ -1,5 +1,5 @@
-import PickerModal from './PickerModal';
-import type { PickerItem } from './PickerModal';
+import ResourcePickerModal from '../workstation/shared/ResourcePickerModal';
+import type { PickerItem } from './tabs/usePickerState';
 
 interface Props {
   tab: string | null;
@@ -19,11 +19,21 @@ const TITLE_MAP: Record<string, string> = {
 export default function PickerSection({ tab, items, onSelect, onClose }: Props) {
   if (!tab) return null;
 
+  const currentItems = items[tab] || [];
+
   return (
-    <PickerModal
+    <ResourcePickerModal
       title={`从工作台添加 - ${TITLE_MAP[tab] || tab}`}
-      items={items[tab] || []}
-      onSelect={(item) => onSelect(tab, item)}
+      options={currentItems}
+      selectedIds={[]}
+      getOptionId={(item: PickerItem) => item.id}
+      getOptionLabel={(item: PickerItem) => item.name}
+      getOptionSecondary={(item: PickerItem) => item.description}
+      multiple
+      onConfirm={(ids) => {
+        const selected = currentItems.filter((item) => (ids as string[]).includes(item.id));
+        selected.forEach((item) => onSelect(tab, item));
+      }}
       onClose={onClose}
     />
   );

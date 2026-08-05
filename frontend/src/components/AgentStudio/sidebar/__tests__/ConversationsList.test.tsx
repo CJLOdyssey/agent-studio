@@ -7,7 +7,8 @@ vi.mock('react-i18next', () => ({
 }));
 
 import ConversationsList from '../ConversationsList';
-import type { Conversation } from '../../../../types/AgentStudio';
+import type { Conversation, Agent } from '../../../../types/AgentStudio';
+import type * as React from 'react';
 
 function makeConv(overrides: Partial<Conversation> = {}): Conversation {
   return {
@@ -31,7 +32,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     onDelete: vi.fn(),
   };
 
-  function renderWithVirtuoso(conversations: Conversation[], props: any = {}) {
+  function renderWithVirtuoso(conversations: Conversation[], props: Partial<React.ComponentProps<typeof ConversationsList>> = {}) {
     return render(
       <VirtuosoMockContext.Provider value={{ viewportHeight: 300, itemHeight: 50 }}>
         <ConversationsList
@@ -107,14 +108,14 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   it('marks active conversation', () => {
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { activeConvId: 'c1' });
-    const item = document.querySelector('.agentstudio-conv-item.active');
+    const item = document.querySelector('[aria-selected="true"]');
     expect(item).toBeInTheDocument();
   });
 
   it('does not mark inactive conversation', () => {
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { activeConvId: 'c2' });
-    const item = document.querySelector('.agentstudio-conv-item.active');
+    const item = document.querySelector('[aria-selected="true"]');
     expect(item).toBeNull();
   });
 
@@ -122,7 +123,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onSelect = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect });
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     if (item) fireEvent.click(item);
     expect(onSelect).toHaveBeenCalledWith(conversations[0]);
   });
@@ -131,7 +132,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onSelect = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect });
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     if (item) fireEvent.keyDown(item, { key: 'Enter' });
     expect(onSelect).toHaveBeenCalled();
   });
@@ -140,7 +141,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onSelect = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect });
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     if (item) fireEvent.keyDown(item, { key: ' ' });
     expect(onSelect).toHaveBeenCalled();
   });
@@ -149,8 +150,8 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onDelete = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onDelete });
-    const deleteBtn = document.querySelector('.agentstudio-conv-delete');
-    if (deleteBtn) fireEvent.click(deleteBtn);
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('删除'));
     expect(onDelete).toHaveBeenCalledWith('c1');
   });
 
@@ -159,8 +160,8 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const onDelete = vi.fn();
     const conversations = [makeConv({ id: 'c1' })];
     renderWithVirtuoso(conversations, { onSelect, onDelete });
-    const deleteBtn = document.querySelector('.agentstudio-conv-delete');
-    if (deleteBtn) fireEvent.click(deleteBtn);
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('删除'));
     expect(onSelect).not.toHaveBeenCalled();
     expect(onDelete).toHaveBeenCalled();
   });
@@ -168,14 +169,14 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   it('has accessible delete button', () => {
     const conversations = [makeConv()];
     renderWithVirtuoso(conversations);
-    const deleteBtn = document.querySelector('.agentstudio-conv-delete');
-    expect(deleteBtn).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    expect(screen.getByText('删除')).toBeInTheDocument();
   });
 
   it('has accessible conv item with tabIndex', () => {
     const conversations = [makeConv()];
     renderWithVirtuoso(conversations);
-    const item = document.querySelector('.agentstudio-conv-item');
+    const item = document.querySelector('[role="button"]');
     expect(item?.getAttribute('tabindex')).toBe('0');
   });
 
@@ -186,7 +187,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
   });
 
   it('shows replied status when agent messages exist', () => {
-    const conversations = [makeConv({ messages: [{ role: 'agent', content: 'hi' }] as any })];
+    const conversations = [makeConv({ messages: [{ id: 'm1', role: 'agent', content: 'hi' }] })];
     const { container } = renderWithVirtuoso(conversations);
     expect(container.textContent).toContain('sidebar.replied');
   });
@@ -212,7 +213,7 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
         <ConversationsList
           {...baseProps}
           conversations={conversations}
-          agents={[convAgent as any]}
+          agents={[convAgent as unknown as Agent]}
         />
       </VirtuosoMockContext.Provider>
     );

@@ -10,7 +10,7 @@ from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 from starlette.testclient import TestClient
 
-from backend.core.infra.security_headers_middleware import SecurityHeadersMiddleware
+from core.infra.security_headers_middleware import SecurityHeadersMiddleware
 
 
 def _build_app() -> Starlette:

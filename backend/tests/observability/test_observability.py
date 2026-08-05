@@ -13,7 +13,7 @@ import pytest
 @pytest.mark.requirement("REQ-OBS-001")
 class TestEventSchema:
     def test_create_event(self):
-        from backend.observability.schema import Event
+        from observability.schema import Event
 
         evt = Event(
             trace_id="trace-1",
@@ -29,7 +29,7 @@ class TestEventSchema:
         assert evt.parent_span_id is None
 
     def test_event_to_row(self):
-        from backend.observability.schema import Event
+        from observability.schema import Event
 
         evt = Event(
             trace_id="t1",
@@ -52,7 +52,7 @@ class TestEventSchema:
         assert row["event_type"] == "error"
 
     def test_event_to_row_defaults(self):
-        from backend.observability.schema import Event
+        from observability.schema import Event
 
         evt = Event(trace_id="t2", level="INFO", message="msg", logger="log", timestamp=2000.0)
         row = evt.to_row()
@@ -64,7 +64,7 @@ class TestEventSchema:
         assert row["tags"] == "{}"
 
     def test_event_with_span(self):
-        from backend.observability.schema import Event
+        from observability.schema import Event
 
         evt = Event(
             trace_id="t3",
@@ -80,7 +80,7 @@ class TestEventSchema:
         assert evt.parent_span_id == "span-0"
 
     def test_event_default_factory_tags(self):
-        from backend.observability.schema import Event
+        from observability.schema import Event
 
         evt1 = Event(trace_id="a", level="INFO", message="m", logger="l", timestamp=1.0)
         evt2 = Event(trace_id="b", level="INFO", message="m", logger="l", timestamp=2.0)
@@ -94,7 +94,7 @@ class TestEventSchema:
 @pytest.mark.requirement("REQ-OBS-002")
 class TestEventStore:
     def test_create_and_close(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -109,8 +109,8 @@ class TestEventStore:
             os.unlink(db_path)
 
     def test_write_after_close(self):
-        from backend.observability.schema import Event
-        from backend.observability.store import EventStore
+        from observability.schema import Event
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -125,7 +125,7 @@ class TestEventStore:
             os.unlink(db_path)
 
     def test_self_check_returns_metrics(self):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -144,9 +144,9 @@ class TestEventStore:
         finally:
             os.unlink(db_path)
 
-    @patch("backend.observability.store.sqlite3.connect")
+    @patch("observability.store.sqlite3.connect")
     def test_init_creates_schema(self, mock_connect):
-        from backend.observability.store import EventStore
+        from observability.store import EventStore
 
         mock_conn = MagicMock()
         mock_connect.return_value = mock_conn
@@ -156,8 +156,8 @@ class TestEventStore:
         store.close()
 
     def test_query_methods_with_real_db(self):
-        from backend.observability.schema import Event
-        from backend.observability.store import EventStore
+        from observability.schema import Event
+        from observability.store import EventStore
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
@@ -201,7 +201,7 @@ class TestEventStore:
             os.unlink(db_path)
 
     def test_get_store_singleton(self):
-        import backend.observability.store as obs_store
+        import observability.store as obs_store
 
         original = obs_store._store
         obs_store._store = None
@@ -221,13 +221,13 @@ class TestEventStore:
 
 class TestObservabilityHandler:
     def test_handler_emit(self):
-        from backend.observability.handler import ObservabilityHandler
+        from observability.handler import ObservabilityHandler
 
         handler = ObservabilityHandler()
 
         mock_store = MagicMock()
-        with patch("backend.observability.handler.get_store", return_value=mock_store):
-            with patch("backend.observability.handler.current_trace_id", return_value="trace-h1"):
+        with patch("observability.handler.get_store", return_value=mock_store):
+            with patch("observability.handler.current_trace_id", return_value="trace-h1"):
                 record = logging.LogRecord(
                     name="test_logger",
                     level=logging.ERROR,
@@ -247,12 +247,12 @@ class TestObservabilityHandler:
     def test_handler_emit_with_exception(self):
         import sys
 
-        from backend.observability.handler import ObservabilityHandler
+        from observability.handler import ObservabilityHandler
 
         handler = ObservabilityHandler()
 
         mock_store = MagicMock()
-        with patch("backend.observability.handler.get_store", return_value=mock_store):
+        with patch("observability.handler.get_store", return_value=mock_store):
             try:
                 raise ValueError("test exception")
             except ValueError:
@@ -272,31 +272,31 @@ class TestObservabilityHandler:
                 assert "test exception" in (written_evt.error_stack or "")
 
     def test_handler_silently_swallows_exceptions(self):
-        from backend.observability.handler import ObservabilityHandler
+        from observability.handler import ObservabilityHandler
 
         handler = ObservabilityHandler()
-        with patch("backend.observability.handler.get_store", side_effect=RuntimeError("fail")):
+        with patch("observability.handler.get_store", side_effect=RuntimeError("fail")):
             record = logging.LogRecord("t", logging.INFO, "f", 1, "msg", (), None)
             handler.emit(record)
 
 
 class TestTrace:
     def test_current_trace_id_default(self):
-        from backend.observability.trace import current_trace_id
+        from observability.trace import current_trace_id
         assert current_trace_id() == ""
 
     def test_set_and_get_trace_id(self):
-        from backend.observability.trace import current_trace_id, set_trace_id
+        from observability.trace import current_trace_id, set_trace_id
         set_trace_id("my-trace")
         assert current_trace_id() == "my-trace"
 
     def test_current_span_id_default(self):
-        from backend.observability.trace import current_span_id
+        from observability.trace import current_span_id
         assert current_span_id() == ""
 
-    @patch("backend.observability.trace.get_store")
+    @patch("observability.trace.get_store")
     def test_span_context_manager(self, mock_get_store):
-        from backend.observability.trace import set_trace_id, span
+        from observability.trace import set_trace_id, span
 
         set_trace_id("span-trace")
         mock_store = MagicMock()
@@ -312,9 +312,9 @@ class TestTrace:
         assert written.logger == "test_logger"
         assert written.tags == {"env": "test"}
 
-    @patch("backend.observability.trace.get_store")
+    @patch("observability.trace.get_store")
     def test_span_records_error(self, mock_get_store):
-        from backend.observability.trace import set_trace_id, span
+        from observability.trace import set_trace_id, span
 
         set_trace_id("err-trace")
         mock_store = MagicMock()
@@ -328,9 +328,9 @@ class TestTrace:
         assert written.error_type == "ValueError"
         assert written.level == "ERROR"
 
-    @patch("backend.observability.trace.get_store")
+    @patch("observability.trace.get_store")
     def test_span_auto_generates_trace_id(self, mock_get_store):
-        from backend.observability.trace import current_trace_id, set_trace_id, span
+        from observability.trace import current_trace_id, set_trace_id, span
 
         # Clear the current trace_id so span must auto-generate one
         set_trace_id("")
@@ -344,9 +344,9 @@ class TestTrace:
         # trace_id should be auto-generated (not empty)
         assert written.trace_id != ""
 
-    @patch("backend.observability.trace.get_store")
+    @patch("observability.trace.get_store")
     def test_span_nested(self, mock_get_store):
-        from backend.observability.trace import set_trace_id, span
+        from observability.trace import set_trace_id, span
 
         set_trace_id("nested-trace")
         mock_store = MagicMock()

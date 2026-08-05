@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { OutputEntry, OutputFormData, OutputCategory } from './output.types';
 import { outputAPI } from './api';
 import { useGenericCrud } from '../shared/useGenericCrud';
@@ -6,8 +6,8 @@ import { useGenericCrud } from '../shared/useGenericCrud';
 export interface OutputData {
   isLoading: boolean; error: string | null;
   filtered: OutputEntry[]; paged: OutputEntry[]; page: number; totalPages: number;
-  search: string; categoryFilter: string; selectedIds: Set<string>; allOnPageSelected: boolean;
-  setSearch: (v: string) => void; setCategoryFilter: (v: string) => void; setPage: (v: number) => void;
+  search: string; statusFilter: string; categoryFilter: string; selectedIds: Set<string>; allOnPageSelected: boolean;
+  setSearch: (v: string) => void; setStatusFilter: (v: string) => void; setCategoryFilter: (v: string) => void; setPage: (v: number) => void;
   toggleSelect: (id: string) => void; toggleSelectAll: () => void;
   addItem: (data: OutputFormData) => Promise<void>; updateItem: (id: string, data: Partial<OutputEntry>) => Promise<void>;
   removeItem: (id: string) => void; copyItem: (item: OutputEntry) => void;
@@ -38,7 +38,7 @@ function validateOutputForm(data: OutputFormData): string[] {
 }
 
 const EMPTY_FORM: OutputFormData = {
-  name: '', content: '', category: '格式约束' as OutputCategory, model: '全部模型', status: 'draft', version: 'v1.0.0',
+  name: '', content: '', category: '格式约束' as OutputCategory, status: 'draft',
 };
 
 export function useOutputManagement(): OutputData {
@@ -47,7 +47,7 @@ export function useOutputManagement(): OutputData {
     emptyForm: EMPTY_FORM,
     itemName: 'Output',
     validate: validateOutputForm,
-    extraFilters: { categoryFilter: 'all' },
+    extraFilters: { status: 'all', category: 'all' },
   });
 
   const itemsRef = useRef(crud.items);
@@ -59,51 +59,32 @@ export function useOutputManagement(): OutputData {
   const handleSave = useCallback((): boolean => {
     const errs = validateOutputForm(crud.formData);
     if (errs.length > 0) {
-      crud.handleSave(); // sets formErrors via useGenericCrud
+      void crud.handleSave(); // sets formErrors via useGenericCrud
       return false;
     }
-    crud.handleSave();
+    void crud.handleSave();
     return true;
   }, [crud]);
 
-  return {
-    isLoading: crud.isLoading,
-    error: crud.error,
-    filtered: crud.processed as OutputEntry[],
-    paged: crud.paged as OutputEntry[],
-    page: crud.page,
-    totalPages: crud.totalPages,
-    search: crud.search,
-    categoryFilter: crud.extraFilterValues.categoryFilter ?? 'all',
-    selectedIds: crud.selectedIds,
-    allOnPageSelected: crud.allOnPageSelected,
-    isFormOpen: crud.isFormOpen,
-    formErrors: crud.formErrors,
-    editingItem: crud.editingItem as OutputEntry | null,
+  return useMemo(() => ({
+    ...crud,
+    filtered: crud.processed,
+    paged: crud.paged,
+    statusFilter: crud.extraFilterValues.status ?? 'all',
+    categoryFilter: crud.extraFilterValues.category ?? 'all',
+    editingItem: crud.editingItem,
     editingId: crud.editingItem?.id ?? null,
-    formData: crud.formData as OutputFormData,
-    openMenuId: crud.openMenuId,
-    menuAnchorEl: crud.menuAnchorEl,
-    setSearch: crud.setSearch,
-    setCategoryFilter: (v) => crud.setExtraFilter('categoryFilter', v),
-    setPage: crud.setPage,
+    formData: crud.formData,
+    setStatusFilter: (v) => crud.setExtraFilter('status', v),
+    setCategoryFilter: (v) => crud.setExtraFilter('category', v),
     setFormData: (fn) => crud.setFormData(fn),
-    setOpenMenuId: crud.setOpenMenuId,
-    setMenuAnchorEl: crud.setMenuAnchorEl,
-    toggleSelect: crud.toggleSelect,
-    toggleSelectAll: crud.toggleSelectAll,
-    addItem: ((data: OutputFormData) => crud.createItem(data).then(() => undefined)) as (data: OutputFormData) => Promise<void>,
-    updateItem: crud.updateItem as (id: string, data: Partial<OutputEntry>) => Promise<void>,
-    removeItem: (id) => { crud.removeItem(id); },
-    copyItem: (item) => { crud.cloneItem(item); },
-    removeMultiple: (ids) => { crud.removeMultipleItems(ids); },
+    addItem: ((data: OutputFormData) => crud.createItem(data).then(() => undefined)),
+    updateItem: crud.updateItem,
+    removeItem: (id) => { void crud.removeItem(id); },
+    copyItem: (item) => { void crud.cloneItem(item); },
+    removeMultiple: (ids) => { void crud.removeMultipleItems(ids); },
     getAllItems,
     addItems,
-    clearError: crud.clearError,
-    retry: crud.retry,
-    openCreate: crud.openCreate,
-    openEdit: (item) => crud.openEdit(item),
-    closeForm: crud.closeForm,
     handleSave,
-  };
+  }), [crud, getAllItems, addItems, handleSave]);
 }

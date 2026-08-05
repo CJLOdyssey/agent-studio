@@ -20,6 +20,7 @@ const INITIAL_STATE = {
   lastAbandonedRunId: null,
   interruptedMessageId: null,
   continuingId: null,
+  editTargetId: null,
   skipThinking: false,
   pendingVersions: null,
   pendingThinkingVersions: null,
@@ -83,6 +84,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }) }));
   },
 
+  switchUserVersion: (msgId, direction) => {
+    set((s) => ({ messages: s.messages.map((m) => {
+      if (m.id !== msgId || !m.userVersions) return m;
+      const max = m.userVersions.length - 1;
+      const cv = m.currentUserVersion ?? max;
+      const nv = direction === 'prev' ? Math.max(0, cv - 1) : Math.min(max, cv + 1);
+      return { ...m, currentUserVersion: nv, content: m.userVersions[nv] };
+    }) }));
+  },
+
   setThumbsFeedback: (msgId, value) => {
     set((s) => ({ messages: s.messages.map((m) => m.id === msgId ? { ...m, thumbs: value } : m) }));
   },
@@ -96,4 +107,4 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 }));
 
-export { submitRequirement, editMessage, regenerateMessage, retry, continueGeneration } from './chatActions';
+export { submitRequirement, editMessage, editAndRegenerate, regenerateMessage, retry, continueGeneration } from './chatActions';

@@ -10,7 +10,7 @@ export function useTeamManagement(): TeamData {
     emptyForm: EMPTY_FORM,
     itemName: 'Team',
     validate: validateTeamForm,
-    extraFilters: { categoryFilter: 'all', statusFilter: 'all' },
+    extraFilters: { category: 'all', status: 'all' },
   });
 
   const addTeam = useCallback(async (data: TeamFormData): Promise<TeamEntry | undefined> => {
@@ -26,10 +26,6 @@ export function useTeamManagement(): TeamData {
     await crud.removeItem(id);
   }, [crud]);
 
-  const copyTeam = useCallback(async (item: TeamEntry) => {
-    await crud.cloneItem(item);
-  }, [crud]);
-
   const batchDelete = useCallback(async (ids: Set<string>) => {
     await crud.removeMultipleItems(ids);
   }, [crud]);
@@ -38,14 +34,13 @@ export function useTeamManagement(): TeamData {
     ...crud,
     get teams() { return crud.items; },
     get sortField() { return (crud.sortField ?? 'name') as 'name' | 'status'; },
-    get categoryFilter() { return (crud.extraFilterValues.categoryFilter ?? 'all') as TeamCategoryFilter; },
-    get statusFilter() { return (crud.extraFilterValues.statusFilter ?? 'all') as 'all' | TeamEntry['status']; },
-    setCategoryFilter: (v: TeamCategoryFilter) => crud.setExtraFilter('categoryFilter', v),
-    setStatusFilter: (v: 'all' | TeamEntry['status']) => crud.setExtraFilter('statusFilter', v),
+    get categoryFilter() { return (crud.extraFilterValues.category ?? 'all') as TeamCategoryFilter; },
+    get statusFilter() { return (crud.extraFilterValues.status ?? 'all') as 'all' | TeamEntry['status']; },
+    setCategoryFilter: (v: TeamCategoryFilter) => crud.setExtraFilter('category', v),
+    setStatusFilter: (v: 'all' | TeamEntry['status']) => crud.setExtraFilter('status', v),
     addTeam,
     updateTeam,
     deleteTeam,
-    copyTeam,
     batchDelete,
-  }), [crud, addTeam, updateTeam, deleteTeam, copyTeam, batchDelete]);
+  }), [crud, addTeam, updateTeam, deleteTeam, batchDelete]);
 }

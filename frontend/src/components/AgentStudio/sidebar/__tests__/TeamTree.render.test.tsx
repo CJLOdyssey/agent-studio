@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -76,30 +76,30 @@ describe('TeamTree', { tags: ['integration'] }, () => {
   it('renders pin icon when team is pinned', () => {
     const teams = [mockTeam({ id: 't1', isPinned: true })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const pin = document.querySelector('.agentstudio-team-pin');
+    const pin = document.querySelector('svg');
     expect(pin).toBeDefined();
   });
 
   it('does not render pin icon when team is not pinned', () => {
     const teams = [mockTeam({ id: 't1', isPinned: false })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const pin = document.querySelector('.agentstudio-team-pin');
+    const pin = document.querySelector('[class*="text-[var(--color-accent-soft)]"]');
     expect(pin).toBeNull();
   });
 
-  it('renders chevron with collapsed class when team is collapsed', () => {
+  it('renders chevron with rotation when team is collapsed', () => {
     const teams = [mockTeam({ id: 't1', isExpanded: false })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const chevron = document.querySelector('.chevron-icon.collapsed');
+    const chevron = document.querySelector('[class*="-rotate-90"]');
     expect(chevron).toBeDefined();
   });
 
-  it('renders chevron without collapsed class when team is expanded', () => {
+  it('renders chevron without rotation when team is expanded', () => {
     const teams = [mockTeam({ id: 't1', isExpanded: true })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const chevron = document.querySelector('.chevron-icon');
+    const chevron = document.querySelector('[class*="transition-transform"]');
     expect(chevron).toBeDefined();
-    expect(chevron?.className).not.toContain('collapsed');
+    expect(chevron?.className).not.toContain('-rotate-90');
   });
 
   it('renders agent items when team is expanded', () => {
@@ -137,7 +137,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
   it('shows Pin icon in header for pinned team', () => {
     const teams = [mockTeam({ id: 't1', isPinned: true })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const pinIcon = document.querySelector('.agentstudio-team-pin');
+    const pinIcon = document.querySelector('svg');
     expect(pinIcon).toBeDefined();
   });
 });

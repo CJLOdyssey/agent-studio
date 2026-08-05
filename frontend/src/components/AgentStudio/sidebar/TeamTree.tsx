@@ -5,6 +5,8 @@ import type { Team, Agent } from '../../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { validateName } from '../../../utils/validation';
 import TeamTreeAgentItem from './TeamTreeAgentItem';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import type * as React from 'react';
 
 interface TeamTreeProps {
   teams: Team[];
@@ -52,7 +54,6 @@ const TeamTree = memo(function TeamTree({
   const [editingAgent, setEditingAgent] = useState<string | null>(null);
   const [editAgentName, setEditAgentName] = useState('');
 
-  // 点击外部关闭菜单
   useEffect(() => {
     if (!openTeamMenu && !openAgentMenu) return;
     const handleClickOutside = () => {
@@ -75,7 +76,6 @@ const TeamTree = memo(function TeamTree({
       setValidationWarning({ message: t('sidebar.nameNotEmpty') });
       return;
     }
-    // 实时验证
     const existingNames = teams.filter((t) => t.id !== teamId).map((t) => t.name);
     const validation = validateName(name, existingNames);
     if (!validation.valid) {
@@ -87,13 +87,12 @@ const TeamTree = memo(function TeamTree({
     setEditName('');
   };
 
-  // 离开输入框时自动保存（显示警告弹窗）
   const handleTeamBlur = (teamId: string) => {
     setTimeout(() => {
-      if (editingTeam === teamId) { // 确保还在编辑模式
+      if (editingTeam === teamId) {
         saveTeamName(teamId);
       }
-    }, 100); // 延迟执行，确保点击事件优先处理
+    }, 100);
   };
 
   const onTeamNameChange = (value: string) => {
@@ -113,7 +112,6 @@ const TeamTree = memo(function TeamTree({
       return;
     }
     if (!editingAgent) return;
-    // 实时验证
     let existingNames: string[] = [];
     teams.forEach((team) => {
       if (team.agents.some((a) => a.id === editingAgent)) {
@@ -130,13 +128,12 @@ const TeamTree = memo(function TeamTree({
     setEditAgentName('');
   };
 
-  // 离开输入框时自动保存（显示警告弹窗）
   const handleAgentBlur = () => {
     setTimeout(() => {
-      if (editingAgent) { // 确保还在编辑模式
+      if (editingAgent) {
         saveAgentName();
       }
-    }, 100); // 延迟执行，确保点击事件优先处理
+    }, 100);
   };
 
   const onAgentNameChange = (value: string) => {
@@ -158,7 +155,7 @@ const TeamTree = memo(function TeamTree({
       setOpenTeamMenu(null);
     } else {
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 140 });
+      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 124 });
       setOpenTeamMenu(teamId);
       setOpenAgentMenu(null);
     }
@@ -169,47 +166,54 @@ const TeamTree = memo(function TeamTree({
       setOpenAgentMenu(null);
     } else {
       const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 140 });
+      setMenuPosition({ top: rect.bottom + 4, left: rect.right - 124 });
       setOpenAgentMenu(agentId);
       setOpenTeamMenu(null);
     }
   };
 
   return (
-    <div>
-      <div className="agentstudio-sidebar-section-header">
-        <div className="agentstudio-sidebar-section-label">
-          <Users size={14} /> {t('sidebar.myTeams')}
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between py-0.5 shrink-0" style={{ paddingLeft: 8, paddingRight: 9 }}>
+        <div className="text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)]">
+          {t('sidebar.myTeams')}
         </div>
-        <button 
-          className={`agentstudio-sidebar-section-action${!isAuthenticated ? ' action-locked' : ''}`}
+        <button
+          className={`bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-tertiary)] flex items-center justify-center transition-colors duration-150 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)]${!isAuthenticated ? ' opacity-35' : ' opacity-50'}`}
           onClick={isAuthenticated ? handleAddTeam : () => openLoginModal()}
           title={isAuthenticated ? t('sidebar.createTeam') : '登录后解锁功能'}
         >
           {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
         </button>
       </div>
-      <div className="agentstudio-sidebar-menu">
+      <div className="p-0 flex flex-col gap-0.5 shrink-0 max-h-[35vh] overflow-y-auto overflow-x-hidden">
+        {teams.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center py-8 px-4">
+            <p className="text-sm text-[var(--color-text-muted)] m-0">
+              {t('sidebar.noTeams', '暂无团队，点击 + 创建')}
+            </p>
+          </div>
+        )}
         {teams.map((team) => (
-          <div key={team.id} className="agentstudio-team-folder">
-            <div className="agentstudio-team-folder-header" onClick={() => toggleTeam(team.id)}>
+          <div key={team.id} className="mb-px rounded-md overflow-visible">
+            <div className="group flex items-center gap-1 py-2 pl-2 pr-2 cursor-pointer transition-colors duration-150 bg-transparent min-h-[36px] rounded-md hover:bg-[var(--color-surface-hover)]" onClick={() => toggleTeam(team.id)}>
               <button
-                className="agentstudio-team-toggle"
+                className="bg-transparent border-none p-0.5 rounded cursor-pointer text-[var(--color-text-muted)] flex items-center justify-center transition-[color,background,opacity] duration-150 flex-shrink-0 w-[24px] h-[24px] opacity-60 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:opacity-100"
               >
-                <ChevronDown 
-                  size={14} 
-                  className={`chevron-icon${team.isExpanded ? '' : ' collapsed'}`} 
+                <ChevronDown
+                  size={15}
+                  className={`transition-transform duration-200 ${team.isExpanded ? '' : '-rotate-90'}`}
                 />
               </button>
-              
+
               {team.isPinned && (
-                <Pin size={12} className="agentstudio-team-pin" />
+                <Pin size={13} className="text-[var(--color-accent-soft)] flex-shrink-0 mr-[-2px]" />
               )}
-              
+
               {editingTeam === team.id ? (
-                <div className="agentstudio-team-edit">
+                <div className="flex-1 min-w-0">
                   <input
-                    className="agentstudio-team-edit-input"
+                    className="w-full py-1 px-1.5 border border-[var(--color-accent)] rounded text-base font-medium text-[var(--color-text-primary)] bg-transparent outline-none font-[inherit]"
                     value={editName}
                     onChange={(e) => onTeamNameChange(e.target.value)}
                     onBlur={() => handleTeamBlur(team.id)}
@@ -221,35 +225,36 @@ const TeamTree = memo(function TeamTree({
                 </div>
               ) : (
                 <>
-                  <span className="agentstudio-team-name">{team.name}</span>
-                  <span className="agentstudio-team-count">{team.agents.length}</span>
-                  <button
-                    className="agentstudio-team-menu-btn"
-                    onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
-                    title={t('sidebar.moreOptions')}
-                  >
-                    <MoreVertical size={14} />
-                  </button>
+                  <span className="text-base font-medium text-[var(--color-text-primary)] overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0 leading-[1] tracking-[-0.01em]">{team.name}</span>
+                  <span className="text-sm text-[var(--color-text-tertiary)] shrink-0 font-normal opacity-70 min-w-[16px] text-center">{team.agents.length}</span>
                   {onTeamChat && (
                     <button
-                      className="agentstudio-team-chat-btn"
+                      className="bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
                       onClick={(e) => { e.stopPropagation(); onTeamChat(team.id); }}
                       title="团队对话"
                     >
-                      <Users size={14} />
+                      <Users size={15} />
                     </button>
                   )}
+                  <button
+                    className="bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] flex items-center justify-center w-[24px] h-[24px] shrink-0 transition-all duration-150"
+                    onClick={(e) => { e.stopPropagation(); toggleTeamMenu(team.id, e); }}
+                    title={t('sidebar.moreOptions')}
+                  >
+                    <MoreVertical size={15} />
+                  </button>
                 </>
               )}
             </div>
 
             {openTeamMenu === team.id && createPortal(
               <div
-                className="agentstudio-team-dropdown agentstudio-portal-dropdown"
-                style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left }}
+                className="bg-[var(--color-surface-overlay)] rounded-xl p-1 min-w-[124px] z-[99999]"
+                style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, boxShadow: 'rgba(0,0,0,0.2) 0px 0px 1px 0px, rgba(0,0,0,0.02) 0px 0px 4px 0px, rgba(0,0,0,0.08) 0px 12px 32px 0px' }}
               >
                 <button
-                  className="agentstudio-team-dropdown-item"
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
+                  style={{ padding: '8px 10px', borderRadius: 'var(--radius-btn)' }}
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleAddAgent(team.id);
@@ -257,22 +262,24 @@ const TeamTree = memo(function TeamTree({
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? <Plus size={14} /> : <Lock size={14} />}
+                  {isAuthenticated ? <Plus size={15} /> : <Lock size={15} />}
                   <span>{t('sidebar.addAgent')}</span>
                 </button>
                 <button
-                  className="agentstudio-team-dropdown-item"
+                  style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     startEditTeam(team);
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? <Pencil size={14} /> : <Lock size={14} />}
+                  {isAuthenticated ? <Pencil size={15} /> : <Lock size={15} />}
                   <span>{t('workstation.rename')}</span>
                 </button>
                 <button
-                  className="agentstudio-team-dropdown-item"
+                  style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-text-secondary)] text-left hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     handleTogglePinTeam(team.id);
@@ -280,11 +287,12 @@ const TeamTree = memo(function TeamTree({
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? (team.isPinned ? <PinOff size={14} /> : <Pin size={14} />) : <Lock size={14} />}
+                  {isAuthenticated ? (team.isPinned ? <PinOff size={15} /> : <Pin size={15} />) : <Lock size={15} />}
                   <span>{team.isPinned ? t('sidebar.unpin') : t('sidebar.pin')}</span>
                 </button>
                 <button
-                  className="agentstudio-team-dropdown-item danger"
+                  style={{ padding: "8px 10px", borderRadius: 'var(--radius-btn)' }}
+                  className="flex items-center gap-2 cursor-pointer transition-colors duration-150 border-none bg-transparent w-full text-base text-[var(--color-danger)] text-left hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)]"
                   onClick={() => {
                     if (!isAuthenticated) { openLoginModal(); return; }
                     setConfirmDelete({ type: 'team', teamId: team.id });
@@ -292,15 +300,15 @@ const TeamTree = memo(function TeamTree({
                   }}
                   title={!isAuthenticated ? '登录后解锁功能' : undefined}
                 >
-                  {isAuthenticated ? <Trash2 size={14} /> : <Lock size={14} />}
+                  {isAuthenticated ? <Trash2 size={15} /> : <Lock size={15} />}
                   <span>{t('workstation.delete')}</span>
                 </button>
               </div>,
               document.body,
             )}
-            
+
             {team.isExpanded && (
-              <div className="agentstudio-team-agents">
+              <div className="py-px" style={{ marginLeft: 26 }}>
                 {team.agents.map((agent) => (
                   <TeamTreeAgentItem
                     key={agent.id}
@@ -331,97 +339,31 @@ const TeamTree = memo(function TeamTree({
         ))}
       </div>
 
-      {confirmDelete && createPortal(
-        <div className="agentstudio-modal-overlay" onClick={() => setConfirmDelete(null)}>
-          <div className="agentstudio-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
-            <div className="agentstudio-modal-header">
-              <h3 id="confirm-delete-title">{t('confirm.title')}</h3>
-              <button
-                className="agentstudio-modal-close"
-                onClick={() => setConfirmDelete(null)}
-                aria-label={t('common.close')}
-              >
-                ×
-              </button>
-            </div>
-            <div className="agentstudio-modal-content">
-              <div className="agentstudio-confirm-body">
-                <span className={`agentstudio-confirm-icon ${confirmDelete.type === 'team' ? 'danger' : 'warning'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </span>
-                <div className="agentstudio-confirm-text">
-                  <p>
-                    {confirmDelete.type === 'team'
-                      ? t('confirm.deleteTeamConfirm')
-                      : t('confirm.deleteAgentConfirm')}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="agentstudio-modal-actions">
-              <button
-                className="agentstudio-modal-btn"
-                onClick={() => setConfirmDelete(null)}
-                autoFocus
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                className="agentstudio-modal-btn danger"
-                onClick={confirmDeleteAction}
-              >
-                {t('sidebar.delete')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
+      {confirmDelete && (
+        <ConfirmDialog
+          title={t('confirm.title')}
+          message={
+            confirmDelete.type === 'team'
+              ? t('confirm.deleteTeamConfirm')
+              : t('confirm.deleteAgentConfirm')
+          }
+          confirmLabel={t('sidebar.delete')}
+          cancelLabel={t('common.cancel')}
+          danger
+          onConfirm={confirmDeleteAction}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
-      {/* 验证警告弹窗 */}
-      {validationWarning && createPortal(
-        <div className="agentstudio-modal-overlay" onClick={() => setValidationWarning(null)}>
-          <div className="agentstudio-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="agentstudio-modal-header">
-              <h3>{t('confirm.tip')}</h3>
-              <button
-                className="agentstudio-modal-close"
-                onClick={() => setValidationWarning(null)}
-                aria-label={t('common.close')}
-              >
-                ×
-              </button>
-            </div>
-            <div className="agentstudio-modal-content">
-              <div className="agentstudio-confirm-body">
-                <span className="agentstudio-confirm-icon warning">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </span>
-                <div className="agentstudio-confirm-text">
-                  <p>{validationWarning.message}</p>
-                </div>
-              </div>
-            </div>
-            <div className="agentstudio-modal-actions">
-              <button
-                className="agentstudio-modal-btn danger"
-                onClick={() => setValidationWarning(null)}
-                autoFocus
-              >
-                {t('confirm.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
+      {validationWarning && (
+        <ConfirmDialog
+          title={t('confirm.tip')}
+          message={validationWarning.message}
+          confirmLabel={t('confirm.confirm')}
+          danger
+          onConfirm={() => setValidationWarning(null)}
+          onCancel={() => setValidationWarning(null)}
+        />
       )}
     </div>
   );

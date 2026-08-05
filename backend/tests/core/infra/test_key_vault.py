@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
-from backend.core.infra.key_vault import (
+from core.infra.key_vault import (
     _derive_fernet_key,
     _get_fernet,
     _machine_fingerprint,

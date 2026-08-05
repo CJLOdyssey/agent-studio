@@ -15,7 +15,7 @@ export async function listMCPs(): Promise<MCPItem[]> {
   return data;
 }
 
-export async function createMCP(payload: { name: string; type: string; endpoint?: string; config?: Record<string, unknown> | string }): Promise<MCPItem> {
+export async function createMCP(payload: { name: string; type: string; endpoint?: string; config?: Record<string, unknown> | string; status?: string }): Promise<MCPItem> {
   const { data } = await api.post('/mcps', payload);
   return data;
 }

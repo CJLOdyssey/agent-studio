@@ -12,14 +12,10 @@ function renderList(overrides?: Record<string, unknown>) {
     title: 'Tools',
     items: baseItems,
     presets: [],
-    editingId: null,
     emptyLabel: 'No items',
     onToggle: vi.fn(),
     onAdd: vi.fn(),
-    onUpdate: vi.fn(),
     onRemove: vi.fn(),
-    onStartEdit: vi.fn(),
-    onFinishEdit: vi.fn(),
     ...overrides,
   };
   return { ...render(<ConfigItemList {...props} />), props };
@@ -54,24 +50,9 @@ describe('ConfigItemList', { tags: ['integration'] }, () => {
     expect(screen.queryByText('Tools (2)')).not.toBeInTheDocument();
   });
 
-  it('opens three-dot menu and shows rename option', async () => {
-    renderList();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
-    fireEvent.click(actionBtns[0]);
-    expect(screen.getByText('重命名')).toBeInTheDocument();
-  });
-
-  it('calls onStartEdit when rename clicked', () => {
-    const { props } = renderList();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
-    fireEvent.click(actionBtns[0]);
-    fireEvent.click(screen.getByText('重命名'));
-    expect(props.onStartEdit).toHaveBeenCalledWith('1');
-  });
-
   it('calls onRemove when delete clicked', () => {
     const { props } = renderList();
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     fireEvent.click(screen.getByText('删除'));
     expect(props.onRemove).toHaveBeenCalledWith('1');
@@ -80,7 +61,7 @@ describe('ConfigItemList', { tags: ['integration'] }, () => {
   it('shows edit option when onEditFull provided', () => {
     const onEditFull = vi.fn();
     renderList({ onEditFull });
-    const actionBtns = document.querySelectorAll('.agent-config-item-action');
+    const actionBtns = document.querySelectorAll('.agent-config-list .flex.items-center.gap-2 > button');
     fireEvent.click(actionBtns[0]);
     expect(screen.getByText('编辑')).toBeInTheDocument();
   });

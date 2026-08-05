@@ -9,9 +9,9 @@ interface FormState {
   skill: { show: boolean; data: SkillFormData; errors: string[] };
 }
 
-const defaultTool: ToolFormData = { name: '', description: '', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{"type":"object"}' };
-const defaultMCP: MCPFormData = { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '' };
-const defaultSkill: SkillFormData = { name: '', description: '', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', prompt_id: '', tool_names: [], output_constraint: '' };
+const defaultTool: ToolFormData = { name: '', description: '', category: '自定义工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{"type":"object"}' };
+const defaultMCP: MCPFormData = { name: '', description: '', type: 'stdio', status: 'disconnected', version: 'v1.0.0', command: '', url: '', args: [], env: [] };
+const defaultSkill: SkillFormData = { name: '', description: '', category: 'AI/ML', status: 'available', version: 'v1.0.0', author: '', instructions: '', tool_names: [], output_constraint: '' };
 
 const initialState: FormState = {
   tool: { show: false, data: defaultTool, errors: [] },

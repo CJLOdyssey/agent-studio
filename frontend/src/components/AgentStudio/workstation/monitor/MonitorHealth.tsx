@@ -12,50 +12,25 @@ interface Props {
 
 export default function MonitorHealth({ items }: Props) {
   return (
-    <div
-      style={{
-        background: 'var(--da-bg-card)',
-        border: '1px solid var(--da-border-subtle)',
-        borderRadius: 10,
-        padding: 20,
-      }}
-    >
-      <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--da-text-primary)', marginBottom: 16 }}>
+    <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-5">
+      <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
         {t('monitor.health')}
       </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="flex flex-col gap-3">
         {items.map((item) => (
           <div
             key={item.label}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px 12px',
-              borderRadius: 8,
-              background: 'var(--da-bg-hover)',
-            }}
+            className="flex justify-between items-center px-3 py-2 rounded-lg bg-[var(--color-surface-hover)]"
           >
-            <span style={{ fontSize: 13, color: 'var(--da-text-secondary)' }}>{item.label}</span>
+            <span className="text-sm text-[var(--color-text-secondary)]">{item.label}</span>
             <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                color: item.status === 'normal' ? '#22c55e' : '#f59e0b',
-              }}
+              className="flex items-center gap-1.5 text-sm font-medium"
+              style={{ color: item.status === 'normal' ? '#22c55e' : '#f59e0b' }}
             >
               <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: item.status === 'normal' ? '#22c55e' : '#f59e0b',
-                }}
-              />
-              {item.value}
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: item.status === 'normal' ? '#22c55e' : '#f59e0b' }}
+              />{item.value}
             </span>
           </div>
         ))}

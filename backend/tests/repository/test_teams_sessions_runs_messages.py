@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from backend.repository.teams import (
+from repository.teams import (
     add_team_member,
     create_team,
     delete_team,
@@ -15,14 +15,14 @@ from backend.repository.teams import (
     reorder_team_members,
     update_team,
 )
-from backend.repository.session_repo import (
+from repository.session_repo import (
     create_session,
     delete_session,
     get_session,
     get_sessions,
     update_session_title,
 )
-from backend.repository.run_repo import (
+from repository.run_repo import (
     create_run,
     get_run,
     get_runs,
@@ -31,7 +31,7 @@ from backend.repository.run_repo import (
     update_run_result,
     update_run_status,
 )
-from backend.repository.message_repo import (
+from repository.message_repo import (
     get_messages,
     get_run_messages,
     get_session_messages,
@@ -93,7 +93,7 @@ class TestTeamRepo:
         assert "agents" in teams[0]
 
     async def test_get_teams_filtered_by_user(self, db_engine):
-        from backend.core.infra.database import TeamDB, get_session_factory
+        from core.infra.database import TeamDB, get_session_factory
 
         team = await create_team(name=f"team-{uuid.uuid4().hex[:6]}")
         factory = get_session_factory()

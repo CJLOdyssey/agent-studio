@@ -4,6 +4,9 @@ import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+pytestmark = pytest.mark.unit
+
 from starlette.testclient import TestClient
 
 os.environ["AUTH_MODE"] = "legacy"
@@ -16,7 +19,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -28,23 +31,23 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    import backend.core.app_lifespan as lifespan_mod
+    import core.app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
+        from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             existing = await session.execute(
@@ -86,11 +89,11 @@ def client():
     mock_redis.set.side_effect = _redis_set
     mock_redis.delete.side_effect = _redis_delete
 
-    with patch("backend.broker.get_redis", return_value=mock_redis), \
-         patch("backend.core.app_lifespan.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.login.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+    with patch("broker.get_redis", return_value=mock_redis), \
+         patch("core.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("routers.auth.login.get_redis", return_value=mock_redis), \
+         patch("routers.auth.register.get_redis", return_value=mock_redis), \
+         patch("routers.auth.password.get_redis", return_value=mock_redis):
         with TestClient(app) as c:
             yield c
 
@@ -128,6 +131,6 @@ class TestVersions:
 
     @pytest.mark.skip(reason="Depends(get_session) makes mock unreliable for versions endpoint")
     def test_get_version_not_found_returns_404(self, client):
-        with patch("backend.repository.versions.get_version", new_callable=AsyncMock, return_value=None):
+        with patch("repository.versions.get_version", new_callable=AsyncMock, return_value=None):
             resp = client.get("/api/versions/detail/nonexistent-id")
             assert resp.status_code == 404

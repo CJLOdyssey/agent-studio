@@ -68,9 +68,9 @@ export interface GenericCrudReturn<T, F> {
   openCreate(): void;
   openEdit(item: T): void;
   openDelete(item: T): void;
-  handleSave(): void;
-  handleDelete(): void;
-  handleBatchDelete(): void;
+  handleSave(): Promise<void> | undefined;
+  handleDelete(): Promise<void> | undefined;
+  handleBatchDelete(): Promise<void> | undefined;
   openHistory(item: T): void;
   openBatchDelete(): void;
   closeForm(): void;

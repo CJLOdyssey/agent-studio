@@ -9,6 +9,7 @@ export interface AgentTool {
   type?: string;
   enabled: boolean;
   parameters?: string;
+  archived?: boolean;
 }
 
 // Agent MCP 配置
@@ -19,6 +20,7 @@ export interface AgentMCP {
   serverUrl: string;
   type?: string;
   enabled: boolean;
+  archived?: boolean;
 }
 
 // Agent Skills 配置
@@ -28,6 +30,7 @@ export interface AgentSkill {
   description: string;
   type?: string;
   enabled: boolean;
+  archived?: boolean;
 }
 
 // Agent 配置
@@ -85,6 +88,15 @@ export interface WorkflowConfig {
   edges: WorkflowEdge[];
 }
 
+export interface WorkflowSummary {
+  id: string;
+  teamId: string;
+  teamName: string;
+  name: string;
+  nodeCount: number;
+  createdAt: string;
+}
+
 // 对话历史记录
 export interface Conversation {
   id: string;
@@ -92,6 +104,7 @@ export interface Conversation {
   messages: Message[];
   createdAt: string;
   updatedAt: string;
+  kind?: 'normal' | 'agent' | 'team';
   agentId?: string;
   sessionId?: string;
   teamId?: string;
@@ -118,18 +131,20 @@ export interface Message {
   versions?: string[];
   thinkingVersions?: string[];
   currentVersion?: number;
+  userVersions?: string[];
+  currentUserVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
 }
 
 // 计划步骤
-export interface PlanStep {
+interface PlanStep {
   step: string;
   status: 'completed' | 'running' | 'pending';
 }
 
 // 消息动作
-export interface MessageAction {
+interface MessageAction {
   type: string;
   label: string;
 }
@@ -145,16 +160,6 @@ export type WorkspaceTab =
   | 'frontend-preview'
   | 'backend-code'
   | 'backend-test';
-
-// 文件节点
-export interface FileNode {
-  id: string;
-  name: string;
-  type: 'file' | 'folder';
-  children?: FileNode[];
-  content?: string;
-  language?: string;
-}
 
 // Agent 类型
 export type AgentType = 'ui' | 'frontend' | 'backend';

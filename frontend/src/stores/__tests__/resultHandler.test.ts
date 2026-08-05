@@ -214,6 +214,48 @@ describe('handleTeamResultEvent', { tags: ['unit'] }, () => {
     expect(result.status).toBe('idle');
     expect(result.streamingId).toBeNull();
   });
+
+  it('replaces streamed content with composed per-node artifact display', () => {
+    const s = makeState({
+      streamingId: 'msg-1',
+      messages: [makeMsg('msg-1', { content: 'raw concatenated nodes' })],
+    });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>(['run-1']);
+
+    const display = '## pm\n\n需求文档\n\n---\n\n## reviewer\n\n审查通过';
+    handleTeamResultEvent(set as never, get, activeStreams, {
+      type: 'team_result',
+      artifacts: { pm: '需求文档', reviewer: '审查通过' },
+      display,
+    });
+
+    const result = set.mock.results[0].value as {
+      status: string;
+      messages: Array<{ content: string; thinkingDone: boolean }>;
+    };
+    expect(result.status).toBe('idle');
+    expect(result.streamingId).toBeNull();
+    expect(result.messages![0].thinkingDone).toBe(true);
+    expect(result.messages![0].content).toBe(display);
+  });
+
+  it('keeps existing content when team_result has no display', () => {
+    const s = makeState({
+      streamingId: 'msg-1',
+      messages: [makeMsg('msg-1', { content: 'old' })],
+    });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>(['run-1']);
+
+    handleTeamResultEvent(set as never, get, activeStreams, { type: 'team_result', artifacts: {} });
+
+    const result = set.mock.results[0].value as { messages: Array<{ content: string }> };
+    expect(result.messages![0].content).toBe('old');
+    expect(result.messages![0].thinkingDone).toBe(true);
+  });
 });
 
 describe('handleThumbsEvent', { tags: ['unit'] }, () => {

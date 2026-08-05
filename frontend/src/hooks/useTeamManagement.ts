@@ -3,8 +3,6 @@ import { useTeamAgents } from './useTeamAgents';
 
 type ToastFn = (msg: string, type: 'success' | 'info' | 'error') => void;
 
-export { removeConversationsByAgentIds, teamMemberToAgent } from './useTeamData';
-
 export function useTeamManagement(toast?: ToastFn) {
   const {
     teams,

@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.auth.password_policy import validate_password
+from auth.password_policy import validate_password
 
 
 @pytest.mark.requirement("REQ-AUTH-007")

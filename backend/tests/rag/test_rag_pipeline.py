@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.rag import rag_pipeline
-from backend.rag.rag_chunking import Chunk
+from rag import rag_pipeline
+from rag.rag_chunking import Chunk
 
 
 class TestRagPipeline:

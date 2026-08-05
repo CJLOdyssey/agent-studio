@@ -18,8 +18,8 @@ os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 
 class TestAttachments:
     async def test_create_attachment(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.attachments import create_attachment, get_attachment_by_id
+        from repository.session_repo import create_session
+        from repository.attachments import create_attachment, get_attachment_by_id
 
         sess = await create_session(title="Att Test")
         att = await create_attachment(
@@ -39,8 +39,8 @@ class TestAttachments:
         assert fetched.filename == "test.pdf"
 
     async def test_create_attachment_with_optional_fields(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.attachments import create_attachment
+        from repository.session_repo import create_session
+        from repository.attachments import create_attachment
 
         sess = await create_session(title="Att Opt")
         att = await create_attachment(
@@ -57,13 +57,13 @@ class TestAttachments:
         assert att.extracted_text == "Hello world"
 
     async def test_get_attachment_not_found(self, db_engine):
-        from backend.repository.attachments import get_attachment_by_id
+        from repository.attachments import get_attachment_by_id
         result = await get_attachment_by_id("nonexistent")
         assert result is None
 
     async def test_list_attachments_by_session(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.attachments import create_attachment, list_attachments_by_session
+        from repository.session_repo import create_session
+        from repository.attachments import create_attachment, list_attachments_by_session
 
         sess = await create_session(title="List Att")
         for i in range(3):
@@ -79,13 +79,13 @@ class TestAttachments:
         assert len(atts) == 3
 
     async def test_list_attachments_empty(self, db_engine):
-        from backend.repository.attachments import list_attachments_by_session
+        from repository.attachments import list_attachments_by_session
         result = await list_attachments_by_session("nonexistent")
         assert result == []
 
     async def test_delete_attachment(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.attachments import create_attachment, delete_attachment, get_attachment_by_id
+        from repository.session_repo import create_session
+        from repository.attachments import create_attachment, delete_attachment, get_attachment_by_id
 
         sess = await create_session(title="Del Att")
         att = await create_attachment(
@@ -101,7 +101,7 @@ class TestAttachments:
         assert await get_attachment_by_id(att.id) is None
 
     async def test_delete_attachment_not_found(self, db_engine):
-        from backend.repository.attachments import delete_attachment
+        from repository.attachments import delete_attachment
         result = await delete_attachment("nonexistent")
         assert result is None
 
@@ -111,8 +111,8 @@ class TestAttachments:
 
 class TestMemoryRepo:
     async def test_create_memory_entry(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.memory_repo import create_memory_entry
+        from repository.session_repo import create_session
+        from repository.memory_repo import create_memory_entry
 
         sess = await create_session(title="Mem")
         mem = await create_memory_entry(
@@ -129,8 +129,8 @@ class TestMemoryRepo:
         assert mem.details == "Chose FastAPI over Flask"
 
     async def test_create_memory_entry_default_details(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.memory_repo import create_memory_entry
+        from repository.session_repo import create_session
+        from repository.memory_repo import create_memory_entry
 
         sess = await create_session(title="Mem Def")
         mem = await create_memory_entry(
@@ -143,8 +143,8 @@ class TestMemoryRepo:
         assert mem.details == ""
 
     async def test_get_session_memories(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.memory_repo import create_memory_entry, get_session_memories
+        from repository.session_repo import create_session
+        from repository.memory_repo import create_memory_entry, get_session_memories
 
         sess = await create_session(title="Mem Get")
         await create_memory_entry(
@@ -159,13 +159,13 @@ class TestMemoryRepo:
         assert len(memories) == 2
 
     async def test_get_session_memories_empty(self, db_engine):
-        from backend.repository.memory_repo import get_session_memories
+        from repository.memory_repo import get_session_memories
         result = await get_session_memories("nonexistent")
         assert result == []
 
     async def test_clear_session_memories(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.memory_repo import (
+        from repository.session_repo import create_session
+        from repository.memory_repo import (
             create_memory_entry, clear_session_memories, get_session_memories,
         )
 
@@ -180,8 +180,8 @@ class TestMemoryRepo:
         assert len(memories) == 0
 
     async def test_delete_memory_entry(self, db_engine):
-        from backend.repository.session_repo import create_session
-        from backend.repository.memory_repo import (
+        from repository.session_repo import create_session
+        from repository.memory_repo import (
             create_memory_entry, delete_memory_entry, get_session_memories,
         )
 
@@ -196,7 +196,7 @@ class TestMemoryRepo:
         assert len(memories) == 0
 
     async def test_delete_memory_entry_not_found(self, db_engine):
-        from backend.repository.memory_repo import delete_memory_entry
+        from repository.memory_repo import delete_memory_entry
         result = await delete_memory_entry("nonexistent")
         assert result is False
 
@@ -206,15 +206,15 @@ class TestMemoryRepo:
 
 class TestAuthRevokeTokenFamily:
     async def test_revoke_token_family(self, db_engine):
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
 
-        from backend.repository.auth import (
+        from repository.auth import (
             create_user, create_refresh_token, revoke_token_family,
         )
         user = await create_user("family@example.com", "hash")
         token, _ = await create_refresh_token(user.id)
-        from backend.repository.auth import consume_refresh_token
+        from repository.auth import consume_refresh_token
         consumed_user, family_id = await consume_refresh_token(token)
         assert consumed_user is not None
 
@@ -232,7 +232,7 @@ class TestAuthRevokeTokenFamily:
 
 class TestToolsDict:
     async def test_get_tools_as_dicts(self, db_engine):
-        from backend.repository.tools import create_tool, get_tools_as_dicts
+        from repository.tools import create_tool, get_tools_as_dicts
 
         await create_tool({
             "name": f"dict-tool-{uuid.uuid4().hex[:6]}",
@@ -249,14 +249,14 @@ class TestToolsDict:
         assert "created_at" in d
 
     def test_list_tool_plugins(self):
-        from backend.repository.tools import list_tool_plugins
+        from repository.tools import list_tool_plugins
         result = list_tool_plugins()
         assert isinstance(result, list)
 
 
 class TestMCPSDict:
     async def test_get_mcps_as_dicts(self, db_engine):
-        from backend.repository.mcps import create_mcp, get_mcps_as_dicts
+        from repository.mcps import create_mcp, get_mcps_as_dicts
 
         await create_mcp({
             "name": f"dict-mcp-{uuid.uuid4().hex[:6]}",
@@ -274,7 +274,7 @@ class TestMCPSDict:
 
 class TestSkillsDict:
     async def test_get_skills_as_dicts(self, db_engine):
-        from backend.repository.skills import create_skill, get_skills_as_dicts
+        from repository.skills import create_skill, get_skills_as_dicts
 
         await create_skill({
             "name": f"dict-skill-{uuid.uuid4().hex[:6]}",
@@ -290,6 +290,8 @@ class TestSkillsDict:
         assert "name" in d
         assert "instructions" in d
         assert "created_at" in d
+        assert "mcp_names" in d
+        assert d["mcp_names"] == []
 
 
 # ── Keys Connectivity: /v1/ trailing slash ──────────────────────────────
@@ -297,7 +299,7 @@ class TestSkillsDict:
 
 class TestKeysConnectivityV1Slash:
     def test_base_url_v1_trailing_slash(self):
-        from backend.repository.keys_connectivity import _test_connection_sync
+        from repository.keys_connectivity import _test_connection_sync
 
         with unittest.mock.patch("urllib.request.urlopen") as mock_open:
             mock_resp = unittest.mock.MagicMock()
@@ -317,7 +319,7 @@ class TestKeysConnectivityV1Slash:
             assert call_url.endswith("/models")
 
     def test_deepseek_provider_no_base_url(self):
-        from backend.repository.keys_connectivity import _test_connection_sync
+        from repository.keys_connectivity import _test_connection_sync
 
         with unittest.mock.patch("urllib.request.urlopen") as mock_open:
             mock_resp = unittest.mock.MagicMock()
@@ -337,7 +339,7 @@ class TestKeysConnectivityV1Slash:
             assert "deepseek" in call_url
 
     def test_anthropic_provider_no_base_url(self):
-        from backend.repository.keys_connectivity import _test_connection_sync
+        from repository.keys_connectivity import _test_connection_sync
 
         with unittest.mock.patch("urllib.request.urlopen") as mock_open:
             mock_resp = unittest.mock.MagicMock()

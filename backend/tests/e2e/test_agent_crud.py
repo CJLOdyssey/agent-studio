@@ -1,9 +1,10 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """E2E Test: Agent CRUD operations + full config."""
 
-from backend.tests.conftest import Api, _cleanup, _rid
+from tests.conftest import Api, _cleanup, _rid
 
 
 class TestAgentCRUD:
@@ -20,7 +21,7 @@ class TestAgentCRUD:
                 "output_constraints": "请用中文回答",
                 "model": "deepseek-v4-flash",
                 "temperature": 0.7,
-                "tools": [{"name": "calculator", "enabled": True}],
+                "tools": [{"name": "custom_tool", "enabled": True}],
                 "mcp": [{"name": "file_server", "config": {"root": "/tmp"}}],
                 "skills": [{"name": "code_review", "version": "1.0"}],
                 "is_active": True,
@@ -40,7 +41,7 @@ class TestAgentCRUD:
         assert a["model"] == "deepseek-v4-flash"
         assert a["temperature"] == 0.7
         assert isinstance(a["tools"], list)
-        assert a["tools"][0]["name"] == "calculator"
+        assert a["tools"][0]["name"] == "custom_tool"
         _cleanup((aid, "/api/agents"))
 
     def test_create_agent_minimal(self, api: Api):
@@ -106,7 +107,7 @@ class TestAgentCRUD:
             "/api/agents",
             json={
                 "name": "Toggle-Agent",
-                "role_identifier": "toggle_agent",
+                "role_identifier": _rid("toggle_agent"),
                 "system_prompt": "x",
                 "is_active": True,
             },

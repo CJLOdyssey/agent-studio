@@ -3,6 +3,10 @@
 Uses FastAPI TestClient with in-memory SQLite and mocked dependencies.
 """
 import os
+
+import pytest
+
+pytestmark = pytest.mark.unit
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -19,7 +23,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -31,23 +35,23 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    import backend.core.app_lifespan as lifespan_mod
+    import core.app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
+        from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             existing = await session.execute(
@@ -89,11 +93,11 @@ def client():
     mock_redis.set.side_effect = _redis_set
     mock_redis.delete.side_effect = _redis_delete
 
-    with patch("backend.broker.get_redis", return_value=mock_redis), \
-         patch("backend.core.app_lifespan.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.login.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+    with patch("broker.get_redis", return_value=mock_redis), \
+         patch("core.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("routers.auth.login.get_redis", return_value=mock_redis), \
+         patch("routers.auth.register.get_redis", return_value=mock_redis), \
+         patch("routers.auth.password.get_redis", return_value=mock_redis):
         with TestClient(app) as c:
             yield c
 
@@ -127,6 +131,54 @@ class TestAgents:
         resp = client.get(f"/api/agents/{agent_id}")
         assert resp.status_code == 200
         assert resp.json()["tools"] == [{"name": "tool1"}]
+
+    def test_agent_output_constraints_roundtrip(self, client):
+        """X1-c: output constraints created in the management tab must round-trip
+        through the agents API so the runtime can consume them."""
+        resp = client.post("/api/agents", json={
+            "name": "oc-agent", "role_identifier": "oc_role",
+            "system_prompt": "test",
+            "output_constraints": "必须输出 JSON，不得包含 Markdown",
+        })
+        assert resp.status_code == 201
+        agent_id = resp.json()["id"]
+
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.status_code == 200
+        assert resp.json()["output_constraints"] == "必须输出 JSON，不得包含 Markdown"
+
+        resp = client.get("/api/agents")
+        assert resp.status_code == 200
+        match = next((a for a in resp.json() if a["id"] == agent_id), None)
+        assert match is not None
+        assert match["output_constraints"] == "必须输出 JSON，不得包含 Markdown"
+
+        resp = client.put(f"/api/agents/{agent_id}", json={
+            "output_constraints": "只返回纯文本结果",
+        })
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.json()["output_constraints"] == "只返回纯文本结果"
+
+    def test_agent_output_constraints_clear(self, client):
+        """X1-c: setting output_constraints to null/empty preserves the field
+        lifecycle — empty string clears, absent keeps the old value."""
+        resp = client.post("/api/agents", json={
+            "name": "oc-clear", "role_identifier": "oc_clear_role",
+            "system_prompt": "test",
+            "output_constraints": "约束 A",
+        })
+        agent_id = resp.json()["id"]
+
+        resp = client.put(f"/api/agents/{agent_id}", json={"name": "oc-clear"})
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.json()["output_constraints"] == "约束 A"
+
+        resp = client.put(f"/api/agents/{agent_id}", json={"output_constraints": ""})
+        assert resp.status_code == 200
+        resp = client.get(f"/api/agents/{agent_id}")
+        assert resp.json()["output_constraints"] == ""
 
     def test_get_agent_string_tools(self, client):
         resp = client.post("/api/agents", json={
@@ -209,12 +261,12 @@ class TestAgents:
     # ── Exception handler paths ──
 
     def test_list_agents_exception(self, client):
-        with patch("backend.routers.agents.get_cached_agent_configs", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.agents.get_cached_agent_configs", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.get("/api/agents")
             assert resp.status_code == 500
 
     def test_create_agent_exception(self, client):
-        with patch("backend.routers.agents.create_agent_config", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.agents.create_agent_config", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.post("/api/agents", json={
                 "name": "err-agent", "role_identifier": "err_role", "system_prompt": "err"
             })
@@ -225,7 +277,7 @@ class TestAgents:
             "name": "bad-json", "role_identifier": "bad_json_role", "system_prompt": "test",
         })
         agent_id = resp.json()["id"]
-        with patch("backend.routers.agents.get_cached_agent_configs", new_callable=AsyncMock) as mock_configs:
+        with patch("routers.agents.get_cached_agent_configs", new_callable=AsyncMock) as mock_configs:
             c = MagicMock()
             c.id = agent_id
             c.name = "bad-json"
@@ -252,7 +304,7 @@ class TestAgents:
             "name": "fail-del", "role_identifier": "fail_del_role", "system_prompt": "x"
         })
         agent_id = resp.json()["id"]
-        with patch("backend.routers.agents.delete_agent_config", new_callable=AsyncMock, return_value=False):
+        with patch("routers.agents.delete_agent_config", new_callable=AsyncMock, return_value=False):
             resp = client.delete(f"/api/agents/{agent_id}")
             assert resp.status_code == 404
 
@@ -261,7 +313,7 @@ class TestAgents:
             "name": "fail-toggle", "role_identifier": "fail_toggle_role", "system_prompt": "x"
         })
         agent_id = resp.json()["id"]
-        with patch("backend.routers.agents.update_agent_config", new_callable=AsyncMock, return_value=None):
+        with patch("routers.agents.update_agent_config", new_callable=AsyncMock, return_value=None):
             resp = client.put(f"/api/agents/{agent_id}/toggle")
             assert resp.status_code == 404
 

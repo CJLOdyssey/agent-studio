@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from backend.core.infra.database import (
+from core.infra.database import (
     AgentConfigDB,
     AuditLogDB,
     CommandLogDB,
@@ -16,9 +16,9 @@ from backend.core.infra.database import (
     TeamDB,
     get_session_factory,
 )
-from backend.repository.admin_stats import get_command_logs, get_dashboard_stats, get_recent_activity
-from backend.repository.command_logs import log_command
-from backend.repository.core import apply_owner_filter
+from repository.admin_stats import get_command_logs, get_dashboard_stats, get_recent_activity
+from repository.command_logs import log_command
+from repository.core import apply_owner_filter
 
 
 # ── Admin Stats ──────────────────────────────────────────────────────────
@@ -225,12 +225,12 @@ class TestCore:
 
 class TestDeps:
     def test_import_get_session(self):
-        from backend.repository.deps import get_session
+        from repository.deps import get_session
         assert get_session is not None
 
     def test_get_session_is_asyncgen(self):
         import inspect
-        from backend.repository.deps import get_session
+        from repository.deps import get_session
         assert inspect.isasyncgenfunction(get_session)
 
 
@@ -239,7 +239,7 @@ class TestDeps:
 
 class TestSnapshotHelper:
     async def test_create_snapshot_from_dict(self, db_engine):
-        from backend.repository.snapshot_helper import create_snapshot_from_dict
+        from repository.snapshot_helper import create_snapshot_from_dict
 
         await create_snapshot_from_dict(
             resource_type="agent",
@@ -248,7 +248,7 @@ class TestSnapshotHelper:
             created_by="test_user",
         )
 
-        from backend.core.infra.database import VersionDB, get_session_factory
+        from core.infra.database import VersionDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             from sqlalchemy import select
@@ -264,8 +264,8 @@ class TestSnapshotHelper:
             assert versions[0].created_by == "test_user"
 
     async def test_create_snapshot_from_dict_with_session(self, db_engine):
-        from backend.repository.snapshot_helper import create_snapshot_from_dict
-        from backend.core.infra.database import get_session_factory, VersionDB
+        from repository.snapshot_helper import create_snapshot_from_dict
+        from core.infra.database import get_session_factory, VersionDB
 
         factory = get_session_factory()
         async with factory() as session:
@@ -286,8 +286,8 @@ class TestSnapshotHelper:
             assert len(versions) == 1
 
     async def test_with_session_with_existing_session(self, db_engine):
-        from backend.repository.snapshot_helper import with_session
-        from backend.core.infra.database import get_session_factory
+        from repository.snapshot_helper import with_session
+        from core.infra.database import get_session_factory
 
         called_with = {}
 
@@ -307,7 +307,7 @@ class TestSnapshotHelper:
         assert called_with["rid"] == "test-1"
 
     async def test_with_session_creates_new_session(self, db_engine):
-        from backend.repository.snapshot_helper import with_session
+        from repository.snapshot_helper import with_session
 
         called = {}
 
@@ -322,8 +322,8 @@ class TestSnapshotHelper:
         assert called.get("ok") is True
 
     def test_build_table_snapshot(self):
-        from backend.repository.snapshot_helper import build_table_snapshot
-        from backend.core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
+        from core.infra.database import AgentConfigDB
 
         agent = AgentConfigDB(
             id="test-id",
@@ -340,8 +340,8 @@ class TestSnapshotHelper:
         assert snapshot["system_prompt"] == "Prompt text"
 
     def test_build_table_snapshot_custom_exclude(self):
-        from backend.repository.snapshot_helper import build_table_snapshot
-        from backend.core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
+        from core.infra.database import AgentConfigDB
 
         agent = AgentConfigDB(
             id="test-id",
@@ -356,8 +356,8 @@ class TestSnapshotHelper:
 
     def test_build_table_snapshot_datetime_value(self):
         """DateTime values are converted to isoformat strings."""
-        from backend.repository.snapshot_helper import build_table_snapshot
-        from backend.core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
+        from core.infra.database import AgentConfigDB
         from datetime import UTC, datetime
 
         agent = AgentConfigDB(
@@ -371,8 +371,8 @@ class TestSnapshotHelper:
 
     def test_build_table_snapshot_none_value(self):
         """None column values are included as None."""
-        from backend.repository.snapshot_helper import build_table_snapshot
-        from backend.core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
+        from core.infra.database import AgentConfigDB
 
         agent = AgentConfigDB(
             id="id", name="Test", role_identifier="r",

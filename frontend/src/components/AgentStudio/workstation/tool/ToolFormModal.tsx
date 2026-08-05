@@ -1,10 +1,10 @@
-import { X, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import type { ToolEntry, ToolFormData } from './tool.types';
-import { TOOL_CATEGORIES, TOOL_STATUS_LABEL } from './tool.constants';
-import { useModelOptions } from '../constants';
+import { TOOL_STATUS_LABEL } from './tool.constants';
 import { t } from './locales';
 import { testTool, type ToolTestResult } from '../../../../api/client/tools';
+import Modal from '@/components/shared/Modal';
 
 interface Props {
   editingItem: ToolEntry | null;
@@ -16,7 +16,6 @@ interface Props {
 }
 
 export default function ToolFormModal({ editingItem, formData, setFormData, onSave, onClose, errors }: Props) {
-  const modelOptions = useModelOptions();
   const [testLoading, setTestLoading] = useState(false);
   const [testResult, setTestResult] = useState<ToolTestResult | null>(null);
 
@@ -38,58 +37,64 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content wsta-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
-        <div className="modal-header">
+    <Modal
+      title={
+        <div className="flex items-center gap-3">
+          <Wrench size={16} />
           <h3>{editingItem ? t('tool.form_title_edit') : t('tool.form_title_new')}</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
         </div>
-        <div className="modal-body wsta-modal-body">
-          {errors.length > 0 && (
-            <div className="wsta-form-errors">
+      }
+      onClose={onClose}
+      hideHeaderBorder
+      hideFooterBorder
+      width={560}
+      bodyClassName="px-5 pb-5 gap-4"
+      footer={
+        <>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('tool.form_cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed" onClick={onSave}>{editingItem ? t('tool.form_save_edit') : t('tool.form_save_create')}</button>
+        </>
+      }
+    >
+      {errors.length > 0 && (
+            <div className="p-3 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/30 rounded-md text-[var(--color-danger)] text-xs">
               {errors.map((e, i) => <p key={i}>{e}</p>)}
             </div>
           )}
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('tool.form_name')} <span className="wsta-required">*</span></label>
-            <input className="wsta-input" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('tool.form_name_placeholder')} maxLength={50} />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_name')} <span className="text-[var(--color-danger)]">*</span></label>
+            <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.name} onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))} placeholder={t('tool.form_name_placeholder')} maxLength={50} />
           </div>
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('tool.form_desc')}</label>
-            <textarea className="wsta-textarea" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('tool.form_desc_placeholder')} rows={3} maxLength={500} />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_desc')} <span className="text-[var(--color-danger)]">*</span></label>
+            <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} placeholder={t('tool.form_desc_placeholder')} rows={3} maxLength={500} />
           </div>
-          <div className="wsta-form-row">
-            <div className="wsta-form-group wsta-flex-1">
-              <label className="wsta-label">{t('tool.form_category')}</label>
-              <select className="wsta-select" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))}>
-                {TOOL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="wsta-form-group wsta-flex-1">
-              <label className="wsta-label">{t('tool.form_model')}</label>
-              <select className="wsta-select" value={formData.model} onChange={(e) => setFormData((f) => ({ ...f, model: e.target.value }))}>
-                {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_category')}</label>
+            <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.category} onChange={(e) => setFormData((f) => ({ ...f, category: e.target.value }))} placeholder="例如：内置工具、自定义工具" />
           </div>
-          <div className="wsta-form-row">
-            <div className="wsta-form-group wsta-flex-1">
-              <label className="wsta-label">{t('tool.form_status')}</label>
-              <select className="wsta-select" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as ToolEntry['status'] }))}>
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_status')}</label>
+              <select className="py-2 pr-7 pl-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" value={formData.status} onChange={(e) => setFormData((f) => ({ ...f, status: e.target.value as ToolEntry['status'] }))} aria-label="状态">
                 {Object.entries(TOOL_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </div>
-            <div className="wsta-form-group wsta-flex-1">
-              <label className="wsta-label">{t('tool.form_version')} <span className="wsta-required">*</span></label>
-              <input className="wsta-input" value={formData.version} onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))} placeholder={t('tool.form_version_placeholder')} />
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_version')}</label>
+              <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" value={formData.version} onChange={(e) => setFormData((f) => ({ ...f, version: e.target.value }))} placeholder={t('tool.form_version_placeholder')} />
             </div>
           </div>
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('tool.form_endpoint')}</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_endpoint')}</label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input className="wsta-input" style={{ flex: 1 }} value={formData.endpoint} onChange={(e) => setFormData((f) => ({ ...f, endpoint: e.target.value }))} placeholder={t('tool.form_endpoint_placeholder')} />
+              <select className="py-2 px-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none cursor-pointer transition-colors appearance-none focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)]" style={{ width: 84, flexShrink: 0 }} value={formData.method || 'GET'} onChange={(e) => setFormData((f) => ({ ...f, method: e.target.value }))} aria-label={t('tool.form_method')}>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+              </select>
+              <input className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)]" style={{ flex: 1 }} value={formData.endpoint} onChange={(e) => setFormData((f) => ({ ...f, endpoint: e.target.value }))} placeholder={t('tool.form_endpoint_placeholder')} />
               <button
-                className="btn btn-secondary"
+                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]"
                 style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4, height: 36, padding: '0 12px', flexShrink: 0 }}
                 onClick={handleTest}
                 disabled={testLoading || !formData.endpoint}
@@ -104,16 +109,14 @@ export default function ToolFormModal({ editingItem, formData, setFormData, onSa
               </div>
             )}
           </div>
-          <div className="wsta-form-group">
-            <label className="wsta-label">{t('tool.form_parameters')}</label>
-            <textarea className="wsta-textarea" value={formData.parameters} onChange={(e) => setFormData((f) => ({ ...f, parameters: e.target.value }))} placeholder={t('tool.form_parameters_placeholder')} rows={4} style={{ fontFamily: 'monospace', fontSize: 12 }} />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_headers')}</label>
+            <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)] font-mono text-xs" value={formData.headers || ''} onChange={(e) => setFormData((f) => ({ ...f, headers: e.target.value }))} placeholder={'{"Authorization": "Bearer ..."}'} rows={2} />
           </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('tool.form_cancel')}</button>
-          <button className="btn btn-primary" onClick={onSave}>{editingItem ? t('tool.form_save_edit') : t('tool.form_save_create')}</button>
-        </div>
-      </div>
-    </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">{t('tool.form_parameters')}</label>
+            <textarea className="py-2 px-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm font-sans outline-none transition-colors resize-y min-h-20 leading-relaxed focus:border-[var(--color-accent)] focus:shadow-[0 0 0 2px var(--color-accent)] placeholder:text-[var(--color-text-muted)] font-mono text-xs" value={formData.parameters} onChange={(e) => setFormData((f) => ({ ...f, parameters: e.target.value }))} placeholder={t('tool.form_parameters_placeholder')} rows={4} />
+          </div>
+    </Modal>
   );
 }

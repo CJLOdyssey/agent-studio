@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('react-i18next', () => ({
@@ -11,16 +11,17 @@ vi.mock('../../../contexts/SettingsContext', () => ({
 vi.mock('../GreetingAnimation', () => ({ default: () => <div data-testid="greeting-animation" /> }));
 vi.mock('../../input', () => ({
   InputToolbar: vi.fn(() => <div data-testid="input-toolbar" />),
-  InputToolbarHandle: {} as any,
+  InputToolbarHandle: {} as unknown as import('../../input').InputToolbarHandle,
 }));
 
 import HomeScreen from '../HomeScreen';
 import { InputToolbar } from '../../input';
+import type { ModelOption, CommandOption } from '../../../types/input';
 
 const baseProps = {
   conversationKey: 0, models: [], selectedModel: '',
   onModelChange: vi.fn(), commands: [], onSend: vi.fn(),
-  inputToolbarRef: { current: null } as any,
+  inputToolbarRef: { current: null },
 };
 
 describe('HomeScreen', { tags: ['integration'] }, () => {
@@ -38,7 +39,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders the Bot logo icon', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-logo-icon')).toBeInTheDocument();
+    expect(container.querySelector('[role="img"][aria-label="AgentStudio Logo"]')).toBeInTheDocument();
   });
 
   it('renders subtitle text', () => {
@@ -53,7 +54,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders all five feature buttons', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    const btns = container.querySelectorAll('.agentstudio-feature-btn');
+    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-2"]');
     expect(btns.length).toBe(5);
   });
 
@@ -99,14 +100,14 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('does not throw when feature button clicked without onExecuteCommand', async () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    const btns = container.querySelectorAll('.agentstudio-feature-btn');
+    const btns = container.querySelectorAll('button[class*="inline-flex"][class*="gap-2"]');
     await userEvent.click(btns[0] as HTMLElement);
     // should not crash
   });
 
   it('passes models to InputToolbar', () => {
     const models = [{ id: 'm1', name: 'GPT-4' }];
-    render(<HomeScreen {...baseProps} models={models as any} selectedModel="m1" />);
+    render(<HomeScreen {...baseProps} models={models as ModelOption[]} selectedModel="m1" />);
     expect(InputToolbar).toHaveBeenCalledWith(
       expect.objectContaining({ models, selectedModel: 'm1' }),
       expect.anything(),
@@ -115,7 +116,7 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('passes commands to InputToolbar', () => {
     const commands = [{ id: 'cmd1', label: 'Run' }];
-    render(<HomeScreen {...baseProps} commands={commands as any} />);
+    render(<HomeScreen {...baseProps} commands={commands as CommandOption[]} />);
     expect(InputToolbar).toHaveBeenCalledWith(
       expect.objectContaining({ commands }),
       expect.anything(),
@@ -159,11 +160,11 @@ describe('HomeScreen', { tags: ['integration'] }, () => {
 
   it('renders the home-centered layout', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-centered')).toBeInTheDocument();
+    expect(container.querySelector('[role="img"][aria-label="AgentStudio Logo"]')).toBeInTheDocument();
   });
 
   it('renders the home-hero section', () => {
     const { container } = render(<HomeScreen {...baseProps} />);
-    expect(container.querySelector('.agentstudio-home-hero')).toBeInTheDocument();
+    expect(container.textContent).toContain('home.subtitle');
   });
 });

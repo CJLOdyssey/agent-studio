@@ -1,9 +1,12 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """E2E Test: Run operations — create, status, history."""
 
-from backend.tests.conftest import Api, _cleanup, _rid
+import uuid
+
+from tests.conftest import Api, _cleanup, _rid
 
 
 class TestRunFlow:
@@ -13,9 +16,7 @@ class TestRunFlow:
         """Helper: create a session and return its ID."""
         r = api.post("/api/sessions", json={"title": f"Run-Session-{_rid('rs')}"})
         assert r.status_code == 201, r.text
-        sid = r.json()["id"]
-        _cleanup((sid, "/api/sessions"))
-        return sid
+        return r.json()["id"]
 
     def _create_agent(self, api: Api) -> str:
         """Helper: create an agent and return its ID."""
@@ -23,15 +24,13 @@ class TestRunFlow:
             "/api/agents",
             json={
                 "name": f"Run-Agent-{_rid('ra')}",
-                "role_identifier": _rid("run_agent"),
+                "role_identifier": f"run_agent_{uuid.uuid4().hex[:16]}",
                 "system_prompt": "run test agent",
                 "model": "deepseek-v4-flash",
             },
         )
         assert r.status_code == 201, r.text
-        aid = r.json()["id"]
-        _cleanup((aid, "/api/agents"))
-        return aid
+        return r.json()["id"]
 
     def test_list_runs(self, api: Api):
         """GET /api/runs returns a list of run summaries."""
@@ -231,7 +230,6 @@ class TestRunFlow:
         )
         assert r.status_code == 201, r.text
         sid = r.json()["id"]
-        _cleanup((sid, "/api/sessions"))
 
         # List with filter
         r2 = api.get("/api/sessions", params={"agent_id": agent_id})
@@ -241,3 +239,4 @@ class TestRunFlow:
         # At least the one we created should appear
         session_ids = [s["id"] for s in data]
         assert sid in session_ids
+        _cleanup((sid, "/api/sessions"))

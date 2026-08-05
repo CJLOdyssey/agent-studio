@@ -3,10 +3,9 @@
 export type { PromptEntry, PromptFormData, PromptSortField, CategoryFilter, PromptCategory, PromptData } from './types';
 export { usePromptManagement } from './usePromptManagement';
 export { usePromptImportExport } from './usePromptImportExport';
-export { PROMPT_CATEGORIES, PROMPT_STATUS_LABEL } from './constants';
+export { PROMPT_STATUS_LABEL, PROMPT_CATEGORY_LABEL, getCategoryLabel } from './constants';
 export { MOCK_PROMPTS, MOCK_PROMPT_VERSIONS } from '@/mocks/prompt';
 export { promptAPI } from './api';
 export { t, setLang, getLang } from './locales';
-export type { Lang } from './locales';
 export { default as PromptManagement } from './PromptManagement';
 export { default as PromptFormModal } from './PromptFormModal';

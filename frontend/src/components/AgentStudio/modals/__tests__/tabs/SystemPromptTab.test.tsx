@@ -40,8 +40,9 @@ describe('SystemPromptTab', { tags: ['integration'] }, () => {
     expect(props.onAddFromWorkstation).toHaveBeenCalled();
   });
 
-  it('shows hint text', () => {
+  it('shows hint text as placeholder only', () => {
     renderTab();
-    expect(screen.getByText('workstation.systemPromptDesc')).toBeInTheDocument();
+    // hint text is used as textarea placeholder, not as separate paragraph
+    expect(screen.getByPlaceholderText('workstation.systemPromptDesc')).toBeInTheDocument();
   });
 });

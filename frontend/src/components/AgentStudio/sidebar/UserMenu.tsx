@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { Settings, Key, HelpCircle, LogOut, User, LayoutDashboard, LogIn, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth';
+import type * as React from 'react';
 
 interface Props {
   isUserMenuOpen: boolean;
@@ -24,7 +25,7 @@ function PopoverItem({
 }) {
   return (
     <button
-      className={`agentstudio-popover-item${disabled ? ' agentstudio-popover-item-disabled' : ''}`}
+      className={`flex items-center gap-3 w-full px-3 py-2.5 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] text-base cursor-pointer transition-[color,background] duration-150 text-left hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]${disabled ? ' opacity-40 cursor-not-allowed hover:text-[var(--color-text-secondary)] hover:bg-transparent' : ''}`}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       title={disabled ? '登录后可管理' : undefined}
@@ -37,7 +38,7 @@ function PopoverItem({
 
 export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSettingsOpen, setIsApiOpen, onOpenWorkstation }: Props) {
   const { t } = useTranslation();
-  const { user, isAuthenticated, logout, openLoginModal } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, logout, openLoginModal } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const closeMenu = useCallback(() => setIsUserMenuOpen(false), [setIsUserMenuOpen]);
@@ -70,44 +71,44 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
   };
 
   return (
-    <div className="agentstudio-sidebar-footer" ref={menuRef}>
+    <div className="shrink-0 p-4 relative" ref={menuRef}>
       {isUserMenuOpen && (
-        <div className="agentstudio-user-popover">
+        <div className="absolute bottom-[calc(100%+8px)] left-4 right-4 bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[var(--z-modal)] flex flex-col p-1 origin-bottom animate-[popoverScaleIn_0.15s_cubic-bezier(0.16,1,0.3,1)]">
           <PopoverItem
-            icon={<Key size={16} className="lucide-icon" />}
-            label="API Key"
+            icon={<Key size={16} className="w-4 h-4 mr-1" />}
+            label="API 管理"
             onClick={() => handleItemClick(() => setIsApiOpen(true))}
           />
           <PopoverItem
-            icon={<Settings size={16} className="lucide-icon" />}
+            icon={<Settings size={16} className="w-4 h-4 mr-1" />}
             label={t('sidebar.settings')}
             onClick={() => handleItemClick(() => setIsSettingsOpen(true))}
           />
           <PopoverItem
-            icon={isAuthenticated ? <LayoutDashboard size={16} className="lucide-icon" /> : <Lock size={16} className="lucide-icon" />}
+            icon={isAuthenticated ? <LayoutDashboard size={16} className="w-4 h-4 mr-1" /> : <Lock size={16} className="w-4 h-4 mr-1" />}
             label={t('sidebar.workstation')}
             disabled={!isAuthenticated}
             onClick={() => handleItemClick(onOpenWorkstation)}
           />
           <PopoverItem
-            icon={<HelpCircle size={16} className="lucide-icon" />}
+            icon={<HelpCircle size={16} className="w-4 h-4 mr-1" />}
             label={t('sidebar.help')}
             onClick={() => closeMenu()}
           />
 
-          <div className="agentstudio-popover-divider" />
+          <div className="h-px bg-[var(--color-border)] my-1" />
           {isAuthenticated ? (
             <PopoverItem
-              icon={<LogOut size={16} className="lucide-icon" />}
+              icon={<LogOut size={16} className="w-4 h-4 mr-1" />}
               label={t('sidebar.logout')}
               onClick={() => handleItemClick(logout)}
             />
           ) : (
             <button
-              className="agentstudio-popover-item agentstudio-popover-item-highlight"
+              className="flex items-center gap-3 w-full px-3 py-2.5 bg-transparent border-none rounded-md text-[var(--color-accent)] font-semibold text-base cursor-pointer transition-[color,background] duration-150 text-left hover:text-[var(--color-accent-hover)] hover:bg-[var(--color-surface-hover)]"
               onClick={() => handleItemClick(() => openLoginModal())}
             >
-              <LogIn size={16} className="lucide-icon" />
+              <LogIn size={16} className="w-4 h-4 mr-1" />
               <span>登录 / 注册</span>
             </button>
           )}
@@ -115,7 +116,7 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
       )}
 
       <button
-        className="agentstudio-user-trigger"
+        className="flex items-center justify-between w-full p-2.5 bg-transparent border border-transparent rounded-lg text-[var(--color-text-primary)] cursor-pointer transition-[color,background] duration-150 hover:bg-[var(--color-surface-hover)]"
         onClick={() => {
           if (isUserMenuOpen) {
             closeMenu();
@@ -126,17 +127,33 @@ export default function UserMenu({ isUserMenuOpen, setIsUserMenuOpen, setIsSetti
         aria-expanded={isUserMenuOpen}
         aria-haspopup="menu"
       >
-          <div className="agentstudio-user-trigger-left">
-            <div className="agentstudio-user-avatar">
-              <User size={16} className="lucide-icon" />
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-9 h-9 bg-[var(--color-accent)]/15 rounded-full flex items-center justify-center shrink-0">
+              {authLoading ? (
+                <div className="w-5 h-5 rounded-full bg-[var(--color-surface-hover)] animate-pulse" />
+              ) : isAuthenticated && user?.username ? (
+                <span className="text-sm font-semibold text-[var(--color-accent)] leading-none">
+                  {user.username.charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <User size={18} className="text-[var(--color-text-secondary)]" />
+              )}
             </div>
-            <div className="agentstudio-user-info">
-              <div className="agentstudio-user-name">
-                {isAuthenticated ? (user?.username || user?.email) : '游客'}
+            <div className="overflow-hidden text-left">
+              <div className="text-base font-semibold text-[var(--color-text-primary)] whitespace-nowrap overflow-hidden text-ellipsis">
+                {authLoading ? (
+                  <span className="inline-block h-4 w-16 rounded bg-[var(--color-surface-hover)] animate-pulse align-middle" />
+                ) : isAuthenticated ? (user?.username || user?.email) : '游客'}
               </div>
-              <div className="agentstudio-user-status">
-                <span className="agentstudio-user-online-dot" />
-                {isAuthenticated ? t('user.onlineStatus') : '未登录'}
+              <div className="text-sm text-[var(--color-text-secondary)] flex items-center gap-1 mt-0.5">
+                {authLoading ? (
+                  <span className="inline-block h-3 w-20 rounded bg-[var(--color-surface-hover)] animate-pulse align-middle" />
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
+                    {isAuthenticated ? t('user.onlineStatus') : '未登录'}
+                  </>
+                )}
               </div>
             </div>
           </div>

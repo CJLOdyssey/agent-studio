@@ -11,7 +11,7 @@ export interface DashboardStats {
   updated_at: string;
 }
 
-export interface LogEntry {
+interface LogEntry {
   id: string;
   timestamp: string;
   command: string;

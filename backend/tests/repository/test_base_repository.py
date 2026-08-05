@@ -4,11 +4,11 @@ import uuid
 
 import pytest
 
-from backend.core.infra.database import (
+from core.infra.database import (
     PromptDB,
     get_session_factory,
 )
-from backend.repository.prompts import PromptRepository
+from repository.prompts import PromptRepository
 
 
 class TestBaseRepository:
@@ -87,6 +87,6 @@ class TestBaseRepository:
 
     def test_to_dict_not_implemented(self):
         """BaseRepository.to_dict raises NotImplementedError."""
-        from backend.repository.base import BaseRepository
+        from repository.base import BaseRepository
         with pytest.raises(NotImplementedError):
             BaseRepository.to_dict(None)

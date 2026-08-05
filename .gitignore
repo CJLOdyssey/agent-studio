@@ -8,6 +8,11 @@ dist/
 .ruff_cache/
 *.whl
 
+# ── pytest-testmon 增量测试本地缓存（机器相关，不入库）─────────────────────
+.testmondata
+.testmondata-*
+.testmondata-shm
+
 # ── Node / Frontend ───────────────────────────────────────────────────────
 frontend/node_modules/
 frontend/dist/
@@ -59,6 +64,13 @@ frontend/coverage/
 # ── Testing Tools ──────────────────────────────────────────────────────────
 .playwright-mcp/
 
+# Playwright auth state (contains credentials)
+frontend/.auth/
+
+# Playwright test artifacts
+frontend/test-results/
+.playwright-cli/
+
 # ── Build Artifacts ───────────────────────────────────────────────────────
 frontend/lighthouse-report.json
 frontend/antd-migration-screenshot.png
@@ -67,6 +79,7 @@ frontend/antd-snapshot.txt
 # ── Code Intelligence Caches ──────────────────────────────────────────────
 .codegraph/
 .superpowers/
+.cocoindex_code/
 
 # ── AI Tool Directories ───────────────────────────────────────────────────
 .mimocode/
@@ -86,13 +99,9 @@ scripts/deploy_prod.py
 scripts/ask_credentials.py
 .omo/
 coverage.json
-docs/e2e-*.png
-docs/
+# Docs are versioned — keep screenshots out
 
-# Internal docs (not for public repo)
-AGENTS.md
-CLAUDE.md
-RUNBOOK.md
+# Internal (not for public repo)
 start.sh
 .secrets.baseline
 monitoring/
@@ -105,3 +114,14 @@ scripts/sync-docs.sh
 scripts/run_mutmut.sh
 scripts/test_tools_in_ai_response.py
 scripts/test_tools_verified.py
+
+# Web prototype leftovers (never commit)
+index.html
+script.js
+styles.css
+# Internal docs (not for public repo)
+docs/
+AGENTS.md
+CLAUDE.md
+RUNBOOK.md
+.mutmut-cache

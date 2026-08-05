@@ -1,7 +1,7 @@
 """Tests for backend/workflow/graph_builder.py."""
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -14,15 +14,14 @@ os.environ.setdefault("RATE_LIMIT", "9999")
 os.environ.setdefault("CHECKPOINTER_BACKEND", "memory")
 os.environ.setdefault("DATABASE_POOL_SIZE", "0")
 
-from backend.workflow.graph_builder import GraphBuilder
-from backend.workflow.models import (
-    NodeStrategy,
+from workflow.graph_builder import GraphBuilder
+from workflow.models import (
     WorkflowConfig,
     WorkflowEdge,
     WorkflowNode,
 )
-from backend.workflow.node_factory import NodeFactory
-from backend.workflow.router import Router
+from workflow.node_factory import NodeFactory
+from workflow.router import Router
 
 
 @pytest.mark.unit

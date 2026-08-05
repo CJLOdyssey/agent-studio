@@ -2,7 +2,12 @@
 
 Uses FastAPI TestClient with in-memory SQLite and mocked dependencies.
 """
+import io
 import os
+
+import pytest
+
+pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -18,7 +23,7 @@ os.environ["CHECKPOINTER_BACKEND"] = "memory"
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -30,23 +35,23 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    import backend.core.app_lifespan as lifespan_mod
+    import core.app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from core.seed import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
-        from backend.core.infra.database import UserDB, get_session_factory
+        from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             existing = await session.execute(
@@ -88,11 +93,11 @@ def client():
     mock_redis.set.side_effect = _redis_set
     mock_redis.delete.side_effect = _redis_delete
 
-    with patch("backend.broker.get_redis", return_value=mock_redis), \
-         patch("backend.core.app_lifespan.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.login.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-         patch("backend.routers.auth.password.get_redis", return_value=mock_redis):
+    with patch("broker.get_redis", return_value=mock_redis), \
+         patch("core.app_lifespan.get_redis", return_value=mock_redis), \
+         patch("routers.auth.login.get_redis", return_value=mock_redis), \
+         patch("routers.auth.register.get_redis", return_value=mock_redis), \
+         patch("routers.auth.password.get_redis", return_value=mock_redis):
         with TestClient(app) as c:
             yield c
 
@@ -123,6 +128,26 @@ class TestSkills:
         assert resp.status_code == 201
         assert resp.json()["name"] == "new-skill"
 
+    def test_create_skill_with_mcp_names(self, client):
+        resp = client.post("/api/skills", json={
+            "name": "mcp-skill", "category": "general",
+            "tool_names": ["custom_python"],
+            "mcp_names": ["github", "filesystem"],
+        })
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["mcp_names"] == ["github", "filesystem"]
+        assert data["tool_names"] == ["custom_python"]
+
+    def test_update_skill_mcp_names(self, client):
+        resp = client.post("/api/skills", json={
+            "name": "upd-mcp-skill", "category": "general"
+        })
+        skill_id = resp.json()["id"]
+        resp = client.put(f"/api/skills/{skill_id}", json={"mcp_names": ["github"]})
+        assert resp.status_code == 200
+        assert resp.json()["mcp_names"] == ["github"]
+
     def test_update_skill(self, client):
         resp = client.post("/api/skills", json={
             "name": "upd-skill", "category": "general"
@@ -150,30 +175,93 @@ class TestSkills:
 
     # ── Exception handler paths ──
 
+    def test_import_skill_skill_md(self, client):
+        markdown = """---
+name: import-me
+description: 导入的技能
+allowed-tools:
+  - custom_python
+metadata:
+  category: 文档处理
+  author: third-party
+---
+
+# 用法
+
+用 openpyxl 生成 xlsx 文件。
+"""
+        resp = client.post("/api/skills/import-text", json={"markdown": markdown})
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["name"] == "import-me"
+        assert data["tool_names"] == ["custom_python"]
+        # instructions = body
+        assert "openpyxl" in data["instructions"]
+
+    def test_import_skill_no_frontmatter_uses_heading(self, client):
+        markdown = "# My Skill\n\n做点什么。"
+        resp = client.post("/api/skills/import-text", json={"markdown": markdown})
+        assert resp.status_code == 201
+        assert resp.json()["name"] == "My Skill"
+
+    def test_import_skill_empty_body_rejected(self, client):
+        resp = client.post("/api/skills/import-text", json={"markdown": "---\nname: x\n---\n"})
+        assert resp.status_code == 400
+
+    def test_import_skill_directory_upload(self, client):
+        sk = (
+            "---\nname: 网络搜索\ndescription: 执行网络搜索\nallowed-tools:\n  - custom_search\n"
+            "metadata:\n  category: 信息检索\n  author: odyssey\n---\n\n# 用法\n\n搜索时调用 custom_search\n"
+        )
+        rec = "import requests\ndef search(q):\n    return requests.get('https://x', params={'q': q}).json()\n"
+        resp = client.post(
+            "/api/skills/import",
+            data={"category": "导入"},
+            files=[
+                ("files", ("SKILL.md", io.BytesIO(sk.encode()), "text/markdown")),
+                ("files", ("scripts/search.py", io.BytesIO(rec.encode()), "text/x-python")),
+            ],
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["name"] == "网络搜索"
+        assert body["tool_names"] == ["custom_search"]
+        assert "scripts/search.py" in (body["script_files"] or {})
+
+    def test_import_skill_missing_skillmd_400(self, client):
+        resp = client.post(
+            "/api/skills/import",
+            data={"category": "导入"},
+            files=[("files", ("readme.txt", io.BytesIO(b"hi"), "text/plain"))],
+        )
+        assert resp.status_code == 400
+
+    # ── Exception handler paths ──
+
     def test_list_skills_exception(self, client):
-        with patch("backend.routers.skills.repo_get_skills_as_dicts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.skills.repo_get_skills_as_dicts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.get("/api/skills")
             assert resp.status_code == 500
 
     def test_create_skill_exception(self, client):
-        with patch("backend.routers.skills.repo_create_skill", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.skills.repo_create_skill", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.post("/api/skills", json={"name": "x", "category": "c"})
             assert resp.status_code == 500
 
     def test_update_skill_exception(self, client):
-        with patch("backend.routers.skills.update_skill", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.skills.update_skill", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/skills/t", json={"name": "x"})
             assert resp.status_code == 500
 
     def test_delete_skill_exception(self, client):
-        with patch("backend.repository.skills.get_skills", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("repository.skills.get_skills", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/skills/t")
             assert resp.status_code == 500
 
     # ── Remaining coverage gaps ──
 
     def test_get_skill_exception(self, client):
-        with patch("backend.routers.skills.repo_get_skills", new_callable=AsyncMock, side_effect=Exception("db error")):
+        with patch("routers.skills.repo_get_skills", new_callable=AsyncMock, side_effect=Exception("db error")):
             resp = client.get("/api/skills/some-id")
             assert resp.status_code == 500
 
@@ -190,7 +278,7 @@ class TestSkills:
             "name": "exc-skill", "category": "general"
         })
         skill_id = resp.json()["id"]
-        with patch("backend.routers.skills.update_skill", new_callable=AsyncMock, side_effect=Exception("err")):
+        with patch("routers.skills.update_skill", new_callable=AsyncMock, side_effect=Exception("err")):
             resp = client.put(f"/api/skills/{skill_id}", json={"name": "x"})
             assert resp.status_code == 500
 
@@ -199,7 +287,7 @@ class TestSkills:
             "name": "del-exc-skill", "category": "general"
         })
         skill_id = resp.json()["id"]
-        with patch("backend.repository.skills.get_skills", new_callable=AsyncMock, side_effect=Exception("err")):
+        with patch("repository.skills.get_skills", new_callable=AsyncMock, side_effect=Exception("err")):
             resp = client.delete(f"/api/skills/{skill_id}")
             assert resp.status_code == 500
 
@@ -208,6 +296,6 @@ class TestSkills:
             "name": "dnf-skill", "category": "general"
         })
         skill_id = resp.json()["id"]
-        with patch("backend.routers.skills.delete_skill", new_callable=AsyncMock, return_value=False):
+        with patch("routers.skills.delete_skill", new_callable=AsyncMock, return_value=False):
             resp = client.delete(f"/api/skills/{skill_id}")
             assert resp.status_code == 404

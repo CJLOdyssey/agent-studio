@@ -24,10 +24,11 @@ describe('tool api', { tags: ['unit'] }, () => {
     name: 'Tool 1',
     description: 'A tool',
     category: 'utility',
-    model: 'gpt-4',
     status: 'active',
     version: 'v1',
     endpoint: 'https://example.com',
+    method: 'POST',
+    headers: '{"Authorization":"Bearer xyz"}',
     parameters: '{"type":"object"}',
     created_at: '2024-01-15T00:00:00Z',
   };
@@ -43,6 +44,26 @@ describe('tool api', { tags: ['unit'] }, () => {
     expect(result[0].status).toBe('active');
   });
 
+  it('toEntry maps method and headers', async () => {
+    mockListTools.mockResolvedValue([sampleRow]);
+
+    const { toolAPI } = await import('../api');
+    const result = await toolAPI.fetchAll();
+
+    expect(result[0].method).toBe('POST');
+    expect(result[0].headers).toBe('{"Authorization":"Bearer xyz"}');
+  });
+
+  it('toEntry defaults method and headers when missing', async () => {
+    mockListTools.mockResolvedValue([{ ...sampleRow, method: undefined, headers: undefined }]);
+
+    const { toolAPI } = await import('../api');
+    const result = await toolAPI.fetchAll();
+
+    expect(result[0].method).toBe('GET');
+    expect(result[0].headers).toBe('{}');
+  });
+
   it('create calls createTool and returns entry', async () => {
     mockCreateTool.mockResolvedValue(sampleRow);
 
@@ -51,10 +72,11 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'New Tool',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Api-Key":"k"}',
       parameters: '{"type":"object"}',
     };
     const result = await toolAPI.create(data);
@@ -63,10 +85,11 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'New Tool',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Api-Key":"k"}',
       parameters: '{"type":"object"}',
     });
     expect(result.name).toBe('Tool 1');
@@ -99,10 +122,11 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'Original',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Key":"v"}',
       parameters: '{"type":"object"}',
       createdAt: '2024-01-01',
     };
@@ -112,10 +136,11 @@ describe('tool api', { tags: ['unit'] }, () => {
       name: 'Original (副本)',
       description: 'desc',
       category: 'utility',
-      model: 'gpt-4',
       status: 'active',
       version: 'v1',
       endpoint: 'https://example.com',
+      method: 'POST',
+      headers: '{"X-Key":"v"}',
       parameters: '{"type":"object"}',
     });
   });
@@ -130,13 +155,12 @@ describe('tool api', { tags: ['unit'] }, () => {
   });
 
   it('toEntry maps disabled status', async () => {
-    mockListTools.mockResolvedValue([{ ...sampleRow, status: 'inactive', model: null }]);
+    mockListTools.mockResolvedValue([{ ...sampleRow, status: 'inactive' }]);
 
     const { toolAPI } = await import('../api');
     const result = await toolAPI.fetchAll();
 
     expect(result[0].status).toBe('disabled');
-    expect(result[0].model).toBe('');
   });
 
   it('toEntry defaults parameters when missing', async () => {

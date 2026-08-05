@@ -39,7 +39,13 @@ export function normalizeError(err: unknown): never {
     }
     const status = err.response.status;
     const data = err.response.data as Record<string, unknown> | undefined;
-    const message = (data?.detail as string) || (data?.message as string) || err.message;
+    const detail = data?.detail;
+    const message =
+      typeof detail === 'string'
+        ? detail
+        : (detail as { error?: { message?: string } } | undefined)?.error?.message
+          || (data?.message as string)
+          || err.message;
 
     switch (status) {
       case 401: {

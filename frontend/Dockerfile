@@ -23,7 +23,8 @@ COPY --from=builder /build/dist /usr/share/nginx/html
 
 # Run as non-root user for security
 RUN addgroup -g 1000 appgroup && adduser -u 1000 -G appgroup -D appuser && \
-    sed -i 's/^user nginx;/user appuser;/' /etc/nginx/nginx.conf && \
+    sed -i 's/^user[ \t]*nginx;/user appuser;/' /etc/nginx/nginx.conf && \
+    sed -i 's|^pid[ \t]*/run/nginx.pid;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf && \
     chown -R appuser:appgroup /var/cache/nginx /var/run /usr/share/nginx/html
 USER appuser
 

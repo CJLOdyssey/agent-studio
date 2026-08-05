@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
+import { listSessions, deleteSession } from '../api/client/sessions';
+import Logger from '../utils/logger';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
 const ACTIVE_CONV_KEY = 'agentstudio-active-conv-id';
@@ -100,8 +102,51 @@ export function useConversation() {
     return () => window.removeEventListener('agentstudio-conversations-updated', handler);
   }, []);
 
+  useEffect(() => {
+    const rt = localStorage.getItem('agentstudio_refresh_token');
+    if (!rt) return;
+
+    let cancelled = false;
+    listSessions(100).then((sessions) => {
+      if (cancelled) return;
+      setConversations((prev) => {
+        const localSessionIds = new Set(
+          prev.map((c) => c.sessionId).filter(Boolean)
+        );
+        const apiConvs: Conversation[] = [];
+        for (const s of sessions) {
+          if (localSessionIds.has(s.id)) continue;
+          apiConvs.push({
+            id: crypto.randomUUID?.() || uid(),
+            title: s.title,
+            messages: [],
+            kind: s.kind as 'normal' | 'agent' | 'team' || 'normal',
+            agentId: s.agent_id || undefined,
+            createdAt: s.created_at || new Date().toISOString(),
+            updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
+            sessionId: s.id,
+          });
+        }
+        if (apiConvs.length === 0) return prev;
+        const merged = [...apiConvs, ...prev];
+        localStorage.setItem('agentstudio-conversations', JSON.stringify(merged));
+        return merged;
+      });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  /** Persist conversations to localStorage immediately (not just via the debounced effect). */
+  const persistConversations = useCallback((convs: Conversation[]) => {
+    try {
+      localStorage.setItem('agentstudio-conversations', JSON.stringify(convs));
+    } catch {
+      // non-fatal
+    }
+  }, []);
+
   /** Save or update a conversation. If convId exists, updates it; otherwise creates new. */
-  const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string, teamId?: string, teamName?: string) => {
+  const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string, teamId?: string, teamName?: string, kind?: 'normal' | 'agent' | 'team') => {
     const now = new Date().toISOString();
     const id = crypto.randomUUID?.() || uid();
     const conv: Conversation = {
@@ -110,38 +155,52 @@ export function useConversation() {
       messages: messages as Conversation['messages'],
       createdAt: now,
       updatedAt: now,
+      kind,
       agentId,
       teamId,
       teamName,
     };
-    setConversations((prev) => [conv, ...prev]);
+    setConversations((prev) => {
+      const next = [conv, ...prev];
+      persistConversations(next);
+      return next;
+    });
     setActiveConvId(id);
     return id;
-  }, []);
+  }, [persistConversations]);
 
   /** Update messages for an existing conversation. */
   const updateConversationMessages = useCallback((convId: string, messages: unknown[], updateTimestamps = true, teamId?: string, teamName?: string) => {
-    setConversations((prev) =>
-      prev.map((c) =>
+    setConversations((prev) => {
+      const next = prev.map((c) =>
         c.id === convId
           ? { ...c, messages: messages as Conversation['messages'], ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}), ...(teamId !== undefined ? { teamId } : {}), ...(teamName !== undefined ? { teamName } : {}) }
           : c,
-      ),
-    );
-  }, []);
+      );
+      persistConversations(next);
+      return next;
+    });
+  }, [persistConversations]);
 
   /** Update session ID for an existing conversation (links to backend session). */
   const updateConversationSessionId = useCallback((convId: string, sessionId: string, updateTimestamps = true) => {
-    setConversations((prev) =>
-      prev.map((c) =>
+    setConversations((prev) => {
+      const next = prev.map((c) =>
         c.id === convId ? { ...c, sessionId, ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}) } : c,
-      ),
-    );
-  }, []);
+      );
+      persistConversations(next);
+      return next;
+    });
+  }, [persistConversations]);
 
-  /** Delete a conversation by ID. */
+  /** Delete a conversation by ID — removes the local record AND the server session. */
   const deleteConversation = useCallback((convId: string) => {
-    setConversations((prev) => prev.filter((c) => c.id !== convId));
+    const conv = conversations.find((c) => c.id === convId);
+    setConversations((prev) => {
+      const next = prev.filter((c) => c.id !== convId);
+      persistConversations(next);
+      return next;
+    });
     setActiveConvId((current) => {
       if (current === convId) {
         useChatStore.getState().reset();
@@ -149,7 +208,12 @@ export function useConversation() {
       }
       return current;
     });
-  }, []);
+    if (conv?.sessionId) {
+      deleteSession(conv.sessionId).catch((err) => {
+        Logger.warn('[conversation] failed to delete server session %s: %s', conv.sessionId, String(err));
+      });
+    }
+  }, [conversations, persistConversations]);
 
   return {
     activeConvId,

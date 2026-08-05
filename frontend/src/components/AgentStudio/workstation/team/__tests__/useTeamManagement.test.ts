@@ -70,14 +70,6 @@ describe('useTeamManagement', { tags: ['unit'] }, () => {
     await waitFor(() => { expect(result.current.processed.find((t) => t.id === id)).toBeUndefined(); });
   });
 
-  it('copies a team', async () => {
-    const { result } = renderHook(() => useTeamManagement());
-    await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
-    const before = result.current.processed.length;
-    act(() => { result.current.copyTeam(result.current.processed[0]); });
-    await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
-  });
-
   it('handles search', async () => {
     const { result } = renderHook(() => useTeamManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });

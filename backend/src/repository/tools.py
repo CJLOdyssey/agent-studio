@@ -1,0 +1,49 @@
+"""Tools repository — CRUD for :class:`RegisteredToolDB`."""
+
+from typing import Any
+
+from core.infra.database import RegisteredToolDB
+from sqlalchemy import desc
+
+from repository.base import BaseRepository
+
+
+class ToolRepository(BaseRepository[RegisteredToolDB]):
+    model = RegisteredToolDB
+    default_order = desc(RegisteredToolDB.updated_at)
+
+    @staticmethod
+    def to_dict(obj: Any) -> dict[str, Any]:
+        """Serialize a RegisteredToolDB instance to a JSON-safe dictionary."""
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "category": obj.category,
+            "description": obj.description,
+            "model": obj.model,
+            "status": obj.status,
+            "version": obj.version,
+            "endpoint": obj.endpoint,
+            "method": obj.method,
+            "headers": obj.headers,
+            "parameters": obj.parameters,
+            "is_builtin": obj.is_builtin,
+            "created_at": obj.created_at.isoformat() if obj.created_at else None,
+        }
+
+
+# module-level aliases — preserve existing ``from repository import *`` API
+get_tools = ToolRepository.get_all     # await get_tools()
+get_tools_as_dicts = ToolRepository.get_all_as_dicts
+get_tool = ToolRepository.get_one      # await get_tool(id)
+create_tool = ToolRepository.create_one
+update_tool = ToolRepository.update_one
+delete_tool = ToolRepository.delete_one
+
+
+def list_tool_plugins() -> list[dict[str, Any]]:
+    """List registered tool plugins from the thinking-tree registry."""
+    import thinking_tree.tools  # noqa: F401 — side-effect registration
+    from thinking_tree.registry import registry
+
+    return registry.list_plugins()

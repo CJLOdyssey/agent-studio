@@ -29,6 +29,7 @@ vi.mock('../workstation/tabConfig', () => ({
 
 vi.mock('lucide-react', () => ({
   RefreshCw: () => <span>Refresh</span>,
+  X: () => <span data-testid="icon-x" />,
 }));
 
 describe('WorkstationPage', { tags: ['integration'] }, () => {
@@ -86,9 +87,8 @@ describe('WorkstationPage', { tags: ['integration'] }, () => {
 
     const teamsTabBtns = screen.getAllByText('团队管理');
     const sidebarBtn = teamsTabBtns[0].closest('button');
-    expect(sidebarBtn).toHaveStyle({
-      color: 'var(--da-accent)',
-    });
+    expect(sidebarBtn?.className).toContain('text-[var(--color-accent)]');
+    expect(sidebarBtn?.className).toContain('bg-[var(--color-accent)]/10');
   });
 
   it('tab renderer receives onNavigate callback', () => {

@@ -23,7 +23,7 @@ export default function useTeamMemberManager(team: TeamEntry) {
   }, []);
 
   const memberAgentIds = useMemo(
-    () => new Set(members.map((m) => m.agentConfigId).filter(Boolean)),
+    () => new Set(members.map((m) => String(Reflect.get(m, 'agent_config_id') ?? '') || m.agentConfigId).filter(Boolean)),
     [members],
   );
 
@@ -39,6 +39,8 @@ export default function useTeamMemberManager(team: TeamEntry) {
   }, [nonMemberAgents, agentSearch]);
 
   const handleAdd = useCallback(async (agent: { id: string; name: string }) => {
+    const already = members.some((m) => (String(Reflect.get(m, 'agent_config_id') ?? '') || m.agentConfigId) === agent.id);
+    if (already) return;
     setAddingId(agent.id);
     setError(null);
     try {
@@ -52,7 +54,7 @@ export default function useTeamMemberManager(team: TeamEntry) {
       setError(`添加「${agent.name}」失败`);
     }
     setAddingId(null);
-  }, [team.id]);
+  }, [team.id, members]);
 
   const handleRemove = useCallback(async (memberId: string) => {
     setRemovingId(memberId);

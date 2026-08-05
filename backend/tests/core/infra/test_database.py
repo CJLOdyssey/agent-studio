@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-import backend.core.infra.database as db_mod
-from backend.core.infra.database import (
+import core.infra.database as db_mod
+from core.infra.database import (
     SLOW_QUERY_THRESHOLD,
     _attach_slow_query_listeners,
     get_async_engine,
@@ -44,8 +44,8 @@ def test_attach_slow_query_listeners_accepts_any_engine() -> None:
     assert mock_engine.sync_engine is real_engine
 
 
-@patch("backend.core.infra.database.create_async_engine")
-@patch("backend.core.infra.database._attach_slow_query_listeners")
+@patch("core.infra.database.create_async_engine")
+@patch("core.infra.database._attach_slow_query_listeners")
 def test_get_async_engine_singleton(mock_attach: MagicMock, mock_create: MagicMock) -> None:
     """get_async_engine returns the same engine on repeated calls."""
     db_mod._async_engine = None
@@ -62,8 +62,8 @@ def test_get_async_engine_singleton(mock_attach: MagicMock, mock_create: MagicMo
     mock_attach.assert_called_once_with(mock_engine)
 
 
-@patch("backend.core.infra.database.create_async_engine")
-@patch("backend.core.infra.database._attach_slow_query_listeners")
+@patch("core.infra.database.create_async_engine")
+@patch("core.infra.database._attach_slow_query_listeners")
 def test_get_async_engine_with_zero_pool_size(mock_attach: MagicMock, mock_create: MagicMock) -> None:
     """When DATABASE_POOL_SIZE=0, poolclass should be NullPool."""
     db_mod._async_engine = None
@@ -83,7 +83,7 @@ def test_get_async_engine_with_zero_pool_size(mock_attach: MagicMock, mock_creat
     assert kwargs.get("poolclass") is NullPool
 
 
-@patch("backend.core.infra.database.get_async_engine")
+@patch("core.infra.database.get_async_engine")
 def test_get_session_factory(mock_get_engine: MagicMock) -> None:
     """get_session_factory returns a session factory bound to the engine."""
     db_mod._async_session_factory = None
@@ -100,7 +100,7 @@ def test_get_session_factory(mock_get_engine: MagicMock) -> None:
     assert mock_get_engine.call_count == 1
 
 
-@patch("backend.core.infra.database.get_async_engine")
+@patch("core.infra.database.get_async_engine")
 def test_get_async_engine_reuses_existing(mock_create: MagicMock) -> None:
     """If _async_engine is already set, get_async_engine returns it without creating new."""
     mock_engine = MagicMock()
@@ -118,8 +118,8 @@ def test_get_async_engine_with_pool_kwargs() -> None:
 
     mock_engine = MagicMock()
     env = {"DATABASE_POOL_SIZE": "5", "DATABASE_POOL_OVERFLOW": "3"}
-    with patch("backend.core.infra.database.create_async_engine", return_value=mock_engine) as mock_create, \
-         patch("backend.core.infra.database._attach_slow_query_listeners"), \
+    with patch("core.infra.database.create_async_engine", return_value=mock_engine) as mock_create, \
+         patch("core.infra.database._attach_slow_query_listeners"), \
          patch.dict("os.environ", env, clear=False):
         engine = get_async_engine()
 
@@ -131,7 +131,7 @@ def test_get_async_engine_with_pool_kwargs() -> None:
 
 def test_re_exports_are_accessible() -> None:
     """All ORM models are re-exported from database module."""
-    from backend.core.infra.database import (
+    from core.infra.database import (
         AgentConfigDB,
         AttachmentDB,
         ChatMessage,
