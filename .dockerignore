@@ -51,6 +51,12 @@ verify_layout.py
 data/
 uploads/
 
+# Root prototype leftovers
+index.html
+script.js
+styles.css
+node_trace*.log
+
 # Docs
 docs/
 *.md

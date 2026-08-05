@@ -3,27 +3,30 @@
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
 
-FROM python:3.12-slim
-
+# ── Stage 1: builder ──
 # ARG declared before FROM is only visible to FROM — redeclare inside the stage
 # so the pip RUN can resolve the variables (otherwise they expand to empty).
+FROM python:3.12-slim AS builder
 ARG PIP_INDEX_URL
 ARG PIP_TRUSTED_HOST
-
-WORKDIR /app
-
-# System deps (pg_isready for healthcheck, libpq-dev for psycopg2)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
-
-# Python deps (layer cached independently of source code)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+COPY requirements-prod.txt .
+RUN pip install --prefix=/install --no-cache-dir -r requirements-prod.txt \
     --index-url ${PIP_INDEX_URL} \
     --trusted-host ${PIP_TRUSTED_HOST}
 
-# Copy project
+# ── Stage 2: runtime ──
+FROM python:3.12-slim
+ARG PIP_INDEX_URL
+ARG PIP_TRUSTED_HOST
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+# pg_isready for entrypoint DB wait
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r appgroup -g 1000 && useradd -r -g appgroup -u 1000 -m appuser
+WORKDIR /app
+COPY --from=builder /install /usr/local
 COPY backend/ backend/
 COPY alembic.ini .
 COPY backend/alembic/ alembic/
@@ -31,11 +34,7 @@ COPY scripts/ scripts/
 
 # PYTHONPATH so imports from backend/src/ work
 ENV PYTHONPATH=/app/backend/src
-
-# Run as non-root user for security
-RUN groupadd -r appgroup -g 1000 && useradd -r -g appgroup -u 1000 -m appuser && \
-    mkdir -p /app/uploads /app/data && \
-    chown -R appuser:appgroup /app
+RUN mkdir -p /app/uploads /app/data && chown -R appuser:appgroup /app
 USER appuser
 
 # Health monitoring script for Docker healthcheck

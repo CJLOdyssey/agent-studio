@@ -1,13 +1,14 @@
-# requirements-lock.txt — 精确版本锁定文件
+# requirements.txt — 精确版本锁定文件
 # 由 `pip freeze` 在已知良好的环境生成。
 # 升级依赖后重新生成此文件。
+# 注意：生产依赖（requirements-prod.txt）与本文件需同步维护。
 
 
 
 # ── 开发依赖 ──────────────────────────────────────────────────────────────
 # ── 测试依赖 ──────────────────────────────────────────────────────────────
 # ── 生产依赖 ──────────────────────────────────────────────────────────────
-# 安装: pip install -r requirements-lock.txt
+# 安装: pip install -r requirements.txt
 aiosqlite==0.22.1
 alembic==1.18.4
 asyncpg==0.31.0
@@ -20,7 +21,6 @@ diff-cover==9.2.3
 email-validator==2.3.0
 factory-boy>=3.3.0
 fastapi==0.136.3
-httpx==0.28.1
 httpx==0.28.1
 langchain-core==1.4.8
 langchain-openai==1.2.2
@@ -53,3 +53,4 @@ types-PyYAML==6.0.12.20250326
 types-redis==4.6.0.20241004
 uvicorn==0.47.0
 websockets==15.0.1
+pyjwt==2.10.1
