@@ -140,7 +140,7 @@ graph TB
 ## 💬 支持
 
 - GitHub Issues: https://github.com/CJLOdyssey/agent-studio/issues
-- 文档: [QUICKSTART.md](QUICKSTART.md) | [AGENTS.md](AGENTS.md) | [RUNBOOK.md](RUNBOOK.md) | [API 示例](docs/api/README.md)
+- 文档: [QUICKSTART.md](QUICKSTART.md)
 
 ---
 
