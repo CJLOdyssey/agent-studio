@@ -172,7 +172,9 @@ services:
       backend:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8080/"]
+      # 用 127.0.0.1 而非 localhost：nginx 只监听 IPv4，wget 解析 localhost 到
+      # ::1 会 Connection refused（本机 IPv6 黑洞，见 AGENTS.md）
+      test: ["CMD", "wget", "--spider", "http://127.0.0.1:8080/"]
       interval: 15s
       timeout: 5s
       retries: 3
