@@ -89,7 +89,8 @@ exclude_lines = [
 [tool.mutmut]
 # CI 硬门禁运行范围：core/infra/ + services/（纯逻辑、单测覆盖）。
 # 引擎（graph/workflow/checkpoint）依赖 langgraph 重 mock，逐步扩量（见 2026-08-05 plan P5）。
-source_paths = ["backend/src/"]
+# mutmut 3.7 无 CLI 范围选项，范围完全由此处 source_paths 控制。
+source_paths = ["backend/src/core/infra/"]
 exclude_paths = [
     "backend/system_team/",
     "backend/thinking_tree/",

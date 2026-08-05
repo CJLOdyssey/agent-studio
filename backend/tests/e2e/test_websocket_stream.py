@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import pytest
 import websockets
@@ -11,7 +12,7 @@ pytestmark = pytest.mark.integration
 
 from tests.conftest import Api, _clear_rate_limits
 
-WS_BASE = "ws://localhost:8082"
+WS_BASE = os.environ.get("E2E_WS_URL", "ws://localhost:8082")
 
 
 class TestWebSocketStream:
