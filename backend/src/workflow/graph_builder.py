@@ -1,8 +1,10 @@
 """Workflow graph builder — constructs LangGraph StateGraph from config."""
 
+import json
 from collections.abc import Hashable
 from typing import Any, cast
 
+from core.infra.logging_config import get_logger
 from langgraph.graph import END, StateGraph
 
 from .models import NodeStrategy, WorkflowConfig, WorkflowState
@@ -13,9 +15,25 @@ from .router import Router
 # can never collide with a user role_identifier in practice.
 _ROUND_NODE = "__round_increment__"
 
+_HUMAN_VERDICT_KEY = "team:{run_id}:human_verdict"
 
-def _approval_route(state: WorkflowState, config: WorkflowConfig, entry_node: str) -> str:
+logger = get_logger(__name__)
+
+
+async def _approval_route(
+    state: WorkflowState,
+    config: WorkflowConfig,
+    entry_node: str,
+    node_id: str,
+    run_id: str = "",
+) -> str:
     """Gate a reviewer node — retry the entry node on rejection, END at max_rounds.
+
+    HITL (optional human): when ``run_id`` is set, publish an ``approval_request``
+    event on the run channel so the frontend may open an approval modal, then
+    read ``team:{run_id}:human_verdict``. If present, the human verdict
+    overrides the reviewer's keyword verdict; absent means auto verdict. Redis
+    I/O is best-effort — any failure falls back to the automatic verdict.
 
     Returns the path key consumed by ``add_conditional_edges``: "retry" back into
     the iteration loop, "continue" to the reviewer's original downstream target,
@@ -24,6 +42,27 @@ def _approval_route(state: WorkflowState, config: WorkflowConfig, entry_node: st
     rounds = int(state.get("round_number", 1) or 1)
     verdicts = state.get("verdicts", {}) or {}
     any_reject = any(not v.get("approved", True) for v in verdicts.values())
+
+    if run_id:
+        try:
+            from broker import get_redis, publish_run_message
+
+            key = _HUMAN_VERDICT_KEY.format(run_id=run_id)
+            r = get_redis()
+            raw = await r.get(key)
+            if raw is None:
+                await publish_run_message(
+                    run_id,
+                    {"type": "approval_request", "run_id": run_id, "node": node_id},
+                )
+            else:
+                raw_s = raw.decode() if isinstance(raw, bytes) else raw
+                verdict = json.loads(raw_s)
+                if isinstance(verdict, dict) and "approved" in verdict:
+                    any_reject = not bool(verdict["approved"])
+        except Exception:
+            logger.debug("HITL verdict check failed for run=%s", run_id, exc_info=True)
+
     if any_reject and rounds >= config.max_rounds:
         return END
     if any_reject:
@@ -38,11 +77,13 @@ class GraphBuilder:
         router: Router,
         checkpointer: Any | None = None,
         llm: Any | None = None,
+        run_id: str = "",
     ):
         self.node_factory = node_factory
         self.router = router
         self.checkpointer = checkpointer
         self.llm = llm
+        self.run_id = run_id
 
     def build(self, config: WorkflowConfig) -> StateGraph[Any]:
         workflow = StateGraph(WorkflowState)
@@ -87,12 +128,20 @@ class GraphBuilder:
         # Approved -> reviewer's original downstream target; skip self-loops back
         # to the entry node (the gate owns retries) and fall back to END.
         post = next((e.to_node_id for e in unconditional if e.to_node_id != entry_node), END)
-        # ponytail: HITL deferred — a future routers/team_runs.py + redis key
-        # team:{run_id}:human_verdict should let an operator override the verdict
-        # before this gate routes (hook point: reviewer node_fn / _approval_route).
+        # HITL hook: the gate publishes an approval_request event and reads a
+        # team:{run_id}:human_verdict key written by routers/team_runs.py — see
+        # _approval_route. run_id is optional; without it the gate is auto-only.
+        async def _hitl_path(
+            state: WorkflowState,
+            cfg: WorkflowConfig = config,
+            en: str | None = entry_node,
+            nid: str = node.role_identifier,
+        ) -> str:
+            return await _approval_route(state, cfg, en or "", nid, self.run_id)
+
         workflow.add_conditional_edges(
             node.role_identifier,
-            lambda s, cfg=config, en=entry_node: _approval_route(s, cfg, en),
+            _hitl_path,
             {"retry": _ROUND_NODE, "continue": post, END: END},
         )
 
