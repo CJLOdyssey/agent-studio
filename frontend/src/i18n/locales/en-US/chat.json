@@ -46,7 +46,17 @@
     "thumbsUp": "Helpful",
     "thumbsDown": "Not helpful",
     "removeFeedback": "Remove feedback",
-    "thinkingStopped": "Thinking stopped"
+    "thinkingStopped": "Thinking stopped",
+    "verdictApproved": "Approved",
+    "verdictRejected": "Rejected",
+    "rounds": "{{count}} rounds",
+    "totalRounds": "{{count}} rounds total",
+    "approvalRequired": "Human approval required",
+    "approvalNode": "Node: {{node}}",
+    "approvalApprove": "Approve",
+    "approvalReject": "Reject",
+    "approvalNote": "Approval note (optional)",
+    "approvalFailed": "Submission failed, please retry"
   },
   "commandGroups": {
     "agent": "Agent",

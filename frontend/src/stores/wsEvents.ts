@@ -61,11 +61,27 @@ export interface WsResultEvent {
   [key: string]: unknown;
 }
 
+/** Per-role verdict from the N1 team backend (contract-N1). */
+export interface TeamVerdict {
+  role: string;
+  approved: boolean;
+  reason?: string;
+  rounds: number;
+}
+
 export interface WsTeamResultEvent {
   type: 'team_result';
   artifacts?: Record<string, unknown>;
   display?: string;
+  verdicts?: Record<string, TeamVerdict>;
+  rounds?: number;
   [key: string]: unknown;
+}
+
+export interface WsApprovalRequestEvent {
+  type: 'approval_request';
+  run_id?: string;
+  node?: string;
 }
 
 export interface WsThumbsEvent {
@@ -85,4 +101,5 @@ export type WsEvent =
   | WsBrowserFrameEvent
   | WsResultEvent
   | WsTeamResultEvent
+  | WsApprovalRequestEvent
   | WsThumbsEvent;

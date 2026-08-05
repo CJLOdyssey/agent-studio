@@ -11,6 +11,7 @@ vi.mock('../utils/logger', () => ({
 vi.mock('./uid', () => ({ uid: vi.fn(() => 'test-uid') }));
 
 import { createStreamHandler } from '../chatStreaming';
+import { useApprovalStore } from '../streamHandler';
 
 describe('chatStreaming', { tags: ['unit'] }, () => {
   function makeBasicState() {
@@ -426,6 +427,89 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
         expect(msgs.find((m: { id: string; thumbs?: string }) => m.id === 'other-msg')?.thumbs).toBeUndefined();
         expect(msgs.find((m: { id: string; thumbs?: string }) => m.id === 'stream-1')?.thumbs).toBe('down');
       }
+    });
+  });
+
+  describe('team_result verdicts', () => {
+    it('attaches verdicts and total rounds to messages', () => {
+      const set = vi.fn();
+      const get = vi.fn(() => ({
+        ...makeBasicState(),
+        currentRunId: 'run-1',
+        streamingId: 'stream-1',
+        continuingId: null,
+        pendingVersions: null,
+        pendingThinkingVersions: null,
+      }));
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({
+        type: 'team_result',
+        display: 'done',
+        verdicts: { writer: { role: 'writer', approved: true, rounds: 2 } },
+        rounds: 2,
+      });
+
+      const updater = set.mock.calls[1]?.[0];
+      if (typeof updater === 'function') {
+        const s = {
+          ...makeBasicState(),
+          streamingId: null,
+          messages: [{ id: 'stream-1', role: 'agent' as const, content: 'done', agent_name: 'writer', round_number: 0, created_at: new Date().toISOString() }],
+        };
+        const result = updater(s);
+        const msgs = result.messages as Array<{ id: string; verdicts?: Record<string, { role: string; approved: boolean; rounds: number }>; round?: number }>;
+        expect(msgs.find((m) => m.id === 'stream-1')?.verdicts?.writer).toEqual({ role: 'writer', approved: true, rounds: 2 });
+        expect(msgs.find((m) => m.id === 'stream-1')?.round).toBe(2);
+      }
+    });
+
+    it('does not attach when verdicts missing', () => {
+      const set = vi.fn();
+      const get = vi.fn(() => makeBasicState());
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({ type: 'team_result', display: 'done' });
+
+      expect(set).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('approval_request event', () => {
+    it('sets approval store request and tags the streaming message', () => {
+      const set = vi.fn();
+      const get = vi.fn(() => ({
+        ...makeBasicState(),
+        currentRunId: 'run-1',
+        streamingId: 'stream-1',
+        continuingId: null,
+        pendingVersions: null,
+        pendingThinkingVersions: null,
+      }));
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({ type: 'approval_request', run_id: 'run-1', node: 'reviewer' });
+
+      expect(useApprovalStore.getState().request).toEqual({ runId: 'run-1', node: 'reviewer' });
+      const updater = set.mock.calls[0]?.[0];
+      if (typeof updater === 'function') {
+        const s = { ...makeBasicState(), streamingId: 'stream-1' };
+        const result = updater(s);
+        const msgs = result.messages as Array<{ id: string; approvalRequest?: { runId: string; node: string } }>;
+        expect(msgs.find((m) => m.id === 'stream-1')?.approvalRequest).toEqual({ runId: 'run-1', node: 'reviewer' });
+      }
+      useApprovalStore.getState().setRequest(null);
+    });
+
+    it('ignores approval_request without run_id', () => {
+      const set = vi.fn();
+      const get = vi.fn(() => makeBasicState());
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({ type: 'approval_request', node: 'reviewer' });
+
+      expect(set).not.toHaveBeenCalled();
+      expect(useApprovalStore.getState().request).toBeNull();
     });
   });
 });
