@@ -100,10 +100,6 @@ scripts/ask_credentials.py
 .omo/
 coverage.json
 # Docs are versioned — keep screenshots out
-docs/e2e-*.png
-docs/superpowers/plans/*.png
-docs/superpowers/plans/visual-v6/**/*.png
-docs/design-references/*.png
 
 # Internal (not for public repo)
 start.sh
@@ -123,3 +119,9 @@ scripts/test_tools_verified.py
 index.html
 script.js
 styles.css
+# Internal docs (not for public repo)
+docs/
+AGENTS.md
+CLAUDE.md
+RUNBOOK.md
+.mutmut-cache

@@ -4,7 +4,7 @@ const authFile = '.auth/user.json';
 
 const API_BASE = process.env.E2E_API_BASE ?? 'http://localhost:8081';
 const USER = {
-  email: process.env.E2E_USER_EMAIL ?? 'cjlodyssey@outlook.com',
+  email: process.env.E2E_USER_EMAIL ?? 'e2e-user@example.com',
   password: process.env.E2E_USER_PASSWORD ?? 'Test1234!',
 };
 const PROMPT_NAME = process.env.E2E_PROMPT_NAME ?? '2222';
