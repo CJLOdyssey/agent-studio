@@ -65,6 +65,16 @@ class TestGetUserId:
         request.headers = {}
         assert get_user_id(request) == "anonymous"
 
+    def test_ignores_x_user_id_when_auth_enabled(self, monkeypatch):
+        import auth.auth_rbac as ar
+
+        monkeypatch.setattr(ar, "AUTH_ENABLED", True)
+        request = MagicMock()
+        request.state.user_id = None
+        request.cookies.get.return_value = None
+        request.headers.get.return_value = "victim-id"
+        assert get_user_id(request) == "anonymous"
+
 @pytest.mark.requirement("REQ-AUTH-009")
 class TestEnvConfig:
     def test_auth_enabled_bool(self):
