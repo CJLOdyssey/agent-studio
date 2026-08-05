@@ -205,6 +205,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      # ci-runner 镜像预装 ruff 版本可能与 requirements 不一致（旧版 isort 规则差异
+      # 导致大量误报 I001），显式对齐项目锁定的 ruff 版本。
+      - run: pip install ruff==0.15.14 --quiet
       - run: ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
       # Use pre-warmed mypy cache from CI runner image
       - run: pip install types-PyYAML --quiet
