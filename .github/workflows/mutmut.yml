@@ -21,10 +21,11 @@ jobs:
       - run: pip install mutmut --quiet
       # 范围：先 core/infra（纯逻辑、跑得快）。services/ 突变多、单轮 ~105s，
       # 等 core/infra 达标后再扩（见 pyproject [tool.mutmut] 注释）。
+      # mutmut 3.7 CLI 无 paths 选项（配置 source_paths 控制全局），用 wildcard 限定范围。
       - name: Run mutation tests (core/infra)
         run: |
           mutmut run \
-            --source-paths backend/src/core/infra \
+            "backend/src/core/infra*" \
             --runner "env PYTHONPATH=backend/src python3 -m pytest -p no:cacheprovider -q --no-header" 2>&1 | tail -40
       - name: Enforce score threshold (60%)
         run: |

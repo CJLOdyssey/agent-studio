@@ -61,7 +61,8 @@ def check_db() -> bool:
         result = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             capture_output=True, text=True, timeout=120,
-            env={**os.environ, "PYTHONPATH": "."},
+            # core 在 backend/src（alembic env.py import core.config）
+            env={**os.environ, "PYTHONPATH": "backend/src"},
         )
         if result.returncode == 0:
             _check("Database migration", True)

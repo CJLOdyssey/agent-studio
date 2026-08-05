@@ -181,6 +181,7 @@ async def test_recovery_after_restart(tmp_path):
         capture_output=True,
         text=True,
         timeout=15,
+        env={**os.environ, "PYTHONPATH": "backend/src"},
     )
     assert result.returncode == 0, (
         f"Writer subprocess failed (rc={result.returncode}):\n"

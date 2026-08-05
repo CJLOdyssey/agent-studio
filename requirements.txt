@@ -53,4 +53,4 @@ types-PyYAML==6.0.12.20250326
 types-redis==4.6.0.20241004
 uvicorn==0.47.0
 websockets==15.0.1
-pyjwt==2.12.0
+pyjwt==2.13.0
