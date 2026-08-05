@@ -1,0 +1,39 @@
+name: Mutation Testing (mutmut)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  mutmut:
+    name: "Backend: Mutation Score"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install mutmut --quiet
+      - name: Run mutation tests (core/infra + services)
+        run: |
+          mutmut run \
+            --paths-to-mutate backend/src/core/infra backend/src/services \
+            --runner "PYTHONPATH=backend/src python3 -m pytest -x --no-header -q" 2>&1 | tail -40
+      - name: Enforce score threshold (60%)
+        run: |
+          score=$(mutmut results | grep -oP 'Mutation score: \K[0-9.]+' || echo 0)
+          echo "Mutation score: ${score}%"
+          python3 - "$score" <<'PY'
+          import sys
+          threshold = 60.0
+          score = float(sys.argv[1])
+          if score < threshold:
+              print(f"❌ Mutation score {score}% below threshold {threshold}%")
+              sys.exit(1)
+          print(f"✅ Mutation score {score}% >= {threshold}%")
+          PY
