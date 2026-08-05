@@ -450,6 +450,15 @@ jobs:
             fi
             sleep 1
           done
+      - name: Seed RBAC test user
+        if: matrix.auth_mode == 'rbac'
+        run: |
+          curl -sf -X POST http://localhost:8080/api/auth/send-register-code \
+            -H 'Content-Type: application/json' -d '{"email":"e2e@test.com"}' > /dev/null
+          code=$(docker exec agent-studio-redis redis-cli -n 1 GET 'auth:verify:e2e@test.com' | tr -d '"')
+          curl -sf -X POST http://localhost:8080/api/auth/register \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"e2e@test.com\",\"code\":\"$code\",\"password\":\"Test@1234\"}" > /dev/null
       - name: Run E2E tests
         run: PYTHONPATH=backend/src AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret E2E_BASE_URL=http://localhost:8080 E2E_WS_URL=ws://localhost:8080 python3 -m pytest backend/tests/e2e/ -v --tb=short --reruns 2 --reruns-delay 5
       - name: Validate OpenAPI schema

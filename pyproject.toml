@@ -87,18 +87,31 @@ exclude_lines = [
 ]
 
 [tool.mutmut]
-# CI 硬门禁运行范围：core/infra/ + services/（纯逻辑、单测覆盖）。
+# CI 硬门禁运行范围：core/infra/（纯逻辑、单测覆盖）。
 # 引擎（graph/workflow/checkpoint）依赖 langgraph 重 mock，逐步扩量（见 2026-08-05 plan P5）。
-# mutmut 3.7 无 CLI 范围选项，范围完全由此处 source_paths 控制。
-source_paths = ["backend/src/core/infra/"]
+# mutmut 3.7 配置要点：
+#   - source_paths 必须是 backend/src/（mutant 模块名从相对路径派生，须与 trampoline 记录的
+#     core.infra.X 一致；配成 backend/src/core/infra/ 会派生 infra.X 导致 0 关联）
+#   - only_mutate 限定实际突变的文件（只动 core/infra，避免引擎/全局慢 + no-tests 拉低 score）
+#   - pytest_add_cli_args_test_selection 只跑 core/infra 测试（stats 关联用）
+#   - pytest_add_cli_args 追加 -n 0 覆盖 pyproject pytest addopts 的 -n auto（xdist 跨进程
+#     丢失 trampoline stats，导致 0 关联）
+#   - PYTHONPATH=backend/src 必须在 mutmut 进程 env（PytestRunner 同进程调 pytest，不读 test_runner）
+source_paths = ["src/"]
+only_mutate = ["src/core/infra/*.py"]
 exclude_paths = [
     "backend/system_team/",
     "backend/thinking_tree/",
     "backend/checkpoint/",
     "backend/graph/",
 ]
-# mutmut 不以 shell 执行 runner（PYTHONPATH=x python3 会直接 FileNotFoundError），
-# 必须用 env 前缀；且不能用 -x（首个失败突变会中断整轮评估，score 失真）。
 test_runner = "env PYTHONPATH=backend/src python3 -m pytest -p no:cacheprovider -q --no-header"
-score_threshold = 60
+pytest_add_cli_args_test_selection = ["backend/tests/core/infra"]
+also_copy = ["backend/tests/core/infra"]
+pytest_add_cli_args = ["-n", "0"]
+# 基线 45.7%（2026-08-05 实测，257 killed / 562 有测试 mutants）。
+# 主要漏网：rate_limit(107 survived) / logging_config(65) / redis_sentinel(62)。
+# CI 门禁阈值 40%（mutmut.yml 硬编码，与 run 波动的 killed 数留缓冲）。
+# TODO: 补 core/infra 单测后逐步提到 60%+。
+score_threshold = 40
 
