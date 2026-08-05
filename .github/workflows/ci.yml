@@ -185,14 +185,14 @@ jobs:
           scan-type: config
           scan-ref: docker/Dockerfile
           severity: CRITICAL,HIGH
-          exit-code: 0
+          exit-code: 1
       - name: Scan frontend/Dockerfile
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: frontend/Dockerfile
           severity: CRITICAL,HIGH
-          exit-code: 0
+          exit-code: 1
 
   # ── Backend Lint & Security ──────────────────────────────────────────────
   backend-lint:
@@ -728,6 +728,7 @@ jobs:
           check "secrets-scan" "${{ needs.secrets-scan.result }}" || FAIL=1
           check "backend-lint" "${{ needs.backend-lint.result }}" || FAIL=1
           check "backend-security" "${{ needs.backend-security.result }}" || FAIL=1
+          check "requirement-coverage" "${{ needs.requirement-coverage.result }}" || FAIL=1
           check "backend-test" "${{ needs.backend-test.result }}" || FAIL=1
           check "backend-coverage" "${{ needs.backend-coverage.result }}" || FAIL=1
           check "frontend-coverage-report" "${{ needs.frontend-coverage-report.result }}" || FAIL=1
