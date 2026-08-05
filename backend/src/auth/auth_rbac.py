@@ -156,7 +156,10 @@ PUBLIC_PREFIXES = ("/ws/", "/api/auth/")
 def get_user_id(request: Any) -> str:
     """Extract user identity from the authenticated request.
 
-    Priority: auth middleware (request.state.user_id) → JWT cookie → X-User-ID header → 'anonymous'
+    Priority: auth middleware (request.state.user_id) → JWT cookie → 'anonymous'.
+    The ``X-User-ID`` header is ONLY trusted in legacy/guest mode (auth disabled),
+    where it is a guest-data namespace, NOT a security boundary. When auth is
+    enabled, unauthenticated requests resolve to ``anonymous``.
     """
     user_id: str | None = getattr(request.state, "user_id", None)
     if user_id:
@@ -170,5 +173,9 @@ def get_user_id(request: Any) -> str:
             uid = payload.get("sub")
             if isinstance(uid, str) and uid:
                 return uid
+
+    if AUTH_ENABLED:
+        logger.warning("Unauthenticated ownership access | path=%s", request.url.path)
+        return "anonymous"
 
     return str(request.headers.get("X-User-ID", "anonymous"))
