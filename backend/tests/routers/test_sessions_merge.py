@@ -1,11 +1,9 @@
-"""Unit tests for sessions._merge_edit_chains edit-regenerate folding."""
+"""Unit tests for sessions.merge_edit_chains edit-regenerate folding."""
 
-from datetime import UTC, datetime
+from datetime import datetime
 from types import SimpleNamespace
 
-import pytest
-
-from routers.sessions import _merge_edit_chains
+from services.session_service import merge_edit_chains
 
 
 def _run(run_id: str, parent: str | None = None, created_at: str = "2026-08-02T00:00:00") -> SimpleNamespace:
@@ -35,14 +33,14 @@ def _msgs(*contents: str) -> list[dict]:
 
 def test_independent_runs_not_folded():
     runs = [_run("a"), _run("b")]
-    merged = _merge_edit_chains(runs, {"a": _msgs("answer-a"), "b": _msgs("answer-b")})
+    merged = merge_edit_chains(runs, {"a": _msgs("answer-a"), "b": _msgs("answer-b")})
     assert [r.id for r, _ in merged] == ["a", "b"]
     assert all(len(msgs) == 1 for _, msgs in merged)
 
 
 def test_linear_chain_folds_into_newest():
     runs = [_run("a"), _run("b", parent="a")]
-    merged = _merge_edit_chains(runs, {"a": _msgs("answer-a"), "b": _msgs("answer-b")})
+    merged = merge_edit_chains(runs, {"a": _msgs("answer-a"), "b": _msgs("answer-b")})
     # Only the newest run (b) is shown, with a's answer folded into versions.
     assert len(merged) == 1
     latest, msgs = merged[0]
@@ -59,7 +57,7 @@ def test_branched_children_fold_into_newest_no_duplicates():
         _run("b", parent="a", created_at="2026-08-02T11:00:00"),
         _run("c", parent="a", created_at="2026-08-02T12:00:00"),
     ]
-    merged = _merge_edit_chains(runs, {
+    merged = merge_edit_chains(runs, {
         "a": _msgs("answer-a"),
         "b": _msgs("answer-b"),
         "c": _msgs("answer-c"),
