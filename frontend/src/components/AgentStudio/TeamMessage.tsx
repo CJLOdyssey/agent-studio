@@ -16,11 +16,16 @@ import {
   Play,
   ThumbsUp,
   ThumbsDown,
+  XCircle,
 } from 'lucide-react';
+import { Modal, Input as AntdInput, Button } from 'antd';
 import type { Message, Agent } from '../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
 import { CopyBtn, CodeBlock } from './messages';
+import api from '../../api/client/instance';
+import { useApprovalStore } from '../../stores/streamHandler';
+import type { TeamVerdict } from '../../stores/wsEvents';
 import type * as React from 'react';
 
 function linkify(text: string): React.ReactNode {
@@ -260,7 +265,39 @@ const TeamMessage = memo(function TeamMessage({
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
+  const [approvalNote, setApprovalNote] = useState('');
+  const [approving, setApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState('');
+  const request = useApprovalStore((s) => s.request);
   const thinkingBodyRef = useRef<HTMLDivElement>(null);
+
+  const meta = msg as Message & {
+    verdicts?: Record<string, TeamVerdict>;
+    round?: number;
+    approvalRequest?: { runId: string; node: string };
+  };
+  const showApprovalModal = !!(meta.approvalRequest && request && meta.approvalRequest.runId === request.runId);
+
+  const submitApproval = async (approved: boolean) => {
+    if (!request) return;
+    setApproving(true);
+    setApprovalError('');
+    try {
+      await api.post(`/team-runs/${request.runId}/approve`, { approved, reason: approvalNote.trim() || undefined });
+      setApprovalNote('');
+      useApprovalStore.getState().setRequest(null);
+    } catch {
+      setApprovalError(t('teamMessage.approvalFailed'));
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const closeApproval = () => {
+    if (approving) return;
+    setApprovalNote('');
+    useApprovalStore.getState().setRequest(null);
+  };
 
   useEffect(() => {
     const el = thinkingBodyRef.current;
@@ -447,6 +484,23 @@ const TeamMessage = memo(function TeamMessage({
               </div>
             )}
 
+            {meta.verdicts && Object.keys(meta.verdicts).length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {Object.entries(meta.verdicts).map(([role, v]) => (
+                  <span key={role} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]">
+                    {v.approved
+                      ? <CheckCircle2 size={12} className="text-[var(--color-success)]" />
+                      : <XCircle size={12} className="text-[#ef4444]" />}
+                    <span>{role}</span>
+                    <span className="text-[var(--color-text-muted)]">{t('teamMessage.rounds', { count: String(v.rounds) })}</span>
+                  </span>
+                ))}
+                {meta.round !== undefined && (
+                  <span className="text-xs text-[var(--color-text-muted)]">{t('teamMessage.totalRounds', { count: String(meta.round) })}</span>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-row items-start gap-2 w-full">
               <div className="flex-1 min-w-0 bg-transparent text-[var(--color-text-primary)] rounded-none p-0 text-base leading-[1.7]">
               {msg.thinking && msg.thinking.length > 0 && (
@@ -599,6 +653,25 @@ const TeamMessage = memo(function TeamMessage({
           </>
         )}
       </div>
+      <Modal
+        title={t('teamMessage.approvalRequired')}
+        open={showApprovalModal}
+        onCancel={closeApproval}
+        footer={[
+          <Button key="reject" data-testid="reject-btn" danger loading={approving} onClick={() => submitApproval(false)}>{t('teamMessage.approvalReject')}</Button>,
+          <Button key="approve" data-testid="approve-btn" type="primary" loading={approving} onClick={() => submitApproval(true)}>{t('teamMessage.approvalApprove')}</Button>,
+        ]}
+      >
+        {request && <p className="text-sm mb-3">{t('teamMessage.approvalNode', { node: request.node })}</p>}
+        <AntdInput.TextArea
+          data-testid="approval-note"
+          value={approvalNote}
+          onChange={(e) => setApprovalNote(e.target.value)}
+          placeholder={t('teamMessage.approvalNote')}
+          rows={3}
+        />
+        {approvalError && <p className="text-xs text-[#ef4444] mt-2">{approvalError}</p>}
+      </Modal>
     </div>
   );
 });

@@ -46,7 +46,17 @@
     "thumbsUp": "有用",
     "thumbsDown": "没用",
     "removeFeedback": "取消评价",
-    "thinkingStopped": "思考已停止"
+    "thinkingStopped": "思考已停止",
+    "verdictApproved": "已通过",
+    "verdictRejected": "已驳回",
+    "rounds": "{{count}} 轮",
+    "totalRounds": "共 {{count}} 轮",
+    "approvalRequired": "等待人工审批",
+    "approvalNode": "节点：{{node}}",
+    "approvalApprove": "通过",
+    "approvalReject": "驳回",
+    "approvalNote": "审批备注（可选）",
+    "approvalFailed": "提交失败，请重试"
   },
   "commandGroups": {
     "agent": "Agent",

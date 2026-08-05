@@ -1,6 +1,6 @@
 import type { ChatState } from './chatTypes';
 import type { WsEvent } from './wsEvents';
-import { handleStreamEvent, handleThinkingStreamEvent } from './streamHandler';
+import { handleStreamEvent, handleThinkingStreamEvent, handleTeamResultMeta, handleApprovalRequest } from './streamHandler';
 import { handleMessageEvent, handleInfoEvent, handleErrorEvent, handleBalanceWarningEvent, handleOpenUrlEvent } from './messageHandler';
 import { handleThinkingDoneEvent, handleResultEvent, handleTeamResultEvent, handleThumbsEvent } from './resultHandler';
 
@@ -60,6 +60,12 @@ export function createStreamHandler(set: SetFn, get: GetFn) {
 
     if (msg.type === 'team_result') {
       handleTeamResultEvent(set, get, _activeStreamMsgIds, msg);
+      handleTeamResultMeta(set, msg);
+      return;
+    }
+
+    if (msg.type === 'approval_request') {
+      handleApprovalRequest(set, msg);
       return;
     }
 

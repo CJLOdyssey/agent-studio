@@ -1,10 +1,61 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
+import { create } from 'zustand';
 import type { ChatState } from './chatTypes';
-import type { WsStreamEvent, WsThinkingStreamEvent } from './wsEvents';
+import type { ChatMessage } from '../types';
+import type { WsStreamEvent, WsThinkingStreamEvent, WsTeamResultEvent, WsApprovalRequestEvent, TeamVerdict } from './wsEvents';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
+
+interface ApprovalRequest {
+  runId: string;
+  node: string;
+}
+
+interface ApprovalStoreState {
+  request: ApprovalRequest | null;
+  setRequest: (request: ApprovalRequest | null) => void;
+}
+
+export const useApprovalStore = create<ApprovalStoreState>((set) => ({
+  request: null,
+  setRequest: (request) => set({ request }),
+}));
+
+type TeamMessageMeta = ChatMessage & {
+  verdicts?: Record<string, TeamVerdict>;
+  round?: number;
+  approvalRequest?: ApprovalRequest;
+};
+
+export function handleTeamResultMeta(set: SetFn, msg: WsTeamResultEvent): void {
+  const verdicts = msg.verdicts;
+  const rounds = msg.rounds;
+  if (!verdicts || typeof verdicts !== 'object' || Array.isArray(verdicts)) return;
+  set((s) => ({
+    messages: s.messages.map((m) =>
+      ({ ...m, verdicts, ...(rounds !== undefined ? { round: rounds } : {}) }) as TeamMessageMeta,
+    ),
+  }));
+}
+
+export function handleApprovalRequest(set: SetFn, msg: WsApprovalRequestEvent): void {
+  const runId = msg.run_id;
+  const node = msg.node;
+  if (!runId || !node) return;
+  useApprovalStore.getState().setRequest({ runId, node });
+  set((s) => {
+    const targetId = s.streamingId || s.messages[s.messages.length - 1]?.id;
+    if (!targetId) return {};
+    return {
+      messages: s.messages.map((m) =>
+        m.id === targetId ? { ...m, approvalRequest: { runId, node } } as TeamMessageMeta : m,
+      ),
+    };
+  });
+}
+
 
 export function handleStreamStart(s: ChatState, msg: WsStreamEvent, chunk: string): Partial<ChatState> {
   const newId = crypto.randomUUID?.() || uid();
