@@ -43,6 +43,9 @@ spec:
                 name: {{ include "agent-studio.fullname" . }}-config
             - secretRef:
                 name: {{ include "agent-studio.fullname" . }}-secret
+          env:
+            - name: SKIP_MIGRATIONS
+              value: "1"
           {{- if .Values.checkpoints.persistence.enabled }}
           volumeMounts:
             - name: checkpoints
@@ -59,7 +62,7 @@ spec:
               {{- toYaml .Values.securityContext.capabilities | nindent 14 }}
           livenessProbe:
             httpGet:
-              path: /api/models
+              path: /api/health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 15
@@ -67,7 +70,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/models
+              path: /api/health
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10

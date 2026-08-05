@@ -107,6 +107,16 @@ celery:
       memory: "1Gi"
       cpu: "500m"
 
+# ── Alembic migration Job ─────────────────────────────────────────────────────
+migrations:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
 # ── Frontend (Nginx SPA) ───────────────────────────────────────────────────────
 frontend:
   image:
