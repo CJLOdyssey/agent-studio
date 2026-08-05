@@ -24,9 +24,17 @@ jobs:
       # mutmut 3.7 CLI 无 --paths/--runner 选项：范围、测试选择、also_copy 均在 pyproject.toml 配置。
       # PYTHONPATH 必须传给 mutmut 进程（其 PytestRunner 同进程调用 pytest，不读 test_runner 配置），
       # 否则 mutants/ 下 conftest 的 core.base import 失败。
+      # source_paths=src/ 需 repo root 有 src→backend/src symlink（mutmut 从相对路径派生模块名
+      # core.infra.X 须与 trampoline 记录的 __module__ 一致；配 backend/src/ 会派生 backend.src.core
+      # 导致 0 关联）。symlink 不提交进 repo（会让 ruff 误报 I001），在 CI 运行时临时创建。
       - name: Run mutation tests (core/infra)
         run: |
+          set -o pipefail
+          ln -s backend/src src
           PYTHONPATH=backend/src mutmut run 2>&1 | tail -40
+          rc=$?
+          rm -f src
+          exit $rc
       - name: Enforce score threshold
         run: |
           # mutmut 3.7 的 `results` 无 "Mutation score" 行，须用 `--all true` 全量统计。
