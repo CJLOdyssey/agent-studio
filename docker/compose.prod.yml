@@ -22,6 +22,9 @@ x-common-env: &common-env
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:80}
   CHECKPOINTER_BACKEND: ${CHECKPOINTER_BACKEND:-postgres}
   CHECKPOINTER_DSN: ${CHECKPOINTER_DSN:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/backend}
+  # celery threads-pool 每次任务新建 event loop：QueuePool 连接池跨 loop 会
+  # 抛 "Future attached to a different loop"。NullPool 每次新连接，规避。
+  DATABASE_POOL_SIZE: "0"
 
 x-logging: &default-logging
   driver: "json-file"
@@ -134,6 +137,10 @@ services:
     command: celery -A broker worker --loglevel=${LOG_LEVEL:-info} --concurrency=2 --pool=threads
     environment:
       <<: *common-env
+      # 迁移只由 backend 执行（P13）；celery 跳过，避免并发 alembic 竞争
+      SKIP_MIGRATIONS: "1"
+      PYTHONFAULTHANDLER: "1"
+      PYTHONFAULTHANDLER_ALL_THREADS: "1"
     healthcheck:
       test: ["CMD-SHELL", "celery -A broker inspect ping >/dev/null 2>&1 || exit 1"]
       interval: 30s

@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import shlex
+import threading
 import time
 import tracemalloc
 from typing import Any
@@ -49,6 +50,17 @@ def log_memory_diff() -> None:
     if top:
         logger.info("[MEM] top growth:\n%s", "\n".join(top))
     _baseline_snapshot = current
+
+
+# Thread-local event loop for celery threads-pool workers.
+#
+# WHY: asyncio.run() creates a fresh loop per task, but SQLAlchemy's async
+# engine (QueuePool) and broker Redis pools are cached per-loop (or module-level).
+# A fresh loop per task reuses connections created under a *closed* loop and
+# blows up with "Future attached to a different loop" (or hangs on half-dead
+# connections). Celery threads-pool runs tasks serially per thread, so caching
+# one loop per thread is safe and lets pools stay valid across tasks.
+_loop_local = threading.local()
 
 
 def _run_async(coro: Any) -> Any:

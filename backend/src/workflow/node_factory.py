@@ -96,7 +96,7 @@ class NodeFactory:
             "stream": True,
             "stream_options": {"include_usage": True},
             "temperature": getattr(self.llm, "temperature", 0.7),
-            "max_tokens": getattr(self.llm, "max_tokens", 16384),
+            "max_tokens": getattr(self.llm, "max_tokens", None),
         }
         if tool_definitions:
             body["tools"] = tool_definitions

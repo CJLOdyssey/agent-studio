@@ -16,6 +16,10 @@ from core.infra.metrics import (
     llm_requests_total,
     llm_tokens_total,
 )
+
+# Hard guard on runaway SSE streams (free-tier LLMs can stream forever, each
+# chunk resetting httpx's read timeout). Truncate past this many SSE lines.
+_MAX_STREAM_LINES = 2000
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -153,7 +157,18 @@ async def stream_llm_response(
                 error_body = body_text.decode(errors="replace")[:1000]
                 logger.error("LLM API error: status=%d body=%s", response.status_code, error_body)
             response.raise_for_status()
+            _line_n = 0
             async for line in response.aiter_lines():
+                _line_n += 1
+                if _line_n > _MAX_STREAM_LINES:
+                    # Hard guard: runaway model output (free-tier LLMs can stream
+                    # forever, resetting the read timeout with each chunk) must not
+                    # pin the worker indefinitely. Truncate and treat as finished.
+                    logger.warning(
+                        "LLM stream truncated at %d lines (guard) | url=%s",
+                        _MAX_STREAM_LINES, url,
+                    )
+                    break
                 if not line or not line.startswith("data: "):
                     continue
                 data_str = line[6:]

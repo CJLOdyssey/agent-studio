@@ -48,7 +48,14 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 # Per-event-loop connection pool — Celery prefork workers create a new event
 # loop via asyncio.run() in each child process, so a single global pool bound
 # to the parent's loop becomes invalid ("Event loop is closed").
-_pools: dict[int, Any] = {}
+#
+# Keyed by the loop OBJECT (not id()): asyncio.run() creates a fresh loop per
+# task; after the task the loop is garbage-collected and its id() can be
+# REUSED by the next task's loop. Keying by id() then hits the stale pool
+# whose connections belong to a closed loop -> redis calls hang forever
+# (redis-py has no socket_timeout on publish). Keying by the loop object and
+# dropping entries whose loop is gone fixes both the stale-hit and the leak.
+_pools: dict[asyncio.AbstractEventLoop, Any] = {}
 CHANNEL_PREFIX = "run:"
 
 
@@ -68,14 +75,19 @@ def get_redis() -> Any:  # returns AsyncRedis
     """
 
     loop = asyncio.get_running_loop()
-    loop_id = id(loop)
 
-    pool = _pools.get(loop_id)
+    # Drop stale pools whose loop is no longer running (loop object identity,
+    # NOT id() — id reuse after GC would otherwise hit dead connections).
+    stale = [k for k in _pools if k is not loop and (k.is_closed() or not k.is_running())]
+    for k in stale:
+        _pools.pop(k, None)
+
+    pool = _pools.get(loop)
     if pool is None:
         from core.infra.redis_sentinel import create_redis
 
         pool = create_redis()
-        _pools[loop_id] = pool
+        _pools[loop] = pool
     return pool
 
 
@@ -83,8 +95,7 @@ async def close_redis() -> None:
     """Close the Redis connection pool for the current event loop."""
 
     loop = asyncio.get_running_loop()
-    loop_id = id(loop)
-    pool = _pools.pop(loop_id, None)
+    pool = _pools.pop(loop, None)
     if pool is not None:
         await pool.aclose()
 
