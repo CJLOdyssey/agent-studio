@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """E2E Test: Agent CRUD operations + full config."""
@@ -106,7 +107,7 @@ class TestAgentCRUD:
             "/api/agents",
             json={
                 "name": "Toggle-Agent",
-                "role_identifier": "toggle_agent",
+                "role_identifier": _rid("toggle_agent"),
                 "system_prompt": "x",
                 "is_active": True,
             },
