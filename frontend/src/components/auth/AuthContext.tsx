@@ -177,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await apiLogin(email, password, rememberMe);
     setTokens(res.access_token, res.refresh_token);
+    setLoading(false);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     localStorage.setItem('agentstudio_user_id', res.user.id);
     window.dispatchEvent(new CustomEvent('auth:login'));
@@ -186,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (email: string, code: string, password: string) => {
     const res = await apiRegister(email, code, password);
     setTokens(res.access_token, res.refresh_token);
+    setLoading(false);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     localStorage.setItem('agentstudio_user_id', res.user.id);
     window.dispatchEvent(new CustomEvent('auth:login'));
@@ -195,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verify = useCallback(async (email: string, code: string) => {
     const res = await apiVerify(email, code);
     setTokens(res.access_token, res.refresh_token);
+    setLoading(false);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     localStorage.setItem('agentstudio_user_id', res.user.id);
     window.dispatchEvent(new CustomEvent('auth:login'));
