@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "virtual-team.name" -}}
+{{- define "agent-studio.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -9,7 +9,7 @@ Expand the name of the chart.
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this.
 */}}
-{{- define "virtual-team.fullname" -}}
+{{- define "agent-studio.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -21,16 +21,16 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "virtual-team.chart" -}}
+{{- define "agent-studio.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "virtual-team.labels" -}}
-helm.sh/chart: {{ include "virtual-team.chart" . }}
-{{ include "virtual-team.selectorLabels" . }}
+{{- define "agent-studio.labels" -}}
+helm.sh/chart: {{ include "agent-studio.chart" . }}
+{{ include "agent-studio.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -40,36 +40,36 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "virtual-team.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "virtual-team.name" . }}
+{{- define "agent-studio.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "agent-studio.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Postgres service name
 */}}
-{{- define "virtual-team.postgres.fullname" -}}
-{{- printf "%s-postgres" (include "virtual-team.fullname" .) }}
+{{- define "agent-studio.postgres.fullname" -}}
+{{- printf "%s-postgres" (include "agent-studio.fullname" .) }}
 {{- end }}
 
 {{/*
 Redis service name
 */}}
-{{- define "virtual-team.redis.fullname" -}}
-{{- printf "%s-redis" (include "virtual-team.fullname" .) }}
+{{- define "agent-studio.redis.fullname" -}}
+{{- printf "%s-redis" (include "agent-studio.fullname" .) }}
 {{- end }}
 
 {{/*
 Backend service name
 */}}
-{{- define "virtual-team.backend.fullname" -}}
-{{- printf "%s-backend" (include "virtual-team.fullname" .) }}
+{{- define "agent-studio.backend.fullname" -}}
+{{- printf "%s-backend" (include "agent-studio.fullname" .) }}
 {{- end }}
 
 {{/*
 Backend image
 */}}
-{{- define "virtual-team.backend.image" -}}
+{{- define "agent-studio.backend.image" -}}
 {{- $registry := .Values.global.acrRegistry }}
 {{- if .Values.backend.image.repository }}
 {{- printf "%s:%s" .Values.backend.image.repository .Values.backend.image.tag }}
@@ -81,7 +81,7 @@ Backend image
 {{/*
 Frontend image
 */}}
-{{- define "virtual-team.frontend.image" -}}
+{{- define "agent-studio.frontend.image" -}}
 {{- $registry := .Values.global.acrRegistry }}
 {{- if .Values.frontend.image.repository }}
 {{- printf "%s:%s" .Values.frontend.image.repository .Values.frontend.image.tag }}
@@ -93,10 +93,10 @@ Frontend image
 {{/*
 Database URL constructed from postgres values
 */}}
-{{- define "virtual-team.databaseUrl" -}}
+{{- define "agent-studio.databaseUrl" -}}
 {{- $user := .Values.postgres.user }}
 {{- $password := .Values.postgres.password }}
-{{- $host := include "virtual-team.postgres.fullname" . }}
+{{- $host := include "agent-studio.postgres.fullname" . }}
 {{- $port := .Values.postgres.port | toString }}
 {{- $db := .Values.postgres.db }}
 {{- printf "postgresql+asyncpg://%s:%s@%s:%s/%s" $user $password $host $port $db }}
@@ -105,18 +105,18 @@ Database URL constructed from postgres values
 {{/*
 Redis URL
 */}}
-{{- define "virtual-team.redisUrl" -}}
-{{- $host := include "virtual-team.redis.fullname" . }}
+{{- define "agent-studio.redisUrl" -}}
+{{- $host := include "agent-studio.redis.fullname" . }}
 {{- printf "redis://%s:6379/0" $host }}
 {{- end }}
 
 {{/*
 Checkpointer DSN
 */}}
-{{- define "virtual-team.checkpointerDsn" -}}
+{{- define "agent-studio.checkpointerDsn" -}}
 {{- $user := .Values.postgres.user }}
 {{- $password := .Values.postgres.password }}
-{{- $host := include "virtual-team.postgres.fullname" . }}
+{{- $host := include "agent-studio.postgres.fullname" . }}
 {{- $db := .Values.postgres.db }}
 {{- printf "postgresql://%s:%s@%s:5432/%s" $user $password $host $db }}
 {{- end }}

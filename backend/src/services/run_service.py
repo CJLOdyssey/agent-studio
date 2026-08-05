@@ -8,7 +8,6 @@ RunService holds the business process.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 from typing import Any
 
@@ -27,6 +26,8 @@ from repository import (
     update_run_status,
     update_session_title,
 )
+
+from services.text_utils import parse_json_list
 
 logger = get_logger(__name__)
 
@@ -49,16 +50,6 @@ class RunService:
       - Redis buffer subscription
       - background task dispatching
     """
-
-    @staticmethod
-    def _parse_json_list(raw: str | None) -> list[str] | None:
-        if not raw:
-            return None
-        try:
-            parsed = json.loads(raw)
-            return parsed if isinstance(parsed, list) else None
-        except Exception:
-            return None
 
     async def create_run(
         self,
@@ -127,7 +118,7 @@ class RunService:
             if parent_run_id:
                 parent = await get_run(parent_run_id)
                 if parent:
-                    parent_versions = self._parse_json_list(parent.requirement_versions)
+                    parent_versions = parse_json_list(parent.requirement_versions)
                     req_versions = (parent_versions or []) + [parent.requirement]
             run_id = await db_create_run(
                 requirement,

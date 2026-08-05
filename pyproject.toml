@@ -96,6 +96,8 @@ exclude_paths = [
     "backend/checkpoint/",
     "backend/graph/",
 ]
-test_runner = "PYTHONPATH=backend/src python3 -m pytest -x --no-header -q"
+# mutmut 不以 shell 执行 runner（PYTHONPATH=x python3 会直接 FileNotFoundError），
+# 必须用 env 前缀；且不能用 -x（首个失败突变会中断整轮评估，score 失真）。
+test_runner = "env PYTHONPATH=backend/src python3 -m pytest -p no:cacheprovider -q --no-header"
 score_threshold = 60
 

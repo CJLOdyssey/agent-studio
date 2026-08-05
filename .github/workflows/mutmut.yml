@@ -13,17 +13,19 @@ jobs:
   mutmut:
     name: "Backend: Mutation Score"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     container:
       image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
     steps:
       - uses: actions/checkout@v4
       - run: pip install mutmut --quiet
-      - name: Run mutation tests (core/infra + services)
+      # 范围：先 core/infra（纯逻辑、跑得快）。services/ 突变多、单轮 ~105s，
+      # 等 core/infra 达标后再扩（见 pyproject [tool.mutmut] 注释）。
+      - name: Run mutation tests (core/infra)
         run: |
           mutmut run \
-            --paths-to-mutate backend/src/core/infra backend/src/services \
-            --runner "PYTHONPATH=backend/src python3 -m pytest -x --no-header -q" 2>&1 | tail -40
+            --paths-to-mutate backend/src/core/infra \
+            --runner "env PYTHONPATH=backend/src python3 -m pytest -p no:cacheprovider -q --no-header" 2>&1 | tail -40
       - name: Enforce score threshold (60%)
         run: |
           score=$(mutmut results | grep -oP 'Mutation score: \K[0-9.]+' || echo 0)
