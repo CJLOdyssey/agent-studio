@@ -133,12 +133,12 @@ class TestBrokerRedis:
 
         _pools.clear()
         loop = MagicMock()
-        _pools[id(loop)] = mock_redis
+        _pools[loop] = mock_redis
 
         with patch("broker.asyncio.get_running_loop", return_value=loop):
             await close_redis()
             mock_redis.aclose.assert_awaited_once()
-            assert id(loop) not in _pools
+            assert loop not in _pools
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -266,13 +266,12 @@ class TestBrokerFull:
         from broker import _pools, close_redis
 
         loop = MagicMock()
-        loop_id = id(loop)
         mock_pool = AsyncMock()
-        _pools[loop_id] = mock_pool
+        _pools[loop] = mock_pool
 
         with patch("broker.asyncio.get_running_loop", return_value=loop):
             await close_redis()
-            assert loop_id not in _pools
+            assert loop not in _pools
             mock_pool.aclose.assert_awaited_once()
 
     def test_celery_app_config(self):

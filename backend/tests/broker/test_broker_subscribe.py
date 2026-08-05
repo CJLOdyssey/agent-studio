@@ -176,18 +176,18 @@ class TestCloseRedisEdgeCases:
         loop_b = MagicMock()
         pool_a = AsyncMock()
         pool_b = AsyncMock()
-        _pools[id(loop_a)] = pool_a
-        _pools[id(loop_b)] = pool_b
+        _pools[loop_a] = pool_a
+        _pools[loop_b] = pool_b
 
         with patch("broker.asyncio.get_running_loop", return_value=loop_a):
             await close_redis()
 
-        assert id(loop_a) not in _pools
-        assert id(loop_b) in _pools
+        assert loop_a not in _pools
+        assert loop_b in _pools
         pool_a.aclose.assert_awaited_once()
         pool_b.aclose.assert_not_awaited()
 
-        _pools.pop(id(loop_b), None)
+        _pools.pop(loop_b, None)
 
 
 # ---------------------------------------------------------------------------
