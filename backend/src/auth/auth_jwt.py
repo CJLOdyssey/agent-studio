@@ -73,6 +73,10 @@ def decode_jwt(token: str, secret: str) -> dict[str, Any] | None:
 
 def create_token(user_id: str, secret: str, ttl: int = 86400) -> str:
     """Create an HS256 JWT token for the given user_id."""
+    if not secret:
+        # PyJWT >= 2.12 raises InvalidKeyError on empty key; guard like decode_jwt
+        # so test environments without AUTH_SECRET don't explode.
+        raise ValueError("AUTH_SECRET is empty — cannot create token")
     now = int(time.time())
     return jwt.encode(
         {"sub": user_id, "iat": now, "exp": now + ttl},

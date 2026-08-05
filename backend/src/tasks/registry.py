@@ -98,11 +98,11 @@ def run_team(
                 requirement=requirement,
                 run_id=run_id,
                 session_id=session_id,
-                team_id=team_id,
+                team_id=team_id or "",
                 key_id=key_id,
-                api_key=api_key,
+                api_key=api_key or "",
                 api_base=api_base,
-                model=model,
+                model=model or "",
             )
         )
     except Exception as exc:

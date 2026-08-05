@@ -55,12 +55,19 @@ jobs:
           done
       - name: Seed E2E user
         run: |
-          curl -sf -X POST http://localhost:8081/api/auth/send-register-code \
-            -H 'Content-Type: application/json' -d '{"email":"cjlodyssey@outlook.com"}' > /dev/null
-          code=$(docker exec virtual-team-redis redis-cli -n 1 GET 'auth:verify:cjlodyssey@outlook.com' | tr -d '"')
+          # 等 auth 端点就绪（/api/models 就绪不代表 auth 路由已可用），带重试
+          for i in $(seq 1 15); do
+            if curl -sf -X POST http://localhost:8081/api/auth/send-register-code \
+              -H 'Content-Type: application/json' -d '{"email":"e2e-user@example.com"}' > /dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          code=$(docker exec virtual-team-redis redis-cli -n 1 GET 'auth:verify:e2e-user@example.com' | tr -d '"')
+          if [ -z "$code" ]; then echo "❌ verify code not found"; cat /tmp/backend.log | tail -20; exit 1; fi
           curl -sf -X POST http://localhost:8081/api/auth/register \
             -H 'Content-Type: application/json' \
-            -d "{\"email\":\"cjlodyssey@outlook.com\",\"code\":\"$code\",\"password\":\"Test1234!\"}" > /dev/null
+            -d "{\"email\":\"e2e-user@example.com\",\"code\":\"$code\",\"password\":\"Test1234!\"}" > /dev/null
       - name: Start frontend
         working-directory: frontend
         run: |

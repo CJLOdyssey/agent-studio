@@ -174,7 +174,7 @@ def _discovery_cache_key(
         {"endpoint": endpoint, "args": args, "env": env},
         sort_keys=True, ensure_ascii=False, separators=(",", ":"),
     )
-    return hashlib.sha1(payload.encode("utf-8")).hexdigest()
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _get_discovery_lock(key: str) -> asyncio.Lock:

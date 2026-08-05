@@ -26,6 +26,7 @@ class TestContinueRun:
 
         with (
             patch("services.run_service.load_config") as mock_config,
+            patch("services.run_service.get_api_key_for_model", return_value=None),
             patch("services.run_service.get_default_api_key") as mock_key,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("repository.create_run") as mock_create_run,
@@ -53,6 +54,7 @@ class TestContinueRun:
 
         with (
             patch("services.run_service.load_config") as mock_config,
+            patch("services.run_service.get_api_key_for_model", return_value=None),
             patch("services.run_service.get_default_api_key") as mock_key,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("repository.create_run") as mock_create_run,
@@ -79,6 +81,7 @@ class TestContinueRun:
 
         with (
             patch("services.run_service.load_config") as mock_config,
+            patch("services.run_service.get_api_key_for_model", return_value=None),
             patch("services.run_service.get_default_api_key") as mock_key,
         ):
             mock_config.return_value = MagicMock(model="test-model")
@@ -98,6 +101,7 @@ class TestContinueRun:
 
         with (
             patch("services.run_service.load_config") as mock_config,
+            patch("services.run_service.get_api_key_for_model", return_value=None),
             patch("services.run_service.get_default_api_key") as mock_key,
             patch("repository.create_run") as mock_create_run,
             patch("services.run_service.buffer_run_messages") as mock_buffer,
@@ -123,6 +127,7 @@ class TestContinueRun:
 
         with (
             patch("services.run_service.load_config") as mock_config,
+            patch("services.run_service.get_api_key_for_model", return_value=None),
             patch("services.run_service.get_default_api_key") as mock_key,
             patch("repository.create_run") as mock_create_run,
             patch("services.run_service.buffer_run_messages") as mock_buffer,
@@ -147,6 +152,7 @@ class TestContinueRun:
 
         with (
             patch("services.run_service.load_config") as mock_config,
+            patch("services.run_service.get_api_key_for_model", return_value=None),
             patch("services.run_service.get_default_api_key") as mock_key,
             patch("repository.create_run") as mock_create_run,
             patch("services.run_service.buffer_run_messages") as mock_buffer,

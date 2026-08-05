@@ -20,6 +20,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 os.environ.update({
     "AUTH_MODE": "legacy",
     "AUTH_ENABLED": "0",
+    # auth 流程（register/login）无条件签发 token（_create_auth_response），
+    # 空 AUTH_SECRET 会让 PyJWT>=2.12 抛 InvalidKeyError。测试统一给足长密钥。
+    "AUTH_SECRET": "test-secret-0123456789abcdef0123456789",
     "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
     "REDIS_URL": "redis://localhost:6379/0",
     "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",

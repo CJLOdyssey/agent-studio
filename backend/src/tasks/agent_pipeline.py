@@ -5,6 +5,7 @@ import asyncio
 import contextlib
 import gc
 import os
+import subprocess
 import tracemalloc
 from typing import Any
 
@@ -50,8 +51,13 @@ def _kill_stuck_child_processes() -> None:
     """
     try:
         ppid = os.getpid()
-        with os.popen(f"ps --ppid {ppid} -o pid= --no-headers") as pipe:
-            children = pipe.read().strip().split()
+        # 无 shell 形式：ppid 是 os.getpid() 的 int，但避免 shell 拼接（bandit B605）
+        with subprocess.Popen(
+            ["ps", "--ppid", str(ppid), "-o", "pid=", "--no-headers"],
+            stdout=subprocess.PIPE,
+            text=True,
+        ) as pipe:
+            children = pipe.stdout.read().strip().split() if pipe.stdout else []
         for pid_str in children:
             if not pid_str.strip():
                 continue
