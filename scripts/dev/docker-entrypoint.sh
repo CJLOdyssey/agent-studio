@@ -25,16 +25,16 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-# ── 2. Run Alembic migrations ─────────────────────────────────────────────────
-# Tables may already exist (from init_db() in app lifespan). If migration
-# fails with DuplicateTable, we just stamp the current head.
-echo "🚀 Running alembic migrations..."
-if alembic upgrade head 2>&1; then
-  echo "✅ Migrations applied"
+# ── 2. Run Alembic migrations (skipped when SKIP_MIGRATIONS=1; K8s 由独立 Job 执行) ──
+if [ "${SKIP_MIGRATIONS:-0}" = "1" ]; then
+  echo "⏭️ SKIP_MIGRATIONS=1 — skipping alembic migrations"
 else
-  echo "⚠️ Migration failed — tables may already exist. Stamping at head..."
-  alembic stamp head
-  echo "✅ Stamped at head"
+  echo "🚀 Running alembic migrations..."
+  if ! alembic upgrade head; then
+    echo "❌ Migration failed — refusing to start backend"
+    exit 1
+  fi
+  echo "✅ Migrations applied"
 fi
 
 # ── 3. Kill any existing uvicorn instances of this app ──────────────────────────
