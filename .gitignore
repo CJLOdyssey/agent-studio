@@ -99,13 +99,13 @@ scripts/deploy_prod.py
 scripts/ask_credentials.py
 .omo/
 coverage.json
+# Docs are versioned — keep screenshots out
 docs/e2e-*.png
-docs/
+docs/superpowers/plans/*.png
+docs/superpowers/plans/visual-v6/**/*.png
+docs/design-references/*.png
 
-# Internal docs (not for public repo)
-AGENTS.md
-CLAUDE.md
-RUNBOOK.md
+# Internal (not for public repo)
 start.sh
 .secrets.baseline
 monitoring/
