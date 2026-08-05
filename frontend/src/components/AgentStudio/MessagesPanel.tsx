@@ -1,4 +1,4 @@
-import { RefObject } from 'react';
+import { RefObject, useCallback } from 'react';
 import { Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, useReducedMotion } from 'motion/react';
@@ -38,34 +38,41 @@ export default function MessagesPanel({
   const switchUserVersion = useChatStore((s) => s.switchUserVersion);
   const continuingId = useChatStore((s) => s.continuingId);
   const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);
-  const handleEditMessage = (msgId: string, newContent: string) => {
+  const handleEditMessage = useCallback((msgId: string, newContent: string) => {
     // Edit → save content + regenerate the following answer (merged into its versions).
     void editAndRegenerate(msgId, newContent);
-  };
+  }, []);
 
-  const handleRegenerate = (msgId: string) => {
-    const idx = displayMessages.findIndex((m) => m.id === msgId);
-    if (idx >= 0) {
-      void regenerateMessage(idx);
-    }
-  };
-
-  const handleSwitchUserVersion = (msgId: string, direction: 'prev' | 'next') => {
-    // Switch the user message edit history AND the linked answer version together,
-    // so the visible pair stays consistent (user vN ↔ answer vN).
-    switchUserVersion(msgId, direction);
-    const idx = displayMessages.findIndex((m) => m.id === msgId);
-    if (idx >= 0) {
-      const linked = displayMessages.slice(idx + 1).find((m) => m.role === 'agent');
-      if (linked && linked.versions && linked.versions.length > 1) {
-        switchVersion(linked.id, direction);
+  const handleRegenerate = useCallback(
+    (msgId: string) => {
+      const idx = displayMessages.findIndex((m) => m.id === msgId);
+      if (idx >= 0) {
+        void regenerateMessage(idx);
       }
-    }
-  };
+    },
+    [displayMessages],
+  );
 
-  const handleThumbsFeedback = (msgId: string, value: 'up' | 'down') => {
-    setThumbsFeedback(msgId, value);
-  };
+  const handleSwitchUserVersion = useCallback(
+    (msgId: string, direction: 'prev' | 'next') => {
+      // Switch the user message edit history AND the linked answer version together,
+      // so the visible pair stays consistent (user vN ↔ answer vN).
+      switchUserVersion(msgId, direction);
+      const idx = displayMessages.findIndex((m) => m.id === msgId);
+      if (idx >= 0) {
+        const linked = displayMessages.slice(idx + 1).find((m) => m.role === 'agent');
+        if (linked && linked.versions && linked.versions.length > 1) {
+          switchVersion(linked.id, direction);
+        }
+      }
+    },
+    [displayMessages, switchUserVersion, switchVersion],
+  );
+
+  const handleThumbsFeedback = useCallback(
+    (msgId: string, value: 'up' | 'down') => setThumbsFeedback(msgId, value),
+    [setThumbsFeedback],
+  );
 
   if (showAgentChat) {
     return (
