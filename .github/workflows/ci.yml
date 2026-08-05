@@ -439,8 +439,8 @@ jobs:
         run: DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend PYTHONPATH=backend/src python3 scripts/dev/preflight.py
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
+          PYTHONPATH=backend/src AUTH_MODE=${{ matrix.auth_mode }} CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
           BACKEND_PID=$!
           echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
           for i in $(seq 1 30); do
@@ -522,8 +522,8 @@ jobs:
         working-directory: frontend
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8081 > /tmp/backend-e2e.log 2>&1 &
+          PYTHONPATH=backend/src AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn core.app:app --host 0.0.0.0 --port 8081 > /tmp/backend-e2e.log 2>&1 &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8081/api/models > /dev/null 2>&1; then break; fi
@@ -661,8 +661,8 @@ jobs:
       - run: pip install locust --quiet
       - name: Start backend
         run: |
-          PYTHONPATH=. AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
-            python3 -m uvicorn backend.core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
+          PYTHONPATH=backend/src AUTH_MODE=legacy CHECKPOINTER_BACKEND=memory RATE_LIMIT=9999 REDIS_URL=redis://localhost:6379/1 AUTH_SECRET=ci-test-secret \
+            python3 -m uvicorn core.app:app --host 0.0.0.0 --port 8080 > /tmp/backend.log 2>&1 &
           BACKEND_PID=$!
           echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
           for i in $(seq 1 30); do
