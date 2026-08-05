@@ -76,10 +76,12 @@ async def _run_team_pipeline(
                 break
         final = artifacts.get("_final_report", last_content)
         display = _compose_team_output(artifacts, final)
+        verdicts = result.get("verdicts", {}) if isinstance(result, dict) else {}
+        rounds = result.get("round_number", 1) if isinstance(result, dict) else 1
 
         await update_run_result(
             run_id=run_id, pm_document="", code=final,
-            review=f"Team done: {len(artifacts)} outputs",
+            review=f"Team done: {len(artifacts)} outputs, {rounds} round(s)",
             approved=True, status="converged",
         )
         if display:
@@ -89,7 +91,11 @@ async def _run_team_pipeline(
                 logger.warning("[TEAM] failed to persist display message for run=%s", run_id, exc_info=True)
         await publish_run_message(
             run_id,
-            {"type": "team_result", "status": "completed", "artifacts": artifacts, "display": display},
+            {
+                "type": "team_result", "status": "completed",
+                "artifacts": artifacts, "display": display,
+                "verdicts": verdicts, "rounds": rounds,
+            },
         )
         logger.info("[TEAM] completed run=%s artifacts=%d", run_id, len(artifacts))
     except Exception as e:

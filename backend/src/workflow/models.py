@@ -44,6 +44,7 @@ class WorkflowEdge:
     condition_key: str | None = None
     is_default: bool = False
     priority: int = 0
+    routing_mode: str = "keyword"  # "keyword" | "llm"
 
 
 @dataclass
@@ -82,6 +83,7 @@ class WorkflowState(TypedDict):
     artifacts: Annotated[dict[str, str], _merge_dicts]
     round_number: int
     approved: Annotated[dict[str, bool], _merge_dicts]
+    verdicts: Annotated[dict[str, dict[str, Any]], _merge_dicts]  # {role: {"approved", "reason", "rounds"}}
 
 
 def create_initial_state(requirement: str = "") -> WorkflowState:
@@ -92,6 +94,7 @@ def create_initial_state(requirement: str = "") -> WorkflowState:
         artifacts={},
         round_number=1,
         approved={},
+        verdicts={},
     )
 
 

@@ -16,10 +16,30 @@ from streaming.llm_stream import (
 )
 
 from .models import WorkflowNode, WorkflowState
-from .strategies import get_strategy
+from .strategy_registry import registry
 
 # Cap tool-call turns inside a single node so a misbehaving model can't loop.
 _MAX_TOOL_ROUNDS = 8
+
+
+def _validate_json(text: str, schema: dict[str, Any]) -> bool:
+    """Check *text* parses as JSON and contains every ``required`` schema field."""
+    data: Any = None
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        start, end = text.find("{"), text.rfind("}")
+        if start != -1 and end > start:
+            try:
+                data = json.loads(text[start : end + 1])
+            except (json.JSONDecodeError, ValueError):
+                return False
+        else:
+            return False
+    if not isinstance(data, dict):
+        return False
+    required = schema.get("required", [])
+    return all(key in data for key in required)
 
 
 class LLMConfig(Protocol):
@@ -113,7 +133,7 @@ class NodeFactory:
 
     def create(self, node: WorkflowNode) -> Callable[[WorkflowState], dict[str, Any] | Awaitable[dict[str, Any]]]:
         """Create a callable node function for a workflow node."""
-        strategy = get_strategy(node)
+        strategy = registry.get(node.strategy.value)
         system_prompt = self.agent_prompts.get(node.role_identifier, "")
         run_id = self.run_id
         tool_definitions, tool_map = self._node_tool_configs(node)
@@ -197,6 +217,18 @@ class NodeFactory:
                         )
                     },
                 })
+
+            schema = getattr(strategy, "output_schema", None)
+            if schema:
+                for _ in range(2):
+                    if _validate_json(full_content, schema):
+                        break
+                    messages.append(AIMessage(content=full_content))
+                    messages.append(HumanMessage(content="输出不符合 JSON Schema，请重试（必须含 required 字段）"))
+                    api_msgs = convert_messages_to_api(messages)
+                    url, headers, body = self._build_request(api_msgs, tool_definitions)
+                    chunks, _, _, _, _ = await stream_llm_response(url, headers, body, cb, tool_definitions)
+                    full_content = "".join(chunks)
 
             result = strategy.process_output(state, node, full_content)
             result["messages"] = state.get("messages", []) + [AIMessage(content=full_content)]
