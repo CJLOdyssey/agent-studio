@@ -10,11 +10,9 @@ export interface ConnectOptions {
 
 const WS_BASE = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 
-/** Build WS URL with auth token as query param for connection-level auth */
+/** Build WS URL. Auth is cookie-based (httpOnly) — same-origin handshake carries it. */
 function buildWsUrl(runId: string): string {
-  const token = localStorage.getItem('auth_token');
-  const base = `${WS_BASE}/runs/${runId}`;
-  return token ? `${base}?token=${encodeURIComponent(token)}` : base;
+  return `${WS_BASE}/runs/${runId}`;
 }
 
 let maxRetries = 3;

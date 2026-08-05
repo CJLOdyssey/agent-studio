@@ -429,21 +429,25 @@ export function useWorkstationState(
     [currentSessionId, toast, t, conv],
   );
 
-  const displayMessages: Message[] = apiMessages.map((m) => ({
-    id: m.id,
-    role: m.role === 'user' ? 'user' : 'agent',
-    agentId: m.role,
-    content: m.content,
-    thinking: m.thinking,
-    thinkingDone: m.thinkingDone === true,
-    timestamp: m.created_at ? new Date(m.created_at).getTime() : 0,
-    versions: m.versions,
-    currentVersion: m.currentVersion,
-    userVersions: m.userVersions,
-    currentUserVersion: m.currentUserVersion,
-    thumbsFeedback: m.thumbsFeedback,
-    interrupted: m.interrupted,
-  }));
+  const displayMessages: Message[] = useMemo(
+    () =>
+      apiMessages.map((m) => ({
+        id: m.id,
+        role: m.role === 'user' ? 'user' : 'agent',
+        agentId: m.role,
+        content: m.content,
+        thinking: m.thinking,
+        thinkingDone: m.thinkingDone === true,
+        timestamp: m.created_at ? new Date(m.created_at).getTime() : 0,
+        versions: m.versions,
+        currentVersion: m.currentVersion,
+        userVersions: m.userVersions,
+        currentUserVersion: m.currentUserVersion,
+        thumbsFeedback: m.thumbsFeedback,
+        interrupted: m.interrupted,
+      })),
+    [apiMessages],
+  );
 
   const handleCloseAgentConfig = useCallback(() => setConfiguringAgent(null), []);
   const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
