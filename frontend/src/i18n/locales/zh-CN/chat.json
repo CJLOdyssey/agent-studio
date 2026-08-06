@@ -70,6 +70,7 @@
     "dropHere": "释放文件以添加附件"
   },
   "model": {
+    "loading": "加载中...",
     "noCommands": "暂无可用命令",
     "noModels": "暂无可用模型",
     "configure": "配置 API 提供商",
