@@ -1,9 +1,15 @@
 """Default data seeding — roles and admin user bootstrap."""
 
-from orm import RoleDB, UserDB, UserRoleDB
+import os
+
 from sqlalchemy import select
 
 from core.infra.database import get_session_factory
+from orm import RoleDB, UserDB, UserRoleDB
+
+# Bootstrap admin password. Dev default only — production must override via env.
+DEFAULT_ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD_ENV = "SEED_ADMIN_PASSWORD"
 
 
 async def seed_default_roles_and_admin() -> None:
@@ -27,8 +33,11 @@ async def seed_default_roles_and_admin() -> None:
         ).scalar_one_or_none()
         user = UserDB(
             username="admin",
-            email="admin@legacy.local",
-            password_hash=bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode(),
+            email="admin@example.com",
+            password_hash=bcrypt.hashpw(
+                os.environ.get(ADMIN_PASSWORD_ENV, DEFAULT_ADMIN_PASSWORD).encode(),
+                bcrypt.gensalt(),
+            ).decode(),
             is_active=True,
             is_verified=True,
         )
@@ -43,12 +52,12 @@ async def seed_builtin_tools() -> None:
     """Sync registered plugins from ToolRegistry into registered_tools table."""
     import json
 
-    import thinking_tree.tools  # noqa: F401 — triggers registration
-    from orm import RegisteredToolDB
     from sqlalchemy import select
-    from thinking_tree.registry import registry
 
+    import thinking_tree.tools  # noqa: F401 — triggers registration
     from core.infra.database import get_session_factory
+    from orm import RegisteredToolDB
+    from thinking_tree.registry import registry
 
     factory = get_session_factory()
     plugins = registry.list_plugins()

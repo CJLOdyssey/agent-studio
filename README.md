@@ -131,9 +131,18 @@ graph TB
 | `DATABASE_URL` | 是 | PostgreSQL 连接串 |
 | `REDIS_URL` | 是 | Redis 连接串 |
 | `AUTH_SECRET` | 是 | JWT 签名密钥（≥32字符） |
+| `SEED_ADMIN_PASSWORD` | 生产必填 | 初始管理员密码（仅首次启动 seed 时生效） |
 | `KEY_VAULT_SECRET` | 是 | Fernet 加密密钥（≥32字符） |
 | `OPENAI_API_KEY` | 选一 | DeepSeek 或 OpenAI API 密钥 |
 | `OPENAI_BASE_URL` | 否 | 自定义 API 端点（默认 DeepSeek） |
+
+### 默认账号
+
+| 账号 | 角色 | 说明 |
+|------|------|------|
+| `admin@example.com` | admin | 种子管理员；密码默认 `admin123`（仅开发），**生产必须通过 `SEED_ADMIN_PASSWORD` 环境变量设置**，且只对首次启动生效 |
+
+> ⚠️ 部署生产前务必设置 `SEED_ADMIN_PASSWORD`，并登录后立即修改密码。
 
 ---
 

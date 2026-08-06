@@ -45,7 +45,7 @@ class CurrentUser:
 
     id: str = "admin"
     username: str = "admin"
-    email: str = "admin@legacy.local"
+    email: str = "admin@example.com"
     roles: list[str] = field(default_factory=lambda: ["admin"])
 
 

@@ -349,7 +349,7 @@ class TestAuthProfile:
         resp = client.get("/api/auth/me")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["email"] == "admin@legacy.local"
+        assert data["email"] == "admin@example.com"
         assert data["is_verified"] is True
 
     def test_profile_returns_admin_in_legacy(self, client):

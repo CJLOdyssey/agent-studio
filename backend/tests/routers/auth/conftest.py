@@ -64,7 +64,7 @@ def client():
             ).scalar_one_or_none()
 
             for user_data in [
-                {"id": "admin", "email": "admin@legacy.local"},
+                {"id": "admin", "email": "admin@example.com"},
                 {"id": "admin-login", "email": "admin@test.com"},
             ]:
                 existing = await session.execute(
