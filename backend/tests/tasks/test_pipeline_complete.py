@@ -177,7 +177,7 @@ class TestCompletePipeline:
             {
                 "type": "thinking_done",
                 "agent_name": "Agent",
-                "thinking": "thinking...",
+                "thinking": "previous reasoningthinking...",
             },
         )
         assert thinking_call in mock_complete_deps["publish_run_message"].await_args_list
