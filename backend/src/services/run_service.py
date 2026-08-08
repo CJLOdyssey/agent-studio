@@ -23,6 +23,7 @@ from repository import (
     get_run,
     get_runs,
     get_session,
+    save_message,
     update_run_status,
     update_session_title,
 )
@@ -130,6 +131,21 @@ class RunService:
             logger.error("Failed to create run: %s", e, exc_info=True)
             raise
 
+        # ── Persist user message ─────────────────────────────────────
+        # 只要有消息就入库：用户问题也落库 chat_messages（此前仅存 runs.
+        # requirement，加载时由 with_requirement_message 运行时合成）。
+        # 幂等保护：已存在则跳过。
+        try:
+            await save_message(
+                run_id=run_id,
+                role="user",
+                agent_name="我",
+                content=requirement,
+                round_number=1,
+            )
+        except Exception:
+            logger.warning("Failed to persist user message for run %s", run_id)
+
         # ── Update session timestamp ────────────────────────────────
         try:
             existing_sess = await get_session(session_id)
@@ -223,12 +239,18 @@ class RunService:
         session_id: str | None,
         user_id: str,
         thinking: str | None = None,
+        model: str | None = None,
+        question: str | None = None,
     ) -> dict[str, Any]:
         """Create a continuation run ("继续生成") — streams raw LLM output.
 
         Unlike ``create_run``, this bypasses the LangGraph pipeline and
         runs the completion directly in the uvicorn process via
-        ``_complete_pipeline``.
+        ``_complete_pipeline``. ``model`` is the model the user had selected
+        in the conversation (falls back to the configured default model);
+        ``question`` is the original user message the interrupted draft
+        answers — needed by prefix/partial mechanisms for a seamless
+        in-place continuation.
         """
         from repository import create_run as db_create_run
 
@@ -243,7 +265,7 @@ class RunService:
         # ── Key resolution ──────────────────────────────────────────
         api_key: str | None = None
         api_base: str | None = None
-        effective_model = config.model
+        effective_model = model or config.model
 
         try:
             if effective_model:
@@ -264,6 +286,20 @@ class RunService:
 
         # ── Persist run ─────────────────────────────────────────────
         run_id = await db_create_run(content, session_id=session_id)
+
+        # ── Persist user message ─────────────────────────────────────
+        # 只要有消息就入库：续写 run 的用户消息 = 原问题（question）——
+        # 视图显示「原问题 + 续写回答」，而非半截文本当问题。
+        try:
+            await save_message(
+                run_id=run_id,
+                role="user",
+                agent_name="我",
+                content=(question or content).strip() or content,
+                round_number=1,
+            )
+        except Exception:
+            logger.warning("Failed to persist user message for continuation run %s", run_id)
 
         # ── Redis buffer ────────────────────────────────────────────
         await buffer_run_messages(run_id)
