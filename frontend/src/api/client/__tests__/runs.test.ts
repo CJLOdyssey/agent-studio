@@ -11,7 +11,7 @@ const { mockApi } = vi.hoisted(() => ({
 
 vi.mock('../instance', () => ({ default: mockApi }));
 
-import { submitRequirement, resumeRun } from '../runs';
+import { submitRequirement, resumeRun, cancelRun } from '../runs';
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -93,5 +93,16 @@ describe('resumeRun', { tags: ['unit'] }, () => {
       model: 'deepseek-chat',
       question: '原问题',
     });
+  });
+});
+
+describe('cancelRun', { tags: ['unit'] }, () => {
+  it('calls POST /runs/:id/cancel and returns data', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r9', status: 'cancelled', session_id: 's1' } });
+
+    const result = await cancelRun('r9');
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs/r9/cancel');
+    expect(result).toEqual({ run_id: 'r9', status: 'cancelled', session_id: 's1' });
   });
 });

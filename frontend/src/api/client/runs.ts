@@ -37,3 +37,10 @@ export async function resumeRun(
   });
   return data;
 }
+
+export async function cancelRun(
+  runId: string,
+): Promise<{ run_id: string; status: string; session_id?: string }> {
+  const { data } = await api.post(`/runs/${runId}/cancel`);
+  return data;
+}

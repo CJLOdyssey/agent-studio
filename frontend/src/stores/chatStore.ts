@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AppStatus, ChatMessage, RunResult } from '../types';
 import { disconnectRun } from '../api/websocket';
+import { cancelRun as cancelRunApi } from '../api/client';
 import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
@@ -59,8 +60,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const prevRunId = s.currentRunId;
     const sid = s.streamingId;
     if (prevRunId) {
-      Logger.info('[chat] cancelRun — disconnecting run %s', prevRunId);
+      Logger.info('[chat] cancelRun — cancelling run %s', prevRunId);
       disconnectRun(prevRunId);
+      // 真取消：通知后端终止任务并中断上游 LLM 流（fire-and-forget）。
+      void cancelRunApi(prevRunId).catch((err) => {
+        Logger.warn(
+          '[chat] cancelRun API failed for %s: %s',
+          prevRunId,
+          String(err),
+        );
+      });
     }
     set({ currentRunId: null, streamingId: null, status: 'idle', wsStatus: 'disconnected', interruptedMessageId: sid, continuingId: null, skipThinking: false });
   },
