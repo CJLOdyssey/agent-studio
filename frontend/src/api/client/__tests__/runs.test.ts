@@ -61,6 +61,8 @@ describe('resumeRun', { tags: ['unit'] }, () => {
       content: 'continue generation',
       session_id: undefined,
       thinking: undefined,
+      model: undefined,
+      question: undefined,
     });
     expect(result).toEqual({ run_id: 'r2', status: 'completed' });
   });
@@ -74,6 +76,22 @@ describe('resumeRun', { tags: ['unit'] }, () => {
       content: 'continue',
       session_id: 's1',
       thinking: 'some thinking',
+      model: undefined,
+      question: undefined,
+    });
+  });
+
+  it('passes model and question when provided', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r2', status: 'completed' } });
+
+    await resumeRun('continue', 's1', 'thinking', 'deepseek-chat', '原问题');
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs/complete', {
+      content: 'continue',
+      session_id: 's1',
+      thinking: 'thinking',
+      model: 'deepseek-chat',
+      question: '原问题',
     });
   });
 });

@@ -387,11 +387,74 @@ describe('continueGeneration', { tags: ['unit'] }, () => {
 
     await continueGeneration();
 
-    expect(mockResumeRun).toHaveBeenCalledWith('partial response', 'sess-1', 'some thinking');
+    expect(mockResumeRun).toHaveBeenCalledWith('partial response', 'sess-1', 'some thinking', 'deepseek-chat', undefined);
     const state = useChatStore.getState();
     expect(state.currentRunId).toBe('run-2');
     expect(state.status).toBe('running');
     expect(connectRun).toHaveBeenCalled();
+  });
+
+  it('passes the selected model from localStorage to resumeRun', async () => {
+    mockListKeys.mockResolvedValue([
+      { id: 'key-q', is_default: false, is_active: true, models: ['Qwen/Qwen3-8B'] },
+    ]);
+    localStorage.setItem('agentstudio-selected-model', 'Qwen/Qwen3-8B');
+    const interrupted = makeMsg({ id: 'int-6', role: 'agent', content: 'partial' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-6',
+      messages: [interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).toHaveBeenCalledWith('partial', 'sess-1', undefined, 'Qwen/Qwen3-8B', undefined);
+  });
+
+  it('passes the original user question for seamless continuation', async () => {
+    const userMsg = makeMsg({ id: 'user-1', role: 'user', content: '原问题是什么？' });
+    const interrupted = makeMsg({ id: 'int-1b', role: 'agent', content: '半截回答', thinking: '思考' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-1b',
+      messages: [userMsg, interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).toHaveBeenCalledWith('半截回答', 'sess-1', '思考', 'deepseek-chat', '原问题是什么？');
+  });
+
+  it('aborts when interrupted message has neither content nor thinking', async () => {
+    const interrupted = makeMsg({ id: 'int-4', role: 'agent', content: '', thinking: '' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-4',
+      messages: [interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).not.toHaveBeenCalled();
+    const state = useChatStore.getState();
+    expect(state.interruptedMessageId).toBeNull();
+    expect(state.error).toBe('\u6ca1\u6709\u53ef\u7eed\u5199\u7684\u5185\u5bb9\uff0c\u8bf7\u91cd\u65b0\u751f\u6210');
+  });
+
+  it('resumes with thinking as material when content was interrupted mid-reasoning', async () => {
+    const interrupted = makeMsg({ id: 'int-5', role: 'agent', content: '', thinking: 'half-built reasoning chain' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-5',
+      messages: [interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).toHaveBeenCalledWith('', 'sess-1', 'half-built reasoning chain', 'deepseek-chat', undefined);
+    const state = useChatStore.getState();
+    expect(state.currentRunId).toBe('run-2');
+    expect(state.status).toBe('running');
   });
 
   it('uses versions when available for pending state', async () => {
