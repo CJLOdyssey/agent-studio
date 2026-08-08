@@ -8,8 +8,9 @@ RunService holds the business process.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
-from typing import Any
+from typing import Any, cast
 
 from broker import buffer_run_messages
 from core.config import load_config
@@ -50,6 +51,14 @@ class RunService:
       - Redis buffer subscription
       - background task dispatching
     """
+
+    def __init__(self) -> None:
+        # In-process task registry (thread mode) — run_id → asyncio.Task.
+        self._tasks: dict[str, asyncio.Task[Any]] = {}
+
+    def _register_task(self, run_id: str, task: asyncio.Task[Any]) -> None:
+        self._tasks[run_id] = task
+        task.add_done_callback(lambda _t: self._tasks.pop(run_id, None))
 
     async def create_run(
         self,
@@ -190,7 +199,7 @@ class RunService:
                 if workflow:
                     from tasks.team_pipeline import _run_team_pipeline
 
-                    asyncio.create_task(
+                    task: asyncio.Task[Any] = asyncio.create_task(
                         _run_team_pipeline(
                             requirement=requirement,
                             run_id=run_id,
@@ -202,6 +211,7 @@ class RunService:
                             api_base=api_base,
                         )
                     )
+                    self._register_task(run_id, task)
                     logger.info(
                         "Team task started (thread) | run=%s | team=%s | nodes=%d",
                         run_id, team_id, len(workflow.nodes),
@@ -210,7 +220,7 @@ class RunService:
 
             from tasks import _run_agent_pipeline
 
-            asyncio.create_task(
+            task = asyncio.create_task(
                 _run_agent_pipeline(
                     requirement=requirement,
                     run_id=run_id,
@@ -222,6 +232,7 @@ class RunService:
                     user_id=user_id,
                 )
             )
+            self._register_task(run_id, task)
             logger.info(
                 "Task started (thread) | run_id=%s | session_id=%s | model=%s",
                 run_id, session_id, effective_model,
@@ -331,9 +342,42 @@ class RunService:
                 logger.exception("Complete pipeline failed for run=%s", run_id)
                 await update_run_status(run_id, "error")
 
-        asyncio.create_task(_run_pipeline())
+        task = asyncio.create_task(_run_pipeline())
+        self._register_task(run_id, task)
 
         return {"run_id": run_id, "status": "running", "session_id": session_id}
+
+    async def cancel_run(self, run_id: str) -> dict[str, Any]:
+        """Cancel an in-flight run — propagate cancellation to the LLM stream.
+
+        Thread mode: ``task.cancel()`` unwinds the await chain and aborts the
+        upstream httpx request; the pipeline marks the run ``cancelled``.
+        Celery mode: best-effort revoke (no hard kill).
+        """
+        if RUN_DISPATCH == "celery":
+            try:
+                from broker import celery_app
+
+                cast(Any, celery_app).control.revoke(run_id, terminate=False)
+                await update_run_status(run_id, "cancelled")
+                return {"run_id": run_id, "status": "cancelled", "cancelled": True}
+            except Exception:
+                logger.exception("Failed to revoke celery task run=%s", run_id)
+                return {"run_id": run_id, "status": "pending", "cancelled": False}
+
+        task = self._tasks.get(run_id)
+        if task is None or task.done():
+            run = await get_run(run_id)
+            return {
+                "run_id": run_id,
+                "status": run.status if run else "not_found",
+                "cancelled": False,
+            }
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await task
+        await update_run_status(run_id, "cancelled")
+        return {"run_id": run_id, "status": "cancelled", "cancelled": True}
 
     async def get_run(self, run_id: str) -> dict[str, Any] | None:
         """Fetch a single run by id."""
