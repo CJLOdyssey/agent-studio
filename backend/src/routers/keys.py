@@ -10,12 +10,13 @@ Security invariants:
 import asyncio
 from typing import Any
 
+from fastapi import APIRouter, Request
+from pydantic import BaseModel, Field
+
 from auth import get_user_id
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from fastapi import APIRouter, Request
-from pydantic import BaseModel, Field
 from repository import (
     create_api_key,
     delete_api_key,

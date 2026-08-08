@@ -2,12 +2,14 @@
 
 from typing import Any
 
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from auth import get_user_id
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
 from repository import (
     add_team_member,
     create_team,
@@ -19,7 +21,6 @@ from repository import (
     reorder_team_members,
     update_team,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["teams"])

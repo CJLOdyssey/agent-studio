@@ -1,8 +1,9 @@
 """Tests for RAG embedding provider (backend/rag/rag_embedding.py)."""
 
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 
 from rag.rag_embedding import EMBEDDING_DIM, EmbeddingProvider, _fallback_embed
 

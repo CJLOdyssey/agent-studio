@@ -4,9 +4,10 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from core.base import Base
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from core.base import Base
 
 
 class UserApiKey(Base):

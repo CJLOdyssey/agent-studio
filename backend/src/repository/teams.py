@@ -3,11 +3,12 @@
 from typing import Any
 from uuid import uuid4
 
-from core.infra.cache import get_cache
-from core.infra.database import AgentConfigDB, TeamAgentDB, TeamDB, get_session_factory
 from sqlalchemy import select
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
+
+from core.infra.cache import get_cache
+from core.infra.database import AgentConfigDB, TeamAgentDB, TeamDB, get_session_factory
 
 CACHE_KEY_TEAMS = "teams:all"
 DEFAULT_TTL = 300

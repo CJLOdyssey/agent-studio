@@ -4,6 +4,28 @@ import uuid
 
 import pytest
 
+from repository.message_repo import (
+    get_messages,
+    get_run_messages,
+    get_session_messages,
+    save_message,
+)
+from repository.run_repo import (
+    create_run,
+    get_run,
+    get_runs,
+    get_runs_by_session_ids,
+    get_session_runs,
+    update_run_result,
+    update_run_status,
+)
+from repository.session_repo import (
+    create_session,
+    delete_session,
+    get_session,
+    get_sessions,
+    update_session_title,
+)
 from repository.teams import (
     add_team_member,
     create_team,
@@ -15,29 +37,6 @@ from repository.teams import (
     reorder_team_members,
     update_team,
 )
-from repository.session_repo import (
-    create_session,
-    delete_session,
-    get_session,
-    get_sessions,
-    update_session_title,
-)
-from repository.run_repo import (
-    create_run,
-    get_run,
-    get_runs,
-    get_runs_by_session_ids,
-    get_session_runs,
-    update_run_result,
-    update_run_status,
-)
-from repository.message_repo import (
-    get_messages,
-    get_run_messages,
-    get_session_messages,
-    save_message,
-)
-
 
 # ── Team Tests ───────────────────────────────────────────────────────────
 

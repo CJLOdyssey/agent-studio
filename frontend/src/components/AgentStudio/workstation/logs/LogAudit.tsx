@@ -36,10 +36,10 @@ function LogAudit() {
   useEffect(() => {
     let cancelled = false;
     fetchCommandLogs(200, 0)
-      .then((items) => {
+      .then((data) => {
         if (cancelled) return;
-        setLogs(items.length > 0
-          ? items.map((item) => ({
+        setLogs(data.items.length > 0
+          ? data.items.map((item) => ({
               id: item.id,
               timestamp: item.timestamp.replace('T', ' ').substring(0, 19),
               level: 'info' as LogLevel,

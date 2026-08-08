@@ -26,7 +26,6 @@ from repository import (
     update_run_status,
     update_session_title,
 )
-
 from services.text_utils import parse_json_list
 
 logger = get_logger(__name__)
@@ -119,7 +118,8 @@ class RunService:
                 parent = await get_run(parent_run_id)
                 if parent:
                     parent_versions = parse_json_list(parent.requirement_versions)
-                    req_versions = (parent_versions or []) + [parent.requirement]
+                    base = parent_versions if parent_versions else [parent.requirement]
+                    req_versions = base + [requirement]
             run_id = await db_create_run(
                 requirement,
                 session_id=session_id,

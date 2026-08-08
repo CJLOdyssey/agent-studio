@@ -306,6 +306,7 @@ class TestAuthPassword:
 
     def test_change_password(self, client):
         from unittest.mock import AsyncMock, MagicMock
+
         import bcrypt
         mock_user = MagicMock()
         mock_user.id = "u-change-legacy"

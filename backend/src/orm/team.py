@@ -4,9 +4,10 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from core.base import Base
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from core.base import Base
 
 
 class CommandLogDB(Base):

@@ -15,7 +15,6 @@ from langgraph.graph import END
 
 from graph.graph import SingleAgentGraph
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 

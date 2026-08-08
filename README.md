@@ -43,6 +43,26 @@ docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d
 
 访问 http://localhost:5173
 
+### 混合模式（开发推荐）
+
+数据库/中间件用容器，后端由 **systemd user service** 守护，前端本地热更：
+
+```bash
+# 1. 起 agent-studio-db (5432) + agent-studio-redis (6379)
+docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d postgres redis
+
+# 2. 后端：systemd user service 守护（后端端口 8091，独立于 ragbase 的 8081）
+systemctl --user restart agent-studio-backend   # 重启后端
+systemctl --user status  agent-studio-backend   # 查看状态
+journalctl --user -u agent-studio-backend -f    # 实时日志
+# 服务文件：~/.config/systemd/user/agent-studio-backend.service（已 enable，Restart=always 崩溃自动拉起）
+
+# 3. 前端（vite proxy 指向 http://localhost:8091）
+cd frontend && npm run dev
+```
+
+> 备用（无 systemd 环境）：`make dev-backend`（`scripts/dev/run-backend.sh`）。后端默认端口 8091；环境变量从 `backend/.env` 加载（`DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/backend`、`REDIS_URL=redis://localhost:6379/0`）。
+
 ---
 
 ## ✨ 功能特性

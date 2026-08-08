@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from core.infra.circuit_breaker import llm_circuit
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
+from core.infra.circuit_breaker import llm_circuit
 from observability.analyzer import analyze_trace, recent_errors_report
 from observability.startup_guard import health as guard_health
 from observability.store import get_store

@@ -112,8 +112,18 @@ export async function regenerateMessage(msgIndex: number) {
   const userMsg = s.messages[msgIndex - 1];
   if (!userMsg) return;
   if (s.currentRunId) disconnectRun(s.currentRunId);
+
+  // The synthetic user message id is "run-{run_id}-requirement" — parse the run
+  // this regeneration replaces so the backend links the edit chain
+  // (parent_run_id); merge_edit_chains then folds the old answer into versions
+  // instead of leaving an orphan run (stale reply + duplicated user message).
+  let parentRunId: string | undefined;
+  if (userMsg.id && userMsg.id.startsWith('run-') && userMsg.id.endsWith('-requirement')) {
+    parentRunId = userMsg.id.slice(4, -'-requirement'.length);
+  }
+
   useChatStore.setState({ status: 'loading', error: null, result: null, messages: s.messages.slice(0, msgIndex) });
-  await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true);
+  await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true, null, parentRunId);
 }
 
 /**
@@ -141,8 +151,17 @@ export async function editAndRegenerate(userMsgId: string, newContent: string) {
     parentRunId = old.id.slice(4, -'-requirement'.length);
   }
 
-  const userVersions = old.userVersions ? [...old.userVersions] : [];
-  if (old.content !== trimmed) userVersions.push(old.content);
+  // Version list INCLUDES the current content so the switcher shows right after
+  // the first edit (length >= 2), mirroring the backend's persisted list.
+  // history already holds old.content after a prior edit, so only append trimmed
+  // in that case — otherwise seed with old.content first. currentUserVersion
+  // points at the newest version.
+  const history = old.userVersions ? [...old.userVersions] : [];
+  const userVersions = old.content === trimmed
+    ? history
+    : history.includes(old.content)
+      ? [...history, trimmed]
+      : [...history, old.content, trimmed];
 
   // First non-user message after the edit is the merge target (agent roles are
   // 'pm'|'programmer'|'tester' in the store; displayMessages normalizes them to 'agent').

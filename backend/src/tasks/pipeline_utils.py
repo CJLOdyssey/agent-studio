@@ -10,12 +10,13 @@ import time
 import tracemalloc
 from typing import Any
 
-from broker import publish_run_message
-from core.infra.logging_config import get_logger
-from core.mock_fallback import run_mock
 from mcp import StdioServerParameters
 from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client
+
+from broker import publish_run_message
+from core.infra.logging_config import get_logger
+from core.mock_fallback import run_mock
 from repository import (
     create_memory_entry,
     update_run_result,
@@ -30,7 +31,13 @@ _baseline_snapshot: tracemalloc.Snapshot | None = None
 
 
 def log_memory_diff() -> None:
-    """Log current RSS and optional tracemalloc diff for leak detection."""
+    """Log current RSS and optional tracemalloc diff for leak detection.
+
+    RSS read via ``/proc/pid/status`` is cheap (microseconds) and always kept.
+    The tracemalloc snapshot + compare is EXPENSIVE — at multi-hundred-MB RSS it
+    blocks the event loop for seconds, stalling concurrent request handlers. It
+    is therefore gated behind ``MEM_TRACE=1`` and off by default.
+    """
     global _baseline_snapshot
     try:
         pid = os.getpid()
@@ -39,6 +46,8 @@ def log_memory_diff() -> None:
         logger.info("[MEM] run=#%s pid=%s rss=%dKB", _run_counter, pid, rss_kb)
     except Exception:
         pass
+    if os.environ.get("MEM_TRACE", "").lower() not in ("1", "true", "yes"):
+        return
     if not tracemalloc.is_tracing():
         return
     current = tracemalloc.take_snapshot()

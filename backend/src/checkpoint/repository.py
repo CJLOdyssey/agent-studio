@@ -5,10 +5,9 @@ Separated from the factory layer so it can evolve independently.
 
 from uuid import uuid4
 
+from checkpoint.models import AgentCheckpoint, CheckpointDB
 from core.infra.database import get_session_factory
 from core.infra.logging_config import get_logger
-
-from checkpoint.models import AgentCheckpoint, CheckpointDB
 
 logger = get_logger(__name__)
 

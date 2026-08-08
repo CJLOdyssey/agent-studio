@@ -3,6 +3,8 @@
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import func, select
+
 from core.infra.database import (
     AgentConfigDB,
     AuditLogDB,
@@ -14,7 +16,6 @@ from core.infra.database import (
     TeamDB,
     get_session_factory,
 )
-from sqlalchemy import func, select
 
 
 async def get_dashboard_stats() -> dict[str, Any]:

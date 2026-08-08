@@ -17,7 +17,6 @@ Production stack:
 """
 
 from core.infra.logging_config import get_logger
-
 from rag.rag_chunking import semantic_chunk
 from rag.rag_embedding import EmbeddingProvider
 from rag.rag_store import PgVectorStore

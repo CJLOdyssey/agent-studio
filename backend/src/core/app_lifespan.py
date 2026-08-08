@@ -10,12 +10,11 @@ import platform
 from typing import TYPE_CHECKING, Any, cast
 
 from broker import BROKER_URL, REDIS_URL, get_redis
-from observability.startup_guard import mark_started, mark_stopped, record_crash
-
 from core.config import load_config
 from core.infra.database import DATABASE_URL, get_session_factory, init_db
 from core.infra.events import Events, bus
 from core.infra.logging_config import get_logger
+from observability.startup_guard import mark_started, mark_stopped, record_crash
 
 if TYPE_CHECKING:
     from fastapi import FastAPI

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ── Backend dev launcher — kills all existing instances first, then starts ──
 # NOTE: --reload 模式会触发 multiprocessing.spawn 子进程卡死 (LangGraph 底层问题),
-#       所以默认不带 --reload。如果非要热更新, 用 PORT=8081 RELOAD=1 make dev-backend。
+#       所以默认不带 --reload。如果非要热更新, 用 PORT=8091 RELOAD=1 make dev-backend。
 set -euo pipefail
 
 PIDFILE="/tmp/agent-studio-backend.pid"
-PORT="${PORT:-8081}"
+PORT="${PORT:-8091}"
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 # ── 1. Kill ALL existing uvicorn instances of this app ──────────────────────

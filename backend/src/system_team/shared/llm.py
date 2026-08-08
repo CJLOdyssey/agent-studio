@@ -3,6 +3,7 @@
 from typing import Any
 
 import httpx
+
 from core.config import load_config
 from core.infra.logging_config import get_logger
 

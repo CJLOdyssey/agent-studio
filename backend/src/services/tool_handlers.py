@@ -11,8 +11,9 @@ import urllib.request
 from typing import TYPE_CHECKING, Any
 
 import httpx
-from core.infra.logging_config import get_logger
 from langchain_core.messages import HumanMessage
+
+from core.infra.logging_config import get_logger
 
 if TYPE_CHECKING:
     from services.tool_config import _ToolWrapper

@@ -1,7 +1,8 @@
 """Attachment repository — CRUD for AttachmentDB."""
 
-from core.infra.database import AttachmentDB, get_session_factory
 from sqlalchemy import select
+
+from core.infra.database import AttachmentDB, get_session_factory
 
 
 async def create_attachment(

@@ -4,9 +4,10 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from sqlalchemy import select
+
 from core.infra.database import KeyUsageLog, UserApiKey, get_session_factory
 from core.infra.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
-from sqlalchemy import select
 
 
 async def create_api_key(

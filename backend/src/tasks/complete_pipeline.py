@@ -6,6 +6,7 @@ import tracemalloc
 from typing import Any
 
 import httpx
+
 from broker import publish_run_message
 from core.config import load_config
 from core.infra.logging_config import get_logger
@@ -36,8 +37,9 @@ async def _complete_pipeline(
         logger.info("[MEM] complete run=#%s pid=%s rss=%dKB", _complete_counter, pid, rss_kb)
     except Exception:
         pass
-    if not tracemalloc.is_tracing():
-        tracemalloc.start(25)
+    if os.environ.get("MEM_TRACE", "").lower() in ("1", "true", "yes"):
+        if not tracemalloc.is_tracing():
+            tracemalloc.start(25)
 
     cfg = load_config()
     effective_model = model or cfg.model
@@ -46,7 +48,15 @@ async def _complete_pipeline(
 
     base_url = (api_base or "https://api.deepseek.com").rstrip("/")
 
-    if thinking:
+    # The /beta/chat/completions endpoint with prefix continuation is DeepSeek
+    # official-API-only. Other OpenAI-compatible providers (SiliconFlow, Groq…)
+    # expose only /chat/completions and reject the prefix fields — routing by
+    # base_url alone, never by model name (a "deepseek-*" model can run on
+    # SiliconFlow).
+    base_lower = (api_base or "").lower()
+    is_deepseek = "deepseek" in base_lower or base_lower.endswith("/beta")
+
+    if thinking and is_deepseek:
         clean_base = base_url.rstrip("/beta")
         url = f"{clean_base}/beta/chat/completions"
     else:
@@ -55,20 +65,32 @@ async def _complete_pipeline(
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     if thinking:
-        body = {
+        body: dict[str, Any] = {
             "model": effective_model,
             "messages": [
                 {"role": "user", "content": content},
-                {"role": "assistant", "content": "", "reasoning_content": thinking, "prefix": True},
+                {
+                    "role": "assistant",
+                    "content": "",
+                    **({"reasoning_content": thinking, "prefix": True} if is_deepseek else {}),
+                },
             ],
             "stream": True,
             "max_tokens": 16384,
         }
-        base_lower = (api_base or "").lower()
-        model_lower = (effective_model or "").lower()
-        is_deepseek = "deepseek" in base_lower or "deepseek" in model_lower
         if is_deepseek:
             body["thinking"] = {"type": "enabled"}
+        else:
+            # Non-DeepSeek continuation: give the model the interrupted thinking
+            # as context via the system prompt instead of prefix params.
+            system_prompt = (
+                "Continue the following text naturally. "
+                "The user's previous reasoning was: "
+                f"{thinking}\n\n"
+                "Output ONLY the continuation — no prefix, no analysis, no commentary, no meta-text. "
+                "Do not repeat the input text."
+            )
+            body["messages"].insert(0, {"role": "system", "content": system_prompt})
     else:
         system_prompt = (
             "Continue the following text naturally. "

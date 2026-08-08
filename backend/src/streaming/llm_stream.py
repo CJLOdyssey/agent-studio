@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 import httpx
+
 from core.infra.circuit_breaker import CircuitBreakerOpenError, llm_circuit
 from core.infra.logging_config import get_logger
 from core.infra.metrics import (

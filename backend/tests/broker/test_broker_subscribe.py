@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # subscribe_run
 # ---------------------------------------------------------------------------
@@ -198,6 +197,7 @@ class TestEnvVarOverrides:
     def test_redis_url_env_override(self):
         with patch.dict("os.environ", {"REDIS_URL": "redis://env-host:9999/1"}):
             import importlib
+
             import broker as broker_mod
             importlib.reload(broker_mod)
             assert broker_mod.REDIS_URL == "redis://env-host:9999/1"
@@ -208,6 +208,7 @@ class TestEnvVarOverrides:
     def test_celery_broker_url_env_override(self):
         with patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://broker-host:6380/2"}):
             import importlib
+
             import broker as broker_mod
             # Reload picks up the new env var
             old_broker = broker_mod.BROKER_URL
@@ -219,6 +220,7 @@ class TestEnvVarOverrides:
     def test_result_backend_env_override(self):
         with patch.dict("os.environ", {"CELERY_RESULT_BACKEND": "redis://result-host:6381/3"}):
             import importlib
+
             import broker as broker_mod
             importlib.reload(broker_mod)
             assert broker_mod.RESULT_BACKEND == "redis://result-host:6381/3"
@@ -234,8 +236,8 @@ class TestBufferRunMessages:
     @pytest.mark.asyncio
     async def test_buffer_accumulates_messages(self, mock_get_redis):
         from broker import (
-            _buffers,
             _buffer_tasks,
+            _buffers,
             buffer_run_messages,
             stop_buffer,
         )
@@ -296,8 +298,8 @@ class TestBufferRunMessages:
     @pytest.mark.asyncio
     async def test_buffer_run_messages_subscribe_called(self, mock_get_redis):
         from broker import (
-            _buffers,
             _buffer_tasks,
+            _buffers,
             buffer_run_messages,
             stop_buffer,
         )
@@ -336,8 +338,8 @@ class TestStopBuffer:
     @pytest.mark.asyncio
     async def test_stop_buffer_clears_buffers_and_task(self):
         from broker import (
-            _buffers,
             _buffer_tasks,
+            _buffers,
             stop_buffer,
         )
 

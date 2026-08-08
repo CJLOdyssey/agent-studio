@@ -41,7 +41,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders empty state when no logs returned', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders log entries in table', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders table column headers', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders toolbar with search input', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -95,7 +95,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('shows details and IP columns for log entries', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -106,7 +106,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('filters logs by search text', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -133,7 +133,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
       payload: `payload${i + 1}`,
       result: `result${i + 1}`,
     }));
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(manyLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: manyLogs, total: manyLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -142,7 +142,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders level filter select', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -153,7 +153,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders toolbar with toolbar role', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -162,7 +162,7 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders region with aria-label', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items: mockLogs, total: mockLogs.length, offset: 0, limit: 200 });
     const { container } = renderWithVirtuoso(<LogAudit />);
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();

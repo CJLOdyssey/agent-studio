@@ -9,11 +9,12 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
 from auth import CurrentUser, get_current_user
 from broker import get_redis
 from core.error_codes import ErrorCode, error_response
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 from repository import get_run
 
 router = APIRouter(tags=["team-runs"])

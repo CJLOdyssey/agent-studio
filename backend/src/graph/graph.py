@@ -14,14 +14,16 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import httpx
-from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
-from core.infra.logging_config import get_logger
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+
+from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
+from core.infra.logging_config import get_logger
+from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 from services.thinking_chain import format_result_preview, get_tool_prefix
 from services.tool_config import ToolConfig, build_tool_definition
 from streaming.llm_stream import (
@@ -30,8 +32,6 @@ from streaming.llm_stream import (
     convert_messages_to_api,
     stream_llm_response,
 )
-
-from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 
 # Balance/quota error keywords used to detect API billing failures
 _BALANCE_ERROR_KEYWORDS = [

@@ -4,8 +4,9 @@ import json
 from collections.abc import Hashable
 from typing import Any, cast
 
-from core.infra.logging_config import get_logger
 from langgraph.graph import END, StateGraph
+
+from core.infra.logging_config import get_logger
 
 from .models import NodeStrategy, WorkflowConfig, WorkflowState
 from .node_factory import NodeFactory

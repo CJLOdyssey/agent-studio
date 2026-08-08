@@ -14,9 +14,8 @@ if TYPE_CHECKING:
     # Only for type checker — runtime uses deferred imports to avoid circular dep
     from orm.auth import RoleDB, UserDB, UserRoleDB
 
-from core.infra.logging_config import get_logger
-
 from auth.auth_jwt import AUTH_SECRET, decode_jwt
+from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

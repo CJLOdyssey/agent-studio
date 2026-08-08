@@ -9,12 +9,13 @@ import subprocess
 import tracemalloc
 from typing import Any
 
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+
 from broker import publish_run_message
 from checkpoint import create_checkpointer_async
 from core.config import load_config
 from core.infra.logging_config import get_logger
 from graph.graph import SingleAgentGraph
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from repository import (
     get_agent_config,
     get_messages,
@@ -86,9 +87,10 @@ async def _run_agent_pipeline(
 ) -> dict[str, Any]:
     global _run_counter
     _run_counter += 1
-    if not tracemalloc.is_tracing():
-        tracemalloc.start(25)
-        logger.info("[MEM] tracemalloc started")
+    if os.environ.get("MEM_TRACE", "").lower() in ("1", "true", "yes"):
+        if not tracemalloc.is_tracing():
+            tracemalloc.start(25)
+            logger.info("[MEM] tracemalloc started")
     log_memory_diff()
     logger.info("=== ENTER _run_agent_pipeline run=#%s | run=%s agent=%s ===", _run_counter, run_id, agent_id)
     await update_run_status(run_id, "running")

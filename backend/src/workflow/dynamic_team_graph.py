@@ -3,8 +3,9 @@
 from collections.abc import Callable
 from typing import Any
 
-from core.infra.logging_config import get_logger
 from langchain_openai import ChatOpenAI
+
+from core.infra.logging_config import get_logger
 from repository import get_agent_configs
 from services.tool_config import ToolConfig
 from tasks.tool_bindings import build_agent_tool_configs

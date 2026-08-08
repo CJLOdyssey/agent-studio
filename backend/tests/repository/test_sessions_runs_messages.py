@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 """Repository tests for session, run, and message CRUD operations.
 

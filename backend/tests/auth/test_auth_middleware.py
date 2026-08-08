@@ -70,6 +70,7 @@ class TestAuthMiddleware:
         """Token from query param is extracted for WebSocket upgrade."""
         # This tests the query param branch
         from urllib.parse import parse_qs
+
         from auth.auth_rbac import PUBLIC_PREFIXES
         # Just ensure PUBLIC_PREFIXES is iterable
         assert isinstance(PUBLIC_PREFIXES, (tuple, list))

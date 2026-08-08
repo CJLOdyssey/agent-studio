@@ -3,10 +3,11 @@
 import time
 from typing import Any
 
-from core.error_codes import ErrorCode, error_response
-from core.infra.logging_config import get_logger
 from fastapi import APIRouter
 from pydantic import BaseModel
+
+from core.error_codes import ErrorCode, error_response
+from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["agents_test"])
@@ -30,6 +31,7 @@ async def test_agent(agent_id: str) -> Any:
     start = time.monotonic()
     try:
         import httpx
+
         from core.config import load_config
         from repository.keys import get_default_api_key
 

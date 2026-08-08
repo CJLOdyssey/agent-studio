@@ -5,7 +5,7 @@
 | # | 方式 | 后端 | 前端 | 数据库 | Redis |
 |---|------|------|------|--------|-------|
 | 1 | 🐳 本地 Docker | **8080** | **5173** | Docker | Docker |
-| 2 | 🔀 混合模式 | **8081** | **5174** | Docker | Docker |
+| 2 | 🔀 混合模式 | **8091** | **5174** | Docker | Docker |
 | 3 | ☁️ 云 Docker | 远程 | 远程 | 远程 | 远程 |
 
 ---
@@ -33,9 +33,9 @@ docker compose -f docker/compose.base.yml -f docker/compose.local.yml up -d
 
 ## 2. 🔀 混合模式（Docker 数据库 + 本地代码）
 
-> Docker 跑 PostgreSQL 和 Redis，后端 + 前端在本机运行，享受热更新。
+> Docker 跑 PostgreSQL 和 Redis，后端由 **systemd user service** 守护，前端在本机运行享受热更新。
 >
-> **⚠️ 后端启动请始终使用 `make dev-backend`，不要手敲 `uvicorn`。**
+> **⚠️ 后端始终用 systemd 管理（或备用脚本 `make dev-backend`），不要手敲 `uvicorn`。**
 > 手敲会绕过端口检测 + pidfile 防护，可能产生孤儿进程导致 CPU 过载。
 
 ```bash
@@ -48,12 +48,15 @@ cp .env.example .env
 # DATABASE_URL 和 REDIS_URL 指向 localhost 默认端口即可
 # 可观测性系统默认开启（OBSERVABILITY_ENABLED=1），磁盘低于 100MB 自动停止写入
 
-# ③ 后端 API（端口 8081，热更新）— 推荐方式
-make dev-backend
-# 或指定端口：PORT=8082 make dev-backend
+# ③ 后端 API（端口 8091，systemd 守护）— 推荐方式
+systemctl --user restart agent-studio-backend   # 重启
+systemctl --user status  agent-studio-backend   # 状态
+journalctl --user -u agent-studio-backend -f    # 实时日志
+# 服务文件：~/.config/systemd/user/agent-studio-backend.service（已 enable，Restart=always 崩溃自动拉起）
+# 备用（无 systemd）：make dev-backend  或  PORT=8082 make dev-backend（E2E 专用）
 
-# ④ 前端开发服务器（端口 5174，热更新）
-cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 5174
+# ④ 前端开发服务器（端口 5174，热更新；vite proxy 已指向 8091）
+cd frontend && npm run dev
 # → http://localhost:5174
 ```
 
@@ -61,19 +64,19 @@ cd frontend && VITE_API_BASE_URL=http://localhost:8081 npm run dev -- --port 517
 
 ```bash
 # 健康检查（含 CPU 时间 + 孤儿进程扫描）
-make health PORT=8081
+make health PORT=8091
 
 # 查看端口占用
-ss -tlnp | grep -E "808[0-9]"
+ss -tlnp | grep -E "808[0-9]|8091"
 
 # 查找孤儿进程（PPID=1 的 python 进程）
 ps --ppid 1 -o pid,%cpu,etime,args | grep python
 
 # 查看后端日志
-make dev-backend-logs
+journalctl --user -u agent-studio-backend -f
 
 # 强制清理端口
-fuser -k 8081/tcp
+fuser -k 8091/tcp
 ```
 
 ---

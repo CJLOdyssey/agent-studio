@@ -1,7 +1,7 @@
 """Prompts router tests — merged from test_coverage_boost, test_coverage_gaps, test_remaining_coverage."""
 
-import os
 import asyncio
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -49,6 +49,7 @@ def client():
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
+
         from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
