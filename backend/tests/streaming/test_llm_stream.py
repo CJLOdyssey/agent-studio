@@ -444,6 +444,55 @@ class TestStreamLlmResponse:
         callback.assert_any_call({"event": "on_custom_token", "data": {"content": "pending"}})
         callback.assert_any_call({"event": "on_custom_token", "data": {"content": " content"}})
 
+    @pytest.mark.asyncio
+    async def test_flushes_trailing_think_buffers_after_stream(self):
+        from streaming.llm_stream import stream_llm_response
+
+        callback = AsyncMock()
+        sse_lines = [
+            'data: {"choices":[{"delta":{"reasoning_content":"<think>推理未闭合"},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":"正文<think>内容未闭合"},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":""},"finish_reason":"stop"}]}',
+            "data: [DONE]",
+        ]
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(sse_lines)):
+            content, thinking, tool_calls, finish_reason, usage = await stream_llm_response(
+                "https://api.deepseek.com/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "deepseek-chat", "messages": []},
+                stream_cb=callback,
+            )
+        assert "".join(content) == "正文"
+        assert "".join(thinking) == "内容未闭合推理未闭合"
+        callback.assert_any_call({"event": "on_custom_thinking", "data": {"content": "推理未闭合"}})
+        callback.assert_any_call({"event": "on_custom_thinking", "data": {"content": "内容未闭合"}})
+
+
+from streaming.llm_stream import ReasoningSplitter, ThinkTagSplitter
+
+
+def test_reasoning_splitter_strips_cross_chunk_think_tag():
+    s = ReasoningSplitter()
+    parts = []
+    # <think> 标签跨 chunk 切片（如 SiliconFlow GLM-Z1）
+    for chunk in ["<th", "ink>思考", "内容", "</thin", "k>"]:
+        parts += s.feed(chunk)
+    assert "".join(parts) == "思考内容"
+    assert s.finish() is None
+
+
+def test_reasoning_splitter_tagless_stream_emits_directly():
+    s = ReasoningSplitter()
+    parts = s.feed("无标签的思考内容" * 20)  # 超过 _TAG_WAIT_CHARS(16) 直接流出
+    assert "".join(parts) == "无标签的思考内容" * 20
+
+
+def test_think_tag_splitter_routes_inline_thinking():
+    s = ThinkTagSplitter()
+    thinking, content = s.feed("前置<think>推理</think>正文")
+    assert "".join(thinking) == "推理"
+    assert "".join(content) == "前置正文"
+
 
 class TestParseSse:
 
