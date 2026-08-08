@@ -322,6 +322,7 @@ class RunService:
             _reg.complete_agent.delay(
                 content=content, run_id=run_id, api_key=api_key,
                 api_base=api_base, model=effective_model, thinking=thinking,
+                question=question,
             )
             logger.info("Complete -> celery | run=%s", run_id)
             return {"run_id": run_id, "status": "running", "session_id": session_id}
@@ -337,6 +338,7 @@ class RunService:
                     api_base=api_base,
                     model=effective_model,
                     thinking=thinking,
+                    question=question,
                 )
             except Exception:
                 logger.exception("Complete pipeline failed for run=%s", run_id)
