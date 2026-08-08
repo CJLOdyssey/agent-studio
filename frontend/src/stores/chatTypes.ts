@@ -22,6 +22,10 @@ export interface ChatState {
   pendingThinkingVersions: string[] | null;
   switchVersion: (msgId: string, direction: 'prev' | 'next') => void;
   switchUserVersion: (msgId: string, direction: 'prev' | 'next') => void;
+  /** 用户消息版本切换（分支语义）：计算目标 runId（越界夹取），null = 无变化 */
+  resolveUserVersionTarget: (msgId: string, direction: 'prev' | 'next') => string | null;
+  /** 模型消息答案分页（重新生成分支）：计算目标 runId */
+  resolveAnswerVersionTarget: (msgId: string, direction: 'prev' | 'next') => string | null;
   setThumbsFeedback: (msgId: string, value: 'up' | 'down' | null) => void;
   wsStatus: WsConnectionStatus;
   /** Conversation ID at submission time */

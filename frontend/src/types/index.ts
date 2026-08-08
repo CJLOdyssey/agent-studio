@@ -57,9 +57,21 @@ export interface ChatMessage {
   currentVersion?: number;
   /** User-message edit history (older edits first; content is the active one) */
   userVersions?: string[];
+  /** 版本 → runId 映射（userVersions[i] 对应 versionRunIds[i] 的 run turn） */
+  versionRunIds?: string[];
+  /** 本消息对应 run 的 parent_run_id（编辑产生兄弟分支时使用） */
+  parentRunId?: string | null;
+  /** 配对的用户消息 id（模型消息分页切换时归一化到用户消息） */
+  userMsgId?: string;
   currentUserVersion?: number;
+  /** 模型消息答案分页（重新生成链）：与用户版本（userVersions）解耦的独立字段 */
+  answerVersions?: string[];
+  /** 答案分页 → runId 映射（answerVersions[i] 对应 answerRunIds[i] 的 run turn） */
+  answerRunIds?: string[];
+  currentAnswerVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
+  runId?: string;
 }
 
 export interface ProjectRun {
@@ -73,6 +85,8 @@ export interface ProjectRun {
   status: string;
   created_at: string | null;
   updated_at: string | null;
+  parent_run_id?: string | null;
+  requirement_versions?: string[] | null;
   messages?: ChatMessage[];
 }
 

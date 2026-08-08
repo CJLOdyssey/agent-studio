@@ -30,6 +30,13 @@ const INITIAL_STATE = {
   selectedAgentId: null as string | null,
 };
 
+// 版本分页通用计算：方向 → 合法索引（越界夹取），未变时返回 null。
+function clampVersion(total: number, cur: number, direction: 'prev' | 'next') {
+  const nv =
+    direction === 'prev' ? Math.max(0, cur - 1) : Math.min(total - 1, cur + 1);
+  return nv === cur ? null : nv;
+}
+
 export const useChatStore = create<ChatState>((set, get) => ({
   ...INITIAL_STATE,
 
@@ -72,6 +79,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (s.currentRunId) disconnectRun(s.currentRunId);
     const activeTeamId = s.activeTeamId;
     set({ ...INITIAL_STATE, activeTeamId, submissionConvId: null });
+  },
+
+  // 用户消息版本切换（分支语义）：计算目标 runId（越界夹取），null = 无变化。
+  resolveUserVersionTarget: (msgId, direction) => {
+    const msg = get().messages.find((m) => m.id === msgId);
+    if (!msg) return null;
+    const versions = msg.userVersions;
+    const versionRunIds = msg.versionRunIds;
+    if (!versions || versions.length < 2) return null;
+    const nv = clampVersion(
+      versions.length,
+      msg.currentUserVersion ?? versions.length - 1,
+      direction,
+    );
+    if (nv === null) return null;
+    return versionRunIds?.[nv] ?? null;
+  },
+
+  // 模型消息答案分页（重新生成分支，与用户消息 1:N）：计算目标 runId。
+  resolveAnswerVersionTarget: (msgId, direction) => {
+    const msg = get().messages.find((m) => m.id === msgId);
+    if (!msg) return null;
+    const versions = msg.answerVersions;
+    const runIds = msg.answerRunIds;
+    if (!versions || !runIds || versions.length < 2) return null;
+    const nv = clampVersion(
+      versions.length,
+      msg.currentAnswerVersion ?? versions.length - 1,
+      direction,
+    );
+    if (nv === null) return null;
+    return runIds[nv] ?? null;
   },
 
   switchVersion: (msgId, direction) => {
