@@ -12,9 +12,72 @@ import { useAgentCommands } from '../../hooks/useAgentCommands';
 import { useChatStore } from '../../stores/chatStore';
 import { submitRequirement, retry } from '../../stores/chatActions';
 import { getSessionDetail } from '../../api/client/sessions';
+import { buildPathTurns } from '../../utils/branchTurns';
+import type { ProjectRun } from '../../types';
 import { useDragAndDrop } from './useDragAndDrop';
 import Logger from '../../utils/logger';
 import type * as React from 'react';
+
+// run 树工具：与 ragbase useHomeState 一致 — 目标 run 的父链 + 主子孙链，
+// 分支切换视图整体加载目标分支全部消息（不在该分支的轮次仅视图隐藏，DB 留存）。
+function buildRunPath(
+  runs: ProjectRun[],
+  fromRunId?: string | null,
+): {
+  path: ProjectRun[];
+  active: string | null;
+} {
+  const byId = new Map(runs.map((r) => [r.id, r]));
+  const latest = runs.reduce(
+    (a, b) =>
+      (b.created_at ?? '').localeCompare(a.created_at ?? '') > 0 ? b : a,
+    runs[0],
+  );
+  const start = fromRunId && byId.has(fromRunId) ? byId.get(fromRunId) : latest;
+  const path: ProjectRun[] = [];
+  const seen = new Set<string>();
+  let cur: ProjectRun | undefined = start;
+  while (cur && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    path.unshift(cur);
+    cur = cur.parent_run_id ? byId.get(cur.parent_run_id) : undefined;
+  }
+  return { path, active: start?.id ?? latest?.id ?? null };
+}
+
+// 分支完整路径：目标 run 的父链（根在前）+ 主子孙链（每次取子分支，优先
+// 选非当前视图所在分支，全部都在当前分支则取最新）。切分支后显示该分支的
+// 全部消息，后续轮次跟随目标分支。
+function buildBranchPath(
+  runs: ProjectRun[],
+  fromRunId: string,
+  excludeRunIds: Set<string>,
+): ProjectRun[] {
+  const { path: parentPath } = buildRunPath(runs, fromRunId);
+  const byParent = new Map<string, ProjectRun[]>();
+  for (const r of runs) {
+    const p = r.parent_run_id;
+    if (!p) continue;
+    const list = byParent.get(p);
+    if (list) list.push(r);
+    else byParent.set(p, [r]);
+  }
+  const tail: ProjectRun[] = [];
+  const seen = new Set<string>(parentPath.map((r) => r.id));
+  let cur: string | null = fromRunId;
+  while (cur) {
+    const kids: ProjectRun[] = (byParent.get(cur) ?? [])
+      .filter((k) => !seen.has(k.id))
+      .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+    const next: ProjectRun | undefined =
+      kids.find((k) => !excludeRunIds.has(k.id)) ?? kids[0];
+    if (!next) break;
+    tail.push(next);
+    seen.add(next.id);
+    cur = next.id;
+  }
+  return [...parentPath, ...tail];
+}
 
 export function useWorkstationState(
   messagesContainerRef: React.RefObject<HTMLDivElement | null>,
@@ -101,6 +164,8 @@ export function useWorkstationState(
   // Conversation that owns the currently running run — sync must write back to
   // it even if the user switches away mid-run, never to the newly active one.
   const runConvIdRef = useRef<string | null>(null);
+  // 加载竞态保护：快速切换分支时，丢弃过期响应（仅最新一次落地）。
+  const loadSeqRef = useRef(0);
 
   // Persist in-flight store messages into a conversation. Must run BEFORE a
   // switch takes effect (while the store still holds the old run's messages).
@@ -295,6 +360,47 @@ export function useWorkstationState(
     setConversationKey((prev) => prev + 1);
   }, [syncActiveConversation, conv, resetApi]);
 
+  // 分支语义：切版本 = 切分支，视图整体切到目标 run 所在分支的全部消息
+  // （父链 + 子孙链，后续轮次跟随目标分支；不在该分支的轮次仅视图隐藏，DB 留存）。
+  const handleSwitchBranch = useCallback(async (runId: string) => {
+    // currentSessionId 即当前会话 id（loadConversation 与流式提交均设置）。
+    const convId = useChatStore.getState().currentSessionId;
+    if (!convId) return;
+    const seq = ++loadSeqRef.current;
+    try {
+      const detail = await getSessionDetail(convId);
+      if (seq !== loadSeqRef.current) return;
+      const currentPath = new Set(
+        useChatStore
+          .getState()
+          .messages.map((m) => m.runId)
+          .filter((id): id is string => !!id),
+      );
+      const path = buildBranchPath(detail.runs ?? [], runId, currentPath);
+      const loaded = buildPathTurns(path, detail.runs ?? []);
+      for (const m of loaded) {
+        if (m.role !== 'user' && m.thinkingDone === undefined) {
+          m.thinkingDone = true;
+        }
+      }
+      useChatStore.getState().loadConversation(loaded, convId, convId);
+      // currentRunId 设为加载分支的末端（buildBranchPath 可能经 tail 选择了
+      // 平行分支），后续追问才挂到当前显示的分支而非传入的父节点。
+      useChatStore.setState({
+        currentRunId: path[path.length - 1]?.id ?? runId,
+      });
+      Logger.info(
+        '[switchBranch] run=%s runs=%d path=%d loaded=%d',
+        runId.slice(0, 8),
+        (detail.runs ?? []).length,
+        path.length,
+        loaded.length,
+      );
+    } catch (err) {
+      Logger.warn('[useWorkstationState] failed to switch branch to %s', runId, err);
+    }
+  }, []);
+
   const handleSendMessage = useCallback(
     (text: string, _files: AttachedFile[]) => {
       const userMessage: import('../../types/AgentStudio').Message = {
@@ -443,6 +549,8 @@ export function useWorkstationState(
         currentVersion: m.currentVersion,
         userVersions: m.userVersions,
         currentUserVersion: m.currentUserVersion,
+        answerVersions: m.answerVersions,
+        currentAnswerVersion: m.currentAnswerVersion,
         thumbsFeedback: m.thumbsFeedback,
         interrupted: m.interrupted,
       })),
@@ -525,6 +633,7 @@ export function useWorkstationState(
     handlePageDrop,
     toggleWorkspaceFullscreen,
     handleNewChat,
+    handleSwitchBranch,
     syncActiveConversation,
     handleSendMessage,
     handleHomeSend,

@@ -133,6 +133,9 @@ export interface Message {
   currentVersion?: number;
   userVersions?: string[];
   currentUserVersion?: number;
+  /** 模型消息答案分页（重新生成链）：与用户版本（userVersions）解耦的独立字段 */
+  answerVersions?: string[];
+  currentAnswerVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
 }

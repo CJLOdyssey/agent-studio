@@ -246,6 +246,7 @@ const TeamMessage = memo(function TeamMessage({
   showContinue,
   onContinue,
   onSwitchUserVersion,
+  onSwitchAnswer,
   isContinuing,
   onThumbsFeedback,
 }: {
@@ -256,6 +257,7 @@ const TeamMessage = memo(function TeamMessage({
   showContinue?: boolean;
   onContinue?: () => void;
   onSwitchUserVersion?: (msgId: string, direction: 'prev' | 'next') => void;
+  onSwitchAnswer?: (msgId: string, direction: 'prev' | 'next') => void;
   isContinuing?: boolean;
   onThumbsFeedback?: (msgId: string, value: 'up' | 'down') => void;
 }) {
@@ -634,6 +636,27 @@ const TeamMessage = memo(function TeamMessage({
                     <ThumbsDown size={12} />
                   </button>
                 </>
+              )}
+              {!meta.verdicts && msg.answerVersions && msg.answerVersions.length > 1 && (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    onClick={() => onSwitchAnswer?.(msg.id, 'prev')}
+                    disabled={(msg.currentAnswerVersion ?? 0) === 0}
+                    aria-label="Previous answer version"
+                  >
+                    <ChevronRight size={12} className="rotate-180" />
+                  </button>
+                  <span className="text-xs text-[var(--color-text-muted)] min-w-7 text-center select-none">{(msg.currentAnswerVersion ?? 0) + 1}/{msg.answerVersions.length}</span>
+                  <button
+                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    onClick={() => onSwitchAnswer?.(msg.id, 'next')}
+                    disabled={(msg.currentAnswerVersion ?? 0) === msg.answerVersions.length - 1}
+                    aria-label="Next answer version"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
               )}
               {time && <span className="block text-xs text-[var(--color-text-muted)] mt-1 ml-0">{time}</span>}
               {(showContinue || isContinuing) && (

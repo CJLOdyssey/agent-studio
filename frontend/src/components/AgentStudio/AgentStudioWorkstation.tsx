@@ -131,6 +131,7 @@ if (currentTheme === 'system') {
                     displayMessages={s.displayMessages}
                     messagesEndRef={messagesEndRef}
                     onDismissWelcome={() => s.setWelcomeDismissed(true)}
+                    onSwitchBranch={s.handleSwitchBranch}
                   />
                 ) : (
                   <HomeScreen
