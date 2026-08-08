@@ -273,68 +273,45 @@ export function useWorkstationState(
       let cancelled = false;
       getSessionDetail(found.sessionId).then((detail) => {
         if (cancelled) return;
-        const msgs: import('../../types').ChatMessage[] = [];
-        if (detail.runs) {
-          for (const run of detail.runs) {
-            // Use run.messages with thinking if available (from batch message loading)
-            if (run.messages && run.messages.length > 0) {
-              for (const m of run.messages) {
-                msgs.push({
-                  id: m.id || `run-${run.id}-${m.round_number}-${m.role}`,
-                  role: m.role === 'user' ? 'user' : 'assistant',
-                  agent_name: m.agent_name || (m.role === 'user' ? '我' : found.teamName || 'Agent'),
-                  content: m.content,
-                  thinking: m.thinking ?? undefined,
-                  round_number: m.round_number ?? 0,
-                  created_at: m.created_at || null,
-                  versions: m.versions,
-                  thinkingVersions: (m as unknown as Record<string, unknown>).thinking_versions as string[] | undefined,
-                  userVersions: (m as unknown as Record<string, unknown>).user_versions as string[] | undefined,
-                  currentVersion: m.versions && m.versions.length > 0 ? m.versions.length - 1 : undefined,
-                  currentUserVersion: (m as unknown as Record<string, unknown>).user_versions ? ((m as unknown as Record<string, unknown>).user_versions as string[]).length - 1 : undefined,
-                });
-              }
-            } else {
-              // Fallback: construct from run.requirement / run.code
-              msgs.push({
-                id: `run-${run.id}-user`,
-                role: 'user',
-                agent_name: '我',
-                content: run.requirement,
-                round_number: 0,
-                created_at: run.created_at || null,
-              });
-              if (run.code) {
-                msgs.push({
-                  id: `run-${run.id}-agent`,
-                  role: 'assistant',
-                  agent_name: found.teamName || 'Agent',
-                  content: run.code,
-                  round_number: 0,
-                  created_at: run.updated_at || run.created_at || null,
-                });
-              }
-            }
+        // 与 handleSwitchBranch 同形：buildRunPath 取目标分支父链（首屏 = 最新
+        // run），buildPathTurns 平铺消息并挂载分支版本（answerVersions/answerRunIds
+        // 等）— 模型答案分页器首屏即可见，无需先切一次分支。
+        const runs = detail.runs ?? [];
+        const { path, active } = buildRunPath(runs);
+        const loaded = buildPathTurns(path, runs);
+        // Persisted messages are completed turns — mark agent thinking as done
+        // so the ThinkingSection shows "已思考" instead of a stuck spinner.
+        for (const m of loaded) {
+          if (m.role !== 'user' && m.thinkingDone === undefined) {
+            m.thinkingDone = true;
+          }
+          const raw = m as unknown as Record<string, unknown>;
+          const thinkingVersions = raw.thinking_versions as string[] | undefined;
+          if (thinkingVersions && thinkingVersions.length > 0) {
+            m.thinkingVersions = thinkingVersions;
           }
         }
-        if (msgs.length > 0) {
+        if (loaded.length > 0) {
           const snapshot = found.messages || [];
-          for (const m of msgs) {
+          for (const m of loaded) {
             const local = snapshot.find((lm) => lm.content === m.content && (lm.role === 'user') === (m.role === 'user'));
             if (!local) continue;
-            // Server-persisted versions win; the local snapshot only fills gaps
-            // (thumbs/interrupted are UI-only and never persisted server-side).
+            // buildPathTurns 分支版本（userVersions/versionRunIds）优先；本地快照
+            // 仅补齐 UI-only 状态（thumbs/interrupted）与服务端缺失的编辑版本。
             m.versions = local.versions ?? m.versions;
             m.thinkingVersions = local.thinkingVersions ?? m.thinkingVersions;
-            m.userVersions = local.userVersions ?? m.userVersions;
+            m.userVersions = m.userVersions ?? local.userVersions;
             m.currentVersion = local.currentVersion ?? m.currentVersion;
-            m.currentUserVersion = local.currentUserVersion ?? m.currentUserVersion;
+            m.currentUserVersion = m.currentUserVersion ?? local.currentUserVersion;
             m.thumbsFeedback = local.thumbsFeedback ?? undefined;
             m.interrupted = local.interrupted ?? undefined;
             m.thinkingDone = local.thinkingDone === true || Boolean(m.thinking && !m.interrupted);
           }
-          conv.updateConversationMessages(activeId, msgs as unknown as import('../../types/AgentStudio').Message[], false);
-          loadConversation(msgs, found.id, found.sessionId);
+          conv.updateConversationMessages(activeId, loaded as unknown as import('../../types/AgentStudio').Message[], false);
+          loadConversation(loaded, found.id, found.sessionId);
+          // currentRunId 设为路径末端（首屏 = 最新 run），后续追问挂到当前
+          // 显示分支（与 handleSwitchBranch 的 setState 行为一致）。
+          useChatStore.setState({ currentRunId: active });
         } else if (found.messages.length > 0) {
           loadSnapshot();
         } else {
