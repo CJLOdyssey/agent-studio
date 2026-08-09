@@ -10,6 +10,8 @@ export type { WsConnectionStatus, ChatState } from './chatTypes';
 
 const INITIAL_STATE = {
   currentRunId: null,
+  activeRunId: null,
+  pendingRegenerate: null,
   currentSessionId: null,
   currentConvId: null,
   messages: [],
@@ -52,7 +54,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
       Logger.info('[chat] loadConversation — disconnecting previous run %s', prevRunId);
       disconnectRun(prevRunId);
     }
-    set({ messages, currentConvId: convId ?? null, currentSessionId: sessionId ?? null, currentRunId: null, streamingId: null, status: 'idle', wsStatus: 'disconnected', lastAbandonedRunId: prevRunId, error: null, skipThinking: false, continuingId: null, interruptedMessageId: null, submissionConvId: null });
+    set((prev) => {
+      // 加载同一会话时保留 in-flight 状态：新建会话提交中，submitRequirement
+      // 已绑定 sessionId / 已写入 error（失败横幅），navigate 触发的加载不得
+      // 把它们覆盖成 null（真实浏览器慢网络下同样存在此竞态）。
+      const sameConv = convId != null && prev.currentConvId === convId;
+      return {
+        messages,
+        currentConvId: convId ?? null,
+        currentSessionId: sessionId ?? (sameConv ? prev.currentSessionId : null),
+        currentRunId: null,
+        streamingId: null,
+        status: sameConv ? prev.status : 'idle',
+        wsStatus: 'disconnected',
+        lastAbandonedRunId: prevRunId,
+        error: sameConv ? prev.error : null,
+        skipThinking: false,
+        continuingId: null,
+        interruptedMessageId: null,
+        submissionConvId: null,
+      };
+    });
   },
 
   cancelRun: () => {
@@ -152,6 +174,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setActiveTeam: (teamId) => {
     set({ activeTeamId: teamId });
+  },
+
+  setActiveRunId: (runId) => {
+    set({ activeRunId: runId });
   },
 }));
 

@@ -70,6 +70,7 @@ class RunService:
         team_id: str | None = None,
         model: str | None = None,
         parent_run_id: str | None = None,
+        is_edit: bool = False,
     ) -> dict[str, Any]:
         """Create a run, resolve credentials, subscribe to buffer, dispatch pipeline.
 
@@ -124,7 +125,9 @@ class RunService:
         # ── Persist run ─────────────────────────────────────────────
         try:
             req_versions: list[str] | None = None
-            if parent_run_id:
+            # 仅编辑/重新生成（is_edit）继承被替换 run 的编辑链；普通续聊
+            # 是新问题，不写 requirement_versions（前端版本器由 run 树推导）。
+            if is_edit and parent_run_id:
                 parent = await get_run(parent_run_id)
                 if parent:
                     parent_versions = parse_json_list(parent.requirement_versions)

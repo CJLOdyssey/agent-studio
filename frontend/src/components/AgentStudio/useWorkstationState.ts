@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { Agent, WorkspaceTab, Message } from '../../types/AgentStudio';
 import { useToast } from '../../utils/useToast';
 import { useTeamManagement } from '../../hooks/useTeamManagement';
@@ -139,6 +140,16 @@ export function useWorkstationState(
     return teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
   }, [activeTeamId, teamMgmt.teams]);
   const showAgentChat = selectedAgentId !== null || activeTeamId !== null;
+  // 会话标识单一事实源 = URL 路由 /chat/:sessionId（对齐 ragbase/DeepSeek：
+  // 可分享/收藏/多标签独立/前进后退）；localStorage 仅作 fallback。
+  const { sessionId } = useParams();
+  const navigate = useNavigate();
+  const activeConvId = sessionId ?? null;
+  // 会话加载中（恢复/切换，消息未就绪）— 期间渲染消息面板而非主页，
+  // 避免刷新/点击后主页一闪而过。
+  const [restoring, setRestoring] = useState<boolean>(
+    () => sessionId !== undefined || !!localStorage.getItem('agentstudio-active-conv-id'),
+  );
 
   const filteredConversations = useMemo(() => conv.conversations, [conv.conversations]);
 
@@ -166,6 +177,10 @@ export function useWorkstationState(
   const runConvIdRef = useRef<string | null>(null);
   // 加载竞态保护：快速切换分支时，丢弃过期响应（仅最新一次落地）。
   const loadSeqRef = useRef(0);
+  // 分支切换（切版本/切分支）时抑制自动滚动 — 不主动滚到底部；
+  // 视觉位置由浏览器 scroll anchoring 保持（与 DeepSeek 一致：切换时
+  // 正在看的消息/按钮保持在视口原位）。流式输出/首屏才跟随底部。
+  const suppressScrollRef = useRef(false);
 
   // Persist in-flight store messages into a conversation. Must run BEFORE a
   // switch takes effect (while the store still holds the old run's messages).
@@ -198,6 +213,12 @@ export function useWorkstationState(
   useEffect(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
+    // 分支切换后消息列表重建 — 不主动滚动。浏览器 scroll anchoring
+    // 会把正在查看的消息/按钮保持在原视口位置。
+    if (suppressScrollRef.current) {
+      suppressScrollRef.current = false;
+      return;
+    }
     el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
   }, [lastMsgLen, lastMsgStream, messagesContainerRef]);
 
@@ -209,14 +230,20 @@ export function useWorkstationState(
     if (apiStatus === 'running' && wsStatus !== 'disconnected') return;
 
     syncActiveConversation(runConvIdRef.current ?? undefined);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiMessages, apiStatus, wsStatus, syncActiveConversation]);
 
   useEffect(() => {
-    const activeId = conv.activeConvId;
-    if (!activeId) return;
-    const found = filteredConversations.find((c) => c.id === activeId);
-    if (!found) { resetApi(); return; }
+    const activeId = activeConvId;
+    if (!activeId) {
+      useChatStore.getState().reset();
+      return;
+    }
+    // setTimeout 延后一帧：restoring 的同步 setState 移出 effect 体
+    // （react-hooks/set-state-in-effect），快速切换由 timer cleanup 兜底。
+    const timer = setTimeout(() => {
+      setRestoring(true);
+      const found = filteredConversations.find((c) => c.id === activeId);
+      if (!found) { resetApi(); setRestoring(false); return; }
 
     const loadSnapshot = () => {
       const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m, idx) => ({
@@ -277,7 +304,16 @@ export function useWorkstationState(
         // run），buildPathTurns 平铺消息并挂载分支版本（answerVersions/answerRunIds
         // 等）— 模型答案分页器首屏即可见，无需先切一次分支。
         const runs = detail.runs ?? [];
-        const { path, active } = buildRunPath(runs);
+        // 刷新/重进会话时恢复切换过的分支：优先用存储的 runId（buildRunPath
+        // 父链 + active=该 run），无存储则默认最新 run。
+        const branchKey = `agentstudio-branch:${found.sessionId}`;
+        let storedRunId: string | null = null;
+        try { storedRunId = localStorage.getItem(branchKey); } catch { /* non-fatal */ }
+        const fromRunId =
+          storedRunId && runs.some((r) => r.id === storedRunId)
+            ? storedRunId
+            : null;
+        const { path, active } = buildRunPath(runs, fromRunId);
         const loaded = buildPathTurns(path, runs);
         // Persisted messages are completed turns — mark agent thinking as done
         // so the ThinkingSection shows "已思考" instead of a stuck spinner.
@@ -311,31 +347,65 @@ export function useWorkstationState(
           loadConversation(loaded, found.id, found.sessionId);
           // currentRunId 设为路径末端（首屏 = 最新 run），后续追问挂到当前
           // 显示分支（与 handleSwitchBranch 的 setState 行为一致）。
-          useChatStore.setState({ currentRunId: active });
+          useChatStore.setState({ currentRunId: active, activeRunId: active });
+          setRestoring(false);
         } else if (found.messages.length > 0) {
           loadSnapshot();
+          setRestoring(false);
         } else {
           resetApi();
+          setRestoring(false);
         }
       }).catch(() => {
         if (found.messages.length > 0) loadSnapshot();
         else resetApi();
+        setRestoring(false);
       });
       return () => { cancelled = true; };
     }
 
-    if (found.messages.length === 0) { resetApi(); return; }
+    if (found.messages.length === 0) { resetApi(); setRestoring(false); return; }
     loadSnapshot();
+    setRestoring(false);
+    }, 0);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conv.activeConvId]);
+  }, [activeConvId]);
 
   const handleNewChat = useCallback(() => {
     syncActiveConversation();
     resetApi();
     setSelectedAgentId(null);
     conv.setActiveConvId(null);
+    setRestoring(false);
+    navigate('/');
     setConversationKey((prev) => prev + 1);
-  }, [syncActiveConversation, conv, resetApi]);
+  }, [syncActiveConversation, conv, resetApi, navigate]);
+
+  // 会话导航（对齐 ragbase/DeepSeek URL 语义）：点击会话/新建会话 →
+  // navigate 驱动 URL，activeConvId 由 useParams 派生。agent/team 身份
+  // 状态（selectedAgentId/activeTeamId）保持 state 语义，不 URL 化。
+  const navigateToConversation = useCallback((convId: string | null) => {
+    conv.setActiveConvId(convId);
+    if (convId) {
+      setRestoring(true);
+      navigate(`/chat/${convId}`);
+    } else {
+      setRestoring(false);
+      navigate('/');
+    }
+  }, [conv, navigate]);
+
+  // 直达主页（无 URL 会话）时恢复上次会话：localStorage fallback 后
+  // 以 URL 形式重建（replace，不堆历史）。
+  useEffect(() => {
+    let stored: string | null = null;
+    try { stored = localStorage.getItem('agentstudio-active-conv-id'); } catch { /* non-fatal */ }
+    if (!sessionId && stored) {
+      navigate(`/chat/${stored}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 分支语义：切版本 = 切分支，视图整体切到目标 run 所在分支的全部消息
   // （父链 + 子孙链，后续轮次跟随目标分支；不在该分支的轮次仅视图隐藏，DB 留存）。
@@ -343,6 +413,9 @@ export function useWorkstationState(
     // currentSessionId 即当前会话 id（loadConversation 与流式提交均设置）。
     const convId = useChatStore.getState().currentSessionId;
     if (!convId) return;
+    // 分支切换 = 用户主动操作 — 抑制自动滚动，视觉位置由浏览器
+    // scroll anchoring 保持。
+    suppressScrollRef.current = true;
     const seq = ++loadSeqRef.current;
     try {
       const detail = await getSessionDetail(convId);
@@ -363,9 +436,18 @@ export function useWorkstationState(
       useChatStore.getState().loadConversation(loaded, convId, convId);
       // currentRunId 设为加载分支的末端（buildBranchPath 可能经 tail 选择了
       // 平行分支），后续追问才挂到当前显示的分支而非传入的父节点。
+      // activeRunId 同步 — 续聊依赖它挂父链（祖先链上下文注入）。
       useChatStore.setState({
         currentRunId: path[path.length - 1]?.id ?? runId,
+        activeRunId: path[path.length - 1]?.id ?? runId,
       });
+      // 记住当前分支，刷新/重进会话时恢复同一视图。
+      try {
+        localStorage.setItem(
+          `agentstudio-branch:${convId}`,
+          path[path.length - 1]?.id ?? runId,
+        );
+      } catch { /* non-fatal */ }
       Logger.info(
         '[switchBranch] run=%s runs=%d path=%d loaded=%d',
         runId.slice(0, 8),
@@ -390,7 +472,7 @@ export function useWorkstationState(
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
         const kind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : activeTeamId ? 'team' : 'normal';
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName, kind);
-        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; }
+        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; useChatStore.setState({ currentConvId: convId }); navigate(`/chat/${convId}`); }
       } else {
         runConvIdRef.current = conv.activeConvId;
         // 续聊：把用户消息追加到当前会话，避免历史里只剩第一条用户消息
@@ -409,7 +491,7 @@ export function useWorkstationState(
       });
       notify();
     },
-    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams],
+    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate],
   );
 
   const handleHomeSend = useCallback(
@@ -423,7 +505,7 @@ export function useWorkstationState(
       const homeKind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : 'normal';
       if (!conv.activeConvId) {
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, undefined, undefined, homeKind);
-        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; }
+        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; useChatStore.setState({ currentConvId: convId }); navigate(`/chat/${convId}`); }
       } else {
         runConvIdRef.current = conv.activeConvId;
         const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
@@ -441,7 +523,7 @@ export function useWorkstationState(
       });
       notify();
     },
-    [conv, submitToApi, notify, selectedAgentId],
+    [conv, submitToApi, notify, selectedAgentId, navigate],
   );
 
   const { isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop } = useDragAndDrop(inputToolbarRef as React.RefObject<InputToolbarHandle>);
@@ -601,9 +683,13 @@ export function useWorkstationState(
     activeTeamId,
     activeTeamName,
     showAgentChat,
+    activeConvId,
+    navigateToConversation,
     filteredConversations,
     effectiveSelectedModel,
-    hasMessages,
+    // activeConvId 非空（URL 指向会话）→ 恒显示消息面板：加载中 restoring
+    // 保真，空会话（runs 为空）也停驻空面板而非回弹主页。
+    hasMessages: hasMessages || restoring || activeConvId !== null,
     isPageDragOver,
     handlePageDragOver,
     handlePageDragLeave,

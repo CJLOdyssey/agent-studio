@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement } from 'react';
+import type { ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
+const wrapper = ({ children }: { children: ReactNode }) => createElement(MemoryRouter, null, children);
 
 const {
   mockToast,
@@ -93,28 +97,29 @@ vi.mock('../../../hooks/useAgentCommands', () => ({
   useAgentCommands: () => [{ id: 'cmd-1', label: 'Cmd 1', type: 'action' }],
 }));
 
-vi.mock('../../../stores/chatStore', () => ({
-  useChatStore: (selector?: (s: unknown) => unknown) => {
-    const state = {
-      messages: mockStore.messages,
-      status: mockStore.status,
-      error: mockStore.error,
-      wsStatus: mockStore.wsStatus,
-      activeConvId: null,
-      activeTeamId: mockStore.activeTeamId,
-      isRunning: false,
-      isThinking: false,
-      reset: mockStoreReset,
-      cancelRun: mockStoreCancelRun,
-      loadConversation: mockStoreLoadConversation,
-      lastAbandonedRunId: mockStore.abandonedRunId,
-      currentSessionId: mockStore.currentSessionId,
-      getState: () => state,
-      setActiveTeam: mockStoreSetActiveTeam,
-    };
-    return selector ? selector(state) : state;
-  },
-}));
+vi.mock('../../../stores/chatStore', () => {
+  const state = {
+    get messages() { return mockStore.messages; },
+    get status() { return mockStore.status; },
+    get error() { return mockStore.error; },
+    get wsStatus() { return mockStore.wsStatus; },
+    activeConvId: null,
+    get activeTeamId() { return mockStore.activeTeamId; },
+    isRunning: false,
+    isThinking: false,
+    reset: mockStoreReset,
+    cancelRun: mockStoreCancelRun,
+    loadConversation: mockStoreLoadConversation,
+    get lastAbandonedRunId() { return mockStore.abandonedRunId; },
+    get currentSessionId() { return mockStore.currentSessionId; },
+    setActiveTeam: mockStoreSetActiveTeam,
+  };
+  const useChatStore = (selector?: (s: unknown) => unknown) =>
+    selector ? selector(state) : state;
+  useChatStore.getState = () => state;
+  useChatStore.setState = vi.fn();
+  return { useChatStore };
+});
 
 vi.mock('../../../stores/chatActions', () => ({
   submitRequirement: mockSubmitRequirement,
@@ -153,94 +158,94 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
   describe('derived values', () => {
     it('hasMessages is false when apiMessages empty', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.hasMessages).toBe(false);
     });
 
     it('hasMessages is true with messages', () => {
       mockStore.messages = [{ id: '1', role: 'user', content: 'hi' }];
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.hasMessages).toBe(true);
     });
 
     it('showAgentChat false when both null', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.showAgentChat).toBe(false);
     });
 
     it('showAgentChat true with selectedAgentId', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setSelectedAgentId('agent-1'); });
       expect(result.current.showAgentChat).toBe(true);
     });
 
     it('showAgentChat true with activeTeamId', () => {
       mockStore.activeTeamId = 'team-1';
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.showAgentChat).toBe(true);
     });
 
     it('isDarkMode false for light theme', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isDarkMode).toBe(false);
     });
 
     it('effectiveSelectedModel uses selectedModel when set', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setSelectedModel('model-b'); });
       expect(result.current.effectiveSelectedModel).toBe('model-b');
     });
 
     it('setSelectedModel persists to localStorage for key routing', () => {
       localStorage.removeItem('agentstudio-selected-model');
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setSelectedModel('Qwen/Qwen3-8B'); });
       expect(localStorage.getItem('agentstudio-selected-model')).toBe('Qwen/Qwen3-8B');
     });
 
     it('initializes selectedModel from localStorage so refresh keeps the last pick', () => {
       localStorage.setItem('agentstudio-selected-model', 'model-a');
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.selectedModel).toBe('model-a');
       expect(result.current.effectiveSelectedModel).toBe('model-a');
     });
 
     it('ignores a stale localStorage model that no key provides', () => {
       localStorage.setItem('agentstudio-selected-model', 'retired-model');
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.selectedModel).toBe('retired-model');
       expect(result.current.effectiveSelectedModel).toBe('model-a');
     });
 
     it('effectiveSelectedModel falls back to first model', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.effectiveSelectedModel).toBe('model-a');
     });
 
     it('isPageDragOver defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isPageDragOver).toBe(false);
     });
 
     it('apiError is null default', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.apiError).toBeNull();
     });
 
     it('apiError reflects store error', () => {
       mockStore.error = 'Something went wrong';
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.apiError).toBe('Something went wrong');
     });
 
     it('allCommands merges api and agent commands', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.allCommands).toHaveLength(1);
     });
 
     it('displayMessages maps correctly', () => {
       mockStore.messages = [{ id: 'm1', role: 'user', content: 'hello', created_at: '2024-01-01T00:00:00Z' }];
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.displayMessages).toHaveLength(1);
       expect(result.current.displayMessages[0].id).toBe('m1');
       expect(result.current.displayMessages[0].role).toBe('user');
@@ -248,89 +253,89 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
     it('displayMessages handles missing created_at', () => {
       mockStore.messages = [{ id: 'm2', role: 'agent', content: 'hello', created_at: undefined }];
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.displayMessages[0].timestamp).toBe(0);
     });
 
     it('displayMessages handles agent role with agentId', () => {
       mockStore.messages = [{ id: 'm3', role: 'agent', content: 'response', created_at: '2024-01-01T00:00:00Z' }];
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.displayMessages[0].agentId).toBe('agent');
     });
 
     it('activeTeamName is undefined when no activeTeamId', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.activeTeamName).toBeUndefined();
     });
 
     it('wsStatus reflects store status', () => {
       mockStore.wsStatus = 'connected';
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.wsStatus).toBe('connected');
     });
 
     it('abandonedRunId is null by default', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.abandonedRunId).toBeNull();
     });
 
     it('confirmDialog is null by default', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.confirmDialog).toBeNull();
     });
   });
 
   describe('callback functions', () => {
     it('handleNewChat resets api and clears selection', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.handleNewChat(); });
       expect(mockStoreReset).toHaveBeenCalled();
     });
 
     it('handleCloseAgentConfig sets configuringAgent to null', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.handleCloseAgentConfig(); });
       expect(result.current.configuringAgent).toBeNull();
     });
 
     it('handleCloseSettings sets false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsSettingsOpen(true); });
       act(() => { result.current.handleCloseSettings(); });
       expect(result.current.isSettingsOpen).toBe(false);
     });
 
     it('handleCloseApi sets false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsApiOpen(true); });
       act(() => { result.current.handleCloseApi(); });
       expect(result.current.isApiOpen).toBe(false);
     });
 
     it('handleCloseConfirm sets null', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.handleCloseConfirm(); });
       expect(result.current.confirmDialog).toBeNull();
     });
 
     it('handleCloseNewProject sets false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.handleCloseNewProject(); });
       expect(result.current.isNewProjectOpen).toBe(false);
     });
 
     it('retryApi is a function', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(typeof result.current.retryApi).toBe('function');
     });
 
     it('cancelRun is a function', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(typeof result.current.cancelRun).toBe('function');
     });
 
     it('resetApi is a function', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(typeof result.current.resetApi).toBe('function');
     });
   });
@@ -338,7 +343,7 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
   describe('abandoned run toast', () => {
     it('shows toast when abandonedRunId is set', () => {
       mockStore.abandonedRunId = 'run-123';
-      renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(mockToast).toHaveBeenCalledWith('toast.requestAbandoned', 'info');
     });
   });
@@ -346,7 +351,7 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
   describe('handleExecuteCommand', () => {
     it('calls executeCommand with command id', async () => {
       mockStore.currentSessionId = 'sess-1';
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       await act(async () => { await result.current.handleExecuteCommand('cmd-1'); });
       expect(commandCalledWith).toBe('cmd-1');
     });
@@ -354,7 +359,7 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
   describe('setConfirmDialog and handleCloseConfirm', () => {
     it('sets and clears confirmDialog', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       const dialog = { title: '确认删除', message: '确定要删除吗？', onConfirm: vi.fn() };
       act(() => { result.current.setConfirmDialog(dialog); });
       expect(result.current.confirmDialog).toEqual(dialog);

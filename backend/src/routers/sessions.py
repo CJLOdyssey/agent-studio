@@ -26,7 +26,7 @@ from repository import (
     update_message_versions,
     update_session_title,
 )
-from services.session_service import merge_edit_chains, with_requirement_message
+from services.session_service import with_requirement_message
 from services.text_utils import parse_json_list
 
 logger = get_logger(__name__)
@@ -124,7 +124,12 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                 "thinking_versions": parse_json_list(m.thinking_versions),
             })
 
-        merged = merge_edit_chains(runs, messages_by_run)
+        # 分支树模型：不折叠。每个 run 独立返回（parent_run_id 为树指针），
+        # 前端 buildPathTurns 按分支树挂载版本器（对齐 ragbase 语义）。
+        merged = [
+            (r, with_requirement_message(r, messages_by_run.get(r.id, [])))
+            for r in runs
+        ]
 
         return {
             "id": sess.id,

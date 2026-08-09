@@ -124,7 +124,7 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
     expect(disconnectRun).toHaveBeenCalledWith('old-run');
     const state = useChatStore.getState();
     expect(state.messages).toHaveLength(1);
-    expect(state.messages[0].id).toBe('u1');
+    expect(state.messages[0].id).toBe('run-run-1-requirement');
     expect(mockSubmitReq).toHaveBeenCalledWith(
       'original',
       'sess-1',
@@ -132,7 +132,8 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       'deepseek-chat',
       undefined,
       undefined,
-      undefined,
+      null,
+      true,
     );
   });
 
@@ -161,7 +162,8 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       'Qwen/Qwen3-8B',
       undefined,
       undefined,
-      undefined,
+      null,
+      true,
     );
   });
 
@@ -183,7 +185,8 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       'deepseek-chat',
       undefined,
       undefined,
-      'abc123',
+      null,
+      true,
     );
   });
 });
@@ -208,8 +211,9 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     expect(updatedUser.userVersions).toEqual(['old question', 'new question']);
     expect(updatedUser.currentUserVersion).toBe(1);
     // The old answer is NOT deleted — it stays as the merge target for the stream.
-    expect(s.messages.map((m) => m.id)).toEqual(['u1', 'a1']);
-    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, undefined);
+    // 用户消息 id 被改写为 run-{run_id}-requirement（编辑路由用，mock run_id='run-1'）。
+    expect(s.messages.map((m) => m.id)).toEqual(['run-run-1-requirement', 'a1']);
+    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true);
   });
 
   it('regenerates even when the edited user message has no following agent answer', async () => {
@@ -226,7 +230,7 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     expect(s.messages[0].content).toBe('edited solo');
     expect(s.messages[0].userVersions).toEqual(['solo', 'edited solo']);
     expect(s.messages[0].currentUserVersion).toBe(1);
-    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, undefined);
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true);
   });
 
   it('does nothing when content is unchanged', async () => {
@@ -268,14 +272,14 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
 
   it('parses parent_run_id from the synthetic user message id', async () => {
     useChatStore.setState({
-      messages: [makeMsg({ id: 'run-abc123-requirement', role: 'user', content: 'old' })],
+      messages: [makeMsg({ id: 'run-abc123-requirement', role: 'user', content: 'old', parentRunId: 'abc123' })],
       currentSessionId: 'sess-1',
     });
 
     const { editAndRegenerate } = await import('../chatActions');
     await editAndRegenerate('run-abc123-requirement', 'edited');
 
-    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123');
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123', true);
   });
 });
 

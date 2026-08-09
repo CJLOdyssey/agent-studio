@@ -127,6 +127,14 @@ function ThemedApp() {
               <AppInit />
               <Routes>
                 <Route
+                  path="/chat/:sessionId"
+                  element={
+                    <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                      <AgentStudioWorkstation />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
                   path="*"
                   element={
                     <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
@@ -135,8 +143,7 @@ function ThemedApp() {
                   }
                 />
               </Routes>
-            </AuthGate>
-          </ToastProvider>
+            </AuthGate>          </ToastProvider>
         </BrowserRouter>
       </AuthProvider>
     </ConfigProvider>

@@ -34,6 +34,7 @@ class RunRequest(BaseModel):
     agent_id: str | None = None
     team_id: str | None = None
     parent_run_id: str | None = None
+    is_edit: bool = False
 
 
 class RunResponse(BaseModel):
@@ -65,6 +66,7 @@ async def create_run(req: RunRequest, request: Request) -> Any:
             team_id=req.team_id,
             model=req.model,
             parent_run_id=req.parent_run_id,
+            is_edit=req.is_edit,
         )
         return RunResponse(**result)
     except ValueError as e:

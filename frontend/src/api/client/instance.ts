@@ -90,6 +90,13 @@ if (api.interceptors?.response) {
         return Promise.reject(normalizeError(error));
       }
 
+      // Refresh endpoint failures are terminal — never recurse into this
+      // interceptor or queue behind a refresh that is itself failing, or
+      // isRefreshing would stay true forever and stall every request.
+      if (retryConfig.url === '/auth/refresh') {
+        return Promise.reject(normalizeError(error));
+      }
+
       if (!refreshToken) {
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         return Promise.reject(normalizeError(error));

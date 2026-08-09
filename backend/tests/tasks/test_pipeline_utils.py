@@ -13,7 +13,7 @@ import pytest
 class TestLogMemoryDiff:
 
     @pytest.fixture(autouse=True)
-    def _reset_global_baseline(self):
+    def _reset_global_baseline(self, monkeypatch):
         """log_memory_diff caches a module-global _baseline_snapshot.
 
         Restore it after each test so the mock baseline never leaks into
@@ -22,6 +22,7 @@ class TestLogMemoryDiff:
         """
         import tasks.pipeline_utils as pu
 
+        monkeypatch.setenv("MEM_TRACE", "1")
         yield
         pu._baseline_snapshot = None
 

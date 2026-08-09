@@ -19,6 +19,7 @@ from graph.graph import SingleAgentGraph
 from repository import (
     get_agent_config,
     get_messages,
+    get_run_ancestors,
     get_session_memories,
     get_session_messages,
     list_attachments_by_run,
@@ -87,10 +88,9 @@ async def _run_agent_pipeline(
 ) -> dict[str, Any]:
     global _run_counter
     _run_counter += 1
-    if os.environ.get("MEM_TRACE", "").lower() in ("1", "true", "yes"):
-        if not tracemalloc.is_tracing():
-            tracemalloc.start(25)
-            logger.info("[MEM] tracemalloc started")
+    if os.environ.get("MEM_TRACE", "").lower() in ("1", "true", "yes") and not tracemalloc.is_tracing():
+        tracemalloc.start(25)
+        logger.info("[MEM] tracemalloc started")
     log_memory_diff()
     logger.info("=== ENTER _run_agent_pipeline run=#%s | run=%s agent=%s ===", _run_counter, run_id, agent_id)
     await update_run_status(run_id, "running")
@@ -118,7 +118,13 @@ async def _run_agent_pipeline(
     session_context = ""
     if session_id:
         try:
-            memories = await get_session_memories(session_id)
+            # 分支树：记忆按当前 run 的父链过滤（MemoryEntry.run_id），
+            # 并行分支/被重新生成分支的记忆不注入新分支上下文（编辑 ≠ 续写）。
+            chain_ids = {r.id for r in await get_run_ancestors(run_id)}
+            memories = [
+                m for m in await get_session_memories(session_id)
+                if m.run_id in chain_ids
+            ]
             if memories:
                 session_context = _build_session_context(memories)
             rag_ctx = await _get_rag_context(requirement, session_id)
@@ -128,17 +134,30 @@ async def _run_agent_pipeline(
             logger.warning("Failed to load RAG context for session %s", session_id)
 
     # ── Short-term memory: collect previous conversation messages ──
+    # 分支树对齐（ragbase）：只回溯当前 run 的 parent 链（编辑分叉/重新生成
+    # 兄弟分支不注入被重生成的 turn；普通续聊经前端 activeRunId 挂父链，
+    # 祖先链即完整历史）。不注入兄弟分支与选中节点之后的轮次。
     chat_history: list[BaseMessage] = []
     if session_id:
         try:
-            prev_msgs = await get_session_messages(session_id, exclude_run_id=run_id)
-            for m in prev_msgs:
-                if m.role == "user":
-                    chat_history.append(HumanMessage(content=m.content))
-                elif m.role == "agent":
-                    chat_history.append(AIMessage(content=m.content))
+            chain = await get_run_ancestors(run_id)
+            for cr in chain[:-1]:  # 不含自身（自身 requirement 由 graph.run 追加）
+                hist = await get_messages(cr.id)
+                req = (cr.requirement or "").strip()
+                # 去重：requirement 与 run 内首条 user 消息内容相同（常规轮次
+                # 两者就是同一问题），只注入一次，省 token 不改变注入内容。
+                first_user = next(
+                    (m.content for m in hist if m.role == "user"), None
+                )
+                if req and req != (first_user or "").strip():
+                    chat_history.append(HumanMessage(content=req))
+                for m in hist:
+                    if m.role == "user":
+                        chat_history.append(HumanMessage(content=m.content))
+                    elif m.role == "agent":
+                        chat_history.append(AIMessage(content=m.content))
         except Exception:
-            logger.warning("Failed to load chat history for session %s", session_id)
+            logger.warning("Failed to load chat history for run %s", run_id)
 
     checkpointer = await create_checkpointer_async()
     emitter = StreamEmitter(run_id)
@@ -206,6 +225,18 @@ async def _run_agent_pipeline(
         # Kill any OS child processes spawned by the timed-out task
         _kill_stuck_child_processes()
         return {"run_id": run_id, "status": "timeout"}
+    except asyncio.CancelledError:
+        # "停止生成"：task.cancel() 沿 await 链传播，上游 LLM 请求随之中断。
+        logger.warning("[TASKS] Agent pipeline cancelled (run=%s)", run_id)
+        # 半截内容也落库（只要有消息就入库）：取消时 emitter 中未 flush 的
+        # 流式正文/思考保存为 chat_message，刷新后仍可见。
+        with contextlib.suppress(Exception):
+            await emitter.persist_partial()
+        with contextlib.suppress(Exception):
+            await update_run_status(run_id, "cancelled")
+        with contextlib.suppress(Exception):
+            await publish_run_message(run_id, {"type": "cancelled", "run_id": run_id})
+        raise
 
     # ── Extract artifacts ──
     messages = result.get("messages", [])

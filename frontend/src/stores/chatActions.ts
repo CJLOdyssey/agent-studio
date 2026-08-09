@@ -36,10 +36,15 @@ export async function submitRequirement(
   agent_id?: string,
   skipAddUserMessage?: boolean,
   submissionConvId?: string | null,
-  parent_run_id?: string,
+  parent_run_id?: string | null,
+  is_edit?: boolean,
 ) {
   const s = useChatStore.getState();
   const effectiveSessionId = session_id || s.currentSessionId || undefined;
+  // 显式传 parent_run_id（编辑/重新生成分支，含 null=根）时按传入值；未传
+  // （正常续聊）才回退到 activeRunId（挂父链，上下文沿祖先链注入）。
+  const effectiveParentRunId =
+    parent_run_id === undefined ? s.activeRunId : parent_run_id;
   if (s.currentRunId) {
     disconnectRun(s.currentRunId);
   }
@@ -70,6 +75,9 @@ export async function submitRequirement(
     content: requirement,
     round_number: 0,
     created_at: new Date().toISOString(),
+    // 携带本 run 的 parent（流式生成时也记录，编辑/重新生成时用于产生兄弟分支；
+    // 若缺失会回退到 activeRunId，导致编辑根 turn 误成续写）
+    parentRunId: effectiveParentRunId,
   };
 
   useChatStore.setState({
@@ -84,10 +92,10 @@ export async function submitRequirement(
     const currentState = useChatStore.getState();
     const teamId = currentState.activeTeamId ?? undefined;
     Logger.info('[chat] submitRequirement — team_id=%s | agent_id=%s | session_id=%s', teamId, agent_id, effectiveSessionId);
-    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId, parent_run_id);
+    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId, effectiveParentRunId, is_edit);
     const run_id = resp.run_id;
     const returnedSessionId = resp.session_id || effectiveSessionId || null;
-    useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
+    useChatStore.setState({ currentRunId: run_id, activeRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
     // Bind the freshly-added user message to its run so edit-regenerate can
     // resolve the parent_run_id from "run-{run_id}-requirement" on a later edit.
     if (!skipAddUserMessage) {
@@ -97,6 +105,35 @@ export async function submitRequirement(
         if (last && last.role === 'user' && !last.id.startsWith('run-')) {
           msgs[msgs.length - 1] = { ...last, id: `run-${run_id}-requirement` };
         }
+        return { messages: msgs };
+      });
+    } else {
+      // Edit-regenerate / regenerate: rebind the target user message to the new
+      // run, or the next edit resolves parent_run_id to a stale run and the
+      // backend requirement_versions chain silently drops intermediate versions.
+      useChatStore.setState((prev) => {
+        const msgs = [...prev.messages];
+        // edit 场景：editTargetId 前一条用户消息；regenerate 场景：截断后最后一条。
+        const targetIdx = prev.editTargetId
+          ? msgs.findIndex((m) => m.id === prev.editTargetId) - 1
+          : msgs.length - 1;
+        const u =
+          targetIdx >= 0 && msgs[targetIdx]?.role === 'user'
+            ? msgs[targetIdx]
+            : null;
+        if (!u) return { messages: msgs };
+        // 版本链最后一跳 = 新 run。userVersions/currentUserVersion 不在此写：
+        // 用户消息版本器由加载时 attachBranchVersions 全量挂载（branchGroup），
+        // 流式路径只维护 run 映射（versionRunIds）。
+        const versionRunIds = u.versionRunIds
+          ? [...u.versionRunIds, run_id]
+          : [run_id];
+        msgs[targetIdx] = {
+          ...u,
+          id: `run-${run_id}-requirement`,
+          runId: run_id,
+          versionRunIds,
+        };
         return { messages: msgs };
       });
     }
@@ -125,17 +162,34 @@ export async function regenerateMessage(msgIndex: number) {
   if (!userMsg) return;
   if (s.currentRunId) disconnectRun(s.currentRunId);
 
-  // The synthetic user message id is "run-{run_id}-requirement" — parse the run
-  // this regeneration replaces so the backend links the edit chain
-  // (parent_run_id); merge_edit_chains then folds the old answer into versions
-  // instead of leaving an orphan run (stale reply + duplicated user message).
-  let parentRunId: string | undefined;
-  if (userMsg.id && userMsg.id.startsWith('run-') && userMsg.id.endsWith('-requirement')) {
-    parentRunId = userMsg.id.slice(4, -'-requirement'.length);
-  }
+  // 重新生成 = 重新回答该用户问题，产生兄弟分支：新 run 的 parent = 被重
+  // 生成 turn 的 parent（与编辑一致），而非 turn 自身。parentRunId 在加载
+  // （buildPathTurns）与流式提交（submitRequirement）时都注入，刷新后仍可靠；
+  // 不能用 synthetic id "run-{id}-requirement"（仅流式会话存在，刷新后消失）。
+  const parentRunId = userMsg.parentRunId ?? null;
+  // 被重新生成 turn 的旧 run：优先接续已有答案分页列表（多次重新生成累积），
+  // 否则用消息 runId（流式消息带 runId，加载消息经 buildPathTurns 注入）。
+  const modelMsg = s.messages[msgIndex];
+  const oldRunIds =
+    modelMsg?.answerRunIds && modelMsg.answerRunIds.length > 0
+      ? modelMsg.answerRunIds
+      : modelMsg?.runId
+        ? [modelMsg.runId]
+        : [];
 
-  useChatStore.setState({ status: 'loading', error: null, result: null, messages: s.messages.slice(0, msgIndex) });
-  await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true, null, parentRunId);
+  useChatStore.setState({
+    status: 'loading',
+    error: null,
+    result: null,
+    streamingId: null,
+    messages: s.messages.slice(0, msgIndex),
+    pendingRegenerate: {
+      userMsgId: userMsg.id,
+      oldRunIds,
+      requirement: userMsg.content,
+    },
+  });
+  await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true, null, parentRunId, true);
 }
 
 /**
@@ -156,24 +210,28 @@ export async function editAndRegenerate(userMsgId: string, newContent: string) {
   if (!trimmed || old.content === trimmed) return;
   if (s.currentRunId) disconnectRun(s.currentRunId);
 
-  // The synthetic user message id is "run-{run_id}-requirement" — parse the run
-  // this edit replaces so the backend can link the edit chain (parent_run_id).
-  let parentRunId: string | undefined;
-  if (old.id && old.id.startsWith('run-') && old.id.endsWith('-requirement')) {
-    parentRunId = old.id.slice(4, -'-requirement'.length);
-  }
+  // 编辑 = 兄弟分支：新 run 的 parent = 被编辑 turn 的 parent（加载时注入），
+  // 而非 turn 自身（不能解析 synthetic id "run-{id}-requirement"）。
+  const parentRunId = old.parentRunId ?? null;
+  // 被编辑 turn 的 run（切回定位用；优先 synthetic id，fallback runId）。
+  const editedRunId =
+    old.id && old.id.startsWith('run-') && old.id.endsWith('-requirement')
+      ? old.id.slice(4, -'-requirement'.length)
+      : (old.runId ?? null);
 
-  // Version list INCLUDES the current content so the switcher shows right after
-  // the first edit (length >= 2), mirroring the backend's persisted list.
-  // history already holds old.content after a prior edit, so only append trimmed
-  // in that case — otherwise seed with old.content first. currentUserVersion
-  // points at the newest version.
+  // 本地版本链（乐观）：与新 run 的 requirement_versions 对应，驱动分页切换。
   const history = old.userVersions ? [...old.userVersions] : [];
-  const userVersions = old.content === trimmed
-    ? history
-    : history.includes(old.content)
-      ? [...history, trimmed]
-      : [...history, old.content, trimmed];
+  const userVersions =
+    history.length === 0 || history[history.length - 1] !== old.content
+      ? [...history, old.content, trimmed]
+      : [...history, trimmed];
+  // 版本 → runId：旧版本继承已加载的版本链；缺失时兜底为被编辑 turn 自身，
+  // 使切回（←）能定位到被编辑 turn 所在分支，而非停在当前分支。
+  const baseRunIds = old.versionRunIds
+    ? [...old.versionRunIds]
+    : editedRunId
+      ? [editedRunId]
+      : [];
 
   // First non-user message after the edit is the merge target (agent roles are
   // 'pm'|'programmer'|'tester' in the store; displayMessages normalizes them to 'agent').
@@ -190,12 +248,24 @@ export async function editAndRegenerate(userMsgId: string, newContent: string) {
     pendingVersions: null,
     pendingThinkingVersions: null,
     skipThinking: false,
-    messages: s.messages.map((m, i) =>
-      i === idx ? { ...m, content: trimmed, userVersions, currentUserVersion: userVersions.length - 1 } : m,
-    ),
+    // 分支语义：编辑 = 切到新分支，分支点之后的轮次（后续 turn）从视图
+    // 截断隐藏（DB 留存），只保留本 turn 供流式替换。
+    messages: s.messages
+      .slice(0, nextAgentIdx >= 0 ? nextAgentIdx + 1 : s.messages.length)
+      .map((m, i) =>
+        i === idx
+          ? {
+              ...m,
+              content: trimmed,
+              userVersions,
+              versionRunIds: baseRunIds,
+              currentUserVersion: userVersions.length - 1,
+            }
+          : m,
+      ),
   });
 
-  await submitRequirement(trimmed, s.currentSessionId ?? undefined, undefined, true, null, parentRunId);
+  await submitRequirement(trimmed, s.currentSessionId ?? undefined, undefined, true, null, parentRunId, true);
 }
 
 export async function retry() {
@@ -278,7 +348,7 @@ export async function continueGeneration() {
     );
     const run_id = resp.run_id;
     const returnedSessionId = resp.session_id || s.currentSessionId || null;
-    useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
+    useChatStore.setState({ currentRunId: run_id, activeRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
     connectRun(run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
   } catch (err: unknown) {
     Logger.error('[chat] continueGeneration failed:', err);

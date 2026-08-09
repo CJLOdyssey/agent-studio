@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
 import { listSessions, deleteSession } from '../api/client/sessions';
+import { useAuth } from '../components/auth';
 import Logger from '../utils/logger';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
@@ -18,6 +19,7 @@ const ACTIVE_CONV_KEY = 'agentstudio-active-conv-id';
  * legacy mock system which is now only used when no API agents are configured.
  */
 export function useConversation() {
+  const { isAuthenticated } = useAuth();
   const [activeConvId, setActiveConvId] = useState<string | null>(() => {
     try {
       return localStorage.getItem(ACTIVE_CONV_KEY);
@@ -102,9 +104,11 @@ export function useConversation() {
     return () => window.removeEventListener('agentstudio-conversations-updated', handler);
   }, []);
 
+  // Sessions are user-owned: only fetch once authentication is established,
+  // and re-fetch when it flips (login/refresh completes after initial mount).
+  // Matches ragbase's useQuery(enabled: isAuthenticated) semantics.
   useEffect(() => {
-    const rt = localStorage.getItem('agentstudio_refresh_token');
-    if (!rt) return;
+    if (!isAuthenticated) return;
 
     let cancelled = false;
     listSessions(100).then((sessions) => {
@@ -134,7 +138,7 @@ export function useConversation() {
       });
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [isAuthenticated]);
 
   /** Persist conversations to localStorage immediately (not just via the debounced effect). */
   const persistConversations = useCallback((convs: Conversation[]) => {

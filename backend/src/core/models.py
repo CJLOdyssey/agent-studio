@@ -172,6 +172,7 @@ class RunSummary(BaseModel):
 
     id: str
     session_id: str | None = None
+    parent_run_id: str | None = None
     requirement: str
     pm_document: str = ""
     code: str = ""

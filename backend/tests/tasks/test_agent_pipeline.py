@@ -19,6 +19,7 @@ def mock_agent_deps():
         patch("tasks.agent_pipeline.load_config"),
         patch("tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.get_run_ancestors", new_callable=AsyncMock, return_value=set()),
         patch("tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
         patch("tasks.tool_bindings.get_tools", new_callable=AsyncMock),
         patch("tasks.tool_bindings.get_skills", new_callable=AsyncMock),
@@ -182,6 +183,7 @@ class TestRunAgentPipeline:
             agent_id="agent-1",
         )
 
+        mock_agent_deps["get_run_ancestors"].assert_awaited_with("run-4")
         mock_agent_deps["get_session_memories"].assert_awaited_with("sess-1")
         mock_agent_deps["get_session_messages"].assert_awaited_with("sess-1", exclude_run_id="run-4")
         mock_agent_deps["_save_output_memories"].assert_awaited()

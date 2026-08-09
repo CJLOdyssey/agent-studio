@@ -51,6 +51,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const [models, setModels] = useState<string[]>(provider.models);
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     listProviders()
@@ -98,18 +99,26 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const handleFetchModels = async () => {
     if (!apiKey.trim()) return;
     setFetchingModels(true);
+    setFetchError(null);
     try {
       const result = await fetchModelsFromProvider({
         api_key: apiKey, base_url: baseUrl || undefined, provider: providerType,
       });
-      if (result.success && result.models.length > 0) {
-        setModels((prev) => {
-          const merged = new Set([...prev, ...result.models]);
-          return Array.from(merged);
-        });
+      if (result.success) {
+        if (result.models.length > 0) {
+          setModels((prev) => {
+            const merged = new Set([...prev, ...result.models]);
+            return Array.from(merged);
+          });
+        }
+      } else {
+        setFetchError(result.message ?? 'Fetch failed');
       }
-    } catch { /* ignore */ }
-    finally { setFetchingModels(false); }
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Fetch failed');
+    } finally {
+      setFetchingModels(false);
+    }
   };
 
   return (
@@ -137,6 +146,16 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
         </>
       }
     >
+      {fetchError && (
+            <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
+              <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+              <span className="text-[var(--color-danger)] text-sm flex-1">{fetchError}</span>
+              <button type="button" onClick={() => setFetchError(null)}
+                className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-0.5 rounded hover:bg-[var(--color-surface-hover)] transition-colors shrink-0">
+                <X size={14} />
+              </button>
+            </div>
+          )}
       {error && (
             <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
               <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />

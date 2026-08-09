@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import {
   getAuthConfig,
   getMe,
@@ -21,6 +21,9 @@ function clearLocalConversations() {
     window.dispatchEvent(new Event('agentstudio-conversations-updated'));
   } catch {}
 }
+
+/** Access token TTL is 15 min — refresh every 10 min so it never expires while the tab is open. */
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 async function mergeGuest() {
   try {
@@ -69,80 +72,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginModalView, setLoginModalView] = useState<AuthModalView>('login');
   const [loginModalEmail, setLoginModalEmail] = useState('');
+  const refreshTimerRef = useRef<number | null>(null);
+  const lastRefreshRef = useRef(0);
+
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    const rt = localStorage.getItem('agentstudio_refresh_token');
+    if (!rt) return false;
+    try {
+      const res = await refreshTokens(rt);
+      setTokens(res.access_token, res.refresh_token);
+      lastRefreshRef.current = Date.now();
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     let authenticated = false;
 
+    async function applyMe(me: { id: string; email: string; username: string | null; roles: string[] }) {
+      if (cancelled) return;
+      authenticated = true;
+      setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
+      localStorage.setItem('agentstudio_user_id', me.id);
+      window.dispatchEvent(new CustomEvent('auth:login'));
+      await mergeGuest();
+    }
+
+    async function tryRestore(): Promise<boolean> {
+      try {
+        const me = await getMe();
+        if (!me) return false;
+        await applyMe(me);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
     async function init() {
       try {
         const config = await getAuthConfig();
         if (cancelled) return;
-        const isLegacy = !config.enabled || config.mode === 'legacy';
-        setLegacyMode(isLegacy);
+        setLegacyMode(!config.enabled || config.mode === 'legacy');
 
-        // Skip /me call if no refresh token exists — avoids 401 console noise for guests
-        const rt = localStorage.getItem('agentstudio_refresh_token');
-        if (!rt) {
+        if (await tryRestore()) {
           setLoading(false);
           return;
         }
-
-        // Legacy mode: still try to restore session from stored token
-        if (isLegacy) {
-          try {
-            const me = await getMe();
-            if (!cancelled && me) {
-              authenticated = true;
-              setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
-              localStorage.setItem('agentstudio_user_id', me.id);
-              window.dispatchEvent(new CustomEvent('auth:login'));
-              await mergeGuest();
-            }
-          } catch {
-            clearTokens();
-          }
-          setLoading(false);
-          return;
+        // Access token may be expired — refresh before giving up. Only clear the
+        // stored refresh_token if refresh itself fails (matches ragbase behaviour).
+        if (await refreshSession()) {
+          await tryRestore();
+        } else {
+          clearTokens();
         }
-
-        try {
-          const me = await getMe();
-          if (!cancelled && me) {
-            authenticated = true;
-            setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
-            localStorage.setItem('agentstudio_user_id', me.id);
-            window.dispatchEvent(new CustomEvent('auth:login'));
-            await mergeGuest();
-          }
-        } catch {
-          // Token may be expired — try refreshing before giving up
-          const rt = localStorage.getItem('agentstudio_refresh_token');
-          let refreshed = false;
-          if (rt) {
-            try {
-              const res = await refreshTokens(rt);
-              setTokens(res.access_token, res.refresh_token);
-              refreshed = true;
-            } catch {
-              clearTokens();
-            }
-          }
-          if (!cancelled && refreshed) {
-            try {
-              const me = await getMe();
-              if (me) {
-                authenticated = true;
-                setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
-                localStorage.setItem('agentstudio_user_id', me.id);
-                window.dispatchEvent(new CustomEvent('auth:login'));
-                await mergeGuest();
-              }
-            } catch {
-              // Refresh succeeded but /me still failed — token invalid
-            }
-          }
-        }
+        setLoading(false);
       } catch {
         // Auth config unavailable
       } finally {
@@ -164,13 +151,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoginModalOpen(true);
       }
     };
+    const handleUnauthorized = () => {
+      setUser(null);
+      clearLocalConversations();
+      setLoginModalOpen(true);
+    };
     window.addEventListener('storage', handleStorage);
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
 
     return () => {
       cancelled = true;
       window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
-  }, []);
+  }, [refreshSession]);
+
+  // Keep the short-lived access_token (15 min TTL) fresh while the page stays open:
+  // backend business endpoints silently fall back to guest when the cookie expires,
+  // so without this the UI would look logged-in while every request fails.
+  useEffect(() => {
+    const start = () => {
+      lastRefreshRef.current = Date.now();
+      if (refreshTimerRef.current !== null) return;
+      // 每 10 分钟续期一次；失败（后端重启/瞬时故障）时 60 秒快速重试，
+      // 避免 access_token 在 15 分钟 TTL 内过期且无人续期。
+      let failureBackoff = false;
+      refreshTimerRef.current = window.setInterval(async () => {
+        const ok = await refreshSession();
+        if (!ok && !failureBackoff) {
+          failureBackoff = true;
+          window.setTimeout(() => {
+            failureBackoff = false;
+            void refreshSession();
+          }, 60_000);
+        }
+      }, REFRESH_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (refreshTimerRef.current !== null) {
+        window.clearInterval(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+    const handleVisibility = () => {
+      // Browser throttles timers in background tabs — refresh immediately on return
+      if (
+        document.visibilityState === 'visible' &&
+        Date.now() - lastRefreshRef.current >= REFRESH_INTERVAL_MS
+      ) {
+        void refreshSession();
+      }
+    };
+    window.addEventListener('auth:login', start);
+    window.addEventListener('auth:logout', stop);
+    window.addEventListener('auth:unauthorized', stop);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('auth:login', start);
+      window.removeEventListener('auth:logout', stop);
+      window.removeEventListener('auth:unauthorized', stop);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      stop();
+    };
+  }, [refreshSession]);
 
   const isAuthenticated = user !== null;
 

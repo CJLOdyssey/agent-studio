@@ -2,8 +2,19 @@ import type { AppStatus, ChatMessage, RunResult } from '../types';
 
 export type WsConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
+/** 重新生成（regenerate）流式上下文：完成后给新模型消息挂答案分页 */
+export interface RegeneratePending {
+  userMsgId: string;
+  oldRunIds: string[];
+  requirement: string;
+}
+
 export interface ChatState {
   currentRunId: string | null;
+  /** 最近一次发送的 run（普通续聊挂父链用）；编辑/重生成显式传 parent 时覆盖 */
+  activeRunId: string | null;
+  /** 重新生成进行中（流式完成后给模型消息挂答案分页） */
+  pendingRegenerate: RegeneratePending | null;
   currentSessionId: string | null;
   currentConvId: string | null;
   messages: ChatMessage[];
@@ -35,6 +46,7 @@ export interface ChatState {
   selectedAgentId: string | null;
 
   setActiveTeam: (teamId: string | null) => void;
+  setActiveRunId: (runId: string | null) => void;
   restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
   loadConversation: (messages: ChatMessage[], convId?: string | null, sessionId?: string | null) => void;
   cancelRun: () => void;

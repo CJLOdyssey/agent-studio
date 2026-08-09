@@ -18,6 +18,10 @@ vi.mock('axios', () => ({
   default: { create: vi.fn(() => mockAxiosInstance) },
 }));
 
+vi.mock('../../components/auth', () => ({
+  useAuth: () => ({ isAuthenticated: true }),
+}));
+
 function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },

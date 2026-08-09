@@ -100,6 +100,7 @@ from repository.prompts import (
 from repository.run_repo import (
     create_run,
     get_run,
+    get_run_ancestors,
     get_runs,
     get_runs_by_session_ids,
     get_session_runs,
@@ -208,6 +209,7 @@ __all__ = [
     "get_prompts",
     "get_prompts_as_dicts",
     "get_run",
+    "get_run_ancestors",
     "get_run_messages",
     "get_runs",
     "get_runs_by_session_ids",
