@@ -30,6 +30,7 @@ const FALLBACK_PROVIDERS: ProvidersMap = {
   anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['chat'],            docs_url: null },
   dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['chat', 'vector'], docs_url: null },
   custom:    { name: '自定义',       base_url: '',                                                    capabilities: ['chat', 'vector'], docs_url: null },
+  custom_tool: { name: '自定义工具', base_url: '',                                                    capabilities: ['tool'],            docs_url: null },
 };
 
 interface Props {
