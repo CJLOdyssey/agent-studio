@@ -307,6 +307,43 @@ async def test_get_embedding_api_key_beyond_row_window(db_engine):
 
 
 @pytest.mark.asyncio
+async def test_get_embedding_config_fallback_keeps_base_url(db_engine):
+    """Fallback config must keep the key's own endpoint, not force DashScope."""
+    from repository.keys_crud import create_api_key, get_embedding_config
+
+    await create_api_key(
+        "user1", "openai", capabilities=["embedding"],
+        plaintext_key="sk-sf", base_url="https://api.siliconflow.cn/v1",
+    )
+    cfg = await get_embedding_config()
+    assert cfg is not None
+    assert cfg["api_key"] == "sk-sf"
+    assert cfg["base_url"] == "https://api.siliconflow.cn/v1"
+    assert cfg["model"] == "text-embedding-v3"
+
+
+@pytest.mark.asyncio
+async def test_get_embedding_config_prefers_declared_model(db_engine):
+    """A key declaring an embedding model wins with its own endpoint and model."""
+    from repository.keys_crud import create_api_key, get_embedding_config
+
+    await create_api_key(
+        "user1", "openai", capabilities=["embedding"],
+        plaintext_key="sk-old", base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    )
+    await create_api_key(
+        "user2", "siliconflow", capabilities=["embedding"],
+        plaintext_key="sk-bge", models=["BAAI/bge-m3"],
+        base_url="https://api.siliconflow.cn/v1",
+    )
+    cfg = await get_embedding_config()
+    assert cfg is not None
+    assert cfg["api_key"] == "sk-bge"
+    assert cfg["base_url"] == "https://api.siliconflow.cn/v1"
+    assert cfg["model"] == "BAAI/bge-m3"
+
+
+@pytest.mark.asyncio
 async def test_get_tool_api_key_matches_capabilities(db_engine):
     """A key carrying the tool capability is served for its provider."""
     from repository.keys_crud import create_api_key, get_tool_api_key
