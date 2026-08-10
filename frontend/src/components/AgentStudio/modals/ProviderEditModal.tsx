@@ -29,8 +29,14 @@ const FALLBACK_PROVIDERS: ProvidersMap = {
   deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['chat'],            docs_url: null },
   anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['chat'],            docs_url: null },
   dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['chat', 'vector'], docs_url: null },
-  custom:    { name: '自定义',       base_url: '',                                                    capabilities: ['chat', 'vector'], docs_url: null },
-  custom_tool: { name: '自定义工具', base_url: '',                                                    capabilities: ['tool'],            docs_url: null },
+  custom_llm: { name: '自定义大模型', base_url: '', capabilities: ['chat'],            docs_url: null },
+  custom_embedding: { name: '自定义嵌入', base_url: '', capabilities: ['vector'],         docs_url: null },
+  custom_rerank: { name: '自定义重排序', base_url: '', capabilities: ['rerank'],          docs_url: null },
+  custom_speech2text: { name: '自定义语音转文字', base_url: '', capabilities: ['speech2text'], docs_url: null },
+  custom_tts: { name: '自定义文字转语音', base_url: '', capabilities: ['tts'],            docs_url: null },
+  custom_moderation: { name: '自定义内容审核', base_url: '', capabilities: ['moderation'], docs_url: null },
+  custom_image: { name: '自定义图像', base_url: '', capabilities: ['image'],             docs_url: null },
+  custom_tool: { name: '自定义工具', base_url: '', capabilities: ['tool'],               docs_url: null },
 };
 
 interface Props {
@@ -49,7 +55,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
-  const [providerType, setProviderType] = useState(provider.provider || 'custom');
+  const [providerType, setProviderType] = useState(provider.provider || 'openai');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
