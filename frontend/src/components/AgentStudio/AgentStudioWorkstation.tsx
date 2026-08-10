@@ -38,6 +38,8 @@ export default function AgentStudioWorkstation() {
             if (convId === s.activeConvId) s.navigateToConversation(null);
             s.conv.deleteConversation(convId);
           }}
+          onRenameConversation={s.conv.renameConversation}
+          onPinConversation={s.conv.pinConversation}
           onNewChat={s.handleNewChat}
           toggleTeam={s.teamMgmt.toggleTeam}
           handleAddTeam={s.teamMgmt.handleAddTeam}

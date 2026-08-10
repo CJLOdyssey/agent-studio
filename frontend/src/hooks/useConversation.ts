@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
-import { listSessions, deleteSession } from '../api/client/sessions';
+import { listSessions, deleteSession, renameSession, pinSession } from '../api/client/sessions';
 import { useAuth } from '../components/auth';
 import Logger from '../utils/logger';
 
@@ -126,6 +126,7 @@ export function useConversation() {
             messages: [],
             kind: s.kind as 'normal' | 'agent' | 'team' || 'normal',
             agentId: s.agent_id || undefined,
+            isPinned: s.is_pinned,
             createdAt: s.created_at || new Date().toISOString(),
             updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
             sessionId: s.id,
@@ -219,6 +220,43 @@ export function useConversation() {
     }
   }, [conversations, persistConversations]);
 
+  /** Rename a conversation — optimistic localStorage update + server sync. */
+  const renameConversation = useCallback((convId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    const conv = conversations.find((c) => c.id === convId);
+    setConversations((prev) => {
+      const next = prev.map((c) =>
+        c.id === convId ? { ...c, title: trimmed } : c,
+      );
+      persistConversations(next);
+      return next;
+    });
+    if (conv?.sessionId) {
+      renameSession(conv.sessionId, trimmed).catch((err) => {
+        Logger.warn('[conversation] failed to rename session %s: %s', conv.sessionId, String(err));
+      });
+    }
+  }, [conversations, persistConversations]);
+
+  /** Pin/unpin a conversation — optimistic localStorage update + server sync. */
+  const pinConversation = useCallback((convId: string) => {
+    const conv = conversations.find((c) => c.id === convId);
+    const next = !conv?.isPinned;
+    setConversations((prev) => {
+      const updated = prev.map((c) =>
+        c.id === convId ? { ...c, isPinned: next } : c,
+      );
+      persistConversations(updated);
+      return updated;
+    });
+    if (conv?.sessionId) {
+      pinSession(conv.sessionId, next).catch((err) => {
+        Logger.warn('[conversation] failed to pin session %s: %s', conv.sessionId, String(err));
+      });
+    }
+  }, [conversations, persistConversations]);
+
   return {
     activeConvId,
     setActiveConvId,
@@ -228,5 +266,7 @@ export function useConversation() {
     updateConversationMessages,
     updateConversationSessionId,
     deleteConversation,
+    renameConversation,
+    pinConversation,
   };
 }

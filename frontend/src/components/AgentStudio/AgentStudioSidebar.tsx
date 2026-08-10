@@ -21,6 +21,8 @@ interface AgentStudioSidebarProps {
   setActiveConvId: (id: string | null) => void;
   setInputValue: (value: string) => void;
   onDeleteConversation: (convId: string) => void;
+  onRenameConversation: (convId: string, title: string) => void;
+  onPinConversation: (convId: string) => void;
   onNewChat: () => void;
   toggleTeam: (teamId: string) => void;
   handleAddTeam: () => void;
@@ -51,6 +53,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   setActiveConvId,
   setInputValue,
   onDeleteConversation,
+  onRenameConversation,
+  onPinConversation,
   onNewChat,
   toggleTeam,
   handleAddTeam,
@@ -147,8 +151,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
             agents={teams.flatMap((t) => t.agents)}
             onSelect={handleConvSelect}
             onDelete={handleConvDelete}
-            onRename={(_id) => {/* TODO */}}
-            onPin={(_id) => {/* TODO */}}
+            onRename={onRenameConversation}
+            onPin={onPinConversation}
           />
         </div>
       </div>

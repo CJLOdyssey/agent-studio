@@ -38,7 +38,8 @@ import type { Team, Agent, Conversation } from '../../../types/AgentStudio';
 const baseProps = {
   teams: [], selectedAgentId: null, conversations: [], activeConvId: null,
   onSelectAgent: vi.fn(), onSelectConversation: vi.fn(), onNewChat: vi.fn(),
-  onDeleteConversation: vi.fn(), onAddTeam: vi.fn(), onAddAgent: vi.fn(),
+  onDeleteConversation: vi.fn(), onRenameConversation: vi.fn(),
+  onPinConversation: vi.fn(), onAddTeam: vi.fn(), onAddAgent: vi.fn(),
   onDeleteTeam: vi.fn(), onDeleteAgent: vi.fn(), onRenameTeam: vi.fn(),
   onRenameAgent: vi.fn(), onTogglePinTeam: vi.fn(), onAgentClick: vi.fn(),
 };
@@ -83,7 +84,6 @@ interface SidebarTestProps {
   setActiveConvId: (id: string | null) => void;
   setInputValue: (value: string) => void;
   setConversations: (convs: Conversation[]) => void;
-  onDeleteConversation: (convId: string) => void;
   onNewChat: () => void;
   toggleTeam: (teamId: string) => void;
   handleAddTeam: () => void;
@@ -96,6 +96,9 @@ interface SidebarTestProps {
   handleAgentClick: (agent: Agent) => void;
   isSidebarOpen: boolean;
   onOpenWorkstation: () => void;
+  onDeleteConversation: (convId: string) => void;
+  onRenameConversation: (convId: string, title: string) => void;
+  onPinConversation: (convId: string) => void;
 }
 
 function properBaseProps(): SidebarTestProps {
@@ -125,6 +128,8 @@ function properBaseProps(): SidebarTestProps {
     isSidebarOpen: true,
     onOpenWorkstation: vi.fn(),
     onDeleteConversation: vi.fn(),
+    onRenameConversation: vi.fn(),
+    onPinConversation: vi.fn(),
   };
 
   props.onDeleteConversation = vi.fn((convId: string) => {

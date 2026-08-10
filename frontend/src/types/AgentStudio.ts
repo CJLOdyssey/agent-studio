@@ -109,6 +109,8 @@ export interface Conversation {
   sessionId?: string;
   teamId?: string;
   teamName?: string;
+  /** 侧边栏置顶（对齐 ragbase is_pinned 语义） */
+  isPinned?: boolean;
 }
 
 // 消息类型

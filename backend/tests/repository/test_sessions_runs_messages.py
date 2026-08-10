@@ -28,6 +28,7 @@ from repository.session_repo import (
     delete_session,
     get_session,
     get_sessions,
+    update_session_pin,
     update_session_title,
 )
 
@@ -92,6 +93,34 @@ class TestSessionRepo:
     async def test_update_session_title_not_found(self, db_engine):
         result = await update_session_title("nonexistent", "Nope")
         assert result is None
+
+    async def test_update_session_pin(self, db_engine):
+        sess = await create_session(title="Pin Me")
+        updated = await update_session_pin(sess.id, True)
+        assert updated is not None
+        assert updated.is_pinned is True
+        fetched = await get_session(sess.id)
+        assert fetched is not None
+        assert fetched.is_pinned is True
+
+    async def test_update_session_pin_unpin(self, db_engine):
+        sess = await create_session(title="Unpin Me")
+        await update_session_pin(sess.id, True)
+        updated = await update_session_pin(sess.id, False)
+        assert updated is not None
+        assert updated.is_pinned is False
+
+    async def test_update_session_pin_not_found(self, db_engine):
+        result = await update_session_pin("nonexistent", True)
+        assert result is None
+
+    async def test_get_sessions_orders_pinned_first(self, db_engine):
+        new_sess = await create_session(title="Fresh")
+        old_sess = await create_session(title="Pinned Old")
+        await update_session_pin(old_sess.id, True)
+        sessions = await get_sessions(limit=10, user_id=new_sess.user_id)
+        ids = [s.id for s in sessions]
+        assert ids.index(old_sess.id) < ids.index(new_sess.id)
 
     @pytest.mark.requirement("REQ-SES-004")
     async def test_delete_session(self, db_engine):

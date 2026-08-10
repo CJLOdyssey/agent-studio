@@ -10,6 +10,7 @@ export {
   getSessionDetail,
   createSession,
   renameSession,
+  pinSession,
   deleteSession,
   deleteMemory,
   exportSessionMemories,

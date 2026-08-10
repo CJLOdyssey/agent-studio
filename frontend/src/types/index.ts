@@ -95,6 +95,7 @@ export interface SessionItem {
   title: string;
   kind: string;
   agent_id: string | null;
+  is_pinned: boolean;
   run_count: number;
   created_at: string | null;
   updated_at: string | null;

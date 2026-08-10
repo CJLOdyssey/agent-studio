@@ -113,6 +113,7 @@ from repository.session_repo import (
     delete_session,
     get_session,
     get_sessions,
+    update_session_pin,
     update_session_title,
 )
 
@@ -257,6 +258,7 @@ __all__ = [
     "update_prompt",
     "update_run_result",
     "update_run_status",
+    "update_session_pin",
     "update_session_title",
     "update_skill",
     "update_team",
