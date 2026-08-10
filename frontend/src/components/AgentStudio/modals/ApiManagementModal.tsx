@@ -44,7 +44,7 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteIds, setConfirmDeleteIds] = useState<string[] | null>(null);
   const [modelTypeMap, setModelTypeMap] = useState<Map<string, string>>(new Map());
 
   const loadKeys = async () => {
@@ -182,14 +182,18 @@ export default function ApiManagementModal({ onClose }: Props) {
   };
 
   const handleDeleteKey = (id: string) => {
-    setConfirmDeleteId(id);
+    setConfirmDeleteIds([id]);
+  };
+
+  const handleBatchDelete = (ids: string[]) => {
+    setConfirmDeleteIds(ids);
   };
 
   const confirmDeleteAction = async () => {
-    if (!confirmDeleteId) return;
+    if (!confirmDeleteIds || confirmDeleteIds.length === 0) return;
     setError(null);
     try {
-      await api.deleteKey(confirmDeleteId);
+      await Promise.all(confirmDeleteIds.map((id) => api.deleteKey(id)));
       await loadKeys();
       void queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
@@ -197,7 +201,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       setError(msg);
       Logger.error('Failed to delete API key', err);
     }
-    setConfirmDeleteId(null);
+    setConfirmDeleteIds(null);
   };
 
   const handleTestConnection = async (key: KeyItem) => {
@@ -273,6 +277,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
               onToggleActive={(id, active) => handleUpdateKey(id, { isActive: active })}
               onTest={handleTestConnection}
               onDelete={handleDeleteKey}
+              onBatchDelete={handleBatchDelete}
               onDismissError={() => setError(null)}
             />
           )}
@@ -338,12 +343,16 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
           }}
         />
       )}
-      {confirmDeleteId && (
+      {confirmDeleteIds && (
         <ConfirmModal
           title={t('confirm.title', '确认删除')}
-          message={t('api.deleteKeyConfirm', '确定要删除此 API Key 吗？此操作不可撤销。')}
+          message={
+            confirmDeleteIds.length > 1
+              ? t('api.deleteKeysConfirm', '确定要删除选中的 {{count}} 个 API Key 吗？此操作不可撤销。', { count: confirmDeleteIds.length })
+              : t('api.deleteKeyConfirm', '确定要删除此 API Key 吗？此操作不可撤销。')
+          }
           onConfirm={confirmDeleteAction}
-          onCancel={() => setConfirmDeleteId(null)}
+          onCancel={() => setConfirmDeleteIds(null)}
           danger
         />
       )}
