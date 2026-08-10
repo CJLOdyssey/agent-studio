@@ -45,6 +45,7 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [modelTypeMap, setModelTypeMap] = useState<Map<string, string>>(new Map());
 
   const loadKeys = async () => {
     try {
@@ -86,6 +87,23 @@ export default function ApiManagementModal({ onClose }: Props) {
       cancelled = true;
     };
   }, [keys]);
+
+  // Model type map from /api/models — feeds the model tab grouping. Failure
+  // falls back to the ModelSelector's own 'llm' default; never crashes the modal.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listModels()
+      .then((infos) => {
+        if (!cancelled) {
+          setModelTypeMap(new Map(infos.map((i) => [i.id, i.type])));
+        }
+      })
+      .catch((err) => Logger.warn('Failed to load model types from server', err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSaveKey = async (keyData: {
     provider: string;
@@ -190,7 +208,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     setTestingId(null);
   };
 
-  const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id })));
+  const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id, type: modelTypeMap.get(m) ?? 'llm' })));
 
   const showAddForm = () => {
     setEditingKey({
