@@ -4,6 +4,7 @@ import { X, Tag, Loader2, Save, AlertCircle } from 'lucide-react';
 import { fetchModelsFromProvider } from '../../../api/client/keys';
 import { listProviders } from '../../../api/client/providers';
 import type { ProvidersMap } from '../../../api/client/providers';
+import { categoriesOf } from '../../../utils/providerCategories';
 import ProviderSelector from './ProviderSelector';
 import CredentialsSection from './CredentialsSection';
 import ModelSection from './ModelSection';
@@ -12,7 +13,7 @@ import Modal from '@/components/shared/Modal';
 export interface ApiProviderForm {
   id: string;
   provider: string;
-  usage_type: string;
+  capabilities: string[];
   name: string;
   baseUrl: string;
   apiKey: string;
@@ -44,7 +45,6 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
   const [providerType, setProviderType] = useState(provider.provider || 'custom');
-  const [usageType, setUsageType] = useState<string>(provider.usage_type || 'chat');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
@@ -60,38 +60,14 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       .finally(() => setLoadingProviders(false));
   }, []);
 
-  const [prevProviderType, setPrevProviderType] = useState<string | null>(null);
-  // Sync usageType/baseUrl to the selected provider's defaults when provider changes.
-  // Render-phase state adjustment (React-sanctioned) instead of setState-in-effect.
-  if (prevProviderType !== providerType) {
-    setPrevProviderType(providerType);
-    const info = providers[providerType];
-    if (info) {
-      const caps = info.capabilities ?? ['chat'];
-      const isTool = caps.includes('tool');
-      if (isTool) {
-        setUsageType('tool');
-      } else {
-        const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
-        if (derived !== usageType) setUsageType(derived);
-      }
-      if (info.base_url && !isTool) {
-        const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
-        if (!baseUrl || knownDefaults.includes(baseUrl)) {
-          setBaseUrl(info.base_url);
-        }
-      }
-    }
-  }
-
   const info = providers[providerType];
   const caps = info?.capabilities ?? [];
   const isToolProvider = caps.includes('tool');
-  const showModels = !isToolProvider && (usageType === 'chat' || usageType === 'general' || usageType === 'image' || usageType === 'audio');
+  const showModels = !isToolProvider && (caps.includes('chat') || caps.includes('image'));
 
   const handleSave = () => {
     onSave({
-      ...provider, provider: providerType, usage_type: usageType,
+      ...provider, provider: providerType, capabilities: categoriesOf(info ?? {}),
       name, baseUrl, apiKey, models,
     });
   };

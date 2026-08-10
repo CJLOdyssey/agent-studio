@@ -54,7 +54,7 @@ vi.mock('../ProviderEditModal', () => ({
 
 vi.mock('../../../../api/client', () => ({
   listKeys: vi.fn(() => Promise.resolve([
-    { id: 'k1', provider: 'openai', usage_type: 'llm', label: 'My Key', key_masked: 'sk-...', base_url: '', models: ['gpt-4'], is_active: true, is_default: true, last_used_at: null, created_at: null },
+    { id: 'k1', provider: 'openai', capabilities: ['llm'], label: 'My Key', key_masked: 'sk-...', base_url: '', models: ['gpt-4'], is_active: true, is_default: true, last_used_at: null, created_at: null },
   ])),
   getKeyUsage: vi.fn(() => Promise.resolve({ today_requests: 10, today_tokens: 500, month_requests: 100, month_tokens: 5000 })),
   listModels: vi.fn(() => Promise.resolve([
@@ -177,8 +177,8 @@ describe('ApiManagementModal', { tags: ['integration'] }, () => {
   it('should load model types on mount and enrich model tab entries', async () => {
     const { listKeys, listModels } = await vi.importMock<typeof import('../../../../api/client')>('../../../../api/client');
     listKeys.mockResolvedValue([
-      { id: 'k1', provider: 'openai', usage_type: 'llm', label: 'My Key', key_masked: 'sk-...', base_url: '', models: ['gpt-4', 'text-embedding-3-small'], is_active: true, is_default: true, last_used_at: null, created_at: null },
-      { id: 'k2', provider: 'custom', usage_type: 'llm', label: 'Custom Key', key_masked: 'ck-...', base_url: '', models: ['my-model'], is_active: true, is_default: false, last_used_at: null, created_at: null },
+      { id: 'k1', provider: 'openai', capabilities: ['llm'], label: 'My Key', key_masked: 'sk-...', base_url: '', models: ['gpt-4', 'text-embedding-3-small'], is_active: true, is_default: true, last_used_at: null, created_at: null },
+      { id: 'k2', provider: 'custom', capabilities: ['llm'], label: 'Custom Key', key_masked: 'ck-...', base_url: '', models: ['my-model'], is_active: true, is_default: false, last_used_at: null, created_at: null },
     ]);
 
     render(

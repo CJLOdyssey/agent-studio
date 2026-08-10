@@ -48,7 +48,7 @@ vi.mock('../../../../api/client/providers', () => ({
 import ProviderEditModal, { type ApiProviderForm } from '../ProviderEditModal';
 
 const baseProvider: ApiProviderForm = {
-  id: '', provider: 'openai', usage_type: 'llm',
+  id: '', provider: 'openai', capabilities: ['llm'],
   name: '', baseUrl: 'https://api.openai.com/v1',
   apiKey: '', models: [], isActive: true, isDefault: false,
 };

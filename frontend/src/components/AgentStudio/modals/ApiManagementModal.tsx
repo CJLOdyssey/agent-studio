@@ -107,7 +107,7 @@ export default function ApiManagementModal({ onClose }: Props) {
 
   const handleSaveKey = async (keyData: {
     provider: string;
-    usage_type?: string;
+    capabilities?: string[];
     label: string;
     apiKey: string;
     baseUrl: string;
@@ -124,7 +124,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     try {
       await api.createKey({
         provider: keyData.provider,
-        usage_type: keyData.usage_type,
+        capabilities: keyData.capabilities,
         label: keyData.label,
         api_key: keyData.apiKey,
         base_url: keyData.baseUrl || undefined,
@@ -146,7 +146,7 @@ export default function ApiManagementModal({ onClose }: Props) {
   const handleUpdateKey = async (
     id: string,
     updates: {
-      usage_type?: string;
+      capabilities?: string[];
       label?: string;
       apiKey?: string;
       baseUrl?: string;
@@ -158,6 +158,7 @@ export default function ApiManagementModal({ onClose }: Props) {
     setError(null);
     try {
       await api.updateKey(id, {
+        capabilities: updates.capabilities,
         label: updates.label,
         api_key: updates.apiKey,
         base_url: updates.baseUrl,
@@ -214,8 +215,8 @@ export default function ApiManagementModal({ onClose }: Props) {
     setEditingKey({
       id: '',
       provider: 'custom',
-            usage_type: 'chat',
-            label: '',
+      capabilities: [],
+      label: '',
       key_masked: '',
       base_url: '',
       models: [],
@@ -286,7 +287,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
           provider={{
             id: editingKey.id,
             provider: editingKey.provider,
-            usage_type: editingKey.usage_type || 'chat',
+            capabilities: editingKey.capabilities,
             name: editingKey.label || editingKey.provider,
             baseUrl: editingKey.base_url || '',
             apiKey: '',
@@ -305,7 +306,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
             if (editingKey.id) {
               await handleUpdateKey(editingKey.id, {
                 label,
-                usage_type: form.usage_type,
+                capabilities: form.capabilities,
                 apiKey: form.apiKey || undefined,
                 baseUrl: form.baseUrl || undefined,
                 models: form.models,
@@ -313,7 +314,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
             } else {
               await handleSaveKey({
                 provider: form.provider,
-                usage_type: form.usage_type,
+                capabilities: form.capabilities,
                 label,
                 apiKey: form.apiKey,
                 baseUrl: form.baseUrl,

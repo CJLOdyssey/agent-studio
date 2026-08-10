@@ -29,7 +29,7 @@ vi.mock('react-i18next', async () => {
 const mockKey: KeyItem = {
   id: 'k1',
   provider: 'openai',
-  usage_type: 'llm',
+  capabilities: ['llm'],
   label: 'My OpenAI Key',
   key_masked: 'sk-...abc',
   base_url: 'https://api.openai.com/v1',
