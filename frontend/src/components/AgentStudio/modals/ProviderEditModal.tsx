@@ -67,7 +67,8 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
 
   const handleSave = () => {
     onSave({
-      ...provider, provider: providerType, capabilities: categoriesOf(info ?? {}),
+      ...provider, provider: providerType,
+      capabilities: info ? categoriesOf(info) : (provider.capabilities ?? []),
       name, baseUrl, apiKey, models,
     });
   };

@@ -94,7 +94,11 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: 'sk-test123' }, onSave });
     fireEvent.click(await screen.findByText('Save'));
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'My Key', apiKey: 'sk-test123' }),
+      expect.objectContaining({
+        name: 'My Key',
+        apiKey: 'sk-test123',
+        capabilities: ['llm', 'embedding'],
+      }),
     );
   });
 
