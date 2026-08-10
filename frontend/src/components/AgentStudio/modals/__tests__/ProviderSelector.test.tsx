@@ -11,7 +11,7 @@ vi.mock('react-i18next', async () => {
       t: (key: string) => {
         const map: Record<string, string> = {
           'providerEdit.provider': '供应商',
-          'providerEdit.category.llm': '大语言模型',
+          'providerEdit.category.llm': 'LLM',
           'providerEdit.category.embedding': '嵌入',
           'providerEdit.category.rerank': '重排序',
           'providerEdit.category.speech2text': '语音转文字',
@@ -66,7 +66,7 @@ describe('ProviderSelector', () => {
     );
     const groups = screen.getAllByRole('group') as HTMLOptGroupElement[];
     expect(groups.map((g) => g.label)).toEqual([
-      '大语言模型',
+      'LLM',
       '嵌入',
       '重排序',
       '语音转文字',
