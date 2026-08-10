@@ -51,9 +51,9 @@ describe('ModelSelector', { tags: ['integration'] }, () => {
         onSelect={vi.fn()}
       />,
     );
-    expect(screen.getByText('providerEdit.category.llm')).toBeInTheDocument();
+    expect(screen.getAllByText('providerEdit.category.llm')[0]).toBeInTheDocument();
     expect(
-      screen.getByText('providerEdit.category.embedding'),
+      screen.getAllByText('providerEdit.category.embedding')[0],
     ).toBeInTheDocument();
     expect(screen.getByText('gpt-4o')).toBeInTheDocument();
     expect(screen.getByText('text-embedding-3-small')).toBeInTheDocument();

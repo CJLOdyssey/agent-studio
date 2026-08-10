@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../test/setup';
 
 vi.mock('react-i18next', async () => {
@@ -181,5 +181,102 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' } });
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
+  });
+
+  it('fetch 成功后每行渲染类型下拉，改类型后保存载荷含 model_types', async () => {
+    mockFetchModels.mockResolvedValue({
+      success: true,
+      models: ['gpt-4', 'text-embedding-3'],
+      types: { 'gpt-4': 'llm', 'text-embedding-3': 'embedding' },
+    });
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, name: 'My Key', apiKey: 'sk-test' },
+      onSave,
+    });
+
+    fireEvent.click(await screen.findByTitle('Fetch'));
+
+    await waitFor(() =>
+      expect(screen.getByText('text-embedding-3')).toBeInTheDocument(),
+    );
+
+    const gptType = screen.getByRole('combobox', {
+      name: 'gpt-4 类型',
+    }) as HTMLSelectElement;
+    expect(gptType.value).toBe('llm');
+    expect(screen.getAllByRole('combobox').length).toBeGreaterThan(1);
+
+    fireEvent.change(gptType, { target: { value: 'embedding' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model_types: { 'gpt-4': 'embedding', 'text-embedding-3': 'embedding' },
+      }),
+    );
+  });
+
+  it('fetch 失败时类型 map 保持为空，保存载荷传空 model_types', async () => {
+    mockFetchModels.mockResolvedValue({
+      success: false,
+      models: [],
+      message: 'Connection refused',
+    });
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, name: 'My Key', apiKey: 'sk-test' },
+      onSave,
+    });
+
+    fireEvent.click(await screen.findByTitle('Fetch'));
+    await waitFor(() =>
+      expect(screen.getByText('Connection refused')).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ model_types: {} }),
+    );
+  });
+
+  it('编辑已有 key 时按存储的类型初始化下拉', async () => {
+    const onSave = vi.fn();
+    renderModal({
+      provider: {
+        ...baseProvider,
+        name: 'My Key',
+        apiKey: 'sk-test123',
+        models: ['gpt-4o'],
+        model_types: { 'gpt-4o': 'llm' },
+      },
+      onSave,
+    });
+
+    const typeSelect = screen.getByRole('combobox', {
+      name: 'gpt-4o 类型',
+    }) as HTMLSelectElement;
+    expect(typeSelect.value).toBe('llm');
+
+    fireEvent.click(await screen.findByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ model_types: { 'gpt-4o': 'llm' } }),
+    );
+  });
+
+  it('模型列表容器带滚动样式', async () => {
+    mockFetchModels.mockResolvedValue({
+      success: true,
+      models: ['gpt-4'],
+      types: { 'gpt-4': 'llm' },
+    });
+    renderModal({ provider: { ...baseProvider, apiKey: 'sk-test' } });
+
+    fireEvent.click(await screen.findByTitle('Fetch'));
+    await waitFor(() => expect(screen.getByText('gpt-4')).toBeInTheDocument());
+
+    const list = screen.getByText('gpt-4').closest('div')?.parentElement;
+    expect(list?.className).toContain('max-h-64');
+    expect(list?.className).toContain('overflow-y-auto');
   });
 });

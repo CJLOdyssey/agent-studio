@@ -70,7 +70,7 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Props
               <div className="px-1 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
                 {t('providerEdit.category.' + cat)}
               </div>
-              {items.map(({ model, keyLabel }) => (
+              {items.map(({ model, keyLabel, type }) => (
                 <label key={model} className="flex items-center gap-3 p-3 rounded-md cursor-pointer transition-[background] duration-150 hover:bg-[var(--color-surface-hover)]">
                   <input
                     type="radio"
@@ -83,6 +83,11 @@ export default function ModelSelector({ models, selectedModel, onSelect }: Props
                   <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-[var(--color-text-primary)] font-mono font-medium">{model}</span>
+                      {type && (
+                        <span className="text-[11px] text-[var(--color-text-muted)] shrink-0">
+                          {t('providerEdit.category.' + type)}
+                        </span>
+                      )}
                       {/* === 预留：能力标签 ===
                           capabilities?.includes('vision') && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] text-[var(--color-accent)]">vision</span>
                           capabilities?.includes('tool_calling') && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-success)_8%,transparent)] text-[var(--color-success)]">tools</span>

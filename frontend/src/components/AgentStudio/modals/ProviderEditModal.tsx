@@ -18,6 +18,7 @@ export interface ApiProviderForm {
   baseUrl: string;
   apiKey: string;
   models: string[];
+  model_types?: Record<string, string> | null;
   isActive: boolean;
   status?: 'connected' | 'error' | 'untested';
 }
@@ -49,6 +50,9 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
   const [models, setModels] = useState<string[]>(provider.models);
+  const [modelTypes, setModelTypes] = useState<Record<string, string>>(
+    provider.model_types ?? {},
+  );
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -73,6 +77,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
         ? (provider.capabilities ?? categoriesOf(info ?? {}))
         : categoriesOf(info ?? {}),
       name, baseUrl, apiKey, models,
+      model_types: modelTypes,
     });
   };
 
@@ -91,6 +96,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             return Array.from(merged);
           });
         }
+        setModelTypes(result.types ?? {});
       } else {
         setFetchError(result.message ?? 'Fetch failed');
       }
@@ -170,7 +176,26 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             <div className="pt-1">
               <ModelSection
                 models={models} fetching={fetchingModels} apiKey={apiKey}
-                onRemoveModel={(m) => setModels((prev) => prev.filter((x) => x !== m))}
+                modelTypes={modelTypes}
+                onRemoveModel={(m) => {
+                  setModels((prev) => prev.filter((x) => x !== m));
+                  setModelTypes((prev) => {
+                    const next = { ...prev };
+                    delete next[m];
+                    return next;
+                  });
+                }}
+                onChangeModelType={(m, type) =>
+                  setModelTypes((prev) => {
+                    const next = { ...prev };
+                    if (type) {
+                      next[m] = type;
+                    } else {
+                      delete next[m];
+                    }
+                    return next;
+                  })
+                }
                 onFetchModels={handleFetchModels}
               />
             </div>
