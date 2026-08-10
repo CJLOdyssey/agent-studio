@@ -11,13 +11,13 @@ vi.mock('react-i18next', async () => {
       t: (key: string) => {
         const map: Record<string, string> = {
           'providerEdit.provider': '供应商',
-          'providerEdit.category.llm': 'LLM',
-          'providerEdit.category.embedding': '嵌入(Embedding)',
-          'providerEdit.category.rerank': '重排序(Rerank)',
+          'providerEdit.category.llm': '大语言模型',
+          'providerEdit.category.embedding': '嵌入',
+          'providerEdit.category.rerank': '重排序',
           'providerEdit.category.speech2text': '语音转文字',
           'providerEdit.category.tts': '文字转语音',
-          'providerEdit.category.moderation': '内容审核(Moderation)',
-          'providerEdit.category.tool': 'Tool',
+          'providerEdit.category.moderation': '内容审核',
+          'providerEdit.category.tool': '工具',
         };
         return map[key] || key;
       },
@@ -66,13 +66,13 @@ describe('ProviderSelector', () => {
     );
     const groups = screen.getAllByRole('group') as HTMLOptGroupElement[];
     expect(groups.map((g) => g.label)).toEqual([
-      'LLM',
-      '嵌入(Embedding)',
-      '重排序(Rerank)',
+      '大语言模型',
+      '嵌入',
+      '重排序',
       '语音转文字',
       '文字转语音',
-      '内容审核(Moderation)',
-      'Tool',
+      '内容审核',
+      '工具',
     ]);
     expect(screen.getAllByText('OpenAI')).toHaveLength(2);
     expect(screen.getAllByText('Tavily AI Search')).toHaveLength(1);
