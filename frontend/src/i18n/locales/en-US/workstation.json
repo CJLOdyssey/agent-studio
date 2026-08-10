@@ -191,7 +191,18 @@
       "tts": "TTS",
       "moderation": "Moderation",
       "tool": "Tool"
-    }
+    },
+    "badge": {
+      "llm": "LLM Chat",
+      "embedding": "Embedding",
+      "rerank": "Rerank",
+      "speech2text": "Speech2text",
+      "tts": "TTS",
+      "moderation": "Moderation",
+      "tool": "Tools"
+    },
+    "filterAll": "All",
+    "noModelsInGroup": "No models yet"
   },
   "api": {
     "manage": "API Management",
