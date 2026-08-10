@@ -102,6 +102,39 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     );
   });
 
+  it('preserves stored capabilities on same-provider edit', async () => {
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, id: 'pk_1', name: 'My Key', apiKey: 'sk-test123', capabilities: ['llm'] },
+      onSave,
+    });
+    fireEvent.click(await screen.findByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'openai',
+        capabilities: ['llm'],
+      }),
+    );
+  });
+
+  it('derives capabilities from catalog when provider type changes', async () => {
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, id: 'pk_1', name: 'My Key', apiKey: 'sk-test123', capabilities: ['llm'] },
+      onSave,
+    });
+    fireEvent.change(await screen.findByRole('combobox'), {
+      target: { value: 'custom' },
+    });
+    fireEvent.click(await screen.findByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'custom',
+        capabilities: ['llm', 'embedding'],
+      }),
+    );
+  });
+
   it('save button is disabled when apiKey empty', async () => {
     renderModal();
     const saveBtn = await screen.findByText('Save');

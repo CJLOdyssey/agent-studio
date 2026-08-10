@@ -66,9 +66,12 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const showModels = !isToolProvider && (caps.includes('chat') || caps.includes('image'));
 
   const handleSave = () => {
+    const preserveStored = Boolean(provider.id) && providerType === provider.provider;
     onSave({
       ...provider, provider: providerType,
-      capabilities: info ? categoriesOf(info) : (provider.capabilities ?? []),
+      capabilities: preserveStored
+        ? (provider.capabilities ?? categoriesOf(info ?? {}))
+        : categoriesOf(info ?? {}),
       name, baseUrl, apiKey, models,
     });
   };

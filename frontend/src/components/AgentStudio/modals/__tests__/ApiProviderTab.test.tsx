@@ -145,4 +145,26 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
     expect(screen.getByText('Tavily Key')).toBeInTheDocument();
     expect(screen.queryByText('OpenAI Key')).toBeNull();
   });
+
+  it('clears row selection when switching filter tab', () => {
+    const onBatchDelete = vi.fn();
+    renderTab({
+      keys: [
+        { ...mockKey, id: 'k1', label: 'OpenAI Key', capabilities: ['llm'] },
+        { ...mockKey, id: 'k2', label: 'Tavily Key', capabilities: ['tool'] },
+      ],
+      onBatchDelete,
+    });
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    fireEvent.click(checkboxes[2]);
+    expect(screen.getByText('删除 (1)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('providerEdit.category.tool'));
+    expect(screen.queryByText('删除 (1)')).toBeNull();
+
+    fireEvent.click(screen.getByText('providerEdit.filterAll'));
+    expect(screen.queryByText('删除 (1)')).toBeNull();
+    expect(onBatchDelete).not.toHaveBeenCalled();
+  });
 });

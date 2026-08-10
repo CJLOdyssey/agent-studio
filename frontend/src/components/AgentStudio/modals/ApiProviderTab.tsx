@@ -69,6 +69,7 @@ export default function ApiProviderTab({
   const handleFilterChange = (cat: 'all' | Category) => {
     setFilterCat(cat);
     setPage(1);
+    setSelectedRowKeys([]);
   };
 
   const onPageChange = useCallback((p: number) => {
