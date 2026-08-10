@@ -13,16 +13,10 @@ from pydantic import BaseModel
 from auth import get_user_id
 from core.infra.logging_config import get_logger
 from repository import get_api_keys
+from routers.providers import PROVIDERS
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["models"])
-
-PROVIDER_LABELS = {
-    "openai": "OpenAI",
-    "deepseek": "DeepSeek",
-    "anthropic": "Anthropic",
-    "custom": "Custom",
-}
 
 
 EMBEDDING_PREFIXES = ("text-embedding", "embedding", "bge-", "m3e-", "jina-embeddings")
@@ -73,7 +67,9 @@ async def _get_models_from_keys(user_id: str) -> list[ModelInfo]:
         if not k.get("is_active"):
             continue
         provider = k.get("provider", "custom")
-        provider_label = PROVIDER_LABELS.get(provider, provider.title())
+        provider_label = (
+            PROVIDERS.get(provider, {}).get("name") or provider.title()
+        )
         types_map = k.get("model_types") or {}
         for model_id in k.get("models", []):
             if model_id in seen:
