@@ -319,10 +319,14 @@ def _build_session_context(memories: list[Any]) -> str:
 async def _get_rag_context(query: str, session_id: str) -> str:
     try:
         from rag.rag_pipeline import ensure_embedding_provider, retrieve_context
-        from repository.keys import get_embedding_api_key
+        from repository.keys import get_embedding_config
 
-        api_key = await get_embedding_api_key()
-        ensure_embedding_provider(api_key)
+        cfg = await get_embedding_config()
+        if cfg is None or cfg["api_key"] is None:
+            return ""
+        ensure_embedding_provider(
+            cfg["api_key"], model=cfg["model"], base_url=cfg["base_url"]
+        )
         return await retrieve_context(query=query, session_id=session_id, top_k=3)
     except Exception:
         logger.warning("RAG context retrieval failed for session %s", session_id, exc_info=True)

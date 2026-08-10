@@ -513,20 +513,31 @@ class TestGetRagContext:
 
     async def test_get_rag_context_success(self):
         from tasks.pipeline_utils import _get_rag_context
-        mock_api_key = AsyncMock(return_value="key-1")
+        mock_config = AsyncMock(return_value={
+            "api_key": "key-1", "base_url": None, "model": "text-embedding-v3",
+        })
         mock_ensure = MagicMock()
         mock_retrieve = AsyncMock(return_value="rag result")
 
         with patch("rag.rag_pipeline.ensure_embedding_provider", mock_ensure), \
              patch("rag.rag_pipeline.retrieve_context", mock_retrieve), \
-             patch("repository.keys.get_embedding_api_key", mock_api_key):
+             patch("repository.keys.get_embedding_config", mock_config):
             result = await _get_rag_context("query", "sess-1")
 
         assert result == "rag result"
+        mock_ensure.assert_called_once_with(
+            "key-1", model="text-embedding-v3", base_url=None
+        )
 
     async def test_get_rag_context_exception_returns_empty(self):
         from tasks.pipeline_utils import _get_rag_context
-        with patch("repository.keys.get_embedding_api_key", new_callable=AsyncMock, side_effect=Exception("fail")):
+        with patch("repository.keys.get_embedding_config", new_callable=AsyncMock, side_effect=Exception("fail")):
+            result = await _get_rag_context("query", "sess-1")
+        assert result == ""
+
+    async def test_get_rag_context_no_config_returns_empty(self):
+        from tasks.pipeline_utils import _get_rag_context
+        with patch("repository.keys.get_embedding_config", new_callable=AsyncMock, return_value=None):
             result = await _get_rag_context("query", "sess-1")
         assert result == ""
 

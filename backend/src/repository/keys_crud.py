@@ -385,6 +385,65 @@ async def get_embedding_api_key() -> str | None:
         return decrypt_api_key(row.encrypted_key)
 
 
+def _pick_embedding_model(models: str) -> str | None:
+    """Pick an embedding-capable model from a key's comma-joined models list.
+
+    bge-m3 is preferred (deterministic 1024-dim output) over other
+    embedding-named models, regardless of list order.
+    """
+    if not models:
+        return None
+    candidates = [x.strip() for x in models.split(",")]
+    for m in candidates:
+        if "bge-m3" in m.lower():
+            return m
+    for m in candidates:
+        lowered = m.lower()
+        if "embedding" in lowered or "bge-" in lowered:
+            return m
+    return None
+
+
+async def get_embedding_config() -> dict[str, str | None] | None:
+    """Resolve the embedding endpoint: {api_key, base_url, model}.
+
+    Prefers an active key whose models list names an embedding model (e.g.
+    bge-m3 / *-embedding-*); falls back to the oldest embedding-capability
+    key with the legacy DashScope endpoint.
+    """
+    from core.infra.database import UserApiKey
+    from core.infra.key_vault import decrypt_api_key
+
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(
+                UserApiKey.is_active.is_(True),
+                _capabilities_contains(session, "embedding"),
+            )
+            .order_by(UserApiKey.created_at)
+        )
+        rows = (await session.execute(stmt)).scalars().all()
+
+    if not rows:
+        return None
+    for row in rows:
+        model = _pick_embedding_model(row.models)
+        if model:
+            return {
+                "api_key": decrypt_api_key(row.encrypted_key),
+                "base_url": row.base_url,
+                "model": model,
+            }
+    row = rows[0]
+    return {
+        "api_key": decrypt_api_key(row.encrypted_key),
+        "base_url": None,
+        "model": "text-embedding-v3",
+    }
+
+
 async def get_tool_api_key(provider: str) -> str | None:
     """Get the decrypted API key for a tool provider (e.g. 'tavily')."""
     from core.infra.database import UserApiKey
