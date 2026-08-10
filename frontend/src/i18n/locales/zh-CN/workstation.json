@@ -182,7 +182,16 @@
     "addModelCancel": "取消",
     "noModelsWithKey": "暂无模型，点击刷新或手动添加",
     "fetchFromApi": "从 API 获取",
-    "enterApiKeyToFetch": "填写 API Key 后点击刷新获取模型"
+    "enterApiKeyToFetch": "填写 API Key 后点击刷新获取模型",
+    "category": {
+      "llm": "LLM",
+      "embedding": "嵌入(Embedding)",
+      "rerank": "重排序(Rerank)",
+      "speech2text": "语音转文字",
+      "tts": "文字转语音",
+      "moderation": "内容审核(Moderation)",
+      "tool": "Tool"
+    }
   },
   "api": {
     "manage": "API 管理",

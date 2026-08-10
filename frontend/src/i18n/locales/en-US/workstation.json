@@ -182,7 +182,16 @@
     "addModelCancel": "Cancel",
     "noModelsWithKey": "No models yet",
     "fetchFromApi": "Fetch from API",
-    "enterApiKeyToFetch": "Enter API key to fetch models"
+    "enterApiKeyToFetch": "Enter API key to fetch models",
+    "category": {
+      "llm": "LLM",
+      "embedding": "Text Embedding",
+      "rerank": "Rerank",
+      "speech2text": "Speech2text",
+      "tts": "TTS",
+      "moderation": "Moderation",
+      "tool": "Tool"
+    }
   },
   "api": {
     "manage": "API Management",

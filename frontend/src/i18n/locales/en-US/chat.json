@@ -76,7 +76,8 @@
     "configure": "Configure API provider",
     "noModelsHint": "Configure an API provider to enable models",
     "statusDeprecated": "Deprecated",
-    "statusSunset": "Sunsetting"
+    "statusSunset": "Sunsetting",
+    "recent": "Recent"
   },
   "agentResponses": {
     "pm": [
