@@ -497,6 +497,58 @@ async def test_get_api_keys_with_models(db_engine):
 
 
 @pytest.mark.asyncio
+async def test_create_api_key_with_model_types_serialized(db_engine):
+    from repository.keys_crud import create_api_key, get_api_keys
+
+    await create_api_key(
+        "user1", "custom", plaintext_key="sk-mt",
+        models=["gpt-4o"], model_types={"gpt-4o": "embedding"},
+    )
+    keys = await get_api_keys("user1")
+    assert len(keys) == 1
+    assert keys[0]["model_types"] == {"gpt-4o": "embedding"}
+
+
+@pytest.mark.asyncio
+async def test_get_api_keys_model_types_none_by_default(db_engine):
+    from repository.keys_crud import create_api_key, get_api_keys
+
+    await create_api_key("user1", "custom", plaintext_key="sk-nomt", models=["gpt-4o"])
+    keys = await get_api_keys("user1")
+    assert len(keys) == 1
+    assert keys[0]["model_types"] is None
+
+
+@pytest.mark.asyncio
+async def test_update_api_key_model_types_replace(db_engine):
+    from repository.keys_crud import create_api_key, get_api_keys, update_api_key
+
+    k = await create_api_key(
+        "user1", "custom", plaintext_key="sk-upd", models=["gpt-4o"],
+        model_types={"gpt-4o": "embedding"},
+    )
+    result = await update_api_key(k.id, "user1", model_types={"gpt-4o": "rerank"})
+    assert result is not None
+    assert result["model_types"] == {"gpt-4o": "rerank"}
+
+    keys = await get_api_keys("user1")
+    assert keys[0]["model_types"] == {"gpt-4o": "rerank"}
+
+
+@pytest.mark.asyncio
+async def test_update_api_key_model_types_clear(db_engine):
+    from repository.keys_crud import create_api_key, update_api_key
+
+    k = await create_api_key(
+        "user1", "custom", plaintext_key="sk-clr", models=["gpt-4o"],
+        model_types={"gpt-4o": "embedding"},
+    )
+    result = await update_api_key(k.id, "user1", model_types={})
+    assert result is not None
+    assert result["model_types"] == {}
+
+
+@pytest.mark.asyncio
 async def test_get_api_keys_empty_models(db_engine):
     from repository.keys_crud import create_api_key, get_api_keys
 

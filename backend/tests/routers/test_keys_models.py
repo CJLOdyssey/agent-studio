@@ -99,6 +99,41 @@ class TestKeysModels:
         with pytest.raises(ValidationError):
             KeyUpdateRequest(capabilities=["bad_type"])
 
+    def test_key_create_request_with_model_types(self):
+        from routers.keys import KeyCreateRequest
+
+        req = KeyCreateRequest(
+            provider="custom",
+            label="SiliconFlow",
+            api_key="sk-test",
+            models=["gpt-4o"],
+            model_types={"gpt-4o": "embedding"},
+        )
+        assert req.model_types == {"gpt-4o": "embedding"}
+
+    def test_key_create_request_invalid_model_type_value(self):
+        from routers.keys import KeyCreateRequest
+
+        with pytest.raises(ValidationError):
+            KeyCreateRequest(
+                provider="custom",
+                label="test",
+                api_key="sk-test",
+                model_types={"gpt-4o": "bogus"},
+            )
+
+    def test_key_update_request_model_types(self):
+        from routers.keys import KeyUpdateRequest
+
+        req = KeyUpdateRequest(model_types={"gpt-4o": "llm"})
+        assert req.model_types == {"gpt-4o": "llm"}
+
+    def test_key_update_request_invalid_model_type_value(self):
+        from routers.keys import KeyUpdateRequest
+
+        with pytest.raises(ValidationError):
+            KeyUpdateRequest(model_types={"gpt-4o": "bogus"})
+
     def test_fetch_models_request(self):
         from routers.keys import FetchModelsRequest
 
@@ -126,6 +161,25 @@ class TestKeysModels:
         assert resp.key_masked == "sk-...est"
         assert resp.is_active is True
         assert resp.models == ["gpt-4"]
+
+    def test_key_response_model_types_field(self):
+        from routers.keys import KeyResponse
+
+        resp = KeyResponse(
+            id="key-1",
+            provider="custom",
+            capabilities=["llm"],
+            label="test",
+            key_masked="sk-...est",
+            base_url=None,
+            models=["gpt-4o"],
+            model_types={"gpt-4o": "embedding"},
+            is_active=True,
+            is_default=False,
+            last_used_at=None,
+            created_at=None,
+        )
+        assert resp.model_types == {"gpt-4o": "embedding"}
 
     def test_encrypt_decrypt_roundtrip(self):
         from core.infra.key_vault import decrypt_api_key, encrypt_api_key
@@ -179,6 +233,52 @@ class TestKeysModels:
         assert callable(caps_default) and caps_default(None) == []
         assert c_map["is_active"].default.arg is True
         assert c_map["is_default"].default.arg is False
+
+
+# ── /api/keys HTTP round-trip ───────────────────────────────────────────────
+
+
+def test_model_types_roundtrip_create_and_update(client):
+    headers = {"X-User-ID": "admin"}
+    created = client.post(
+        "/api/keys",
+        headers=headers,
+        json={
+            "provider": "custom",
+            "capabilities": ["llm"],
+            "label": "roundtrip",
+            "api_key": "sk-test",
+            "models": ["gpt-4o"],
+            "model_types": {"gpt-4o": "embedding"},
+            "is_default": False,
+        },
+    )
+    assert created.status_code == 201
+    assert created.json()["model_types"] == {"gpt-4o": "embedding"}
+
+    updated = client.put(
+        f"/api/keys/{created.json()['id']}",
+        headers=headers,
+        json={"model_types": {"gpt-4o": "rerank"}},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["model_types"] == {"gpt-4o": "rerank"}
+
+
+def test_add_key_rejects_unknown_model_type_value(client):
+    resp = client.post(
+        "/api/keys",
+        json={
+            "provider": "custom",
+            "capabilities": ["llm"],
+            "label": "bad",
+            "api_key": "sk-test",
+            "models": ["gpt-4o"],
+            "model_types": {"gpt-4o": "bogus"},
+            "is_default": False,
+        },
+    )
+    assert resp.status_code == 422
 
 
 # ─────────────────────────────────────────────────────────────────────
