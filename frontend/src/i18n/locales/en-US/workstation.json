@@ -156,8 +156,8 @@
     "save": "Save",
     "placeholders": {
       "name": "e.g. My OpenAI",
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "sk-...",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKey": "Enter API Key",
       "models": "gpt-4o\ngpt-4o-mini"
     },
     "providers": {

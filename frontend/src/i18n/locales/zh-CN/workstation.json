@@ -156,8 +156,8 @@
     "save": "保存",
     "placeholders": {
       "name": "例如：我的 OpenAI",
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "sk-...",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKey": "输入 API Key",
       "models": "gpt-4o\ngpt-4o-mini"
     },
     "providers": {
