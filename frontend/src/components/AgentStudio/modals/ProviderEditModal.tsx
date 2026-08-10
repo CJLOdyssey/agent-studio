@@ -86,7 +86,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const isToolProvider = caps.includes('tool');
   const showModels = !isToolProvider && (caps.includes('chat') || caps.includes('image'));
 
-  const canSave = !saving && !!name.trim() && (!requireApiKey || !!apiKey.trim());
+  const canSave = !saving && (!requireApiKey || !!apiKey.trim());
 
   const handleSave = () => {
     const preserveStored = Boolean(provider.id) && providerType === provider.provider;
@@ -95,7 +95,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       capabilities: preserveStored
         ? (provider.capabilities ?? categoriesOf(info ?? {}))
         : categoriesOf(info ?? {}),
-      name, baseUrl, apiKey, models,
+      name: name.trim() || info?.name || providerType, baseUrl, apiKey, models,
       model_types: modelTypes,
     });
   };

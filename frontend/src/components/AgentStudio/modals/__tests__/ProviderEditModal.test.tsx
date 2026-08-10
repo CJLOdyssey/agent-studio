@@ -146,7 +146,7 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
   });
 
   it('save button is disabled when apiKey empty', async () => {
-    renderModal();
+    renderModal({ requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
   });
@@ -187,10 +187,10 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     expect(saveBtn.closest('button')).toBeDisabled();
   });
 
-  it('save button is disabled when only apiKey is filled but name is empty', async () => {
+  it('save button is enabled when only apiKey is filled but name is empty (name optional)', async () => {
     renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' }, requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
-    expect(saveBtn.closest('button')).toBeDisabled();
+    expect(saveBtn.closest('button')).not.toBeDisabled();
   });
 
   it('fetch 成功后每行渲染类型下拉，改类型后保存载荷含 model_types', async () => {
