@@ -39,4 +39,35 @@ describe('ModelSelector', { tags: ['integration'] }, () => {
     expect(radios[0]).toBeChecked();
     expect(radios[1]).not.toBeChecked();
   });
+
+  it('groups models by type', () => {
+    render(
+      <ModelSelector
+        models={[
+          { model: 'gpt-4o', keyId: 'key1', type: 'llm' },
+          { model: 'text-embedding-3-small', keyId: 'key1', type: 'embedding' },
+        ]}
+        selectedModel=""
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('providerEdit.category.llm')).toBeInTheDocument();
+    expect(
+      screen.getByText('providerEdit.category.embedding'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('gpt-4o')).toBeInTheDocument();
+    expect(screen.getByText('text-embedding-3-small')).toBeInTheDocument();
+  });
+
+  it('shows empty-group hint for categories without models', () => {
+    render(
+      <ModelSelector
+        models={[{ model: 'gpt-4o', keyId: 'key1', type: 'llm' }]}
+        selectedModel=""
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('gpt-4o')).toBeInTheDocument();
+    expect(screen.getAllByText('providerEdit.noModelsInGroup').length).toBe(6);
+  });
 });
