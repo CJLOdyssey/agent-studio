@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { CATEGORY_ORDER, categoriesOf } from '../providerCategories';
 
 describe('providerCategories', () => {
-  it('orders all seven categories', () => {
+  it('orders all eight categories', () => {
     expect(CATEGORY_ORDER).toEqual([
-      'llm', 'embedding', 'rerank', 'speech2text', 'tts', 'moderation', 'tool',
+      'llm', 'embedding', 'rerank', 'speech2text', 'tts', 'moderation', 'image', 'tool',
     ]);
   });
 
@@ -12,9 +12,10 @@ describe('providerCategories', () => {
     expect(categoriesOf({ capabilities: ['chat'] })).toEqual(['llm']);
     expect(categoriesOf({ capabilities: ['vector'] })).toEqual(['embedding']);
     expect(categoriesOf({ capabilities: ['chat', 'vector', 'image'] })).toEqual([
-      'llm', 'embedding', 'tool',
+      'llm', 'embedding', 'image',
     ]);
     expect(categoriesOf({ capabilities: ['tool'] })).toEqual(['tool']);
+    expect(categoriesOf({ capabilities: ['image'] })).toEqual(['image']);
     expect(categoriesOf({ capabilities: [] })).toEqual([]);
     expect(categoriesOf({ capabilities: undefined })).toEqual([]);
   });

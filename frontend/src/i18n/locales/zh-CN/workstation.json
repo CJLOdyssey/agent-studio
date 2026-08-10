@@ -190,6 +190,7 @@
       "speech2text": "语音转文字",
       "tts": "文字转语音",
       "moderation": "内容审核",
+      "image": "图像",
       "tool": "工具"
     },
     "badge": {
@@ -199,6 +200,7 @@
       "speech2text": "语音转文字",
       "tts": "文字转语音",
       "moderation": "内容审核",
+      "image": "图像",
       "tool": "工具"
     },
     "filterAll": "全部",

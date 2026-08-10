@@ -68,6 +68,6 @@ describe('ModelSelector', { tags: ['integration'] }, () => {
       />,
     );
     expect(screen.getByText('gpt-4o')).toBeInTheDocument();
-    expect(screen.getAllByText('providerEdit.noModelsInGroup').length).toBe(6);
+    expect(screen.getAllByText('providerEdit.noModelsInGroup').length).toBe(7);
   });
 });
