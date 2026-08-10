@@ -131,4 +131,18 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
     renderTab({ keys: [{ ...mockKey, is_active: false }] });
     expect(screen.getByText('My OpenAI Key')).toBeInTheDocument();
   });
+
+  it('filters rows by capability category', () => {
+    renderTab({
+      keys: [
+        { ...mockKey, id: 'k1', label: 'OpenAI Key', capabilities: ['llm', 'embedding'] },
+        { ...mockKey, id: 'k2', label: 'Tavily Key', capabilities: ['tool'] },
+      ],
+    });
+    expect(screen.getByText('OpenAI Key')).toBeInTheDocument();
+    expect(screen.getByText('Tavily Key')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('providerEdit.category.tool'));
+    expect(screen.getByText('Tavily Key')).toBeInTheDocument();
+    expect(screen.queryByText('OpenAI Key')).toBeNull();
+  });
 });

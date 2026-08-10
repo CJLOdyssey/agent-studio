@@ -1,18 +1,25 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Key, Plus, AlertCircle, Loader2, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ConfigProvider, Table, Switch, Tag, Button, Space, Tooltip } from 'antd';
+import { ConfigProvider, Table, Switch, Button, Space, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { KeyItem } from '../../../api/client';
+import {
+  CATEGORY_ORDER,
+  categoriesOf,
+  type Category,
+} from '../../../utils/providerCategories';
 import WstaPagination from '../workstation/shared/WstaPagination';
 import LoadingSkeleton from '../../shared/LoadingSkeleton';
 import type * as React from 'react';
+import CapabilityBadges from './CapabilityBadges';
 
-const USAGE_COLORS: Record<string, string> = {
-  vector: 'var(--color-accent)',
-  general: 'var(--color-success)',
-  tool: 'var(--color-warning)',
-};
+const capsOf = (k: KeyItem): string[] =>
+  (k as { capabilities?: string[] }).capabilities ?? [];
+
+const FILTER_TAB_BASE = 'px-2.5 py-1 rounded-md text-xs transition-colors cursor-pointer border-none';
+const FILTER_TAB_ACTIVE = 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)] font-medium';
+const FILTER_TAB_IDLE = 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]';
 
 interface Props {
   keys: KeyItem[];
@@ -47,11 +54,22 @@ export default function ApiProviderTab({
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 8;
+  const [filterCat, setFilterCat] = useState<'all' | Category>('all');
+
+  const visibleKeys = useMemo(() => {
+    if (filterCat === 'all') return keys;
+    return keys.filter((k) => categoriesOf({ capabilities: capsOf(k) }).includes(filterCat));
+  }, [keys, filterCat]);
 
   const paginatedKeys = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return keys.slice(start, start + pageSize);
-  }, [keys, page]);
+    return visibleKeys.slice(start, start + pageSize);
+  }, [visibleKeys, page]);
+
+  const handleFilterChange = (cat: 'all' | Category) => {
+    setFilterCat(cat);
+    setPage(1);
+  };
 
   const onPageChange = useCallback((p: number) => {
     setPage(p);
@@ -71,14 +89,6 @@ export default function ApiProviderTab({
   };
 
   const columns: ColumnsType<KeyItem> = useMemo(() => {
-    const usageLabel = (type: string) => {
-      if (type === 'tool') return t('api.type_tool');
-      if (type === 'general') return t('api.type_general');
-      if (type === 'vector') return t('api.type_vector');
-      if (type === 'image') return t('api.type_image');
-      if (type === 'audio') return t('api.type_audio');
-      return t('api.type_chat');
-    };
     return [
     {
       title: '名称',
@@ -102,21 +112,11 @@ export default function ApiProviderTab({
     },
     {
       title: '用途',
-      dataIndex: 'usage_type',
-      key: 'usage_type',
-      width: 64,
-      render: (type: string) => (
-        <Tag color={USAGE_COLORS[type] ? undefined : 'default'}
-          style={{
-            fontSize: 11, lineHeight: '20px', padding: '0 8px',
-            ...(USAGE_COLORS[type] ? {
-              background: `color-mix(in srgb, ${USAGE_COLORS[type]} 12%, transparent)`,
-              color: USAGE_COLORS[type],
-              borderColor: `color-mix(in srgb, ${USAGE_COLORS[type]} 25%, transparent)`,
-            } : {}),
-          }}>
-          {usageLabel(type)}
-        </Tag>
+      dataIndex: 'capabilities',
+      key: 'capabilities',
+      width: 150,
+      render: (_: unknown, record: KeyItem) => (
+        <CapabilityBadges capabilities={capsOf(record)} />
       ),
     },
     {
@@ -177,7 +177,7 @@ export default function ApiProviderTab({
       ),
     },
     ];
-  }, [testingId, onEdit, onTest, onDelete, onToggleActive, t]);
+  }, [testingId, onEdit, onTest, onDelete, onToggleActive]);
 
   return (
     <div className="h-full flex flex-col">
@@ -206,6 +206,25 @@ export default function ApiProviderTab({
         </div>
       )}
       <div className="border-t border-[var(--color-border)] shrink-0" />
+      <div className="flex items-center gap-1 mb-2 pt-2 shrink-0">
+        <button
+          type="button"
+          className={`${FILTER_TAB_BASE} ${filterCat === 'all' ? FILTER_TAB_ACTIVE : FILTER_TAB_IDLE}`}
+          onClick={() => handleFilterChange('all')}
+        >
+          {t('providerEdit.filterAll')}
+        </button>
+        {CATEGORY_ORDER.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            className={`${FILTER_TAB_BASE} ${filterCat === cat ? FILTER_TAB_ACTIVE : FILTER_TAB_IDLE}`}
+            onClick={() => handleFilterChange(cat)}
+          >
+            {t(`providerEdit.category.${cat}`)}
+          </button>
+        ))}
+      </div>
       <div className="flex-1 min-h-0 overflow-y-auto">
         {loading && keys.length === 0 ? (
           <LoadingSkeleton type="table" rows={4} />
@@ -251,10 +270,10 @@ export default function ApiProviderTab({
         </ConfigProvider>
         )}
       </div>
-      {keys.length > 0 && (
+      {visibleKeys.length > 0 && (
         <div>
           <WstaPagination
-            total={keys.length}
+            total={visibleKeys.length}
             current={page}
             pageSize={pageSize}
             onChange={onPageChange}
