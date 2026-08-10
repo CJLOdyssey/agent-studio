@@ -38,6 +38,7 @@ export async function submitRequirement(
   submissionConvId?: string | null,
   parent_run_id?: string | null,
   is_edit?: boolean,
+  attachment_ids?: string[],
 ) {
   const s = useChatStore.getState();
   const effectiveSessionId = session_id || s.currentSessionId || undefined;
@@ -92,7 +93,7 @@ export async function submitRequirement(
     const currentState = useChatStore.getState();
     const teamId = currentState.activeTeamId ?? undefined;
     Logger.info('[chat] submitRequirement — team_id=%s | agent_id=%s | session_id=%s', teamId, agent_id, effectiveSessionId);
-    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId, effectiveParentRunId, is_edit);
+    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId, effectiveParentRunId, is_edit, attachment_ids);
     const run_id = resp.run_id;
     const returnedSessionId = resp.session_id || effectiveSessionId || null;
     useChatStore.setState({ currentRunId: run_id, activeRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });

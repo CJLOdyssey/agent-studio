@@ -250,7 +250,7 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
     await waitFor(() => expect(messagesArea().textContent).toContain('帮我实现一个冒泡排序'));
 
     await waitFor(() => {
-      expect(mockSubmitRequirement).toHaveBeenCalledWith('帮我实现一个冒泡排序', undefined, 'key-1', 'gpt-4', undefined, undefined, null, undefined);
+      expect(mockSubmitRequirement).toHaveBeenCalledWith('帮我实现一个冒泡排序', undefined, 'key-1', 'gpt-4', undefined, undefined, null, undefined, undefined);
     });
 
     await waitFor(() => expect(wsCallbacks.has('run-flow')).toBe(true));

@@ -134,6 +134,7 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       undefined,
       null,
       true,
+      undefined,
     );
   });
 
@@ -164,6 +165,7 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       undefined,
       null,
       true,
+      undefined,
     );
   });
 
@@ -187,6 +189,7 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       undefined,
       null,
       true,
+      undefined,
     );
   });
 });
@@ -213,7 +216,7 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     // The old answer is NOT deleted — it stays as the merge target for the stream.
     // 用户消息 id 被改写为 run-{run_id}-requirement（编辑路由用，mock run_id='run-1'）。
     expect(s.messages.map((m) => m.id)).toEqual(['run-run-1-requirement', 'a1']);
-    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true);
+    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true, undefined);
   });
 
   it('regenerates even when the edited user message has no following agent answer', async () => {
@@ -230,7 +233,7 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     expect(s.messages[0].content).toBe('edited solo');
     expect(s.messages[0].userVersions).toEqual(['solo', 'edited solo']);
     expect(s.messages[0].currentUserVersion).toBe(1);
-    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true);
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true, undefined);
   });
 
   it('does nothing when content is unchanged', async () => {
@@ -279,7 +282,7 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     const { editAndRegenerate } = await import('../chatActions');
     await editAndRegenerate('run-abc123-requirement', 'edited');
 
-    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123', true);
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123', true, undefined);
   });
 });
 

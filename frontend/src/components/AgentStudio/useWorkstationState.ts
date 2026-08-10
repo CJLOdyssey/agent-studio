@@ -460,8 +460,15 @@ export function useWorkstationState(
     }
   }, []);
 
+  // 附件链路：InputToolbar 选中即传（后端 pre-session 解耦），这里只把已
+  // 上传的 attachment id 随消息提交；run 创建时后端绑定到 session/run。
+  const attachmentIdsOf = useCallback((files: AttachedFile[]): string[] | undefined => {
+    const ids = files.map((f) => f.attachmentId).filter((x): x is string => !!x);
+    return ids.length > 0 ? ids : undefined;
+  }, []);
+
   const handleSendMessage = useCallback(
-    (text: string, _files: AttachedFile[]) => {
+    async (text: string, files: AttachedFile[]) => {
       const userMessage: import('../../types/AgentStudio').Message = {
         id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
         role: 'user',
@@ -486,16 +493,16 @@ export function useWorkstationState(
         }] });
       }
       window.dispatchEvent(new CustomEvent('clear-browser-url'));
-      submitToApi(text, undefined, selectedAgentId ?? undefined, true).catch(() => {
+      submitToApi(text, undefined, selectedAgentId ?? undefined, true, undefined, undefined, undefined, attachmentIdsOf(files)).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
     },
-    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate],
+    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate, attachmentIdsOf],
   );
 
   const handleHomeSend = useCallback(
-    (text: string, _files: AttachedFile[]) => {
+    async (text: string, files: AttachedFile[]) => {
       const userMessage: import('../../types/AgentStudio').Message = {
         id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
         role: 'user',
@@ -518,12 +525,12 @@ export function useWorkstationState(
         }] });
       }
       // saveConversation + setActiveConvId → useEffect loads msg into store → skip duplicate
-      submitToApi(text, undefined, undefined, true).catch(() => {
+      submitToApi(text, undefined, undefined, true, undefined, undefined, undefined, attachmentIdsOf(files)).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
     },
-    [conv, submitToApi, notify, selectedAgentId, navigate],
+    [conv, submitToApi, notify, selectedAgentId, navigate, attachmentIdsOf],
   );
 
   const { isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop } = useDragAndDrop(inputToolbarRef as React.RefObject<InputToolbarHandle>);

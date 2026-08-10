@@ -49,6 +49,38 @@ describe('submitRequirement', { tags: ['unit'] }, () => {
     });
     expect(result).toEqual({ run_id: 'r1', status: 'queued', session_id: 's1' });
   });
+
+  it('passes attachment_ids when provided', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r1', status: 'queued', session_id: 's1' } });
+
+    await submitRequirement('req', 's1', undefined, undefined, undefined, undefined, undefined, undefined, ['a1', 'a2']);
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs', {
+      requirement: 'req',
+      session_id: 's1',
+      key_id: undefined,
+      model: undefined,
+      agent_id: undefined,
+      team_id: undefined,
+      attachment_ids: ['a1', 'a2'],
+    });
+  });
+
+  it('omits attachment_ids when empty', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r1', status: 'queued' } });
+
+    await submitRequirement('req', 's1', undefined, undefined, undefined, undefined, undefined, undefined, []);
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs', {
+      requirement: 'req',
+      session_id: 's1',
+      key_id: undefined,
+      model: undefined,
+      agent_id: undefined,
+      team_id: undefined,
+      attachment_ids: undefined,
+    });
+  });
 });
 
 describe('resumeRun', { tags: ['unit'] }, () => {

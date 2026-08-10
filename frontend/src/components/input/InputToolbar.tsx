@@ -5,11 +5,13 @@ import { motion, useReducedMotion } from 'motion/react';
 import type { ModelOption, AttachedFile, CommandOption, FileRejection } from '../../types/input';
 import ModelSelector from './ModelSelector';
 import FileAttach from './FileAttach';
+import AttachmentList from './AttachmentList';
 import CommandDropdown from './CommandDropdown';
 import { useMessageComposer } from '../../hooks/useMessageComposer';
 import { useCommandPalette } from '../../hooks/useCommandPalette';
 import { useToast } from '../../utils/useToast';
 import { useSettings } from '../../contexts/SettingsContext';
+import { uploadAttachment, deleteAttachment } from '../../api/client/attachments';
 import type * as React from 'react';
 
 export interface InputToolbarHandle {
@@ -58,6 +60,13 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
 
   const composer = useMessageComposer({
     onSend: (text) => {
+      // 附件未就绪（上传中/失败）时不发送——失败需移除，进行中需等待
+      const pending = files.filter((f) => f.status !== 'done');
+      if (pending.length > 0) {
+        const allFailed = pending.every((f) => f.status === 'error');
+        toast(allFailed ? '部分文件上传失败，请移除后重试' : '文件上传中，请稍候', 'error');
+        return;
+      }
       onSend(text, files);
       setFiles([]);
     },
@@ -110,26 +119,55 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
 
   // ── File handling ──
 
+  // 选中即传（行业模式）：文件上传与会话解耦（后端支持 pre-session 上传），
+  // 选中立刻上传拿 attachment id，发送时消息只带 id。
   const addFiles = useCallback(
     (incoming: File[]) => {
-      setFiles((prev) => {
-        const now = Date.now();
-        const mapped: AttachedFile[] = incoming.map((f, i) => ({
-          id: `${now}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-          name: f.name,
-          size: f.size,
-          type: f.type,
-          file: f,
-        }));
-        const merged = [...prev, ...mapped].slice(0, MAX_FILES);
-        if (merged.length < prev.length + mapped.length) {
-          toast(`最多附加 ${MAX_FILES} 个文件`, 'info');
-        }
-        return merged;
-      });
+      const now = Date.now();
+      const all: AttachedFile[] = incoming.map((f, i) => ({
+        id: `${now}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        file: f,
+        status: 'uploading',
+        progress: 0,
+      }));
+      const room = MAX_FILES - files.length;
+      if (room < all.length) {
+        toast(`最多附加 ${MAX_FILES} 个文件`, 'info');
+      }
+      const toKeep = all.slice(0, Math.max(0, room));
+      setFiles((prev) => [...prev, ...toKeep]);
+      for (const m of toKeep) {
+        if (!m.file) continue;
+        uploadAttachment(m.file, undefined, undefined, (pct) => {
+          setFiles((prev) => prev.map((x) => (x.id === m.id ? { ...x, progress: pct } : x)));
+        })
+          .then((att) => {
+            setFiles((prev) =>
+              prev.map((x) => (x.id === m.id ? { ...x, status: 'done', attachmentId: att.id } : x)),
+            );
+          })
+          .catch(() => {
+            setFiles((prev) => prev.map((x) => (x.id === m.id ? { ...x, status: 'error' } : x)));
+          });
+      }
     },
-    [toast],
+    [toast, files],
   );
+
+  const removeFile = useCallback((id: string) => {
+    setFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target?.attachmentId) {
+        deleteAttachment(target.attachmentId).catch(() => {
+          /* orphan server file — best effort cleanup */
+        });
+      }
+      return prev.filter((f) => f.id !== id);
+    });
+  }, []);
 
   useImperativeHandle(ref, () => ({ addFiles }), [addFiles]);
 
@@ -137,7 +175,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
     (rejections: FileRejection[]) => {
       for (const r of rejections) {
         if (r.reason === 'size_exceeded') {
-          toast(`"${r.file.name}" 超过 50MB 限制`, 'error');
+          toast(`"${r.file.name}" 超过 10MB 限制`, 'error');
         } else {
           toast(`"${r.file.name}" 格式不支持`, 'error');
         }
@@ -184,6 +222,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
         />
+
+        <AttachmentList files={files} onRemove={removeFile} />
 
         <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-raised)] border-t-0 min-h-[var(--da-toolbar-height)] rounded-b-[var(--da-input-radius)]">
           <div className="flex items-center gap-2">
