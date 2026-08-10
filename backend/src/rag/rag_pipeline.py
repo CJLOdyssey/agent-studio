@@ -1,5 +1,3 @@
-from typing import Any
-
 """RAG pipeline: analysis → chunking → embedding → vector store → retrieval.
 
 Steps 8-15 of the single-agent template:
@@ -16,12 +14,25 @@ Production stack:
   - Vector DB: PostgreSQL + pgvector extension
 """
 
+import os
+from difflib import SequenceMatcher
+from typing import Any
+
 from core.infra.logging_config import get_logger
 from rag.rag_chunking import semantic_chunk
 from rag.rag_embedding import EmbeddingProvider
 from rag.rag_store import PgVectorStore
 
 logger = get_logger(__name__)
+
+# ── Retrieval policy ─────────────────────────────────────────────────────────
+
+# Chunks scoring below this similarity are noise, not context (env-tunable).
+DEFAULT_MIN_SCORE = float(os.environ.get("RAG_MIN_SCORE", "0.25"))
+# Overfetch before dedup so dropping near-duplicates can refill up to top_k.
+DEDUP_OVERFETCH = 3
+# Adjacent sliding-window chunks overlap ~12%; anything above this ratio is a duplicate.
+DEDUP_RATIO = 0.85
 
 # ── Global state ─────────────────────────────────────────────────────────────
 
@@ -75,12 +86,13 @@ async def retrieve_context(
     session_id: str | None = None,
     tags: list[str] | None = None,
     top_k: int = 5,
+    min_score: float | None = None,
 ) -> str:
     """Steps 13-14: Retrieve relevant context for a user query.
 
     1. Embed query with DashScope
-    2. Hybrid search via pgvector (cosine + tag filter)
-    3. Return formatted context for LLM
+    2. Vector search via pgvector (cosine + tag filter + score floor)
+    3. Drop near-duplicate chunks, then format context for LLM
     """
     if _embedding_provider is None:
         return ""
@@ -89,15 +101,41 @@ async def retrieve_context(
         query_embedding,
         session_id=session_id,
         tag_filter=tags,
-        top_k=top_k,
+        top_k=top_k * DEDUP_OVERFETCH,
+        min_score=min_score if min_score is not None else DEFAULT_MIN_SCORE,
     )
 
     if not results:
         return ""
 
+    deduped = _dedup_chunks(results, top_k)
+    if not deduped:
+        return ""
+
     parts = []
-    for r in results:
+    for r in deduped:
         tag_str = f" [{', '.join(r['tags'])}]" if r["tags"] else ""
         parts.append(f"--- [相似度: {r['score']:.2f}]{tag_str} ---\n{r['text']}")
 
     return "\n\n".join(parts)
+
+
+def _dedup_chunks(
+    results: list[dict[str, Any]], top_k: int
+) -> list[dict[str, Any]]:
+    """Drop chunks that are near-duplicates of an already-accepted one.
+
+    Overlapping sliding windows produce near-identical texts; keeping both
+    wastes context. Results arrive score-descending, so the first copy wins.
+    """
+    accepted: list[dict[str, Any]] = []
+    for r in results:
+        if any(
+            SequenceMatcher(None, r["text"], a["text"]).ratio() >= DEDUP_RATIO
+            for a in accepted
+        ):
+            continue
+        accepted.append(r)
+        if len(accepted) >= top_k:
+            break
+    return accepted

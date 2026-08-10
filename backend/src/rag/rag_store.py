@@ -119,9 +119,11 @@ class PgVectorStore:
         session_id: str | None = None,
         tag_filter: list[str] | None = None,
         top_k: int = 5,
+        min_score: float | None = None,
     ) -> list[dict[str, Any]]:
-        """Search with hybrid vector similarity and optional tag filter.
+        """Search with vector similarity, optional tag filter and score floor.
 
+        min_score drops low-similarity chunks (noise) before top_k applies.
         Returns list of {text, score, tags, session_id, run_id}.
         """
         await self._ensure_table()
@@ -146,6 +148,12 @@ class PgVectorStore:
                     tag_conditions.append(f":{param_name} = ANY(tags)")
                     params[param_name] = tag.lower()
                 where_clauses.append("(" + " OR ".join(tag_conditions) + ")")
+
+            if min_score is not None:
+                where_clauses.append(
+                    "(1 - (embedding <=> CAST(:emb AS vector))) >= :min_score"
+                )
+                params["min_score"] = min_score
 
             where_sql = " AND ".join(where_clauses) if where_clauses else "TRUE"
 

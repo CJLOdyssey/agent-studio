@@ -303,6 +303,34 @@ class TestPgVectorStore:
             assert results[0]["tags"] == []
 
     @pytest.mark.asyncio
+    async def test_search_with_min_score(self):
+        store = PgVectorStore()
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = []
+        mock_session.execute = AsyncMock(side_effect=[None, None, None, mock_result])
+        with _patch_db(mock_session):
+            await store.search([0.1] * 1024, min_score=0.3)
+            search_call = mock_session.execute.call_args_list[3]
+            query = str(search_call[0][0])
+            params = search_call[0][1]
+            assert "min_score" in query
+            assert params["min_score"] == 0.3
+
+    @pytest.mark.asyncio
+    async def test_search_without_min_score_no_floor(self):
+        store = PgVectorStore()
+        mock_session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = []
+        mock_session.execute = AsyncMock(side_effect=[None, None, None, mock_result])
+        with _patch_db(mock_session):
+            await store.search([0.1] * 1024)
+            search_call = mock_session.execute.call_args_list[3]
+            query = str(search_call[0][0])
+            assert "min_score" not in query
+
+    @pytest.mark.asyncio
     async def test_search_no_filters(self):
         store = PgVectorStore()
         mock_session = AsyncMock()

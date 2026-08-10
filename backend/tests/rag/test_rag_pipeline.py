@@ -149,7 +149,57 @@ class TestRagPipeline:
             with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
                 await rag_pipeline.retrieve_context("query", top_k=10)
                 call_kwargs = mock_search.call_args[1]
-                assert call_kwargs["top_k"] == 10
+                # Overfetch for dedup refill, then trim to top_k
+                assert call_kwargs["top_k"] == 10 * rag_pipeline.DEDUP_OVERFETCH
+
+    @pytest.mark.asyncio
+    async def test_retrieve_default_min_score(self):
+        provider = MagicMock()
+        provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
+        with patch.object(rag_pipeline, "_embedding_provider", provider):
+            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
+                await rag_pipeline.retrieve_context("query")
+                call_kwargs = mock_search.call_args[1]
+                assert call_kwargs["min_score"] == rag_pipeline.DEFAULT_MIN_SCORE
+
+    @pytest.mark.asyncio
+    async def test_retrieve_explicit_min_score(self):
+        provider = MagicMock()
+        provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
+        with patch.object(rag_pipeline, "_embedding_provider", provider):
+            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
+                await rag_pipeline.retrieve_context("query", min_score=0.5)
+                call_kwargs = mock_search.call_args[1]
+                assert call_kwargs["min_score"] == 0.5
+
+    @pytest.mark.asyncio
+    async def test_retrieve_dedup_near_duplicates(self):
+        provider = MagicMock()
+        provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
+        dup_text = "需求: 构建一个支持多租户的企业级 RAG 平台。"
+        search_results = [
+            {"text": dup_text, "score": 0.95, "tags": [], "session_id": "s1", "run_id": "r1"},
+            {"text": dup_text, "score": 0.93, "tags": [], "session_id": "s1", "run_id": "r1"},
+            {"text": "完全不同的无关内容", "score": 0.80, "tags": [], "session_id": "s1", "run_id": "r1"},
+        ]
+        with patch.object(rag_pipeline, "_embedding_provider", provider):
+            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=search_results):
+                result = await rag_pipeline.retrieve_context("query", top_k=3)
+                assert result.count(dup_text) == 1
+                assert "完全不同的无关内容" in result
+
+    @pytest.mark.asyncio
+    async def test_retrieve_dedup_keeps_first_copy(self):
+        provider = MagicMock()
+        provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
+        search_results = [
+            {"text": "A", "score": 0.90, "tags": [], "session_id": "s1", "run_id": "r1"},
+            {"text": "A", "score": 0.88, "tags": [], "session_id": "s1", "run_id": "r1"},
+        ]
+        with patch.object(rag_pipeline, "_embedding_provider", provider):
+            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=search_results):
+                result = await rag_pipeline.retrieve_context("query", top_k=1)
+                assert result.count("A") == 1
 
     @pytest.mark.asyncio
     async def test_ingest_messages_chunk_embeddings_assigned(self):
