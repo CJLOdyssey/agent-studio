@@ -54,7 +54,7 @@ const baseProvider: ApiProviderForm = {
 };
 
 function renderModal(overrides: {
-  provider?: ApiProviderForm; saving?: boolean;
+  provider?: ApiProviderForm; saving?: boolean; requireApiKey?: boolean;
   onSave?: ReturnType<typeof vi.fn>; onClose?: ReturnType<typeof vi.fn>;
 } = {}) {
   return render(
@@ -64,6 +64,7 @@ function renderModal(overrides: {
         onSave={overrides.onSave || vi.fn()}
         onClose={overrides.onClose || vi.fn()}
         saving={overrides.saving}
+        requireApiKey={overrides.requireApiKey}
       />
     </TestProviders>,
   );
@@ -80,6 +81,15 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
   it('renders edit title when provider has id', async () => {
     renderModal({ provider: { ...baseProvider, id: 'pk_1' } });
     expect(await screen.findByText('Edit Provider')).toBeInTheDocument();
+  });
+
+  it('allows saving edit when apiKey is empty (plaintext not exposed)', async () => {
+    const onSave = vi.fn();
+    renderModal({ provider: { ...baseProvider, id: 'pk_1', name: 'My Key', apiKey: '' }, onSave });
+    const saveBtn = await screen.findByText('Save');
+    expect(saveBtn.closest('button')).not.toBeDisabled();
+    fireEvent.click(saveBtn);
+    expect(onSave).toHaveBeenCalled();
   });
 
   it('calls onClose when cancel clicked', async () => {
@@ -172,13 +182,13 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
   });
 
   it('save button is disabled when only name is filled but apiKey is empty', async () => {
-    renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: '' } });
+    renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: '' }, requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
   });
 
   it('save button is disabled when only apiKey is filled but name is empty', async () => {
-    renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' } });
+    renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' }, requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
   });

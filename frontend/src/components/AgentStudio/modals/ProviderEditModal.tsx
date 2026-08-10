@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Tag, Loader2, Save, AlertCircle } from 'lucide-react';
 import { fetchModelsFromProvider } from '../../../api/client/keys';
+import { listModels } from '../../../api/client/commands';
 import { listProviders } from '../../../api/client/providers';
 import type { ProvidersMap } from '../../../api/client/providers';
 import { categoriesOf } from '../../../utils/providerCategories';
@@ -38,9 +39,11 @@ interface Props {
   saving?: boolean;
   error?: string | null;
   onCloseError?: () => void;
+  /** 新建模式必须填写 API Key；编辑模式（明文不暴露）允许留空 */
+  requireApiKey?: boolean;
 }
 
-export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError }: Props) {
+export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError, requireApiKey = false }: Props) {
   const { t } = useTranslation();
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
@@ -56,6 +59,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [typeDefaults, setTypeDefaults] = useState<Record<string, string>>({});
 
   useEffect(() => {
     listProviders()
@@ -64,10 +68,18 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       .finally(() => setLoadingProviders(false));
   }, []);
 
+  useEffect(() => {
+    listModels()
+      .then((infos) => setTypeDefaults(Object.fromEntries(infos.map((i) => [i.id, i.type]))))
+      .catch(() => {});
+  }, []);
+
   const info = providers[providerType];
   const caps = info?.capabilities ?? [];
   const isToolProvider = caps.includes('tool');
   const showModels = !isToolProvider && (caps.includes('chat') || caps.includes('image'));
+
+  const canSave = !saving && !!name.trim() && (!requireApiKey || !!apiKey.trim());
 
   const handleSave = () => {
     const preserveStored = Boolean(provider.id) && providerType === provider.provider;
@@ -125,7 +137,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       footer={
         <>
           <button type="button" className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!canSave}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}
           </button>
@@ -176,7 +188,7 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             <div className="pt-1">
               <ModelSection
                 models={models} fetching={fetchingModels} apiKey={apiKey}
-                modelTypes={modelTypes}
+                modelTypes={modelTypes} typeDefaults={typeDefaults}
                 onRemoveModel={(m) => {
                   setModels((prev) => prev.filter((x) => x !== m));
                   setModelTypes((prev) => {

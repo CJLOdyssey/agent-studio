@@ -157,7 +157,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       isActive?: boolean;
       isDefault?: boolean;
     },
-  ) => {
+  ): Promise<boolean> => {
     setError(null);
     try {
       await api.updateKey(id, {
@@ -172,10 +172,12 @@ export default function ApiManagementModal({ onClose }: Props) {
       });
       await loadKeys();
       void queryClient.invalidateQueries({ queryKey: ['keys'] });
+      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.updateFailed');
       setError(msg);
       Logger.error('Failed to update API key', err);
+      return false;
     }
   };
 
@@ -296,11 +298,13 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
             baseUrl: editingKey.base_url || '',
             apiKey: '',
             models: editingKey.models,
+            model_types: editingKey.model_types ?? undefined,
             isActive: editingKey.is_active,
             status: 'untested' as const,
           }}
           saving={saving}
           error={modalError}
+          requireApiKey={!editingKey.id}
           onCloseError={() => setModalError(null)}
           onSave={async (form) => {
             const label = form.name.trim() || (() => {
@@ -308,7 +312,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
               return `${form.provider}-${count}`;
             })();
             if (editingKey.id) {
-              await handleUpdateKey(editingKey.id, {
+              const ok = await handleUpdateKey(editingKey.id, {
                 label,
                 capabilities: form.capabilities,
                 apiKey: form.apiKey || undefined,
@@ -316,6 +320,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
                 models: form.models,
                 model_types: form.model_types ?? undefined,
               });
+              if (ok) { setEditingKey(null); setModalError(null); }
             } else {
               await handleSaveKey({
                 provider: form.provider,
