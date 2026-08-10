@@ -20,8 +20,15 @@ describe('uploadAttachment', { tags: ['unit'] }, () => {
     const result = await uploadAttachment(file, 's1');
 
     expect(mockApi.post).toHaveBeenCalledTimes(1);
-    const [url, form] = mockApi.post.mock.calls[0] as [string, FormData];
+    const [url, form, config] = mockApi.post.mock.calls[0] as [
+      string,
+      FormData,
+      { headers?: { 'Content-Type'?: unknown } },
+    ];
     expect(url).toBe('/attachments');
+    // 关键：必须覆盖实例默认的 application/json，否则 FormData 被序列化成
+    // JSON 字符串 → 后端 multipart 422
+    expect(config.headers).toEqual({ 'Content-Type': undefined });
     expect(form.get('session_id')).toBe('s1');
     expect((form.get('file') as File).name).toBe('hello.txt');
     expect(result).toEqual({ id: 'a1' });
