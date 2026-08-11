@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ userId: me.id, email: me.email, username: me.username, roles: me.roles });
       localStorage.setItem('agentstudio_user_id', me.id);
       window.dispatchEvent(new CustomEvent('auth:login'));
-      await mergeGuest();
+      void mergeGuest();
     }
 
     async function tryRestore(): Promise<boolean> {
@@ -114,14 +114,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function init() {
       try {
-        const config = await getAuthConfig();
+        // B: identity restore and auth config run in parallel — a slow config
+        // request must not block showing the signed-in user on refresh.
+        const [config, restored] = await Promise.all([
+          getAuthConfig().catch(() => null),
+          (async () => {
+            try {
+              return await tryRestore();
+            } catch {
+              return false;
+            }
+          })(),
+        ]);
         if (cancelled) return;
-        setLegacyMode(!config.enabled || config.mode === 'legacy');
+        setLegacyMode(!config?.enabled || config?.mode === 'legacy');
 
-        if (await tryRestore()) {
-          setLoading(false);
-          return;
-        }
+        if (restored) return;
         // Access token may be expired — refresh before giving up. Only clear the
         // stored refresh_token if refresh itself fails (matches ragbase behaviour).
         if (await refreshSession()) {
@@ -129,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           clearTokens();
         }
-        setLoading(false);
       } catch {
         // Auth config unavailable
       } finally {
