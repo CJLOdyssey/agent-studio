@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { createRef } from 'react';
 
@@ -253,6 +253,11 @@ describe('InputToolbar attachment bar & preview', { tags: ['unit'] }, () => {
     vi.clearAllMocks();
     mockUploadAttachment.mockResolvedValue({ id: 'att-1' });
     mockDeleteAttachment.mockResolvedValue({});
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('no network')));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   const addDoneFile = async (name = 'a.txt') => {
