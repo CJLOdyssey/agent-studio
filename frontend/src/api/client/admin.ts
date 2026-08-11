@@ -14,9 +14,12 @@ export interface DashboardStats {
 interface LogEntry {
   id: string;
   timestamp: string;
-  command: string;
-  payload: string;
-  result: string;
+  action: string;
+  entity_type: string;
+  entity_name: string;
+  detail: string;
+  user: string;
+  ip: string;
 }
 
 export interface CommandLogsResponse {

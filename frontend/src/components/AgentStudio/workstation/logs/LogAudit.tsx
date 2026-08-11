@@ -11,7 +11,7 @@ import WstaPagination from '../shared/WstaPagination';
 import type * as React from 'react';
 
 type LogLevel = 'info' | 'warn' | 'error';
-type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' | 'system';
+type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' | 'system' | 'command' | 'api_key';
 
 interface LogEntry { id: string; timestamp: string; level: LogLevel; module: string; user: string; action: string; details: string; ip: string; }
 
@@ -21,8 +21,15 @@ const LOG_LEVELS: { value: LogLevel; label: string; icon: typeof Info }[] = [
   { value: 'error', label: 'ERROR', icon: AlertCircle },
 ];
 
-const MODULES: LogModule[] = ['all', 'agent', 'prompt', 'tool', 'mcp', 'skill', 'team', 'system'];
-const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: t('logs.module_agent'), prompt: t('logs.module_prompt'), tool: t('logs.module_tool'), mcp: t('logs.module_mcp'), skill: t('logs.module_skill'), team: t('logs.module_team'), system: t('logs.module_system') };
+// 审计级别由操作类型推导（delete 告警级，其余 info）——不再硬编码。
+function deriveLevel(action: string): LogLevel {
+  const a = (action || '').toLowerCase();
+  if (a.includes('delete') || a.includes('删除')) return 'warn';
+  return 'info';
+}
+
+const MODULES: LogModule[] = ['all', 'agent', 'prompt', 'tool', 'mcp', 'skill', 'team', 'system', 'command', 'api_key'];
+const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: t('logs.module_agent'), prompt: t('logs.module_prompt'), tool: t('logs.module_tool'), mcp: t('logs.module_mcp'), skill: t('logs.module_skill'), team: t('logs.module_team'), system: t('logs.module_system'), command: '命令', api_key: 'API Key' };
 const LEVEL_CLASS: Record<string, string> = { info: 'wsta-tag-indigo', warn: 'wsta-tag-amber', error: 'wsta-tag-red' };
 
 function LogAudit() {
@@ -42,12 +49,14 @@ function LogAudit() {
           ? data.items.map((item) => ({
               id: item.id,
               timestamp: item.timestamp.replace('T', ' ').substring(0, 19),
-              level: 'info' as LogLevel,
-              module: 'system',
-              user: 'system',
-              action: item.command,
-              details: item.result || item.payload,
-              ip: '',
+              level: deriveLevel(item.action),
+              module: item.entity_type,
+              user: item.user || '-',
+              action: item.action,
+              details: item.entity_name
+                ? (item.detail ? `${item.entity_name} — ${item.detail}` : item.entity_name)
+                : (item.detail || item.action),
+              ip: item.ip || '-',
             }))
           : []);
       })

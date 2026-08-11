@@ -39,6 +39,8 @@ class AuditLogDB(Base):
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
     entity_name: Mapped[str] = mapped_column(String(255), default="")
     detail: Mapped[str] = mapped_column(Text, default="")
+    user_name: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    client_ip: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

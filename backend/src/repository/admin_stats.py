@@ -64,33 +64,59 @@ async def get_dashboard_stats() -> dict[str, Any]:
 
 
 async def get_command_logs(limit: int = 20, offset: int = 0) -> dict[str, Any]:
-    """Return paginated command logs (newest first) with total count."""
+    """Return paginated audit log entries (newest first) with total count.
+
+    Primary source is the management audit trail (AuditLogDB: CRUD ops with
+    acting user + client ip); command palette executions (CommandLogDB) are
+    merged in as ``entity_type=command`` entries so the audit view is
+    complete.
+    """
     factory = get_session_factory()
     async with factory() as session:
-        count_row = await session.execute(select(func.count()).select_from(CommandLogDB))
-        total = count_row.scalar() or 0
-
-        rows = (
+        audit_rows = (
             await session.execute(
-                select(CommandLogDB)
-                .order_by(CommandLogDB.created_at.desc())
-                .offset(offset)
-                .limit(limit)
+                select(AuditLogDB).order_by(AuditLogDB.created_at.desc())
+            )
+        ).scalars().all()
+        cmd_rows = (
+            await session.execute(
+                select(CommandLogDB).order_by(CommandLogDB.created_at.desc())
             )
         ).scalars().all()
 
-        items = [
-            {
-                "id": r.id,
-                "timestamp": r.created_at.isoformat() if r.created_at else "",
-                "command": r.command_name,
-                "payload": r.payload,
-                "result": r.result,
-            }
-            for r in rows
-        ]
-
-        return {"items": items, "total": total, "offset": offset, "limit": limit}
+    items = [
+        {
+            "id": r.id,
+            "timestamp": r.created_at.isoformat() if r.created_at else "",
+            "action": r.action,
+            "entity_type": r.entity_type,
+            "entity_name": r.entity_name,
+            "detail": r.detail,
+            "user": r.user_name,
+            "ip": r.client_ip,
+        }
+        for r in audit_rows
+    ] + [
+        {
+            "id": r.id,
+            "timestamp": r.created_at.isoformat() if r.created_at else "",
+            "action": r.command_name,
+            "entity_type": "command",
+            "entity_name": r.command_id,
+            "detail": r.result or r.payload,
+            "user": "",
+            "ip": "",
+        }
+        for r in cmd_rows
+    ]
+    items.sort(key=lambda x: x["timestamp"], reverse=True)
+    total = len(items)
+    return {
+        "items": items[offset : offset + limit],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 async def get_recent_activity(limit: int = 10) -> list[dict[str, Any]]:

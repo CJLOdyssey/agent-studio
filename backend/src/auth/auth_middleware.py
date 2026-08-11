@@ -44,6 +44,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         client_ip = request.client.host if request.client else "?"
 
+        # Audit identity for this request — filled in as soon as the user is
+        # known so log_audit call sites don't thread request context.
+        from core.audit import set_audit_context
+
+        set_audit_context(client_ip=client_ip)
+
         # ── Guest mode: no token → pass through as unauthenticated ────
         if not token:
             request.state.is_authenticated = False
@@ -80,5 +86,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # Attach user info to request state
         request.state.user_id = user_id
         request.state.is_authenticated = True
+        from core.audit import set_audit_context
+
+        set_audit_context(
+            user_name=user.username if user is not None else "",
+            client_ip=client_ip,
+        )
 
         return cast(Response, await call_next(request))
