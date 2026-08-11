@@ -27,6 +27,11 @@ function isImage(name: string) {
   return IMAGE_EXT.test(name.split('.').pop()?.toLowerCase() || '');
 }
 
+function renderIcon(name: string) {
+  const Icon = getIcon(name);
+  return <Icon size={14} />;
+}
+
 /**
  * Shared attachment list — used by InputToolbar (attach bar above the textarea).
  * Thumbnails for uploaded images; optional onPreview makes the name a button.
@@ -53,7 +58,6 @@ function AttachmentChip({
   onPreview?: (file: AttachedFile) => void;
 }) {
   const [thumbFailed, setThumbFailed] = useState(false);
-  const Icon = getIcon(file.name);
   const previewEnabled = !!onPreview && file.status === 'done';
   const showThumb =
     file.status === 'done' && !!file.attachmentId && isImage(file.name) && !thumbFailed;
@@ -68,7 +72,7 @@ function AttachmentChip({
           onError={() => setThumbFailed(true)}
         />
       ) : (
-        <Icon size={14} />
+        renderIcon(file.name)
       )}
 
       {previewEnabled ? (
