@@ -96,6 +96,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ currentRunId: null, streamingId: null, status: 'idle', wsStatus: 'disconnected', interruptedMessageId: sid, continuingId: null, skipThinking: false });
   },
 
+  clearMessages: () => {
+    const s = get();
+    if (s.currentRunId) {
+      Logger.info('[chat] clearMessages — disconnecting run %s', s.currentRunId);
+      disconnectRun(s.currentRunId);
+    }
+    // 切换会话：立即清空旧消息与流状态，避免旧消息残留到新会话加载完成才跳变。
+    // 保留 currentSessionId/currentConvId，由 loadConversation 加载完成后更新。
+    set({
+      messages: [],
+      currentRunId: null,
+      activeRunId: null,
+      streamingId: null,
+      status: 'idle',
+      wsStatus: 'disconnected',
+      error: null,
+      skipThinking: false,
+      continuingId: null,
+      interruptedMessageId: null,
+    });
+  },
+
   addMessage: (msg) => {
     set((s) => ({ messages: [...s.messages, { id: msg.id || uid(), role: msg.role!, agent_name: msg.agent_name || 'Agent', content: msg.content || '', thinking: msg.thinking, round_number: msg.round_number ?? 0, created_at: new Date().toISOString() }], currentRole: msg.role! || 'Agent' }));
   },

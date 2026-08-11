@@ -107,7 +107,7 @@ export default function MessagesPanel({
         {displayMessages.map((msg) => (
           <motion.div
             key={msg.id}
-            initial={reduce ? false : { opacity: 0, y: 12 }}
+            initial={reduce || msg.thinkingDone ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
@@ -134,10 +134,13 @@ export default function MessagesPanel({
   if (hasMessages) {
     return (
       <div className="max-w-[min(900px,85vw)] mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-12" aria-live="polite">
-        {displayMessages.map((msg) => (
+        {displayMessages.length === 0 ? (
+          <LoadingSkeleton />
+        ) : (
+          displayMessages.map((msg) => (
           <motion.div
             key={msg.id}
-            initial={reduce ? false : { opacity: 0, y: 12 }}
+            initial={reduce || msg.thinkingDone ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
@@ -154,7 +157,8 @@ export default function MessagesPanel({
               onThumbsFeedback={handleThumbsFeedback}
             />
           </motion.div>
-        ))}
+          ))
+        )}
         <BrowserFrame />
         <div ref={messagesEndRef} />
       </div>
@@ -162,4 +166,17 @@ export default function MessagesPanel({
   }
 
   return null;
+}
+
+function LoadingSkeleton() {
+  return (
+    <div
+      className="flex flex-1 flex-col items-center justify-center py-24 text-sm text-[var(--color-text-muted)]"
+      aria-busy="true"
+    >
+      <div className="h-4 w-40 mb-3 rounded bg-[var(--color-surface-raised)] animate-pulse" />
+      <div className="h-4 w-56 rounded bg-[var(--color-surface-raised)] animate-pulse" />
+      <div className="mt-4 text-[var(--color-text-muted)]">正在加载对话…</div>
+    </div>
+  );
 }

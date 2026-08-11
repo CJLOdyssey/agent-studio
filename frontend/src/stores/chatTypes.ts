@@ -56,5 +56,7 @@ export interface ChatState {
   setError: (error: string | null) => void;
   setWsStatus: (wsStatus: WsConnectionStatus) => void;
   reset: () => void;
+  /** 切换会话时清空消息与流状态（保留 currentSessionId/currentConvId，由 loadConversation 更新）。 */
+  clearMessages: () => void;
   selectAgent: (agentId: string) => void;
 }

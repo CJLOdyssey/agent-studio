@@ -242,6 +242,8 @@ export function useWorkstationState(
     // （react-hooks/set-state-in-effect），快速切换由 timer cleanup 兜底。
     const timer = setTimeout(() => {
       setRestoring(true);
+      // 立即清空旧会话消息，避免旧消息残留到新会话加载完成才跳变（视觉跳动）。
+      useChatStore.getState().clearMessages();
       const found = filteredConversations.find((c) => c.id === activeId);
       if (!found) { resetApi(); setRestoring(false); return; }
 
