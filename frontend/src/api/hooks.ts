@@ -147,6 +147,9 @@ export function useAvailableModels(): ModelOption[] {
   const { data: apiModels } = useQuery({
     queryKey: ['models'],
     queryFn: () => api.listModels(),
+    // Backend returns 200 [] for unauthenticated GETs — only query once auth
+    // is established so the pre-auth empty result is never cached.
+    enabled: isAuthenticated,
     staleTime: 0,
     gcTime: 30_000,
   });
