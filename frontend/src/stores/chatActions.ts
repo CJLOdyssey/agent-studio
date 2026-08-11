@@ -282,8 +282,26 @@ export async function retry() {
     return;
   }
   useChatStore.setState({ currentRunId: null });
+  // 重试与正常发送走同一 key/model 解析（否则落到后端 config 默认模型，
+  // 硅基流动/免费模型会被错误路由到 deepseek 默认 key）。
+  let keyId: string | undefined;
+  let model: string | undefined;
   try {
-    const resp = await submitRequirementExternal(lastUserMsg.content, s.currentSessionId ?? undefined);
+    const keys = await listKeys();
+    const activeKeys = keys.filter((k) => k.is_active);
+    const persistedModel = localStorage.getItem('agentstudio-selected-model');
+    const resolved = resolveKey(activeKeys, persistedModel ?? undefined);
+    keyId = resolved.keyId;
+    model = resolved.model;
+  } catch {
+    // Key vault unavailable — backend falls back to the default model
+  }
+  if (!keyId) {
+    useChatStore.setState({ status: 'error', error: '请先在设置中配置 API Key', wsStatus: 'disconnected' });
+    return;
+  }
+  try {
+    const resp = await submitRequirementExternal(lastUserMsg.content, s.currentSessionId ?? undefined, keyId, model);
     useChatStore.setState({ currentRunId: resp.run_id, currentSessionId: resp.session_id || s.currentSessionId || null, status: 'running', wsStatus: 'connecting' });
     connectRun(resp.run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
   } catch (err: unknown) {

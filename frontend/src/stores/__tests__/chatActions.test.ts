@@ -334,8 +334,34 @@ describe('retry', { tags: ['unit'] }, () => {
     expect(mockSubmitReq).toHaveBeenCalledWith(
       'follow-up',
       'sess-1',
+      'key-1',
+      'deepseek-chat',
     );
     expect(connectRun).toHaveBeenCalled();
+  });
+
+  it('routes retry to the key owning the UI-selected model (SiliconFlow case)', async () => {
+    mockListKeys.mockResolvedValue([
+      { id: 'deepseek-key', is_default: false, is_active: true, models: ['deepseek-v4-flash'] },
+      { id: 'siliconflow-key', is_default: false, is_active: true, models: ['Qwen/Qwen3-8B', 'THUDM/GLM-Z1-9B-0414'] },
+    ]);
+    localStorage.setItem('agentstudio-selected-model', 'THUDM/GLM-Z1-9B-0414');
+    const msg1 = makeMsg({ id: 'u1', role: 'user', content: 'question' });
+    const msg2 = makeMsg({ id: 'a1', role: 'agent', content: 'answer' });
+    useChatStore.setState({
+      messages: [msg1, msg2],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    await retry();
+
+    expect(mockSubmitReq).toHaveBeenCalledWith(
+      'question',
+      'sess-1',
+      'siliconflow-key',
+      'THUDM/GLM-Z1-9B-0414',
+    );
   });
 
   it('handles retry API failure', async () => {
