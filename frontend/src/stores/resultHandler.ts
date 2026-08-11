@@ -155,14 +155,49 @@ export function handleTeamResultEvent(
   set((_s) => {
     let msgs = _s.messages;
     if (_s.streamingId) {
-      msgs = _s.messages.map((m) => {
-        if (m.id !== _s.streamingId) return m;
-        // Replace the unlabeled concatenated stream output with the composed
-        // per-node artifact blocks so each node's result is presented separately.
-        const updated: Record<string, unknown> = { thinkingDone: true };
-        if (display) updated.content = display;
-        return { ...m, ...updated } as ChatMessage;
-      });
+      const streamed = _s.messages.find((m) => m.id === _s.streamingId);
+      const verdictFor = streamed
+        ? msg.verdicts?.[streamed.agent_name || ''] ?? undefined
+        : undefined;
+      if (verdictFor) {
+        // Reviewer：verdict 人类可读化，保留角色消息（行业化布局——
+        // 评审是角色自己的输出，不并入团队汇总）。
+        const score = typeof verdictFor.score === 'number'
+          ? ` · score ${verdictFor.score}`
+          : '';
+        const head = `${verdictFor.approved ? '✅ 通过' : '❌ 未通过'}${score}`;
+        const reason = verdictFor.reason ? `\n理由：${verdictFor.reason}` : '';
+        msgs = _s.messages.map((m) =>
+          m.id === _s.streamingId
+            ? { ...m, thinkingDone: true, content: `${head}${reason}` } as ChatMessage
+            : m,
+        );
+        // 追加「团队汇总」最终成品（reporter 交付物）
+        if (display) {
+          msgs = [
+            ...msgs,
+            {
+              id: crypto.randomUUID?.() || uid(),
+              role: 'agent',
+              agent_name: '团队汇总',
+              content: display,
+              round_number: 1,
+              created_at: new Date().toISOString(),
+            } as ChatMessage,
+          ];
+        }
+      } else {
+        // Generator：最后一条流消息升级为「团队汇总」最终成品
+        msgs = _s.messages.map((m) => {
+          if (m.id !== _s.streamingId) return m;
+          const updated: Record<string, unknown> = { thinkingDone: true };
+          if (display) {
+            updated.content = display;
+            updated.agent_name = '团队汇总';
+          }
+          return { ...m, ...updated } as ChatMessage;
+        });
+      }
     }
     // 重新生成完成：给新模型消息挂答案分页（同 requirement 答案组 =
     // 旧 run 列表 + 新 run），切换走分支加载（父链 + 子孙链）。

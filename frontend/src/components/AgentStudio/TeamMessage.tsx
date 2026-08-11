@@ -507,12 +507,19 @@ const TeamMessage = memo(function TeamMessage({
             {meta.verdicts && Object.keys(meta.verdicts).length > 0 && (
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 {Object.entries(meta.verdicts).map(([role, v]) => (
-                  <span key={role} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]">
+                  <span
+                    key={role}
+                    title={v.reason}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]"
+                  >
                     {v.approved
                       ? <CheckCircle2 size={12} className="text-[var(--color-success)]" />
                       : <XCircle size={12} className="text-[#ef4444]" />}
                     <span>{role}</span>
                     <span className="text-[var(--color-text-muted)]">{t('teamMessage.rounds', { count: String(v.rounds) })}</span>
+                    {v.reason && (
+                      <span className="text-[var(--color-text-muted)] italic truncate max-w-[180px]">{v.reason}</span>
+                    )}
                   </span>
                 ))}
                 {meta.round !== undefined && (

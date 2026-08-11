@@ -23,7 +23,9 @@ async def get_dashboard_stats() -> dict[str, Any]:
     factory = get_session_factory()
     async with factory() as session:
         agents = await session.execute(
-            select(func.count()).select_from(AgentConfigDB).where(AgentConfigDB.is_active)
+            # is_active 标记与"是否可被团队使用"无关（陈旧数据多为 false），
+            # 统计全部已配置的 agent 以反映真实数量。
+            select(func.count()).select_from(AgentConfigDB)
         )
         prompts = await session.execute(
             select(func.count()).select_from(PromptDB).where(PromptDB.status == "active")

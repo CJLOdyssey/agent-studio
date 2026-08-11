@@ -21,6 +21,9 @@ def _parse_verdict(output: str) -> dict[str, Any]:
             return {
                 "approved": bool(data.get("approved", False)),
                 "reason": str(data.get("reason", "")),
+                "score": data.get("score")
+                if isinstance(data.get("score"), (int, float))
+                else None,
             }
     approved = any(kw.lower() in text.lower() for kw in _APPROVAL_KEYWORDS)
     return {"approved": approved, "reason": ""}
@@ -104,6 +107,7 @@ class ReviewerStrategy:
         verdicts[node.role_identifier] = {
             "approved": verdict["approved"],
             "reason": verdict["reason"],
+            "score": verdict.get("score"),
             "rounds": state.get("round_number", 1),
         }
         state["verdicts"] = verdicts

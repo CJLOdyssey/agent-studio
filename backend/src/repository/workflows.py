@@ -136,7 +136,10 @@ async def save_workflow_config(config: WorkflowConfig) -> WorkflowConfig:
                 from_id = node_id_map.get(edge.from_node_id, edge.from_node_id)
                 to_id = node_id_map.get(edge.to_node_id, edge.to_node_id)
                 db_edge = WorkflowEdgeDB(
-                    id=edge.id if edge.id else str(uuid4()),
+                    # ReactFlow frontend sends generated edge ids (e.g.
+                    # "reactflow__edge-<uuid>-<uuid>") that exceed the 36-char
+                    # column — fall back to a fresh uuid for those.
+                    id=edge.id if edge.id and len(edge.id) <= 36 else str(uuid4()),
                     workflow_config_id=db_config.id,
                     from_node_id=from_id,
                     to_node_id=to_id,

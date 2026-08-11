@@ -161,7 +161,7 @@ function MonitorCenter({ onNavigate }: Props) {
       }
     >
       <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
-        <div className="flex flex-col flex-1 p-6 gap-6 overflow-y-auto">
+        <div className="flex flex-col flex-1 min-h-0 p-6 gap-6 overflow-y-auto">
           <div className="flex items-center justify-between">
             <div className="text-sm text-[var(--color-text-muted)]">
               {lastUpdated ? `上次更新: ${lastUpdated}` : ''}

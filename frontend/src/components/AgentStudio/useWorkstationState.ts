@@ -376,6 +376,7 @@ export function useWorkstationState(
     syncActiveConversation();
     resetApi();
     setSelectedAgentId(null);
+    useChatStore.getState().setActiveTeam(null);
     conv.setActiveConvId(null);
     setRestoring(false);
     navigate('/');
@@ -386,6 +387,16 @@ export function useWorkstationState(
   // navigate 驱动 URL，activeConvId 由 useParams 派生。agent/team 身份
   // 状态（selectedAgentId/activeTeamId）保持 state 语义，不 URL 化。
   const navigateToConversation = useCallback((convId: string | null) => {
+    // 按会话自身身份恢复/清除 agent/team 状态，避免团队身份残留导致
+    // 普通会话消息被渲染成团队消息（见 MessagesPanel TeamMessage 分支）。
+    // convId 为 null（新建聊天/团队入口）时由调用方管理身份，此处不动。
+    if (convId) {
+      const target = conv.conversations.find((c) => c.id === convId);
+      const teamId = target?.kind === 'team' ? target.teamId : undefined;
+      const agentId = target?.kind === 'agent' ? target.agentId : undefined;
+      useChatStore.getState().setActiveTeam(teamId ?? null);
+      setSelectedAgentId(agentId ?? null);
+    }
     conv.setActiveConvId(convId);
     if (convId) {
       setRestoring(true);
@@ -394,7 +405,7 @@ export function useWorkstationState(
       setRestoring(false);
       navigate('/');
     }
-  }, [conv, navigate]);
+  }, [conv, navigate, setSelectedAgentId]);
 
   // 直达主页（无 URL 会话）时恢复上次会话：localStorage fallback 后
   // 以 URL 形式重建（replace，不堆历史）。

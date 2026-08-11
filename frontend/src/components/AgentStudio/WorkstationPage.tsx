@@ -103,7 +103,7 @@ export default function WorkstationPage({ onClose }: Props) {
                 </button>
               </div>
             </header>
-            <div className="flex-1 min-h-0 overflow-hidden bg-[var(--color-surface-raised)]" style={{ paddingBottom: 30, animation: activeTab !== prevTab ? 'wstaFadeSlideIn 0.2s ease' : undefined }}>
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[var(--color-surface-raised)]" style={{ paddingBottom: 30, animation: activeTab !== prevTab ? 'wstaFadeSlideIn 0.2s ease' : undefined }}>
               <ErrorBoundary key={activeTab} FallbackComponent={ModuleFallback}>
                 {TAB_RENDERERS[activeTab]({ onNavigate: (tab) => handleTabChange(tab as WorkstationTab) })}
               </ErrorBoundary>

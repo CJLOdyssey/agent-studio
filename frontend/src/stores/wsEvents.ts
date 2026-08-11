@@ -66,6 +66,7 @@ export interface TeamVerdict {
   role: string;
   approved: boolean;
   reason?: string;
+  score?: number;
   rounds: number;
 }
 
