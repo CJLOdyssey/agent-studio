@@ -474,6 +474,9 @@ export function useWorkstationState(
         role: 'user',
         content: text,
         timestamp: Date.now(),
+        attachments: files
+          .filter((f) => f.attachmentId)
+          .map((f) => ({ id: f.attachmentId as string, filename: f.name, size_bytes: f.size })),
       };
       if (!conv.activeConvId) {
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
@@ -508,6 +511,9 @@ export function useWorkstationState(
         role: 'user',
         content: text,
         timestamp: Date.now(),
+        attachments: files
+          .filter((f) => f.attachmentId)
+          .map((f) => ({ id: f.attachmentId as string, filename: f.name, size_bytes: f.size })),
       };
       const homeKind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : 'normal';
       if (!conv.activeConvId) {
@@ -619,6 +625,7 @@ export function useWorkstationState(
         currentAnswerVersion: m.currentAnswerVersion,
         thumbsFeedback: m.thumbsFeedback,
         interrupted: m.interrupted,
+        attachments: m.attachments,
       })),
     [apiMessages],
   );
