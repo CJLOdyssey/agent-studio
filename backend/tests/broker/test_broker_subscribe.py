@@ -276,6 +276,67 @@ class TestBufferRunMessages:
 
     @patch("broker.get_redis")
     @pytest.mark.asyncio
+    async def test_worker_closes_pubsub_on_stop_buffer(self, mock_get_redis):
+        """Regression: stop_buffer cancels the worker but the pubsub connection
+        must be returned to the pool — otherwise every run leaks one Redis
+        connection (pool of 20 exhausts after ~20 runs → "Too many connections")."""
+        from broker import (
+            _buffer_tasks,
+            _buffers,
+            buffer_run_messages,
+            stop_buffer,
+        )
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+
+        async def blocking_get_message(**kwargs):
+            await asyncio.sleep(10)
+
+        mock_pubsub.get_message = blocking_get_message
+        mock_pubsub.close = AsyncMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        await buffer_run_messages("run-close-cancel")
+        await asyncio.sleep(0.05)  # let the worker block inside get_message
+        await stop_buffer("run-close-cancel")
+
+        mock_pubsub.close.assert_awaited_once()
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_worker_closes_pubsub_on_idle_timeout(self, mock_get_redis):
+        """Regression: idle-timeout exit path must also return the pubsub
+        connection to the pool (no WebSocket ever connected)."""
+        from broker import (
+            _buffer_tasks,
+            _buffers,
+            buffer_run_messages,
+        )
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.get_message = AsyncMock(side_effect=TimeoutError)
+        mock_pubsub.close = AsyncMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        await buffer_run_messages("run-close-timeout")
+        await asyncio.sleep(0.05)  # let the worker hit the timeout and exit
+
+        mock_pubsub.close.assert_awaited_once()
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
     async def test_drain_buffer_returns_and_clears(self, mock_get_redis):
         from broker import _buffers, drain_buffer
 

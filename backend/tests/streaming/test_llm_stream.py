@@ -468,6 +468,58 @@ class TestStreamLlmResponse:
         callback.assert_any_call({"event": "on_custom_thinking", "data": {"content": "内容未闭合"}})
 
 
+def _sse_delta(content: str) -> str:
+    return f'data: {{"choices":[{{"delta":{{"content":"{content}"}},"finish_reason":null}}]}}'
+
+
+class TestStreamLineGuard:
+    """Regression: the SSE line-count guard must not truncate reasoning-model
+    streams. GLM-Z1-style models emit thinking as 1-2 char chunks; 2000 lines
+    is exhausted by a ~2-4KB answer, silently cutting the model message off
+    (finish=None). The guard must be configurable and default far higher."""
+
+    @pytest.mark.asyncio
+    async def test_stream_above_2k_lines_not_truncated(self):
+        from streaming.llm_stream import _MAX_STREAM_LINES, stream_llm_response
+
+        # 2000-line guard truncates ~4KB answers; a realistic reasoning-model
+        # stream is much longer. Send 5000 lines and expect them all back.
+        lines = [_sse_delta("x") for _ in range(5000)]
+
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(lines)):
+            content, _, _, finish_reason, _ = await stream_llm_response(
+                "https://api.siliconflow.cn/v1/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "THUDM/GLM-Z1-9B-0414", "messages": []},
+            )
+        assert len(content) == 5000
+        assert finish_reason is None or finish_reason != "length"
+
+    @pytest.mark.asyncio
+    async def test_guard_limit_configurable_via_env(self):
+        from streaming.llm_stream import stream_llm_response
+
+        with patch("streaming.llm_stream._MAX_STREAM_LINES", 10):
+            lines = [_sse_delta("y") for _ in range(20)]
+            with patch("httpx.AsyncClient", return_value=_MockClientCtx(lines)):
+                content, _, _, finish_reason, _ = await stream_llm_response(
+                    "https://api.siliconflow.cn/v1/chat/completions",
+                    {"Authorization": "Bearer sk-test"},
+                    {"model": "THUDM/GLM-Z1-9B-0414", "messages": []},
+                )
+        # Guard still exists as a runaway-output safety net, just with a sane default.
+        assert len(content) < 20
+        assert finish_reason is None
+
+    @pytest.mark.asyncio
+    async def test_default_guard_high_enough_for_reasoning_models(self):
+        import streaming.llm_stream as mod
+
+        # Reasoning models stream 1-2 char chunks; a 8KB answer + thinking is
+        # ~4000-8000 SSE lines. Default must comfortably cover that.
+        assert mod._MAX_STREAM_LINES >= 20000
+
+
 from streaming.llm_stream import ReasoningSplitter, ThinkTagSplitter
 
 

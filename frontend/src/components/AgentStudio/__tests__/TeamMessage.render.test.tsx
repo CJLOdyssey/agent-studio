@@ -36,6 +36,51 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
     expect(container.textContent).toContain('Hello from agent');
   });
 
+  describe('answer pagination', () => {
+    it('renders pagination arrows when multiple answer versions exist', () => {
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({
+            answerVersions: ['v1', 'v2'],
+            answerRunIds: ['r1', 'r2'],
+            currentAnswerVersion: 1,
+          })}
+          allAgents={[mockAgent]}
+        />
+      );
+      expect(container.textContent).toContain('2/2');
+      expect(screen.getByLabelText('Previous answer version')).toBeInTheDocument();
+      expect(screen.getByLabelText('Next answer version')).toBeInTheDocument();
+    });
+
+    it('renders pagination arrows even when verdicts are attached (team result)', () => {
+      // Regression: team_result attaches verdicts to the streamed message; the
+      // `!meta.verdicts` gate hid the answer pagination until a page reload.
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({
+            answerVersions: ['v1', 'v2'],
+            answerRunIds: ['r1', 'r2'],
+            currentAnswerVersion: 1,
+            verdicts: { writer: { role: 'writer', approved: true, rounds: 2 } },
+          })}
+          allAgents={[mockAgent]}
+        />
+      );
+      expect(container.textContent).toContain('2/2');
+    });
+
+    it('does not render pagination arrows for a single answer', () => {
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({ answerVersions: ['v1'], answerRunIds: ['r1'], currentAnswerVersion: 0 })}
+          allAgents={[mockAgent]}
+        />
+      );
+      expect(screen.queryByLabelText('Previous answer version')).not.toBeInTheDocument();
+    });
+  });
+
   describe('agent typing state', () => {
     it('shows typing indicator when isTyping is true', () => {
       const { container } = render(

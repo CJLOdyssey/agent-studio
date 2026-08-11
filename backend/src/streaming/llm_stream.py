@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import os
 import time
 from typing import Any
 
@@ -20,7 +21,12 @@ from core.infra.metrics import (
 
 # Hard guard on runaway SSE streams (free-tier LLMs can stream forever, each
 # chunk resetting httpx's read timeout). Truncate past this many SSE lines.
-_MAX_STREAM_LINES = 2000
+#
+# Default must be large: reasoning models (GLM-Z1 etc.) emit thinking as
+# 1-2 char SSE chunks, so a ~2-4KB answer exhausts 2000 lines and the model
+# message gets silently cut off mid-sentence (finish=None). 20000 lines
+# covers ~20-40KB of output while still bounding a runaway stream.
+_MAX_STREAM_LINES = int(os.environ.get("LLM_MAX_STREAM_LINES", "20000"))
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,

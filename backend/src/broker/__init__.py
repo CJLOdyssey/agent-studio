@@ -193,6 +193,14 @@ async def buffer_run_messages(run_id: str) -> None:
             _buffer_tasks.pop(run_id, None)
         except asyncio.CancelledError:
             pass
+        finally:
+            # Return the pubsub connection to the pool on EVERY exit path
+            # (stop_buffer cancel or idle timeout). Without this, every run
+            # leaks one Redis connection and the pool (REDIS_POOL_SIZE=20)
+            # exhausts after ~20 runs → MaxConnectionsError "Too many
+            # connections" on every subsequent Redis op.
+            with contextlib.suppress(Exception):
+                await pubsub.close()
 
     _buffer_tasks[run_id] = asyncio.create_task(_worker())
 

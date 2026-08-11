@@ -164,8 +164,32 @@ export function handleTeamResultEvent(
         return { ...m, ...updated } as ChatMessage;
       });
     }
+    // 重新生成完成：给新模型消息挂答案分页（同 requirement 答案组 =
+    // 旧 run 列表 + 新 run），切换走分支加载（父链 + 子孙链）。
+    // 与 handleResultEvent 保持一致——否则 team 会话重新生成后分页
+    // 箭头要等刷新（buildPathTurns 从 DB 挂载）才出现。
+    let pendingRegenerate = _s.pendingRegenerate;
+    const done = msgs.find((m) => m.id === _s.streamingId);
+    if (done && pendingRegenerate && runId) {
+      const answerRunIds = [...pendingRegenerate.oldRunIds, runId];
+      msgs = msgs.map((m) =>
+        m.id === done.id
+          ? {
+              ...m,
+              userMsgId: pendingRegenerate!.userMsgId,
+              answerVersions: answerRunIds.map(
+                () => pendingRegenerate!.requirement,
+              ),
+              answerRunIds,
+              currentAnswerVersion: answerRunIds.length - 1,
+            }
+          : m,
+      );
+      pendingRegenerate = null;
+    }
     return {
       messages: msgs,
+      pendingRegenerate,
       status: 'idle' as ChatState['status'],
       streamingId: null,
       skipThinking: false,
