@@ -127,6 +127,7 @@ export function useConversation() {
             kind: s.kind as 'normal' | 'agent' | 'team' || 'normal',
             agentId: s.agent_id || undefined,
             isPinned: s.is_pinned,
+            runCount: s.run_count ?? 0,
             createdAt: s.created_at || new Date().toISOString(),
             updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
             sessionId: s.id,

@@ -267,6 +267,23 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     expect(container.textContent).toContain('sidebar.replied');
   });
 
+  it('shows replied status when agent messages have role_identifier role (pm etc)', () => {
+    // Real store agent messages carry the backend role_identifier ('pm'/'programmer'/'tester'),
+    // not the literal 'agent' role — see chatActions.test.ts comment.
+    const conversations = [makeConv({ messages: [{ id: 'm1', role: 'pm', content: 'hi' }] })];
+    const { container } = renderWithVirtuoso(conversations);
+    expect(container.textContent).toContain('sidebar.replied');
+    expect(container.textContent).not.toContain('sidebar.pendingReply');
+  });
+
+  it('shows replied status when session has runs but messages not loaded', () => {
+    // Backend sessions map to conversations with empty messages; runCount decides.
+    const conversations = [makeConv({ messages: [], runCount: 2 })];
+    const { container } = renderWithVirtuoso(conversations);
+    expect(container.textContent).toContain('sidebar.replied');
+    expect(container.textContent).not.toContain('sidebar.pendingReply');
+  });
+
   it('truncates long titles', () => {
     const longTitle = '这是一段很长的对话标题需要被截断显示' + 'x'.repeat(50);
     const conversations = [makeConv({ title: longTitle })];

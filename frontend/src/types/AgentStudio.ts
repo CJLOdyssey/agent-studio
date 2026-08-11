@@ -111,6 +111,8 @@ export interface Conversation {
   teamName?: string;
   /** 侧边栏置顶（对齐 ragbase is_pinned 语义） */
   isPinned?: boolean;
+  /** 会话已产生的 run 数（后端 sessions 列表返回；列表消息未加载时用于判定是否已回复） */
+  runCount?: number;
 }
 
 // 消息类型

@@ -222,7 +222,7 @@ const ConversationsList = memo(function ConversationsList({
             {agent && !isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium">{agent.name}</span>
             )}
-            {conv.messages.filter((m) => m.role === 'agent').length > 0
+            {conv.messages.some((m) => m.role !== 'user') || (conv.runCount ?? 0) > 0
               ? t('sidebar.replied')
               : t('sidebar.pendingReply')}
             {' · '}
