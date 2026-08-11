@@ -4,12 +4,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 import bcrypt
-from fastapi import APIRouter, Depends, Request, Response
-
-from auth import AUTH_SECRET, CurrentUser, create_token, get_current_user
+from auth import AUTH_SECRET, create_token
 from broker import get_redis
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
+from fastapi import APIRouter, Request, Response
 from repository.auth import (
     consume_refresh_token,
     create_refresh_token,
@@ -107,7 +106,7 @@ async def refresh(body: RefreshRequest, response: Response) -> Any:
 
 
 @router.post("/logout", status_code=204)
-async def logout(body: LogoutRequest, response: Response, _user: CurrentUser = Depends(get_current_user)) -> None:
+async def logout(body: LogoutRequest, response: Response) -> None:
     """Invalidate a refresh token to log the user out and clear the access_token cookie."""
     await consume_refresh_token(body.refresh_token)
     _clear_access_token_cookie(response)

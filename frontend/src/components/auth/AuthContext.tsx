@@ -11,6 +11,7 @@ import {
   resetPassword as apiResetPassword,
   resendVerification as apiResendVerification,
   sendRegisterCode as apiSendRegisterCode,
+  logout as apiLogout,
 } from '../../api/client/auth';
 import { clearTokens, setTokens } from '../../api/client/instance';
 import { useChatStore } from '../../stores/chatStore';
@@ -83,7 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTokens(res.access_token, res.refresh_token);
       lastRefreshRef.current = Date.now();
       return true;
-    } catch {
+    } catch (err) {
+      // refresh_token 失效（401/403）→ 会话过期：登出，避免"幽灵登录"后
+      // 业务请求以 anonymous 身份报误导性 400。网络错误不登出（由定时器重试）。
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      }
       return false;
     }
   }, []);
@@ -263,6 +270,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // 先通知后端撤销 refresh token 并清除 httpOnly access_token cookie，
+    // 否则 cookie 残留会在刷新后自动恢复登录（"刷新后又登录"）。
+    // token 已失效时后端调用失败，忽略并继续完成本地登出。
+    try {
+      const rt = localStorage.getItem('agentstudio_refresh_token');
+      if (rt) await apiLogout(rt);
+    } catch {
+      // 后端登出失败（token 已失效 / 网络）— 仍完成本地登出
+    }
     setUser(null);
     clearTokens();
     clearLocalConversations();
