@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Input, Select } from 'antd';
+import { Input, Select, Modal } from 'antd';
 import { Search, FileText, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 import { PAGE_SIZE } from '../constants';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
@@ -37,6 +37,7 @@ function LogAudit() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [detailLog, setDetailLog] = useState<LogEntry | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,13 +112,13 @@ function LogAudit() {
           </thead>
           <tbody>
             {paged.map((entry) => (
-              <tr key={entry.id}>
+              <tr key={entry.id} onClick={() => setDetailLog(entry)} className="cursor-pointer">
                 <td><span className="font-mono text-xs text-[var(--color-text-muted)] whitespace-nowrap">{entry.timestamp}</span></td>
                 <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
                 <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)] whitespace-nowrap">{MODULE_LABEL[entry.module] || entry.module}</span></td>
                 <td className="whitespace-nowrap">{entry.user}</td>
                 <td className="whitespace-nowrap">{entry.action}</td>
-                <td className="text-sm text-[var(--color-text-secondary)] truncate max-w-[280px]">{entry.details}</td>
+                <td className="text-sm text-[var(--color-text-secondary)] truncate max-w-[280px]" title={entry.details}>{entry.details}</td>
                 <td><span className="font-mono text-xs text-[var(--color-text-muted)] whitespace-nowrap">{entry.ip}</span></td>
               </tr>
             ))}
@@ -132,6 +133,27 @@ function LogAudit() {
         pageSize={PAGE_SIZE}
         onChange={(p) => setPage(p)}
       />
+
+      <Modal
+        open={detailLog !== null}
+        title="审计日志详情"
+        footer={null}
+        width={560}
+        centered
+        onCancel={() => setDetailLog(null)}
+      >
+        {detailLog && (
+          <div className="flex flex-col gap-3 py-2 text-sm">
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">时间</span><span className="font-mono text-[var(--color-text-primary)]">{detailLog.timestamp}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">级别</span><span className={`wsta-tag-pill ${LEVEL_CLASS[detailLog.level] || 'wsta-tag-indigo'}`}>{detailLog.level.toUpperCase()}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">模块</span><span>{MODULE_LABEL[detailLog.module] || detailLog.module}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">用户</span><span>{detailLog.user}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">操作</span><span>{detailLog.action}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">IP 地址</span><span className="font-mono">{detailLog.ip}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">详情</span><div className="text-[var(--color-text-primary)] whitespace-pre-wrap break-words leading-relaxed">{detailLog.details}</div></div>
+          </div>
+        )}
+      </Modal>
     </div>
     </ErrorBoundary>
   );
