@@ -392,6 +392,17 @@ export function useWorkstationState(
     setConversationKey((prev) => prev + 1);
   }, [syncActiveConversation, conv, resetApi, navigate]);
 
+  // 退出登录：重置模型选择并回首页（登出已清 store/localStorage，这里清
+  // 组件内 useState — '/' 与 '/chat/:id' 同组件，navigate 不会卸载重置）。
+  useEffect(() => {
+    const onLogout = () => {
+      setSelectedModelState('');
+      navigate('/');
+    };
+    window.addEventListener('auth:logout', onLogout);
+    return () => window.removeEventListener('auth:logout', onLogout);
+  }, [navigate]);
+
   // 会话导航（对齐 ragbase/DeepSeek URL 语义）：点击会话/新建会话 →
   // navigate 驱动 URL，activeConvId 由 useParams 派生。agent/team 身份
   // 状态（selectedAgentId/activeTeamId）保持 state 语义，不 URL 化。

@@ -168,6 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleUnauthorized = () => {
       setUser(null);
       clearLocalConversations();
+      localStorage.removeItem('agentstudio-selected-model');
+      localStorage.removeItem('agentstudio-active-conv-id');
       setLoginModalOpen(true);
     };
     window.addEventListener('storage', handleStorage);
@@ -283,7 +285,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearTokens();
     clearLocalConversations();
     localStorage.removeItem('agentstudio_user_id');
+    localStorage.removeItem('agentstudio-selected-model');
+    localStorage.removeItem('agentstudio-active-conv-id');
     useChatStore.getState().reset();
+    setLoginModalOpen(true);
     window.dispatchEvent(new CustomEvent('auth:logout'));
   }, []);
 

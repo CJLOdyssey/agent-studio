@@ -104,6 +104,17 @@ export function useConversation() {
     return () => window.removeEventListener('agentstudio-conversations-updated', handler);
   }, []);
 
+  // 退出登录：清空内存会话列表/激活会话（localStorage 已由 AuthContext 清），
+  // 避免游客态仍显示登录用户的会话残留。
+  useEffect(() => {
+    const onLogout = () => {
+      setConversations([]);
+      setActiveConvId(null);
+    };
+    window.addEventListener('auth:logout', onLogout);
+    return () => window.removeEventListener('auth:logout', onLogout);
+  }, []);
+
   // Sessions are user-owned: only fetch once authentication is established,
   // and re-fetch when it flips (login/refresh completes after initial mount).
   // Matches ragbase's useQuery(enabled: isAuthenticated) semantics.
