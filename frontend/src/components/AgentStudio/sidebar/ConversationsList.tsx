@@ -1,4 +1,5 @@
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical, Users, Pencil, Pin, Trash2, MessageSquare, Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
@@ -27,6 +28,9 @@ const ConversationsList = memo(function ConversationsList({
 }: ConversationsListProps) {
   const { t, i18n } = useTranslation();
   const [openMenuConvId, setOpenMenuConvId] = useState<string | null>(null);
+  // 更多菜单用 portal 渲染到 body（fixed 定位）：会话列表是可滚动容器，
+  // absolute 弹窗在列表底部会被 overflow 裁剪。下方空间不足时向上展开。
+  const [menuAnchor, setMenuAnchor] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
   const [editingConvId, setEditingConvId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -237,16 +241,28 @@ const ConversationsList = memo(function ConversationsList({
             className="bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] flex items-center justify-center w-[24px] h-[24px] shrink-0 opacity-0 group-hover:opacity-70 hover:opacity-100 transition-all duration-150"
             onClick={(e) => {
               e.stopPropagation();
-              setOpenMenuConvId(openMenuConvId === conv.id ? null : conv.id);
+              if (openMenuConvId === conv.id) {
+                setOpenMenuConvId(null);
+              } else {
+                setOpenMenuConvId(conv.id);
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                // 菜单高约 130px：下方空间不足则向上展开，避免超视口被截。
+                if (window.innerHeight - r.bottom >= 134) {
+                  setMenuAnchor({ top: r.bottom + 4, right: window.innerWidth - r.right });
+                } else {
+                  setMenuAnchor({ bottom: window.innerHeight - r.top + 4, right: window.innerWidth - r.right });
+                }
+              }
             }}
             aria-label="更多"
           >
             <MoreVertical size={15} />
           </button>
-          {openMenuConvId === conv.id && (
+          {openMenuConvId === conv.id && menuAnchor && createPortal(
             <div
               ref={menuRef}
-              className="absolute right-0 top-full mt-1 min-w-[120px] bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[var(--z-dropdown)] flex flex-col p-1 origin-top-right animate-[popoverScaleIn_0.12s_cubic-bezier(0.16,1,0.3,1)]"
+              className="fixed z-[var(--z-dropdown)] min-w-[120px] bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.18)] flex flex-col p-1 origin-top-right animate-[popoverScaleIn_0.12s_cubic-bezier(0.16,1,0.3,1)]"
+              style={{ top: menuAnchor.top, bottom: menuAnchor.bottom, right: menuAnchor.right }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -271,7 +287,8 @@ const ConversationsList = memo(function ConversationsList({
                 <Trash2 size={13} />
                 删除
               </button>
-            </div>
+            </div>,
+            document.body,
           )}
         </div>
       </div>
