@@ -140,7 +140,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
           onTeamChat={onTeamChat}
         />
 
-        <div className="flex flex-col min-h-0 flex-1">
+        <div className="flex flex-col min-h-0 flex-1 -mr-4">
           <div className="px-2 py-0.5 text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)] shrink-0">
             {t('sidebar.recentConversations')}
           </div>
