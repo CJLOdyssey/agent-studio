@@ -300,6 +300,13 @@ export function useWorkstationState(
     // from the snapshot; on API failure/empty, fall back to the snapshot.
     if (found.sessionId) {
       let cancelled = false;
+      // 切换即时性（stale-while-revalidate）：先渲染本地快照（localStorage，
+      // 毫秒级），网络详情返回后再覆盖 — 避免每次切换等待后端 RTT 的空白。
+      if (found.messages.length > 0) {
+        loadSnapshot();
+      } else {
+        resetApi();
+      }
       getSessionDetail(found.sessionId).then((detail) => {
         if (cancelled) return;
         // 与 handleSwitchBranch 同形：buildRunPath 取目标分支父链（首屏 = 最新
