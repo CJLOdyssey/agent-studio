@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Agent, WorkspaceTab, Message } from '../../types/AgentStudio';
 import { useToast } from '../../utils/useToast';
 import { useTeamManagement } from '../../hooks/useTeamManagement';
@@ -393,15 +394,19 @@ export function useWorkstationState(
   }, [syncActiveConversation, conv, resetApi, navigate]);
 
   // 退出登录：重置模型选择并回首页（登出已清 store/localStorage，这里清
-  // 组件内 useState — '/' 与 '/chat/:id' 同组件，navigate 不会卸载重置）。
+  // 组件内 useState — '/' 与 '/chat/:id' 同组件，navigate 不会卸载重置；
+  // models/keys 查询缓存也移除，游客态不再复用登录用户的模型列表）。
+  const queryClient = useQueryClient();
   useEffect(() => {
     const onLogout = () => {
       setSelectedModelState('');
+      queryClient.removeQueries({ queryKey: ['models'] });
+      queryClient.removeQueries({ queryKey: ['keys'] });
       navigate('/');
     };
     window.addEventListener('auth:logout', onLogout);
     return () => window.removeEventListener('auth:logout', onLogout);
-  }, [navigate]);
+  }, [queryClient, navigate]);
 
   // 会话导航（对齐 ragbase/DeepSeek URL 语义）：点击会话/新建会话 →
   // navigate 驱动 URL，activeConvId 由 useParams 派生。agent/team 身份
