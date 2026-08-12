@@ -86,10 +86,13 @@ class TestTeamRepo:
         assert result is None
 
     async def test_get_teams(self, db_engine):
-        await create_team(name=f"team-{uuid.uuid4().hex[:6]}")
-        teams = await get_teams()
+        await create_team(name=f"team-{uuid.uuid4().hex[:6]}", owner_id="owner-1")
+        teams = await get_teams(user_id="owner-1")
         assert len(teams) >= 1
         assert "agents" in teams[0]
+        # 匿名用户不可见任何团队
+        assert await get_teams() == []
+        assert await get_teams("anonymous") == []
 
     async def test_get_teams_filtered_by_user(self, db_engine):
         from core.infra.database import TeamDB, get_session_factory
@@ -217,8 +220,8 @@ class TestTeamRepo:
         assert agent["skills"] == []
 
     async def test_get_teams_list_structure(self, db_engine):
-        team = await create_team(name=f"team-{uuid.uuid4().hex[:6]}")
-        teams = await get_teams()
+        team = await create_team(name=f"team-{uuid.uuid4().hex[:6]}", owner_id="owner-1")
+        teams = await get_teams(user_id="owner-1")
         assert len(teams) >= 1
         t = teams[0]
         assert "id" in t

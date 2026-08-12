@@ -54,12 +54,15 @@ async def test_get_team_found():
 async def test_get_teams():
     from repository.teams import create_team, get_teams
 
-    t1 = await create_team("Team A")
+    t1 = await create_team("Team A", owner_id="owner-1")
     assert t1 is not None
-    t2 = await create_team("Team B")
+    t2 = await create_team("Team B", owner_id="owner-1")
     assert t2 is not None
-    teams = await get_teams()
+    teams = await get_teams(user_id="owner-1")
     assert len(teams) >= 2
+    # 匿名用户不可见任何团队
+    assert await get_teams() == []
+    assert await get_teams("anonymous") == []
 
 
 @pytest.mark.asyncio
