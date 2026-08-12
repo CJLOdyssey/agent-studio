@@ -167,9 +167,9 @@ export function useWorkstationState(
         if (recent) return recent;
       }
     } catch {
-      // non-fatal — fall through to first model
+      // non-fatal — fall through to no model selected
     }
-    return models.length > 0 ? models[0].id : '';
+    return '';
   }, [selectedModel, models]);
   // Persist the selected model so chatActions can route the request to the
   // key whose models contain it (a SiliconFlow model must hit SiliconFlow).
