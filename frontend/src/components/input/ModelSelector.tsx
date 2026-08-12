@@ -95,7 +95,7 @@ function SelectorLabel({
   }
   return (
     <>
-      {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
+      {isEmpty ? t('model.configure') : (current?.label ?? t('model.select'))}
     </>
   );
 }
@@ -297,7 +297,7 @@ export default function ModelSelector({
   return (
     <div className="relative inline-flex items-center" ref={ref}>
       <button
-        className={`inline-flex items-center gap-1 px-2 h-[26px] min-w-[140px] border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)] ${!hasLoadedOnce || isEmpty ? 'justify-center' : ''}`}
+        className={`inline-flex items-center gap-1 px-2 h-[26px] min-w-[140px] border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)] ${!hasLoadedOnce || isEmpty || !current ? 'justify-center' : ''}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -318,7 +318,7 @@ export default function ModelSelector({
             current={current}
           />
         </span>
-        {hasLoadedOnce && !isEmpty && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
+        {hasLoadedOnce && !isEmpty && current && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
       </button>
 
       {open && !isEmpty && (
