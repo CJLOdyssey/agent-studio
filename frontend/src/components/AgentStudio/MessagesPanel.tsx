@@ -1,7 +1,6 @@
 import { RefObject, useCallback } from 'react';
 import { Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { motion, useReducedMotion } from 'motion/react';
 import type { Agent, Message } from '../../types/AgentStudio';
 import TeamMessage from './TeamMessage';
 import BrowserFrame from './BrowserFrame';
@@ -34,7 +33,6 @@ export default function MessagesPanel({
   onSwitchBranch,
 }: Props) {
   const { t } = useTranslation();
-  const reduce = useReducedMotion();
   const interruptedMessageId = useChatStore((s) => s.interruptedMessageId);
   const continuingId = useChatStore((s) => s.continuingId);
   const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);
@@ -105,11 +103,8 @@ export default function MessagesPanel({
           </div>
         )}
         {displayMessages.map((msg) => (
-          <motion.div
+          <div
             key={msg.id}
-            initial={reduce || msg.thinkingDone ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <TeamMessage
               msg={msg}
@@ -123,7 +118,7 @@ export default function MessagesPanel({
               isContinuing={msg.id === continuingId}
               onThumbsFeedback={handleThumbsFeedback}
             />
-          </motion.div>
+          </div>
         ))}
         <BrowserFrame />
         <div ref={messagesEndRef} />
@@ -138,11 +133,8 @@ export default function MessagesPanel({
           <LoadingSkeleton />
         ) : (
           displayMessages.map((msg) => (
-          <motion.div
+          <div
             key={msg.id}
-            initial={reduce || msg.thinkingDone ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <TeamMessage
               msg={msg}
@@ -156,7 +148,7 @@ export default function MessagesPanel({
               isContinuing={msg.id === continuingId}
               onThumbsFeedback={handleThumbsFeedback}
             />
-          </motion.div>
+          </div>
           ))
         )}
         <BrowserFrame />
