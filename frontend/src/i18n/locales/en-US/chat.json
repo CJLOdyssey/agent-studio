@@ -72,11 +72,9 @@
   "model": {
     "loadingText": "Loading",
     "noCommands": "No commands available",
-    "noModels": "No models available",
     "select": "Select a model",
     "configure": "Configure API Key",
     "manageKeys": "Manage API Keys",
-    "noModelsHint": "Configure an API Key to enable models",
     "statusDeprecated": "Deprecated",
     "statusSunset": "Sunsetting",
     "recent": "Recent"
