@@ -154,10 +154,23 @@ export function useWorkstationState(
 
   const filteredConversations = useMemo(() => conv.conversations, [conv.conversations]);
 
-  const effectiveSelectedModel = useMemo(
-    () => (selectedModel && models.some((m) => m.id === selectedModel) ? selectedModel : (models.length > 0 ? models[0].id : '')),
-    [selectedModel, models],
-  );
+  const effectiveSelectedModel = useMemo(() => {
+    if (selectedModel && models.some((m) => m.id === selectedModel)) return selectedModel;
+    // 未显式选择时，默认取用户最近使用过的模型（agentstudio-recent-models
+    // 顶部第一个），否则回退到列表第一个。选模型会触发 setSelectedModelState，
+    // 使本 memo 重算并读到最新 recent 列表。
+    try {
+      const raw = localStorage.getItem('agentstudio-recent-models');
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        const recent = parsed.find((x): x is string => typeof x === 'string' && models.some((m) => m.id === x));
+        if (recent) return recent;
+      }
+    } catch {
+      // non-fatal — fall through to first model
+    }
+    return models.length > 0 ? models[0].id : '';
+  }, [selectedModel, models]);
   // Persist the selected model so chatActions can route the request to the
   // key whose models contain it (a SiliconFlow model must hit SiliconFlow).
   const setSelectedModel = useCallback((id: string) => {
@@ -182,6 +195,10 @@ export function useWorkstationState(
   // 视觉位置由浏览器 scroll anchoring 保持（与 DeepSeek 一致：切换时
   // 正在看的消息/按钮保持在视口原位）。流式输出/首屏才跟随底部。
   const suppressScrollRef = useRef(false);
+  // 自动跟随滚动：模型输出时滚到底；用户手动滚动离开底部则暂停跟随
+  // （停留用户位置），滚回底部后恢复。
+  const followBottomRef = useRef(true);
+  const programmaticScrollRef = useRef(false);
 
   // Persist in-flight store messages into a conversation. Must run BEFORE a
   // switch takes effect (while the store still holds the old run's messages).
@@ -211,6 +228,23 @@ export function useWorkstationState(
     }
   }, [abandonedRunId, toast, t]);
 
+  // 用户手动滚动 → 更新是否跟随底部（程序滚动由 programmaticScrollRef 跳过）。
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (programmaticScrollRef.current) {
+        programmaticScrollRef.current = false;
+        return;
+      }
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+      if (atBottom !== followBottomRef.current) followBottomRef.current = atBottom;
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [messagesContainerRef]);
+
+  const prevLenRef = useRef(lastMsgLen);
   useEffect(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -220,6 +254,12 @@ export function useWorkstationState(
       suppressScrollRef.current = false;
       return;
     }
+    const lenChanged = lastMsgLen !== prevLenRef.current;
+    prevLenRef.current = lastMsgLen;
+    // 新增消息（发送/切换/加载）→ 无条件跟随；流式增量 → 仅在用户位于
+    // 底部时跟随（用户上滚看历史时暂停，不强制拉回）。
+    if (!lenChanged && !followBottomRef.current) return;
+    programmaticScrollRef.current = true;
     el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
   }, [lastMsgLen, lastMsgStream, messagesContainerRef]);
 
@@ -243,6 +283,8 @@ export function useWorkstationState(
     // （react-hooks/set-state-in-effect），快速切换由 timer cleanup 兜底。
     const timer = setTimeout(() => {
       setRestoring(true);
+      // 切换会话 → 恢复自动跟随滚动（新会话重新滚到底部）。
+      followBottomRef.current = true;
       // 立即清空旧会话消息，避免旧消息残留到新会话加载完成才跳变（视觉跳动）。
       useChatStore.getState().clearMessages();
       const found = filteredConversations.find((c) => c.id === activeId);

@@ -305,9 +305,22 @@ const TeamMessage = memo(function TeamMessage({
     useApprovalStore.getState().setRequest(null);
   };
 
+  // 思考内容流式更新时跟随到底；用户手动滚动离开底部则暂停跟随。
+  const thinkingAtBottomRef = useRef(true);
   useEffect(() => {
     const el = thinkingBodyRef.current;
-    if (el && isThinkingExpanded) {
+    if (!el) return;
+    const onScroll = () => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+      if (atBottom !== thinkingAtBottomRef.current) thinkingAtBottomRef.current = atBottom;
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = thinkingBodyRef.current;
+    if (el && isThinkingExpanded && thinkingAtBottomRef.current) {
       el.scrollTop = el.scrollHeight;
     }
   }, [msg.thinking?.length, isThinkingExpanded]);
