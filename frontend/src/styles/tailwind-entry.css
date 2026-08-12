@@ -2,6 +2,7 @@
 
 @import "tailwindcss";
 @import "./base/index.css" layer(base);
+@import "./base/scrollbar.css";
 
 /* ── Geist font (variable) ── */
 @font-face {
