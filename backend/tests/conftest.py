@@ -73,7 +73,9 @@ BASE = os.environ.get("E2E_BASE_URL", "http://localhost:8082")
 
 # Test user credentials for rbac mode
 TEST_EMAIL = "e2e@test.com"
-TEST_PASSWORD = "Test@1234"
+# CI injects TEST_PASSWORD via repository secrets; local runs fall back to the
+# placeholder so no real credential is committed.
+TEST_PASSWORD = os.environ.get("TEST_PASSWORD", "Test@1234")
 
 
 def _rid(prefix: str = "test") -> str:

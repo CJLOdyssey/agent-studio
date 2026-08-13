@@ -143,7 +143,7 @@ class TestAuthFlow:
         _clear_rate_limits()
         r = api.post(
             "/api/auth/register",
-            json={"email": email, "code": "000000", "password": "Test@1234"},
+            json={"email": email, "code": "000000", "password": TEST_PASSWORD},
         )
         assert r.status_code in (400, 401)
 

@@ -40,7 +40,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         - BUILDKIT_INLINE_CACHE=1
-    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio/backend:latest
+    image: your-registry.cn-shenzhen.cr.aliyuncs.com/agent-studio/backend:latest
     container_name: agent-studio-api-prod
     <<: *restart-policy
     logging: *default-logging
@@ -65,7 +65,7 @@ services:
       dockerfile: docker/Dockerfile
       args:
         - BUILDKIT_INLINE_CACHE=1
-    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio/backend:latest
+    image: your-registry.cn-shenzhen.cr.aliyuncs.com/agent-studio/backend:latest
     container_name: agent-studio-worker-prod
     <<: *restart-policy
     logging: *default-logging
@@ -83,7 +83,7 @@ services:
       start_period: 30s
 
   frontend:
-    image: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio/frontend:latest
+    image: your-registry.cn-shenzhen.cr.aliyuncs.com/agent-studio/frontend:latest
     container_name: agent-studio-frontend-prod
     <<: *restart-policy
     logging: *default-logging
