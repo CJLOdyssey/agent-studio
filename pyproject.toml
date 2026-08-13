@@ -12,6 +12,18 @@ target-version = "py311"
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
 ignore = ["E402"]
 
+[tool.ruff.lint.isort]
+# Project modules live under backend/src but import as top-level names at
+# runtime (PYTHONPATH=backend/src). Declaring them first-party keeps isort
+# stable regardless of whether CI's ruff-only environment has the runtime
+# deps installed (unresolvable third-party imports would otherwise be
+# misclassified as first-party and I001-fire spuriously).
+known-first-party = [
+    "auth", "broker", "checkpoint", "core", "domain", "graph", "observability",
+    "orm", "rag", "repository", "routers", "services", "streaming",
+    "system_team", "tasks", "thinking_tree", "uploads", "workflow",
+]
+
 [tool.ruff.lint.per-file-ignores]
 "backend/src/routers/*.py" = ["B008"]
 "backend/src/auth/auth_rbac.py" = ["F401"]
