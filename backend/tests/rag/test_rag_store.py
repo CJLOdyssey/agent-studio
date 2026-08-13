@@ -409,6 +409,60 @@ class TestPgVectorStore:
             await store.search([0.1] * 1024)
             assert store._initialized is True
 
+    # ── search_hybrid (BM25 + vector, RRF fusion) ──────────────────────
+
+    @pytest.mark.asyncio
+    async def test_search_hybrid_fuses_both_branches(self):
+        store = PgVectorStore()
+        mock_session = AsyncMock()
+        shared = ("both branches", ["t"], "s1", "r1", 0.8)
+        vec_only = ("vector only", ["t"], "s1", "r1", 0.9)
+        bm25_only = ("keyword match", ["t"], "s1", "r1", 0.7)
+
+        vec_result = MagicMock()
+        vec_result.fetchall.return_value = [shared, vec_only]
+        bm25_result = MagicMock()
+        bm25_result.fetchall.return_value = [shared, bm25_only]
+        # DDL ×3 (ensure_table) + hybrid DDL ×2 + vector branch + bm25 branch
+        mock_session.execute = AsyncMock(
+            side_effect=[None, None, None, None, None, vec_result, bm25_result]
+        )
+        with _patch_db(mock_session):
+            results = await store.search_hybrid("query", [0.1] * 1024, top_k=5)
+
+        # Chunk present in both branches ranks first; others follow.
+        assert [r["text"] for r in results] == ["both branches", "vector only", "keyword match"]
+        assert results[0]["score"] > results[1]["score"]
+
+    @pytest.mark.asyncio
+    async def test_search_hybrid_bm25_failure_degrades_to_vector(self):
+        store = PgVectorStore()
+        mock_session = AsyncMock()
+        vec_only = ("only vector", ["t"], "s1", "r1", 0.9)
+        vec_result = MagicMock()
+        vec_result.fetchall.return_value = [vec_only]
+        mock_session.execute = AsyncMock(
+            side_effect=[None, None, None, None, None, vec_result, RuntimeError("no tsv")]
+        )
+        with _patch_db(mock_session):
+            results = await store.search_hybrid("query", [0.1] * 1024, top_k=5)
+
+        assert len(results) == 1
+        assert results[0]["text"] == "only vector"
+
+    def test_rrf_fuse_ranks_shared_hits_first(self):
+        from rag.rag_store import _rrf_fuse
+
+        vec = [("a", ["t"], "s", "r", 0.9), ("b", ["t"], "s", "r", 0.8)]
+        bm25 = [("a", ["t"], "s", "r", 0.7), ("c", ["t"], "s", "r", 0.6)]
+        out = _rrf_fuse(vec, bm25, top_k=5)
+
+        assert [r["text"] for r in out] == ["a", "b", "c"]
+        # a 在两个分支都出现 → RRF 分数最高；b/c 同为各自分支第 2 名 → 同分。
+        assert out[0]["score"] > out[1]["score"]
+        assert out[1]["score"] == out[2]["score"]
+        assert out[0]["session_id"] == "s"
+
 
 class TestSearchFormat:
     def test_dimension_constant(self):

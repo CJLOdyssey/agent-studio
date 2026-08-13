@@ -52,7 +52,7 @@ class TestRagPipeline:
         provider = MagicMock()
         provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]):
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=[]):
                 result = await rag_pipeline.retrieve_context("query")
                 assert result == ""
 
@@ -122,7 +122,7 @@ class TestRagPipeline:
             },
         ]
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=search_results):
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=search_results):
                 result = await rag_pipeline.retrieve_context("test query", session_id="s1")
                 assert "Result one" in result
                 assert "Result two" in result
@@ -135,7 +135,7 @@ class TestRagPipeline:
         provider = MagicMock()
         provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=[]) as mock_search:
                 await rag_pipeline.retrieve_context("query", tags=["python", "bug"])
                 mock_search.assert_called_once()
                 call_kwargs = mock_search.call_args[1]
@@ -146,7 +146,7 @@ class TestRagPipeline:
         provider = MagicMock()
         provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=[]) as mock_search:
                 await rag_pipeline.retrieve_context("query", top_k=10)
                 call_kwargs = mock_search.call_args[1]
                 # Overfetch for dedup refill, then trim to top_k
@@ -157,7 +157,7 @@ class TestRagPipeline:
         provider = MagicMock()
         provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=[]) as mock_search:
                 await rag_pipeline.retrieve_context("query")
                 call_kwargs = mock_search.call_args[1]
                 assert call_kwargs["min_score"] == rag_pipeline.DEFAULT_MIN_SCORE
@@ -167,7 +167,7 @@ class TestRagPipeline:
         provider = MagicMock()
         provider.embed_query = AsyncMock(return_value=[0.1] * 1024)
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=[]) as mock_search:
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=[]) as mock_search:
                 await rag_pipeline.retrieve_context("query", min_score=0.5)
                 call_kwargs = mock_search.call_args[1]
                 assert call_kwargs["min_score"] == 0.5
@@ -183,7 +183,7 @@ class TestRagPipeline:
             {"text": "完全不同的无关内容", "score": 0.80, "tags": [], "session_id": "s1", "run_id": "r1"},
         ]
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=search_results):
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=search_results):
                 result = await rag_pipeline.retrieve_context("query", top_k=3)
                 assert result.count(dup_text) == 1
                 assert "完全不同的无关内容" in result
@@ -197,7 +197,7 @@ class TestRagPipeline:
             {"text": "A", "score": 0.88, "tags": [], "session_id": "s1", "run_id": "r1"},
         ]
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=search_results):
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=search_results):
                 result = await rag_pipeline.retrieve_context("query", top_k=1)
                 assert result.count("A") == 1
 
@@ -227,7 +227,7 @@ class TestRagPipeline:
             },
         ]
         with patch.object(rag_pipeline, "_embedding_provider", provider):
-            with patch.object(rag_pipeline._vector_store, "search", new_callable=AsyncMock, return_value=search_results):
+            with patch.object(rag_pipeline._vector_store, "search_hybrid", new_callable=AsyncMock, return_value=search_results):
                 result = await rag_pipeline.retrieve_context("query")
                 assert "Single result" in result
                 assert "0.90" in result

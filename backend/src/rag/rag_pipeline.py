@@ -101,13 +101,14 @@ async def retrieve_context(
     """Steps 13-14: Retrieve relevant context for a user query.
 
     1. Embed query with DashScope
-    2. Vector search via pgvector (cosine + tag filter + score floor)
+    2. Hybrid search via pgvector (BM25 + cosine, RRF-fused; tag filter + floor)
     3. Drop near-duplicate chunks, then format context for LLM
     """
     if _embedding_provider is None:
         return ""
     query_embedding = await _embedding_provider.embed_query(query)
-    results = await _vector_store.search(
+    results = await _vector_store.search_hybrid(
+        query,
         query_embedding,
         session_id=session_id,
         tag_filter=tags,
