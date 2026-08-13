@@ -1,6 +1,10 @@
 """Workflow graph builder — constructs LangGraph StateGraph from config."""
 
+import asyncio
+import contextlib
 import json
+import os
+import time
 from collections.abc import Hashable
 from typing import Any, cast
 
@@ -21,6 +25,29 @@ _HUMAN_VERDICT_KEY = "team:{run_id}:human_verdict"
 logger = get_logger(__name__)
 
 
+def _hitl_wait_timeout() -> float:
+    """Seconds the approval gate blocks for a human verdict (0 = auto-fallthrough)."""
+    return float(os.environ.get("HITL_WAIT_TIMEOUT", "300"))
+
+
+async def _read_human_verdict(r: Any, key: str) -> dict[str, Any] | None:
+    """Read and parse ``team:{run_id}:human_verdict``; None when absent/invalid."""
+    try:
+        raw = await r.get(key)
+    except Exception:
+        return None
+    if raw is None:
+        return None
+    raw_s = raw.decode() if isinstance(raw, bytes) else raw
+    try:
+        verdict = json.loads(raw_s)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if isinstance(verdict, dict) and "approved" in verdict:
+        return verdict
+    return None
+
+
 async def _approval_route(
     state: WorkflowState,
     config: WorkflowConfig,
@@ -30,11 +57,15 @@ async def _approval_route(
 ) -> str:
     """Gate a reviewer node — retry the entry node on rejection, END at max_rounds.
 
-    HITL (optional human): when ``run_id`` is set, publish an ``approval_request``
-    event on the run channel so the frontend may open an approval modal, then
-    read ``team:{run_id}:human_verdict``. If present, the human verdict
-    overrides the reviewer's keyword verdict; absent means auto verdict. Redis
-    I/O is best-effort — any failure falls back to the automatic verdict.
+    HITL (blocking): when ``run_id`` is set, publish an ``approval_request``
+    event on the run channel so the frontend may open an approval modal, then:
+      - reviewer rejected → block up to ``HITL_WAIT_TIMEOUT`` seconds (default
+        300) polling ``team:{run_id}:human_verdict``; a human verdict overrides
+        the automatic one and is consumed once (subsequent rounds re-ask).
+        Timeout falls back to the automatic verdict.
+      - reviewer approved → read the verdict key once (non-blocking) so a human
+        rejection can still override an auto-approval.
+    Redis I/O is best-effort — any failure falls back to the automatic verdict.
 
     Returns the path key consumed by ``add_conditional_edges``: "retry" back into
     the iteration loop, "continue" to the reviewer's original downstream target,
@@ -50,16 +81,28 @@ async def _approval_route(
 
             key = _HUMAN_VERDICT_KEY.format(run_id=run_id)
             r = get_redis()
-            raw = await r.get(key)
-            if raw is None:
-                await publish_run_message(
-                    run_id,
-                    {"type": "approval_request", "run_id": run_id, "node": node_id},
-                )
+            await publish_run_message(
+                run_id,
+                {"type": "approval_request", "run_id": run_id, "node": node_id},
+            )
+            if any_reject:
+                # 强阻塞：驳回必须经人工确认（或超时自动回退）。
+                # 至少读一次：已存在的裁决立即消费；否则等到 deadline。
+                deadline = time.monotonic() + _hitl_wait_timeout()
+                while True:
+                    verdict = await _read_human_verdict(r, key)
+                    if verdict is not None:
+                        # 一次性消费：后续轮次再驳回时重新请求人工。
+                        with contextlib.suppress(Exception):
+                            await r.delete(key)
+                        any_reject = not bool(verdict["approved"])
+                        break
+                    if time.monotonic() >= deadline:
+                        break
+                    await asyncio.sleep(1.0)
             else:
-                raw_s = raw.decode() if isinstance(raw, bytes) else raw
-                verdict = json.loads(raw_s)
-                if isinstance(verdict, dict) and "approved" in verdict:
+                verdict = await _read_human_verdict(r, key)
+                if verdict is not None:
                     any_reject = not bool(verdict["approved"])
         except Exception:
             logger.debug("HITL verdict check failed for run=%s", run_id, exc_info=True)
