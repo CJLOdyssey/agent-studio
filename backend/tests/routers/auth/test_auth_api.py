@@ -64,7 +64,9 @@ def _delete_redis_pattern(pattern: str):
 
 
 def _valid_password() -> str:
-    return "Test@1234"
+    from tests.conftest import TEST_PASSWORD
+
+    return TEST_PASSWORD
 
 
 def _weak_password() -> str:
