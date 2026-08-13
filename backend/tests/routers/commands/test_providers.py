@@ -8,7 +8,7 @@ class TestProviders:
         assert "deepseek" in data
         assert "anthropic" in data
         assert "dashscope" in data
-        assert "custom" in data
+        assert "custom_llm" in data
 
     def test_test_provider(self, client):
         resp = client.post("/api/providers/test", json={

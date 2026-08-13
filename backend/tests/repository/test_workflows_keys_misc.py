@@ -268,7 +268,7 @@ class TestCommandLogsRepo:
         )
         logs = await get_command_logs(limit=10)
         assert len(logs["items"]) == 1
-        assert logs["items"][0]["command"] == "generate_code"
+        assert logs["items"][0]["action"] == "generate_code"
 
     async def test_multiple_command_logs(self, db_engine):
         sid = str(uuid.uuid4())

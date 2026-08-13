@@ -16,10 +16,10 @@ from uuid import uuid4
 
 import pytest
 
-# Ensure backend is importable
-_sys_insert = str(Path(__file__).resolve().parent.parent.parent)
-if _sys_insert not in sys.path:
-    sys.path.insert(0, _sys_insert)
+# Ensure backend/src is importable (checkpoint package lives under src/)
+_SRC_PATH = str(Path(__file__).resolve().parent.parent.parent / "src")
+if _SRC_PATH not in sys.path:
+    sys.path.insert(0, _SRC_PATH)
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ async def test_recovery_after_restart(tmp_path):
     import asyncio
     import os
     import sys
-    sys.path.insert(0, {str(Path(__file__).resolve().parent.parent.parent)!r})
+    sys.path.insert(0, {_SRC_PATH!r})
 
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = {db_path!r}
@@ -181,7 +181,7 @@ async def test_recovery_after_restart(tmp_path):
         capture_output=True,
         text=True,
         timeout=15,
-        env={**os.environ, "PYTHONPATH": "backend/src"},
+        env={**os.environ, "PYTHONPATH": _SRC_PATH},
     )
     assert result.returncode == 0, (
         f"Writer subprocess failed (rc={result.returncode}):\n"

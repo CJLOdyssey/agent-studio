@@ -14,6 +14,15 @@ pytestmark = pytest.mark.benchmark
 BASE = "http://localhost:8080"
 
 
+@pytest.fixture(autouse=True)
+def _skip_unless_backend_up():
+    """Benchmarks need a running backend; skip cleanly when it is unreachable."""
+    try:
+        httpx.get(f"{BASE}/api/health", timeout=3)
+    except Exception:
+        pytest.skip(f"Backend not available at {BASE}")
+
+
 class TestHTTPBenchmark:
     """Basic HTTP performance benchmarks for key endpoints."""
 

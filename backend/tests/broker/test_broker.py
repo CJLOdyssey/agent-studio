@@ -18,6 +18,10 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     importlib.reload() which can leave the module with SENTINEL_ENABLED=True
     after the test ends (monkeypatch restores the env var, but the module-level
     constant is not re-evaluated).
+
+    Clears ``broker._pools`` on teardown: several cases store MagicMock pools
+    under mock loop keys; leaking them breaks later app-lifespan close_redis()
+    (``await pool.aclose()`` on a plain MagicMock raises TypeError).
     """
     import broker as mod_broker
     import core.infra.redis_sentinel as rsmod
@@ -42,6 +46,10 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     monkeypatch.setattr(
         "core.infra.redis_sentinel.create_redis", _real_create_redis
     )
+
+    yield
+
+    mod_broker._pools.clear()
 
 
 class TestBrokerRedis:

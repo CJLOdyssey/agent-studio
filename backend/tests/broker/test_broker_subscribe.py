@@ -6,6 +6,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def _clear_broker_pools():
+    """Clear broker._pools after each test.
+
+    Edge-case tests stash MagicMock/AsyncMock pools under mock loop keys;
+    leaking them makes later app-lifespan close_redis() raise TypeError on
+    ``await pool.aclose()``.
+    """
+    yield
+    from broker import _pools
+
+    _pools.clear()
+
 # ---------------------------------------------------------------------------
 # subscribe_run
 # ---------------------------------------------------------------------------

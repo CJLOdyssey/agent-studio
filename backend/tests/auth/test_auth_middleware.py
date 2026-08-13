@@ -1,5 +1,6 @@
 """Tests for auth middleware (backend/auth/auth_middleware.py)."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -127,7 +128,7 @@ class TestAuthMiddlewareDispatch:
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer test.jwt.token"})
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
              patch("auth.auth_middleware.decode_jwt", return_value={"sub": "user-123"}), \
-             patch("repository.auth.get_user_by_id", return_value=object()):
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.user_id == "user-123"
@@ -154,7 +155,7 @@ class TestAuthMiddlewareDispatch:
         )
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
              patch("auth.auth_middleware.decode_jwt", return_value={"sub": "ws-user"}), \
-             patch("repository.auth.get_user_by_id", return_value=object()):
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.user_id == "ws-user"
@@ -197,7 +198,7 @@ class TestAuthMiddlewareDispatch:
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer real.jwt"})
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
              patch("auth.auth_middleware.decode_jwt", return_value={"sub": "uid-42"}), \
-             patch("repository.auth.get_user_by_id", return_value=object()):
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "uid-42"
 
@@ -236,7 +237,7 @@ class TestAuthMiddlewareDispatch:
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer valid.jwt"})
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
              patch("auth.auth_middleware.decode_jwt", return_value={"sub": "real-user"}), \
-             patch("repository.auth.get_user_by_id", return_value=object()):
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "real-user"
         assert request.state.is_authenticated is True
@@ -259,6 +260,6 @@ class TestAuthMiddlewareDispatch:
         request = Request(scope)
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
              patch("auth.auth_middleware.decode_jwt", return_value={"sub": "cookie-user"}), \
-             patch("repository.auth.get_user_by_id", return_value=object()):
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "cookie-user"

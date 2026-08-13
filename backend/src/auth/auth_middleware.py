@@ -65,6 +65,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return cast(Response, await call_next(request))
 
         user_id = payload.get("sub", "unknown")
+        user = None
         # 校验用户仍存在：用户合并/删除后旧 JWT 的 sub 已失效，继续信任会让
         # key/附件等按 user 归属的解析命中不存在的用户，产生误导性 400。
         if user_id != "unknown":

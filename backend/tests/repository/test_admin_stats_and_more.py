@@ -93,11 +93,15 @@ class TestAdminStats:
 
         logs = await get_command_logs(limit=10)
         assert len(logs["items"]) == 1
-        assert logs["items"][0]["command"] == "gen"
-        assert logs["items"][0]["payload"] == '{"lang":"py"}'
-        assert logs["items"][0]["result"] == "done"
-        assert logs["items"][0]["id"] is not None
-        assert logs["items"][0]["timestamp"] != ""
+        log = logs["items"][0]
+        # Command entries merge into the audit view: action=command_name,
+        # entity_type="command", entity_name=command_id, detail=result or payload.
+        assert log["action"] == "gen"
+        assert log["entity_type"] == "command"
+        assert log["entity_name"] == "c1"
+        assert log["detail"] == "done"
+        assert log["id"] is not None
+        assert log["timestamp"] != ""
 
     async def test_get_command_logs_pagination(self, db_engine):
         factory = get_session_factory()
@@ -132,9 +136,10 @@ class TestAdminStats:
         assert len(logs["items"]) == 1
         log = logs["items"][0]
         assert log["id"] == "test-log-id"
-        assert log["command"] == "test_cmd"
-        assert log["payload"] == '{"key": "val"}'
-        assert log["result"] == "done"
+        assert log["action"] == "test_cmd"
+        assert log["entity_type"] == "command"
+        assert log["entity_name"] == "c1"
+        assert log["detail"] == "done"
         assert log["timestamp"] != ""
 
     async def test_get_recent_activity_empty(self, db_engine):
@@ -175,7 +180,7 @@ class TestCommandLogs:
         )
         logs = await get_command_logs(limit=10)
         assert len(logs["items"]) == 1
-        assert logs["items"][0]["command"] == "generate_code"
+        assert logs["items"][0]["action"] == "generate_code"
 
     async def test_multiple_command_logs(self, db_engine):
         sid = str(uuid.uuid4())
