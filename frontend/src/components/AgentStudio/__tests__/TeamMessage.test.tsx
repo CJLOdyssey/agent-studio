@@ -374,7 +374,7 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
       expect(onSwitchAnswer).toHaveBeenCalledWith('m1', 'prev');
     });
 
-    it('does not render pager for team messages with verdicts meta', () => {
+    it('renders pager for team messages with verdicts meta when multiple versions', () => {
       const { container } = render(
         <TeamMessage
           msg={makeMsg({
@@ -385,8 +385,8 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('[aria-label="Next answer version"]')).toBeNull();
-      expect(container.querySelector('[aria-label="Previous answer version"]')).toBeNull();
+      expect(container.querySelector('[aria-label="Next answer version"]')).not.toBeNull();
+      expect(container.querySelector('[aria-label="Previous answer version"]')).not.toBeNull();
     });
   });
 

@@ -307,19 +307,21 @@ async def test_get_embedding_api_key_beyond_row_window(db_engine):
 
 
 @pytest.mark.asyncio
-async def test_get_embedding_config_fallback_keeps_base_url(db_engine):
+async def test_get_embedding_config_fallback_keeps_base_url(db_engine, monkeypatch):
     """Fallback config must keep the key's own endpoint, not force DashScope."""
-    from repository.keys_crud import create_api_key, get_embedding_config
+    import repository.keys_crud as keys_crud
 
-    await create_api_key(
+    monkeypatch.setattr(keys_crud, "EMBEDDING_MODEL", "env-tuned-model")
+    await keys_crud.create_api_key(
         "user1", "openai", capabilities=["embedding"],
         plaintext_key="sk-sf", base_url="https://api.siliconflow.cn/v1",
     )
-    cfg = await get_embedding_config()
+    cfg = await keys_crud.get_embedding_config()
     assert cfg is not None
     assert cfg["api_key"] == "sk-sf"
     assert cfg["base_url"] == "https://api.siliconflow.cn/v1"
-    assert cfg["model"] == "text-embedding-v3"
+    # Model comes from EMBEDDING_MODEL (env-tunable), never hardcoded.
+    assert cfg["model"] == "env-tuned-model"
 
 
 @pytest.mark.asyncio

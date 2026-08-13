@@ -6,7 +6,8 @@ helper 一律放行以保持既有行为；RBAC 模式（AUTH_ENABLED=1）下强
 """
 
 import os
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from auth.auth_rbac import get_user_id
 from core.error_codes import ErrorCode, error_response
@@ -43,10 +44,7 @@ async def require_owned(
     user_id = get_user_id(request)
     if user_id == "anonymous":
         raise error_response(not_found, detail="资源不存在")
-    if isinstance(resource, dict):
-        owner = resource.get(owner_key)
-    else:
-        owner = getattr(resource, owner_key, None)
+    owner = resource.get(owner_key) if isinstance(resource, dict) else getattr(resource, owner_key, None)
     if owner in (None, ""):
         if allow_unowned:
             return resource
@@ -92,11 +90,11 @@ async def ws_run_owner(websocket: Any, run_id: str) -> bool:
     from auth.auth_jwt import AUTH_SECRET, decode_jwt
 
     token = websocket.cookies.get("access_token")
-    user_id = None
+    user_id: str | None = None
     if token:
         payload = decode_jwt(token, AUTH_SECRET)
         if payload:
-            user_id = payload.get("sub")
+            user_id = str(payload.get("sub") or "") or None
     if not user_id:
         return False
 
@@ -108,5 +106,5 @@ async def ws_run_owner(websocket: Any, run_id: str) -> bool:
     owner = None
     if run.session_id:
         sess = await get_session(run.session_id)
-        owner = sess.user_id if sess else None
+        owner = str(sess.user_id) if sess and sess.user_id else None
     return owner == user_id

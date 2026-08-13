@@ -2,8 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-const wrapper = ({ children }: { children: ReactNode }) => createElement(MemoryRouter, null, children);
+const queryClient = new QueryClient();
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    createElement(MemoryRouter, null, children),
+  );
 
 const {
   mockToast,

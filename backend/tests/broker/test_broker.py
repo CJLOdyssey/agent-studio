@@ -52,6 +52,13 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     mod_broker._pools.clear()
 
 
+@pytest.fixture(autouse=True)
+def _clear_pool_size_env(monkeypatch):
+    # Pool size defaults to 200 in redis_sentinel when REDIS_POOL_SIZE is
+    # unset; dev .env sets 20, which would make assertions host-dependent.
+    monkeypatch.delenv("REDIS_POOL_SIZE", raising=False)
+
+
 class TestBrokerRedis:
     def test_redis_url_has_valid_format(self):
         """REDIS_URL should be a valid redis URL (depends on .env / env var)."""
@@ -88,7 +95,7 @@ class TestBrokerRedis:
         result = get_redis()
         mock_from_url.assert_called_once_with(
             REDIS_URL,
-            max_connections=20,
+            max_connections=200,
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,
@@ -194,7 +201,7 @@ class TestBrokerFull:
         result = get_redis()
         mock_from_url.assert_called_once_with(
             "redis://custom-host:7777/5",
-            max_connections=20,
+            max_connections=200,
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,

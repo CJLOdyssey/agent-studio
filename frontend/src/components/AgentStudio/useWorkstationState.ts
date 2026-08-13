@@ -286,7 +286,7 @@ export function useWorkstationState(
       // 切换会话 → 恢复自动跟随滚动（新会话重新滚到底部）。
       followBottomRef.current = true;
       // 立即清空旧会话消息，避免旧消息残留到新会话加载完成才跳变（视觉跳动）。
-      useChatStore.getState().clearMessages();
+      useChatStore.getState().clearMessages(activeId);
       const found = filteredConversations.find((c) => c.id === activeId);
       if (!found) { resetApi(); setRestoring(false); return; }
 

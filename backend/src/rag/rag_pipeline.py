@@ -143,9 +143,8 @@ async def _rerank_results(
     query: str, results: list[dict[str, Any]], top_k: int
 ) -> list[dict[str, Any]]:
     """Reorder results with the configured cross-encoder; no-op if unavailable."""
-    from repository.keys import get_rerank_config
-
     from rag.rag_rerank import RerankProvider
+    from repository.keys import get_rerank_config
 
     cfg = await get_rerank_config()
     if cfg is None or cfg["api_key"] is None:

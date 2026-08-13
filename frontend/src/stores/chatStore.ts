@@ -96,7 +96,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ currentRunId: null, streamingId: null, status: 'idle', wsStatus: 'disconnected', interruptedMessageId: sid, continuingId: null, skipThinking: false });
   },
 
-  clearMessages: () => {
+  clearMessages: (convId?: string | null) => {
     const s = get();
     if (s.currentRunId) {
       Logger.info('[chat] clearMessages — disconnecting run %s', s.currentRunId);
@@ -104,14 +104,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     // 切换会话：立即清空旧消息与流状态，避免旧消息残留到新会话加载完成才跳变。
     // 保留 currentSessionId/currentConvId，由 loadConversation 加载完成后更新。
+    // 同一会话（提交失败后 navigate 回刚创建的会话）保留 error，错误横幅不被抹掉。
+    const sameConv = convId != null && s.currentConvId === convId;
     set({
       messages: [],
       currentRunId: null,
       activeRunId: null,
       streamingId: null,
-      status: 'idle',
+      status: sameConv ? s.status : 'idle',
       wsStatus: 'disconnected',
-      error: null,
+      error: sameConv ? s.error : null,
       skipThinking: false,
       continuingId: null,
       interruptedMessageId: null,

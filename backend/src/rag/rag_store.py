@@ -323,7 +323,7 @@ class PgVectorStore:
                 logger.warning("BM25 search unavailable — falling back to vector-only")
                 bm25_result = None
 
-            return _rrf_fuse(vec_result.fetchall(), bm25_result.fetchall() if bm25_result else [], top_k)
+            return _rrf_fuse(list(vec_result.fetchall()), list(bm25_result.fetchall()) if bm25_result else [], top_k)
 
     async def clear_session(self, session_id: str) -> None:
         await self._ensure_table()

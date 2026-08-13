@@ -71,7 +71,7 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
     });
 
     it('does not render pagination arrows for a single answer', () => {
-      const { container } = render(
+      render(
         <TeamMessage
           msg={makeMsg({ answerVersions: ['v1'], answerRunIds: ['r1'], currentAnswerVersion: 0 })}
           allAgents={[mockAgent]}

@@ -63,7 +63,10 @@ async def summarize_rollup(merged: str) -> str:
         resp = await llm.ainvoke(
             [
                 SystemMessage(
-                    content="你是会话记忆整理器。把以下历史记忆条目压缩为一段简洁的中文摘要，保留关键事实、决定和结论，不超过 300 字。只输出摘要本身。"
+                    content=(
+                        "你是会话记忆整理器。把以下历史记忆条目压缩为一段简洁的中文摘要，"
+                        "保留关键事实、决定和结论，不超过 300 字。只输出摘要本身。"
+                    )
                 ),
                 HumanMessage(content=merged),
             ]
@@ -96,8 +99,11 @@ async def retrieve_relevant(
         cfg = await get_embedding_config()
         if cfg is None or not cfg.get("api_key"):
             return memories[-k:]
+        api_key = str(cfg["api_key"])
+        model = cfg.get("model")
+        base_url = cfg.get("base_url")
         provider = EmbeddingProvider(
-            api_key=cfg["api_key"], model=cfg["model"], base_url=cfg["base_url"]
+            api_key=api_key, model=model, base_url=base_url
         )
         query_emb = await provider.embed_query(query)
         embs = await provider.embed([m.summary for m in memories])

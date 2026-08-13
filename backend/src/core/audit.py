@@ -16,7 +16,7 @@ from contextvars import ContextVar
 
 from repository.audit import create_audit_entry
 
-_audit_ctx: ContextVar[dict[str, str]] = ContextVar("audit_ctx", default={})
+_audit_ctx: ContextVar[dict[str, str] | None] = ContextVar("audit_ctx", default=None)
 
 
 def set_audit_context(user_name: str = "", client_ip: str = "") -> None:
@@ -32,7 +32,7 @@ async def log_audit(
     user_name: str = "",
     client_ip: str = "",
 ) -> None:
-    ctx = _audit_ctx.get()
+    ctx = _audit_ctx.get() or {}
     await create_audit_entry(
         action=action,
         entity_type=entity_type,

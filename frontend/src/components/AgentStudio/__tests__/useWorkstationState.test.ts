@@ -2,8 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-const wrapper = ({ children }: { children: ReactNode }) => createElement(MemoryRouter, null, children);
+const queryClient = new QueryClient();
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    createElement(MemoryRouter, null, children),
+  );
 
 const {
   mockToast,
@@ -273,10 +280,18 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
       expect(result.current.effectiveSelectedModel).toBe('model-b');
     });
 
-    it('effectiveSelectedModel falls back to first model', () => {
+    it('effectiveSelectedModel is empty without selection or recent', () => {
       localStorage.removeItem('agentstudio-selected-model');
+      localStorage.removeItem('agentstudio-recent-models');
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
-      expect(result.current.effectiveSelectedModel).toBe('model-a');
+      expect(result.current.effectiveSelectedModel).toBe('');
+    });
+
+    it('effectiveSelectedModel prefers most-recent-used model', () => {
+      localStorage.removeItem('agentstudio-selected-model');
+      localStorage.setItem('agentstudio-recent-models', JSON.stringify(['model-b', 'model-a']));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
+      expect(result.current.effectiveSelectedModel).toBe('model-b');
     });
 
     it('isPageDragOver defaults to false', () => {

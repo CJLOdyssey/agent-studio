@@ -370,8 +370,8 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
       expect(alert.textContent).toContain('模拟网络错误');
       expect(alert.textContent).toContain('重试');
     });
-
-    fireEvent.click(screen.getByText('重试'));
+    const retryBtn = await screen.findByText('重试');
+    fireEvent.click(retryBtn);
     await waitFor(() => expect(mockSubmitRequirement).toHaveBeenCalledTimes(2));
   });
 

@@ -56,7 +56,9 @@ export interface ChatState {
   setError: (error: string | null) => void;
   setWsStatus: (wsStatus: WsConnectionStatus) => void;
   reset: () => void;
-  /** 切换会话时清空消息与流状态（保留 currentSessionId/currentConvId，由 loadConversation 更新）。 */
-  clearMessages: () => void;
+  /** 切换会话时清空消息与流状态（保留 currentSessionId/currentConvId，由 loadConversation 更新）。
+   *  传入 convId 且与当前会话相同时保留 error —— 覆盖「提交失败后 navigate 到刚创建的会话」竞态，
+   *  错误横幅不得被清空流程抹掉（与 loadConversation 的 sameConv 保护一致）。 */
+  clearMessages: (convId?: string | null) => void;
   selectAgent: (agentId: string) => void;
 }
