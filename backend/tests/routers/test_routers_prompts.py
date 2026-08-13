@@ -182,12 +182,16 @@ class TestPrompts:
             assert resp.status_code == 500
 
     def test_update_prompt_exception(self, client):
-        with patch("routers.prompts.update_prompt", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.prompts.get_prompt", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.prompts.update_prompt", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/prompts/t", json={"name": "x"})
             assert resp.status_code == 500
 
     def test_delete_prompt_exception(self, client):
-        with patch("repository.get_prompts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.prompts.get_prompt", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("repository.get_prompts", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/prompts/t")
             assert resp.status_code == 500
 

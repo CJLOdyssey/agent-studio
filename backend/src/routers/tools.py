@@ -5,10 +5,11 @@ import time
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth import require_owned
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
@@ -138,10 +139,14 @@ async def _snapshot_tool(resource_id: str, session: AsyncSession | None = None) 
 
 
 @router.post("/api/tools/{tool_id}/test")
-async def test_tool_endpoint(tool_id: str) -> Any:
+async def test_tool_endpoint(tool_id: str, request: Request) -> Any:
     """Test a tool's HTTP endpoint connectivity."""
     timeout = 10
     try:
+        await require_owned(
+            request, tool_id, get_tool,
+            not_found=ErrorCode.TOOL_NOT_FOUND, allow_unowned=False,
+        )
         t = await get_tool(tool_id)
         if not t:
             raise error_response(ErrorCode.TOOL_NOT_FOUND, detail="Tool not found")
@@ -194,9 +199,13 @@ async def add_tool(req: ToolCreate) -> Any:
 
 
 @router.put("/api/tools/{tool_id}")
-async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
+async def edit_tool(tool_id: str, req: ToolUpdate, request: Request) -> Any:
     """Update an existing tool."""
     try:
+        await require_owned(
+            request, tool_id, get_tool,
+            not_found=ErrorCode.TOOL_NOT_FOUND, allow_unowned=False,
+        )
         existing = await get_tool(tool_id)
         if not existing:
             raise error_response(ErrorCode.TOOL_NOT_FOUND, detail="Tool not found")
@@ -216,9 +225,13 @@ async def edit_tool(tool_id: str, req: ToolUpdate) -> Any:
 
 
 @router.delete("/api/tools/{tool_id}", status_code=204)
-async def remove_tool(tool_id: str) -> None:
+async def remove_tool(tool_id: str, request: Request) -> None:
     """Delete a tool by ID."""
     try:
+        await require_owned(
+            request, tool_id, get_tool,
+            not_found=ErrorCode.TOOL_NOT_FOUND, allow_unowned=False,
+        )
         t = await get_tool(tool_id)
         if t and t.is_builtin:
             raise error_response(ErrorCode.INVALID_REQUEST, detail="Built-in tools cannot be deleted")

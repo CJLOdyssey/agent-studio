@@ -3,9 +3,10 @@
 import time
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from auth import require_owned
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 
@@ -20,10 +21,14 @@ class AgentTestResult(BaseModel):
 
 
 @router.post("/api/agents/{agent_id}/test")
-async def test_agent(agent_id: str) -> Any:
+async def test_agent(agent_id: str, request: Request) -> Any:
     """Test an agent config by running a single LLM call with its settings."""
     from repository.agents import get_agent_config
 
+    await require_owned(
+        request, agent_id, get_agent_config,
+        not_found=ErrorCode.AGENT_NOT_FOUND, allow_unowned=False,
+    )
     agent = await get_agent_config(agent_id)
     if not agent:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="Agent not found")

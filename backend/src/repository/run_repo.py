@@ -118,11 +118,19 @@ async def get_run(run_id: str) -> ProjectRun | None:
         return run
 
 
-async def get_runs(limit: int = 20) -> list[ProjectRun]:
-    """Return the most recent project runs, up to the given limit."""
+async def get_runs(limit: int = 20, user_id: str | None = None) -> list[ProjectRun]:
+    """Return the most recent project runs, up to the given limit.
+
+    When ``user_id`` is given, only runs belonging to that user's sessions
+    are returned (session ownership is the run's owner boundary).
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(ProjectRun).order_by(desc(ProjectRun.created_at)).limit(limit)
+        if user_id and user_id != "anonymous":
+            stmt = stmt.join(SessionDB, SessionDB.id == ProjectRun.session_id).where(
+                SessionDB.user_id == user_id
+            )
         result = await session.execute(stmt)
         return list(result.scalars().all())
 

@@ -3,6 +3,7 @@
 import asyncio
 import os
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -343,13 +344,22 @@ class TestSessions:
         assert resp.status_code == 404
 
     def test_delete_memory_success(self, client):
-        with patch("routers.sessions.delete_memory_entry", new_callable=AsyncMock) as mock_del:
+        with patch("routers.sessions.get_memory_entry", new_callable=AsyncMock,
+                   return_value=SimpleNamespace(session_id="s-1")), \
+             patch("routers.sessions.get_session", new_callable=AsyncMock,
+                   return_value=SimpleNamespace(user_id="admin")), \
+             patch("routers.sessions.delete_memory_entry", new_callable=AsyncMock) as mock_del:
             mock_del.return_value = True
             resp = client.delete("/api/memories/mem-1", headers={"X-User-ID": "admin"})
             assert resp.status_code == 200
 
     def test_delete_memory_exception(self, client):
-        with patch("routers.sessions.delete_memory_entry", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.sessions.get_memory_entry", new_callable=AsyncMock,
+                   return_value=SimpleNamespace(session_id="s-1")), \
+             patch("routers.sessions.get_session", new_callable=AsyncMock,
+                   return_value=SimpleNamespace(user_id="admin")), \
+             patch("routers.sessions.delete_memory_entry", new_callable=AsyncMock,
+                   side_effect=RuntimeError("err")):
             resp = client.delete("/api/memories/mem-1", headers={"X-User-ID": "admin"})
             assert resp.status_code == 500
 

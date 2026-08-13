@@ -439,9 +439,9 @@ class RunService:
             ],
         }
 
-    async def list_runs(self, limit: int = 20) -> list[dict[str, Any]]:
-        """List recent runs."""
-        runs = await get_runs(limit=min(limit, 100))
+    async def list_runs(self, limit: int = 20, user_id: str | None = None) -> list[dict[str, Any]]:
+        """List recent runs, optionally scoped to a user's sessions."""
+        runs = await get_runs(limit=min(limit, 100), user_id=user_id)
         return [
             {
                 "id": r.id,

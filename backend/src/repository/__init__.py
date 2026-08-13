@@ -66,6 +66,7 @@ from repository.keys import (
 from repository.mcps import (
     create_mcp,
     delete_mcp,
+    get_mcp,
     get_mcps,
     get_mcps_as_dicts,
     update_mcp,
@@ -75,6 +76,7 @@ from repository.memory_repo import (
     clear_session_memories,
     create_memory_entry,
     delete_memory_entry,
+    get_memory_entry,
     get_session_memories,
 )
 
@@ -120,6 +122,7 @@ from repository.session_repo import (
 from repository.skills import (
     create_skill,
     delete_skill,
+    get_skill,
     get_skills,
     get_skills_as_dicts,
     update_skill,
@@ -181,6 +184,7 @@ __all__ = [
     "delete_agent_config",
     "delete_mcp",
     "delete_memory_entry",
+    "get_memory_entry",
     "delete_prompt",
     "delete_session",
     "delete_skill",
@@ -198,6 +202,7 @@ __all__ = [
     "get_api_key_for_model",
     "get_api_key_for_use",
     "get_api_keys",
+    "get_mcp",
     "get_tool_api_key",
     "get_attachment_by_id",
     "get_default_api_key",
@@ -219,6 +224,7 @@ __all__ = [
     "get_session_messages",
     "get_session_runs",
     "get_sessions",
+    "get_skill",
     "get_skills",
     "get_skills_as_dicts",
     "get_team",

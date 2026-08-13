@@ -2,15 +2,17 @@
 
 from typing import Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth import require_owned
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from repository import create_skill as repo_create_skill
 from repository import delete_skill, update_skill
+from repository import get_skill as repo_get_skill
 from repository import get_skills as repo_get_skills
 from repository import get_skills_as_dicts as repo_get_skills_as_dicts
 
@@ -59,9 +61,12 @@ async def list_skills() -> Any:
 
 
 @router.get("/api/skills/{skill_id}")
-async def get_skill(skill_id: str) -> Any:
+async def get_skill(skill_id: str, request: Request) -> Any:
     """Get a single skill by ID."""
     try:
+        await require_owned(
+            request, skill_id, repo_get_skill, not_found=ErrorCode.SKILL_NOT_FOUND,
+        )
         skills = await repo_get_skills()
         s = next((sk for sk in skills if sk.id == skill_id), None)
         if not s:
@@ -315,9 +320,13 @@ async def import_skill_text(req: SkillImportRequest) -> Any:
 
 
 @router.put("/api/skills/{skill_id}")
-async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
+async def edit_skill(skill_id: str, req: SkillUpdate, request: Request) -> Any:
     """Update an existing skill."""
     try:
+        await require_owned(
+            request, skill_id, repo_get_skill,
+            not_found=ErrorCode.SKILL_NOT_FOUND, allow_unowned=False,
+        )
         data = req.model_dump(exclude_unset=True)
         if "description" in data:
             data["content"] = data.pop("description")
@@ -343,9 +352,13 @@ async def edit_skill(skill_id: str, req: SkillUpdate) -> Any:
 
 
 @router.delete("/api/skills/{skill_id}", status_code=204)
-async def remove_skill(skill_id: str) -> None:
+async def remove_skill(skill_id: str, request: Request) -> None:
     """Delete a skill by ID."""
     try:
+        await require_owned(
+            request, skill_id, repo_get_skill,
+            not_found=ErrorCode.SKILL_NOT_FOUND, allow_unowned=False,
+        )
         from repository.skills import get_skills as _gskills
         all_items = await _gskills()
         target = next((s for s in all_items if s.id == skill_id), None)

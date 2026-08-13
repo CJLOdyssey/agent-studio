@@ -3,10 +3,10 @@
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
-from auth import CurrentUser, get_current_user
+from auth import CurrentUser, get_current_user, require_owned
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
@@ -85,8 +85,11 @@ async def list_agents() -> Any:
 
 
 @router.get("/api/agents/{agent_id}")
-async def get_agent(agent_id: str) -> Any:
+async def get_agent(agent_id: str, request: Request) -> Any:
     """Get a single agent configuration by ID."""
+    await require_owned(
+        request, agent_id, get_agent_config, not_found=ErrorCode.AGENT_NOT_FOUND,
+    )
     configs = await get_cached_agent_configs()
     c = next((x for x in configs if x.id == agent_id), None)
     if not c:
@@ -179,9 +182,14 @@ async def _snapshot_agent(agent_id: str, current_user: CurrentUser) -> Any:
 async def edit_agent(
     agent_id: str,
     req: AgentUpdateRequest,
+    request: Request,
     current_user: CurrentUser = Depends(get_current_user),
 ) -> Any:
     """Update an existing agent configuration."""
+    await require_owned(
+        request, agent_id, get_agent_config,
+        not_found=ErrorCode.AGENT_NOT_FOUND, allow_unowned=False,
+    )
     updated = await update_agent_config(
         id=agent_id,
         name=req.name,
@@ -205,8 +213,16 @@ async def edit_agent(
 
 
 @router.delete("/api/agents/{agent_id}")
-async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:
+async def remove_agent(
+    agent_id: str,
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Any:
     """Delete an agent configuration (with last-approver guard)."""
+    await require_owned(
+        request, agent_id, get_agent_config,
+        not_found=ErrorCode.AGENT_NOT_FOUND, allow_unowned=False,
+    )
     target = await get_agent_config(agent_id)
     if not target:
         raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="未找到该 agent 配置")
@@ -224,8 +240,16 @@ async def remove_agent(agent_id: str, current_user: CurrentUser = Depends(get_cu
 
 
 @router.put("/api/agents/{agent_id}/toggle")
-async def toggle_agent(agent_id: str, current_user: CurrentUser = Depends(get_current_user)) -> Any:
+async def toggle_agent(
+    agent_id: str,
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Any:
     """Toggle an agent's active/inactive status."""
+    await require_owned(
+        request, agent_id, get_agent_config,
+        not_found=ErrorCode.AGENT_NOT_FOUND, allow_unowned=False,
+    )
     configs = await get_cached_agent_configs()
     target = next((c for c in configs if c.id == agent_id), None)
     if not target:

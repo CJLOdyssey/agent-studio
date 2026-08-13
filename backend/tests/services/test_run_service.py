@@ -366,7 +366,17 @@ class TestRunService:
         with patch("services.run_service.get_runs") as mock_get_runs:
             mock_get_runs.return_value = []
             await svc.list_runs(limit=999)
-            mock_get_runs.assert_called_once_with(limit=100)
+            mock_get_runs.assert_called_once_with(limit=100, user_id=None)
+
+    @pytest.mark.asyncio
+    async def test_list_runs_scopes_to_user(self):
+        from services.run_service import RunService
+
+        svc = RunService()
+        with patch("services.run_service.get_runs") as mock_get_runs:
+            mock_get_runs.return_value = []
+            await svc.list_runs(limit=10, user_id="u-1")
+            mock_get_runs.assert_called_once_with(limit=10, user_id="u-1")
 
     @pytest.mark.asyncio
     async def test_create_run_dispatches_agent_to_celery_when_enabled(self, monkeypatch):

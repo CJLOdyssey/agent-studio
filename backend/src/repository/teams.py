@@ -122,6 +122,7 @@ async def get_team(team_id: str) -> dict[str, Any] | None:
             "description": t.description,
             "status": t.status,
             "category": t.category,
+            "owner_id": t.owner_id,
             "order": t.order,
             "is_expanded": t.is_expanded,
             "agents": [

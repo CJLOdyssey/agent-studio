@@ -154,6 +154,14 @@ async def save_workflow_config(config: WorkflowConfig) -> WorkflowConfig:
         return config
 
 
+async def get_workflow_team_id(config_id: str) -> str | None:
+    """Return the owning team_id of a workflow config, or None if not found."""
+    factory = get_session_factory()
+    async with factory() as session:
+        db_config = await session.get(WorkflowConfigDB, config_id)
+        return db_config.team_id if db_config else None
+
+
 async def delete_workflow_config(config_id: str) -> bool:
     """Delete a workflow config by ID. Returns False if not found."""
     factory = get_session_factory()
@@ -205,11 +213,12 @@ class WorkflowMeta:
     created_at: datetime
 
 
-async def list_workflow_meta() -> list[WorkflowMeta]:
+async def list_workflow_meta(owner_id: str | None = None) -> list[WorkflowMeta]:
     """Return all workflow configs as lightweight rows joined with team names.
 
     Configs whose team no longer exists get an empty team name rather than
-    being dropped from the list.
+    being dropped from the list. When ``owner_id`` is given, only workflows
+    of teams owned by that user are returned.
     """
     factory = get_session_factory()
     async with factory() as session:
@@ -218,6 +227,10 @@ async def list_workflow_meta() -> list[WorkflowMeta]:
             .options(selectinload(WorkflowConfigDB.nodes))
             .order_by(WorkflowConfigDB.created_at.desc())
         )
+        if owner_id and owner_id != "anonymous":
+            stmt = stmt.join(TeamDB, TeamDB.id == WorkflowConfigDB.team_id).where(
+                TeamDB.owner_id == owner_id
+            )
         configs = (await session.execute(stmt)).scalars().all()
         team_rows = (await session.execute(select(TeamDB.id, TeamDB.name))).all()
         team_names = {row[0]: row[1] for row in team_rows}

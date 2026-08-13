@@ -27,6 +27,7 @@ class MCPRepository(BaseRepository[MCPServerDB]):
 
 
 # module-level aliases
+get_mcp = MCPRepository.get_one        # await get_mcp(id)
 get_mcps = MCPRepository.get_all
 get_mcps_as_dicts = MCPRepository.get_all_as_dicts
 create_mcp = MCPRepository.create_one

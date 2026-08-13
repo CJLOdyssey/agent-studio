@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisco
 from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
 
-from auth import get_user_id
+from auth import get_user_id, require_run_owner, ws_run_owner
 from broker import drain_buffer, stop_buffer, subscribe_run
 from core.config import load_config
 from core.error_codes import ErrorCode, error_response
@@ -81,9 +81,10 @@ async def create_run(req: RunRequest, request: Request) -> Any:
 
 
 @router.get("/api/runs/{run_id}", response_model=RunDetail)
-async def get_run_detail(run_id: str) -> Any:
+async def get_run_detail(run_id: str, request: Request) -> Any:
     """Get detailed information for a specific run."""
     try:
+        await require_run_owner(request, run_id)
         result = await run_service.get_run(run_id)
         if result is None:
             raise error_response(ErrorCode.RUN_NOT_FOUND, detail="未找到该次讨论")
@@ -96,10 +97,17 @@ async def get_run_detail(run_id: str) -> Any:
 
 
 @router.get("/api/runs", response_model=list[RunSummary])
-async def list_runs(limit: int = 20) -> Any:
+async def list_runs(request: Request, limit: int = 20) -> Any:
     """List recent runs with a configurable limit."""
     try:
-        return await run_service.list_runs(limit=limit)
+        from auth.ownership import auth_enabled
+        user_id = get_user_id(request)
+        if user_id == "anonymous" and auth_enabled():
+            return []
+        return await run_service.list_runs(
+            limit=limit,
+            user_id=None if user_id == "anonymous" else user_id,
+        )
     except Exception as e:
         logger.error("Error listing runs: %s", e, exc_info=True)
         raise error_response(ErrorCode.INTERNAL_ERROR) from e
@@ -109,6 +117,7 @@ async def list_runs(limit: int = 20) -> Any:
 async def cancel_run(run_id: str, request: Request) -> Any:
     """Cancel an in-flight run: propagate cancellation to the LLM stream."""
     try:
+        await require_run_owner(request, run_id)
         result = await run_service.cancel_run(run_id)
         return RunResponse(**result)
     except HTTPException:
@@ -123,6 +132,14 @@ async def run_websocket(websocket: WebSocket, run_id: str) -> Any:
     """Stream run progress and messages over a WebSocket connection."""
     client_host = websocket.client.host if websocket.client else "?"
     await websocket.accept()
+    if not await ws_run_owner(websocket, run_id):
+        logger.warning(
+            "WebSocket ownership denied | run_id=%s | client=%s",
+            run_id, client_host,
+        )
+        await websocket.send_json({"type": "status", "status": "error", "error": "无权访问该运行"})
+        await websocket.close(code=1008)
+        return
     logger.info(
         "WebSocket connected | run_id=%s | client=%s",
         run_id, client_host,

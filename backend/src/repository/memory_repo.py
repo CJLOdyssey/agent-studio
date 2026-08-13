@@ -73,6 +73,13 @@ async def clear_session_memories(session_id: str) -> Any:
         await session.commit()
 
 
+async def get_memory_entry(memory_id: str) -> MemoryEntry | None:
+    """Fetch a single memory entry by ID (column access only, session is closed)."""
+    factory = get_session_factory()
+    async with factory() as session:
+        return await session.get(MemoryEntry, memory_id)
+
+
 async def delete_memory_entry(memory_id: str) -> bool:
     """Delete a single memory entry by ID. Returns False if not found."""
     factory = get_session_factory()

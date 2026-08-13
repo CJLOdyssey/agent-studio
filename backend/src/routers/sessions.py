@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from starlette.responses import Response
 
-from auth import get_user_id
+from auth import get_user_id, require_run_owner
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from core.models import AttachmentResponse, SessionDetailResponse, SessionSummary
@@ -16,6 +16,7 @@ from repository import (
     delete_memory_entry,
     delete_session,
     get_agent_config,
+    get_memory_entry,
     get_messages,
     get_runs_by_session_ids,
     get_session,
@@ -298,9 +299,16 @@ async def list_session_memories(request: Request, session_id: str) -> Any:
 
 
 @router.delete("/api/memories/{memory_id}")
-async def delete_session_memory(memory_id: str) -> Any:
-    """Delete a single memory entry."""
+async def delete_session_memory(memory_id: str, request: Request) -> Any:
+    """Delete a single memory entry (owner-scoped via its session)."""
     try:
+        user_id = get_user_id(request)
+        memory = await get_memory_entry(memory_id)
+        if memory is None:
+            raise error_response(ErrorCode.MEMORY_NOT_FOUND, detail="未找到该记忆")
+        sess = await get_session(memory.session_id)
+        if sess is None or sess.user_id != user_id:
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权访问该记忆")
         deleted = await delete_memory_entry(memory_id)
         if not deleted:
             raise error_response(ErrorCode.MEMORY_NOT_FOUND, detail="未找到该记忆")
@@ -385,6 +393,7 @@ class AnswerVersionsRequest(BaseModel):
 async def update_run_answer_versions(run_id: str, req: AnswerVersionsRequest, request: Request) -> Any:
     """Persist an edit-regenerate's answer version history on the run's final answer."""
     user_id = get_user_id(request)
+    await require_run_owner(request, run_id)
     msgs = await get_messages(run_id)
     agent_msgs = [m for m in msgs if m.role != "user"]
     if not agent_msgs:

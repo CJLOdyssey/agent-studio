@@ -3,14 +3,15 @@
 import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth import require_owned
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from repository import create_mcp, delete_mcp, get_mcps, get_mcps_as_dicts, update_mcp
+from repository import create_mcp, delete_mcp, get_mcp, get_mcps, get_mcps_as_dicts, update_mcp
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["mcps"])
@@ -99,9 +100,13 @@ async def add_mcp(req: MCPCreate) -> Any:
 
 
 @router.put("/api/mcps/{mcp_id}")
-async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
+async def edit_mcp(mcp_id: str, req: MCPUpdate, request: Request) -> Any:
     """Update an MCP server configuration."""
     try:
+        await require_owned(
+            request, mcp_id, get_mcp,
+            not_found=ErrorCode.MCP_NOT_FOUND, allow_unowned=False,
+        )
         m = await update_mcp(mcp_id, req.model_dump(exclude_unset=True))
         if not m:
             raise error_response(ErrorCode.MCP_NOT_FOUND, detail="MCP not found")
@@ -124,9 +129,13 @@ async def edit_mcp(mcp_id: str, req: MCPUpdate) -> Any:
 
 
 @router.delete("/api/mcps/{mcp_id}", status_code=204)
-async def remove_mcp(mcp_id: str) -> None:
+async def remove_mcp(mcp_id: str, request: Request) -> None:
     """Delete an MCP server configuration."""
     try:
+        await require_owned(
+            request, mcp_id, get_mcp,
+            not_found=ErrorCode.MCP_NOT_FOUND, allow_unowned=False,
+        )
         mcps = await get_mcps()
         target = next((m for m in mcps if m.id == mcp_id), None)
         mcp_name = target.name if target else mcp_id
@@ -148,9 +157,14 @@ class MCPTestResult(BaseModel):
 
 
 @router.post("/api/mcps/{mcp_id}/test")
-async def test_mcp(mcp_id: str) -> Any:
+async def test_mcp(mcp_id: str, request: Request) -> Any:
     """Test an MCP server connection."""
     import time
+
+    await require_owned(
+        request, mcp_id, get_mcp,
+        not_found=ErrorCode.MCP_NOT_FOUND, allow_unowned=False,
+    )
 
     from repository import get_mcps as _get_mcps
 
