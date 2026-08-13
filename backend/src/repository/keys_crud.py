@@ -4,19 +4,22 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from sqlalchemy import select
+
 from core.infra.database import KeyUsageLog, UserApiKey, get_session_factory
 from core.infra.key_vault import decrypt_api_key, encrypt_api_key, mask_api_key
-from sqlalchemy import select
+from rag.rag_embedding import EMBEDDING_MODEL
 
 
 async def create_api_key(
     user_id: str,
     provider: str,
-    usage_type: str = "llm",
+    capabilities: list[str] | None = None,
     label: str = "",
     plaintext_key: str = "",
     base_url: str | None = None,
     models: list[str] | None = None,
+    model_types: dict[str, str] | None = None,
     is_default: bool = False,
 ) -> UserApiKey:
     """Save a new API key — encrypts before storage, returns the created key."""
@@ -38,11 +41,12 @@ async def create_api_key(
             id=str(uuid4()),
             user_id=user_id,
             provider=provider,
-            usage_type=usage_type,
+            capabilities=capabilities if capabilities is not None else ["llm"],
             label=label,
             encrypted_key=encrypted,
             base_url=base_url,
             models=",".join(models) if models else "",
+            model_types=model_types,
             is_active=True,
             is_default=is_default,
         )
@@ -109,7 +113,8 @@ async def get_api_keys(
                 {
                     "id": r.id,
                     "provider": r.provider,
-                    "usage_type": r.usage_type,
+                    "capabilities": list(r.capabilities or []),
+                    "model_types": r.model_types,
                     "label": r.label,
                     "key_masked": key_masked,
                     "base_url": r.base_url,
@@ -165,7 +170,8 @@ async def get_api_key_for_use(key_id: str, user_id: str) -> dict[str, Any] | Non
         return {
             "id": row.id,
             "provider": row.provider,
-            "usage_type": row.usage_type,
+            "capabilities": list(row.capabilities or []),
+            "model_types": row.model_types,
             "api_key": decrypt_api_key(row.encrypted_key),
             "base_url": row.base_url,
             "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
@@ -219,7 +225,8 @@ async def get_api_key_for_model(model: str, user_id: str) -> dict[str, Any] | No
         return {
             "id": row.id,
             "provider": row.provider,
-            "usage_type": row.usage_type,
+            "capabilities": list(row.capabilities or []),
+            "model_types": row.model_types,
             "api_key": decrypt_api_key(row.encrypted_key),
             "base_url": row.base_url,
             "models": [m.strip() for m in row.models.split(",") if m.strip()] if row.models else [],
@@ -293,7 +300,8 @@ async def update_api_key(
     models: list[str] | None = None,
     is_active: bool | None = None,
     is_default: bool | None = None,
-    usage_type: str | None = None,
+    capabilities: list[str] | None = None,
+    model_types: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
     """Update an API key configuration."""
     factory = get_session_factory()
@@ -314,8 +322,10 @@ async def update_api_key(
             row.base_url = base_url
         if models is not None:
             row.models = ",".join(models)
-        if usage_type is not None:
-            row.usage_type = usage_type
+        if capabilities is not None:
+            row.capabilities = capabilities
+        if model_types is not None:
+            row.model_types = model_types
         if is_active is not None:
             row.is_active = is_active
         if is_default is not None:
@@ -339,7 +349,8 @@ async def update_api_key(
             "id": row.id,
             "label": row.label,
             "provider": row.provider,
-            "usage_type": row.usage_type,
+            "capabilities": list(row.capabilities or []),
+            "model_types": row.model_types,
             "key_masked": mask_api_key(decrypt_api_key(row.encrypted_key)),
             "is_active": row.is_active,
             "is_default": row.is_default,
@@ -372,15 +383,125 @@ async def get_embedding_api_key() -> str | None:
         stmt = (
             select(UserApiKey)
             .where(
-                UserApiKey.usage_type.in_(["embedding", "both"]),
                 UserApiKey.is_active.is_(True),
+                _capabilities_contains(session, "embedding"),
             )
+            .order_by(UserApiKey.created_at)
             .limit(1)
         )
-        result = await session.execute(stmt)
-        row = result.scalar_one_or_none()
-        if row:
-            return decrypt_api_key(row.encrypted_key)
+        row = (await session.execute(stmt)).scalar_one_or_none()
+        if row is None:
+            return None
+        return decrypt_api_key(row.encrypted_key)
+
+
+def _pick_embedding_model(models: str) -> str | None:
+    """Pick an embedding-capable model from a key's comma-joined models list.
+
+    bge-m3 is preferred (deterministic 1024-dim output) over other
+    embedding-named models, regardless of list order.
+    """
+    if not models:
+        return None
+    candidates = [x.strip() for x in models.split(",")]
+    for m in candidates:
+        if "bge-m3" in m.lower():
+            return m
+    for m in candidates:
+        lowered = m.lower()
+        if "embedding" in lowered or "bge-" in lowered:
+            return m
+    return None
+
+
+async def get_embedding_config() -> dict[str, str | None] | None:
+    """Resolve the embedding endpoint: {api_key, base_url, model}.
+
+    Prefers an active key whose models list names an embedding model (e.g.
+    bge-m3 / *-embedding-*); falls back to the oldest embedding-capability
+    key with the legacy DashScope endpoint.
+    """
+    from core.infra.database import UserApiKey
+    from core.infra.key_vault import decrypt_api_key
+
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(
+                UserApiKey.is_active.is_(True),
+                _capabilities_contains(session, "embedding"),
+            )
+            .order_by(UserApiKey.created_at)
+        )
+        rows = (await session.execute(stmt)).scalars().all()
+
+    if not rows:
+        return None
+    for row in rows:
+        model = _pick_embedding_model(row.models)
+        if model:
+            return {
+                "api_key": decrypt_api_key(row.encrypted_key),
+                "base_url": row.base_url,
+                "model": model,
+            }
+    row = rows[0]
+    return {
+        "api_key": decrypt_api_key(row.encrypted_key),
+        # Keep the key's own endpoint: a key without declared embedding models
+        # may still point at an OpenAI-compatible provider (e.g. SiliconFlow).
+        # Only a key with no base_url at all falls back to the legacy DashScope
+        # native protocol. Model comes from EMBEDDING_MODEL (env-tunable), never
+        # hardcoded.
+        "base_url": row.base_url,
+        "model": EMBEDDING_MODEL,
+    }
+
+
+def _pick_rerank_model(models: str) -> str | None:
+    """Pick a reranker model from a key's comma-joined models list.
+
+    bge-reranker-v2-m3 is preferred over other rerank-named models.
+    """
+    if not models:
+        return None
+    candidates = [x.strip() for x in models.split(",")]
+    for m in candidates:
+        if "bge-reranker-v2-m3" in m.lower():
+            return m
+    for m in candidates:
+        if "rerank" in m.lower():
+            return m
+    return None
+
+
+async def get_rerank_config() -> dict[str, str] | None:
+    """Resolve the reranker endpoint: {api_key, base_url, model}.
+
+    Prefers an active key whose models list names a reranker; None when no
+    key declares one (rerank then stays disabled).
+    """
+    from core.infra.database import UserApiKey
+    from core.infra.key_vault import decrypt_api_key
+
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(UserApiKey.is_active.is_(True))
+            .order_by(UserApiKey.created_at)
+        )
+        rows = (await session.execute(stmt)).scalars().all()
+
+    for row in rows:
+        model = _pick_rerank_model(row.models)
+        if model and row.base_url:
+            return {
+                "api_key": decrypt_api_key(row.encrypted_key),
+                "base_url": row.base_url,
+                "model": model,
+            }
     return None
 
 
@@ -395,16 +516,32 @@ async def get_tool_api_key(provider: str) -> str | None:
             select(UserApiKey)
             .where(
                 UserApiKey.provider == provider,
-                UserApiKey.usage_type == "tool",
                 UserApiKey.is_active.is_(True),
+                _capabilities_contains(session, "tool"),
             )
+            .order_by(UserApiKey.created_at)
             .limit(1)
         )
-        result = await session.execute(stmt)
-        row = result.scalar_one_or_none()
-        if row:
-            return decrypt_api_key(row.encrypted_key)
-    return None
+        row = (await session.execute(stmt)).scalar_one_or_none()
+        if row is None:
+            return None
+        return decrypt_api_key(row.encrypted_key)
+
+
+def _capabilities_contains(session: Any, capability: str) -> Any:
+    """Array-contains predicate: JSONB ``@>`` on postgres, ``json_each`` on sqlite.
+
+    ``UserApiKey.capabilities`` is JSONB on postgres (``contains`` compiles to
+    the ``@>`` operator) but plain JSON on sqlite (``with_variant``), where the
+    ``@>`` operator does not exist — emulate "array contains value" with the
+    json1 ``json_each`` table function so filtering is SQL-side on both engines.
+    """
+    from sqlalchemy import exists, func
+
+    if session.get_bind().dialect.name == "postgresql":
+        return UserApiKey.capabilities.contains([capability])
+    elements = func.json_each(UserApiKey.capabilities).table_valued("value")
+    return exists(select(elements.c.value).where(elements.c.value == capability))
 
 
 async def log_key_usage(

@@ -3,10 +3,12 @@
 import json
 from typing import Any
 
+from fastapi import APIRouter, Request
+
+from auth import get_user_id
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from core.models import CommandExecuteRequest, CommandExecuteResponse, CommandResponse
-from fastapi import APIRouter
 from repository import get_session, log_command, update_session_title
 
 logger = get_logger(__name__)
@@ -98,7 +100,7 @@ def get_command(command_id: str) -> Any:
 
 
 @router.post("/api/commands/execute", response_model=CommandExecuteResponse)
-async def execute_command(req: CommandExecuteRequest) -> Any:
+async def execute_command(req: CommandExecuteRequest, request: Request) -> Any:
     """Execute a command and return the result."""
     cmd = next((c for c in BUILTIN_COMMANDS if c["id"] == req.command_id), None)
     if cmd is None:
@@ -107,6 +109,8 @@ async def execute_command(req: CommandExecuteRequest) -> Any:
     sess = await get_session(req.session_id)
     if sess is None:
         raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="会话不存在")
+    if sess.user_id != get_user_id(request):
+        raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权操作该会话")
 
     result = await _dispatch_command(cmd["id"], req.session_id, req.payload)
 

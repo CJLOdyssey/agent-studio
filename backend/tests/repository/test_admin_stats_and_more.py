@@ -20,7 +20,6 @@ from repository.admin_stats import get_command_logs, get_dashboard_stats, get_re
 from repository.command_logs import log_command
 from repository.core import apply_owner_filter
 
-
 # ── Admin Stats ──────────────────────────────────────────────────────────
 
 
@@ -94,11 +93,15 @@ class TestAdminStats:
 
         logs = await get_command_logs(limit=10)
         assert len(logs["items"]) == 1
-        assert logs["items"][0]["command"] == "gen"
-        assert logs["items"][0]["payload"] == '{"lang":"py"}'
-        assert logs["items"][0]["result"] == "done"
-        assert logs["items"][0]["id"] is not None
-        assert logs["items"][0]["timestamp"] != ""
+        log = logs["items"][0]
+        # Command entries merge into the audit view: action=command_name,
+        # entity_type="command", entity_name=command_id, detail=result or payload.
+        assert log["action"] == "gen"
+        assert log["entity_type"] == "command"
+        assert log["entity_name"] == "c1"
+        assert log["detail"] == "done"
+        assert log["id"] is not None
+        assert log["timestamp"] != ""
 
     async def test_get_command_logs_pagination(self, db_engine):
         factory = get_session_factory()
@@ -133,9 +136,10 @@ class TestAdminStats:
         assert len(logs["items"]) == 1
         log = logs["items"][0]
         assert log["id"] == "test-log-id"
-        assert log["command"] == "test_cmd"
-        assert log["payload"] == '{"key": "val"}'
-        assert log["result"] == "done"
+        assert log["action"] == "test_cmd"
+        assert log["entity_type"] == "command"
+        assert log["entity_name"] == "c1"
+        assert log["detail"] == "done"
         assert log["timestamp"] != ""
 
     async def test_get_recent_activity_empty(self, db_engine):
@@ -176,7 +180,7 @@ class TestCommandLogs:
         )
         logs = await get_command_logs(limit=10)
         assert len(logs["items"]) == 1
-        assert logs["items"][0]["command"] == "generate_code"
+        assert logs["items"][0]["action"] == "generate_code"
 
     async def test_multiple_command_logs(self, db_engine):
         sid = str(uuid.uuid4())
@@ -230,6 +234,7 @@ class TestDeps:
 
     def test_get_session_is_asyncgen(self):
         import inspect
+
         from repository.deps import get_session
         assert inspect.isasyncgenfunction(get_session)
 
@@ -264,8 +269,8 @@ class TestSnapshotHelper:
             assert versions[0].created_by == "test_user"
 
     async def test_create_snapshot_from_dict_with_session(self, db_engine):
+        from core.infra.database import VersionDB, get_session_factory
         from repository.snapshot_helper import create_snapshot_from_dict
-        from core.infra.database import get_session_factory, VersionDB
 
         factory = get_session_factory()
         async with factory() as session:
@@ -286,8 +291,8 @@ class TestSnapshotHelper:
             assert len(versions) == 1
 
     async def test_with_session_with_existing_session(self, db_engine):
-        from repository.snapshot_helper import with_session
         from core.infra.database import get_session_factory
+        from repository.snapshot_helper import with_session
 
         called_with = {}
 
@@ -322,8 +327,8 @@ class TestSnapshotHelper:
         assert called.get("ok") is True
 
     def test_build_table_snapshot(self):
-        from repository.snapshot_helper import build_table_snapshot
         from core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
 
         agent = AgentConfigDB(
             id="test-id",
@@ -340,8 +345,8 @@ class TestSnapshotHelper:
         assert snapshot["system_prompt"] == "Prompt text"
 
     def test_build_table_snapshot_custom_exclude(self):
-        from repository.snapshot_helper import build_table_snapshot
         from core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
 
         agent = AgentConfigDB(
             id="test-id",
@@ -356,9 +361,10 @@ class TestSnapshotHelper:
 
     def test_build_table_snapshot_datetime_value(self):
         """DateTime values are converted to isoformat strings."""
-        from repository.snapshot_helper import build_table_snapshot
-        from core.infra.database import AgentConfigDB
         from datetime import UTC, datetime
+
+        from core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
 
         agent = AgentConfigDB(
             id="test-id", name="Test Agent", role_identifier="r",
@@ -371,8 +377,8 @@ class TestSnapshotHelper:
 
     def test_build_table_snapshot_none_value(self):
         """None column values are included as None."""
-        from repository.snapshot_helper import build_table_snapshot
         from core.infra.database import AgentConfigDB
+        from repository.snapshot_helper import build_table_snapshot
 
         agent = AgentConfigDB(
             id="id", name="Test", role_identifier="r",

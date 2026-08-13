@@ -50,6 +50,7 @@ def client():
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
+
         from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
@@ -176,12 +177,16 @@ class TestMCPS:
             assert resp.status_code == 500
 
     def test_update_mcp_exception(self, client):
-        with patch("routers.mcps.update_mcp", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.mcps.get_mcp", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.mcps.update_mcp", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/mcps/t", json={"name": "x"})
             assert resp.status_code == 500
 
     def test_delete_mcp_exception(self, client):
-        with patch("routers.mcps.get_mcps", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.mcps.get_mcp", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.mcps.get_mcps", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/mcps/t")
             assert resp.status_code == 500
 

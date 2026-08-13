@@ -42,6 +42,7 @@ def client():
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
+
         from core.infra.database import UserDB
         async with db_mod._async_session_factory() as session:  # type: ignore[arg-type]
             existing = await session.execute(

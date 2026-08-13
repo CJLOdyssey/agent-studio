@@ -4,13 +4,18 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from core.error_codes import ErrorCode, error_response
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 from pydantic.alias_generators import to_camel
+
+from auth import get_user_id, require_owned
+from auth.ownership import auth_enabled
+from core.error_codes import ErrorCode, error_response
+from repository import get_team
 from repository.workflows import (
     delete_workflow_config,
     get_workflow_config_by_team,
+    get_workflow_team_id,
     list_workflow_meta,
     save_workflow_config,
 )
@@ -130,8 +135,12 @@ async def _snapshot_workflow(config: WorkflowConfig) -> None:
 
 
 @router.post("", response_model=WorkflowConfigSchema, status_code=201)
-async def create_workflow(req: WorkflowSaveRequest) -> Any:
+async def create_workflow(req: WorkflowSaveRequest, request: Request) -> Any:
     """Create or update a workflow configuration for a team."""
+    await require_owned(
+        request, req.team_id, get_team,
+        not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+    )
     config = WorkflowConfig(
         id=req.id,
         team_id=req.team_id,
@@ -165,8 +174,11 @@ async def create_workflow(req: WorkflowSaveRequest) -> Any:
 
 
 @router.get("/teams/{team_id}", response_model=WorkflowConfigSchema | None)
-async def get_team_workflow(team_id: str) -> Any:
+async def get_team_workflow(team_id: str, request: Request) -> Any:
     """Get the workflow configuration for a specific team."""
+    await require_owned(
+        request, team_id, get_team, not_found=ErrorCode.TEAM_NOT_FOUND,
+    )
     config = await get_workflow_config_by_team(team_id)
     if config is None:
         raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found for this team")
@@ -174,9 +186,14 @@ async def get_team_workflow(team_id: str) -> Any:
 
 
 @router.get("", response_model=list[WorkflowListItemSchema])
-async def list_workflows() -> Any:
-    """List all workflow configurations as lightweight rows."""
-    rows = await list_workflow_meta()
+async def list_workflows(request: Request) -> Any:
+    """List workflow configurations as lightweight rows (owner-scoped when RBAC)."""
+    user_id = get_user_id(request)
+    if user_id == "anonymous" and auth_enabled():
+        return []
+    rows = await list_workflow_meta(
+        owner_id=None if user_id == "anonymous" else user_id,
+    )
     return [
         WorkflowListItemSchema(
             id=r.id,
@@ -191,8 +208,15 @@ async def list_workflows() -> Any:
 
 
 @router.delete("/{config_id}")
-async def delete_workflow(config_id: str) -> Any:
+async def delete_workflow(config_id: str, request: Request) -> Any:
     """Delete a workflow configuration by ID."""
+    team_id = await get_workflow_team_id(config_id)
+    if team_id is None:
+        raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found")
+    await require_owned(
+        request, team_id, get_team,
+        not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+    )
     deleted = await delete_workflow_config(config_id)
     if not deleted:
         raise error_response(ErrorCode.WORKFLOW_NOT_FOUND, detail="Workflow not found")

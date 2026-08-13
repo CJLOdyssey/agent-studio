@@ -9,13 +9,12 @@ import os
 import platform
 from typing import TYPE_CHECKING, Any, cast
 
-from broker import BROKER_URL, REDIS_URL, get_redis
-from observability.startup_guard import mark_started, mark_stopped, record_crash
-
+from broker import BROKER_URL, REDIS_URL, close_redis, get_redis
 from core.config import load_config
 from core.infra.database import DATABASE_URL, get_session_factory, init_db
 from core.infra.events import Events, bus
 from core.infra.logging_config import get_logger
+from observability.startup_guard import mark_started, mark_stopped, record_crash
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -195,5 +194,9 @@ async def shutdown(app: FastAPI) -> None:
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError, asyncio.TimeoutError):
                 await asyncio.wait_for(task, timeout=5)
+    from observability.store import get_store
+
+    get_store().close()
+    await close_redis()
     mark_stopped()
     logger.info("[LIFECYCLE] shutting down — app=%s | pid=%d", app.title, os.getpid())

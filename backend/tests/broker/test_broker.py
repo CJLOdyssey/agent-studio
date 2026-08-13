@@ -18,6 +18,10 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     importlib.reload() which can leave the module with SENTINEL_ENABLED=True
     after the test ends (monkeypatch restores the env var, but the module-level
     constant is not re-evaluated).
+
+    Clears ``broker._pools`` on teardown: several cases store MagicMock pools
+    under mock loop keys; leaking them breaks later app-lifespan close_redis()
+    (``await pool.aclose()`` on a plain MagicMock raises TypeError).
     """
     import broker as mod_broker
     import core.infra.redis_sentinel as rsmod
@@ -42,6 +46,17 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
     monkeypatch.setattr(
         "core.infra.redis_sentinel.create_redis", _real_create_redis
     )
+
+    yield
+
+    mod_broker._pools.clear()
+
+
+@pytest.fixture(autouse=True)
+def _clear_pool_size_env(monkeypatch):
+    # Pool size defaults to 200 in redis_sentinel when REDIS_POOL_SIZE is
+    # unset; dev .env sets 20, which would make assertions host-dependent.
+    monkeypatch.delenv("REDIS_POOL_SIZE", raising=False)
 
 
 class TestBrokerRedis:
@@ -80,7 +95,7 @@ class TestBrokerRedis:
         result = get_redis()
         mock_from_url.assert_called_once_with(
             REDIS_URL,
-            max_connections=20,
+            max_connections=200,
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,
@@ -186,7 +201,7 @@ class TestBrokerFull:
         result = get_redis()
         mock_from_url.assert_called_once_with(
             "redis://custom-host:7777/5",
-            max_connections=20,
+            max_connections=200,
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,

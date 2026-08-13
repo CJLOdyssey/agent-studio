@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Tag, Loader2, Save, AlertCircle } from 'lucide-react';
 import { fetchModelsFromProvider } from '../../../api/client/keys';
+import { listModels } from '../../../api/client/commands';
 import { listProviders } from '../../../api/client/providers';
 import type { ProvidersMap } from '../../../api/client/providers';
+import { categoriesOf } from '../../../utils/providerCategories';
 import ProviderSelector from './ProviderSelector';
 import CredentialsSection from './CredentialsSection';
 import ModelSection from './ModelSection';
@@ -12,11 +14,12 @@ import Modal from '@/components/shared/Modal';
 export interface ApiProviderForm {
   id: string;
   provider: string;
-  usage_type: string;
+  capabilities: string[];
   name: string;
   baseUrl: string;
   apiKey: string;
   models: string[];
+  model_types?: Record<string, string> | null;
   isActive: boolean;
   status?: 'connected' | 'error' | 'untested';
 }
@@ -26,7 +29,14 @@ const FALLBACK_PROVIDERS: ProvidersMap = {
   deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['chat'],            docs_url: null },
   anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['chat'],            docs_url: null },
   dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['chat', 'vector'], docs_url: null },
-  custom:    { name: '自定义',       base_url: '',                                                    capabilities: ['chat', 'vector'], docs_url: null },
+  custom_llm: { name: '自定义大模型', base_url: '', capabilities: ['chat'],            docs_url: null },
+  custom_embedding: { name: '自定义嵌入', base_url: '', capabilities: ['vector'],         docs_url: null },
+  custom_rerank: { name: '自定义重排序', base_url: '', capabilities: ['rerank'],          docs_url: null },
+  custom_speech2text: { name: '自定义语音转文字', base_url: '', capabilities: ['speech2text'], docs_url: null },
+  custom_tts: { name: '自定义文字转语音', base_url: '', capabilities: ['tts'],            docs_url: null },
+  custom_moderation: { name: '自定义内容审核', base_url: '', capabilities: ['moderation'], docs_url: null },
+  custom_image: { name: '自定义图像', base_url: '', capabilities: ['image'],             docs_url: null },
+  custom_tool: { name: '自定义工具', base_url: '', capabilities: ['tool'],               docs_url: null },
 };
 
 interface Props {
@@ -36,21 +46,27 @@ interface Props {
   saving?: boolean;
   error?: string | null;
   onCloseError?: () => void;
+  /** 新建模式必须填写 API Key；编辑模式（明文不暴露）允许留空 */
+  requireApiKey?: boolean;
 }
 
-export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError }: Props) {
+export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError, requireApiKey = false }: Props) {
   const { t } = useTranslation();
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
-  const [providerType, setProviderType] = useState(provider.provider || 'custom');
-  const [usageType, setUsageType] = useState<string>(provider.usage_type || 'chat');
+  const [providerType, setProviderType] = useState(provider.provider || 'openai');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
   const [models, setModels] = useState<string[]>(provider.models);
+  const [modelTypes, setModelTypes] = useState<Record<string, string>>(
+    provider.model_types ?? {},
+  );
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [typeDefaults, setTypeDefaults] = useState<Record<string, string>>({});
 
   useEffect(() => {
     listProviders()
@@ -59,57 +75,55 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       .finally(() => setLoadingProviders(false));
   }, []);
 
-  const [prevProviderType, setPrevProviderType] = useState<string | null>(null);
-  // Sync usageType/baseUrl to the selected provider's defaults when provider changes.
-  // Render-phase state adjustment (React-sanctioned) instead of setState-in-effect.
-  if (prevProviderType !== providerType) {
-    setPrevProviderType(providerType);
-    const info = providers[providerType];
-    if (info) {
-      const caps = info.capabilities ?? ['chat'];
-      const isTool = caps.includes('tool');
-      if (isTool) {
-        setUsageType('tool');
-      } else {
-        const derived = caps.includes('chat') && caps.includes('vector') ? 'general' : caps[0];
-        if (derived !== usageType) setUsageType(derived);
-      }
-      if (info.base_url && !isTool) {
-        const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
-        if (!baseUrl || knownDefaults.includes(baseUrl)) {
-          setBaseUrl(info.base_url);
-        }
-      }
-    }
-  }
+  useEffect(() => {
+    listModels()
+      .then((infos) => setTypeDefaults(Object.fromEntries(infos.map((i) => [i.id, i.type]))))
+      .catch(() => {});
+  }, []);
 
   const info = providers[providerType];
   const caps = info?.capabilities ?? [];
   const isToolProvider = caps.includes('tool');
-  const showModels = !isToolProvider && (usageType === 'chat' || usageType === 'general' || usageType === 'image' || usageType === 'audio');
+  const showModels = !isToolProvider && (caps.includes('chat') || caps.includes('image'));
+
+  const canSave = !saving && (!requireApiKey || !!apiKey.trim());
 
   const handleSave = () => {
+    const preserveStored = Boolean(provider.id) && providerType === provider.provider;
     onSave({
-      ...provider, provider: providerType, usage_type: usageType,
-      name, baseUrl, apiKey, models,
+      ...provider, provider: providerType,
+      capabilities: preserveStored
+        ? (provider.capabilities ?? categoriesOf(info ?? {}))
+        : categoriesOf(info ?? {}),
+      name: name.trim() || info?.name || providerType, baseUrl, apiKey, models,
+      model_types: modelTypes,
     });
   };
 
   const handleFetchModels = async () => {
     if (!apiKey.trim()) return;
     setFetchingModels(true);
+    setFetchError(null);
     try {
       const result = await fetchModelsFromProvider({
         api_key: apiKey, base_url: baseUrl || undefined, provider: providerType,
       });
-      if (result.success && result.models.length > 0) {
-        setModels((prev) => {
-          const merged = new Set([...prev, ...result.models]);
-          return Array.from(merged);
-        });
+      if (result.success) {
+        if (result.models.length > 0) {
+          setModels((prev) => {
+            const merged = new Set([...prev, ...result.models]);
+            return Array.from(merged);
+          });
+        }
+        setModelTypes(result.types ?? {});
+      } else {
+        setFetchError(result.message ?? 'Fetch failed');
       }
-    } catch { /* ignore */ }
-    finally { setFetchingModels(false); }
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Fetch failed');
+    } finally {
+      setFetchingModels(false);
+    }
   };
 
   return (
@@ -130,13 +144,23 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
       footer={
         <>
           <button type="button" className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!canSave}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}
           </button>
         </>
       }
     >
+      {fetchError && (
+            <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
+              <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+              <span className="text-[var(--color-danger)] text-sm flex-1">{fetchError}</span>
+              <button type="button" onClick={() => setFetchError(null)}
+                className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-0.5 rounded hover:bg-[var(--color-surface-hover)] transition-colors shrink-0">
+                <X size={14} />
+              </button>
+            </div>
+          )}
       {error && (
             <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
               <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
@@ -171,7 +195,26 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
             <div className="pt-1">
               <ModelSection
                 models={models} fetching={fetchingModels} apiKey={apiKey}
-                onRemoveModel={(m) => setModels((prev) => prev.filter((x) => x !== m))}
+                modelTypes={modelTypes} typeDefaults={typeDefaults}
+                onRemoveModel={(m) => {
+                  setModels((prev) => prev.filter((x) => x !== m));
+                  setModelTypes((prev) => {
+                    const next = { ...prev };
+                    delete next[m];
+                    return next;
+                  });
+                }}
+                onChangeModelType={(m, type) =>
+                  setModelTypes((prev) => {
+                    const next = { ...prev };
+                    if (type) {
+                      next[m] = type;
+                    } else {
+                      delete next[m];
+                    }
+                    return next;
+                  })
+                }
                 onFetchModels={handleFetchModels}
               />
             </div>

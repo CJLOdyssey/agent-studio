@@ -1,7 +1,30 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ModelOption } from '../../types/input';
+
+const RECENT_KEY = 'agentstudio-recent-models';
+const RECENT_LIMIT = 5;
+
+function readRecentModels(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentModels(ids: string[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(ids));
+  } catch {
+    // storage unavailable — recent list applies for this session only
+  }
+}
 
 interface Props {
   models: ModelOption[];
@@ -11,11 +34,140 @@ interface Props {
   onConfigure?: () => void;
 }
 
-export default function ModelSelector({ models, selectedModel, onChange, onConfigure }: Props) {
+function ModelOptionButton({
+  m,
+  isSelected,
+  isFocused,
+  onSelect,
+}: {
+  m: ModelOption;
+  isSelected: boolean;
+  isFocused: boolean;
+  onSelect: () => void;
+}) {
+  const { t } = useTranslation();
+  const badge =
+    m.status === 'deprecated' ? (
+      <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">
+        {t('model.statusDeprecated')}
+      </span>
+    ) : m.status === 'sunset' ? (
+      <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">
+        {t('model.statusSunset')}
+      </span>
+    ) : null;
+  return (
+    <button
+      data-model-option
+      className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${isSelected ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${isFocused ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
+      onClick={onSelect}
+      role="option"
+      aria-selected={isSelected}
+      type="button"
+    >
+      <span>{m.label}</span>
+      {badge}
+    </button>
+  );
+}
+
+function modelsReady(models: ModelOption[], selectedModel: string): boolean {
+  return models.length > 0 || models.some((m) => m.id === selectedModel);
+}
+
+function SelectorLabel({
+  hasLoadedOnce,
+  isEmpty,
+  current,
+}: {
+  hasLoadedOnce: boolean;
+  isEmpty: boolean;
+  current: ModelOption | undefined;
+}) {
+  const { t } = useTranslation();
+  if (!hasLoadedOnce) {
+    return (
+      <span className="inline-flex items-center justify-center gap-1 h-[16px]">
+        <Loader2 size={10} className="animate-spin" />
+        <span>{t('model.loadingText') || '加载中'}</span>
+      </span>
+    );
+  }
+  return (
+    <>
+      {isEmpty ? t('model.configure') : (current?.label ?? t('model.select'))}
+    </>
+  );
+}
+
+function OptionsList({
+  providers,
+  recentModels,
+  selectedModel,
+  focusIdx,
+  onSelect,
+}: {
+  providers: [string, ModelOption[]][];
+  recentModels: ModelOption[];
+  selectedModel: string;
+  focusIdx: number;
+  onSelect: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const allOptions = [
+    ...recentModels,
+    ...providers.flatMap(([, list]) => list),
+  ];
+  return (
+    <>
+      {recentModels.length > 0 && (
+        <div key="__recent" className="flex flex-col">
+          <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+            {t('model.recent')}
+          </div>
+          {recentModels.map((m) => (
+            <ModelOptionButton
+              key={m.id}
+              m={m}
+              isSelected={m.id === selectedModel}
+              isFocused={allOptions.indexOf(m) === focusIdx}
+              onSelect={() => onSelect(m.id)}
+            />
+          ))}
+          <div className="h-px bg-[var(--color-border-subtle)] mx-2 my-1" />
+        </div>
+      )}
+      {providers.map(([provider, list]) => (
+        <div key={provider} className="flex flex-col">
+          <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+            {provider}
+          </div>
+          {list.map((m) => (
+            <ModelOptionButton
+              key={m.id}
+              m={m}
+              isSelected={m.id === selectedModel}
+              isFocused={allOptions.indexOf(m) === focusIdx}
+              onSelect={() => onSelect(m.id)}
+            />
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+export default function ModelSelector({
+  models,
+  selectedModel,
+  onChange,
+  onConfigure,
+}: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [recentIds, setRecentIds] = useState<string[]>(readRecentModels);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const current = models.find((m) => m.id === selectedModel);
@@ -23,7 +175,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
 
   // Latch once models are available: render-phase state adjustment (React-sanctioned
   // pattern for deriving state from props). Prevents flashing "请配置API" on refresh.
-  if (!hasLoadedOnce && (models.length > 0 || models.some((m) => m.id === selectedModel))) {
+  if (!hasLoadedOnce && modelsReady(models, selectedModel)) {
     setHasLoadedOnce(true);
   }
 
@@ -41,8 +193,36 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
     return Object.entries(g);
   }, [models]);
 
+  // Recent models (user's last picks) shown at top of the list
+  const recentModels = useMemo(() => {
+    const byId = new Map(models.map((m) => [m.id, m]));
+    return recentIds
+      .map((id) => byId.get(id))
+      .filter((m): m is ModelOption => !!m);
+  }, [models, recentIds]);
+
+  // Full list minus recent entries (no duplicates)
+  const recentSet = useMemo(
+    () => new Set(recentModels.map((m) => m.id)),
+    [recentModels],
+  );
+  const fullProviders = useMemo(
+    () =>
+      providers.map(
+        ([provider, list]) =>
+          [provider, list.filter((m) => !recentSet.has(m.id))] as [
+            string,
+            ModelOption[],
+          ],
+      ),
+    [providers, recentSet],
+  );
+
   // All options flattened for keyboard navigation
-  const allOptions = useMemo(() => providers.flatMap(([, list]) => list), [providers]);
+  const allOptions = useMemo(
+    () => [...recentModels, ...fullProviders.flatMap(([, list]) => list)],
+    [recentModels, fullProviders],
+  );
 
   // Close on outside click
   useEffect(() => {
@@ -56,6 +236,14 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
+
+  const recordRecent = useCallback((id: string) => {
+    setRecentIds((prev) => {
+      const next = [id, ...prev.filter((x) => x !== id)].slice(0, RECENT_LIMIT);
+      writeRecentModels(next);
+      return next;
+    });
+  }, []);
 
   // Keyboard navigation + Escape close
   useEffect(() => {
@@ -78,6 +266,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
           e.preventDefault();
           if (focusIdx >= 0 && focusIdx < allOptions.length) {
             onChange(allOptions[focusIdx].id);
+            recordRecent(allOptions[focusIdx].id);
             setOpen(false);
             setFocusIdx(-1);
           }
@@ -86,7 +275,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
     };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
-  }, [open, focusIdx, allOptions, onChange]);
+  }, [open, focusIdx, allOptions, onChange, recordRecent]);
 
   // Scroll focused item into view
   useEffect(() => {
@@ -98,16 +287,17 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   const handleSelect = useCallback(
     (id: string) => {
       onChange(id);
+      recordRecent(id);
       setOpen(false);
       setFocusIdx(-1);
     },
-    [onChange],
+    [onChange, recordRecent],
   );
 
   return (
     <div className="relative inline-flex items-center" ref={ref}>
       <button
-        className={`inline-flex items-center gap-1 px-2 py-1 border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] ${isEmpty ? 'border-[var(--color-accent-soft)] text-[var(--color-accent-soft)] hover:bg-[color-mix(in_srgb,var(--color-accent-soft)_10%,transparent)] hover:border-[var(--color-accent-soft)] hover:text-[var(--color-accent-soft)]' : 'border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)]'}`}
+        className={`inline-flex items-center gap-1 px-2 h-[26px] min-w-[140px] border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)] ${!hasLoadedOnce || isEmpty || !current ? 'justify-center' : ''}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -122,63 +312,38 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         aria-haspopup={isEmpty ? undefined : 'listbox'}
       >
         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-          {!hasLoadedOnce ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Loader2 size={10} className="animate-spin" />
-              {selectedModel || t('model.loading') || '加载中'}
-            </span>
-          ) : isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
+          <SelectorLabel
+            hasLoadedOnce={hasLoadedOnce}
+            isEmpty={isEmpty}
+            current={current}
+          />
         </span>
-        {hasLoadedOnce && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
+        {hasLoadedOnce && !isEmpty && current && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
       </button>
 
       {open && !isEmpty && (
-        <div className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={listRef} role="listbox">
-          {providers.length > 1
-            ? providers.map(([provider, list]) => (
-                <div key={provider} className="flex flex-col">
-                  <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">{provider}</div>
-                  {list.map((m) => {
-                    const globalIdx = allOptions.indexOf(m);
-                    return (
-                      <button
-                        key={m.id}
-                        data-model-option
-                        className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${globalIdx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
-                        onClick={() => handleSelect(m.id)}
-                        role="option"
-                        aria-selected={m.id === selectedModel}
-                        type="button"
-                      >
-                        <span>{m.label}</span>
-                        {m.status === 'deprecated' && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
-                        )}
-                        {m.status === 'sunset' && (
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
-            : models.map((m, idx) => (
-                <button
-                  key={m.id}
-                  data-model-option
-                  className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${m.id === selectedModel ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${idx === focusIdx ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
-                  onClick={() => handleSelect(m.id)}
-                  role="option"
-                  aria-selected={m.id === selectedModel}
-                  type="button"
-                >
-                  <span>{m.label}</span>
-                  {m.status === 'deprecated' && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusDeprecated')}</span>
-                  )}
-                  {m.status === 'sunset' && <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">{t('model.statusSunset')}</span>}
-                </button>
-              ))}
+        <div
+          className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1"
+          ref={listRef}
+          role="listbox"
+        >
+          <OptionsList
+            providers={fullProviders}
+            recentModels={recentModels}
+            selectedModel={selectedModel}
+            focusIdx={focusIdx}
+            onSelect={handleSelect}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onConfigure?.();
+            }}
+            className="w-full px-3 py-2 mt-1 text-left text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] bg-transparent cursor-pointer transition-colors hover:text-[var(--color-text-primary)]"
+          >
+            {t('model.manageKeys')}
+          </button>
         </div>
       )}
     </div>

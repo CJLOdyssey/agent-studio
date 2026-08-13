@@ -6,7 +6,6 @@ import pytest
 
 from core.seed import seed_default_roles_and_admin
 
-
 # =============================================================================
 # seed_default_roles_and_admin
 # =============================================================================
@@ -96,6 +95,62 @@ class TestSeedDefaultRolesAndAdmin:
         # Admin user added + UserRoleDB link added
         add_calls = mock_session.add.call_args_list
         assert len(add_calls) >= 2  # user + user_role
+
+    @pytest.mark.asyncio
+    async def test_uses_seed_admin_password_env_when_set(self, monkeypatch):
+        """Admin password comes from SEED_ADMIN_PASSWORD env, not the hardcoded default."""
+        monkeypatch.setenv("SEED_ADMIN_PASSWORD", "S3cureProdPass!")
+        mock_session = AsyncMock()
+        mock_factory = MagicMock(return_value=MagicMock(__aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()))
+
+        # admin role exists, member role exists, admin user missing, admin role for FK
+        existing_role = MagicMock()
+        existing_role.name = "admin"
+        existing_role.id = 42
+        mock_session.execute.side_effect = [
+            MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role)),
+            MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role)),
+            MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
+            MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role)),
+        ]
+
+        hashed = b"$2b$12$envpassword"
+        with (
+            patch("core.seed.get_session_factory", return_value=mock_factory),
+            patch("core.seed.select", side_effect=lambda *a: MagicMock()),
+            patch("bcrypt.hashpw", return_value=hashed) as mock_hashpw,
+            patch("bcrypt.gensalt", return_value=b"$2b$12$salt"),
+        ):
+            await seed_default_roles_and_admin()
+
+        mock_hashpw.assert_called_once_with(b"S3cureProdPass!", b"$2b$12$salt")
+
+    @pytest.mark.asyncio
+    async def test_defaults_to_admin123_when_env_unset(self, monkeypatch):
+        """Without SEED_ADMIN_PASSWORD, the dev default admin123 is used."""
+        monkeypatch.delenv("SEED_ADMIN_PASSWORD", raising=False)
+        mock_session = AsyncMock()
+        mock_factory = MagicMock(return_value=MagicMock(__aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()))
+
+        existing_role = MagicMock()
+        existing_role.name = "admin"
+        existing_role.id = 42
+        mock_session.execute.side_effect = [
+            MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role)),
+            MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role)),
+            MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
+            MagicMock(scalar_one_or_none=MagicMock(return_value=existing_role)),
+        ]
+
+        with (
+            patch("core.seed.get_session_factory", return_value=mock_factory),
+            patch("core.seed.select", side_effect=lambda *a: MagicMock()),
+            patch("bcrypt.hashpw", return_value=b"$2b$12$default") as mock_hashpw,
+            patch("bcrypt.gensalt", return_value=b"$2b$12$salt"),
+        ):
+            await seed_default_roles_and_admin()
+
+        mock_hashpw.assert_called_once_with(b"admin123", b"$2b$12$salt")
 
     @pytest.mark.asyncio
     async def test_no_role_fk_when_admin_role_not_found(self):

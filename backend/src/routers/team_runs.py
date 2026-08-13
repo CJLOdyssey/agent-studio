@@ -9,11 +9,12 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from auth import CurrentUser, get_current_user
+from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel
+
+from auth import CurrentUser, get_current_user, require_run_owner
 from broker import get_redis
 from core.error_codes import ErrorCode, error_response
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 from repository import get_run
 
 router = APIRouter(tags=["team-runs"])
@@ -31,9 +32,11 @@ class ApproveRequest(BaseModel):
 async def approve_run(
     run_id: str,
     body: ApproveRequest,
+    request: Request,
     current_user: CurrentUser = Depends(get_current_user),  # noqa: B008
 ) -> Any:
     """Record a human verdict that overrides the reviewer gate for a run."""
+    await require_run_owner(request, run_id)
     run = await get_run(run_id)
     if run is None:
         raise error_response(ErrorCode.RUN_NOT_FOUND, detail="运行不存在")

@@ -5,8 +5,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from core.infra.database import ProjectRun, SessionDB, get_session_factory
 from sqlalchemy import desc, select
+
+from core.infra.database import ProjectRun, SessionDB, get_session_factory
 
 
 async def get_session_runs(session_id: str) -> list[ProjectRun]:
@@ -117,10 +118,39 @@ async def get_run(run_id: str) -> ProjectRun | None:
         return run
 
 
-async def get_runs(limit: int = 20) -> list[ProjectRun]:
-    """Return the most recent project runs, up to the given limit."""
+async def get_runs(limit: int = 20, user_id: str | None = None) -> list[ProjectRun]:
+    """Return the most recent project runs, up to the given limit.
+
+    When ``user_id`` is given, only runs belonging to that user's sessions
+    are returned (session ownership is the run's owner boundary).
+    """
     factory = get_session_factory()
     async with factory() as session:
         stmt = select(ProjectRun).order_by(desc(ProjectRun.created_at)).limit(limit)
+        if user_id and user_id != "anonymous":
+            stmt = stmt.join(SessionDB, SessionDB.id == ProjectRun.session_id).where(
+                SessionDB.user_id == user_id
+            )
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
+
+async def get_run_ancestors(run_id: str) -> list[ProjectRun]:
+    """Return the run and all its ancestors via parent_run_id, root-first.
+
+    Guards against cycles (corrupt data) by capping the walk at the run count.
+    """
+    factory = get_session_factory()
+    async with factory() as session:
+        rows: list[ProjectRun] = []
+        seen: set[str] = set()
+        current_id: str | None = run_id
+        while current_id and current_id not in seen:
+            seen.add(current_id)
+            run = await session.get(ProjectRun, current_id)
+            if run is None:
+                break
+            rows.append(run)
+            current_id = run.parent_run_id or None
+        rows.reverse()
+        return rows

@@ -69,21 +69,24 @@ const TAB_MAP: Record<string, string> = {
 };
 
 function healthToItems(health: SystemHealth): HealthItem[] {
+  const dbOk = health.checks?.database === 'ok';
+  const redisOk = health.checks?.redis === 'ok';
+  const healthy = health.status === 'healthy';
   return [
     {
       label: t('monitor.health_status'),
-      value: health.status === 'ok' ? t('monitor.health_ok') : t('monitor.health_degraded'),
-      status: health.status === 'ok' ? 'normal' : 'warning',
+      value: healthy ? t('monitor.health_ok') : t('monitor.health_degraded'),
+      status: healthy ? 'normal' : 'warning',
     },
     {
       label: t('monitor.health_database'),
-      value: health.database?.startsWith('connected') ? t('monitor.health_connected') : t('monitor.health_disconnected'),
-      status: health.database?.startsWith('connected') ? 'normal' : 'warning',
+      value: dbOk ? t('monitor.health_connected') : t('monitor.health_disconnected'),
+      status: dbOk ? 'normal' : 'warning',
     },
     {
       label: t('monitor.health_redis'),
-      value: health.redis?.startsWith('connected') ? t('monitor.health_connected') : t('monitor.health_disconnected'),
-      status: health.redis?.startsWith('connected') ? 'normal' : 'warning',
+      value: redisOk ? t('monitor.health_connected') : t('monitor.health_disconnected'),
+      status: redisOk ? 'normal' : 'warning',
     },
   ];
 }
@@ -158,7 +161,7 @@ function MonitorCenter({ onNavigate }: Props) {
       }
     >
       <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
-        <div className="flex flex-col flex-1 p-6 gap-6 overflow-y-auto">
+        <div className="flex flex-col flex-1 min-h-0 p-6 gap-6 overflow-y-auto">
           <div className="flex items-center justify-between">
             <div className="text-sm text-[var(--color-text-muted)]">
               {lastUpdated ? `上次更新: ${lastUpdated}` : ''}

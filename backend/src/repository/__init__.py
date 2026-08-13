@@ -66,6 +66,7 @@ from repository.keys import (
 from repository.mcps import (
     create_mcp,
     delete_mcp,
+    get_mcp,
     get_mcps,
     get_mcps_as_dicts,
     update_mcp,
@@ -75,6 +76,7 @@ from repository.memory_repo import (
     clear_session_memories,
     create_memory_entry,
     delete_memory_entry,
+    get_memory_entry,
     get_session_memories,
 )
 
@@ -100,6 +102,7 @@ from repository.prompts import (
 from repository.run_repo import (
     create_run,
     get_run,
+    get_run_ancestors,
     get_runs,
     get_runs_by_session_ids,
     get_session_runs,
@@ -112,12 +115,14 @@ from repository.session_repo import (
     delete_session,
     get_session,
     get_sessions,
+    update_session_pin,
     update_session_title,
 )
 
 from repository.skills import (
     create_skill,
     delete_skill,
+    get_skill,
     get_skills,
     get_skills_as_dicts,
     update_skill,
@@ -179,6 +184,7 @@ __all__ = [
     "delete_agent_config",
     "delete_mcp",
     "delete_memory_entry",
+    "get_memory_entry",
     "delete_prompt",
     "delete_session",
     "delete_skill",
@@ -196,6 +202,7 @@ __all__ = [
     "get_api_key_for_model",
     "get_api_key_for_use",
     "get_api_keys",
+    "get_mcp",
     "get_tool_api_key",
     "get_attachment_by_id",
     "get_default_api_key",
@@ -208,6 +215,7 @@ __all__ = [
     "get_prompts",
     "get_prompts_as_dicts",
     "get_run",
+    "get_run_ancestors",
     "get_run_messages",
     "get_runs",
     "get_runs_by_session_ids",
@@ -216,6 +224,7 @@ __all__ = [
     "get_session_messages",
     "get_session_runs",
     "get_sessions",
+    "get_skill",
     "get_skills",
     "get_skills_as_dicts",
     "get_team",
@@ -255,6 +264,7 @@ __all__ = [
     "update_prompt",
     "update_run_result",
     "update_run_status",
+    "update_session_pin",
     "update_session_title",
     "update_skill",
     "update_team",

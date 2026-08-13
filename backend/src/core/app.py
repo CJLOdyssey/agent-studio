@@ -19,6 +19,8 @@ from observability.startup_guard import mark_starting
 
 mark_starting()
 
+from core.app_lifespan import shutdown, startup
+from core.infra.logging_config import get_logger
 from routers import (
     admin,
     agent_test_handler,
@@ -41,9 +43,6 @@ from routers import (
     versions,
     workflows,
 )
-
-from core.app_lifespan import shutdown, startup
-from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 

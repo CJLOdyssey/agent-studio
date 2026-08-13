@@ -24,6 +24,10 @@ export async function renameSession(sessionId: string, title: string): Promise<v
   await api.put(`/sessions/${sessionId}`, { title });
 }
 
+export async function pinSession(sessionId: string, isPinned: boolean): Promise<void> {
+  await api.put(`/sessions/${sessionId}/pin`, { is_pinned: isPinned });
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   await api.delete(`/sessions/${sessionId}`);
 }

@@ -3,17 +3,20 @@
 import json
 from typing import Any
 
-from auth import get_user_id
-from core.error_codes import ErrorCode, error_response
-from core.infra.logging_config import get_logger
-from core.models import SessionDetailResponse, SessionSummary
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
+from starlette.responses import Response
+
+from auth import get_user_id, require_run_owner
+from core.error_codes import ErrorCode, error_response
+from core.infra.logging_config import get_logger
+from core.models import AttachmentResponse, SessionDetailResponse, SessionSummary
 from repository import (
     create_session,
     delete_memory_entry,
     delete_session,
     get_agent_config,
+    get_memory_entry,
     get_messages,
     get_runs_by_session_ids,
     get_session,
@@ -22,11 +25,12 @@ from repository import (
     get_session_runs,
     get_sessions,
     update_message_versions,
+    update_session_pin,
     update_session_title,
 )
-from services.session_service import merge_edit_chains, with_requirement_message
+from repository.attachments import list_attachments_by_session
+from services.session_service import with_requirement_message
 from services.text_utils import parse_json_list
-from starlette.responses import Response
 
 logger = get_logger(__name__)
 
@@ -40,6 +44,10 @@ class SessionCreateRequest(BaseModel):
 
 class SessionUpdateRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=256)
+
+
+class SessionPinRequest(BaseModel):
+    is_pinned: bool = True
 
 
 @router.get("/api/sessions", response_model=list[SessionSummary])
@@ -59,6 +67,7 @@ async def list_sessions(request: Request, limit: int = 50, agent_id: str | None 
                     "title": s.title,
                     "kind": s.kind,
                     "agent_id": s.agent_id,
+                    "is_pinned": s.is_pinned,
                     "run_count": len(runs),
                     "created_at": s.created_at.isoformat() if s.created_at else None,
                     "updated_at": s.updated_at.isoformat() if s.updated_at else None,
@@ -105,6 +114,29 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
         runs = await get_session_runs(session_id)
         memories = await get_session_memories(session_id)
 
+        # Attachments by run: 让前端在用户消息里展示文件（下载链接）。
+        # 附件经 POST /runs 绑定 run_id（选中即传仅带 session_id）。
+        attachments_by_run: dict[str, list[AttachmentResponse]] = {}
+        try:
+            atts = await list_attachments_by_session(session_id)
+            for a in atts:
+                if not a.run_id:
+                    continue
+                attachments_by_run.setdefault(a.run_id, []).append(
+                    AttachmentResponse(
+                        id=a.id,
+                        session_id=a.session_id,
+                        run_id=a.run_id,
+                        filename=a.filename,
+                        content_type=a.content_type,
+                        size_bytes=a.size_bytes,
+                        has_extracted_text=bool(a.extracted_text),
+                        created_at=a.created_at,
+                    )
+                )
+        except Exception:
+            logger.warning("Failed to load attachments for session %s", session_id)
+
         # Load messages with thinking for all runs in batch
         all_messages = await get_session_messages(session_id)
         messages_by_run: dict[str, list[dict[str, Any]]] = {}
@@ -123,7 +155,12 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                 "thinking_versions": parse_json_list(m.thinking_versions),
             })
 
-        merged = merge_edit_chains(runs, messages_by_run)
+        # 分支树模型：不折叠。每个 run 独立返回（parent_run_id 为树指针），
+        # 前端 buildPathTurns 按分支树挂载版本器（对齐 ragbase 语义）。
+        merged = [
+            (r, with_requirement_message(r, messages_by_run.get(r.id, [])))
+            for r in runs
+        ]
 
         return {
             "id": sess.id,
@@ -146,6 +183,7 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                     "updated_at": r.updated_at.isoformat() if r.updated_at else None,
                     "messages": with_requirement_message(r, msgs),
+                    "attachments": attachments_by_run.get(r.id, []),
                 }
                 for r, msgs in merged
             ],
@@ -186,6 +224,27 @@ async def rename_session(request: Request, session_id: str, req: SessionUpdateRe
         raise
     except Exception as e:
         logger.error("Error renaming session %s: %s", session_id, e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.put("/api/sessions/{session_id}/pin")
+async def pin_session(request: Request, session_id: str, req: SessionPinRequest) -> Any:
+    """Pin or unpin a session for sidebar pin-to-top."""
+    try:
+        user_id = get_user_id(request)
+        sess = await get_session(session_id)
+        if not sess:
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
+        if sess.user_id != user_id:
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权修改该对话")
+        sess = await update_session_pin(session_id, req.is_pinned)
+        if not sess:
+            raise error_response(ErrorCode.SESSION_NOT_FOUND, detail="未找到该对话")
+        return {"id": sess.id, "is_pinned": sess.is_pinned, "status": "updated"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error pinning session %s: %s", session_id, e, exc_info=True)
         raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
@@ -240,9 +299,16 @@ async def list_session_memories(request: Request, session_id: str) -> Any:
 
 
 @router.delete("/api/memories/{memory_id}")
-async def delete_session_memory(memory_id: str) -> Any:
-    """Delete a single memory entry."""
+async def delete_session_memory(memory_id: str, request: Request) -> Any:
+    """Delete a single memory entry (owner-scoped via its session)."""
     try:
+        user_id = get_user_id(request)
+        memory = await get_memory_entry(memory_id)
+        if memory is None:
+            raise error_response(ErrorCode.MEMORY_NOT_FOUND, detail="未找到该记忆")
+        sess = await get_session(memory.session_id)
+        if sess is None or sess.user_id != user_id:
+            raise error_response(ErrorCode.SESSION_FORBIDDEN, detail="无权访问该记忆")
         deleted = await delete_memory_entry(memory_id)
         if not deleted:
             raise error_response(ErrorCode.MEMORY_NOT_FOUND, detail="未找到该记忆")
@@ -327,6 +393,7 @@ class AnswerVersionsRequest(BaseModel):
 async def update_run_answer_versions(run_id: str, req: AnswerVersionsRequest, request: Request) -> Any:
     """Persist an edit-regenerate's answer version history on the run's final answer."""
     user_id = get_user_id(request)
+    await require_run_owner(request, run_id)
     msgs = await get_messages(run_id)
     agent_msgs = [m for m in msgs if m.role != "user"]
     if not agent_msgs:

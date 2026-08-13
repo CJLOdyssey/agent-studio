@@ -124,7 +124,7 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
     expect(disconnectRun).toHaveBeenCalledWith('old-run');
     const state = useChatStore.getState();
     expect(state.messages).toHaveLength(1);
-    expect(state.messages[0].id).toBe('u1');
+    expect(state.messages[0].id).toBe('run-run-1-requirement');
     expect(mockSubmitReq).toHaveBeenCalledWith(
       'original',
       'sess-1',
@@ -132,6 +132,8 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       'deepseek-chat',
       undefined,
       undefined,
+      null,
+      true,
       undefined,
     );
   });
@@ -161,6 +163,32 @@ describe('regenerateMessage', { tags: ['unit'] }, () => {
       'Qwen/Qwen3-8B',
       undefined,
       undefined,
+      null,
+      true,
+      undefined,
+    );
+  });
+
+  it('links regeneration to the replaced run via parent_run_id', async () => {
+    const userMsg = makeMsg({ id: 'run-abc123-requirement', role: 'user', content: 'original' });
+    const agentMsg = makeMsg({ id: 'a1', role: 'agent', content: 'response' });
+    useChatStore.setState({
+      messages: [userMsg, agentMsg],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    await regenerateMessage(1);
+
+    expect(mockSubmitReq).toHaveBeenCalledWith(
+      'original',
+      'sess-1',
+      'key-1',
+      'deepseek-chat',
+      undefined,
+      undefined,
+      null,
+      true,
       undefined,
     );
   });
@@ -183,11 +211,12 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     expect(s.editTargetId).toBe('a1');
     const updatedUser = s.messages[0];
     expect(updatedUser.content).toBe('new question');
-    expect(updatedUser.userVersions).toEqual(['old question']);
-    expect(updatedUser.currentUserVersion).toBe(0);
+    expect(updatedUser.userVersions).toEqual(['old question', 'new question']);
+    expect(updatedUser.currentUserVersion).toBe(1);
     // The old answer is NOT deleted — it stays as the merge target for the stream.
-    expect(s.messages.map((m) => m.id)).toEqual(['u1', 'a1']);
-    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, undefined);
+    // 用户消息 id 被改写为 run-{run_id}-requirement（编辑路由用，mock run_id='run-1'）。
+    expect(s.messages.map((m) => m.id)).toEqual(['run-run-1-requirement', 'a1']);
+    expect(mockSubmitReq).toHaveBeenCalledWith('new question', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true, undefined);
   });
 
   it('regenerates even when the edited user message has no following agent answer', async () => {
@@ -202,8 +231,9 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     const s = useChatStore.getState();
     expect(s.editTargetId).toBeNull();
     expect(s.messages[0].content).toBe('edited solo');
-    expect(s.messages[0].userVersions).toEqual(['solo']);
-    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, undefined);
+    expect(s.messages[0].userVersions).toEqual(['solo', 'edited solo']);
+    expect(s.messages[0].currentUserVersion).toBe(1);
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited solo', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, null, true, undefined);
   });
 
   it('does nothing when content is unchanged', async () => {
@@ -219,16 +249,40 @@ describe('editAndRegenerate', { tags: ['unit'] }, () => {  it('merges into the f
     expect(useChatStore.getState().messages[0].userVersions).toBeUndefined();
   });
 
+  it('does not duplicate the current version on a second edit', async () => {
+    useChatStore.setState({
+      messages: [
+        makeMsg({
+          id: 'u1',
+          role: 'user',
+          content: 'v2 content',
+          userVersions: ['v1 content', 'v2 content'],
+        }),
+      ],
+      currentSessionId: 'sess-1',
+    });
+
+    const { editAndRegenerate } = await import('../chatActions');
+    await editAndRegenerate('u1', 'v3 content');
+
+    expect(useChatStore.getState().messages[0].userVersions).toEqual([
+      'v1 content',
+      'v2 content',
+      'v3 content',
+    ]);
+    expect(useChatStore.getState().messages[0].currentUserVersion).toBe(2);
+  });
+
   it('parses parent_run_id from the synthetic user message id', async () => {
     useChatStore.setState({
-      messages: [makeMsg({ id: 'run-abc123-requirement', role: 'user', content: 'old' })],
+      messages: [makeMsg({ id: 'run-abc123-requirement', role: 'user', content: 'old', parentRunId: 'abc123' })],
       currentSessionId: 'sess-1',
     });
 
     const { editAndRegenerate } = await import('../chatActions');
     await editAndRegenerate('run-abc123-requirement', 'edited');
 
-    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123');
+    expect(mockSubmitReq).toHaveBeenCalledWith('edited', 'sess-1', 'key-1', 'deepseek-chat', undefined, undefined, 'abc123', true, undefined);
   });
 });
 
@@ -280,8 +334,34 @@ describe('retry', { tags: ['unit'] }, () => {
     expect(mockSubmitReq).toHaveBeenCalledWith(
       'follow-up',
       'sess-1',
+      'key-1',
+      'deepseek-chat',
     );
     expect(connectRun).toHaveBeenCalled();
+  });
+
+  it('routes retry to the key owning the UI-selected model (SiliconFlow case)', async () => {
+    mockListKeys.mockResolvedValue([
+      { id: 'deepseek-key', is_default: false, is_active: true, models: ['deepseek-v4-flash'] },
+      { id: 'siliconflow-key', is_default: false, is_active: true, models: ['Qwen/Qwen3-8B', 'THUDM/GLM-Z1-9B-0414'] },
+    ]);
+    localStorage.setItem('agentstudio-selected-model', 'THUDM/GLM-Z1-9B-0414');
+    const msg1 = makeMsg({ id: 'u1', role: 'user', content: 'question' });
+    const msg2 = makeMsg({ id: 'a1', role: 'agent', content: 'answer' });
+    useChatStore.setState({
+      messages: [msg1, msg2],
+      currentSessionId: 'sess-1',
+      currentRunId: 'old-run',
+    });
+
+    await retry();
+
+    expect(mockSubmitReq).toHaveBeenCalledWith(
+      'question',
+      'sess-1',
+      'siliconflow-key',
+      'THUDM/GLM-Z1-9B-0414',
+    );
   });
 
   it('handles retry API failure', async () => {
@@ -340,11 +420,74 @@ describe('continueGeneration', { tags: ['unit'] }, () => {
 
     await continueGeneration();
 
-    expect(mockResumeRun).toHaveBeenCalledWith('partial response', 'sess-1', 'some thinking');
+    expect(mockResumeRun).toHaveBeenCalledWith('partial response', 'sess-1', 'some thinking', 'deepseek-chat', undefined);
     const state = useChatStore.getState();
     expect(state.currentRunId).toBe('run-2');
     expect(state.status).toBe('running');
     expect(connectRun).toHaveBeenCalled();
+  });
+
+  it('passes the selected model from localStorage to resumeRun', async () => {
+    mockListKeys.mockResolvedValue([
+      { id: 'key-q', is_default: false, is_active: true, models: ['Qwen/Qwen3-8B'] },
+    ]);
+    localStorage.setItem('agentstudio-selected-model', 'Qwen/Qwen3-8B');
+    const interrupted = makeMsg({ id: 'int-6', role: 'agent', content: 'partial' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-6',
+      messages: [interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).toHaveBeenCalledWith('partial', 'sess-1', undefined, 'Qwen/Qwen3-8B', undefined);
+  });
+
+  it('passes the original user question for seamless continuation', async () => {
+    const userMsg = makeMsg({ id: 'user-1', role: 'user', content: '原问题是什么？' });
+    const interrupted = makeMsg({ id: 'int-1b', role: 'agent', content: '半截回答', thinking: '思考' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-1b',
+      messages: [userMsg, interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).toHaveBeenCalledWith('半截回答', 'sess-1', '思考', 'deepseek-chat', '原问题是什么？');
+  });
+
+  it('aborts when interrupted message has neither content nor thinking', async () => {
+    const interrupted = makeMsg({ id: 'int-4', role: 'agent', content: '', thinking: '' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-4',
+      messages: [interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).not.toHaveBeenCalled();
+    const state = useChatStore.getState();
+    expect(state.interruptedMessageId).toBeNull();
+    expect(state.error).toBe('\u6ca1\u6709\u53ef\u7eed\u5199\u7684\u5185\u5bb9\uff0c\u8bf7\u91cd\u65b0\u751f\u6210');
+  });
+
+  it('resumes with thinking as material when content was interrupted mid-reasoning', async () => {
+    const interrupted = makeMsg({ id: 'int-5', role: 'agent', content: '', thinking: 'half-built reasoning chain' });
+    useChatStore.setState({
+      interruptedMessageId: 'int-5',
+      messages: [interrupted],
+      currentSessionId: 'sess-1',
+    });
+
+    await continueGeneration();
+
+    expect(mockResumeRun).toHaveBeenCalledWith('', 'sess-1', 'half-built reasoning chain', 'deepseek-chat', undefined);
+    const state = useChatStore.getState();
+    expect(state.currentRunId).toBe('run-2');
+    expect(state.status).toBe('running');
   });
 
   it('uses versions when available for pending state', async () => {

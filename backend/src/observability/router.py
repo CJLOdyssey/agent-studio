@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from core.infra.circuit_breaker import llm_circuit
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
+from core.infra.circuit_breaker import llm_circuit
 from observability.analyzer import analyze_trace, recent_errors_report
 from observability.startup_guard import health as guard_health
 from observability.store import get_store
@@ -33,11 +33,7 @@ def list_events(
     elif slow is not None:
         data = store.slow_events(slow, seconds, limit)
     else:
-        cutoff = __import__("time").time() - seconds
-        data = store._query(
-            "SELECT * FROM events WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT ?",
-            (cutoff, limit),
-        )
+        data = store.recent(seconds, limit)
     return {"events": data, "total": len(data)}
 
 
@@ -64,7 +60,7 @@ def observability_health()-> Any:
     """Health check including self-check and startup guard status."""
     store = get_store()
     try:
-        count = store._query("SELECT COUNT(*) as cnt FROM events")[0]["cnt"]
+        count = store.count()
         self_check = store.self_check()
         guard = guard_health()
         degraded = (

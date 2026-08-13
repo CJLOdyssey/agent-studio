@@ -51,6 +51,7 @@ def client():
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
+
         from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:
@@ -249,19 +250,23 @@ metadata:
             assert resp.status_code == 500
 
     def test_update_skill_exception(self, client):
-        with patch("routers.skills.update_skill", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.skills.repo_get_skill", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.skills.update_skill", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/skills/t", json={"name": "x"})
             assert resp.status_code == 500
 
     def test_delete_skill_exception(self, client):
-        with patch("repository.skills.get_skills", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.skills.repo_get_skill", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("repository.skills.get_skills", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/skills/t")
             assert resp.status_code == 500
 
     # ── Remaining coverage gaps ──
 
     def test_get_skill_exception(self, client):
-        with patch("routers.skills.repo_get_skills", new_callable=AsyncMock, side_effect=Exception("db error")):
+        with patch("routers.skills.repo_get_skill", new_callable=AsyncMock, side_effect=Exception("db error")):
             resp = client.get("/api/skills/some-id")
             assert resp.status_code == 500
 

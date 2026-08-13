@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect, forwardRef } from 'react';
-import { TableVirtuoso } from 'react-virtuoso';
-import { Input, Select } from 'antd';
+import { useState, useMemo, useEffect } from 'react';
+import { Input, Select, Modal } from 'antd';
 import { Search, FileText, Info, AlertTriangle, AlertCircle } from 'lucide-react';
 import { PAGE_SIZE } from '../constants';
 import { TableSkeleton } from '../shared/LoadingSkeleton';
@@ -8,10 +7,9 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { fetchCommandLogs } from '../../../../api/client/admin';
 import { t } from './locales';
 import WstaPagination from '../shared/WstaPagination';
-import type * as React from 'react';
 
 type LogLevel = 'info' | 'warn' | 'error';
-type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' | 'system';
+type LogModule = 'all' | 'agent' | 'prompt' | 'tool' | 'mcp' | 'skill' | 'team' | 'system' | 'command' | 'api_key';
 
 interface LogEntry { id: string; timestamp: string; level: LogLevel; module: string; user: string; action: string; details: string; ip: string; }
 
@@ -21,8 +19,15 @@ const LOG_LEVELS: { value: LogLevel; label: string; icon: typeof Info }[] = [
   { value: 'error', label: 'ERROR', icon: AlertCircle },
 ];
 
-const MODULES: LogModule[] = ['all', 'agent', 'prompt', 'tool', 'mcp', 'skill', 'team', 'system'];
-const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: t('logs.module_agent'), prompt: t('logs.module_prompt'), tool: t('logs.module_tool'), mcp: t('logs.module_mcp'), skill: t('logs.module_skill'), team: t('logs.module_team'), system: t('logs.module_system') };
+// 审计级别由操作类型推导（delete 告警级，其余 info）——不再硬编码。
+function deriveLevel(action: string): LogLevel {
+  const a = (action || '').toLowerCase();
+  if (a.includes('delete') || a.includes('删除')) return 'warn';
+  return 'info';
+}
+
+const MODULES: LogModule[] = ['all', 'agent', 'prompt', 'tool', 'mcp', 'skill', 'team', 'system', 'command', 'api_key'];
+const MODULE_LABEL: Record<string, string> = { all: t('logs.all_modules'), agent: t('logs.module_agent'), prompt: t('logs.module_prompt'), tool: t('logs.module_tool'), mcp: t('logs.module_mcp'), skill: t('logs.module_skill'), team: t('logs.module_team'), system: t('logs.module_system'), command: '命令', api_key: 'API Key' };
 const LEVEL_CLASS: Record<string, string> = { info: 'wsta-tag-indigo', warn: 'wsta-tag-amber', error: 'wsta-tag-red' };
 
 function LogAudit() {
@@ -32,22 +37,25 @@ function LogAudit() {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [detailLog, setDetailLog] = useState<LogEntry | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     fetchCommandLogs(200, 0)
-      .then((items) => {
+      .then((data) => {
         if (cancelled) return;
-        setLogs(items.length > 0
-          ? items.map((item) => ({
+        setLogs(data.items.length > 0
+          ? data.items.map((item) => ({
               id: item.id,
               timestamp: item.timestamp.replace('T', ' ').substring(0, 19),
-              level: 'info' as LogLevel,
-              module: 'system',
-              user: 'system',
-              action: item.command,
-              details: item.result || item.payload,
-              ip: '',
+              level: deriveLevel(item.action),
+              module: item.entity_type,
+              user: item.user || '-',
+              action: item.action,
+              details: item.entity_name
+                ? (item.detail ? `${item.entity_name} — ${item.detail}` : item.entity_name)
+                : (item.detail || item.action),
+              ip: item.ip || '-',
             }))
           : []);
       })
@@ -83,22 +91,15 @@ function LogAudit() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden" style={processed.length > 0 && !isLoading ? { overflow: 'hidden' } : undefined}>
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
         {isLoading ? <TableSkeleton rows={8} cols={7} /> : processed.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 px-4 text-center">
             <FileText size={40} className="text-[var(--color-text-muted)] opacity-50" />
             <div className="text-lg font-semibold text-[var(--color-text-secondary)]">{t('logs.empty')}</div>
           </div>
         ) : (
-        <TableVirtuoso
-          style={{ height: '400px' }}
-          data={paged}
-          components={{
-            Table: forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>((props, ref) => (
-              <table ref={ref} className="w-full table-fixed border-collapse text-sm" role="grid" aria-label={t('logs.empty')} {...props} />
-            )),
-          }}
-          fixedHeaderContent={() => (
+        <table className="w-full table-fixed border-collapse text-sm" role="grid" aria-label={t('logs.empty')}>
+          <thead>
             <tr>
               <th scope="col">{t('logs.col_time')}</th>
               <th scope="col">{t('logs.col_level')}</th>
@@ -108,19 +109,21 @@ function LogAudit() {
               <th scope="col">{t('logs.col_details')}</th>
               <th scope="col">{t('logs.col_ip')}</th>
             </tr>
-          )}
-          itemContent={(_index: number, entry: LogEntry) => (
-            <>
-              <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{entry.timestamp}</span></td>
-              <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
-              <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)]">{MODULE_LABEL[entry.module] || entry.module}</span></td>
-              <td>{entry.user}</td>
-              <td>{entry.action}</td>
-              <td className="text-sm text-[var(--color-text-secondary)]">{entry.details}</td>
-              <td><span className="font-mono text-xs text-[var(--color-text-muted)]">{entry.ip}</span></td>
-            </>
-          )}
-        />
+          </thead>
+          <tbody>
+            {paged.map((entry) => (
+              <tr key={entry.id} onClick={() => setDetailLog(entry)} className="cursor-pointer">
+                <td><span className="font-mono text-xs text-[var(--color-text-muted)] whitespace-nowrap">{entry.timestamp}</span></td>
+                <td><span className={`wsta-tag-pill ${LEVEL_CLASS[entry.level] || 'wsta-tag-indigo'}`}>{entry.level.toUpperCase()}</span></td>
+                <td><span className="inline-block py-0.5 px-2.5 rounded-md text-xs font-medium bg-[var(--color-accent)]/8 text-[var(--color-accent)] whitespace-nowrap">{MODULE_LABEL[entry.module] || entry.module}</span></td>
+                <td className="whitespace-nowrap">{entry.user}</td>
+                <td className="whitespace-nowrap">{entry.action}</td>
+                <td className="text-sm text-[var(--color-text-secondary)] truncate max-w-[280px]" title={entry.details}>{entry.details}</td>
+                <td><span className="font-mono text-xs text-[var(--color-text-muted)] whitespace-nowrap">{entry.ip}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         )}
       </div>
 
@@ -130,6 +133,27 @@ function LogAudit() {
         pageSize={PAGE_SIZE}
         onChange={(p) => setPage(p)}
       />
+
+      <Modal
+        open={detailLog !== null}
+        title="审计日志详情"
+        footer={null}
+        width={560}
+        centered
+        onCancel={() => setDetailLog(null)}
+      >
+        {detailLog && (
+          <div className="flex flex-col gap-3 py-2 text-sm">
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">时间</span><span className="font-mono text-[var(--color-text-primary)]">{detailLog.timestamp}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">级别</span><span className={`wsta-tag-pill ${LEVEL_CLASS[detailLog.level] || 'wsta-tag-indigo'}`}>{detailLog.level.toUpperCase()}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">模块</span><span>{MODULE_LABEL[detailLog.module] || detailLog.module}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">用户</span><span>{detailLog.user}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">操作</span><span>{detailLog.action}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">IP 地址</span><span className="font-mono">{detailLog.ip}</span></div>
+            <div className="flex gap-2"><span className="w-16 shrink-0 text-[var(--color-text-muted)]">详情</span><div className="text-[var(--color-text-primary)] whitespace-pre-wrap break-words leading-relaxed">{detailLog.details}</div></div>
+          </div>
+        )}
+      </Modal>
     </div>
     </ErrorBoundary>
   );

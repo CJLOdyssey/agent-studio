@@ -6,6 +6,8 @@ Run once at startup or via: PYTHONPATH=. python -m backend.workflow.migrate
 import asyncio
 from typing import Any, cast
 
+from sqlalchemy import select
+
 from core.infra.database import (
     AgentConfigDB,
     TeamAgentDB,
@@ -14,8 +16,6 @@ from core.infra.database import (
 )
 from core.infra.logging_config import get_logger
 from repository.workflows import get_workflow_config_by_team, save_workflow_config
-from sqlalchemy import select
-
 from workflow.models import (
     NodeStrategy,
     WorkflowConfig,

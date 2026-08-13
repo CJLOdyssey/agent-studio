@@ -14,9 +14,8 @@ if TYPE_CHECKING:
     # Only for type checker — runtime uses deferred imports to avoid circular dep
     from orm.auth import RoleDB, UserDB, UserRoleDB
 
-from core.infra.logging_config import get_logger
-
 from auth.auth_jwt import AUTH_SECRET, decode_jwt
+from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -45,7 +44,7 @@ class CurrentUser:
 
     id: str = "admin"
     username: str = "admin"
-    email: str = "admin@legacy.local"
+    email: str = "admin@example.com"
     roles: list[str] = field(default_factory=lambda: ["admin"])
 
 
@@ -164,6 +163,11 @@ def get_user_id(request: Any) -> str:
     user_id: str | None = getattr(request.state, "user_id", None)
     if user_id:
         return user_id
+
+    # JWT 有效但 sub 指向已删除/合并的用户（AuthMiddleware 已标记）——
+    # 不信任该身份，回退 anonymous，避免误导性 400（key/附件按 user 归属）。
+    if getattr(request.state, "user_invalid_token", False) and AUTH_ENABLED:
+        return "anonymous"
 
     # Check httpOnly access_token cookie (set by login/register/verify/refresh endpoints)
     token = request.cookies.get("access_token")

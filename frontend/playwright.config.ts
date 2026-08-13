@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 180000,
-  expect: { timeout: 8000 },
+  timeout: 60000,
+  expect: { timeout: 4000 },
   retries: 0,
   maxFailures: 1,
   // 两个 spec 共享同一后端 DB，串行避免数据互相踩踏
@@ -11,7 +11,8 @@ export default defineConfig({
   workers: 1,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5174',
-    actionTimeout: 10000,
+    actionTimeout: 5000,
+    navigationTimeout: 10000,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
     headless: true,

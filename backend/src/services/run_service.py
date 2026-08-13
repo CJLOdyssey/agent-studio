@@ -8,8 +8,9 @@ RunService holds the business process.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
-from typing import Any
+from typing import Any, cast
 
 from broker import buffer_run_messages
 from core.config import load_config
@@ -23,10 +24,10 @@ from repository import (
     get_run,
     get_runs,
     get_session,
+    save_message,
     update_run_status,
     update_session_title,
 )
-
 from services.text_utils import parse_json_list
 
 logger = get_logger(__name__)
@@ -51,6 +52,14 @@ class RunService:
       - background task dispatching
     """
 
+    def __init__(self) -> None:
+        # In-process task registry (thread mode) — run_id → asyncio.Task.
+        self._tasks: dict[str, asyncio.Task[Any]] = {}
+
+    def _register_task(self, run_id: str, task: asyncio.Task[Any]) -> None:
+        self._tasks[run_id] = task
+        task.add_done_callback(lambda _t: self._tasks.pop(run_id, None))
+
     async def create_run(
         self,
         requirement: str,
@@ -61,6 +70,8 @@ class RunService:
         team_id: str | None = None,
         model: str | None = None,
         parent_run_id: str | None = None,
+        is_edit: bool = False,
+        attachment_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         """Create a run, resolve credentials, subscribe to buffer, dispatch pipeline.
 
@@ -92,6 +103,7 @@ class RunService:
         api_key: str | None = None
         api_base: str | None = None
         effective_model = model or config.model
+        image_model = False
 
         if key_id:
             key_entry = await get_api_key_for_use(key_id, user_id)
@@ -103,6 +115,7 @@ class RunService:
             if model_key:
                 api_key = model_key.get("api_key")
                 api_base = model_key.get("base_url") or api_base
+                image_model = (model_key.get("model_types") or {}).get(effective_model) == "image"
         if not api_key:
             default_key = await get_default_api_key(user_id)
             if default_key:
@@ -115,11 +128,14 @@ class RunService:
         # ── Persist run ─────────────────────────────────────────────
         try:
             req_versions: list[str] | None = None
-            if parent_run_id:
+            # 仅编辑/重新生成（is_edit）继承被替换 run 的编辑链；普通续聊
+            # 是新问题，不写 requirement_versions（前端版本器由 run 树推导）。
+            if is_edit and parent_run_id:
                 parent = await get_run(parent_run_id)
                 if parent:
                     parent_versions = parse_json_list(parent.requirement_versions)
-                    req_versions = (parent_versions or []) + [parent.requirement]
+                    base = parent_versions if parent_versions else [parent.requirement]
+                    req_versions = base + [requirement]
             run_id = await db_create_run(
                 requirement,
                 session_id=session_id,
@@ -129,6 +145,36 @@ class RunService:
         except Exception as e:
             logger.error("Failed to create run: %s", e, exc_info=True)
             raise
+
+        # ── Bind pre-uploaded attachments ─────────────────────────────
+        # Pre-uploaded files (POST /api/attachments) carry session_id but no
+        # run_id; binding happens here so the pipeline can inject their links.
+        if attachment_ids:
+            try:
+                from repository.attachments import bind_attachments_to_run
+
+                await bind_attachments_to_run(attachment_ids, run_id, session_id, user_id)
+                logger.info(
+                    "Attachments bound | run=%s | requested=%d",
+                    run_id, len(attachment_ids),
+                )
+            except Exception:
+                logger.exception("Failed to bind attachments for run=%s", run_id)
+
+        # ── Persist user message ─────────────────────────────────────
+        # 只要有消息就入库：用户问题也落库 chat_messages（此前仅存 runs.
+        # requirement，加载时由 with_requirement_message 运行时合成）。
+        # 幂等保护：已存在则跳过。
+        try:
+            await save_message(
+                run_id=run_id,
+                role="user",
+                agent_name="我",
+                content=requirement,
+                round_number=1,
+            )
+        except Exception:
+            logger.warning("Failed to persist user message for run %s", run_id)
 
         # ── Update session timestamp ────────────────────────────────
         try:
@@ -174,7 +220,7 @@ class RunService:
                 if workflow:
                     from tasks.team_pipeline import _run_team_pipeline
 
-                    asyncio.create_task(
+                    task: asyncio.Task[Any] = asyncio.create_task(
                         _run_team_pipeline(
                             requirement=requirement,
                             run_id=run_id,
@@ -186,6 +232,7 @@ class RunService:
                             api_base=api_base,
                         )
                     )
+                    self._register_task(run_id, task)
                     logger.info(
                         "Team task started (thread) | run=%s | team=%s | nodes=%d",
                         run_id, team_id, len(workflow.nodes),
@@ -194,7 +241,7 @@ class RunService:
 
             from tasks import _run_agent_pipeline
 
-            asyncio.create_task(
+            task = asyncio.create_task(
                 _run_agent_pipeline(
                     requirement=requirement,
                     run_id=run_id,
@@ -204,8 +251,10 @@ class RunService:
                     api_base=api_base,
                     model=effective_model,
                     user_id=user_id,
+                    image_model=image_model,
                 )
             )
+            self._register_task(run_id, task)
             logger.info(
                 "Task started (thread) | run_id=%s | session_id=%s | model=%s",
                 run_id, session_id, effective_model,
@@ -223,12 +272,18 @@ class RunService:
         session_id: str | None,
         user_id: str,
         thinking: str | None = None,
+        model: str | None = None,
+        question: str | None = None,
     ) -> dict[str, Any]:
         """Create a continuation run ("继续生成") — streams raw LLM output.
 
         Unlike ``create_run``, this bypasses the LangGraph pipeline and
         runs the completion directly in the uvicorn process via
-        ``_complete_pipeline``.
+        ``_complete_pipeline``. ``model`` is the model the user had selected
+        in the conversation (falls back to the configured default model);
+        ``question`` is the original user message the interrupted draft
+        answers — needed by prefix/partial mechanisms for a seamless
+        in-place continuation.
         """
         from repository import create_run as db_create_run
 
@@ -243,7 +298,8 @@ class RunService:
         # ── Key resolution ──────────────────────────────────────────
         api_key: str | None = None
         api_base: str | None = None
-        effective_model = config.model
+        effective_model = model or config.model
+        image_model = False
 
         try:
             if effective_model:
@@ -251,6 +307,7 @@ class RunService:
                 if model_key:
                     api_key = model_key["api_key"]
                     api_base = model_key["base_url"]
+                    image_model = (model_key.get("model_types") or {}).get(effective_model) == "image"
             if not api_key:
                 default_key = await get_default_api_key(user_id)
                 if default_key:
@@ -262,8 +319,25 @@ class RunService:
         if not api_key:
             raise ValueError("请先在设置中配置 API Key")
 
+        if image_model:
+            raise ValueError("图片生成模型不支持继续生成")
+
         # ── Persist run ─────────────────────────────────────────────
         run_id = await db_create_run(content, session_id=session_id)
+
+        # ── Persist user message ─────────────────────────────────────
+        # 只要有消息就入库：续写 run 的用户消息 = 原问题（question）——
+        # 视图显示「原问题 + 续写回答」，而非半截文本当问题。
+        try:
+            await save_message(
+                run_id=run_id,
+                role="user",
+                agent_name="我",
+                content=(question or content).strip() or content,
+                round_number=1,
+            )
+        except Exception:
+            logger.warning("Failed to persist user message for continuation run %s", run_id)
 
         # ── Redis buffer ────────────────────────────────────────────
         await buffer_run_messages(run_id)
@@ -275,6 +349,7 @@ class RunService:
             _reg.complete_agent.delay(
                 content=content, run_id=run_id, api_key=api_key,
                 api_base=api_base, model=effective_model, thinking=thinking,
+                question=question,
             )
             logger.info("Complete -> celery | run=%s", run_id)
             return {"run_id": run_id, "status": "running", "session_id": session_id}
@@ -290,14 +365,48 @@ class RunService:
                     api_base=api_base,
                     model=effective_model,
                     thinking=thinking,
+                    question=question,
                 )
             except Exception:
                 logger.exception("Complete pipeline failed for run=%s", run_id)
                 await update_run_status(run_id, "error")
 
-        asyncio.create_task(_run_pipeline())
+        task = asyncio.create_task(_run_pipeline())
+        self._register_task(run_id, task)
 
         return {"run_id": run_id, "status": "running", "session_id": session_id}
+
+    async def cancel_run(self, run_id: str) -> dict[str, Any]:
+        """Cancel an in-flight run — propagate cancellation to the LLM stream.
+
+        Thread mode: ``task.cancel()`` unwinds the await chain and aborts the
+        upstream httpx request; the pipeline marks the run ``cancelled``.
+        Celery mode: best-effort revoke (no hard kill).
+        """
+        if RUN_DISPATCH == "celery":
+            try:
+                from broker import celery_app
+
+                cast(Any, celery_app).control.revoke(run_id, terminate=False)
+                await update_run_status(run_id, "cancelled")
+                return {"run_id": run_id, "status": "cancelled", "cancelled": True}
+            except Exception:
+                logger.exception("Failed to revoke celery task run=%s", run_id)
+                return {"run_id": run_id, "status": "pending", "cancelled": False}
+
+        task = self._tasks.get(run_id)
+        if task is None or task.done():
+            run = await get_run(run_id)
+            return {
+                "run_id": run_id,
+                "status": run.status if run else "not_found",
+                "cancelled": False,
+            }
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError, Exception):
+            await task
+        await update_run_status(run_id, "cancelled")
+        return {"run_id": run_id, "status": "cancelled", "cancelled": True}
 
     async def get_run(self, run_id: str) -> dict[str, Any] | None:
         """Fetch a single run by id."""
@@ -330,9 +439,9 @@ class RunService:
             ],
         }
 
-    async def list_runs(self, limit: int = 20) -> list[dict[str, Any]]:
-        """List recent runs."""
-        runs = await get_runs(limit=min(limit, 100))
+    async def list_runs(self, limit: int = 20, user_id: str | None = None) -> list[dict[str, Any]]:
+        """List recent runs, optionally scoped to a user's sessions."""
+        runs = await get_runs(limit=min(limit, 100), user_id=user_id)
         return [
             {
                 "id": r.id,

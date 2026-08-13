@@ -8,8 +8,8 @@ import time
 
 import pytest
 import websockets
-
 from tests.conftest import Api
+
 
 def _clear_limits():
     import subprocess
@@ -31,6 +31,18 @@ def _clear_limits():
 pytestmark = pytest.mark.benchmark
 
 WS_BASE = "ws://localhost:8080"
+
+
+@pytest.fixture(autouse=True)
+def _skip_unless_backend_up(api: Api):
+    """Benchmarks need a running backend; skip cleanly when it is unreachable."""
+    try:
+        r = api.get("/api/health")
+        unreachable = r.status_code >= 500
+    except Exception:
+        unreachable = True
+    if unreachable:
+        pytest.skip("Backend not available")
 
 
 class TestWebSocketConcurrency:

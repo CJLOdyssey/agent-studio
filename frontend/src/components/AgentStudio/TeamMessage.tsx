@@ -17,6 +17,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   XCircle,
+  Paperclip,
 } from 'lucide-react';
 import { Modal, Input as AntdInput, Button } from 'antd';
 import type { Message, Agent } from '../../types/AgentStudio';
@@ -54,6 +55,9 @@ function markdownComponents(t: (key: string) => string): Components {
     },
     code({ className, children }) {
       return <CodeBlock className={className} children={children} t={t} />;
+    },
+    img({ src, alt }) {
+      return <img src={src} alt={alt} className="max-w-full h-auto rounded-lg border border-[var(--color-border)]" />;
     },
   };
 }
@@ -246,6 +250,7 @@ const TeamMessage = memo(function TeamMessage({
   showContinue,
   onContinue,
   onSwitchUserVersion,
+  onSwitchAnswer,
   isContinuing,
   onThumbsFeedback,
 }: {
@@ -256,6 +261,7 @@ const TeamMessage = memo(function TeamMessage({
   showContinue?: boolean;
   onContinue?: () => void;
   onSwitchUserVersion?: (msgId: string, direction: 'prev' | 'next') => void;
+  onSwitchAnswer?: (msgId: string, direction: 'prev' | 'next') => void;
   isContinuing?: boolean;
   onThumbsFeedback?: (msgId: string, value: 'up' | 'down') => void;
 }) {
@@ -299,9 +305,22 @@ const TeamMessage = memo(function TeamMessage({
     useApprovalStore.getState().setRequest(null);
   };
 
+  // 思考内容流式更新时跟随到底；用户手动滚动离开底部则暂停跟随。
+  const thinkingAtBottomRef = useRef(true);
   useEffect(() => {
     const el = thinkingBodyRef.current;
-    if (el && isThinkingExpanded) {
+    if (!el) return;
+    const onScroll = () => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+      if (atBottom !== thinkingAtBottomRef.current) thinkingAtBottomRef.current = atBottom;
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = thinkingBodyRef.current;
+    if (el && isThinkingExpanded && thinkingAtBottomRef.current) {
       el.scrollTop = el.scrollHeight;
     }
   }, [msg.thinking?.length, isThinkingExpanded]);
@@ -373,6 +392,23 @@ const TeamMessage = memo(function TeamMessage({
         <div className="flex flex-col gap-1 items-end max-w-[80%]">
           <div className="flex flex-col items-end w-fit max-w-full">
             <div className="px-4 py-3 rounded-[12px_12px_4px_12px] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)]">{sanitizeHtml(msg.content)}</div>
+            {msg.attachments && msg.attachments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 justify-end mt-1">
+                {msg.attachments.map((a) => (
+                  <a
+                    key={a.id}
+                    href={`/api/attachments/${a.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] text-xs cursor-pointer no-underline transition-colors duration-150 hover:text-[var(--color-text-primary)]"
+                    title={a.filename}
+                  >
+                    <Paperclip size={12} />
+                    <span className="max-w-[220px] truncate">{a.filename}</span>
+                  </a>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-1 w-full justify-end">
               <CopyBtn text={msg.content} label={t('teamMessage.copy')} />
               <button
@@ -487,12 +523,19 @@ const TeamMessage = memo(function TeamMessage({
             {meta.verdicts && Object.keys(meta.verdicts).length > 0 && (
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 {Object.entries(meta.verdicts).map(([role, v]) => (
-                  <span key={role} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]">
+                  <span
+                    key={role}
+                    title={v.reason}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]"
+                  >
                     {v.approved
                       ? <CheckCircle2 size={12} className="text-[var(--color-success)]" />
                       : <XCircle size={12} className="text-[#ef4444]" />}
                     <span>{role}</span>
                     <span className="text-[var(--color-text-muted)]">{t('teamMessage.rounds', { count: String(v.rounds) })}</span>
+                    {v.reason && (
+                      <span className="text-[var(--color-text-muted)] italic truncate max-w-[180px]">{v.reason}</span>
+                    )}
                   </span>
                 ))}
                 {meta.round !== undefined && (
@@ -634,6 +677,27 @@ const TeamMessage = memo(function TeamMessage({
                     <ThumbsDown size={12} />
                   </button>
                 </>
+              )}
+              {msg.answerVersions && msg.answerVersions.length > 1 && (
+                <div className="flex items-center gap-0.5">
+                  <button
+                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    onClick={() => onSwitchAnswer?.(msg.id, 'prev')}
+                    disabled={(msg.currentAnswerVersion ?? 0) === 0}
+                    aria-label="Previous answer version"
+                  >
+                    <ChevronRight size={12} className="rotate-180" />
+                  </button>
+                  <span className="text-xs text-[var(--color-text-muted)] min-w-7 text-center select-none">{(msg.currentAnswerVersion ?? 0) + 1}/{msg.answerVersions.length}</span>
+                  <button
+                    className="flex items-center justify-center w-6 h-6 bg-transparent border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-pointer transition-colors duration-150 p-0 hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] disabled:opacity-35 disabled:cursor-not-allowed"
+                    onClick={() => onSwitchAnswer?.(msg.id, 'next')}
+                    disabled={(msg.currentAnswerVersion ?? 0) === msg.answerVersions.length - 1}
+                    aria-label="Next answer version"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
               )}
               {time && <span className="block text-xs text-[var(--color-text-muted)] mt-1 ml-0">{time}</span>}
               {(showContinue || isContinuing) && (

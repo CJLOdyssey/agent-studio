@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as api from './client';
+import { useAuth } from '../components/auth';
 import type { ModelOption } from '../types/input';
 
 // ---- Sessions ----
@@ -142,9 +143,13 @@ export function useCommands() {
  * Also merges GET /api/models (server env var fallback).
  */
 export function useAvailableModels(): ModelOption[] {
+  const { isAuthenticated } = useAuth();
   const { data: apiModels } = useQuery({
     queryKey: ['models'],
     queryFn: () => api.listModels(),
+    // Backend returns 200 [] for unauthenticated GETs — only query once auth
+    // is established so the pre-auth empty result is never cached.
+    enabled: isAuthenticated,
     staleTime: 0,
     gcTime: 30_000,
   });
@@ -152,6 +157,9 @@ export function useAvailableModels(): ModelOption[] {
   const { data: keys } = useQuery({
     queryKey: ['keys'],
     queryFn: () => api.listKeys(),
+    // Backend returns 200 [] for unauthenticated GETs — only query once auth
+    // is established so the pre-auth empty result is never cached.
+    enabled: isAuthenticated,
     staleTime: 30_000,
     gcTime: 60_000,
   });

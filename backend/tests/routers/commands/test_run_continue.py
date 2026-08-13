@@ -53,3 +53,28 @@ class TestRunContinue:
         assert req.content == "hello"
         assert req.session_id is None
         assert req.thinking is None
+
+    def test_complete_run_request_accepts_model_and_question(self):
+        from routers.run_continue import CompleteRunRequest
+        req = CompleteRunRequest(content="x", model="m-1", question="q-1")
+        assert req.model == "m-1"
+        assert req.question == "q-1"
+
+    @patch("routers.run_continue.run_service", new_callable=MagicMock)
+    def test_continue_run_passes_model_and_question(self, mock_service, client):
+        mock_service.continue_run = AsyncMock(return_value={
+            "run_id": "r-3", "status": "running", "session_id": "s-1",
+        })
+        resp = client.post("/api/runs/complete", json={
+            "content": "continue", "session_id": "s-1",
+            "model": "m-1", "question": "q-1",
+        }, headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        mock_service.continue_run.assert_awaited_once_with(
+            content="continue",
+            session_id="s-1",
+            user_id="admin",
+            thinking=None,
+            model="m-1",
+            question="q-1",
+        )

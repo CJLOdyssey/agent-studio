@@ -14,14 +14,16 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import httpx
-from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
-from core.infra.logging_config import get_logger
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+
+from core._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
+from core.infra.logging_config import get_logger
+from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 from services.thinking_chain import format_result_preview, get_tool_prefix
 from services.tool_config import ToolConfig, build_tool_definition
 from streaming.llm_stream import (
@@ -30,8 +32,6 @@ from streaming.llm_stream import (
     convert_messages_to_api,
     stream_llm_response,
 )
-
-from graph.graph_state import AgentState  # noqa: F401  # re-exported for backward compat
 
 # Balance/quota error keywords used to detect API billing failures
 _BALANCE_ERROR_KEYWORDS = [
@@ -76,6 +76,7 @@ class SingleAgentGraph:
         temperature: float = 0.7,
         max_tokens: int = 16384,
         checkpointer: BaseCheckpointSaver[Any] | None = None,
+        image_model: bool = False,
     ):
         """Initialize the ReAct agent graph with LLM and checkpointer."""
         self.model = model
@@ -83,6 +84,7 @@ class SingleAgentGraph:
         self.base_url = base_url
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.image_model = image_model
         self._run_id = None
         self._last_usage: dict[str, Any] = {}
 
@@ -170,6 +172,8 @@ class SingleAgentGraph:
 
     async def _agent_node(self, state: AgentState) -> dict[str, Any]:
         """LangGraph agent node — builds messages, calls LLM, returns AIMessage."""
+        if self.image_model:
+            return await self._image_node(state)
         messages = state.get("messages", [])
         system_prompt = state.get("system_prompt", "")
         session_context = state.get("session_context", "")
@@ -218,6 +222,50 @@ class SingleAgentGraph:
             await self._stream_cb({"event": "on_node_end", "data": {}})
 
         return {"messages": [AIMessage(**kwargs)]}
+
+    async def _image_node(self, state: AgentState) -> dict[str, Any]:
+        """Image-model node — calls the provider's /images/generations endpoint.
+
+        Non-chat models (model_types == "image", e.g. Kwai-Kolors/Kolors) cannot
+        consume chat prompts: the last user message text is used as the prompt
+        and the generated image URL is returned as markdown so the existing
+        frontend markdown renderer displays it inline.
+        """
+        messages = state.get("messages", [])
+        prompt = ""
+        for m in reversed(messages):
+            if getattr(m, "type", "") == "human":
+                prompt = str(m.content or "")
+                break
+        if not prompt.strip():
+            prompt = "请生成一张图片"
+
+        if self._stream_cb:
+            with contextlib.suppress(Exception):
+                await self._stream_cb({
+                    "event": "on_custom_thinking",
+                    "data": {"content": f"正在使用 {self.model} 生成图片…"},
+                })
+
+        from streaming.image_generation import generate_image
+
+        image_url = await generate_image(
+            self.api_key,
+            prompt,
+            model=self.model,
+            base_url=self.base_url,
+        )
+        content = f"![生成的图片]({image_url})"
+
+        if self._stream_cb:
+            with contextlib.suppress(Exception):
+                await self._stream_cb({
+                    "event": "on_custom_token",
+                    "data": {"content": content},
+                })
+            await self._stream_cb({"event": "on_node_end", "data": {}})
+
+        return {"messages": [AIMessage(content=content)]}
 
     async def _tools_node(self, state: AgentState) -> dict[str, Any]:
         """LangGraph tools node — executes tool calls."""

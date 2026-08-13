@@ -27,14 +27,19 @@ export default function AgentStudioWorkstation() {
           teams={s.teamMgmt.teams}
           selectedAgentId={s.selectedAgentId}
           conversations={s.filteredConversations}
-          activeConvId={s.conv.activeConvId}
+          activeConvId={s.activeConvId}
           isUserMenuOpen={s.isUserMenuOpen}
           setIsUserMenuOpen={s.setIsUserMenuOpen}
           setIsSettingsOpen={s.setIsSettingsOpen}
           setIsApiOpen={s.setIsApiOpen}
           setSelectedAgentId={s.setSelectedAgentId}
           setInputValue={() => {}}
-          onDeleteConversation={s.conv.deleteConversation}
+          onDeleteConversation={(convId) => {
+            if (convId === s.activeConvId) s.navigateToConversation(null);
+            s.conv.deleteConversation(convId);
+          }}
+          onRenameConversation={s.conv.renameConversation}
+          onPinConversation={s.conv.pinConversation}
           onNewChat={s.handleNewChat}
           toggleTeam={s.teamMgmt.toggleTeam}
           handleAddTeam={s.teamMgmt.handleAddTeam}
@@ -48,7 +53,7 @@ export default function AgentStudioWorkstation() {
             s.syncActiveConversation();
             s.resetApi();
             useChatStore.getState().setActiveTeam(null);
-            s.conv.setActiveConvId(null);
+            s.navigateToConversation(null);
             s.setSelectedAgentId(_agent.id);
           }}
           onEditAgent={(agent) => { s.setConfiguringAgent(agent); }}
@@ -56,7 +61,7 @@ export default function AgentStudioWorkstation() {
             s.syncActiveConversation();
             s.resetApi();
             useChatStore.getState().setActiveTeam(teamId);
-            s.conv.setActiveConvId(null);
+            s.navigateToConversation(null);
             s.setSelectedAgentId(null);
           }}
           isSidebarOpen={s.isSidebarOpen}
@@ -66,7 +71,7 @@ export default function AgentStudioWorkstation() {
             // Sync the current run's messages into its owning conversation
             // BEFORE the store gets replaced by the newly selected one.
             s.syncActiveConversation();
-            s.conv.setActiveConvId(id);
+            s.navigateToConversation(id);
           }}
         />
 
@@ -131,6 +136,7 @@ if (currentTheme === 'system') {
                     displayMessages={s.displayMessages}
                     messagesEndRef={messagesEndRef}
                     onDismissWelcome={() => s.setWelcomeDismissed(true)}
+                    onSwitchBranch={s.handleSwitchBranch}
                   />
                 ) : (
                   <HomeScreen

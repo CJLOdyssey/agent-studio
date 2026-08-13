@@ -2,13 +2,15 @@
 
 from typing import Any
 
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from auth import require_owned
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from repository import create_prompt, delete_prompt, get_prompts_as_dicts, update_prompt
-from sqlalchemy.ext.asyncio import AsyncSession
+from repository import create_prompt, delete_prompt, get_prompt, get_prompts_as_dicts, update_prompt
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["prompts"])
@@ -101,9 +103,13 @@ async def add_prompt(req: PromptCreate) -> Any:
 
 
 @router.put("/api/prompts/{prompt_id}")
-async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
+async def edit_prompt(prompt_id: str, req: PromptUpdate, request: Request) -> Any:
     """Update an existing prompt."""
     try:
+        await require_owned(
+            request, prompt_id, get_prompt,
+            not_found=ErrorCode.PROMPT_NOT_FOUND, allow_unowned=False,
+        )
         p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
         if not p:
             raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
@@ -127,9 +133,13 @@ async def edit_prompt(prompt_id: str, req: PromptUpdate) -> Any:
 
 
 @router.delete("/api/prompts/{prompt_id}", status_code=204)
-async def remove_prompt(prompt_id: str) -> None:
+async def remove_prompt(prompt_id: str, request: Request) -> None:
     """Delete a prompt by ID."""
     try:
+        await require_owned(
+            request, prompt_id, get_prompt,
+            not_found=ErrorCode.PROMPT_NOT_FOUND, allow_unowned=False,
+        )
         from repository import get_prompts
         prompts = await get_prompts()
         target = next((p for p in prompts if p.id == prompt_id), None)

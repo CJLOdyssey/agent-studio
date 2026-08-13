@@ -69,7 +69,7 @@ async def test_get_api_keys_decrypt_failure_graceful(db_engine):
             id="bad-key-id-1234",
             user_id="user1",
             provider="openai",
-            usage_type="llm",
+            capabilities=["llm"],
             label="bad",
             encrypted_key="not-valid-fernet",
             models="",
@@ -272,7 +272,7 @@ async def test_get_default_api_key_system_wide_fallback(db_engine):
 async def test_get_embedding_api_key(db_engine):
     from repository.keys_crud import create_api_key, get_embedding_api_key
 
-    await create_api_key("user1", "openai", usage_type="embedding", plaintext_key="sk-emb")
+    await create_api_key("user1", "openai", capabilities=["embedding"], plaintext_key="sk-emb")
     result = await get_embedding_api_key()
     assert result == "sk-emb"
 
@@ -281,7 +281,7 @@ async def test_get_embedding_api_key(db_engine):
 async def test_get_embedding_api_key_both(db_engine):
     from repository.keys_crud import create_api_key, get_embedding_api_key
 
-    await create_api_key("user1", "openai", usage_type="both", plaintext_key="sk-both")
+    await create_api_key("user1", "openai", capabilities=["llm", "embedding"], plaintext_key="sk-both")
     result = await get_embedding_api_key()
     assert result == "sk-both"
 
@@ -292,6 +292,87 @@ async def test_get_embedding_api_key_none(db_engine):
 
     result = await get_embedding_api_key()
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_embedding_api_key_beyond_row_window(db_engine):
+    """SQL-side filtering must find a matching key beyond the old 50-row window."""
+    from repository.keys_crud import create_api_key, get_embedding_api_key
+
+    for i in range(60):
+        await create_api_key("user1", "openai", plaintext_key=f"sk-llm-{i}")
+    await create_api_key("user1", "openai", capabilities=["embedding"], plaintext_key="sk-emb-60")
+    result = await get_embedding_api_key()
+    assert result == "sk-emb-60"
+
+
+@pytest.mark.asyncio
+async def test_get_embedding_config_fallback_keeps_base_url(db_engine, monkeypatch):
+    """Fallback config must keep the key's own endpoint, not force DashScope."""
+    import repository.keys_crud as keys_crud
+
+    monkeypatch.setattr(keys_crud, "EMBEDDING_MODEL", "env-tuned-model")
+    await keys_crud.create_api_key(
+        "user1", "openai", capabilities=["embedding"],
+        plaintext_key="sk-sf", base_url="https://api.siliconflow.cn/v1",
+    )
+    cfg = await keys_crud.get_embedding_config()
+    assert cfg is not None
+    assert cfg["api_key"] == "sk-sf"
+    assert cfg["base_url"] == "https://api.siliconflow.cn/v1"
+    # Model comes from EMBEDDING_MODEL (env-tunable), never hardcoded.
+    assert cfg["model"] == "env-tuned-model"
+
+
+@pytest.mark.asyncio
+async def test_get_embedding_config_prefers_declared_model(db_engine):
+    """A key declaring an embedding model wins with its own endpoint and model."""
+    from repository.keys_crud import create_api_key, get_embedding_config
+
+    await create_api_key(
+        "user1", "openai", capabilities=["embedding"],
+        plaintext_key="sk-old", base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    )
+    await create_api_key(
+        "user2", "siliconflow", capabilities=["embedding"],
+        plaintext_key="sk-bge", models=["BAAI/bge-m3"],
+        base_url="https://api.siliconflow.cn/v1",
+    )
+    cfg = await get_embedding_config()
+    assert cfg is not None
+    assert cfg["api_key"] == "sk-bge"
+    assert cfg["base_url"] == "https://api.siliconflow.cn/v1"
+    assert cfg["model"] == "BAAI/bge-m3"
+
+
+@pytest.mark.asyncio
+async def test_get_tool_api_key_matches_capabilities(db_engine):
+    """A key carrying the tool capability is served for its provider."""
+    from repository.keys_crud import create_api_key, get_tool_api_key
+
+    await create_api_key("user1", "tavily", capabilities=["tool"], plaintext_key="tavily-secret")
+    result = await get_tool_api_key("tavily")
+    assert result == "tavily-secret"
+
+
+@pytest.mark.asyncio
+async def test_get_tool_api_key_requires_tool_capability(db_engine):
+    """Provider match alone is not enough — the key must carry the tool capability."""
+    from repository.keys_crud import create_api_key, get_tool_api_key
+
+    await create_api_key("user1", "tavily", plaintext_key="tavily-llm-only")
+    result = await get_tool_api_key("tavily")
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_tool_api_key_provider_scope(db_engine):
+    """A tool-capable key of another provider is not served for this provider."""
+    from repository.keys_crud import create_api_key, get_tool_api_key
+
+    await create_api_key("user1", "openai", capabilities=["tool"], plaintext_key="openai-tool")
+    assert await get_tool_api_key("tavily") is None
+    assert await get_tool_api_key("openai") == "openai-tool"
 
 
 @pytest.mark.asyncio
@@ -337,8 +418,9 @@ async def test_get_key_usage_stats(db_engine):
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-stat")
 
-    from core.infra.database import KeyUsageLog, get_session_factory
     from uuid import uuid4
+
+    from core.infra.database import KeyUsageLog, get_session_factory
     factory = get_session_factory()
     async with factory() as session:
         log = KeyUsageLog(
@@ -387,10 +469,10 @@ async def test_update_api_key_base_url_and_models(db_engine):
         k.id, "user1",
         base_url="http://new",
         models=["gpt-4", "gpt-3.5-turbo"],
-        usage_type="embedding",
+        capabilities=["embedding"],
     )
     assert result is not None
-    assert result["usage_type"] == "embedding"
+    assert result["capabilities"] == ["embedding"]
 
 
 @pytest.mark.asyncio
@@ -414,6 +496,58 @@ async def test_get_api_keys_with_models(db_engine):
     keys = await get_api_keys("user1")
     assert len(keys) == 1
     assert keys[0]["models"] == ["gpt-4", "gpt-3.5-turbo"]
+
+
+@pytest.mark.asyncio
+async def test_create_api_key_with_model_types_serialized(db_engine):
+    from repository.keys_crud import create_api_key, get_api_keys
+
+    await create_api_key(
+        "user1", "custom", plaintext_key="sk-mt",
+        models=["gpt-4o"], model_types={"gpt-4o": "embedding"},
+    )
+    keys = await get_api_keys("user1")
+    assert len(keys) == 1
+    assert keys[0]["model_types"] == {"gpt-4o": "embedding"}
+
+
+@pytest.mark.asyncio
+async def test_get_api_keys_model_types_none_by_default(db_engine):
+    from repository.keys_crud import create_api_key, get_api_keys
+
+    await create_api_key("user1", "custom", plaintext_key="sk-nomt", models=["gpt-4o"])
+    keys = await get_api_keys("user1")
+    assert len(keys) == 1
+    assert keys[0]["model_types"] is None
+
+
+@pytest.mark.asyncio
+async def test_update_api_key_model_types_replace(db_engine):
+    from repository.keys_crud import create_api_key, get_api_keys, update_api_key
+
+    k = await create_api_key(
+        "user1", "custom", plaintext_key="sk-upd", models=["gpt-4o"],
+        model_types={"gpt-4o": "embedding"},
+    )
+    result = await update_api_key(k.id, "user1", model_types={"gpt-4o": "rerank"})
+    assert result is not None
+    assert result["model_types"] == {"gpt-4o": "rerank"}
+
+    keys = await get_api_keys("user1")
+    assert keys[0]["model_types"] == {"gpt-4o": "rerank"}
+
+
+@pytest.mark.asyncio
+async def test_update_api_key_model_types_clear(db_engine):
+    from repository.keys_crud import create_api_key, update_api_key
+
+    k = await create_api_key(
+        "user1", "custom", plaintext_key="sk-clr", models=["gpt-4o"],
+        model_types={"gpt-4o": "embedding"},
+    )
+    result = await update_api_key(k.id, "user1", model_types={})
+    assert result is not None
+    assert result["model_types"] == {}
 
 
 @pytest.mark.asyncio
@@ -441,9 +575,10 @@ async def test_get_api_key_for_use_models_list(db_engine):
 
 @pytest.mark.asyncio
 async def test_get_api_keys_with_last_used_at(db_engine):
-    from repository.keys_crud import create_api_key, get_api_keys
-    from core.infra.database import UserApiKey, get_session_factory
     from datetime import UTC, datetime
+
+    from core.infra.database import UserApiKey, get_session_factory
+    from repository.keys_crud import create_api_key, get_api_keys
 
     k = await create_api_key("user1", "openai", plaintext_key="sk-lastused")
     factory = get_session_factory()

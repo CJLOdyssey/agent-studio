@@ -5,9 +5,10 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from core.base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from core.base import Base
 
 if TYPE_CHECKING:
     from orm.agent import AgentConfigDB

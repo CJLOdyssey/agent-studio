@@ -241,6 +241,18 @@ export function handleStreamEvent(
   if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
+      // Team mode: each role streams its own message. When the streaming agent
+      // changes, close the current message and start a fresh one (industry
+      // layout: one message per agent, aligned with LangGraph add_messages).
+      if (prev.activeTeamId) {
+        const current = prev.messages.find((m) => m.id === prev.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          return {
+            streamingId: null,
+            ...handleStreamStart(prev, msg, chunk),
+          };
+        }
+      }
       return {
         skipThinking: false,
         messages: prev.messages.map((m) => {
@@ -258,6 +270,15 @@ export function handleStreamEvent(
   if (s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
+      if (prev.activeTeamId) {
+        const current = prev.messages.find((m) => m.id === prev.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          return {
+            streamingId: null,
+            ...handleStreamStart(prev, msg, chunk),
+          };
+        }
+      }
       return {
         skipThinking: false,
         messages: prev.messages.map((m) => {
@@ -289,6 +310,15 @@ export function handleThinkingStreamEvent(
   if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
+      if (prev.activeTeamId) {
+        const current = prev.messages.find((m) => m.id === prev.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          return {
+            streamingId: null,
+            ...handleThinkingStreamNew(prev, msg, chunk),
+          };
+        }
+      }
       return {
         messages: prev.messages.map((m) => {
           if (m.id !== prev.streamingId) return m;
@@ -301,6 +331,15 @@ export function handleThinkingStreamEvent(
   activeStreamMsgIds.add(runId);
   set((s) => {
     if (s.streamingId) {
+      if (s.activeTeamId) {
+        const current = s.messages.find((m) => m.id === s.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          return {
+            streamingId: null,
+            ...handleThinkingStreamNew(s, msg, chunk),
+          };
+        }
+      }
       return {
         messages: s.messages.map((m) => {
           if (m.id !== s.streamingId) return m;

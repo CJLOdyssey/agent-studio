@@ -5,9 +5,10 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from core.base import Base
 from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from core.base import Base
 
 
 class PromptDB(Base):
@@ -86,6 +87,7 @@ class RegisteredSkillDB(Base):
     tool_names: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     mcp_names: Mapped[dict[str, Any] | list[Any] | None] = mapped_column(JSON, nullable=True)
     output_constraint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    owner_id: Mapped[str | None] = mapped_column(String(36), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

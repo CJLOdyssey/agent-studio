@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement } from 'react';
+import type { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
+const queryClient = new QueryClient();
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    createElement(MemoryRouter, null, children),
+  );
 
 const {
   mockToast,
@@ -93,28 +104,29 @@ vi.mock('../../../hooks/useAgentCommands', () => ({
   useAgentCommands: () => [{ id: 'cmd-1', label: 'Cmd 1', type: 'action' }],
 }));
 
-vi.mock('../../../stores/chatStore', () => ({
-  useChatStore: (selector?: (s: unknown) => unknown) => {
-    const state = {
-      messages: mockStore.messages,
-      status: mockStore.status,
-      error: mockStore.error,
-      wsStatus: mockStore.wsStatus,
-      activeConvId: null,
-      activeTeamId: mockStore.activeTeamId,
-      isRunning: false,
-      isThinking: false,
-      reset: mockStoreReset,
-      cancelRun: mockStoreCancelRun,
-      loadConversation: mockStoreLoadConversation,
-      lastAbandonedRunId: mockStore.abandonedRunId,
-      currentSessionId: mockStore.currentSessionId,
-      getState: () => state,
-      setActiveTeam: mockStoreSetActiveTeam,
-    };
-    return selector ? selector(state) : state;
-  },
-}));
+vi.mock('../../../stores/chatStore', () => {
+  const state = {
+    get messages() { return mockStore.messages; },
+    get status() { return mockStore.status; },
+    get error() { return mockStore.error; },
+    get wsStatus() { return mockStore.wsStatus; },
+    activeConvId: null,
+    get activeTeamId() { return mockStore.activeTeamId; },
+    isRunning: false,
+    isThinking: false,
+    reset: mockStoreReset,
+    cancelRun: mockStoreCancelRun,
+    loadConversation: mockStoreLoadConversation,
+    get lastAbandonedRunId() { return mockStore.abandonedRunId; },
+    get currentSessionId() { return mockStore.currentSessionId; },
+    setActiveTeam: mockStoreSetActiveTeam,
+  };
+  const useChatStore = (selector?: (s: unknown) => unknown) =>
+    selector ? selector(state) : state;
+  useChatStore.getState = () => state;
+  useChatStore.setState = vi.fn();
+  return { useChatStore };
+});
 
 vi.mock('../../../stores/chatActions', () => ({
   submitRequirement: mockSubmitRequirement,
@@ -152,13 +164,13 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
   });
 
   it('initializes without crashing', () => {
-    const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+    const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
     expect(result.current).toBeDefined();
     expect(typeof result.current.submitToApi).toBe('function');
   });
 
   it('provides expected API surface', () => {
-    const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+    const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
     expect(typeof result.current.submitToApi).toBe('function');
     expect(typeof result.current.retryApi).toBe('function');
     expect(typeof result.current.cancelRun).toBe('function');
@@ -168,130 +180,130 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
 
   describe('initial state values', () => {
     it('isSidebarOpen defaults to true', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isSidebarOpen).toBe(true);
     });
 
     it('welcomeDismissed defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.welcomeDismissed).toBe(false);
     });
 
     it('isWorkspaceOpen defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isWorkspaceOpen).toBe(false);
     });
 
     it('isWorkstationOpen defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isWorkstationOpen).toBe(false);
     });
 
     it('selectedAgentId defaults to null', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.selectedAgentId).toBeNull();
     });
 
     it('configuringAgent defaults to null', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.configuringAgent).toBeNull();
     });
 
     it('isUserMenuOpen defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isUserMenuOpen).toBe(false);
     });
 
     it('isSettingsOpen defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isSettingsOpen).toBe(false);
     });
 
     it('isApiOpen defaults to false', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.isApiOpen).toBe(false);
     });
 
     it('conversationKey defaults to 0', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.conversationKey).toBe(0);
     });
 
     it('activeWorkspaceTab defaults to "code"', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.activeWorkspaceTab).toBe('code');
     });
 
     it('selectedModel defaults to empty string', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.selectedModel).toBe('');
     });
   });
 
   describe('state setters', () => {
     it('setIsSidebarOpen toggles', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsSidebarOpen(false); });
       expect(result.current.isSidebarOpen).toBe(false);
     });
 
     it('setWelcomeDismissed sets true', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setWelcomeDismissed(true); });
       expect(result.current.welcomeDismissed).toBe(true);
     });
 
     it('setIsWorkspaceOpen toggles', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsWorkspaceOpen(true); });
       expect(result.current.isWorkspaceOpen).toBe(true);
     });
 
     it('setIsWorkstationOpen toggles', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsWorkstationOpen(true); });
       expect(result.current.isWorkstationOpen).toBe(true);
     });
 
     it('setActiveWorkspaceTab changes tab', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setActiveWorkspaceTab('test'); });
       expect(result.current.activeWorkspaceTab).toBe('test');
     });
 
     it('setIsUserMenuOpen toggles', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsUserMenuOpen(true); });
       expect(result.current.isUserMenuOpen).toBe(true);
     });
 
     it('setIsSettingsOpen opens', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsSettingsOpen(true); });
       expect(result.current.isSettingsOpen).toBe(true);
     });
 
     it('setIsApiOpen opens', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsApiOpen(true); });
       expect(result.current.isApiOpen).toBe(true);
     });
 
     it('setIsNewProjectOpen toggles', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setIsNewProjectOpen(true); });
       expect(result.current.isNewProjectOpen).toBe(true);
     });
 
     it('setConfirmDialog sets dialog state', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       const dialog = { title: 'Confirm', message: 'Are you sure?', onConfirm: vi.fn() };
       act(() => { result.current.setConfirmDialog(dialog); });
       expect(result.current.confirmDialog).toEqual(dialog);
     });
 
     it('setConversationKey increments key', () => {
-      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()));
+      const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       act(() => { result.current.setConversationKey(5); });
       expect(result.current.conversationKey).toBe(5);
     });

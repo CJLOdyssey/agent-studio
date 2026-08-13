@@ -372,9 +372,10 @@ async def test_merge_guest_data(db_engine):
 @pytest.mark.asyncio
 async def test_merge_guest_data_with_anonymous(db_engine):
     """merge_guest_data skips 'anonymous' for UserApiKey table."""
-    from repository.auth import create_user, merge_guest_data
     from uuid import uuid4
+
     from core.infra.database import SessionDB, get_session_factory
+    from repository.auth import create_user, merge_guest_data
 
     real_user = await create_user("real@example.com", "hash")
 

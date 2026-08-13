@@ -8,7 +8,8 @@
     "show": "显示",
     "hide": "隐藏",
     "send": "发送",
-    "cancel": "取消"
+    "cancel": "取消",
+    "noData": "暂无数据"
   },
   "confirm": {
     "cancel": "取消",
@@ -31,7 +32,10 @@
     "agentAdded": "Agent 已添加",
     "agentDeleted": "Agent 已删除",
     "saved": "已自动保存",
-    "requestAbandoned": "已切换对话，当前请求已中断"
+    "requestAbandoned": "已切换对话，当前请求已中断",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
+    "error": "操作失败，请重试"
   },
   "user": {
     "onlineStatus": "在线状态"

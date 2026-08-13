@@ -136,7 +136,9 @@ class TestTeams:
             assert resp.status_code == 404
 
     def test_remove_member_exception(self, client):
-        with patch("routers.teams.remove_team_member", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.teams.get_team", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.teams.remove_team_member", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/teams/t/members/m")
             assert resp.status_code == 500
 
@@ -146,22 +148,30 @@ class TestTeams:
             assert resp.status_code == 500
 
     def test_link_agent_exception(self, client):
-        with patch("routers.teams.link_agent_config", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.teams.get_team", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.teams.link_agent_config", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/teams/t/members/m/link-agent", json={"agent_config_id": "a"})
             assert resp.status_code == 500
 
     def test_update_team_exception(self, client):
-        with patch("routers.teams.update_team", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.teams.get_team", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.teams.update_team", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.put("/api/teams/t", json={"name": "x"})
             assert resp.status_code == 500
 
     def test_delete_team_exception(self, client):
-        with patch("routers.teams.delete_team", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.teams.get_team", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.teams.delete_team", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.delete("/api/teams/t")
             assert resp.status_code == 500
 
     def test_add_member_exception(self, client):
-        with patch("routers.teams.add_team_member", new_callable=AsyncMock, side_effect=RuntimeError("err")):
+        with patch("routers.teams.get_team", new_callable=AsyncMock,
+                   return_value={"id": "t", "owner_id": None}), \
+             patch("routers.teams.add_team_member", new_callable=AsyncMock, side_effect=RuntimeError("err")):
             resp = client.post("/api/teams/t/members", json={"name": "m"})
             assert resp.status_code == 500
 

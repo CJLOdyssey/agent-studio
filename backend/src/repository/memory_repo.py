@@ -4,8 +4,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from core.infra.database import MemoryEntry, get_session_factory
 from sqlalchemy import select
+
+from core.infra.database import MemoryEntry, get_session_factory
 
 
 async def get_session_memories(session_id: str) -> list[MemoryEntry]:
@@ -70,6 +71,13 @@ async def clear_session_memories(session_id: str) -> Any:
         for obj in result.scalars().all():
             await session.delete(obj)
         await session.commit()
+
+
+async def get_memory_entry(memory_id: str) -> MemoryEntry | None:
+    """Fetch a single memory entry by ID (column access only, session is closed)."""
+    factory = get_session_factory()
+    async with factory() as session:
+        return await session.get(MemoryEntry, memory_id)
 
 
 async def delete_memory_entry(memory_id: str) -> bool:

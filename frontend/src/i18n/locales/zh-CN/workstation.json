@@ -124,6 +124,9 @@
     "testPassed": "通过",
     "testFailed": "失败",
     "fileExplorer": "资源管理器",
+    "emptyFiles": "暂无文件，等待工作区生成",
+    "noPreview": "暂无预览内容，等待工作区生成",
+    "noTests": "暂无测试结果，等待工作区生成",
     "fullscreen": "全屏",
     "collapse": "收起",
     "hotReloadReady": "热重载就绪",
@@ -153,8 +156,8 @@
     "save": "保存",
     "placeholders": {
       "name": "例如：我的 OpenAI",
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "sk-...",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKey": "输入 API Key",
       "models": "gpt-4o\ngpt-4o-mini"
     },
     "providers": {
@@ -179,7 +182,29 @@
     "addModelCancel": "取消",
     "noModelsWithKey": "暂无模型，点击刷新或手动添加",
     "fetchFromApi": "从 API 获取",
-    "enterApiKeyToFetch": "填写 API Key 后点击刷新获取模型"
+    "enterApiKeyToFetch": "填写 API Key 后点击刷新获取模型",
+    "category": {
+      "llm": "LLM",
+      "embedding": "嵌入",
+      "rerank": "重排序",
+      "speech2text": "语音转文字",
+      "tts": "文字转语音",
+      "moderation": "内容审核",
+      "image": "图像",
+      "tool": "工具"
+    },
+    "badge": {
+      "llm": "LLM",
+      "embedding": "嵌入",
+      "rerank": "重排序",
+      "speech2text": "语音转文字",
+      "tts": "文字转语音",
+      "moderation": "内容审核",
+      "image": "图像",
+      "tool": "工具"
+    },
+    "filterAll": "全部",
+    "noModelsInGroup": "暂无可用模型"
   },
   "api": {
     "manage": "API 管理",

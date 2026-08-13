@@ -6,6 +6,25 @@ from unittest.mock import patch
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _reset_sentinel_state(monkeypatch):
+    """Restore the real module after each test.
+
+    importlib.reload() re-evaluates SENTINEL_ENABLED from the env at reload
+    time; tests that set REDIS_SENTINEL_ENABLED=1 leave the module constant
+    True even after monkeypatch restores the env. That leaks into later real
+    broker.get_redis() calls on the same worker (rate-limit middleware →
+    create_redis → Sentinel path), which can then produce a mock pool and
+    crash app-lifespan close_redis() with TypeError.
+    """
+    yield
+    monkeypatch.delenv("REDIS_SENTINEL_ENABLED", raising=False)
+    mod = importlib.import_module("core.infra.redis_sentinel")
+    importlib.reload(mod)
+    mod.SENTINEL_ENABLED = False
+    mod._sentinel = None
+
+
 def _reload(monkeypatch, **env):
     for k, v in env.items():
         monkeypatch.setenv(k, v)

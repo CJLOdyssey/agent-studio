@@ -128,6 +128,21 @@ class EventStore:
             (like, like, like, like, limit),
         )
 
+    def recent(self, seconds: int = 300, limit: int = 50) -> list[dict[str, Any]]:
+        """Return the newest events within the time window."""
+        cutoff = time.time() - seconds
+        return self._query(
+            """SELECT * FROM events
+               WHERE timestamp >= ?
+               ORDER BY timestamp DESC LIMIT ?""",
+            (cutoff, limit),
+        )
+
+    def count(self) -> int:
+        """Return the total number of stored events."""
+        rows = self._query("SELECT COUNT(*) as cnt FROM events")
+        return rows[0]["cnt"] if rows else 0
+
     def stats(self, seconds: int = 300) -> dict[str, Any]:
         """Return per-level event counts and error total within the time window."""
         cutoff = time.time() - seconds
@@ -218,12 +233,19 @@ def _writer_size(q: "queue.SimpleQueue[dict[str, Any]]") -> int:
 
 
 # Module-level singleton — created on first use.
-_store: EventStore | None = None
+_store: Any = None
 
 
-def get_store() -> EventStore:
-    """Return the module-level EventStore singleton."""
+def get_store() -> Any:
+    """Return the module-level event store singleton.
+
+    Backend is selected by ``OBSERVABILITY_BACKEND`` (default ``sqlite``;
+    ``postgres`` enables the optional PostgreSQL store). Callers only use the
+    shared ``write``/query contract, so the backend stays swappable.
+    """
     global _store
     if _store is None:
-        _store = EventStore()
+        from observability.pg_store import PgEventStore, _backend_enabled
+
+        _store = PgEventStore() if _backend_enabled() else EventStore()
     return _store

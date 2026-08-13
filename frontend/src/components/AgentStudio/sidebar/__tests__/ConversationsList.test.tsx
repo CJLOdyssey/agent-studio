@@ -173,6 +173,81 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     expect(screen.getByText('删除')).toBeInTheDocument();
   });
 
+  // ── Rename ───────────────────────────────────────────────────────────
+
+  it('shows pin menu item and calls onPin when clicked', () => {
+    const onPin = vi.fn();
+    const conversations = [makeConv({ id: 'c1' })];
+    renderWithVirtuoso(conversations, { onPin });
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('顶置'));
+    expect(onPin).toHaveBeenCalledWith('c1');
+  });
+
+  it('shows unpin menu item for pinned conversation', () => {
+    const conversations = [makeConv({ id: 'c1', isPinned: true })];
+    renderWithVirtuoso(conversations);
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    expect(screen.getByText('取消顶置')).toBeInTheDocument();
+  });
+
+  it('shows pinned group at top for pinned conversations', () => {
+    const conversations = [
+      makeConv({ id: 'old', updatedAt: new Date(now.getTime() - 60 * dayMs).toISOString() }),
+      makeConv({ id: 'sticky', isPinned: true, updatedAt: new Date(now.getTime() - 60 * dayMs).toISOString() }),
+    ];
+    const { container } = renderWithVirtuoso(conversations);
+    const html = container.innerHTML;
+    expect(html.indexOf('sidebar.pinned')).toBeGreaterThan(-1);
+    expect(html.indexOf('sidebar.pinned')).toBeLessThan(html.indexOf('sidebar.older'));
+  });
+
+  it('does not show pinned conversation in time groups', () => {
+    const conversations = [
+      makeConv({ id: 'sticky', isPinned: true }),
+    ];
+    const { container } = renderWithVirtuoso(conversations);
+    expect(container.textContent).toContain('sidebar.pinned');
+    expect(container.textContent).not.toContain('sidebar.today');
+  });
+
+  it('starts inline rename and saves on Enter', () => {
+    const onRename = vi.fn();
+    const conversations = [makeConv({ id: 'c1', title: 'Old Title' })];
+    renderWithVirtuoso(conversations, { onRename });
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('重命名'));
+    const input = document.querySelector('input');
+    expect(input).toBeInTheDocument();
+    fireEvent.change(input!, { target: { value: 'New Title' } });
+    fireEvent.keyDown(input!, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('c1', 'New Title');
+  });
+
+  it('inline rename cancels on Escape without saving', () => {
+    const onRename = vi.fn();
+    const conversations = [makeConv({ id: 'c1', title: 'Old Title' })];
+    renderWithVirtuoso(conversations, { onRename });
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('重命名'));
+    const input = document.querySelector('input');
+    fireEvent.keyDown(input!, { key: 'Escape' });
+    expect(onRename).not.toHaveBeenCalled();
+    expect(input).not.toBeInTheDocument();
+  });
+
+  it('inline rename does not save empty title', () => {
+    const onRename = vi.fn();
+    const conversations = [makeConv({ id: 'c1', title: 'Old Title' })];
+    renderWithVirtuoso(conversations, { onRename });
+    fireEvent.click(screen.getByRole('button', { name: '更多' }));
+    fireEvent.click(screen.getByText('重命名'));
+    const input = document.querySelector('input');
+    fireEvent.change(input!, { target: { value: '   ' } });
+    fireEvent.keyDown(input!, { key: 'Enter' });
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
   it('has accessible conv item with tabIndex', () => {
     const conversations = [makeConv()];
     renderWithVirtuoso(conversations);
@@ -190,6 +265,23 @@ describe('ConversationsList', { tags: ['integration'] }, () => {
     const conversations = [makeConv({ messages: [{ id: 'm1', role: 'agent', content: 'hi' }] })];
     const { container } = renderWithVirtuoso(conversations);
     expect(container.textContent).toContain('sidebar.replied');
+  });
+
+  it('shows replied status when agent messages have role_identifier role (pm etc)', () => {
+    // Real store agent messages carry the backend role_identifier ('pm'/'programmer'/'tester'),
+    // not the literal 'agent' role — see chatActions.test.ts comment.
+    const conversations = [makeConv({ messages: [{ id: 'm1', role: 'pm', content: 'hi' }] })];
+    const { container } = renderWithVirtuoso(conversations);
+    expect(container.textContent).toContain('sidebar.replied');
+    expect(container.textContent).not.toContain('sidebar.pendingReply');
+  });
+
+  it('shows replied status when session has runs but messages not loaded', () => {
+    // Backend sessions map to conversations with empty messages; runCount decides.
+    const conversations = [makeConv({ messages: [], runCount: 2 })];
+    const { container } = renderWithVirtuoso(conversations);
+    expect(container.textContent).toContain('sidebar.replied');
+    expect(container.textContent).not.toContain('sidebar.pendingReply');
   });
 
   it('truncates long titles', () => {

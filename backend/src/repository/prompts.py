@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from core.infra.cache import get_cache
-from core.infra.database import PromptDB
 from sqlalchemy import desc
 
+from core.infra.cache import get_cache
+from core.infra.database import PromptDB
 from repository.base import BaseRepository
 
 CACHE_KEY_PROMPTS = "prompts:all"

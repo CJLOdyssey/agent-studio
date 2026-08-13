@@ -1,4 +1,5 @@
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical, Users, Pencil, Pin, Trash2, MessageSquare, Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso } from 'react-virtuoso';
@@ -11,7 +12,7 @@ interface ConversationsListProps {
   agents?: Agent[];
   onSelect: (conv: Conversation) => void;
   onDelete: (convId: string) => void;
-  onRename?: (convId: string) => void;
+  onRename?: (convId: string, title: string) => void;
   onPin?: (convId: string) => void;
 }
 
@@ -27,6 +28,12 @@ const ConversationsList = memo(function ConversationsList({
 }: ConversationsListProps) {
   const { t, i18n } = useTranslation();
   const [openMenuConvId, setOpenMenuConvId] = useState<string | null>(null);
+  // 更多菜单用 portal 渲染到 body（fixed 定位）：会话列表是可滚动容器，
+  // absolute 弹窗在列表底部会被 overflow 裁剪。下方空间不足时向上展开。
+  const [menuAnchor, setMenuAnchor] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
+  const [editingConvId, setEditingConvId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -103,15 +110,25 @@ const ConversationsList = memo(function ConversationsList({
   }, [agents]);
 
   const nonEmptyGroups = useMemo(() => {
-    return [
+    const pinnedIds = new Set(
+      conversations.filter((c) => c.isPinned).map((c) => c.id),
+    );
+    const timeGroups = [
       { label: t('sidebar.today'), items: groupedConversations.today },
       { label: t('sidebar.yesterday'), items: groupedConversations.yesterday },
       { label: t('sidebar.threeDays'), items: groupedConversations.threeDays },
       { label: t('sidebar.sevenDays'), items: groupedConversations.sevenDays },
       { label: t('sidebar.month'), items: groupedConversations.month },
       { label: t('sidebar.older'), items: groupedConversations.older },
-    ].filter((g) => g.items.length > 0);
-  }, [groupedConversations, t]);
+    ].map((g) => ({
+      ...g,
+      items: g.items.filter((c) => !pinnedIds.has(c.id)),
+    }));
+    const pinned = conversations.filter((c) => c.isPinned);
+    const pinnedGroup =
+      pinned.length > 0 ? [{ label: t('sidebar.pinned'), items: pinned }] : [];
+    return [...pinnedGroup, ...timeGroups].filter((g) => g.items.length > 0);
+  }, [groupedConversations, conversations, t]);
 
   if (nonEmptyGroups.length === 0) return null;
 
@@ -120,9 +137,69 @@ const ConversationsList = memo(function ConversationsList({
     ...g.items.map((conv) => ({ type: 'item' as const, conv })),
   ]);
 
-  const renderConversationItem = (conv: Conversation) => {
+  const startRename = (conv: Conversation) => {
+    setEditingConvId(conv.id);
+    setEditName(conv.title);
+    setOpenMenuConvId(null);
+    requestAnimationFrame(() => {
+      editInputRef.current?.focus();
+      editInputRef.current?.select();
+    });
+  };
+
+  const saveRename = (convId: string) => {
+    const name = editName.trim();
+    setEditingConvId(null);
+    if (name) onRename?.(convId, name);
+  };
+
+  const renderTitle = (conv: Conversation) => {
     const agent = conv.agentId ? agentMap.get(conv.agentId) : undefined;
     const AgentIcon = agent?.icon;
+    const isTeam = !!conv.teamId;
+    const isEditing = editingConvId === conv.id;
+    return (
+      <div className="text-base text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">
+        {!isEditing && (
+          conv.kind === 'team' || isTeam ? (
+            <span className="shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
+              <Users size={14} />
+            </span>
+          ) : conv.kind === 'agent' ? (
+            <span className="shrink-0 flex items-center" style={{ color: agent?.color || 'var(--color-accent)' }}>
+              {agent && AgentIcon ? <AgentIcon size={14} /> : <Cpu size={14} />}
+            </span>
+          ) : (
+            <span className="shrink-0 flex items-center" style={{ color: 'var(--color-text-tertiary)' }}>
+              <MessageSquare size={14} />
+            </span>
+          )
+        )}
+        {isEditing ? (
+          <input
+            ref={editInputRef}
+            className="flex-1 min-w-0 w-full px-2 py-1.5 bg-[var(--color-surface-raised)] border border-[var(--color-accent)] rounded-md text-sm text-[var(--color-text-primary)] outline-none"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onBlur={() => saveRename(conv.id)}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter') saveRename(conv.id);
+              if (e.key === 'Escape') setEditingConvId(null);
+            }}
+          />
+        ) : Array.from(conv.title).length > 28 ? (
+          Array.from(conv.title).slice(0, 28).join('') + '...'
+        ) : (
+          conv.title
+        )}
+      </div>
+    );
+  };
+
+  const renderConversationItem = (conv: Conversation) => {
+    const agent = conv.agentId ? agentMap.get(conv.agentId) : undefined;
     const isTeam = !!conv.teamId;
     const isActive = activeConvId === conv.id && !selectedAgentId;
     return (
@@ -141,24 +218,7 @@ const ConversationsList = memo(function ConversationsList({
         aria-selected={isActive}
       >
         <div className="flex-1 min-w-0">
-          <div className="text-base text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">
-            {conv.kind === 'team' || isTeam ? (
-              <span className="shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
-                <Users size={14} />
-              </span>
-            ) : conv.kind === 'agent' ? (
-              <span className="shrink-0 flex items-center" style={{ color: agent?.color || 'var(--color-accent)' }}>
-                {agent && AgentIcon ? <AgentIcon size={14} /> : <Cpu size={14} />}
-              </span>
-            ) : (
-              <span className="shrink-0 flex items-center" style={{ color: 'var(--color-text-tertiary)' }}>
-                <MessageSquare size={14} />
-              </span>
-            )}
-            {Array.from(conv.title).length > 28
-              ? Array.from(conv.title).slice(0, 28).join('') + '...'
-              : conv.title}
-          </div>
+          {renderTitle(conv)}
           <div className="text-sm text-[var(--color-text-tertiary)] mt-1 flex items-center gap-1">
             {isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
@@ -166,7 +226,7 @@ const ConversationsList = memo(function ConversationsList({
             {agent && !isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium">{agent.name}</span>
             )}
-            {conv.messages.filter((m) => m.role === 'agent').length > 0
+            {conv.messages.some((m) => m.role !== 'user') || (conv.runCount ?? 0) > 0
               ? t('sidebar.replied')
               : t('sidebar.pendingReply')}
             {' · '}
@@ -181,21 +241,33 @@ const ConversationsList = memo(function ConversationsList({
             className="bg-transparent border-none p-1 rounded cursor-pointer text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] flex items-center justify-center w-[24px] h-[24px] shrink-0 opacity-0 group-hover:opacity-70 hover:opacity-100 transition-all duration-150"
             onClick={(e) => {
               e.stopPropagation();
-              setOpenMenuConvId(openMenuConvId === conv.id ? null : conv.id);
+              if (openMenuConvId === conv.id) {
+                setOpenMenuConvId(null);
+              } else {
+                setOpenMenuConvId(conv.id);
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                // 菜单高约 130px：下方空间不足则向上展开，避免超视口被截。
+                if (window.innerHeight - r.bottom >= 134) {
+                  setMenuAnchor({ top: r.bottom + 4, right: window.innerWidth - r.right });
+                } else {
+                  setMenuAnchor({ bottom: window.innerHeight - r.top + 4, right: window.innerWidth - r.right });
+                }
+              }
             }}
             aria-label="更多"
           >
             <MoreVertical size={15} />
           </button>
-          {openMenuConvId === conv.id && (
+          {openMenuConvId === conv.id && menuAnchor && createPortal(
             <div
               ref={menuRef}
-              className="absolute right-0 top-full mt-1 min-w-[120px] bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.18)] z-[var(--z-dropdown)] flex flex-col p-1 origin-top-right animate-[popoverScaleIn_0.12s_cubic-bezier(0.16,1,0.3,1)]"
+              className="fixed z-[var(--z-dropdown)] min-w-[120px] bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.18)] flex flex-col p-1 origin-top-right animate-[popoverScaleIn_0.12s_cubic-bezier(0.16,1,0.3,1)]"
+              style={{ top: menuAnchor.top, bottom: menuAnchor.bottom, right: menuAnchor.right }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-[var(--color-text-primary)] bg-transparent border-none rounded-md cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)]"
-                onClick={() => { setOpenMenuConvId(null); onRename?.(conv.id); }}
+                onClick={() => startRename(conv)}
               >
                 <Pencil size={13} />
                 重命名
@@ -205,7 +277,7 @@ const ConversationsList = memo(function ConversationsList({
                 onClick={() => { setOpenMenuConvId(null); onPin?.(conv.id); }}
               >
                 <Pin size={13} />
-                顶置
+                {conv.isPinned ? '取消顶置' : '顶置'}
               </button>
               <div className="h-px bg-[var(--color-border-subtle)] mx-2 my-1" />
               <button
@@ -215,7 +287,8 @@ const ConversationsList = memo(function ConversationsList({
                 <Trash2 size={13} />
                 删除
               </button>
-            </div>
+            </div>,
+            document.body,
           )}
         </div>
       </div>

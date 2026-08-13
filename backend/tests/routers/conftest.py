@@ -42,10 +42,15 @@ async def _reset_db():
     UNIQUE username / role_identifier collisions and mutated seed passwords.
     Mirror the repository tests' pattern (tests/repository/conftest.py): reset
     the schema before each test so every test starts with a clean slate.
+
+    Also re-pins the session factory: repository tests' autouse ``_setup_db``
+    (same xdist worker) repoints ``_async_session_factory`` at their own
+    engine, which would otherwise send router-test writes to a stale database.
     """
     import core.infra.database as db_mod
 
     engine = db_mod.get_async_engine()
+    db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -63,6 +68,7 @@ def client():
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
+
         from core.infra.database import UserDB, get_session_factory
         factory = get_session_factory()
         async with factory() as session:

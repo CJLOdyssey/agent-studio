@@ -43,8 +43,11 @@ def client():
         # Use raw seeding (not seed_default_roles_and_admin) so admin user gets
         # id="admin" matching CurrentUser() defaults in legacy auth mode.
         from sqlalchemy import select
+
         from core.infra.database import (
-            RoleDB, UserDB, UserRoleDB,
+            RoleDB,
+            UserDB,
+            UserRoleDB,
         )
 
         async with db_mod._async_session_factory() as session:  # type: ignore[arg-type]
@@ -64,7 +67,7 @@ def client():
             ).scalar_one_or_none()
 
             for user_data in [
-                {"id": "admin", "email": "admin@legacy.local"},
+                {"id": "admin", "email": "admin@example.com"},
                 {"id": "admin-login", "email": "admin@test.com"},
             ]:
                 existing = await session.execute(

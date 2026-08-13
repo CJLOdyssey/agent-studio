@@ -1,5 +1,8 @@
 /* ============================================
-   Scrollbar — 全局滚动条样式（伪元素，无法用 Tailwind）
+   Scrollbar — 全局滚动条样式（伪元素，无法用 Tailwind）。
+   注意：必须独立 import（不经 @import ... layer(base)），
+   否则被并入 tailwind 的 @layer base，优先级低于浏览器默认
+   滚动条规则，scrollbar-button 箭头无法隐藏。
    ============================================ */
 
 ::-webkit-scrollbar {
@@ -21,7 +24,23 @@
   background: var(--color-text-muted);
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) var(--color-surface-sidebar);
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Chromium 一旦设置 scrollbar-width/scrollbar-color（非 auto）会忽略全部
+   ::-webkit-scrollbar-* 样式（含 button 箭头隐藏）。所以标准属性仅给
+   Firefox（不支持 ::-webkit-scrollbar selector）用。 */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) var(--color-surface-sidebar);
+  }
 }

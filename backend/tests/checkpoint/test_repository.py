@@ -4,16 +4,16 @@ Uses a real in-memory SQLite database — no mocks.
 """
 
 import asyncio
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from unittest.mock import patch
 
 from checkpoint.models import AgentCheckpoint, CheckpointDB
 from checkpoint.repository import (
-    save_checkpoint,
-    load_latest_checkpoint,
     list_checkpoints,
+    load_latest_checkpoint,
+    save_checkpoint,
 )
 from core.base import Base
 

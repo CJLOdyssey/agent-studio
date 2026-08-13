@@ -10,19 +10,31 @@ import time
 import tracemalloc
 from typing import Any
 
-from broker import publish_run_message
-from core.infra.logging_config import get_logger
-from core.mock_fallback import run_mock
 from mcp import StdioServerParameters
 from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client
+
+from broker import publish_run_message
+from core.infra.logging_config import get_logger
+from core.mock_fallback import run_mock
+from rag.rag_memory import summarize_rollup
 from repository import (
     create_memory_entry,
+    delete_memory_entry,
+    get_session_memories,
     update_run_result,
     update_run_status,
 )
 
 logger = get_logger(__name__)
+
+# ── Session memory policy (P1 长期记忆) ─────────────────────────────────────
+# Window trimming: only the newest N entries are injected into context
+# (Dify TokenBufferMemory / n8n trimMessages 同款思路，条数维度).
+MEMORY_MAX_INJECT = int(os.environ.get("MEMORY_MAX_INJECT", "20"))
+# Rolling summary: once a session's entries exceed this many, the oldest half
+# is consolidated into one rollup entry (Open WebUI review 轻量版).
+MEMORY_ROLLUP_THRESHOLD = int(os.environ.get("MEMORY_ROLLUP_THRESHOLD", "20"))
 
 # ── Shared memory diagnostics ─────────────────────────────────────────────
 _run_counter = 0
@@ -30,7 +42,13 @@ _baseline_snapshot: tracemalloc.Snapshot | None = None
 
 
 def log_memory_diff() -> None:
-    """Log current RSS and optional tracemalloc diff for leak detection."""
+    """Log current RSS and optional tracemalloc diff for leak detection.
+
+    RSS read via ``/proc/pid/status`` is cheap (microseconds) and always kept.
+    The tracemalloc snapshot + compare is EXPENSIVE — at multi-hundred-MB RSS it
+    blocks the event loop for seconds, stalling concurrent request handlers. It
+    is therefore gated behind ``MEM_TRACE=1`` and off by default.
+    """
     global _baseline_snapshot
     try:
         pid = os.getpid()
@@ -39,6 +57,8 @@ def log_memory_diff() -> None:
         logger.info("[MEM] run=#%s pid=%s rss=%dKB", _run_counter, pid, rss_kb)
     except Exception:
         pass
+    if os.environ.get("MEM_TRACE", "").lower() not in ("1", "true", "yes"):
+        return
     if not tracemalloc.is_tracing():
         return
     current = tracemalloc.take_snapshot()
@@ -298,11 +318,18 @@ async def _discover_mcp_tools_uncached(
         return [], True
 
 
-def _build_session_context(memories: list[Any]) -> str:
+def _build_session_context(memories: list[Any], max_entries: int | None = None) -> str:
+    """Build the 【历史上下文】 block from memory entries.
+
+    Window trimming (industry norm — Dify/n8n drop oldest beyond a budget):
+    only the newest ``max_entries`` entries are injected so long sessions do
+    not grow context without bound. Defaults to env MEMORY_MAX_INJECT (20).
+    """
     if not memories:
         return ""
+    limit = max_entries if max_entries is not None else MEMORY_MAX_INJECT
     lines = ["\n\n【历史上下文】"]
-    for m in memories:
+    for m in memories[-limit:]:
         lines.append(f"- [{m.content_type}] {m.agent_role}: {m.summary}")
     return "\n".join(lines)
 
@@ -310,12 +337,19 @@ def _build_session_context(memories: list[Any]) -> str:
 async def _get_rag_context(query: str, session_id: str) -> str:
     try:
         from rag.rag_pipeline import ensure_embedding_provider, retrieve_context
-        from repository.keys import get_embedding_api_key
+        from repository.keys import get_embedding_config
 
-        api_key = await get_embedding_api_key()
-        ensure_embedding_provider(api_key)
-        return await retrieve_context(query=query, session_id=session_id, top_k=3)
+        cfg = await get_embedding_config()
+        if cfg is None or cfg["api_key"] is None:
+            return ""
+        ensure_embedding_provider(
+            cfg["api_key"], model=cfg["model"], base_url=cfg["base_url"]
+        )
+        return await retrieve_context(
+            query=query, session_id=session_id, top_k=3, rerank=True
+        )
     except Exception:
+        logger.warning("RAG context retrieval failed for session %s", session_id, exc_info=True)
         return ""
 
 
@@ -335,5 +369,64 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
             summary=summary,
             details=response[:2000],
         )
+        # Rolling summary: once entries exceed the threshold, consolidate the
+        # oldest half into a single rollup entry so per-session memory stays
+        # bounded (Open WebUI periodic review, lightweight variant).
+        await _maybe_rollup_memories(session_id)
     except Exception:
         logger.exception("Failed to save memory for run %s", run_id)
+
+
+async def _maybe_rollup_memories(session_id: str) -> None:
+    """Consolidate the oldest half of a session's memory entries into one rollup.
+
+    Runs when entry count exceeds MEMORY_ROLLUP_THRESHOLD. The consolidated
+    entries are deleted; a single ``content_type="rollup"`` entry with the
+    merged summaries replaces them (kept at the head so ordering is preserved).
+    """
+    try:
+        entries = await get_session_memories(session_id)
+    except Exception:
+        return
+    if len(entries) <= MEMORY_ROLLUP_THRESHOLD:
+        return
+
+    # Keep the newest half intact; roll up the oldest half. An existing
+    # rollup's content is folded into the new one so history is never lost.
+    existing_rollup = next(
+        (m for m in entries if m.content_type == "rollup"), None
+    )
+    keep = [m for m in entries if m.content_type != "rollup"]
+    if len(keep) <= MEMORY_ROLLUP_THRESHOLD:
+        return
+    old, fresh = keep[: len(keep) // 2], keep[len(keep) // 2 :]
+    if not old:
+        return
+
+    parts = []
+    if existing_rollup:
+        parts.append(existing_rollup.details or existing_rollup.summary)
+    parts.append("\n".join(f"- [{m.content_type}] {m.agent_role}: {m.summary}" for m in old))
+    merged = "\n".join(parts)
+    summarized = await _summarize_rollup(merged)
+    try:
+        await create_memory_entry(
+            session_id=session_id,
+            run_id=old[0].run_id or "",
+            agent_role="agent",
+            content_type="rollup",
+            summary=summarized[:500],
+            details=merged[:4000],
+        )
+        for m in old:
+            await delete_memory_entry(m.id)
+        if existing_rollup:
+            await delete_memory_entry(existing_rollup.id)
+    except Exception:
+        logger.exception("Failed to roll up memories for session %s", session_id)
+    logger.info("[MEM] rolled up %d entries into session rollup (fresh=%d)", len(old), len(fresh))
+
+
+async def _summarize_rollup(merged: str) -> str:
+    """Condense merged memory lines — delegating to rag_memory (LLM config-driven)."""
+    return str(await summarize_rollup(merged))

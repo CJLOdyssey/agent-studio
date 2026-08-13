@@ -109,6 +109,10 @@ export interface Conversation {
   sessionId?: string;
   teamId?: string;
   teamName?: string;
+  /** 侧边栏置顶（对齐 ragbase is_pinned 语义） */
+  isPinned?: boolean;
+  /** 会话已产生的 run 数（后端 sessions 列表返回；列表消息未加载时用于判定是否已回复） */
+  runCount?: number;
 }
 
 // 消息类型
@@ -133,8 +137,13 @@ export interface Message {
   currentVersion?: number;
   userVersions?: string[];
   currentUserVersion?: number;
+  /** 模型消息答案分页（重新生成链）：与用户版本（userVersions）解耦的独立字段 */
+  answerVersions?: string[];
+  currentAnswerVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
+  /** 用户消息展示的附件（来自 run 绑定，下载 GET /api/attachments/{id}） */
+  attachments?: { id: string; filename: string; size_bytes?: number }[];
 }
 
 // 计划步骤

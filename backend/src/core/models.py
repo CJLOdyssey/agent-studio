@@ -106,7 +106,7 @@ class AttachmentResponse(BaseModel):
     """Attachment metadata returned from the API."""
 
     id: str
-    session_id: str
+    session_id: str | None = None
     run_id: str | None = None
     filename: str
     content_type: str = "application/octet-stream"
@@ -162,6 +162,7 @@ class SessionSummary(BaseModel):
     title: str
     kind: str = "normal"
     agent_id: str | None = None
+    is_pinned: bool = False
     run_count: int = 0
     created_at: str | None = None
     updated_at: str | None = None
@@ -172,6 +173,7 @@ class RunSummary(BaseModel):
 
     id: str
     session_id: str | None = None
+    parent_run_id: str | None = None
     requirement: str
     pm_document: str = ""
     code: str = ""
@@ -181,6 +183,7 @@ class RunSummary(BaseModel):
     created_at: str | None = None
     updated_at: str | None = None
     messages: list["MessageItem"] = Field(default_factory=list)
+    attachments: list["AttachmentResponse"] = Field(default_factory=list)
 
 
 class MessageItem(BaseModel):
