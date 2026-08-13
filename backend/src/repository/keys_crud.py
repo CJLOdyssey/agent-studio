@@ -459,6 +459,52 @@ async def get_embedding_config() -> dict[str, str | None] | None:
     }
 
 
+def _pick_rerank_model(models: str) -> str | None:
+    """Pick a reranker model from a key's comma-joined models list.
+
+    bge-reranker-v2-m3 is preferred over other rerank-named models.
+    """
+    if not models:
+        return None
+    candidates = [x.strip() for x in models.split(",")]
+    for m in candidates:
+        if "bge-reranker-v2-m3" in m.lower():
+            return m
+    for m in candidates:
+        if "rerank" in m.lower():
+            return m
+    return None
+
+
+async def get_rerank_config() -> dict[str, str] | None:
+    """Resolve the reranker endpoint: {api_key, base_url, model}.
+
+    Prefers an active key whose models list names a reranker; None when no
+    key declares one (rerank then stays disabled).
+    """
+    from core.infra.database import UserApiKey
+    from core.infra.key_vault import decrypt_api_key
+
+    factory = get_session_factory()
+    async with factory() as session:
+        stmt = (
+            select(UserApiKey)
+            .where(UserApiKey.is_active.is_(True))
+            .order_by(UserApiKey.created_at)
+        )
+        rows = (await session.execute(stmt)).scalars().all()
+
+    for row in rows:
+        model = _pick_rerank_model(row.models)
+        if model and row.base_url:
+            return {
+                "api_key": decrypt_api_key(row.encrypted_key),
+                "base_url": row.base_url,
+                "model": model,
+            }
+    return None
+
+
 async def get_tool_api_key(provider: str) -> str | None:
     """Get the decrypted API key for a tool provider (e.g. 'tavily')."""
     from core.infra.database import UserApiKey

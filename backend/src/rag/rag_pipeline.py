@@ -33,6 +33,8 @@ DEFAULT_MIN_SCORE = float(os.environ.get("RAG_MIN_SCORE", "0.25"))
 DEDUP_OVERFETCH = 3
 # Adjacent sliding-window chunks overlap ~12%; anything above this ratio is a duplicate.
 DEDUP_RATIO = 0.85
+# Candidate pool fed to the cross-encoder reranker, which narrows to top_k.
+RERANK_CANDIDATES = 20
 
 # ── Global state ─────────────────────────────────────────────────────────────
 
@@ -97,38 +99,67 @@ async def retrieve_context(
     tags: list[str] | None = None,
     top_k: int = 5,
     min_score: float | None = None,
+    rerank: bool = False,
 ) -> str:
     """Steps 13-14: Retrieve relevant context for a user query.
 
     1. Embed query with DashScope
     2. Hybrid search via pgvector (BM25 + cosine, RRF-fused; tag filter + floor)
-    3. Drop near-duplicate chunks, then format context for LLM
+    3. Optional cross-encoder rerank of candidates down to top_k
+    4. Drop near-duplicate chunks, then format context for LLM
     """
     if _embedding_provider is None:
         return ""
     query_embedding = await _embedding_provider.embed_query(query)
+    candidate_k = RERANK_CANDIDATES if rerank else top_k * DEDUP_OVERFETCH
     results = await _vector_store.search_hybrid(
         query,
         query_embedding,
         session_id=session_id,
         tag_filter=tags,
-        top_k=top_k * DEDUP_OVERFETCH,
+        top_k=candidate_k,
         min_score=min_score if min_score is not None else DEFAULT_MIN_SCORE,
     )
 
     if not results:
         return ""
 
-    deduped = _dedup_chunks(results, top_k)
+    deduped = _dedup_chunks(results, candidate_k if rerank else top_k)
     if not deduped:
         return ""
 
+    if rerank and len(deduped) > top_k:
+        deduped = await _rerank_results(query, deduped, top_k)
+
     parts = []
-    for r in deduped:
+    for r in deduped[:top_k]:
         tag_str = f" [{', '.join(r['tags'])}]" if r["tags"] else ""
         parts.append(f"--- [相似度: {r['score']:.2f}]{tag_str} ---\n{r['text']}")
 
     return "\n\n".join(parts)
+
+
+async def _rerank_results(
+    query: str, results: list[dict[str, Any]], top_k: int
+) -> list[dict[str, Any]]:
+    """Reorder results with the configured cross-encoder; no-op if unavailable."""
+    from repository.keys import get_rerank_config
+
+    from rag.rag_rerank import RerankProvider
+
+    cfg = await get_rerank_config()
+    if cfg is None or cfg["api_key"] is None:
+        return results
+    provider = RerankProvider(
+        api_key=cfg["api_key"], base_url=cfg["base_url"], model=cfg["model"]
+    )
+    indices = await provider.rerank(query, [r["text"] for r in results], top_n=top_k)
+    by_index = {i: results[i] for i in range(len(results))}
+    reranked: list[dict[str, Any]] = []
+    for idx in indices:
+        if idx in by_index:
+            reranked.append(by_index[idx])
+    return reranked
 
 
 def _dedup_chunks(

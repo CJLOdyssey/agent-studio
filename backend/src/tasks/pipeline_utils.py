@@ -327,7 +327,9 @@ async def _get_rag_context(query: str, session_id: str) -> str:
         ensure_embedding_provider(
             cfg["api_key"], model=cfg["model"], base_url=cfg["base_url"]
         )
-        return await retrieve_context(query=query, session_id=session_id, top_k=3)
+        return await retrieve_context(
+            query=query, session_id=session_id, top_k=3, rerank=True
+        )
     except Exception:
         logger.warning("RAG context retrieval failed for session %s", session_id, exc_info=True)
         return ""
