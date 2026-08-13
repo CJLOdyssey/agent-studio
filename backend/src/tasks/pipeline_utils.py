@@ -17,13 +17,24 @@ from mcp.client.stdio import stdio_client
 from broker import publish_run_message
 from core.infra.logging_config import get_logger
 from core.mock_fallback import run_mock
+from rag.rag_memory import summarize_rollup
 from repository import (
     create_memory_entry,
+    delete_memory_entry,
+    get_session_memories,
     update_run_result,
     update_run_status,
 )
 
 logger = get_logger(__name__)
+
+# ── Session memory policy (P1 长期记忆) ─────────────────────────────────────
+# Window trimming: only the newest N entries are injected into context
+# (Dify TokenBufferMemory / n8n trimMessages 同款思路，条数维度).
+MEMORY_MAX_INJECT = int(os.environ.get("MEMORY_MAX_INJECT", "20"))
+# Rolling summary: once a session's entries exceed this many, the oldest half
+# is consolidated into one rollup entry (Open WebUI review 轻量版).
+MEMORY_ROLLUP_THRESHOLD = int(os.environ.get("MEMORY_ROLLUP_THRESHOLD", "20"))
 
 # ── Shared memory diagnostics ─────────────────────────────────────────────
 _run_counter = 0
@@ -307,11 +318,18 @@ async def _discover_mcp_tools_uncached(
         return [], True
 
 
-def _build_session_context(memories: list[Any]) -> str:
+def _build_session_context(memories: list[Any], max_entries: int | None = None) -> str:
+    """Build the 【历史上下文】 block from memory entries.
+
+    Window trimming (industry norm — Dify/n8n drop oldest beyond a budget):
+    only the newest ``max_entries`` entries are injected so long sessions do
+    not grow context without bound. Defaults to env MEMORY_MAX_INJECT (20).
+    """
     if not memories:
         return ""
+    limit = max_entries if max_entries is not None else MEMORY_MAX_INJECT
     lines = ["\n\n【历史上下文】"]
-    for m in memories:
+    for m in memories[-limit:]:
         lines.append(f"- [{m.content_type}] {m.agent_role}: {m.summary}")
     return "\n".join(lines)
 
@@ -351,5 +369,64 @@ async def _save_output_memories(session_id: str, run_id: str, response: str, met
             summary=summary,
             details=response[:2000],
         )
+        # Rolling summary: once entries exceed the threshold, consolidate the
+        # oldest half into a single rollup entry so per-session memory stays
+        # bounded (Open WebUI periodic review, lightweight variant).
+        await _maybe_rollup_memories(session_id)
     except Exception:
         logger.exception("Failed to save memory for run %s", run_id)
+
+
+async def _maybe_rollup_memories(session_id: str) -> None:
+    """Consolidate the oldest half of a session's memory entries into one rollup.
+
+    Runs when entry count exceeds MEMORY_ROLLUP_THRESHOLD. The consolidated
+    entries are deleted; a single ``content_type="rollup"`` entry with the
+    merged summaries replaces them (kept at the head so ordering is preserved).
+    """
+    try:
+        entries = await get_session_memories(session_id)
+    except Exception:
+        return
+    if len(entries) <= MEMORY_ROLLUP_THRESHOLD:
+        return
+
+    # Keep the newest half intact; roll up the oldest half. An existing
+    # rollup's content is folded into the new one so history is never lost.
+    existing_rollup = next(
+        (m for m in entries if m.content_type == "rollup"), None
+    )
+    keep = [m for m in entries if m.content_type != "rollup"]
+    if len(keep) <= MEMORY_ROLLUP_THRESHOLD:
+        return
+    old, fresh = keep[: len(keep) // 2], keep[len(keep) // 2 :]
+    if not old:
+        return
+
+    parts = []
+    if existing_rollup:
+        parts.append(existing_rollup.details or existing_rollup.summary)
+    parts.append("\n".join(f"- [{m.content_type}] {m.agent_role}: {m.summary}" for m in old))
+    merged = "\n".join(parts)
+    summarized = await _summarize_rollup(merged)
+    try:
+        await create_memory_entry(
+            session_id=session_id,
+            run_id=old[0].run_id or "",
+            agent_role="agent",
+            content_type="rollup",
+            summary=summarized[:500],
+            details=merged[:4000],
+        )
+        for m in old:
+            await delete_memory_entry(m.id)
+        if existing_rollup:
+            await delete_memory_entry(existing_rollup.id)
+    except Exception:
+        logger.exception("Failed to roll up memories for session %s", session_id)
+    logger.info("[MEM] rolled up %d entries into session rollup (fresh=%d)", len(old), len(fresh))
+
+
+async def _summarize_rollup(merged: str) -> str:
+    """Condense merged memory lines — delegating to rag_memory (LLM config-driven)."""
+    return str(await summarize_rollup(merged))

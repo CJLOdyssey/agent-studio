@@ -16,6 +16,7 @@ from checkpoint import create_checkpointer_async
 from core.config import load_config
 from core.infra.logging_config import get_logger
 from graph.graph import SingleAgentGraph
+from rag.rag_memory import retrieve_relevant
 from repository import (
     get_agent_config,
     get_messages,
@@ -127,7 +128,10 @@ async def _run_agent_pipeline(
                 if m.run_id in chain_ids
             ]
             if memories:
-                session_context = _build_session_context(memories)
+                # P1 长期记忆：相关性检索 + 窗口裁剪（CrewAI recall + Dify 窗口同款）。
+                # 检索注入让模型只看到与当前问题相关的记忆；window 兜底防膨胀。
+                relevant = await retrieve_relevant(requirement, memories)
+                session_context = _build_session_context(relevant)
             rag_ctx = await _get_rag_context(requirement, session_id)
             if rag_ctx:
                 session_context += "\n" + rag_ctx
