@@ -2,10 +2,11 @@
 
 from typing import Any
 
+from fastapi import APIRouter, Depends, Request
+
 from auth import CurrentUser, get_current_user
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from fastapi import APIRouter, Depends, Request
 from repository.auth import (
     get_user_by_email,
     get_user_by_id,

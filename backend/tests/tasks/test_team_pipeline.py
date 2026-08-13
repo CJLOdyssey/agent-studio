@@ -62,7 +62,7 @@ class TestRunTeamPipeline:
         mock_team_deps["publish_run_message"].assert_awaited_once()
         # Only a _final_report artifact → display falls back to the report and is persisted
         mock_team_deps["save_message"].assert_awaited_once_with(
-            "run-1", "agent", "team", "final report", 1
+            "run-1", "agent", "团队汇总", "final report", 1
         )
 
     async def test_persists_composed_node_artifacts(self, mock_team_deps):
@@ -92,13 +92,20 @@ class TestRunTeamPipeline:
             team_id="team-1",
         )
 
-        composed = "## pm\n\n需求文档\n\n---\n\n## reviewer\n\n审查通过"
-        mock_team_deps["save_message"].assert_awaited_once_with(
-            "run-8", "agent", "team", composed, 1
+        # 行业化布局（fe62fb5）：逐节点独立消息 + 「团队汇总」最终成品消息。
+        mock_team_deps["save_message"].assert_any_await(
+            "run-8", "agent", "pm", "需求文档", 1
+        )
+        mock_team_deps["save_message"].assert_any_await(
+            "run-8", "agent", "reviewer", "审查通过", 1
+        )
+        mock_team_deps["save_message"].assert_any_await(
+            "run-8", "agent", "团队汇总", "final", 1
         )
         publish_call = mock_team_deps["publish_run_message"].call_args[0][1]
         assert publish_call["type"] == "team_result"
-        assert publish_call["display"] == composed
+        # _final_report 存在时最终成品 = reporter 输出（行业化定案）
+        assert publish_call["display"] == "final"
         assert publish_call["artifacts"]["pm"] == "需求文档"
 
     async def test_empty_artifacts_skips_persist(self, mock_team_deps):

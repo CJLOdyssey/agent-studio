@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   // Ports per mode: hybrid 5174, full-container 5173, E2E 5175.
   const devPort = Number(process.env.VITE_DEV_PORT ?? env.VITE_DEV_PORT) || 5174;
   const apiOrigin =
-    process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8081';
+    process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8091';
   // Derive WS origin from API origin or use env override
   const wsOrigin = process.env.VITE_WS_URL || env.VITE_WS_URL || apiOrigin.replace(/^http/, 'ws');
 

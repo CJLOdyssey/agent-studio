@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../test/setup';
 
 vi.mock('react-i18next', async () => {
@@ -48,13 +48,13 @@ vi.mock('../../../../api/client/providers', () => ({
 import ProviderEditModal, { type ApiProviderForm } from '../ProviderEditModal';
 
 const baseProvider: ApiProviderForm = {
-  id: '', provider: 'openai', usage_type: 'llm',
+  id: '', provider: 'openai', capabilities: ['llm'],
   name: '', baseUrl: 'https://api.openai.com/v1',
   apiKey: '', models: [], isActive: true, isDefault: false,
 };
 
 function renderModal(overrides: {
-  provider?: ApiProviderForm; saving?: boolean;
+  provider?: ApiProviderForm; saving?: boolean; requireApiKey?: boolean;
   onSave?: ReturnType<typeof vi.fn>; onClose?: ReturnType<typeof vi.fn>;
 } = {}) {
   return render(
@@ -64,6 +64,7 @@ function renderModal(overrides: {
         onSave={overrides.onSave || vi.fn()}
         onClose={overrides.onClose || vi.fn()}
         saving={overrides.saving}
+        requireApiKey={overrides.requireApiKey}
       />
     </TestProviders>,
   );
@@ -82,6 +83,15 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     expect(await screen.findByText('Edit Provider')).toBeInTheDocument();
   });
 
+  it('allows saving edit when apiKey is empty (plaintext not exposed)', async () => {
+    const onSave = vi.fn();
+    renderModal({ provider: { ...baseProvider, id: 'pk_1', name: 'My Key', apiKey: '' }, onSave });
+    const saveBtn = await screen.findByText('Save');
+    expect(saveBtn.closest('button')).not.toBeDisabled();
+    fireEvent.click(saveBtn);
+    expect(onSave).toHaveBeenCalled();
+  });
+
   it('calls onClose when cancel clicked', async () => {
     const onClose = vi.fn();
     renderModal({ onClose });
@@ -94,12 +104,49 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
     renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: 'sk-test123' }, onSave });
     fireEvent.click(await screen.findByText('Save'));
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'My Key', apiKey: 'sk-test123' }),
+      expect.objectContaining({
+        name: 'My Key',
+        apiKey: 'sk-test123',
+        capabilities: ['llm', 'embedding'],
+      }),
+    );
+  });
+
+  it('preserves stored capabilities on same-provider edit', async () => {
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, id: 'pk_1', name: 'My Key', apiKey: 'sk-test123', capabilities: ['llm'] },
+      onSave,
+    });
+    fireEvent.click(await screen.findByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'openai',
+        capabilities: ['llm'],
+      }),
+    );
+  });
+
+  it('derives capabilities from catalog when provider type changes', async () => {
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, id: 'pk_1', name: 'My Key', apiKey: 'sk-test123', capabilities: ['llm'] },
+      onSave,
+    });
+    fireEvent.change(await screen.findByRole('combobox'), {
+      target: { value: 'custom' },
+    });
+    fireEvent.click(await screen.findByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'custom',
+        capabilities: ['llm', 'embedding'],
+      }),
     );
   });
 
   it('save button is disabled when apiKey empty', async () => {
-    renderModal();
+    renderModal({ requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
   });
@@ -135,14 +182,111 @@ describe('ProviderEditModal', { tags: ['integration'] }, () => {
   });
 
   it('save button is disabled when only name is filled but apiKey is empty', async () => {
-    renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: '' } });
+    renderModal({ provider: { ...baseProvider, name: 'My Key', apiKey: '' }, requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
     expect(saveBtn.closest('button')).toBeDisabled();
   });
 
-  it('save button is disabled when only apiKey is filled but name is empty', async () => {
-    renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' } });
+  it('save button is enabled when only apiKey is filled but name is empty (name optional)', async () => {
+    renderModal({ provider: { ...baseProvider, name: '', apiKey: 'sk-test' }, requireApiKey: true });
     const saveBtn = await screen.findByText('Save');
-    expect(saveBtn.closest('button')).toBeDisabled();
+    expect(saveBtn.closest('button')).not.toBeDisabled();
+  });
+
+  it('fetch 成功后每行渲染类型下拉，改类型后保存载荷含 model_types', async () => {
+    mockFetchModels.mockResolvedValue({
+      success: true,
+      models: ['gpt-4', 'text-embedding-3'],
+      types: { 'gpt-4': 'llm', 'text-embedding-3': 'embedding' },
+    });
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, name: 'My Key', apiKey: 'sk-test' },
+      onSave,
+    });
+
+    fireEvent.click(await screen.findByTitle('Fetch'));
+
+    await waitFor(() =>
+      expect(screen.getByText('text-embedding-3')).toBeInTheDocument(),
+    );
+
+    const gptType = screen.getByRole('combobox', {
+      name: 'gpt-4 类型',
+    }) as HTMLSelectElement;
+    expect(gptType.value).toBe('llm');
+    expect(screen.getAllByRole('combobox').length).toBeGreaterThan(1);
+
+    fireEvent.change(gptType, { target: { value: 'embedding' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model_types: { 'gpt-4': 'embedding', 'text-embedding-3': 'embedding' },
+      }),
+    );
+  });
+
+  it('fetch 失败时类型 map 保持为空，保存载荷传空 model_types', async () => {
+    mockFetchModels.mockResolvedValue({
+      success: false,
+      models: [],
+      message: 'Connection refused',
+    });
+    const onSave = vi.fn();
+    renderModal({
+      provider: { ...baseProvider, name: 'My Key', apiKey: 'sk-test' },
+      onSave,
+    });
+
+    fireEvent.click(await screen.findByTitle('Fetch'));
+    await waitFor(() =>
+      expect(screen.getByText('Connection refused')).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ model_types: {} }),
+    );
+  });
+
+  it('编辑已有 key 时按存储的类型初始化下拉', async () => {
+    const onSave = vi.fn();
+    renderModal({
+      provider: {
+        ...baseProvider,
+        name: 'My Key',
+        apiKey: 'sk-test123',
+        models: ['gpt-4o'],
+        model_types: { 'gpt-4o': 'llm' },
+      },
+      onSave,
+    });
+
+    const typeSelect = screen.getByRole('combobox', {
+      name: 'gpt-4o 类型',
+    }) as HTMLSelectElement;
+    expect(typeSelect.value).toBe('llm');
+
+    fireEvent.click(await screen.findByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ model_types: { 'gpt-4o': 'llm' } }),
+    );
+  });
+
+  it('模型列表容器带滚动样式', async () => {
+    mockFetchModels.mockResolvedValue({
+      success: true,
+      models: ['gpt-4'],
+      types: { 'gpt-4': 'llm' },
+    });
+    renderModal({ provider: { ...baseProvider, apiKey: 'sk-test' } });
+
+    fireEvent.click(await screen.findByTitle('Fetch'));
+    await waitFor(() => expect(screen.getByText('gpt-4')).toBeInTheDocument());
+
+    const list = screen.getByText('gpt-4').closest('div')?.parentElement;
+    expect(list?.className).toContain('max-h-[84px]');
+    expect(list?.className).toContain('overflow-y-auto');
   });
 });

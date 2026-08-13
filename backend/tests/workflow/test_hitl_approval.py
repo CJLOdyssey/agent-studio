@@ -3,9 +3,10 @@
 The gate reads ``team:{run_id}:human_verdict`` from Redis (written by the
 ``POST /api/team-runs/{run_id}/approve`` endpoint). When present the human
 verdict overrides the reviewer's keyword verdict; when absent the automatic
-verdict stands (non-blocking "optional human" mode).
+verdict stands after ``HITL_WAIT_TIMEOUT`` (blocking on rejection).
 """
 
+import asyncio
 import json
 import os
 from unittest.mock import AsyncMock, patch
@@ -152,3 +153,62 @@ class TestHumanVerdictGate:
         assert result["verdicts"]["reviewer"]["approved"] is True
         assert mock.publish.call_count == 0
         assert mock.get.call_count == 0
+
+    async def test_reject_blocks_then_timeout_falls_back(self, redis_store, monkeypatch):
+        """强阻塞：驳回且无人裁决 → 超时后按自动判定 retry，直到 max_rounds。"""
+        monkeypatch.setenv("HITL_WAIT_TIMEOUT", "0")
+        store, mock = redis_store
+        calls = []
+
+        def pm(state):
+            calls.append(int(state.get("round_number", 1)))
+            return {"artifacts": {"pm": f"draft{state['round_number']}"}}
+
+        reviewer = _reviewer_fn(approved=False)
+        factory = FakeFactory(
+            {"pm": pm, "reviewer": reviewer, "reporter": lambda s: {}}
+        )
+        with patch("broker.get_redis", return_value=mock):
+            graph = GraphBuilder(factory, Router(), run_id="r4").build(_review_config(max_rounds=2))
+            result = await graph.ainvoke(create_initial_state("task"), {"recursion_limit": 50})
+
+        assert calls == [1, 2]
+        assert "reporter" not in result["artifacts"]
+
+    async def test_reject_waits_for_late_human_verdict(self, redis_store, monkeypatch):
+        """强阻塞：驳回后等待窗口内出现人工 approve → 放行 continue。"""
+        monkeypatch.setenv("HITL_WAIT_TIMEOUT", "5")
+        store, mock = redis_store
+
+        async def _late_write():
+            await asyncio.sleep(0.2)
+            store[_verdict_key("r5")] = json.dumps({"approved": True, "note": "ok"})
+
+        asyncio.create_task(_late_write())
+        reviewer = _reviewer_fn(approved=False)
+        factory = FakeFactory(
+            {"pm": lambda s: {"artifacts": {"pm": "draft"}}, "reviewer": reviewer,
+             "reporter": lambda s: {"artifacts": {"reporter": "final"}}}
+        )
+        with patch("broker.get_redis", return_value=mock):
+            graph = GraphBuilder(factory, Router(), run_id="r5").build(_review_config())
+            result = await graph.ainvoke(create_initial_state("task"), {"recursion_limit": 50})
+
+        assert result["artifacts"].get("reporter") == "final"
+
+    async def test_reject_consumes_verdict_once(self, redis_store, monkeypatch):
+        """强阻塞：人工裁决一次性消费（delete），后续轮次重新请求。"""
+        monkeypatch.setenv("HITL_WAIT_TIMEOUT", "0")
+        store, mock = redis_store
+        store[_verdict_key("r6")] = json.dumps({"approved": True, "note": "ok"})
+        reviewer = _reviewer_fn(approved=False)
+        factory = FakeFactory(
+            {"pm": lambda s: {"artifacts": {"pm": "draft"}}, "reviewer": reviewer,
+             "reporter": lambda s: {"artifacts": {"reporter": "final"}}}
+        )
+        with patch("broker.get_redis", return_value=mock):
+            graph = GraphBuilder(factory, Router(), run_id="r6").build(_review_config())
+            result = await graph.ainvoke(create_initial_state("task"), {"recursion_limit": 50})
+
+        assert result["artifacts"].get("reporter") == "final"
+        assert (_verdict_key("r6"),) in [c.args for c in mock.delete.call_args_list]

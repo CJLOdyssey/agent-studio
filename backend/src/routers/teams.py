@@ -2,12 +2,14 @@
 
 from typing import Any
 
-from auth import get_user_id
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from auth import get_user_id, require_owned
 from core.audit import log_audit
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
 from repository import (
     add_team_member,
     create_team,
@@ -19,7 +21,6 @@ from repository import (
     reorder_team_members,
     update_team,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["teams"])
@@ -149,18 +150,22 @@ async def add_team(req: TeamCreateRequest, request: Request) -> Any:
 
 
 @router.get("/api/teams/{team_id}")
-async def get_team_detail(team_id: str) -> Any:
+async def get_team_detail(team_id: str, request: Request) -> Any:
     """Get detailed information for a specific team."""
-    team = await get_team(team_id)
-    if not team:
-        raise error_response(ErrorCode.TEAM_NOT_FOUND, detail="团队不存在")
+    team = await require_owned(
+        request, team_id, get_team, not_found=ErrorCode.TEAM_NOT_FOUND,
+    )
     return team
 
 
 @router.put("/api/teams/{team_id}")
-async def update_team_endpoint(team_id: str, req: TeamUpdateRequest) -> Any:
+async def update_team_endpoint(team_id: str, req: TeamUpdateRequest, request: Request) -> Any:
     """Update a team's properties."""
     try:
+        await require_owned(
+            request, team_id, get_team,
+            not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+        )
         team = await update_team(
             team_id=team_id,
             name=req.name,
@@ -191,10 +196,13 @@ async def update_team_endpoint(team_id: str, req: TeamUpdateRequest) -> Any:
 
 
 @router.delete("/api/teams/{team_id}")
-async def delete_team_endpoint(team_id: str) -> Any:
+async def delete_team_endpoint(team_id: str, request: Request) -> Any:
     """Delete a team by ID."""
     try:
-        from repository import get_team
+        await require_owned(
+            request, team_id, get_team,
+            not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+        )
         team = await get_team(team_id)
         team_name = team["name"] if team else team_id
         deleted = await delete_team(team_id)
@@ -210,9 +218,13 @@ async def delete_team_endpoint(team_id: str) -> Any:
 
 
 @router.post("/api/teams/{team_id}/members", status_code=201)
-async def add_member(team_id: str, req: MemberAddRequest) -> Any:
+async def add_member(team_id: str, req: MemberAddRequest, request: Request) -> Any:
     """Add a member to a team."""
     try:
+        await require_owned(
+            request, team_id, get_team,
+            not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+        )
         member = await add_team_member(
             team_id=team_id,
             name=req.name,
@@ -230,9 +242,13 @@ async def add_member(team_id: str, req: MemberAddRequest) -> Any:
 
 
 @router.delete("/api/teams/{team_id}/members/{member_id}")
-async def remove_member(team_id: str, member_id: str) -> Any:
+async def remove_member(team_id: str, member_id: str, request: Request) -> Any:
     """Remove a member from a team."""
     try:
+        await require_owned(
+            request, team_id, get_team,
+            not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+        )
         deleted = await remove_team_member(team_id, member_id)
         if not deleted:
             raise error_response(ErrorCode.TEAM_MEMBER_NOT_FOUND, detail="成员不存在")
@@ -245,9 +261,13 @@ async def remove_member(team_id: str, member_id: str) -> Any:
 
 
 @router.put("/api/teams/{team_id}/members/reorder")
-async def reorder_members(team_id: str, req: ReorderRequest) -> Any:
+async def reorder_members(team_id: str, req: ReorderRequest, request: Request) -> Any:
     """Reorder members within a team."""
     try:
+        await require_owned(
+            request, team_id, get_team,
+            not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+        )
         await reorder_team_members(team_id, req.member_ids)
         return {"ok": True}
     except Exception as e:
@@ -260,9 +280,13 @@ class LinkAgentRequest(BaseModel):
 
 
 @router.put("/api/teams/{team_id}/members/{member_id}/link-agent")
-async def link_agent(team_id: str, member_id: str, req: LinkAgentRequest) -> Any:
+async def link_agent(team_id: str, member_id: str, req: LinkAgentRequest, request: Request) -> Any:
     """Link an agent configuration to a team member."""
     try:
+        await require_owned(
+            request, team_id, get_team,
+            not_found=ErrorCode.TEAM_NOT_FOUND, allow_unowned=False,
+        )
         ok = await link_agent_config(member_id, req.agent_config_id)
         if not ok:
             raise error_response(ErrorCode.TEAM_MEMBER_NOT_FOUND, detail="成员不存在")

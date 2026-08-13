@@ -2,8 +2,19 @@ import type { AppStatus, ChatMessage, RunResult } from '../types';
 
 export type WsConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
+/** 重新生成（regenerate）流式上下文：完成后给新模型消息挂答案分页 */
+export interface RegeneratePending {
+  userMsgId: string;
+  oldRunIds: string[];
+  requirement: string;
+}
+
 export interface ChatState {
   currentRunId: string | null;
+  /** 最近一次发送的 run（普通续聊挂父链用）；编辑/重生成显式传 parent 时覆盖 */
+  activeRunId: string | null;
+  /** 重新生成进行中（流式完成后给模型消息挂答案分页） */
+  pendingRegenerate: RegeneratePending | null;
   currentSessionId: string | null;
   currentConvId: string | null;
   messages: ChatMessage[];
@@ -22,6 +33,10 @@ export interface ChatState {
   pendingThinkingVersions: string[] | null;
   switchVersion: (msgId: string, direction: 'prev' | 'next') => void;
   switchUserVersion: (msgId: string, direction: 'prev' | 'next') => void;
+  /** 用户消息版本切换（分支语义）：计算目标 runId（越界夹取），null = 无变化 */
+  resolveUserVersionTarget: (msgId: string, direction: 'prev' | 'next') => string | null;
+  /** 模型消息答案分页（重新生成分支）：计算目标 runId */
+  resolveAnswerVersionTarget: (msgId: string, direction: 'prev' | 'next') => string | null;
   setThumbsFeedback: (msgId: string, value: 'up' | 'down' | null) => void;
   wsStatus: WsConnectionStatus;
   /** Conversation ID at submission time */
@@ -31,6 +46,7 @@ export interface ChatState {
   selectedAgentId: string | null;
 
   setActiveTeam: (teamId: string | null) => void;
+  setActiveRunId: (runId: string | null) => void;
   restoreSession: (sessionId: string, runId: string, messages: ChatMessage[], result: RunResult | null, status: AppStatus) => void;
   loadConversation: (messages: ChatMessage[], convId?: string | null, sessionId?: string | null) => void;
   cancelRun: () => void;
@@ -40,5 +56,9 @@ export interface ChatState {
   setError: (error: string | null) => void;
   setWsStatus: (wsStatus: WsConnectionStatus) => void;
   reset: () => void;
+  /** 切换会话时清空消息与流状态（保留 currentSessionId/currentConvId，由 loadConversation 更新）。
+   *  传入 convId 且与当前会话相同时保留 error —— 覆盖「提交失败后 navigate 到刚创建的会话」竞态，
+   *  错误横幅不得被清空流程抹掉（与 loadConversation 的 sameConv 保护一致）。 */
+  clearMessages: (convId?: string | null) => void;
   selectAgent: (agentId: string) => void;
 }

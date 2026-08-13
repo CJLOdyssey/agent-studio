@@ -1,13 +1,13 @@
 """Tests for auth middleware (backend/auth/auth_middleware.py)."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-from starlette.requests import Request
-from starlette.testclient import TestClient
-
 from auth.auth_middleware import AuthMiddleware
 from core.app import app
+from starlette.requests import Request
+from starlette.testclient import TestClient
 
 
 @pytest.fixture
@@ -69,7 +69,6 @@ class TestAuthMiddleware:
     def test_websocket_query_token(self, client):
         """Token from query param is extracted for WebSocket upgrade."""
         # This tests the query param branch
-        from urllib.parse import parse_qs
         from auth.auth_rbac import PUBLIC_PREFIXES
         # Just ensure PUBLIC_PREFIXES is iterable
         assert isinstance(PUBLIC_PREFIXES, (tuple, list))
@@ -128,7 +127,8 @@ class TestAuthMiddlewareDispatch:
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer test.jwt.token"})
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "user-123"}):
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "user-123"}), \
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.user_id == "user-123"
@@ -154,7 +154,8 @@ class TestAuthMiddlewareDispatch:
             query_string="token=ws.jwt.token&other=1",
         )
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "ws-user"}):
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "ws-user"}), \
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
             resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
         assert request.state.user_id == "ws-user"
@@ -196,8 +197,9 @@ class TestAuthMiddlewareDispatch:
         mw = AuthMiddleware(app=None)
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer real.jwt"})
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
-             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "uid-42"}):
-            resp = await mw.dispatch(request, _noop_call_next)
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "uid-42"}), \
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
+            await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "uid-42"
 
     @pytest.mark.asyncio
@@ -207,5 +209,57 @@ class TestAuthMiddlewareDispatch:
         request = _make_request(path="/api/models", headers={"Authorization": "Bearer no.sub.jwt"})
         with patch("auth.auth_middleware.AUTH_ENABLED", True), \
              patch("auth.auth_middleware.decode_jwt", return_value={"iat": 123}):
-            resp = await mw.dispatch(request, _noop_call_next)
+            await mw.dispatch(request, _noop_call_next)
         assert request.state.user_id == "unknown"
+
+    @pytest.mark.asyncio
+    async def test_valid_token_user_not_found_marks_invalid(self):
+        """JWT sub 指向已删除/合并的用户 → 不信任该身份，标记 user_invalid_token。
+
+        否则 key/附件按 user 归属解析会命中不存在的用户，产生误导性
+        "请先在设置中配置 API Key"（400）。
+        """
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Bearer stale.jwt"})
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "ghost-user"}), \
+             patch("repository.auth.get_user_by_id", return_value=None):
+            resp = await mw.dispatch(request, _noop_call_next)
+        assert resp.status_code == 200
+        assert not hasattr(request.state, "user_id")
+        assert request.state.user_invalid_token is True
+        assert request.state.is_authenticated is False
+
+    @pytest.mark.asyncio
+    async def test_valid_token_user_exists_authenticated(self):
+        """JWT sub 的用户存在 → 正常认证并设置 user_id。"""
+        mw = AuthMiddleware(app=None)
+        request = _make_request(path="/api/models", headers={"Authorization": "Bearer valid.jwt"})
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "real-user"}), \
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
+            await mw.dispatch(request, _noop_call_next)
+        assert request.state.user_id == "real-user"
+        assert request.state.is_authenticated is True
+
+    @pytest.mark.asyncio
+    async def test_cookie_token_extracted(self):
+        """httpOnly access_token cookie（前端主认证路径）也参与用户校验。"""
+        mw = AuthMiddleware(app=None)
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/models",
+            "query_string": b"",
+            "headers": [(b"cookie", b"access_token=cookie.jwt; refresh_token=x")],
+            "client": ("127.0.0.1", 12345),
+            "server": ("testserver", 80),
+            "scheme": "http",
+            "state": {},
+        }
+        request = Request(scope)
+        with patch("auth.auth_middleware.AUTH_ENABLED", True), \
+             patch("auth.auth_middleware.decode_jwt", return_value={"sub": "cookie-user"}), \
+             patch("repository.auth.get_user_by_id", return_value=SimpleNamespace(username="u1", id="u1")):
+            await mw.dispatch(request, _noop_call_next)
+        assert request.state.user_id == "cookie-user"

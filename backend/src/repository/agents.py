@@ -3,12 +3,13 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from sqlalchemy import select
+
 from core.infra.cache import get_cache
 from core.infra.database import (
     AgentConfigDB,
     get_session_factory,
 )
-from sqlalchemy import select
 
 
 async def get_agent_configs() -> list[AgentConfigDB]:

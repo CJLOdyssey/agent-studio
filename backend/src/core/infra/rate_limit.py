@@ -1,4 +1,4 @@
-"""Rate limiting middleware using token-bucket algorithm backed by Redis.
+"""Rate limiting middleware using a sliding-window (bucketed) algorithm backed by Redis.
 
 Supports per-IP and optional per-user rate limiting.
 """
@@ -18,18 +18,41 @@ AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "0") == "1"
 # Default: 60 requests per 60 seconds per IP
 DEFAULT_RATE = 60
 DEFAULT_WINDOW = 60
+# Sliding-window bucket resolution: the window is split into buckets of this
+# size; a request counts against the sum of the current and preceding buckets,
+# so bursts at a fixed-window boundary are no longer free (Open WebUI 同款).
+DEFAULT_BUCKET_SIZE = 10
 
 
 class RateLimiter:
-    """Token-bucket rate limiter backed by Redis.
+    """Sliding-window rate limiter backed by Redis.
+
+    The window is divided into ``window // bucket_size`` fixed buckets plus
+    the current one. Each request increments its bucket (TTL = window +
+    bucket) and is allowed iff the summed count across the in-window buckets
+    stays within ``rate``. Bucketing bounds memory (one key per bucket, not
+    per request) while still smoothing boundary bursts.
 
     Usage as FastAPI middleware:
         app.add_middleware(RateLimitMiddleware, rate=60, window_seconds=60)
     """
 
-    def __init__(self, rate: int = DEFAULT_RATE, window_seconds: int = DEFAULT_WINDOW):
+    def __init__(
+        self,
+        rate: int = DEFAULT_RATE,
+        window_seconds: int = DEFAULT_WINDOW,
+        bucket_size: int = DEFAULT_BUCKET_SIZE,
+    ):
         self.rate = rate
         self.window = window_seconds
+        self.bucket_size = max(1, bucket_size)
+        self._num_buckets = max(1, window_seconds // self.bucket_size)
+
+    def _bucket_key(self, key: str, bucket_index: int) -> str:
+        return f"ratelimit:{key}:{bucket_index}"
+
+    def _current_bucket(self) -> int:
+        return int(time.time()) // self.bucket_size
 
     async def is_allowed(self, key: str, rate_override: int | None = None) -> bool:
         """Check if request identified by ``key`` is within the rate limit.
@@ -43,15 +66,27 @@ class RateLimiter:
             from broker import get_redis
 
             r = get_redis()
-            current = int(time.time())
-            window_key = f"ratelimit:{key}:{current // self.window}"
+            now_bucket = self._current_bucket()
             limit = rate_override if rate_override is not None else self.rate
 
-            count = await r.incr(window_key)
+            # Increment the current bucket (TTL covers the full window so a
+            # bucket never counts after it leaves the window).
+            bucket_key = self._bucket_key(key, now_bucket)
+            count = await r.incr(bucket_key)
             if count == 1:
-                await r.expire(window_key, self.window + 1)
+                await r.expire(bucket_key, self.window + self.bucket_size)
 
-            return bool(count <= limit)
+            # Sum counts across the current and preceding in-window buckets —
+            # a request near a bucket boundary still sees requests from the
+            # previous bucket, closing the fixed-window burst hole.
+            window_keys = [
+                self._bucket_key(key, now_bucket - i)
+                for i in range(self._num_buckets + 1)
+            ]
+            values = await r.mget(window_keys)
+            total = sum(int(v) for v in values if v)
+
+            return bool(total <= limit)
         except Exception:
             logger.warning("Rate limiter Redis check failed — allowing request")
             return True

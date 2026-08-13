@@ -6,7 +6,7 @@ import type { KeyItem } from '../../../../api/client';
 
 type KeyCreateConfig = {
   provider: string;
-  usage_type?: string;
+  capabilities?: string[];
   label: string;
   api_key: string;
   base_url?: string;
@@ -22,7 +22,7 @@ vi.mock('../../../../api/client', () => {
       const item: KeyItem = {
         id: 'k-new',
         provider: cfg.provider,
-        usage_type: cfg.usage_type || 'chat',
+        capabilities: cfg.capabilities || [],
         label: cfg.label,
         key_masked: 'sk-***',
         base_url: cfg.base_url || '',
@@ -40,6 +40,7 @@ vi.mock('../../../../api/client', () => {
     getKeyUsage: vi.fn(async () => ({ today_requests: 0, today_tokens: 0, month_requests: 0, month_tokens: 0 })),
     testKeyConnection: vi.fn(async () => ({ success: true, message: 'ok' })),
     getKeyUsageSummary: vi.fn(async () => ({})),
+    listModels: vi.fn(async () => []),
   };
 });
 

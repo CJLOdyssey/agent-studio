@@ -327,26 +327,66 @@ describe('TeamMessage', { tags: ['integration'] }, () => {
 
   // ────────────── answer version pagination ──────────────
   describe('answer version pagination', () => {
-    it('does not render pagination on agent answers even with multiple versions', () => {
+    it('does not render pagination on agent answers without answerVersions', () => {
       const { container } = render(
         <TeamMessage
           msg={makeMsg({ versions: ['v1', 'v2', 'v3'], currentVersion: 1 })}
           allAgents={[mockAgent]}
         />
       );
-      expect(container.querySelector('[aria-label="Previous version"]')).toBeNull();
-      expect(container.querySelector('[aria-label="Next version"]')).toBeNull();
+      expect(container.querySelector('[aria-label="Previous answer version"]')).toBeNull();
+      expect(container.querySelector('[aria-label="Next answer version"]')).toBeNull();
     });
 
-    it('renders the active version content without pagination controls', () => {
+    it('renders pager with count when answerVersions present', () => {
       const { container } = render(
         <TeamMessage
-          msg={makeMsg({ content: 'v2 active', versions: ['v1', 'v2'], currentVersion: 1 })}
+          msg={makeMsg({ answerVersions: ['a1', 'a2'], currentAnswerVersion: 0 })}
           allAgents={[mockAgent]}
         />
       );
-      expect(container.textContent).toContain('v2 active');
-      expect(container.textContent).not.toContain('/');
+      expect(container.textContent).toContain('1/2');
+    });
+
+    it('calls onSwitchAnswer with direction on next click', async () => {
+      const onSwitchAnswer = vi.fn();
+      render(
+        <TeamMessage
+          msg={makeMsg({ answerVersions: ['a1', 'a2'], currentAnswerVersion: 0 })}
+          allAgents={[mockAgent]}
+          onSwitchAnswer={onSwitchAnswer}
+        />
+      );
+      await userEvent.click(screen.getByLabelText('Next answer version'));
+      expect(onSwitchAnswer).toHaveBeenCalledWith('m1', 'next');
+    });
+
+    it('calls onSwitchAnswer with direction on prev click', async () => {
+      const onSwitchAnswer = vi.fn();
+      render(
+        <TeamMessage
+          msg={makeMsg({ answerVersions: ['a1', 'a2'], currentAnswerVersion: 1 })}
+          allAgents={[mockAgent]}
+          onSwitchAnswer={onSwitchAnswer}
+        />
+      );
+      await userEvent.click(screen.getByLabelText('Previous answer version'));
+      expect(onSwitchAnswer).toHaveBeenCalledWith('m1', 'prev');
+    });
+
+    it('renders pager for team messages with verdicts meta when multiple versions', () => {
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({
+            answerVersions: ['a1', 'a2'],
+            currentAnswerVersion: 0,
+            verdicts: { reviewer: { role: 'reviewer', approved: true, rounds: 2 } },
+          })}
+          allAgents={[mockAgent]}
+        />
+      );
+      expect(container.querySelector('[aria-label="Next answer version"]')).not.toBeNull();
+      expect(container.querySelector('[aria-label="Previous answer version"]')).not.toBeNull();
     });
   });
 

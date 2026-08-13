@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from core.infra.database import RegisteredSkillDB
 from sqlalchemy import desc
 
+from core.infra.database import RegisteredSkillDB
 from repository.base import BaseRepository
 
 
@@ -33,6 +33,7 @@ class SkillRepository(BaseRepository[RegisteredSkillDB]):
 
 
 # module-level aliases
+get_skill = SkillRepository.get_one     # await get_skill(id)
 get_skills = SkillRepository.get_all
 get_skills_as_dicts = SkillRepository.get_all_as_dicts
 create_skill = SkillRepository.create_one

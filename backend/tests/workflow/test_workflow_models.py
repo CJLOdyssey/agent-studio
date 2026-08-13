@@ -1,4 +1,5 @@
 from langchain_core.messages import HumanMessage
+
 from workflow.models import (
     NodeStrategy,
     WorkflowConfig,

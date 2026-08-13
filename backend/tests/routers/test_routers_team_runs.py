@@ -8,9 +8,10 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-import core.infra.database as db_mod
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from starlette.testclient import TestClient
+
+import core.infra.database as db_mod
 
 os.environ["AUTH_MODE"] = "legacy"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"

@@ -3,6 +3,7 @@ import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 pytestmark = pytest.mark.integration
 from starlette.testclient import TestClient
 
@@ -558,7 +559,7 @@ class TestKeyCRUD:
     def test_key_create(self, client):
         payload = {
             "provider": "openai",
-            "usage_type": "vector",
+            "capabilities": ["embedding"],
             "label": "test-key",
             "api_key": "sk-test-key-value",
         }

@@ -18,6 +18,7 @@ console.error = (...args: unknown[]) => {
 };
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ToastProvider } from '../utils/useToast';
@@ -88,7 +89,12 @@ export function TestProviders({ children }: { children: ReactNode }) {
       <SettingsProvider>
         <ToastProvider>
           <VirtuosoMockContext.Provider value={{ viewportHeight: 800, itemHeight: 60 }}>
-            {children}
+            <MemoryRouter>
+              <Routes>
+                <Route path="/chat/:sessionId" element={children} />
+                <Route path="*" element={children} />
+              </Routes>
+            </MemoryRouter>
           </VirtuosoMockContext.Provider>
         </ToastProvider>
       </SettingsProvider>

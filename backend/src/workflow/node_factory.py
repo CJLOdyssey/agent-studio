@@ -5,8 +5,9 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
-from broker import publish_run_message
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+
+from broker import publish_run_message
 from services.thinking_chain import format_result_preview, get_tool_prefix
 from services.tool_config import ToolConfig, build_tool_definition
 from streaming.llm_stream import (

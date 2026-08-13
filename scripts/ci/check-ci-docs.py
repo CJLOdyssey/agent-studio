@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CI docs consistency checks — .env.example coverage + module counts."""
-import re
 import pathlib
+import re
 import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent.parent

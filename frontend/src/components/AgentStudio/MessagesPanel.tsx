@@ -1,7 +1,6 @@
 import { RefObject, useCallback } from 'react';
 import { Cpu } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { motion, useReducedMotion } from 'motion/react';
 import type { Agent, Message } from '../../types/AgentStudio';
 import TeamMessage from './TeamMessage';
 import BrowserFrame from './BrowserFrame';
@@ -18,6 +17,7 @@ interface Props {
   displayMessages: Message[];
   messagesEndRef: RefObject<HTMLDivElement>;
   onDismissWelcome: () => void;
+  onSwitchBranch: (runId: string) => void;
 }
 
 export default function MessagesPanel({
@@ -30,12 +30,10 @@ export default function MessagesPanel({
   displayMessages,
   messagesEndRef,
   onDismissWelcome,
+  onSwitchBranch,
 }: Props) {
   const { t } = useTranslation();
-  const reduce = useReducedMotion();
   const interruptedMessageId = useChatStore((s) => s.interruptedMessageId);
-  const switchVersion = useChatStore((s) => s.switchVersion);
-  const switchUserVersion = useChatStore((s) => s.switchUserVersion);
   const continuingId = useChatStore((s) => s.continuingId);
   const setThumbsFeedback = useChatStore((s) => s.setThumbsFeedback);
   const handleEditMessage = useCallback((msgId: string, newContent: string) => {
@@ -53,20 +51,30 @@ export default function MessagesPanel({
     [displayMessages],
   );
 
+  // 模型消息分页：同一用户问题的不同回答（重新生成链）也是分支（与用户
+  // 消息 1:N）。切换 = 分支切换（父链 + 子孙链整体加载）：目标分支后续
+  // 若有追问轮次，视图随之切到该分支的后续内容。目标 runId 由 store 计算。
+  const handleSwitchAnswerVersion = useCallback(
+    (msgId: string, direction: 'prev' | 'next') => {
+      const runId = useChatStore
+        .getState()
+        .resolveAnswerVersionTarget(msgId, direction);
+      if (!runId) return;
+      void onSwitchBranch(runId);
+    },
+    [onSwitchBranch],
+  );
+
   const handleSwitchUserVersion = useCallback(
     (msgId: string, direction: 'prev' | 'next') => {
-      // Switch the user message edit history AND the linked answer version together,
-      // so the visible pair stays consistent (user vN ↔ answer vN).
-      switchUserVersion(msgId, direction);
-      const idx = displayMessages.findIndex((m) => m.id === msgId);
-      if (idx >= 0) {
-        const linked = displayMessages.slice(idx + 1).find((m) => m.role === 'agent');
-        if (linked && linked.versions && linked.versions.length > 1) {
-          switchVersion(linked.id, direction);
-        }
-      }
+      const runId = useChatStore
+        .getState()
+        .resolveUserVersionTarget(msgId, direction);
+      if (!runId) return;
+      // 用户版本 = 分支语义：始终整分支切换（视图加载目标分支全部消息）。
+      void onSwitchBranch(runId);
     },
-    [displayMessages, switchUserVersion, switchVersion],
+    [onSwitchBranch],
   );
 
   const handleThumbsFeedback = useCallback(
@@ -95,11 +103,8 @@ export default function MessagesPanel({
           </div>
         )}
         {displayMessages.map((msg) => (
-          <motion.div
+          <div
             key={msg.id}
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <TeamMessage
               msg={msg}
@@ -109,10 +114,11 @@ export default function MessagesPanel({
               showContinue={msg.id === interruptedMessageId}
               onContinue={continueGeneration}
               onSwitchUserVersion={handleSwitchUserVersion}
+              onSwitchAnswer={handleSwitchAnswerVersion}
               isContinuing={msg.id === continuingId}
               onThumbsFeedback={handleThumbsFeedback}
             />
-          </motion.div>
+          </div>
         ))}
         <BrowserFrame />
         <div ref={messagesEndRef} />
@@ -124,11 +130,8 @@ export default function MessagesPanel({
     return (
       <div className="max-w-[min(900px,85vw)] mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-12" aria-live="polite">
         {displayMessages.map((msg) => (
-          <motion.div
+          <div
             key={msg.id}
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <TeamMessage
               msg={msg}
@@ -138,11 +141,12 @@ export default function MessagesPanel({
               showContinue={msg.id === interruptedMessageId}
               onContinue={continueGeneration}
               onSwitchUserVersion={handleSwitchUserVersion}
+              onSwitchAnswer={handleSwitchAnswerVersion}
               isContinuing={msg.id === continuingId}
               onThumbsFeedback={handleThumbsFeedback}
             />
-          </motion.div>
-        ))}
+          </div>
+          ))}
         <BrowserFrame />
         <div ref={messagesEndRef} />
       </div>

@@ -250,7 +250,7 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
     await waitFor(() => expect(messagesArea().textContent).toContain('帮我实现一个冒泡排序'));
 
     await waitFor(() => {
-      expect(mockSubmitRequirement).toHaveBeenCalledWith('帮我实现一个冒泡排序', undefined, 'key-1', 'gpt-4', undefined, undefined, undefined);
+      expect(mockSubmitRequirement).toHaveBeenCalledWith('帮我实现一个冒泡排序', undefined, 'key-1', 'gpt-4', undefined, undefined, null, undefined, undefined);
     });
 
     await waitFor(() => expect(wsCallbacks.has('run-flow')).toBe(true));
@@ -311,6 +311,49 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
     });
   });
 
+  it('会话首屏加载走 buildPathTurns — 模型答案分页器立即可见（无需先切分支）', async () => {
+    const mkMsg = (id: string, role: 'user' | 'agent', content: string) => ({
+      id,
+      role,
+      agent_name: role === 'user' ? '我' : 'Agent',
+      content,
+      thinking: null,
+      round_number: 0,
+      created_at: '2026-01-01T00:00:00Z',
+    });
+    mockGetSessionDetail.mockResolvedValue({
+      runs: [
+        { id: 'run-1', requirement: 'q1', pm_document: '', code: '', review: '', approved: false, status: 'completed', created_at: '2026-01-01T00:00:01Z', updated_at: null, parent_run_id: null, messages: [mkMsg('r1-u', 'user', 'q1'), mkMsg('r1-a', 'agent', 'ans1')] },
+        { id: 'run-2', requirement: 'q1', pm_document: '', code: '', review: '', approved: false, status: 'completed', created_at: '2026-01-01T00:00:02Z', updated_at: null, parent_run_id: null, messages: [mkMsg('r2-u', 'user', 'q1'), mkMsg('r2-a', 'agent', 'ans2')] },
+      ],
+    });
+    localStorage.setItem('agentstudio-conversations', JSON.stringify([{
+      id: 'conv-s',
+      title: '分支会话',
+      sessionId: 'sess-branch',
+      messages: [],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }]));
+    localStorage.setItem('agentstudio-active-conv-id', 'conv-s');
+
+    render(
+      <TestProviders>
+        <AgentStudioWorkstation />
+      </TestProviders>,
+    );
+
+    await waitFor(() => expect(messagesArea().textContent).toContain('ans2'));
+
+    const agentMsg = useChatStore.getState().messages.find((m) => m.role !== 'user');
+    expect(agentMsg?.answerVersions).toEqual(['q1', 'q1']);
+    expect(agentMsg?.answerRunIds).toEqual(['run-1', 'run-2']);
+    expect(agentMsg?.runId).toBe('run-2');
+    expect(agentMsg?.thinkingDone).toBe(true);
+
+    await waitFor(() => expect(screen.getByText('2/2')).toBeInTheDocument());
+  });
+
   it('提交失败时显示错误横幅与重试按钮', async () => {
     mockSubmitRequirement.mockRejectedValue(new Error('模拟网络错误'));
 
@@ -327,8 +370,8 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
       expect(alert.textContent).toContain('模拟网络错误');
       expect(alert.textContent).toContain('重试');
     });
-
-    fireEvent.click(screen.getByText('重试'));
+    const retryBtn = await screen.findByText('重试');
+    fireEvent.click(retryBtn);
     await waitFor(() => expect(mockSubmitRequirement).toHaveBeenCalledTimes(2));
   });
 

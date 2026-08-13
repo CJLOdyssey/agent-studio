@@ -8,6 +8,7 @@ from .auth import *  # noqa: F403
 from .auth_jwt import *  # noqa: F403
 from .auth_middleware import *  # noqa: F403
 from .auth_rbac import *  # noqa: F403
+from .ownership import *  # noqa: F403
 from .password_policy import *  # noqa: F403
 
 __all__ = [x for x in dir() if not x.startswith("_")]

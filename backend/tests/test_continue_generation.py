@@ -143,7 +143,9 @@ class TestContinueRun:
                 user_id="user-1",
             )
 
-            mock_create_task.assert_called_once()
+            # AsyncSession.close 的惰性收尾也走 create_task（fire-and-forget），
+            # 只断言管道协程确实被派发。
+            assert any("_run_pipeline" in str(c.args) for c in mock_create_task.call_args_list)
 
     @pytest.mark.asyncio
     async def test_continue_run_with_thinking(self):
@@ -169,8 +171,9 @@ class TestContinueRun:
                 thinking="之前的思考内容",
             )
 
-            # Verify task was created
-            mock_create_task.assert_called_once()
+            # AsyncSession.close 的惰性收尾也走 create_task（fire-and-forget），
+            # 只断言管道协程确实被派发。
+            assert any("_run_pipeline" in str(c.args) for c in mock_create_task.call_args_list)
 
 
 @pytest.mark.requirement("REQ-RUN-006")

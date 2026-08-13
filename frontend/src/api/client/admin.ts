@@ -14,9 +14,19 @@ export interface DashboardStats {
 interface LogEntry {
   id: string;
   timestamp: string;
-  command: string;
-  payload: string;
-  result: string;
+  action: string;
+  entity_type: string;
+  entity_name: string;
+  detail: string;
+  user: string;
+  ip: string;
+}
+
+export interface CommandLogsResponse {
+  items: LogEntry[];
+  total: number;
+  offset: number;
+  limit: number;
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
@@ -24,7 +34,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   return resp.data;
 }
 
-export async function fetchCommandLogs(limit = 50, offset = 0): Promise<LogEntry[]> {
+export async function fetchCommandLogs(limit = 50, offset = 0): Promise<CommandLogsResponse> {
   const resp = await client.get('/admin/logs', { params: { limit, offset } });
   return resp.data;
 }
@@ -45,11 +55,12 @@ export async function fetchRecentActivity(limit = 10): Promise<ActivityEntry[]> 
 
 export interface SystemHealth {
   status: string;
-  database: string;
-  redis: string;
+  checks: Record<string, string>;
 }
 
 export async function fetchSystemHealth(): Promise<SystemHealth> {
-  const resp = await client.get('/health');
+  const resp = await client.get('/health', {
+    validateStatus: (s: number) => (s >= 200 && s < 300) || s === 503,
+  });
   return resp.data;
 }

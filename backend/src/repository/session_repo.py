@@ -3,8 +3,9 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from core.infra.database import SessionDB, get_session_factory
 from sqlalchemy import desc, select
+
+from core.infra.database import SessionDB, get_session_factory
 
 
 async def create_session(
@@ -63,7 +64,10 @@ async def get_sessions(
     """
     factory = get_session_factory()
     async with factory() as session:
-        stmt = select(SessionDB).order_by(desc(SessionDB.updated_at)).limit(limit)
+        stmt = select(SessionDB).order_by(
+            desc(SessionDB.is_pinned),
+            desc(SessionDB.updated_at),
+        ).limit(limit)
         if agent_id:
             stmt = stmt.where(SessionDB.agent_id == agent_id)
         if user_id:
@@ -80,6 +84,20 @@ async def update_session_title(session_id: str, title: str) -> SessionDB | None:
         if not obj:
             return None
         obj.title = title
+        obj.updated_at = datetime.now(UTC)
+        await session.commit()
+        await session.refresh(obj)
+        return obj
+
+
+async def update_session_pin(session_id: str, is_pinned: bool) -> SessionDB | None:
+    """Pin/unpin a session. Returns the refreshed row, or None if not found."""
+    factory = get_session_factory()
+    async with factory() as session:
+        obj = await session.get(SessionDB, session_id)
+        if not obj:
+            return None
+        obj.is_pinned = is_pinned
         obj.updated_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(obj)

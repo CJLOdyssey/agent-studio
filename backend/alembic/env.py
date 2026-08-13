@@ -13,9 +13,8 @@ import os
 import re
 from logging.config import fileConfig
 
-from sqlalchemy import create_engine, pool
-
 from alembic import context
+from sqlalchemy import create_engine, pool
 
 from core.base import Base as ProjectBase
 

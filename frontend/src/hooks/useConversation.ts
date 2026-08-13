@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
-import { listSessions, deleteSession } from '../api/client/sessions';
+import { listSessions, deleteSession, renameSession, pinSession } from '../api/client/sessions';
+import { useAuth } from '../components/auth';
 import Logger from '../utils/logger';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
@@ -18,6 +19,7 @@ const ACTIVE_CONV_KEY = 'agentstudio-active-conv-id';
  * legacy mock system which is now only used when no API agents are configured.
  */
 export function useConversation() {
+  const { isAuthenticated } = useAuth();
   const [activeConvId, setActiveConvId] = useState<string | null>(() => {
     try {
       return localStorage.getItem(ACTIVE_CONV_KEY);
@@ -102,9 +104,22 @@ export function useConversation() {
     return () => window.removeEventListener('agentstudio-conversations-updated', handler);
   }, []);
 
+  // 退出登录：清空内存会话列表/激活会话（localStorage 已由 AuthContext 清），
+  // 避免游客态仍显示登录用户的会话残留。
   useEffect(() => {
-    const rt = localStorage.getItem('agentstudio_refresh_token');
-    if (!rt) return;
+    const onLogout = () => {
+      setConversations([]);
+      setActiveConvId(null);
+    };
+    window.addEventListener('auth:logout', onLogout);
+    return () => window.removeEventListener('auth:logout', onLogout);
+  }, []);
+
+  // Sessions are user-owned: only fetch once authentication is established,
+  // and re-fetch when it flips (login/refresh completes after initial mount).
+  // Matches ragbase's useQuery(enabled: isAuthenticated) semantics.
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
     let cancelled = false;
     listSessions(100).then((sessions) => {
@@ -122,6 +137,8 @@ export function useConversation() {
             messages: [],
             kind: s.kind as 'normal' | 'agent' | 'team' || 'normal',
             agentId: s.agent_id || undefined,
+            isPinned: s.is_pinned,
+            runCount: s.run_count ?? 0,
             createdAt: s.created_at || new Date().toISOString(),
             updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
             sessionId: s.id,
@@ -134,7 +151,7 @@ export function useConversation() {
       });
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [isAuthenticated]);
 
   /** Persist conversations to localStorage immediately (not just via the debounced effect). */
   const persistConversations = useCallback((convs: Conversation[]) => {
@@ -215,6 +232,43 @@ export function useConversation() {
     }
   }, [conversations, persistConversations]);
 
+  /** Rename a conversation — optimistic localStorage update + server sync. */
+  const renameConversation = useCallback((convId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    const conv = conversations.find((c) => c.id === convId);
+    setConversations((prev) => {
+      const next = prev.map((c) =>
+        c.id === convId ? { ...c, title: trimmed } : c,
+      );
+      persistConversations(next);
+      return next;
+    });
+    if (conv?.sessionId) {
+      renameSession(conv.sessionId, trimmed).catch((err) => {
+        Logger.warn('[conversation] failed to rename session %s: %s', conv.sessionId, String(err));
+      });
+    }
+  }, [conversations, persistConversations]);
+
+  /** Pin/unpin a conversation — optimistic localStorage update + server sync. */
+  const pinConversation = useCallback((convId: string) => {
+    const conv = conversations.find((c) => c.id === convId);
+    const next = !conv?.isPinned;
+    setConversations((prev) => {
+      const updated = prev.map((c) =>
+        c.id === convId ? { ...c, isPinned: next } : c,
+      );
+      persistConversations(updated);
+      return updated;
+    });
+    if (conv?.sessionId) {
+      pinSession(conv.sessionId, next).catch((err) => {
+        Logger.warn('[conversation] failed to pin session %s: %s', conv.sessionId, String(err));
+      });
+    }
+  }, [conversations, persistConversations]);
+
   return {
     activeConvId,
     setActiveConvId,
@@ -224,5 +278,7 @@ export function useConversation() {
     updateConversationMessages,
     updateConversationSessionId,
     deleteConversation,
+    renameConversation,
+    pinConversation,
   };
 }

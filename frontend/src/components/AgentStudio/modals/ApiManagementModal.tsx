@@ -44,7 +44,8 @@ export default function ApiManagementModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteIds, setConfirmDeleteIds] = useState<string[] | null>(null);
+  const [modelTypeMap, setModelTypeMap] = useState<Map<string, string>>(new Map());
 
   const loadKeys = async () => {
     try {
@@ -87,13 +88,31 @@ export default function ApiManagementModal({ onClose }: Props) {
     };
   }, [keys]);
 
+  // Model type map from /api/models — feeds the model tab grouping. Failure
+  // falls back to the ModelSelector's own 'llm' default; never crashes the modal.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listModels()
+      .then((infos) => {
+        if (!cancelled) {
+          setModelTypeMap(new Map(infos.map((i) => [i.id, i.type])));
+        }
+      })
+      .catch((err) => Logger.warn('Failed to load model types from server', err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSaveKey = async (keyData: {
     provider: string;
-    usage_type?: string;
+    capabilities?: string[];
     label: string;
     apiKey: string;
     baseUrl: string;
     models: string[];
+    model_types?: Record<string, string>;
   }) => {
     setModalError(null);
     const maskedNew = maskKey(keyData.apiKey);
@@ -106,11 +125,12 @@ export default function ApiManagementModal({ onClose }: Props) {
     try {
       await api.createKey({
         provider: keyData.provider,
-        usage_type: keyData.usage_type,
+        capabilities: keyData.capabilities,
         label: keyData.label,
         api_key: keyData.apiKey,
         base_url: keyData.baseUrl || undefined,
         models: keyData.models,
+        model_types: keyData.model_types,
         is_default: false,
       });
       await loadKeys();
@@ -128,43 +148,52 @@ export default function ApiManagementModal({ onClose }: Props) {
   const handleUpdateKey = async (
     id: string,
     updates: {
-      usage_type?: string;
+      capabilities?: string[];
       label?: string;
       apiKey?: string;
       baseUrl?: string;
       models?: string[];
+      model_types?: Record<string, string>;
       isActive?: boolean;
       isDefault?: boolean;
     },
-  ) => {
+  ): Promise<boolean> => {
     setError(null);
     try {
       await api.updateKey(id, {
+        capabilities: updates.capabilities,
         label: updates.label,
         api_key: updates.apiKey,
         base_url: updates.baseUrl,
         models: updates.models,
+        model_types: updates.model_types,
         is_active: updates.isActive,
         is_default: updates.isDefault,
       });
       await loadKeys();
       void queryClient.invalidateQueries({ queryKey: ['keys'] });
+      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('api.updateFailed');
       setError(msg);
       Logger.error('Failed to update API key', err);
+      return false;
     }
   };
 
   const handleDeleteKey = (id: string) => {
-    setConfirmDeleteId(id);
+    setConfirmDeleteIds([id]);
+  };
+
+  const handleBatchDelete = (ids: string[]) => {
+    setConfirmDeleteIds(ids);
   };
 
   const confirmDeleteAction = async () => {
-    if (!confirmDeleteId) return;
+    if (!confirmDeleteIds || confirmDeleteIds.length === 0) return;
     setError(null);
     try {
-      await api.deleteKey(confirmDeleteId);
+      await Promise.all(confirmDeleteIds.map((id) => api.deleteKey(id)));
       await loadKeys();
       void queryClient.invalidateQueries({ queryKey: ['keys'] });
     } catch (err: unknown) {
@@ -172,7 +201,7 @@ export default function ApiManagementModal({ onClose }: Props) {
       setError(msg);
       Logger.error('Failed to delete API key', err);
     }
-    setConfirmDeleteId(null);
+    setConfirmDeleteIds(null);
   };
 
   const handleTestConnection = async (key: KeyItem) => {
@@ -190,14 +219,14 @@ export default function ApiManagementModal({ onClose }: Props) {
     setTestingId(null);
   };
 
-  const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id })));
+  const allModels = keys.filter((k) => k.is_active).flatMap((k) => k.models.map((m) => ({ model: m, keyId: k.id, type: modelTypeMap.get(m) ?? 'llm' })));
 
   const showAddForm = () => {
     setEditingKey({
       id: '',
-      provider: 'custom',
-            usage_type: 'chat',
-            label: '',
+      provider: 'openai',
+      capabilities: [],
+      label: '',
       key_masked: '',
       base_url: '',
       models: [],
@@ -248,6 +277,7 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
               onToggleActive={(id, active) => handleUpdateKey(id, { isActive: active })}
               onTest={handleTestConnection}
               onDelete={handleDeleteKey}
+              onBatchDelete={handleBatchDelete}
               onDismissError={() => setError(null)}
             />
           )}
@@ -268,16 +298,18 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
           provider={{
             id: editingKey.id,
             provider: editingKey.provider,
-            usage_type: editingKey.usage_type || 'chat',
-            name: editingKey.label || editingKey.provider,
+            capabilities: editingKey.capabilities,
+            name: editingKey.id ? editingKey.label : '',
             baseUrl: editingKey.base_url || '',
             apiKey: '',
             models: editingKey.models,
+            model_types: editingKey.model_types ?? undefined,
             isActive: editingKey.is_active,
             status: 'untested' as const,
           }}
           saving={saving}
           error={modalError}
+          requireApiKey={!editingKey.id}
           onCloseError={() => setModalError(null)}
           onSave={async (form) => {
             const label = form.name.trim() || (() => {
@@ -285,21 +317,24 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
               return `${form.provider}-${count}`;
             })();
             if (editingKey.id) {
-              await handleUpdateKey(editingKey.id, {
+              const ok = await handleUpdateKey(editingKey.id, {
                 label,
-                usage_type: form.usage_type,
+                capabilities: form.capabilities,
                 apiKey: form.apiKey || undefined,
                 baseUrl: form.baseUrl || undefined,
                 models: form.models,
+                model_types: form.model_types ?? undefined,
               });
+              if (ok) { setEditingKey(null); setModalError(null); }
             } else {
               await handleSaveKey({
                 provider: form.provider,
-                usage_type: form.usage_type,
+                capabilities: form.capabilities,
                 label,
                 apiKey: form.apiKey,
                 baseUrl: form.baseUrl,
                 models: form.models,
+                model_types: form.model_types ?? undefined,
               });
             }
           }}
@@ -308,12 +343,16 @@ const TAB_ICONS: Record<ApiTab, typeof Server> = { keys: Server, models: Globe, 
           }}
         />
       )}
-      {confirmDeleteId && (
+      {confirmDeleteIds && (
         <ConfirmModal
           title={t('confirm.title', '确认删除')}
-          message={t('api.deleteKeyConfirm', '确定要删除此 API Key 吗？此操作不可撤销。')}
+          message={
+            confirmDeleteIds.length > 1
+              ? t('api.deleteKeysConfirm', '确定要删除选中的 {{count}} 个 API Key 吗？此操作不可撤销。', { count: confirmDeleteIds.length })
+              : t('api.deleteKeyConfirm', '确定要删除此 API Key 吗？此操作不可撤销。')
+          }
           onConfirm={confirmDeleteAction}
-          onCancel={() => setConfirmDeleteId(null)}
+          onCancel={() => setConfirmDeleteIds(null)}
           danger
         />
       )}

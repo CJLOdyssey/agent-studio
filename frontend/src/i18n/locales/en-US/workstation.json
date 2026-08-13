@@ -124,6 +124,9 @@
     "testPassed": "Passed",
     "testFailed": "Failed",
     "fileExplorer": "File Explorer",
+    "emptyFiles": "No files yet, waiting for the workspace to generate",
+    "noPreview": "No preview yet, waiting for the workspace to generate",
+    "noTests": "No test results yet, waiting for the workspace to generate",
     "fullscreen": "Fullscreen",
     "collapse": "Collapse",
     "hotReloadReady": "Hot Reload Ready",
@@ -153,8 +156,8 @@
     "save": "Save",
     "placeholders": {
       "name": "e.g. My OpenAI",
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "sk-...",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKey": "Enter API Key",
       "models": "gpt-4o\ngpt-4o-mini"
     },
     "providers": {
@@ -179,7 +182,29 @@
     "addModelCancel": "Cancel",
     "noModelsWithKey": "No models yet",
     "fetchFromApi": "Fetch from API",
-    "enterApiKeyToFetch": "Enter API key to fetch models"
+    "enterApiKeyToFetch": "Enter API key to fetch models",
+    "category": {
+      "llm": "LLM",
+      "embedding": "Text Embedding",
+      "rerank": "Rerank",
+      "speech2text": "Speech2text",
+      "tts": "TTS",
+      "moderation": "Moderation",
+      "image": "Image",
+      "tool": "Tool"
+    },
+    "badge": {
+      "llm": "LLM Chat",
+      "embedding": "Embedding",
+      "rerank": "Rerank",
+      "speech2text": "Speech2text",
+      "tts": "TTS",
+      "moderation": "Moderation",
+      "image": "Image",
+      "tool": "Tools"
+    },
+    "filterAll": "All",
+    "noModelsInGroup": "No models yet"
   },
   "api": {
     "manage": "API Management",

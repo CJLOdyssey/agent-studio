@@ -2,14 +2,14 @@
 
 from typing import Any
 
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+
 from auth import get_user_id
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
-from services.run_service import run_service
-
 from routers.runs import RunResponse
+from services.run_service import run_service
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["runs"])
@@ -19,6 +19,8 @@ class CompleteRunRequest(BaseModel):
     content: str = Field(default="")
     session_id: str | None = None
     thinking: str | None = None
+    model: str | None = None
+    question: str | None = None
 
 
 @router.post("/api/runs/complete", response_model=RunResponse)
@@ -38,6 +40,8 @@ async def create_complete_run(req: CompleteRunRequest, request: Request) -> Any:
             session_id=req.session_id,
             user_id=user_id,
             thinking=req.thinking,
+            model=req.model,
+            question=req.question,
         )
         return RunResponse(**result)
     except ValueError as e:

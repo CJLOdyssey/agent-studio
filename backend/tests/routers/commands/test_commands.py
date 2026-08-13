@@ -45,9 +45,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_clear_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_clear_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "clear", "session_id": "sess-1",
         })
         assert resp.status_code == 200
@@ -57,9 +57,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_export_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_export_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "export", "session_id": "sess-1",
         })
         assert resp.status_code == 200
@@ -68,9 +68,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_rename_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_rename_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "rename", "session_id": "sess-1",
             "payload": {"title": "New Title"},
         })
@@ -80,9 +80,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_rename_empty_title(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_rename_empty_title(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "rename", "session_id": "sess-1",
             "payload": {"title": "  "},
         })
@@ -92,9 +92,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_rename_long_title(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_rename_long_title(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "rename", "session_id": "sess-1",
             "payload": {"title": "x" * 257},
         })
@@ -105,9 +105,9 @@ class TestCommands:
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
     @patch("routers.commands.update_session_title", new_callable=AsyncMock, side_effect=Exception("db error"))
-    async def test_execute_rename_exception(self, mock_update, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_rename_exception(self, mock_update, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "rename", "session_id": "sess-1",
             "payload": {"title": "Title"},
         })
@@ -117,9 +117,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_model_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_model_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "model", "session_id": "sess-1",
         })
         assert resp.status_code == 200
@@ -128,9 +128,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_agents_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_agents_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "agents", "session_id": "sess-1",
         })
         assert resp.status_code == 200
@@ -138,9 +138,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_help_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_help_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "help", "session_id": "sess-1",
         })
         assert resp.status_code == 200
@@ -149,9 +149,9 @@ class TestCommands:
 
     @patch("routers.commands.log_command", new_callable=AsyncMock)
     @patch("routers.commands.get_session", new_callable=AsyncMock)
-    async def test_execute_shortcuts_command(self, mock_log, mock_get_session, client):
-        mock_get_session.return_value = MagicMock()
-        resp = client.post("/api/commands/execute", json={
+    async def test_execute_shortcuts_command(self, mock_get_session, mock_log, client):
+        mock_get_session.return_value = MagicMock(user_id="admin")
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "shortcuts", "session_id": "sess-1",
         })
         assert resp.status_code == 200
@@ -159,7 +159,7 @@ class TestCommands:
         assert len(resp.json()["data"]["shortcuts"]) > 0
 
     def test_execute_unknown_command(self, client):
-        resp = client.post("/api/commands/execute", json={
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "nonexistent", "session_id": "sess-1",
         })
         assert resp.status_code == 404
@@ -167,7 +167,7 @@ class TestCommands:
     @patch("routers.commands.get_session", new_callable=AsyncMock)
     async def test_execute_command_session_not_found(self, mock_get_session, client):
         mock_get_session.return_value = None
-        resp = client.post("/api/commands/execute", json={
+        resp = client.post("/api/commands/execute", headers={"X-User-ID": "admin"}, json={
             "command_id": "clear", "session_id": "nonexistent",
         })
         assert resp.status_code == 404

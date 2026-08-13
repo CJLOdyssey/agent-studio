@@ -7,9 +7,10 @@ managing version snapshots. No knowledge of business entity types.
 from typing import Any
 from uuid import uuid4
 
-from core.infra.database import VersionDB
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.infra.database import VersionDB
 
 
 async def create_version(

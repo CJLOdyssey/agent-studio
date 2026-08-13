@@ -47,6 +47,8 @@ services:
     environment:
       # include 深合并进 base 的 x-common-env（anchor 不跨文件，只写差异）
       RUN_DISPATCH: celery
+      # 初始 admin 密码（首次 seed 生效）——生产必须显式设置
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?SEED_ADMIN_PASSWORD must be set in .env for production}
       # celery threads-pool 每次任务新建 event loop：QueuePool 连接池跨 loop 会
       # 抛 "Future attached to a different loop"。NullPool 每次新连接，规避。
       DATABASE_POOL_SIZE: "0"

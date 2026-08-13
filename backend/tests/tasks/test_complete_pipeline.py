@@ -17,6 +17,7 @@ def mock_deps():
         patch("tasks.complete_pipeline.load_config"),
         patch("tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
         patch("tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.save_message", new_callable=AsyncMock),
         patch("tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
         patch("tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
@@ -53,9 +54,10 @@ class TestCompletePipeline:
         args, _ = mock_deps["stream_prefix_completion"].await_args
         body = args[2]
         assert body["model"] == "test-model"
-        assert "Continue the following text" in body["messages"][0]["content"]
+        assert "<已生成的回答草稿>" in body["messages"][0]["content"]
         assert "Hello" in body["messages"][0]["content"]
         assert body.get("stream") is True
+        assert body["thinking"] == {"type": "disabled"}
 
         mock_deps["update_run_result"].assert_awaited_with(
             "run-c1",
@@ -64,6 +66,14 @@ class TestCompletePipeline:
             review="",
             approved=False,
             status="completed",
+        )
+        mock_deps["save_message"].assert_awaited_with(
+            run_id="run-c1",
+            role="Agent",
+            agent_name="Agent",
+            content=content + " world!",
+            thinking=None,
+            round_number=1,
         )
         mock_deps["publish_run_message"].assert_awaited_with(
             "run-c1",
@@ -91,6 +101,7 @@ class TestCompletePipeline:
             api_base=api_base,
             model="deepseek-v4-flash",
             thinking="previous reasoning",
+            question="Continue this",
         )
 
         args, _ = mock_deps["stream_prefix_completion"].await_args
@@ -103,13 +114,15 @@ class TestCompletePipeline:
         assert body["messages"][1]["role"] == "assistant"
         assert body["messages"][1]["prefix"] is True
         assert body.get("thinking") == {"type": "enabled"}
+        assert body["messages"][1]["content"] == content
+        assert body["messages"][1]["reasoning_content"] == "previous reasoning"
 
         thinking_call = call(
             "run-c2",
             {
                 "type": "thinking_done",
                 "agent_name": "Agent",
-                "thinking": "thinking...",
+                "thinking": "previous reasoningthinking...",
             },
         )
         assert thinking_call in mock_deps["publish_run_message"].await_args_list
@@ -121,6 +134,14 @@ class TestCompletePipeline:
             review="",
             approved=False,
             status="completed",
+        )
+        mock_deps["save_message"].assert_awaited_with(
+            run_id="run-c2",
+            role="Agent",
+            agent_name="Agent",
+            content=content + " continued text.",
+            thinking="previous reasoningthinking...",
+            round_number=1,
         )
         assert result is None
 
@@ -185,6 +206,34 @@ class TestCompletePipeline:
             {"type": "error", "detail": "保存失败: DB write failed"},
         )
         assert result is None
+
+    async def test_save_message_failure_suppressed(self, mock_deps):
+        """save_message failure must not fail the run — result still published."""
+        mock_deps["stream_prefix_completion"].return_value = (" output", ["thought"])
+        mock_deps["save_message"].side_effect = RuntimeError("DB write failed")
+
+        result = await _complete_pipeline(
+            content="test",
+            run_id="run-c7",
+            api_key="sk-test",
+            api_base="https://api.deepseek.com",
+            model="deepseek-v4",
+            thinking="prev",
+        )
+
+        assert result is None
+        mock_deps["update_run_result"].assert_awaited()
+        mock_deps["publish_run_message"].assert_awaited_with(
+            "run-c7",
+            {
+                "type": "result",
+                "status": "completed",
+                "code": "test output",
+                "pm_document": "",
+                "review": "",
+                "approved": False,
+            },
+        )
 
     async def test_custom_model_and_base(self, mock_deps):
         content = "test"

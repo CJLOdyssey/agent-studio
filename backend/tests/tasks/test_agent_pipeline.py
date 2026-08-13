@@ -19,6 +19,7 @@ def mock_agent_deps():
         patch("tasks.agent_pipeline.load_config"),
         patch("tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
         patch("tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.get_run_ancestors", new_callable=AsyncMock, return_value=set()),
         patch("tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
         patch("tasks.tool_bindings.get_tools", new_callable=AsyncMock),
         patch("tasks.tool_bindings.get_skills", new_callable=AsyncMock),
@@ -32,6 +33,7 @@ def mock_agent_deps():
         patch("tasks.agent_pipeline.SingleAgentGraph"),
         patch("tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
         patch("tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
+        patch("tasks.agent_pipeline.list_attachments_by_run", new_callable=AsyncMock, return_value=[]),
         patch("tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
         # Don't let tests actually start tracemalloc (agent_pipeline starts it
         # when not already tracing) — it slows every test significantly.
@@ -182,6 +184,7 @@ class TestRunAgentPipeline:
             agent_id="agent-1",
         )
 
+        mock_agent_deps["get_run_ancestors"].assert_awaited_with("run-4")
         mock_agent_deps["get_session_memories"].assert_awaited_with("sess-1")
         mock_agent_deps["get_session_messages"].assert_awaited_with("sess-1", exclude_run_id="run-4")
         mock_agent_deps["_save_output_memories"].assert_awaited()
@@ -1094,6 +1097,45 @@ class TestRunAgentPipeline:
             agent_id="agent-1",
         )
         assert result["status"] == "completed"
+
+    async def test_attachment_text_injected_into_session_context(self, mock_agent_deps):
+        """Attachment extracted_text must reach the model input via session_context."""
+        _default_agent_mocks(mock_agent_deps)
+        att = MagicMock()
+        att.filename = "codex配置第三方api.txt"
+        att.extracted_text = "Codex 使用 DeepSeek 模型完全指南"
+        mock_agent_deps["list_attachments_by_run"].return_value = [att]
+
+        await _run_agent_pipeline(
+            requirement="这个文档写了什么",
+            run_id="run-att",
+            session_id="sess-1",
+            agent_id="agent-1",
+        )
+
+        graph = mock_agent_deps["SingleAgentGraph"].return_value
+        session_context = graph.run.await_args.kwargs["session_context"]
+        assert "[附件: codex配置第三方api.txt]" in session_context
+        assert "Codex 使用 DeepSeek 模型完全指南" in session_context
+
+    async def test_attachment_without_extracted_text_skipped(self, mock_agent_deps):
+        """Attachments with no extracted text must not pollute session_context."""
+        _default_agent_mocks(mock_agent_deps)
+        att = MagicMock()
+        att.filename = "empty.bin"
+        att.extracted_text = None
+        mock_agent_deps["list_attachments_by_run"].return_value = [att]
+
+        await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-att-empty",
+            session_id="sess-1",
+            agent_id="agent-1",
+        )
+
+        graph = mock_agent_deps["SingleAgentGraph"].return_value
+        session_context = graph.run.await_args.kwargs["session_context"]
+        assert "empty.bin" not in session_context
 
 
 # =============================================================================

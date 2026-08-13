@@ -3,8 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import HTTPException, status
-
 from auth.auth_rbac import (
     AUTH_ENABLED,
     AUTH_MODE,
@@ -15,6 +13,7 @@ from auth.auth_rbac import (
     get_user_id,
     require_role,
 )
+from fastapi import HTTPException, status
 
 FAKE_STATE = type("FakeState", (), {"user_id": None})
 
@@ -73,6 +72,18 @@ class TestGetUserId:
         request.state.user_id = None
         request.cookies.get.return_value = None
         request.headers.get.return_value = "victim-id"
+        assert get_user_id(request) == "anonymous"
+
+    def test_stale_token_user_falls_back_anonymous(self, monkeypatch):
+        """JWT sub 指向已删除/合并用户（AuthMiddleware 标记 user_invalid_token）
+        → 不信任该身份，回退 anonymous，而非返回不存在的 user_id。"""
+        import auth.auth_rbac as ar
+
+        monkeypatch.setattr(ar, "AUTH_ENABLED", True)
+        request = MagicMock()
+        request.state.user_id = None
+        request.state.user_invalid_token = True
+        request.cookies.get.return_value = None
         assert get_user_id(request) == "anonymous"
 
 @pytest.mark.requirement("REQ-AUTH-009")

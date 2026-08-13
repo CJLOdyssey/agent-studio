@@ -179,9 +179,10 @@ class TestLoginWithLockout:
         )
 
         # Manually lock the account
+        from sqlalchemy import update
+
         from core.infra.database import get_session_factory
         from orm.auth import UserDB
-        from sqlalchemy import update
 
         factory = get_session_factory()
         async with factory() as session:

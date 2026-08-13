@@ -3,11 +3,12 @@
 from typing import Any
 from uuid import uuid4
 
-from core.infra.cache import get_cache
-from core.infra.database import AgentConfigDB, TeamAgentDB, TeamDB, get_session_factory
 from sqlalchemy import select
 from sqlalchemy import update as sa_update
 from sqlalchemy.orm import selectinload
+
+from core.infra.cache import get_cache
+from core.infra.database import AgentConfigDB, TeamAgentDB, TeamDB, get_session_factory
 
 CACHE_KEY_TEAMS = "teams:all"
 DEFAULT_TTL = 300
@@ -23,7 +24,7 @@ async def get_cached_teams() -> list[dict[str, Any]]:
     """Return all teams as dicts, using Redis cache with 5-min TTL.
 
     Falls through to DB on cache miss; mutations invalidate the cache.
-    Note: cached variant omits user_id filtering (most deployments have no user filter).
+    Note: cached variant returns all teams (no user filter).
     """
     cache = get_cache()
     cached = await cache.get(CACHE_KEY_TEAMS)
@@ -41,7 +42,7 @@ async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:
     """Return all teams with their member agents eagerly loaded.
 
     Args:
-        user_id: If provided, filter to teams owned by this user.
+        user_id: 用户 ID。仅返回该用户拥有的团队；匿名（None/"anonymous"）返回空列表。
 
     Returns:
         A list of team dicts, each containing an "agents" list with config details.
@@ -58,6 +59,9 @@ async def get_teams(user_id: str | None = None) -> list[dict[str, Any]]:
         )
         if user_id and user_id != "anonymous":
             stmt = stmt.where(TeamDB.owner_id == user_id)
+        else:
+            # anonymous / 未登录：无自有团队，直接返回空列表
+            return []
         result = await session.execute(stmt)
         teams = result.scalars().all()
         return [
@@ -118,6 +122,7 @@ async def get_team(team_id: str) -> dict[str, Any] | None:
             "description": t.description,
             "status": t.status,
             "category": t.category,
+            "owner_id": t.owner_id,
             "order": t.order,
             "is_expanded": t.is_expanded,
             "agents": [

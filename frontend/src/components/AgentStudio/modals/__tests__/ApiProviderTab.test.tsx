@@ -29,7 +29,7 @@ vi.mock('react-i18next', async () => {
 const mockKey: KeyItem = {
   id: 'k1',
   provider: 'openai',
-  usage_type: 'llm',
+  capabilities: ['llm'],
   label: 'My OpenAI Key',
   key_masked: 'sk-...abc',
   base_url: 'https://api.openai.com/v1',
@@ -130,5 +130,41 @@ describe('ApiProviderTab', { tags: ['integration'] }, () => {
   it('shows inactive badge', () => {
     renderTab({ keys: [{ ...mockKey, is_active: false }] });
     expect(screen.getByText('My OpenAI Key')).toBeInTheDocument();
+  });
+
+  it('filters rows by capability category', () => {
+    renderTab({
+      keys: [
+        { ...mockKey, id: 'k1', label: 'OpenAI Key', capabilities: ['llm', 'embedding'] },
+        { ...mockKey, id: 'k2', label: 'Tavily Key', capabilities: ['tool'] },
+      ],
+    });
+    expect(screen.getByText('OpenAI Key')).toBeInTheDocument();
+    expect(screen.getByText('Tavily Key')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('providerEdit.category.tool'));
+    expect(screen.getByText('Tavily Key')).toBeInTheDocument();
+    expect(screen.queryByText('OpenAI Key')).toBeNull();
+  });
+
+  it('clears row selection when switching filter tab', () => {
+    const onBatchDelete = vi.fn();
+    renderTab({
+      keys: [
+        { ...mockKey, id: 'k1', label: 'OpenAI Key', capabilities: ['llm'] },
+        { ...mockKey, id: 'k2', label: 'Tavily Key', capabilities: ['tool'] },
+      ],
+      onBatchDelete,
+    });
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    fireEvent.click(checkboxes[2]);
+    expect(screen.getByText('删除 (1)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('providerEdit.category.tool'));
+    expect(screen.queryByText('删除 (1)')).toBeNull();
+
+    fireEvent.click(screen.getByText('providerEdit.filterAll'));
+    expect(screen.queryByText('删除 (1)')).toBeNull();
+    expect(onBatchDelete).not.toHaveBeenCalled();
   });
 });

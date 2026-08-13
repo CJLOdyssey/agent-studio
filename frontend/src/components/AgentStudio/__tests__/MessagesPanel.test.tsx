@@ -6,6 +6,7 @@ type TeamMessageGlobals = {
   __lastEditMessageFn?: unknown;
   __lastRegenerateFn?: unknown;
   __lastSwitchUserVersionFn?: unknown;
+  __lastSwitchAnswerFn?: unknown;
   __lastThumbsFeedbackFn?: unknown;
 };
 const globals = globalThis as TeamMessageGlobals;
@@ -40,28 +41,37 @@ describe('MessagesPanel', { tags: ['integration'] }, () => {
   });
 });
 
-const mockSwitchVersion = vi.fn();
-const mockSwitchUserVersion = vi.fn();
+const mockResolveUserVersionTarget = vi.fn();
+const mockResolveAnswerVersionTarget = vi.fn();
 const mockSetThumbsFeedback = vi.fn();
 
-vi.mock('../../../stores/chatStore', () => ({
-  useChatStore: (selector?: (s: unknown) => unknown) => {
+vi.mock('../../../stores/chatStore', () => {
+  const impl = (selector?: (s: unknown) => unknown) => {
     const state = {
       interruptedMessageId: null,
       continuingId: null,
-      switchVersion: mockSwitchVersion,
-      switchUserVersion: mockSwitchUserVersion,
+      resolveUserVersionTarget: mockResolveUserVersionTarget,
+      resolveAnswerVersionTarget: mockResolveAnswerVersionTarget,
       setThumbsFeedback: mockSetThumbsFeedback,
     };
     return selector ? selector(state) : state;
-  },
-}));
+  };
+  impl.getState = () => ({
+    interruptedMessageId: null,
+    continuingId: null,
+    resolveUserVersionTarget: mockResolveUserVersionTarget,
+    resolveAnswerVersionTarget: mockResolveAnswerVersionTarget,
+    setThumbsFeedback: mockSetThumbsFeedback,
+  });
+  return { useChatStore: impl };
+});
 
 vi.mock('../TeamMessage', () => ({
-  default: ({ msg, onEditMessage, onRegenerate, onSwitchUserVersion, showContinue, isContinuing, onThumbsFeedback }: React.ComponentProps<typeof TeamMessage>) => {
+  default: ({ msg, onEditMessage, onRegenerate, onSwitchUserVersion, onSwitchAnswer, showContinue, isContinuing, onThumbsFeedback }: React.ComponentProps<typeof TeamMessage>) => {
     (globalThis as TeamMessageGlobals).__lastEditMessageFn = onEditMessage;
     (globalThis as TeamMessageGlobals).__lastRegenerateFn = onRegenerate;
     (globalThis as TeamMessageGlobals).__lastSwitchUserVersionFn = onSwitchUserVersion;
+    (globalThis as TeamMessageGlobals).__lastSwitchAnswerFn = onSwitchAnswer;
     (globalThis as TeamMessageGlobals).__lastThumbsFeedbackFn = onThumbsFeedback;
     return (
       <div data-testid={`team-msg-${msg.id}`} data-show-continue={showContinue} data-is-continuing={isContinuing}>
@@ -111,6 +121,7 @@ function properBaseProps(overrides: Record<string, unknown> = {}) {
     displayMessages: [] as Message[],
     messagesEndRef: { current: null } as React.RefObject<HTMLDivElement>,
     onDismissWelcome: vi.fn(),
+    onSwitchBranch: vi.fn(),
     ...overrides,
   };
 }
@@ -121,6 +132,7 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
     delete globals.__lastEditMessageFn;
     delete globals.__lastRegenerateFn;
     delete globals.__lastSwitchUserVersionFn;
+    delete globals.__lastSwitchAnswerFn;
     delete globals.__lastThumbsFeedbackFn;
   });
 
@@ -276,16 +288,64 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
     expect(editAndRegenerate).toHaveBeenCalledWith('nonexistent', 'text');
   });
 
-  it('handleSwitchUserVersion switches user version and linked answer version', () => {
-    const msgs = [makeMsg('v1', { role: 'user', userVersions: ['a', 'b'] }), makeMsg('v2', { role: 'agent', versions: ['a1', 'b1'], currentVersion: 1 })];
+  it('handleSwitchUserVersion resolves target run and switches branch', () => {
+    mockResolveUserVersionTarget.mockReturnValue('run-b');
+    const onSwitchBranch = vi.fn();
+    const msgs = [makeMsg('v1', { role: 'user', userVersions: ['a', 'b'] })];
     render(<MessagesPanel {...properBaseProps({
       showAgentChat: true,
       displayMessages: msgs,
+      onSwitchBranch,
     })} />);
 
     invoke(globals.__lastSwitchUserVersionFn, 'v1', 'prev');
-    expect(mockSwitchUserVersion).toHaveBeenCalledWith('v1', 'prev');
-    expect(mockSwitchVersion).toHaveBeenCalledWith('v2', 'prev');
+    expect(mockResolveUserVersionTarget).toHaveBeenCalledWith('v1', 'prev');
+    expect(onSwitchBranch).toHaveBeenCalledWith('run-b');
+  });
+
+  it('handleSwitchUserVersion no-op when resolve target is null', () => {
+    mockResolveUserVersionTarget.mockReturnValue(null);
+    const onSwitchBranch = vi.fn();
+    const msgs = [makeMsg('v1', { role: 'user', userVersions: ['a', 'b'] })];
+    render(<MessagesPanel {...properBaseProps({
+      showAgentChat: true,
+      displayMessages: msgs,
+      onSwitchBranch,
+    })} />);
+
+    invoke(globals.__lastSwitchUserVersionFn, 'v1', 'prev');
+    expect(mockResolveUserVersionTarget).toHaveBeenCalledWith('v1', 'prev');
+    expect(onSwitchBranch).not.toHaveBeenCalled();
+  });
+
+  it('handleSwitchAnswerVersion resolves target run and switches branch', () => {
+    mockResolveAnswerVersionTarget.mockReturnValue('run-a2');
+    const onSwitchBranch = vi.fn();
+    const msgs = [makeMsg('a1', { role: 'agent', answerVersions: ['a1', 'a2'], currentAnswerVersion: 0 })];
+    render(<MessagesPanel {...properBaseProps({
+      showAgentChat: true,
+      displayMessages: msgs,
+      onSwitchBranch,
+    })} />);
+
+    invoke(globals.__lastSwitchAnswerFn, 'a1', 'next');
+    expect(mockResolveAnswerVersionTarget).toHaveBeenCalledWith('a1', 'next');
+    expect(onSwitchBranch).toHaveBeenCalledWith('run-a2');
+  });
+
+  it('handleSwitchAnswerVersion no-op when resolve target is null', () => {
+    mockResolveAnswerVersionTarget.mockReturnValue(null);
+    const onSwitchBranch = vi.fn();
+    const msgs = [makeMsg('a1', { role: 'agent', answerVersions: ['a1', 'a2'], currentAnswerVersion: 0 })];
+    render(<MessagesPanel {...properBaseProps({
+      showAgentChat: true,
+      displayMessages: msgs,
+      onSwitchBranch,
+    })} />);
+
+    invoke(globals.__lastSwitchAnswerFn, 'a1', 'next');
+    expect(mockResolveAnswerVersionTarget).toHaveBeenCalledWith('a1', 'next');
+    expect(onSwitchBranch).not.toHaveBeenCalled();
   });
 
   it('handleRegenerate calls regenerateMessage', () => {
@@ -337,6 +397,15 @@ describe('handler functions', { tags: ['integration'] }, () => {
         displayMessages: msgs,
       })} />);
       expect(globals.__lastThumbsFeedbackFn).toBeInstanceOf(Function);
+    });
+
+    it('provides onSwitchAnswer to TeamMessage', () => {
+      const msgs = [makeMsg('answer-1')];
+      render(<MessagesPanel {...properBaseProps({
+        showAgentChat: true,
+        displayMessages: msgs,
+      })} />);
+      expect(globals.__lastSwitchAnswerFn).toBeInstanceOf(Function);
     });
   });
 });

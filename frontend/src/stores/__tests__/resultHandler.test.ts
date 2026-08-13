@@ -256,6 +256,45 @@ describe('handleTeamResultEvent', { tags: ['unit'] }, () => {
     expect(result.messages![0].content).toBe('old');
     expect(result.messages![0].thinkingDone).toBe(true);
   });
+
+  it('attaches answer pagination from pendingRegenerate on regenerate', () => {
+    // Regression: team_result must consume pendingRegenerate and attach
+    // answerVersions/answerRunIds to the streamed message — otherwise the
+    // pagination arrows only appear after a page reload (when buildPathTurns
+    // re-attaches them from the DB).
+    const s = makeState({
+      currentRunId: 'run-new',
+      streamingId: 'msg-streamed',
+      messages: [makeMsg('msg-streamed', { content: 'new answer' })],
+      pendingRegenerate: {
+        userMsgId: 'run-old-requirement',
+        oldRunIds: ['run-old'],
+        requirement: 'same requirement',
+      },
+    });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>(['run-new']);
+
+    handleTeamResultEvent(set as never, get, activeStreams, { type: 'team_result', display: 'new answer' });
+
+    const result = set.mock.results[0].value as {
+      pendingRegenerate: unknown;
+      messages: Array<{
+        userMsgId: string;
+        answerVersions: string[];
+        answerRunIds: string[];
+        currentAnswerVersion: number;
+      }>;
+    };
+    expect(result.pendingRegenerate).toBeNull();
+    const done = result.messages.find((m) => m.id === 'msg-streamed');
+    expect(done).toBeDefined();
+    expect(done!.userMsgId).toBe('run-old-requirement');
+    expect(done!.answerRunIds).toEqual(['run-old', 'run-new']);
+    expect(done!.answerVersions).toEqual(['same requirement', 'same requirement']);
+    expect(done!.currentAnswerVersion).toBe(1);
+  });
 });
 
 describe('handleThumbsEvent', { tags: ['unit'] }, () => {

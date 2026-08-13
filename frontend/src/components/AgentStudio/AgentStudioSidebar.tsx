@@ -21,6 +21,8 @@ interface AgentStudioSidebarProps {
   setActiveConvId: (id: string | null) => void;
   setInputValue: (value: string) => void;
   onDeleteConversation: (convId: string) => void;
+  onRenameConversation: (convId: string, title: string) => void;
+  onPinConversation: (convId: string) => void;
   onNewChat: () => void;
   toggleTeam: (teamId: string) => void;
   handleAddTeam: () => void;
@@ -51,6 +53,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
   setActiveConvId,
   setInputValue,
   onDeleteConversation,
+  onRenameConversation,
+  onPinConversation,
   onNewChat,
   toggleTeam,
   handleAddTeam,
@@ -136,7 +140,7 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
           onTeamChat={onTeamChat}
         />
 
-        <div className="flex flex-col min-h-0 flex-1">
+        <div className="flex flex-col min-h-0 flex-1 -mr-4">
           <div className="px-2 py-0.5 text-sm font-medium leading-[22px] text-[var(--color-text-tertiary)] shrink-0">
             {t('sidebar.recentConversations')}
           </div>
@@ -147,8 +151,8 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
             agents={teams.flatMap((t) => t.agents)}
             onSelect={handleConvSelect}
             onDelete={handleConvDelete}
-            onRename={(_id) => {/* TODO */}}
-            onPin={(_id) => {/* TODO */}}
+            onRename={onRenameConversation}
+            onPin={onPinConversation}
           />
         </div>
       </div>

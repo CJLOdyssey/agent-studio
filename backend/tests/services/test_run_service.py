@@ -1,7 +1,7 @@
 """Unit tests for """
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -61,6 +61,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("services.run_service.asyncio.create_task"),
             patch("services.run_service.get_session") as mock_get_sess,
@@ -97,6 +98,7 @@ class TestRunService:
             patch("services.run_service.get_api_key_for_use"),
             patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task"),
             patch("services.run_service.update_session_title"),
@@ -130,6 +132,7 @@ class TestRunService:
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task"),
             patch("services.run_service.update_session_title"),
@@ -190,6 +193,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("services.run_service.asyncio.create_task") as mock_create_task,
             patch("services.run_service.get_session") as mock_get_sess,
@@ -243,6 +247,7 @@ class TestRunService:
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_model") as mock_get_model,
             patch("services.run_service.get_default_api_key") as mock_get_default,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task"),
             patch("repository.create_run") as mock_db_create_run,
@@ -361,7 +366,17 @@ class TestRunService:
         with patch("services.run_service.get_runs") as mock_get_runs:
             mock_get_runs.return_value = []
             await svc.list_runs(limit=999)
-            mock_get_runs.assert_called_once_with(limit=100)
+            mock_get_runs.assert_called_once_with(limit=100, user_id=None)
+
+    @pytest.mark.asyncio
+    async def test_list_runs_scopes_to_user(self):
+        from services.run_service import RunService
+
+        svc = RunService()
+        with patch("services.run_service.get_runs") as mock_get_runs:
+            mock_get_runs.return_value = []
+            await svc.list_runs(limit=10, user_id="u-1")
+            mock_get_runs.assert_called_once_with(limit=10, user_id="u-1")
 
     @pytest.mark.asyncio
     async def test_create_run_dispatches_agent_to_celery_when_enabled(self, monkeypatch):
@@ -383,6 +398,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task") as mock_create_task,
             patch("services.run_service.get_session") as mock_get_sess,
@@ -439,6 +455,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.get_session") as mock_get_sess,
             patch("services.run_service.update_session_title"),
@@ -479,6 +496,7 @@ class TestRunService:
             patch("services.run_service.load_config") as mock_load,
             patch("services.run_service.create_session") as mock_create_sess,
             patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
             patch("services.run_service.buffer_run_messages"),
             patch("services.run_service.asyncio.create_task") as mock_create_task,
             patch("services.run_service.get_session") as mock_get_sess,
@@ -503,6 +521,154 @@ class TestRunService:
 
         assert result == {"run_id": "run-thread", "status": "pending", "session_id": "sess-thread"}
         mock_create_task.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_create_run_persists_user_message(self):
+        """create_run 在 db_create_run 之后落库用户消息（role=user, agent_name=我）。"""
+        from services.run_service import RunService
+
+        svc = RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.save_message", new_callable=AsyncMock) as mock_save,
+            patch("services.run_service.get_api_key_for_use") as mock_get_key,
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.asyncio.create_task"),
+            patch("services.run_service.get_session") as mock_get_sess,
+            patch("services.run_service.update_session_title"),
+            patch("repository.create_run") as mock_db_create_run,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-msg"
+            mock_create_sess.return_value = mock_sess
+            mock_get_key.return_value = {"api_key": "sk-test", "base_url": None}
+            mock_get_sess.return_value = mock_sess
+            mock_db_create_run.return_value = "run-msg"
+
+            await svc.create_run(
+                requirement="hello world",
+                session_id=None,
+                user_id="user-1",
+                key_id="key-1",
+            )
+            mock_save.assert_awaited_once_with(
+                run_id="run-msg",
+                role="user",
+                agent_name="我",
+                content="hello world",
+                round_number=1,
+            )
+
+    @pytest.mark.asyncio
+    async def test_continue_run_persists_user_message_with_question(self):
+        """continue_run 带 question → 落库用户消息 = 原问题（question 语义）。"""
+        from services.run_service import RunService
+
+        svc = RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.save_message", new_callable=AsyncMock) as mock_save,
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
+            patch("services.run_service.get_default_api_key") as mock_get_default,
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.asyncio.create_task"),
+            patch("repository.create_run") as mock_db_create_run,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-cont-msg"
+            mock_create_sess.return_value = mock_sess
+            mock_get_model.return_value = None
+            mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}
+            mock_db_create_run.return_value = "run-cont-msg"
+
+            await svc.continue_run(
+                content="half draft",
+                session_id=None,
+                user_id="user-1",
+                question="原问题",
+            )
+            mock_save.assert_awaited_once_with(
+                run_id="run-cont-msg",
+                role="user",
+                agent_name="我",
+                content="原问题",
+                round_number=1,
+            )
+
+    @pytest.mark.asyncio
+    async def test_continue_run_persists_user_message_falls_back_to_content(self):
+        """continue_run 无 question → 用户消息回退到 content。"""
+        from services.run_service import RunService
+
+        svc = RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.save_message", new_callable=AsyncMock) as mock_save,
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
+            patch("services.run_service.get_default_api_key") as mock_get_default,
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.asyncio.create_task"),
+            patch("repository.create_run") as mock_db_create_run,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-cont-fb"
+            mock_create_sess.return_value = mock_sess
+            mock_get_model.return_value = None
+            mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}
+            mock_db_create_run.return_value = "run-cont-fb"
+
+            await svc.continue_run(
+                content="half draft",
+                session_id=None,
+                user_id="user-1",
+            )
+            mock_save.assert_awaited_once_with(
+                run_id="run-cont-fb",
+                role="user",
+                agent_name="我",
+                content="half draft",
+                round_number=1,
+            )
+
+    @pytest.mark.asyncio
+    async def test_continue_run_uses_model_param_for_key_resolution(self):
+        """continue_run 的 model 参数优先于 config.model 做 key 解析。"""
+        from services.run_service import RunService
+
+        svc = RunService()
+        with (
+            patch("services.run_service.load_config") as mock_load,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
+            patch("services.run_service.get_api_key_for_model") as mock_get_model,
+            patch("services.run_service.get_default_api_key") as mock_get_default,
+            patch("services.run_service.save_message", new_callable=AsyncMock),
+            patch("services.run_service.buffer_run_messages"),
+            patch("services.run_service.asyncio.create_task"),
+            patch("repository.create_run") as mock_db_create_run,
+        ):
+            mock_load.return_value.model = "gpt-4"
+            mock_sess = MagicMock()
+            mock_sess.id = "sess-model"
+            mock_create_sess.return_value = mock_sess
+            mock_get_model.return_value = {"api_key": "sk-model", "base_url": None}
+            mock_get_default.return_value = {"api_key": "sk-default", "base_url": None}
+            mock_db_create_run.return_value = "run-model"
+
+            await svc.continue_run(
+                content="keep going",
+                session_id=None,
+                user_id="user-1",
+                model="deepseek-chat",
+            )
+            mock_get_model.assert_awaited_once_with("deepseek-chat", "user-1")
+            mock_get_default.assert_not_awaited()
 
 
 # ─────────────────────────────────────────────────────────────────────

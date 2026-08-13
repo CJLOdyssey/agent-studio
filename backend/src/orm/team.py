@@ -4,9 +4,10 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from core.base import Base
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from core.base import Base
 
 
 class CommandLogDB(Base):
@@ -38,6 +39,8 @@ class AuditLogDB(Base):
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
     entity_name: Mapped[str] = mapped_column(String(255), default="")
     detail: Mapped[str] = mapped_column(Text, default="")
+    user_name: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    client_ip: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
@@ -48,11 +51,16 @@ class AttachmentDB(Base):
     __tablename__ = "attachments"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    session_id: Mapped[str] = mapped_column(
+    session_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("sessions.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
+        comment="Null until bound to a run's session (pre-upload before first message)",
+    )
+    user_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True,
+        comment="Uploader; ownership check for pre-session attachments",
     )
     run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     filename: Mapped[str] = mapped_column(String(256), nullable=False)

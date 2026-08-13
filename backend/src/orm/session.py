@@ -4,9 +4,10 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from core.base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from core.base import Base
 
 
 class SessionDB(Base):
@@ -16,6 +17,7 @@ class SessionDB(Base):
     title: Mapped[str] = mapped_column(String(256), default="新对话")
     user_id: Mapped[str] = mapped_column(String(128), default="default")
     kind: Mapped[str] = mapped_column(String(16), default="normal")
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, server_default="f")
     agent_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("agent_configs.id", ondelete="SET NULL"),
@@ -49,7 +51,7 @@ class ProjectRun(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     session_id: Mapped[str | None] = mapped_column(
         String(36),
-        ForeignKey("sessions.id", ondelete="SET NULL"),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )
@@ -66,6 +68,7 @@ class ProjectRun(Base):
     )
     parent_run_id: Mapped[str | None] = mapped_column(
         String(36),
+        ForeignKey("project_runs.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
         comment="Edit-regenerate chain: the run whose answer this run replaces",

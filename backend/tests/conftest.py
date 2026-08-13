@@ -278,8 +278,9 @@ async def test_client() -> Any:
 
     # ── 3. Import the app (deps already patched) ────────────────────
     # ── 4. Create ASGI client ───────────────────────────────────────
-    from core.app import app
     from httpx import ASGITransport, AsyncClient
+
+    from core.app import app
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:

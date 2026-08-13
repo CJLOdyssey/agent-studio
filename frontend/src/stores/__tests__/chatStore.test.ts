@@ -8,6 +8,9 @@ vi.mock('../../api/websocket', () => ({
 
 vi.mock('../../api/client', () => ({
   submitRequirement: vi.fn(),
+  cancelRun: vi
+    .fn()
+    .mockResolvedValue({ run_id: 'run-1', status: 'cancelled' }),
   listKeys: vi.fn().mockResolvedValue([{ id: 'key-1', is_default: true, is_active: true, models: ['deepseek-chat'] }]),
 }));
 
@@ -39,6 +42,36 @@ describe('chatStore', { tags: ['unit'] }, () => {
     expect(state.currentRole).toBeNull();
     expect(state.error).toBeNull();
     expect(state.wsStatus).toBe('disconnected');
+  });
+
+  it('clearMessages 清空消息与流状态但保留会话 id', async () => {
+    const { useChatStore } = await import('../chatStore');
+    useChatStore.getState().setStatus('running');
+    useChatStore.getState().setWsStatus('connecting');
+    useChatStore.setState({
+      messages: [
+        {
+          id: 'm1',
+          role: 'user',
+          agent_name: '我',
+          content: 'hi',
+          round_number: 1,
+          created_at: '',
+        },
+      ],
+      currentSessionId: 'sess-1',
+      currentConvId: 'conv-1',
+      streamingId: 'run-1',
+    });
+    useChatStore.getState().clearMessages();
+    const s = useChatStore.getState();
+    expect(s.messages).toEqual([]);
+    expect(s.status).toBe('idle');
+    expect(s.wsStatus).toBe('disconnected');
+    expect(s.streamingId).toBeNull();
+    expect(s.currentSessionId).toBe('sess-1');
+    expect(s.currentConvId).toBe('conv-1');
+    useChatStore.getState().reset();
   });
 
   it('setStatus 更新状态', async () => {
@@ -155,15 +188,24 @@ describe('chatStore', { tags: ['unit'] }, () => {
   });
 
   describe('cancelRun', () => {
-    it('disconnects and clears run state', async () => {
+    it('disconnects, cancels backend and clears run state', async () => {
       const { useChatStore } = await import('../chatStore');
-      useChatStore.setState({ currentRunId: 'run-1', streamingId: 'stream-1', status: 'running' });
+      const { cancelRun } = await import('../../api/client');
+      useChatStore.setState({
+        currentRunId: 'run-1',
+        streamingId: 'stream-1',
+        status: 'running',
+      });
       useChatStore.getState().cancelRun();
+      await vi.waitFor(() => {
+        expect(cancelRun).toHaveBeenCalledWith('run-1');
+      });
       const state = useChatStore.getState();
       expect(state.currentRunId).toBeNull();
       expect(state.streamingId).toBeNull();
       expect(state.status).toBe('idle');
       expect(state.wsStatus).toBe('disconnected');
+      expect(state.interruptedMessageId).toBe('stream-1');
     });
   });
 
@@ -313,6 +355,68 @@ describe('chatStore', { tags: ['unit'] }, () => {
       useChatStore.getState().switchVersion('m1', 'next');
       const msg = useChatStore.getState().messages[0];
       expect(msg.content).toBe('old');
+    });
+  });
+
+  describe('resolveVersionTargets', () => {
+    function makeMsg(overrides: Record<string, unknown>) {
+      return {
+        id: 'm1',
+        role: 'agent',
+        agent_name: 'Agent',
+        content: 'c',
+        round_number: 0,
+        created_at: new Date().toISOString(),
+        ...overrides,
+      };
+    }
+
+    it('resolveUserVersionTarget returns target runId and clamps', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [
+          makeMsg({
+            userVersions: ['v1', 'v2'],
+            versionRunIds: ['r1', 'r2'],
+            currentUserVersion: 1,
+          }),
+        ],
+      });
+      expect(
+        useChatStore.getState().resolveUserVersionTarget('m1', 'prev'),
+      ).toBe('r1');
+      expect(
+        useChatStore.getState().resolveUserVersionTarget('m1', 'next'),
+      ).toBeNull(); // 越界夹取 → 无变化
+    });
+
+    it('resolveAnswerVersionTarget returns target runId', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [
+          makeMsg({
+            answerVersions: ['a1', 'a2'],
+            answerRunIds: ['r1', 'r2'],
+            currentAnswerVersion: 0,
+          }),
+        ],
+      });
+      expect(
+        useChatStore.getState().resolveAnswerVersionTarget('m1', 'next'),
+      ).toBe('r2');
+    });
+
+    it('returns null for messages without versions', async () => {
+      const { useChatStore } = await import('../chatStore');
+      useChatStore.setState({
+        messages: [makeMsg({})],
+      });
+      expect(
+        useChatStore.getState().resolveUserVersionTarget('m1', 'next'),
+      ).toBeNull();
+      expect(
+        useChatStore.getState().resolveAnswerVersionTarget('m1', 'next'),
+      ).toBeNull();
     });
   });
 

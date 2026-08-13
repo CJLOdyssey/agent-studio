@@ -24,10 +24,12 @@ vi.mock('react-i18next', async () => {
 describe('ModelSection', () => {
   const baseProps = {
     models: ['gpt-4', 'gpt-3.5-turbo'],
+    modelTypes: {},
     fetching: false,
     apiKey: 'sk-test',
     onRemoveModel: vi.fn(),
     onFetchModels: vi.fn(),
+    onChangeModelType: vi.fn(),
   };
 
   it('renders model tags', () => {
@@ -54,8 +56,8 @@ describe('ModelSection', () => {
   it('calls onRemoveModel when tag X is clicked', () => {
     const onRemoveModel = vi.fn();
     render(<TestProviders><ModelSection {...baseProps} onRemoveModel={onRemoveModel} /></TestProviders>);
-    const tag = screen.getByText('gpt-4').closest('span');
-    const xBtn = tag?.querySelector('button');
+    const row = screen.getByText('gpt-4').closest('div');
+    const xBtn = row?.querySelector('button');
     if (xBtn) fireEvent.click(xBtn);
     expect(onRemoveModel).toHaveBeenCalledWith('gpt-4');
   });
