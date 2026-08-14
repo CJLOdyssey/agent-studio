@@ -197,6 +197,9 @@ async def shutdown(app: FastAPI) -> None:
     from observability.store import get_store
 
     get_store().close()
+    from core.infra.database import dispose_engine
+
+    dispose_engine()
     await close_redis()
     mark_stopped()
     logger.info("[LIFECYCLE] shutting down — app=%s | pid=%d", app.title, os.getpid())

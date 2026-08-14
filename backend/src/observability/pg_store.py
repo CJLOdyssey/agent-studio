@@ -122,8 +122,7 @@ class PgEventStore:
                 try:
                     while True:
                         rows = []
-                        rows.append(self._queue.get())
-                        while not self._queue.empty() and len(rows) < 100:
+                        while not self._queue.empty():
                             rows.append(self._queue.get_nowait())
                         if rows:
                             await conn.executemany(
@@ -142,6 +141,9 @@ class PgEventStore:
                                 ],
                             )
                             self._last_heartbeat = time.time()
+                        # Yield to the loop — blocking get() would stall every
+                        # run_coroutine_threadsafe() caller (e.g. cleanup()).
+                        await asyncio.sleep(0.05)
                 finally:
                     await conn.close()
             except Exception:
@@ -159,10 +161,15 @@ class PgEventStore:
             self._write_errors += 1
 
     def self_check(self) -> dict[str, Any]:
-        """Return internal health metrics (queue size, errors, writer status)."""
+        """Return internal health metrics (queue size, errors, writer status).
+
+        Contract mirrors the SQLite store: the health router reads
+        ``disk_errors`` — kept at 0 for PG (no local-disk guard).
+        """
         return {
             "queue_size": self._queue.qsize(),
             "write_errors": self._write_errors,
+            "disk_errors": 0,
             "writer_alive": self._writer.is_alive(),
             "closed": self._closed,
             "last_heartbeat": self._last_heartbeat,
@@ -253,12 +260,19 @@ class PgEventStore:
 
     def error_trace_ids(self, seconds: int = 300, limit: int = 20) -> list[dict[str, Any]]:
         cutoff = time.time() - seconds
+        # PG (unlike SQLite) requires every non-aggregated SELECT column to
+        # appear in GROUP BY — pick the latest event per trace via a
+        # self-join on MAX(timestamp) instead of a bare GROUP BY trace_id.
         return self._query(
-            """SELECT trace_id, error_type, message, timestamp
-               FROM observability_events
-               WHERE timestamp >= $1 AND error_type != ''
-               GROUP BY trace_id
-               ORDER BY MAX(timestamp) DESC
+            """SELECT e.trace_id, e.error_type, e.message, e.timestamp
+               FROM observability_events e
+               JOIN (
+                   SELECT trace_id, MAX(timestamp) AS ts
+                   FROM observability_events
+                   WHERE timestamp >= $1 AND error_type != ''
+                   GROUP BY trace_id
+               ) latest ON latest.trace_id = e.trace_id AND latest.ts = e.timestamp
+               ORDER BY e.timestamp DESC
                LIMIT $2""",
             [cutoff, limit],
         )
@@ -267,9 +281,16 @@ class PgEventStore:
         if retention_days <= 0:
             return 0
         cutoff = time.time() - retention_days * 86400
+        # Schedule on the background loop — asyncio.run() here would raise
+        # "cannot be called from a running event loop" when retention fires
+        # inside the app's own loop (see app_lifespan._periodic_retention).
         try:
-            return asyncio.run(self._cleanup_async(cutoff))
+            fut = asyncio.run_coroutine_threadsafe(
+                self._cleanup_async(cutoff), self._loop
+            )
+            return fut.result(timeout=30)
         except Exception:
+            _log().warning("PG observability cleanup failed", exc_info=True)
             return -1
 
     async def _cleanup_async(self, cutoff: float) -> int:
@@ -295,7 +316,6 @@ class PgEventStore:
 
 def _run_loop(loop: asyncio.AbstractEventLoop, drain: Any) -> None:
     """Run the background event loop, hosting the drain coroutine.
-
     The drain task is created inside the loop's own thread after it is set as
     the current loop — scheduling it from the constructor thread with
     ``run_coroutine_threadsafe`` races ``run_forever`` startup and can drop

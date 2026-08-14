@@ -93,6 +93,18 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
         _async_session_factory = async_sessionmaker(get_async_engine(), expire_on_commit=False)
     return _async_session_factory
 
+def dispose_engine() -> None:
+    """Dispose the singleton async engine — call on application shutdown.
+
+    Releases the connection pool and its event-loop resources so a graceful
+    shutdown does not leak them (previously the engine lived for the process).
+    """
+    global _async_engine, _async_session_factory
+    if _async_engine is not None:
+        _async_engine.sync_engine.dispose()
+        _async_engine = None
+    _async_session_factory = None
+
 async def init_db() -> None:
     """Bootstrap database tables on first run.
 
