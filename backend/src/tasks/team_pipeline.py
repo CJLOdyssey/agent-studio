@@ -4,7 +4,7 @@ import gc
 from typing import Any
 
 from broker import publish_run_message
-from checkpoint import create_checkpointer_async
+from checkpoint import close_checkpointer, create_checkpointer_async
 from core.config import load_config
 from core.infra.logging_config import get_logger
 from repository import save_message, update_run_result, update_run_status
@@ -70,13 +70,15 @@ async def _run_team_pipeline(
         return
 
     logger.info("[TEAM] starting run=%s team=%s nodes=%d", run_id, team_id, len(workflow_config.nodes))
+    checkpointer = None
     try:
         await update_run_status(run_id, "in_progress")
+        checkpointer = await create_checkpointer_async()
         graph = DynamicTeamGraph(
             model=model or cfg.model,
             api_key=api_key or cfg.api_key,
             base_url=api_base or cfg.api_base,
-            checkpointer=await create_checkpointer_async(),
+            checkpointer=checkpointer,
         )
         await graph.set_workflow(workflow_config)
         result = await graph.run(
@@ -147,5 +149,10 @@ async def _run_team_pipeline(
         logger.error("[TEAM] fatal run=%s error=%s", run_id, str(e), exc_info=True)
         await update_run_status(run_id, "error")
     finally:
+        if checkpointer is not None:
+            try:
+                await close_checkpointer(checkpointer)
+            except Exception:
+                logger.warning("[TEAM] failed to close checkpointer run=%s", run_id, exc_info=True)
         gc.collect()
         log_memory_diff()
