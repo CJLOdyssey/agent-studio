@@ -118,3 +118,51 @@ class TestAppLifespan:
             assert _env("MY_KEY") == "my_value"
             assert _env("NONEXISTENT", "default") == "default"
             assert _env("NONEXISTENT2") == ""
+
+
+class TestPrewarmPipeline:
+    @pytest.mark.asyncio
+    async def test_skips_in_test_harness(self):
+        """TestClient fires the lifespan per test; prewarm must be a no-op on :memory: DBs."""
+        from core.app_lifespan import _prewarm_pipeline
+
+        with patch("core.app_lifespan.DATABASE_URL", "sqlite+aiosqlite:///:memory:"):
+            with patch("checkpoint.create_checkpointer_async") as mock_create:
+                await _prewarm_pipeline()
+                mock_create.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_warms_imports_checkpointer_and_graph(self):
+        """Production path: pull the lazy-import chain, pre-create the
+        checkpointer schema, and compile the graph once."""
+        from core.app_lifespan import _prewarm_pipeline
+
+        mock_ckpt = AsyncMock()
+        mock_graph = MagicMock()
+
+        # _prewarm_pipeline imports these lazily inside the function, so the
+        # patches must target the underlying modules.
+        with patch("core.app_lifespan.DATABASE_URL", "postgresql://u:p@h/db"):
+            with patch("checkpoint.create_checkpointer_async", new_callable=AsyncMock, return_value=mock_ckpt) as mock_create:
+                with patch("checkpoint.close_checkpointer", new_callable=AsyncMock) as mock_close:
+                    with patch("graph.graph.SingleAgentGraph", return_value=mock_graph) as mock_graph_cls:
+                        await _prewarm_pipeline()
+                        mock_create.assert_awaited_once()
+                        mock_close.assert_awaited_once_with(mock_ckpt)
+                        mock_graph_cls.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_startup_swallows_prewarm_failure(self):
+        """A failed prewarm must not block serving — startup logs and continues."""
+        from core.app_lifespan import startup
+
+        mock_app = MagicMock()
+        mock_app.state = MagicMock()
+
+        with patch("core.app_lifespan.load_config"):
+            with patch("core.app_lifespan._init_database", new_callable=AsyncMock):
+                with patch("core.app_lifespan._check_redis", new_callable=AsyncMock):
+                    with patch("core.app_lifespan._prewarm_pipeline", side_effect=RuntimeError("boom")):
+                        with patch("core.app_lifespan.mark_started") as mock_started:
+                            await startup(mock_app)
+                            mock_started.assert_called_once()

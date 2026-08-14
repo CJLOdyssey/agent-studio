@@ -27,3 +27,48 @@ def test_user_events_ws_streams_user_events(client, monkeypatch):
             "session_id": "s1",
             "ts": 1,
         }
+
+
+def test_ws_user_id_guest_when_auth_disabled(monkeypatch):
+    from unittest.mock import MagicMock
+
+    from routers.events import _ws_user_id
+
+    monkeypatch.setattr("routers.events.auth_enabled", lambda: False)
+    ws = MagicMock()
+    assert _ws_user_id(ws) == "guest"
+
+
+def test_ws_user_id_empty_without_token(monkeypatch):
+    from unittest.mock import MagicMock
+
+    from routers.events import _ws_user_id
+
+    monkeypatch.setattr("routers.events.auth_enabled", lambda: True)
+    ws = MagicMock()
+    ws.cookies.get.return_value = None
+    assert _ws_user_id(ws) == ""
+
+
+def test_ws_user_id_from_token(monkeypatch):
+    from unittest.mock import MagicMock
+
+    from routers.events import _ws_user_id
+
+    monkeypatch.setattr("routers.events.auth_enabled", lambda: True)
+    monkeypatch.setattr("routers.events.decode_jwt", lambda token, secret: {"sub": "user-123"})
+    ws = MagicMock()
+    ws.cookies.get.return_value = "token"
+    assert _ws_user_id(ws) == "user-123"
+
+
+def test_ws_user_id_empty_on_invalid_payload(monkeypatch):
+    from unittest.mock import MagicMock
+
+    from routers.events import _ws_user_id
+
+    monkeypatch.setattr("routers.events.auth_enabled", lambda: True)
+    monkeypatch.setattr("routers.events.decode_jwt", lambda token, secret: None)
+    ws = MagicMock()
+    ws.cookies.get.return_value = "token"
+    assert _ws_user_id(ws) == ""
