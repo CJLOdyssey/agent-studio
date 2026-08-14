@@ -121,7 +121,7 @@ function ThemedApp() {
         跳转到主内容
       </a>
       <AuthProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter>
           <ToastProvider>
             <AuthGate>
               <AppInit />
