@@ -160,18 +160,20 @@ export function useConversation() {
   const refreshFromServer = useCallback(() => {
     listSessions(100).then((sessions) => {
       setConversations((prev) => {
-        const merged = prev.map((c) => {
-          const s = c.sessionId ? sessions.find((x) => x.id === c.sessionId) : undefined;
-          return s
-            ? {
-                ...c,
-                title: s.title,
-                isPinned: s.is_pinned,
-                runCount: s.run_count ?? 0,
-                updatedAt: s.updated_at || s.created_at || c.updatedAt,
-              }
-            : c;
-        });
+        const merged = prev
+          .filter((c) => !c.sessionId || sessions.some((x) => x.id === c.sessionId))
+          .map((c) => {
+            const s = c.sessionId ? sessions.find((x) => x.id === c.sessionId) : undefined;
+            return s
+              ? {
+                  ...c,
+                  title: s.title,
+                  isPinned: s.is_pinned,
+                  runCount: s.run_count ?? 0,
+                  updatedAt: s.updated_at || s.created_at || c.updatedAt,
+                }
+              : c;
+          });
         for (const s of sessions) {
           if (merged.some((c) => c.sessionId === s.id)) continue;
           merged.push({
