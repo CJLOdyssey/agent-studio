@@ -127,12 +127,14 @@ export function useConversation() {
     listSessions(100).then((sessions) => {
       if (cancelled) return;
       setConversations((prev) => {
-        const localSessionIds = new Set(
-          prev.map((c) => c.sessionId).filter(Boolean)
+        const serverIds = new Set(sessions.map((s) => s.id));
+        const kept = prev.filter(
+          (c) => !c.sessionId || serverIds.has(c.sessionId),
         );
+        const localIds = new Set(kept.map((c) => c.sessionId).filter(Boolean));
         const apiConvs: Conversation[] = [];
         for (const s of sessions) {
-          if (localSessionIds.has(s.id)) continue;
+          if (localIds.has(s.id)) continue;
           apiConvs.push({
             id: crypto.randomUUID?.() || uid(),
             title: s.title,
@@ -146,8 +148,8 @@ export function useConversation() {
             sessionId: s.id,
           });
         }
-        if (apiConvs.length === 0) return prev;
-        const merged = [...apiConvs, ...prev];
+        if (apiConvs.length === 0 && kept.length === prev.length) return prev;
+        const merged = [...apiConvs, ...kept];
         localStorage.setItem('agentstudio-conversations', JSON.stringify(merged));
         return merged;
       });
@@ -288,9 +290,11 @@ export function useConversation() {
     if (conv?.sessionId) {
       deleteSession(conv.sessionId).catch((err) => {
         Logger.warn('[conversation] failed to delete server session %s: %s', conv.sessionId, String(err));
+        // 乐观删除失败 → 以 server 为准恢复（DB 权威）
+        refreshFromServer();
       });
     }
-  }, [conversations, persistConversations]);
+  }, [conversations, persistConversations, refreshFromServer]);
 
   /** Rename a conversation — optimistic localStorage update + server sync. */
   const renameConversation = useCallback((convId: string, title: string) => {
@@ -307,9 +311,11 @@ export function useConversation() {
     if (conv?.sessionId) {
       renameSession(conv.sessionId, trimmed).catch((err) => {
         Logger.warn('[conversation] failed to rename session %s: %s', conv.sessionId, String(err));
+        // 乐观重命名失败 → 以 server 为准恢复标题（DB 权威）
+        refreshFromServer();
       });
     }
-  }, [conversations, persistConversations]);
+  }, [conversations, persistConversations, refreshFromServer]);
 
   /** Pin/unpin a conversation — optimistic localStorage update + server sync. */
   const pinConversation = useCallback((convId: string) => {
@@ -325,9 +331,11 @@ export function useConversation() {
     if (conv?.sessionId) {
       pinSession(conv.sessionId, next).catch((err) => {
         Logger.warn('[conversation] failed to pin session %s: %s', conv.sessionId, String(err));
+        // 乐观置顶失败 → 以 server 为准恢复（DB 权威）
+        refreshFromServer();
       });
     }
-  }, [conversations, persistConversations]);
+  }, [conversations, persistConversations, refreshFromServer]);
 
   return {
     activeConvId,
