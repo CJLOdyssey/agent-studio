@@ -99,6 +99,7 @@ class TestBrokerRedis:
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,
+            socket_timeout=10,
             health_check_interval=30,
             retry_on_timeout=True,
         )
@@ -205,6 +206,7 @@ class TestBrokerFull:
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=10,
+            socket_timeout=10,
             health_check_interval=30,
             retry_on_timeout=True,
         )
