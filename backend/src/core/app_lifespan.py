@@ -112,6 +112,55 @@ async def _check_redis() -> None:
         logger.warning("[LIFECYCLE] redis unavailable (pub/sub will fail): %s", e)
 
 
+async def _prewarm_pipeline() -> None:
+    """Warm the run pipeline at boot so the first POST /api/runs after a
+    restart isn't a 10s cold start (lazy imports + checkpointer schema +
+    graph compilation) that trips the frontend's 10s axios timeout.
+
+    Lazy imports stay lazy inside run_service/tasks — this function
+    explicitly pulls the whole chain in during startup instead.
+    """
+    import time
+
+    t0 = time.time()
+
+    # 1. Lazy-import chain used by create_run / continue_run / team runs.
+    #    Importing ``tasks`` pulls agent_pipeline → graph.graph →
+    #    streaming.llm_stream → langchain/langgraph/httpx, plus the team
+    #    pipeline and registry.
+    # 2. Checkpointer schema — create_checkpointer_async() runs CREATE TABLE
+    #    (AsyncSqliteSaver.setup / AsyncPostgresSaver.setup). Pre-creating it
+    #    here moves that cost out of the first run. A fresh checkpointer is
+    #    created per run anyway; this one is only for the warmup and is closed
+    #    immediately.
+    from checkpoint import close_checkpointer, create_checkpointer_async
+    from tasks import (  # noqa: F401
+        _complete_pipeline,
+        _run_agent_pipeline,
+        registry,
+    )
+    from tasks.team_pipeline import _run_team_pipeline  # noqa: F401
+
+    warm_ckpt = await create_checkpointer_async()
+    await close_checkpointer(warm_ckpt)
+
+    # 3. Compile the LangGraph state graph once (compilation is the same for
+    #    every run; only checkpointer/tools differ). MemorySaver avoids
+    #    opening a real connection just for warmup.
+    from langgraph.checkpoint.memory import MemorySaver
+
+    from graph.graph import SingleAgentGraph
+
+    SingleAgentGraph(
+        model="warmup",
+        api_key="warmup",
+        base_url=None,
+        checkpointer=MemorySaver(),
+    )
+
+    logger.info("[LIFECYCLE] pipeline prewarmed in %.2fs", time.time() - t0)
+
+
 # ── Lifespan ────────────────────────────────────────────────────────
 
 
@@ -180,10 +229,19 @@ async def startup(app: FastAPI) -> None:
     try:
         await _init_database()
         await _check_redis()
-        mark_started()
     except Exception as exc:
         record_crash(exc)
         raise
+
+    # Warm the run pipeline (lazy imports + checkpointer schema + graph
+    # compilation) so the first request after a restart isn't a ~10s cold
+    # start. Best-effort: a warmup failure must not block serving.
+    try:
+        await _prewarm_pipeline()
+    except Exception:
+        logger.exception("[LIFECYCLE] pipeline prewarm failed — first run will pay cold-start cost")
+
+    mark_started()
 
 
 async def shutdown(app: FastAPI) -> None:
