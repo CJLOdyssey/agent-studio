@@ -24,7 +24,7 @@ class TestMiddlewareExempt:
     async def test_ws_path(self):
         from core.infra.rate_limit import RateLimitMiddleware
         app = AsyncMock()
-        await RateLimitMiddleware(app)({"type": "http", "path": "/ws/session-1", "headers": []}, AsyncMock(), AsyncMock())
+        await RateLimitMiddleware(app)({"type": "http", "path": "/api/ws/session-1", "headers": []}, AsyncMock(), AsyncMock())
         app.assert_called_once()
 
     @pytest.mark.asyncio

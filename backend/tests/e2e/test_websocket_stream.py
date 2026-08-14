@@ -48,7 +48,7 @@ class TestWebSocketStream:
         import asyncio
 
         async def _ws_test():
-            uri = f"{WS_BASE}/ws/runs/{run_id}"
+            uri = f"{WS_BASE}/api/ws/runs/{run_id}"
             async with websockets.connect(uri) as ws:
                 # Should receive a status message first
                 msg = await asyncio.wait_for(ws.recv(), timeout=5.0)
@@ -77,7 +77,7 @@ class TestWebSocketStream:
         import asyncio
 
         async def _ws_test():
-            uri = f"{WS_BASE}/ws/runs/nonexistent-run-id"
+            uri = f"{WS_BASE}/api/ws/runs/nonexistent-run-id"
             try:
                 async with websockets.connect(uri) as ws:
                     msg = await asyncio.wait_for(ws.recv(), timeout=3.0)

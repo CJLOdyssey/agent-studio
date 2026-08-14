@@ -14,7 +14,7 @@ ASGIReceive = Callable[[], Awaitable[dict[str, Any]]]
 ASGISend = Callable[[dict[str, Any]], Awaitable[None]]
 Scope = dict[str, Any]
 
-_EXEMPT_PREFIXES = ("/api/health", "/ws/", "/metrics")
+_EXEMPT_PREFIXES = ("/api/health", "/api/ws/", "/metrics")
 _SENSITIVE_HEADERS = {b"authorization", b"cookie", b"x-api-key", b"proxy-authorization"}
 _MAX_BODY_BYTES = 2 * 1024
 

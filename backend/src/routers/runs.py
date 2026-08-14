@@ -127,7 +127,7 @@ async def cancel_run(run_id: str, request: Request) -> Any:
         raise error_response(ErrorCode.INTERNAL_ERROR) from e
 
 
-@router.websocket("/ws/runs/{run_id}")
+@router.websocket("/api/ws/runs/{run_id}")
 async def run_websocket(websocket: WebSocket, run_id: str) -> Any:
     """Stream run progress and messages over a WebSocket connection."""
     client_host = websocket.client.host if websocket.client else "?"

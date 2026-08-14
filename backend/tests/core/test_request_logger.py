@@ -70,7 +70,7 @@ class TestMiddlewareExemptPaths:
     @pytest.mark.asyncio
     async def test_non_http_passes_through(self):
         app = AsyncMock()
-        scope = {"type": "websocket", "path": "/ws/test"}
+        scope = {"type": "websocket", "path": "/api/ws/test"}
         mw = RequestLogMiddleware(app)
         await mw(scope, AsyncMock(), AsyncMock())
         app.assert_awaited_once()

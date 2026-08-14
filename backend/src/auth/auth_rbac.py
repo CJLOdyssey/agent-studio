@@ -149,7 +149,7 @@ PUBLIC_PATHS = {
     "/openapi.json",
     "/redoc",
 }
-PUBLIC_PREFIXES = ("/ws/", "/api/auth/")
+PUBLIC_PREFIXES = ("/api/ws/", "/api/auth/")
 
 
 def get_user_id(request: Any) -> str:
