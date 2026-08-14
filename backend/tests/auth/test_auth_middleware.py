@@ -90,7 +90,7 @@ class TestAuthMiddlewareDispatch:
     async def test_public_prefix_skips_auth(self):
         """Line 23-24: public prefix → passes through without auth."""
         mw = AuthMiddleware(app=None)
-        request = _make_request(path="/ws/some-connection")
+        request = _make_request(path="/api/ws/some-connection")
         resp = await mw.dispatch(request, _noop_call_next)
         assert resp.status_code == 200
 

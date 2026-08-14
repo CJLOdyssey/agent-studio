@@ -8,7 +8,7 @@ export interface ConnectOptions {
   onStatusChange?: (status: WsConnectionStatus) => void;
 }
 
-const WS_BASE = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+const WS_BASE = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/ws`;
 
 /** Build WS URL. Auth is cookie-based (httpOnly) — same-origin handshake carries it. */
 function buildWsUrl(runId: string): string {

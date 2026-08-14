@@ -140,7 +140,7 @@ class RateLimitMiddleware:
         self.app = app
         self.limiter = RateLimiter(rate=rate, window_seconds=window_seconds)
         self.user_rate = user_rate
-        self._exempt_paths = {"/api/health", "/ws/"}
+        self._exempt_paths = {"/api/health", "/api/ws/"}
 
     async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         if scope["type"] != "http":
@@ -150,7 +150,7 @@ class RateLimitMiddleware:
         path = scope.get("path", "")
 
         # Skip health checks and WebSocket upgrade requests
-        if path == "/api/health" or path.startswith("/ws/"):
+        if path == "/api/health" or path.startswith("/api/ws/"):
             await self.app(scope, receive, send)
             return
 

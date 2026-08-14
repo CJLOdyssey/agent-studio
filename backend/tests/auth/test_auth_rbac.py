@@ -42,7 +42,7 @@ class TestPublicConfig:
         assert "/docs" in PUBLIC_PATHS
 
     def test_public_prefixes(self):
-        assert "/ws/" in PUBLIC_PREFIXES
+        assert "/api/ws/" in PUBLIC_PREFIXES
         assert "/api/auth/" in PUBLIC_PREFIXES
 
 @pytest.mark.requirement("REQ-AUTH-009")

@@ -73,7 +73,7 @@ describe('WebSocket Module', { tags: ['unit'] }, () => {
     const ws = await getWs();
     const unsub = ws.connectRun('url-run', mockOpts());
     const url = fakeWsInstances[0].url;
-    expect(url).toContain('/ws/runs/url-run');
+    expect(url).toContain('/api/ws/runs/url-run');
     expect(url).not.toContain('token=');
     expect(url).not.toContain('?');
     unsub();
