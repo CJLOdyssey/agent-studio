@@ -5,7 +5,6 @@ Integration tests hit the local agent-studio-db (postgres:postgres@localhost:
 normalization and the backend selector without a live DB.
 """
 
-import os
 import time
 from unittest.mock import patch
 
@@ -13,7 +12,6 @@ import pytest
 
 from observability.pg_store import PgEventStore, _backend_enabled, _dsn_for_asyncpg
 from observability.schema import Event
-
 
 PG_DSN = "postgresql://postgres:postgres@localhost:5432/backend"
 
@@ -66,7 +64,7 @@ class TestBackendSelector:
         import observability.store as store_mod
 
         store_mod._store = None
-        with patch("observability.pg_store.asyncio.run") as mock_schema, \
+        with patch("observability.pg_store.asyncio.run"), \
              patch("observability.pg_store.asyncio.new_event_loop"):
             store = store_mod.get_store()
         assert isinstance(store, PgEventStore)
@@ -145,3 +143,30 @@ class TestPgEventStoreIntegration:
         assert deleted >= 1
         assert store.by_trace("pgtest-old") == []
         assert len(store.by_trace("pgtest-new")) == 1
+
+    def test_self_check_has_disk_errors_key(self, store):
+        """Health router reads self_check['disk_errors'] — contract must match SQLite store."""
+        check = store.self_check()
+        assert "disk_errors" in check
+        assert check["disk_errors"] == 0
+
+    def test_error_trace_ids_returns_latest_per_trace(self, store):
+        """PG requires non-aggregated SELECT columns in GROUP BY — the rewritten
+        self-join must return the latest error event per trace, not fail."""
+        now = time.time()
+        store.write(Event(trace_id="pgtest-err2", level="ERROR", message="first", logger="t",
+                          timestamp=now - 10, error_type="ValueError"))
+        store.write(Event(trace_id="pgtest-err2", level="ERROR", message="latest", logger="t",
+                          timestamp=now, error_type="ValueError"))
+        store.write(Event(trace_id="pgtest-ok2", level="INFO", message="fine", logger="t", timestamp=now))
+        deadline = time.time() + 5
+        rows = []
+        while time.time() < deadline:
+            rows = store.error_trace_ids(seconds=600, limit=20)
+            if any(r["trace_id"] == "pgtest-err2" for r in rows):
+                break
+            time.sleep(0.2)
+        err2 = [r for r in rows if r["trace_id"] == "pgtest-err2"]
+        assert len(err2) == 1
+        assert err2[0]["message"] == "latest"
+        assert not any(r["trace_id"] == "pgtest-ok2" for r in rows)
