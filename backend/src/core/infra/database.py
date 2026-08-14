@@ -94,16 +94,16 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     return _async_session_factory
 
 def dispose_engine() -> None:
-    """Dispose the singleton async engine — call on application shutdown.
+    """Dispose the singleton async engine's connection pool.
 
-    Releases the connection pool and its event-loop resources so a graceful
-    shutdown does not leak them (previously the engine lived for the process).
+    Called on application shutdown to release pooled connections and their
+    event-loop resources. The engine object itself is kept: tests reuse the
+    module-level engine across TestClient lifecycles (dropping it would
+    recreate a fresh ``:memory:`` SQLite database and lose every table).
     """
-    global _async_engine, _async_session_factory
+    global _async_engine
     if _async_engine is not None:
         _async_engine.sync_engine.dispose()
-        _async_engine = None
-    _async_session_factory = None
 
 async def init_db() -> None:
     """Bootstrap database tables on first run.

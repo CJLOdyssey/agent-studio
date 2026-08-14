@@ -122,6 +122,12 @@ async def _prewarm_pipeline() -> None:
     """
     import time
 
+    # Skip under the test harness: TestClient triggers the full lifespan
+    # per test, so prewarming would repeat the import chain (and its
+    # checkpointer/graph setup) dozens of times for zero benefit.
+    if ":memory:" in DATABASE_URL:
+        return
+
     t0 = time.time()
 
     # 1. Lazy-import chain used by create_run / continue_run / team runs.
