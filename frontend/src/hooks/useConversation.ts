@@ -3,6 +3,8 @@ import type { Conversation } from '../types/AgentStudio';
 import { useChatStore } from '../stores/chatStore';
 import { listSessions, deleteSession, renameSession, pinSession } from '../api/client/sessions';
 import { useAuth } from '../components/auth';
+import { useUserEvents } from './useUserEvents';
+import type { UserEvent } from '../api/userEvents';
 import Logger from '../utils/logger';
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
@@ -152,6 +154,62 @@ export function useConversation() {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [isAuthenticated]);
+
+  // 跨端实时同步：其他端对会话增删改 → 从服务器重建列表（DB 权威最终一致；
+  // WS 重连触发全量对齐）。当前会话被其他端删除 → 清激活态。
+  const refreshFromServer = useCallback(() => {
+    listSessions(100).then((sessions) => {
+      setConversations((prev) => {
+        const merged = prev.map((c) => {
+          const s = c.sessionId ? sessions.find((x) => x.id === c.sessionId) : undefined;
+          return s
+            ? {
+                ...c,
+                title: s.title,
+                isPinned: s.is_pinned,
+                runCount: s.run_count ?? 0,
+                updatedAt: s.updated_at || s.created_at || c.updatedAt,
+              }
+            : c;
+        });
+        for (const s of sessions) {
+          if (merged.some((c) => c.sessionId === s.id)) continue;
+          merged.push({
+            id: crypto.randomUUID?.() || uid(),
+            title: s.title,
+            messages: [],
+            kind: (s.kind as 'normal' | 'agent' | 'team') || 'normal',
+            agentId: s.agent_id || undefined,
+            isPinned: s.is_pinned,
+            runCount: s.run_count ?? 0,
+            createdAt: s.created_at || new Date().toISOString(),
+            updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
+            sessionId: s.id,
+          });
+        }
+        localStorage.setItem('agentstudio-conversations', JSON.stringify(merged));
+        return merged;
+      });
+    }).catch(() => {});
+  }, []);
+
+  useUserEvents(
+    useCallback(
+      (event: UserEvent) => {
+        if (event.type === 'session.deleted') {
+          const target = conversations.find((c) => c.sessionId === event.session_id);
+          if (target && target.id === activeConvId) {
+            setActiveConvId(null);
+          }
+        }
+        refreshFromServer();
+      },
+      [conversations, activeConvId, refreshFromServer],
+    ),
+    useCallback(() => {
+      refreshFromServer();
+    }, [refreshFromServer]),
+  );
 
   /** Persist conversations to localStorage immediately (not just via the debounced effect). */
   const persistConversations = useCallback((convs: Conversation[]) => {
