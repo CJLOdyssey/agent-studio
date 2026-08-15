@@ -473,6 +473,18 @@ export function useWorkstationState(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConvId]);
 
+  // 权威兜底（两项目统一）：会话列表已加载后，URL 指向的会话不存在
+  // （跨端删除 / 本地删除 / 刷新已删 URL）→ 回首页。保证 URL 永远指向存在的
+  // 会话，不残留空白会话页。判定依赖 conversations（删除后 refreshFromServer
+  // 移除即触发），sessionsLoaded 防初始加载竞态误跳。
+  useEffect(() => {
+    if (!activeConvId || !conv.sessionsLoaded) return;
+    const exists = filteredConversations.some(
+      (c) => c.id === activeConvId || c.sessionId === activeConvId,
+    );
+    if (!exists) navigate('/');
+  }, [activeConvId, filteredConversations, conv.sessionsLoaded, navigate]);
+
   const handleNewChat = useCallback(() => {
     syncActiveConversation();
     resetApi();

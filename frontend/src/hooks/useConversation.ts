@@ -30,6 +30,10 @@ export function useConversation() {
       return null;
     }
   });
+  // 会话列表是否已从 server 加载完成（首个 listSessions 成功）。
+  // useWorkstationState 据此判定"URL 指向的会话是否真的不存在"（避免初始
+  // 加载竞态把尚在拉取的会话误判为已删除而跳回首页）。
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>(() => {
     try {
       const saved = localStorage.getItem('agentstudio-conversations');
@@ -180,6 +184,7 @@ export function useConversation() {
     const onLogout = () => {
       setConversations([]);
       setActiveConvId(null);
+      setSessionsLoaded(false);
     };
     window.addEventListener('auth:logout', onLogout);
     return () => window.removeEventListener('auth:logout', onLogout);
@@ -194,6 +199,7 @@ export function useConversation() {
     let cancelled = false;
     listSessions(100).then((sessions) => {
       if (cancelled) return;
+      setSessionsLoaded(true);
       setConversations((prev) => {
         const merged = mergeWithServer(prev, sessions);
         if (merged.length === prev.length) return prev;
@@ -372,6 +378,7 @@ export function useConversation() {
     setActiveConvId,
     conversations,
     setConversations,
+    sessionsLoaded,
     saveConversation,
     updateConversationMessages,
     confirmConversationSession,
