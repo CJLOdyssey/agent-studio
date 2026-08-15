@@ -289,7 +289,9 @@ async def _run_agent_pipeline(
         # LLM API failures (HTTPStatusError 402/401/429 etc.) must not leak out
         # of the task ("Task exception was never retrieved") nor leave the run
         # stuck in running. Surface an error event + mark the run failed.
-        logger.error("[TASKS] Agent pipeline failed (run=%s): %s", run_id, exc)
+        # exc_info 保留完整 traceback：统一标 error 不能掩盖编程错误（区别于
+        # 业务失败，异常类型/堆栈是唯一诊断线索）。
+        logger.error("[TASKS] Agent pipeline failed (run=%s): %s", run_id, exc, exc_info=True)
         await publish_run_message(run_id, {"type": "error", "message": f"执行失败: {exc}"})
         await update_run_status(run_id, "error")
         await _notify_session_changed(user_id, session_id)

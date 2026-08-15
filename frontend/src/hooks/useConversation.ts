@@ -120,6 +120,23 @@ export function useConversation() {
     for (const s of sessions) {
       const local = confirmed.get(s.id);
       const tmp = temp.find((t) => matchesTemp(t, s));
+      if (tmp && !local) {
+        // WS 事件先于 run 响应到达：server 条目匹配到发送中的乐观占位。
+        // 原位「吸附」到 server 会话但保留 temp 语义（temp:true + 原 id）——
+        // 加载/兜底 effect 据 temp 标记放行进行中的流式状态；等 run 响应
+        // 的 confirm effect 再转正（id→sessionId）。不新增重复条。
+        result.push({
+          ...tmp,
+          sessionId: s.id,
+          title: s.title,
+          isPinned: s.is_pinned,
+          runCount: s.run_count ?? 0,
+          createdAt: s.created_at || tmp.createdAt,
+          updatedAt: s.updated_at || s.created_at || tmp.updatedAt,
+          agentId: s.agent_id || tmp.agentId,
+        });
+        continue;
+      }
       result.push({
         id: s.id,
         sessionId: s.id,

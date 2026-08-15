@@ -1,5 +1,6 @@
 """Login, refresh token, and logout endpoints."""
 
+import os
 from datetime import UTC, datetime
 from typing import Any
 
@@ -80,8 +81,22 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Any
     logger.info("User logged in: %s", _mask_email(email))
 
     auth_resp = await _create_auth_response(user.id, user.email, user.username, body.remember_me)
-    _set_access_token_cookie(response, auth_resp.access_token, secure=request.url.scheme == "https")
+    _set_access_token_cookie(response, auth_resp.access_token, secure=_cookie_secure(request))
     return auth_resp
+
+
+def _cookie_secure(request: Request) -> bool:
+    """Whether the access_token cookie needs the Secure flag.
+
+    Dev (DEV_MODE=1) runs over plain http — a Secure cookie would be silently
+    dropped by the browser (ghost login). Production always sets Secure even if
+    TLS terminates at a proxy that doesn't forward the scheme: a missing flag
+    there is a security downgrade, while a spurious flag in dev is only a
+    login-blocking annoyance (dev opt-out is explicit).
+    """
+    if os.environ.get("DEV_MODE", "") == "1":
+        return False
+    return request.url.scheme == "https"
 
 
 @router.post("/refresh", response_model=AuthResponse)
@@ -97,7 +112,7 @@ async def refresh(body: RefreshRequest, request: Request, response: Response) ->
     access_token = create_token(user.id, AUTH_SECRET, ttl=ACCESS_TOKEN_TTL)
     user_resp = await _build_user_response(user.id, user.email, user.username)
 
-    _set_access_token_cookie(response, access_token, secure=request.url.scheme == "https")
+    _set_access_token_cookie(response, access_token, secure=_cookie_secure(request))
     return AuthResponse(
         access_token="",
         refresh_token=new_refresh_token_raw,

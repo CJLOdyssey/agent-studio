@@ -239,17 +239,26 @@ export function useWorkstationState(
   // 正式模式：run 响应返回 session_id → 立即把乐观占位（temp-*）原位替换为
   // 真实会话（confirmConversationSession：id→sessionId + 唯一化），并把 URL
   // 从临时占位 replace 到 server 会话 id（可分享/收藏）。幂等，重复调用安全。
+  // 校验 pendingTempId 仍是列表中的 temp 占位：发送失败残留后切到已有会话
+  // 续聊（续聊不设 pendingTempId），新 run 响应不会拿陈旧 temp-A 去并入会话 B。
   useEffect(() => {
     if (!runSessionId) return;
     const tempId = pendingTempIdRef.current;
     if (!tempId) return;
+    const pending = convRef.current.conversations.find((c) => c.id === tempId);
+    // 占位须仍存在且为 temp，且当前激活会话就是该占位（发送失败残留后用户
+    // 切到其它会话续聊：新 run 的 sessionId 不得并入旧失败占位）
+    if (!pending?.temp || activeConvId !== tempId) {
+      pendingTempIdRef.current = null;
+      return;
+    }
     pendingTempIdRef.current = null;
     convRef.current.confirmConversationSession(tempId, runSessionId);
     // 占位已原位替换为 sessionId：run 完成后的 sync 写回必须用新 id
     runConvIdRef.current = runSessionId;
     skipReloadRef.current = true;
     navigate(`/chat/${runSessionId}`, { replace: true });
-  }, [runSessionId, convRef, navigate]);
+  }, [runSessionId, convRef, navigate, activeConvId]);
 
   const lastMsgLen = apiMessages.length;
   const lastMsgStream = useMemo(() => {

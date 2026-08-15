@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from starlette.responses import Response
 
 from auth import get_user_id, require_run_owner
-from auth.auth_rbac import AUTH_ENABLED
+from auth.auth_rbac import AUTH_REQUIRE_LOGIN
 from broker import publish_user_event
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
@@ -65,11 +65,13 @@ class SessionPinRequest(BaseModel):
 async def list_sessions(request: Request, limit: int = 50, agent_id: str | None = None) -> Any:
     """List sessions for the current user."""
     user_id = get_user_id(request)
-    # 认证启用时未登录（anonymous）→ 401 而非 200 []：否则 events/发送触发的
-    # refetch 在认证瞬时失效窗口会以 anonymous 返回空列表，前端覆盖缓存清空
-    # 会话列表（"最近对话消失，需刷新才恢复"）。401 → 前端拦截器自动 refresh
-    # 恢复后重试。
-    if AUTH_ENABLED and user_id == "anonymous":
+    # 登录墙（AUTH_REQUIRE_LOGIN=1）时未登录（anonymous）→ 401 而非 200 []：
+    # 否则 events/发送触发的 refetch 在认证瞬时失效窗口会以 anonymous 返回空
+    # 列表，前端覆盖缓存清空会话列表（"最近对话消失，需刷新才恢复"）。401 →
+    # 前端拦截器自动 refresh 恢复后重试。注意用 AUTH_REQUIRE_LOGIN 而非
+    # AUTH_ENABLED：guest 模式（AUTH_ENABLED=1 + AUTH_REQUIRE_LOGIN=0）下
+    # anonymous 仍应看到自己的会话（200 []），不能被登录墙逻辑误伤。
+    if AUTH_REQUIRE_LOGIN and user_id == "anonymous":
         raise error_response(ErrorCode.AUTH_UNAUTHORIZED, detail="请先登录")
     try:
         user_id = get_user_id(request)
