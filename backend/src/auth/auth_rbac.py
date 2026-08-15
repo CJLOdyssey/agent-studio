@@ -21,6 +21,7 @@ logger = get_logger(__name__)
 
 AUTH_ENABLED = os.environ.get("AUTH_ENABLED", "0") == "1"
 AUTH_MODE = os.environ.get("AUTH_MODE", "legacy")
+AUTH_REQUIRE_LOGIN = os.environ.get("AUTH_REQUIRE_LOGIN", "0") == "1"
 
 # Validate AUTH_SECRET at import time for RBAC mode
 if AUTH_MODE == "rbac" and AUTH_ENABLED and AUTH_SECRET == "":
