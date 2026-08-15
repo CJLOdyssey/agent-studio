@@ -614,7 +614,7 @@ const TeamMessage = memo(function TeamMessage({
                         {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                       {isThinkingExpanded && (
-                        <div className="relative mt-2 max-h-[420px] overflow-y-auto text-xs text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                        <div className="relative mt-2 max-h-[420px] overflow-y-auto text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
                           {msg.thinking ? (() => {
                             const items = groupThinkingNodes(msg.thinking);
                             return items.map((item, i) => (
