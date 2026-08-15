@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
 import { normalizeError } from './errors';
-import { refreshTokens } from './auth';
+import { refreshAccessToken } from './refresh';
 import Logger from '../../utils/logger';
 
 const api = axios.create({
@@ -14,14 +14,8 @@ const api = axios.create({
 
 const REFRESH_KEY = 'agentstudio_refresh_token';
 
-function getRefreshToken(): string | null {
-  try { return localStorage.getItem(REFRESH_KEY); } catch { return null; }
-}
-let refreshToken: string | null = getRefreshToken();
-
 /** Store or clear the refresh_token only — access_token is an httpOnly cookie set by the server. */
 export function setTokens(_access: string | null, refresh: string | null) {
-  refreshToken = refresh;
   if (refresh) {
     localStorage.setItem(REFRESH_KEY, refresh);
   } else {
@@ -41,7 +35,6 @@ export function clearTokens() {
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e: StorageEvent) => {
     if (e.key === REFRESH_KEY && !e.newValue) {
-      refreshToken = null;
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
   });
@@ -53,9 +46,6 @@ if (typeof window !== 'undefined') {
 interface RetryConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
-
-let isRefreshing = false;
-let pendingQueue: Array<() => void> = [];
 
 if (api.interceptors?.request) {
   api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -91,40 +81,24 @@ if (api.interceptors?.response) {
       }
 
       // Refresh endpoint failures are terminal — never recurse into this
-      // interceptor or queue behind a refresh that is itself failing, or
-      // isRefreshing would stay true forever and stall every request.
+      // interceptor or queue behind a refresh that is itself failing.
       if (retryConfig.url === '/auth/refresh') {
         return Promise.reject(normalizeError(error));
       }
 
-      if (!refreshToken) {
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-        return Promise.reject(normalizeError(error));
-      }
-
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          pendingQueue.push(() => resolve(api(retryConfig)));
-        });
-      }
-
+      // Single-flight refresh: refreshAccessToken collapses concurrent 401s
+      // into one backend call (the server rotates refresh tokens), so we never
+      // double-consume and never spuriously log out on a race.
       retryConfig._retry = true;
-      isRefreshing = true;
-
       try {
-        const res = await refreshTokens(refreshToken);
-        setTokens(null, res.refresh_token);
-        pendingQueue.forEach((cb) => cb());
-        pendingQueue = [];
-        // New access_token was set as httpOnly cookie by server — auto-sent on retry
+        await refreshAccessToken();
         return api(retryConfig);
-      } catch {
-        clearTokens();
-        pendingQueue = [];
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      } catch (refreshErr) {
+        const rs = (refreshErr as { response?: { status?: number } })?.response?.status;
+        if (rs === 401 || rs === 403) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
         return Promise.reject(normalizeError(error));
-      } finally {
-        isRefreshing = false;
       }
     },
   );

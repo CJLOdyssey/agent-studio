@@ -181,6 +181,20 @@ export function useWorkstationState(
       // localStorage unavailable — routing falls back to the default key
     }
   }, []);
+
+  // 模型选择的单一事实源：UI 生效模型（selectedModel 或 recent 回退）必须在
+  // 提交前同步到 localStorage，否则 chatActions.resolveKey 读到 null → 默认
+  // key（历史上"一直走 deepseek"的根因之一：UI 显示选了模型但请求走默认）。
+  const ensureModelPersisted = useCallback(() => {
+    const effective = effectiveSelectedModel;
+    if (effective) {
+      try {
+        localStorage.setItem('agentstudio-selected-model', effective);
+      } catch {
+        // non-fatal
+      }
+    }
+  }, [effectiveSelectedModel]);
   const hasMessages = apiMessages.length > 0;
   const convRef = useRef(conv);
   useEffect(() => {
@@ -547,6 +561,7 @@ export function useWorkstationState(
 
   const handleSendMessage = useCallback(
     async (text: string, files: AttachedFile[]) => {
+      ensureModelPersisted();
       const userMessage: import('../../types/AgentStudio').Message = {
         id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
         role: 'user',
@@ -579,11 +594,12 @@ export function useWorkstationState(
       });
       notify();
     },
-    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate, attachmentIdsOf],
+    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate, attachmentIdsOf, ensureModelPersisted],
   );
 
   const handleHomeSend = useCallback(
     async (text: string, files: AttachedFile[]) => {
+      ensureModelPersisted();
       const userMessage: import('../../types/AgentStudio').Message = {
         id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
         role: 'user',
@@ -614,7 +630,7 @@ export function useWorkstationState(
       });
       notify();
     },
-    [conv, submitToApi, notify, selectedAgentId, navigate, attachmentIdsOf],
+    [conv, submitToApi, notify, selectedAgentId, navigate, attachmentIdsOf, ensureModelPersisted],
   );
 
   const { isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop } = useDragAndDrop(inputToolbarRef as React.RefObject<InputToolbarHandle>);

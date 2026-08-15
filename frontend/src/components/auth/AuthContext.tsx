@@ -3,7 +3,6 @@ import {
   getAuthConfig,
   getMe,
   mergeGuestData as apiMergeGuestData,
-  refreshTokens,
   login as apiLogin,
   register as apiRegister,
   verify as apiVerify,
@@ -14,6 +13,7 @@ import {
   logout as apiLogout,
 } from '../../api/client/auth';
 import { clearTokens, setTokens } from '../../api/client/instance';
+import { refreshAccessToken } from '../../api/client/refresh';
 import { useChatStore } from '../../stores/chatStore';
 
 function clearLocalConversations() {
@@ -77,11 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const lastRefreshRef = useRef(0);
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
-    const rt = localStorage.getItem('agentstudio_refresh_token');
-    if (!rt) return false;
+    // Single-flight refresh: the axios 401 interceptor and this timer share the
+    // same coordinator so the rotated refresh_token is never double-consumed
+    // (a race would 401 one path and spuriously log the user out).
     try {
-      const res = await refreshTokens(rt);
-      setTokens(res.access_token, res.refresh_token);
+      await refreshAccessToken();
       lastRefreshRef.current = Date.now();
       return true;
     } catch (err) {
@@ -173,7 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleUnauthorized = () => {
       setUser(null);
       clearLocalConversations();
-      localStorage.removeItem('agentstudio-selected-model');
+      // 模型选择是用户偏好，与认证无关 —— 不清除，否则重新登录后仍走默认
+      // 模型（历史上"一直走 deepseek"的根因之一）。
       localStorage.removeItem('agentstudio-active-conv-id');
       setLoginModalOpen(true);
     };
