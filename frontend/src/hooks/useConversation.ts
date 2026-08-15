@@ -192,6 +192,18 @@ export function useConversation() {
           });
         for (const s of sessions) {
           if (merged.some((c) => c.sessionId === s.id)) continue;
+          // 发送中的乐观 conv（无 sessionId、标题相同、15s 内创建）——它对应的
+          // 后端 session 正是刚由 create run 创建的这条（WS session.updated 常
+          // 先于 POST /api/runs 响应到达，refreshFromServer 抢先 push 会在链接
+          // 前把同一 session 拉成第二条）。跳过 push，稍后
+          // updateConversationSessionId 链接，消除"发送中侧边栏暂态双条"。
+          const pendingSend = prev.some(
+            (c) =>
+              !c.sessionId &&
+              c.title === s.title &&
+              Date.now() - new Date(c.createdAt).getTime() < 15000,
+          );
+          if (pendingSend) continue;
           merged.push({
             id: crypto.randomUUID?.() || uid(),
             title: s.title,
