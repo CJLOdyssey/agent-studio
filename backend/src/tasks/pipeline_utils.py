@@ -14,19 +14,44 @@ from mcp import StdioServerParameters
 from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client
 
-from broker import publish_run_message
+from broker import publish_run_message, publish_user_event
 from core.infra.logging_config import get_logger
 from core.mock_fallback import run_mock
 from rag.rag_memory import summarize_rollup
 from repository import (
     create_memory_entry,
     delete_memory_entry,
+    get_session,
     get_session_memories,
     update_run_result,
     update_run_status,
 )
 
 logger = get_logger(__name__)
+
+
+async def notify_session_changed(session_id: str | None) -> None:
+    """Cross-client sync: broadcast a session update (resolves user from session).
+
+    Used by terminal paths that do not carry a user_id (team / mock-fallback).
+    """
+    if not session_id:
+        return
+    try:
+        sess = await get_session(session_id)
+        user_id = sess.user_id if sess else None
+        if not user_id:
+            return
+        await publish_user_event(
+            user_id,
+            {
+                "type": "session.updated",
+                "session_id": session_id,
+                "ts": int(time.time()),
+            },
+        )
+    except Exception:
+        logger.debug("session sync notify failed for %s", session_id, exc_info=True)
 
 # ── Session memory policy (P1 长期记忆) ─────────────────────────────────────
 # Window trimming: only the newest N entries are injected into context
@@ -145,6 +170,7 @@ def _try_mock_fallback(
                  "pm_document": "", "code": output.response, "review": "LangGraph fallback"},
             )
         )
+        _run_async(notify_session_changed(session_id))
         if session_id:
             with contextlib.suppress(Exception):
                 _run_async(_save_output_memories(session_id, run_id, output.response, {}))
