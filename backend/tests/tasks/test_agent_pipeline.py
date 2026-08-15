@@ -134,15 +134,19 @@ class TestRunAgentPipeline:
         _, graph = _default_agent_mocks(mock_agent_deps)
         graph.run.side_effect = Exception("Graph execution failed")
 
-        with pytest.raises(Exception, match="Graph execution failed"):
-            await _run_agent_pipeline(
-                requirement="test",
-                run_id="run-2",
-                session_id=None,
-                agent_id="agent-1",
-            )
+        result = await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-2",
+            session_id=None,
+            agent_id="agent-1",
+        )
 
+        assert result["status"] == "error"
         mock_agent_deps["update_run_status"].assert_any_await("run-2", "running")
+        mock_agent_deps["update_run_status"].assert_any_await("run-2", "error")
+        mock_agent_deps["publish_run_message"].assert_any_await(
+            "run-2", {"type": "error", "message": "执行失败: Graph execution failed"}
+        )
 
     async def test_no_agent_id(self, mock_agent_deps):
         cfg = MagicMock()
