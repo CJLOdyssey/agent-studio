@@ -6,7 +6,7 @@
 FROM python:3.12-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NODE_VERSION=22.23.1
+ENV NODE_VERSION=24.15.0
 ENV PATH="/usr/local/node/bin:${PATH}"
 
 # Install system dependencies + Node.js from binary tarball (no apt repo)

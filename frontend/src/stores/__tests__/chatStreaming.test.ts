@@ -10,8 +10,11 @@ vi.mock('../utils/logger', () => ({
 
 vi.mock('./uid', () => ({ uid: vi.fn(() => 'test-uid') }));
 
+vi.mock('../../api/websocket', () => ({ disconnectRun: vi.fn() }));
+
 import { createStreamHandler } from '../chatStreaming';
 import { useApprovalStore } from '../streamHandler';
+import { disconnectRun } from '../../api/websocket';
 
 describe('chatStreaming', { tags: ['unit'] }, () => {
   function makeBasicState() {
@@ -29,7 +32,7 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
           created_at: new Date().toISOString(),
         },
       ],
-      status: 'streaming',
+      status: 'running',
       currentRole: 'Agent',
       wsStatus: 'connected',
       skipThinking: false,
@@ -225,6 +228,17 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
       expect(result.status).toBe('error');
       expect(result.error).toBe('Unknown error');
     });
+
+    it('disconnects the run WS on error (backend error path sends no result)', () => {
+      disconnectRun.mockClear();
+      const set = vi.fn();
+      const get = vi.fn(() => makeBasicState());
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({ type: 'error', content: 'boom' });
+
+      expect(disconnectRun).toHaveBeenCalledWith('run-1');
+    });
   });
 
   describe('balance_warning event', () => {
@@ -245,6 +259,24 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
       const result = getUpdater(set);
       expect(result.status).toBe('error');
       expect(result.error).toBe('余额不足');
+    });
+
+    it('disconnects the run WS on balance warning', () => {
+      disconnectRun.mockClear();
+      const set = vi.fn();
+      const get = vi.fn(() => ({
+        ...makeBasicState(),
+        currentRunId: 'run-1',
+        streamingId: null,
+        continuingId: null,
+        pendingVersions: null,
+        pendingThinkingVersions: null,
+      }));
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({ type: 'balance_warning', content: '余额不足' });
+
+      expect(disconnectRun).toHaveBeenCalledWith('run-1');
     });
   });
 

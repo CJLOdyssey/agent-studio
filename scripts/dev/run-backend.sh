@@ -62,7 +62,12 @@ if [ "${RELOAD:-}" = "1" ]; then
 fi
 
 echo "🚀 Starting backend on port $PORT${RELOAD_FLAG:+ with --reload}..."
-nohup /usr/bin/python3 -m uvicorn core.app:app \
+PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN=/usr/bin/python3
+  echo "⚠️  .venv not found — falling back to system python3"
+fi
+nohup "$PYTHON_BIN" -m uvicorn core.app:app \
   --port "$PORT" \
   --host "0.0.0.0" \
   --loop asyncio \

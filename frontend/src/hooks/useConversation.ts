@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Conversation } from '../types/AgentStudio';
+import type { SessionItem } from '../types';
 import { useChatStore } from '../stores/chatStore';
 import { listSessions, deleteSession, renameSession, pinSession } from '../api/client/sessions';
 import { useAuth } from '../components/auth';
@@ -29,6 +30,10 @@ export function useConversation() {
       return null;
     }
   });
+  // 会话列表是否已从 server 加载完成（首个 listSessions 成功）。
+  // useWorkstationState 据此判定"URL 指向的会话是否真的不存在"（避免初始
+  // 加载竞态把尚在拉取的会话误判为已删除而跳回首页）。
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>(() => {
     try {
       const saved = localStorage.getItem('agentstudio-conversations');
@@ -72,6 +77,87 @@ export function useConversation() {
     }
   });
 
+  // Persist conversations to localStorage immediately (not just via the debounced effect).
+  // 乐观占位（temp）不落盘：刷新后以 server 为准，未获确认的占位直接丢弃。
+  const persistConversations = useCallback((convs: Conversation[]) => {
+    try {
+      localStorage.setItem(
+        'agentstudio-conversations',
+        JSON.stringify(convs.filter((c) => !c.temp)),
+      );
+    } catch {
+      // non-fatal
+    }
+  }, []);
+
+  // 正式模式的统一列表归并（幂等核心，替代此前的 merge+删重补丁）：
+  // 乐观占位（temp）保留在列；已确认会话与 server 按 sessionId 合并（唯一）；
+  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换（不新增，
+  // 消除 WS 事件先于 run 响应的发送中暂态双条）；已确认但不在 server 的删除。
+  const mergeWithServer = useCallback((prev: Conversation[], sessions: SessionItem[]) => {
+    const confirmed = new Map<string, Conversation>();
+    const temp: Conversation[] = [];
+    const orphan: Conversation[] = [];
+    for (const c of prev) {
+      if (c.temp) {
+        temp.push(c);
+        continue;
+      }
+      if (c.sessionId) {
+        confirmed.set(c.sessionId, c);
+        continue;
+      }
+      // 无 sessionId 且非 temp：本地旧数据/未确认会话——保留（server 无对应）
+      orphan.push(c);
+    }
+    const matchesTemp = (t: Conversation, s: SessionItem) =>
+      t.title === s.title &&
+      Date.now() - new Date(t.createdAt).getTime() < 15000;
+    const result: Conversation[] = [
+      ...orphan,
+      ...temp.filter((t) => !sessions.some((s) => matchesTemp(t, s))),
+    ];
+    for (const s of sessions) {
+      const local = confirmed.get(s.id);
+      const tmp = temp.find((t) => matchesTemp(t, s));
+      if (tmp && !local) {
+        // WS 事件先于 run 响应到达：server 条目匹配到发送中的乐观占位。
+        // 原位「吸附」到 server 会话但保留 temp 语义（temp:true + 原 id）——
+        // 加载/兜底 effect 据 temp 标记放行进行中的流式状态；等 run 响应
+        // 的 confirm effect 再转正（id→sessionId）。不新增重复条。
+        result.push({
+          ...tmp,
+          sessionId: s.id,
+          title: s.title,
+          isPinned: s.is_pinned,
+          runCount: s.run_count ?? 0,
+          createdAt: s.created_at || tmp.createdAt,
+          updatedAt: s.updated_at || s.created_at || tmp.updatedAt,
+          agentId: s.agent_id || tmp.agentId,
+        });
+        continue;
+      }
+      result.push({
+        id: s.id,
+        sessionId: s.id,
+        title: s.title,
+        messages: local?.messages ?? tmp?.messages ?? [],
+        kind: (s.kind as 'normal' | 'agent' | 'team') || 'normal',
+        agentId: s.agent_id || local?.agentId || tmp?.agentId,
+        isPinned: s.is_pinned,
+        runCount: s.run_count ?? 0,
+        createdAt:
+          s.created_at || local?.createdAt || tmp?.createdAt || new Date().toISOString(),
+        updatedAt:
+          s.updated_at || s.created_at || local?.updatedAt || tmp?.updatedAt ||
+          new Date().toISOString(),
+        teamId: local?.teamId ?? tmp?.teamId,
+        teamName: local?.teamName ?? tmp?.teamName,
+      });
+    }
+    return result;
+  }, []);
+
   // Persist activeConvId across page refreshes
   useEffect(() => {
     try {
@@ -85,10 +171,13 @@ export function useConversation() {
     }
   }, [activeConvId]);
 
-  // Persist to localStorage whenever conversations change
+  // Persist to localStorage whenever conversations change (temp 占位不落盘)
   useEffect(() => {
     try {
-      localStorage.setItem('agentstudio-conversations', JSON.stringify(conversations));
+      localStorage.setItem(
+        'agentstudio-conversations',
+        JSON.stringify(conversations.filter((c) => !c.temp)),
+      );
     } catch {
       // localStorage full or unavailable — non-fatal
     }
@@ -112,6 +201,7 @@ export function useConversation() {
     const onLogout = () => {
       setConversations([]);
       setActiveConvId(null);
+      setSessionsLoaded(false);
     };
     window.addEventListener('auth:logout', onLogout);
     return () => window.removeEventListener('auth:logout', onLogout);
@@ -126,76 +216,28 @@ export function useConversation() {
     let cancelled = false;
     listSessions(100).then((sessions) => {
       if (cancelled) return;
+      setSessionsLoaded(true);
       setConversations((prev) => {
-        const serverIds = new Set(sessions.map((s) => s.id));
-        const kept = prev.filter(
-          (c) => !c.sessionId || serverIds.has(c.sessionId),
-        );
-        const localIds = new Set(kept.map((c) => c.sessionId).filter(Boolean));
-        const apiConvs: Conversation[] = [];
-        for (const s of sessions) {
-          if (localIds.has(s.id)) continue;
-          apiConvs.push({
-            id: crypto.randomUUID?.() || uid(),
-            title: s.title,
-            messages: [],
-            kind: s.kind as 'normal' | 'agent' | 'team' || 'normal',
-            agentId: s.agent_id || undefined,
-            isPinned: s.is_pinned,
-            runCount: s.run_count ?? 0,
-            createdAt: s.created_at || new Date().toISOString(),
-            updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
-            sessionId: s.id,
-          });
-        }
-        if (apiConvs.length === 0 && kept.length === prev.length) return prev;
-        const merged = [...apiConvs, ...kept];
-        localStorage.setItem('agentstudio-conversations', JSON.stringify(merged));
+        const merged = mergeWithServer(prev, sessions);
+        if (merged.length === prev.length) return prev;
+        persistConversations(merged.filter((c) => !c.temp));
         return merged;
       });
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, mergeWithServer, persistConversations]);
 
   // 跨端实时同步：其他端对会话增删改 → 从服务器重建列表（DB 权威最终一致；
   // WS 重连触发全量对齐）。当前会话被其他端删除 → 清激活态。
   const refreshFromServer = useCallback(() => {
     listSessions(100).then((sessions) => {
       setConversations((prev) => {
-        const merged = prev
-          .filter((c) => !c.sessionId || sessions.some((x) => x.id === c.sessionId))
-          .map((c) => {
-            const s = c.sessionId ? sessions.find((x) => x.id === c.sessionId) : undefined;
-            return s
-              ? {
-                  ...c,
-                  title: s.title,
-                  isPinned: s.is_pinned,
-                  runCount: s.run_count ?? 0,
-                  updatedAt: s.updated_at || s.created_at || c.updatedAt,
-                }
-              : c;
-          });
-        for (const s of sessions) {
-          if (merged.some((c) => c.sessionId === s.id)) continue;
-          merged.push({
-            id: crypto.randomUUID?.() || uid(),
-            title: s.title,
-            messages: [],
-            kind: (s.kind as 'normal' | 'agent' | 'team') || 'normal',
-            agentId: s.agent_id || undefined,
-            isPinned: s.is_pinned,
-            runCount: s.run_count ?? 0,
-            createdAt: s.created_at || new Date().toISOString(),
-            updatedAt: s.updated_at || s.created_at || new Date().toISOString(),
-            sessionId: s.id,
-          });
-        }
-        localStorage.setItem('agentstudio-conversations', JSON.stringify(merged));
+        const merged = mergeWithServer(prev, sessions);
+        persistConversations(merged.filter((c) => !c.temp));
         return merged;
       });
     }).catch(() => {});
-  }, []);
+  }, [mergeWithServer, persistConversations]);
 
   useUserEvents(
     useCallback(
@@ -215,21 +257,16 @@ export function useConversation() {
     }, [refreshFromServer]),
   );
 
-  /** Persist conversations to localStorage immediately (not just via the debounced effect). */
-  const persistConversations = useCallback((convs: Conversation[]) => {
-    try {
-      localStorage.setItem('agentstudio-conversations', JSON.stringify(convs));
-    } catch {
-      // non-fatal
-    }
-  }, []);
-
-  /** Save or update a conversation. If convId exists, updates it; otherwise creates new. */
+  /** Save or update a conversation. If convId exists, updates it; otherwise creates new.
+   * 正式模式：发送时创建乐观占位（id=temp-*，temp:true，不持久化），server 确认
+   * （run 响应返回 session_id）后经 confirmConversationSession 原位替换为 sessionId。
+   */
   const saveConversation = useCallback((title: string, messages: unknown[], agentId?: string, teamId?: string, teamName?: string, kind?: 'normal' | 'agent' | 'team') => {
     const now = new Date().toISOString();
-    const id = crypto.randomUUID?.() || uid();
+    const id = `temp-${crypto.randomUUID?.() || uid()}`;
     const conv: Conversation = {
       id,
+      temp: true,
       title: title.length > 36 ? title.slice(0, 36) + '...' : title,
       messages: messages as Conversation['messages'],
       createdAt: now,
@@ -261,14 +298,30 @@ export function useConversation() {
     });
   }, [persistConversations]);
 
-  /** Update session ID for an existing conversation (links to backend session). */
-  const updateConversationSessionId = useCallback((convId: string, sessionId: string, updateTimestamps = true) => {
+  /** 正式模式：server 确认后把乐观占位原位替换为真实会话（id → sessionId）。
+   * 顺带唯一化：同 sessionId 只保留一条（保留顺序最先 = 本地带消息的占位，
+   * 删除 WS 先到被 merge push 的空 server 条）——结构幂等，非删重补丁。 */
+  const confirmConversationSession = useCallback((tempId: string, sessionId: string) => {
     setConversations((prev) => {
-      const next = prev.map((c) =>
-        c.id === convId ? { ...c, sessionId, ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}) } : c,
-      );
-      persistConversations(next);
-      return next;
+      const replaced = prev.map((c) => {
+        if (c.id !== tempId) return c;
+        if (c.temp) {
+          // 乐观占位：原位替换 id → sessionId（正式会话标识）
+          const { temp: _removed, ...rest } = c;
+          return { ...rest, id: sessionId, sessionId };
+        }
+        // 续聊/已确认会话（非占位）：仅补/更新 sessionId，保留本地 id
+        return { ...c, sessionId };
+      });
+      const seen = new Set<string>();
+      const unique = replaced.filter((c) => {
+        const key = c.temp ? c.id : c.sessionId || c.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      persistConversations(unique);
+      return unique;
     });
   }, [persistConversations]);
 
@@ -342,9 +395,10 @@ export function useConversation() {
     setActiveConvId,
     conversations,
     setConversations,
+    sessionsLoaded,
     saveConversation,
     updateConversationMessages,
-    updateConversationSessionId,
+    confirmConversationSession,
     deleteConversation,
     renameConversation,
     pinConversation,

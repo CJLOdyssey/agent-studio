@@ -294,6 +294,11 @@ describe('AgentStudioWorkstation 集成测试', { tags: ['integration'] }, () =>
     await waitFor(() => expect(messagesArea().textContent).toContain('第三段对话的消息'));
     await waitFor(() => expect(wsCallbacks.has('run-switch')).toBe(true));
 
+    // 完成 run：避免进行中的 confirm effect（temp→sessionId + navigate）在切
+    // 回旧会话时竞态把用户拉回新会话（flaky：慢机器/CI 上偶发）
+    emitWs('run-switch', { type: 'result', run_id: 'run-switch', code: '' });
+    await waitFor(() => expect(mockSubmitRequirement).toHaveBeenCalledTimes(1));
+
     fireEvent.click(screen.getByText('第一段对话'));
     await waitFor(() => {
       const el = messagesArea();

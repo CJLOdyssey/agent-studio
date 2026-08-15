@@ -113,6 +113,8 @@ export interface Conversation {
   isPinned?: boolean;
   /** 会话已产生的 run 数（后端 sessions 列表返回；列表消息未加载时用于判定是否已回复） */
   runCount?: number;
+  /** 乐观占位：发送中未获 server 确认的临时会话（id=temp-*，确认后原位替换为 sessionId） */
+  temp?: boolean;
 }
 
 // 消息类型

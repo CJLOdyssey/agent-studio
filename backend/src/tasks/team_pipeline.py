@@ -12,7 +12,7 @@ from repository.workflows import get_workflow_config_by_team
 from workflow.dynamic_team_graph import DynamicTeamGraph
 from workflow.models import NodeStrategy
 
-from .pipeline_utils import log_memory_diff
+from .pipeline_utils import log_memory_diff, notify_session_changed
 
 logger = get_logger(__name__)
 
@@ -104,6 +104,7 @@ async def _run_team_pipeline(
             review=f"Team done: {len(artifacts)} outputs, {rounds} round(s)",
             approved=True, status="converged",
         )
+        await notify_session_changed(session_id)
         # 行业化布局：每条角色输出 = 独立消息（agent_name=角色），reviewer
         # verdict 以人类可读文本独立落库（徽章不可持久化，刷新后靠此保留）。
         for role, content in artifacts.items():
@@ -154,5 +155,12 @@ async def _run_team_pipeline(
                 await close_checkpointer(checkpointer)
             except Exception:
                 logger.warning("[TEAM] failed to close checkpointer run=%s", run_id, exc_info=True)
+        # run 结束即释放 buffer pubsub 连接（同 agent_pipeline，防 Redis 池耗尽）
+        try:
+            from broker import stop_buffer
+
+            await stop_buffer(run_id)
+        except Exception:
+            logger.debug("stop_buffer failed for run %s", run_id, exc_info=True)
         gc.collect()
         log_memory_diff()

@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from auth.auth_jwt import AUTH_SECRET, decode_jwt
-from auth.auth_rbac import AUTH_ENABLED, PUBLIC_PATHS, PUBLIC_PREFIXES
+from auth.auth_rbac import AUTH_ENABLED, AUTH_REQUIRE_LOGIN, PUBLIC_PATHS, PUBLIC_PREFIXES
 from core.infra.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -51,8 +51,25 @@ class AuthMiddleware(BaseHTTPMiddleware):
         set_audit_context(client_ip=client_ip)
 
         # ── Guest mode: no token → pass through as unauthenticated ────
+        # AUTH_REQUIRE_LOGIN=1 turns the guest namespace into a login wall:
+        # business APIs reject unauthenticated requests (401) so public
+        # deployments can require sign-in before any use. Without the wall,
+        # anonymous list endpoints return 200 [] and a frontend refetch during a
+        # transient auth gap wipes cached lists (e.g. conversation list).
         if not token:
             request.state.is_authenticated = False
+            if AUTH_REQUIRE_LOGIN:
+                from fastapi.responses import JSONResponse
+
+                logger.warning("Login wall rejected anonymous request | path=%s", path)
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "detail": {
+                            "error": {"code": "AUTH_001", "message": "未登录或会话已过期"}
+                        }
+                    },
+                )
             return cast(Response, await call_next(request))
 
         payload = decode_jwt(token, AUTH_SECRET)
@@ -62,6 +79,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 client_ip, path,
             )
             request.state.is_authenticated = False
+            # 登录墙：无效/过期 token 与无 token 同等对待 → 401（前端拦截器
+            # 自动 refresh 恢复后重试，而非放行 anonymous 返回空列表覆盖缓存）。
+            if AUTH_REQUIRE_LOGIN:
+                from fastapi.responses import JSONResponse
+
+                logger.warning("Login wall rejected expired token | path=%s", path)
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "detail": {
+                            "error": {"code": "AUTH_001", "message": "未登录或会话已过期"}
+                        }
+                    },
+                )
             return cast(Response, await call_next(request))
 
         user_id = payload.get("sub", "unknown")
