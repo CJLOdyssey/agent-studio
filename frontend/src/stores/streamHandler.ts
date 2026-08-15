@@ -235,6 +235,9 @@ export function handleStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
+  // Run finished (result → status idle): WS reconnect replays buffered events.
+  // Ignore them — appending would duplicate the completed conversation.
+  if (s.status !== 'running') return;
   const runId = s.currentRunId || '';
   // Continuation is only valid while a message is streaming: a leftover run id
   // (result event lost / state reset mid-run) must not swallow the first chunk.
@@ -305,6 +308,7 @@ export function handleThinkingStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
+  if (s.status !== 'running') return;
   Logger.info('[chat] thinking stream entry — editTargetId=%s streamingId=%s runId=%s', s.editTargetId, s.streamingId, s.currentRunId);
   const runId = s.currentRunId || '';
   if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {

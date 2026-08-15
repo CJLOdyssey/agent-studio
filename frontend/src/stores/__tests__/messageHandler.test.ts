@@ -19,7 +19,7 @@ function makeState(overrides: Record<string, unknown> = {}) {
     messages: [
       { id: 'msg-1', role: 'agent', content: 'Hello', thinking: 'thinking...', agent_name: 'Agent', round_number: 0, created_at: new Date().toISOString() },
     ],
-    status: 'streaming',
+    status: 'running',
     currentRole: 'Agent',
     wsStatus: 'connected',
     skipThinking: false,
@@ -52,6 +52,17 @@ describe('handleMessageEvent', { tags: ['unit'] }, () => {
     const result = set.mock.results[0].value as { messages: Array<{ content: string }> };
     expect(result.messages).toHaveLength(2);
     expect(result.messages[1].content).toBe('New msg');
+  });
+
+  it('ignores message event when run finished (status idle — reconnect replay)', () => {
+    const set = vi.fn((fn: (s: ReturnType<typeof makeState>) => unknown) =>
+      fn(makeState({ streamingId: null, status: 'idle' })),
+    );
+
+    handleMessageEvent(set as never, { type: 'message', content: 'Replayed', thinking: '', role: 'agent', agent_name: 'Agent' });
+
+    const result = set.mock.results[0].value;
+    expect(result).toEqual({});
   });
 });
 
