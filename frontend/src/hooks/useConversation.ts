@@ -128,9 +128,16 @@ export function useConversation() {
       if (cancelled) return;
       setConversations((prev) => {
         const serverIds = new Set(sessions.map((s) => s.id));
-        const kept = prev.filter(
-          (c) => !c.sessionId || serverIds.has(c.sessionId),
-        );
+        // 按 sessionId 去重（保留顺序最先 = 最新/带消息的记录），清掉历史遗留
+        // 的重复（同 session 被乐观插入 + server 拉取各建一条）。
+        const seenSessionIds = new Set<string>();
+        const kept = prev.filter((c) => {
+          if (!c.sessionId) return true;
+          if (!serverIds.has(c.sessionId)) return false;
+          if (seenSessionIds.has(c.sessionId)) return false;
+          seenSessionIds.add(c.sessionId);
+          return true;
+        });
         const localIds = new Set(kept.map((c) => c.sessionId).filter(Boolean));
         const apiConvs: Conversation[] = [];
         for (const s of sessions) {
@@ -162,8 +169,15 @@ export function useConversation() {
   const refreshFromServer = useCallback(() => {
     listSessions(100).then((sessions) => {
       setConversations((prev) => {
+        const seenSessionIds = new Set<string>();
         const merged = prev
           .filter((c) => !c.sessionId || sessions.some((x) => x.id === c.sessionId))
+          .filter((c) => {
+            if (!c.sessionId) return true;
+            if (seenSessionIds.has(c.sessionId)) return false;
+            seenSessionIds.add(c.sessionId);
+            return true;
+          })
           .map((c) => {
             const s = c.sessionId ? sessions.find((x) => x.id === c.sessionId) : undefined;
             return s
@@ -264,9 +278,15 @@ export function useConversation() {
   /** Update session ID for an existing conversation (links to backend session). */
   const updateConversationSessionId = useCallback((convId: string, sessionId: string, updateTimestamps = true) => {
     setConversations((prev) => {
-      const next = prev.map((c) =>
-        c.id === convId ? { ...c, sessionId, ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}) } : c,
-      );
+      // 去重（发消息"显示两个会话"根治）：乐观 conv 在 WS 触发的
+      // refreshFromServer 时尚未有 sessionId（去重 :180 失配），server 会把
+      // 同一后端 session 拉成另一条空记录；此刻链接 sessionId 时删除该重复，
+      // 保留带消息的当前 conv（其 id 即 activeConvId / URL）。
+      const next = prev
+        .filter((c) => !(c.sessionId === sessionId && c.id !== convId))
+        .map((c) =>
+          c.id === convId ? { ...c, sessionId, ...(updateTimestamps ? { updatedAt: new Date().toISOString() } : {}) } : c,
+        );
       persistConversations(next);
       return next;
     });
