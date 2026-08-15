@@ -155,5 +155,12 @@ async def _run_team_pipeline(
                 await close_checkpointer(checkpointer)
             except Exception:
                 logger.warning("[TEAM] failed to close checkpointer run=%s", run_id, exc_info=True)
+        # run 结束即释放 buffer pubsub 连接（同 agent_pipeline，防 Redis 池耗尽）
+        try:
+            from broker import stop_buffer
+
+            await stop_buffer(run_id)
+        except Exception:
+            logger.debug("stop_buffer failed for run %s", run_id, exc_info=True)
         gc.collect()
         log_memory_diff()

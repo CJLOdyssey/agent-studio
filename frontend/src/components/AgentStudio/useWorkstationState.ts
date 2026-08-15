@@ -204,6 +204,12 @@ export function useWorkstationState(
   // Conversation that owns the currently running run — sync must write back to
   // it even if the user switches away mid-run, never to the newly active one.
   const runConvIdRef = useRef<string | null>(null);
+  // 正式模式：确认占位（temp→sessionId）时的 URL replace 不触发会话重载——
+  // 流式消息已在 chatStore，重载会用 localStorage 快照覆盖（丢失进行中回复）。
+  const skipReloadRef = useRef(false);
+  // 待确认的乐观占位 id（独立于 runConvIdRef —— run 完成后 syncActiveConversation
+  // 会清 runConvIdRef，若快 run 在 confirm effect 执行前完成，navigate 会被跳过）
+  const pendingTempIdRef = useRef<string | null>(null);
   // 加载竞态保护：快速切换分支时，丢弃过期响应（仅最新一次落地）。
   const loadSeqRef = useRef(0);
   // 分支切换（切版本/切分支）时抑制自动滚动 — 不主动滚到底部；
@@ -225,20 +231,25 @@ export function useWorkstationState(
       convRef.current.updateConversationMessages(targetId, state.messages, false, activeTeamId ?? undefined, activeTeamName);
     }
     if (state.currentSessionId) {
-      convRef.current.updateConversationSessionId(targetId, state.currentSessionId, false);
+      convRef.current.confirmConversationSession(targetId, state.currentSessionId);
     }
     runConvIdRef.current = null;
   }, [activeTeamId, activeTeamName, convRef]);
 
-  // 发送后立即把 run 的 session_id 链接到乐观 conv（不等 run 完成）：
-  // create run 响应一返回就更新，WS 触发的 refreshFromServer 到达时乐观 conv
-  // 已有 sessionId → 去重命中，不会把同一后端 session 拉成第二条（发送后
-  // 侧边栏暂态显示两个会话）。updateConversationSessionId 幂等，重复调用安全。
+  // 正式模式：run 响应返回 session_id → 立即把乐观占位（temp-*）原位替换为
+  // 真实会话（confirmConversationSession：id→sessionId + 唯一化），并把 URL
+  // 从临时占位 replace 到 server 会话 id（可分享/收藏）。幂等，重复调用安全。
   useEffect(() => {
-    const convId = runConvIdRef.current;
-    if (!convId || !runSessionId) return;
-    convRef.current.updateConversationSessionId(convId, runSessionId, false);
-  }, [runSessionId, convRef]);
+    if (!runSessionId) return;
+    const tempId = pendingTempIdRef.current;
+    if (!tempId) return;
+    pendingTempIdRef.current = null;
+    convRef.current.confirmConversationSession(tempId, runSessionId);
+    // 占位已原位替换为 sessionId：run 完成后的 sync 写回必须用新 id
+    runConvIdRef.current = runSessionId;
+    skipReloadRef.current = true;
+    navigate(`/chat/${runSessionId}`, { replace: true });
+  }, [runSessionId, convRef, navigate]);
 
   const lastMsgLen = apiMessages.length;
   const lastMsgStream = useMemo(() => {
@@ -300,6 +311,11 @@ export function useWorkstationState(
 
   useEffect(() => {
     const activeId = activeConvId;
+    // 确认占位跳转（temp→sessionId）→ 跳过重载，流式消息保持（chatStore 权威）
+    if (skipReloadRef.current) {
+      skipReloadRef.current = false;
+      return;
+    }
     if (!activeId) {
       useChatStore.getState().reset();
       return;
@@ -307,6 +323,14 @@ export function useWorkstationState(
     // setTimeout 延后一帧：restoring 的同步 setState 移出 effect 体
     // （react-hooks/set-state-in-effect），快速切换由 timer cleanup 兜底。
     const timer = setTimeout(() => {
+      // 乐观占位（temp，发送中）：消息已在 chatStore（handleSendMessage 写入），
+      // 无需重载 —— 否则 timer 执行时 confirm 已把占位 id 替换为 sessionId，
+      // find(temp-id) 落空 → resetApi 清空 store → 进行中的流式回复被抹掉。
+      const tempFound = filteredConversations.find((c) => c.id === activeId && c.temp);
+      if (tempFound) {
+        setRestoring(false);
+        return;
+      }
       setRestoring(true);
       // 切换会话 → 恢复自动跟随滚动（新会话重新滚到底部）。
       followBottomRef.current = true;
@@ -586,7 +610,21 @@ export function useWorkstationState(
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
         const kind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : activeTeamId ? 'team' : 'normal';
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName, kind);
-        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; useChatStore.setState({ currentConvId: convId }); navigate(`/chat/${convId}`); }
+        if (convId) {
+          conv.setActiveConvId(convId);
+          runConvIdRef.current = convId;
+          pendingTempIdRef.current = convId;
+          // 正式模式：乐观占位（temp）消息直接写入 store —— 会话路由跳转不再
+          // 触发重载（占位消息即内存态），流式回复在此之上继续。
+          useChatStore.setState({
+            currentConvId: convId,
+            messages: [{
+              id: userMessage.id, role: userMessage.role, agent_name: '我',
+              content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
+            }],
+          });
+          navigate(`/chat/${convId}`);
+        }
       } else {
         runConvIdRef.current = conv.activeConvId;
         // 续聊：把用户消息追加到当前会话，避免历史里只剩第一条用户消息
@@ -623,7 +661,19 @@ export function useWorkstationState(
       const homeKind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : 'normal';
       if (!conv.activeConvId) {
         const convId = conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined, undefined, undefined, homeKind);
-        if (convId) { conv.setActiveConvId(convId); runConvIdRef.current = convId; useChatStore.setState({ currentConvId: convId }); navigate(`/chat/${convId}`); }
+        if (convId) {
+          conv.setActiveConvId(convId);
+          runConvIdRef.current = convId;
+          pendingTempIdRef.current = convId;
+          useChatStore.setState({
+            currentConvId: convId,
+            messages: [{
+              id: userMessage.id, role: userMessage.role, agent_name: '我',
+              content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
+            }],
+          });
+          navigate(`/chat/${convId}`);
+        }
       } else {
         runConvIdRef.current = conv.activeConvId;
         const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
