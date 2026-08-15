@@ -137,8 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLegacyMode(!config?.enabled || config?.mode === 'legacy');
 
         if (restored) return;
-        // Access token may be expired — refresh before giving up. Only clear the
-        // stored refresh_token if refresh itself fails (matches ragbase behaviour).
+        // Access token may be expired — refresh before giving up.
         if (await refreshSession()) {
           // Refresh returned 200 but getMe still fails (e.g. the Secure cookie
           // was dropped by the http client) — do NOT keep the ghost login where
@@ -146,9 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!(await tryRestore())) {
             window.dispatchEvent(new CustomEvent('auth:unauthorized'));
           }
-        } else {
-          clearTokens();
         }
+        // else（refreshSession false）：401/403 已由 refreshSession 内部 dispatch
+        // auth:unauthorized（登出并清 token）；网络错误必须保留 refresh_token 供
+        // 定时器重试 —— 否则清掉 token 后永久假登录（UI 显示 admin、无法恢复）。
       } catch {
         // Auth config unavailable
       } finally {
