@@ -140,7 +140,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Access token may be expired — refresh before giving up. Only clear the
         // stored refresh_token if refresh itself fails (matches ragbase behaviour).
         if (await refreshSession()) {
-          await tryRestore();
+          // Refresh returned 200 but getMe still fails (e.g. the Secure cookie
+          // was dropped by the http client) — do NOT keep the ghost login where
+          // the UI shows a user while every request runs anonymous.
+          if (!(await tryRestore())) {
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+          }
         } else {
           clearTokens();
         }

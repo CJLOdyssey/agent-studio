@@ -80,12 +80,12 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Any
     logger.info("User logged in: %s", _mask_email(email))
 
     auth_resp = await _create_auth_response(user.id, user.email, user.username, body.remember_me)
-    _set_access_token_cookie(response, auth_resp.access_token)
+    _set_access_token_cookie(response, auth_resp.access_token, secure=request.url.scheme == "https")
     return auth_resp
 
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh(body: RefreshRequest, response: Response) -> Any:
+async def refresh(body: RefreshRequest, request: Request, response: Response) -> Any:
     """Exchange a refresh token for new access and refresh tokens."""
     user, family_id = await consume_refresh_token(body.refresh_token)
     if user is None:
@@ -97,7 +97,7 @@ async def refresh(body: RefreshRequest, response: Response) -> Any:
     access_token = create_token(user.id, AUTH_SECRET, ttl=ACCESS_TOKEN_TTL)
     user_resp = await _build_user_response(user.id, user.email, user.username)
 
-    _set_access_token_cookie(response, access_token)
+    _set_access_token_cookie(response, access_token, secure=request.url.scheme == "https")
     return AuthResponse(
         access_token="",
         refresh_token=new_refresh_token_raw,
