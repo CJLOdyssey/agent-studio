@@ -107,6 +107,7 @@ export function useWorkstationState(
   const retryApi = retry;
   const loadConversation = useChatStore((s) => s.loadConversation);
   const abandonedRunId = useChatStore((s) => s.lastAbandonedRunId);
+  const runSessionId = useChatStore((s) => s.currentSessionId);
 
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [configuringAgent, setConfiguringAgent] = useState<Agent | null>(null);
@@ -228,6 +229,16 @@ export function useWorkstationState(
     }
     runConvIdRef.current = null;
   }, [activeTeamId, activeTeamName, convRef]);
+
+  // 发送后立即把 run 的 session_id 链接到乐观 conv（不等 run 完成）：
+  // create run 响应一返回就更新，WS 触发的 refreshFromServer 到达时乐观 conv
+  // 已有 sessionId → 去重命中，不会把同一后端 session 拉成第二条（发送后
+  // 侧边栏暂态显示两个会话）。updateConversationSessionId 幂等，重复调用安全。
+  useEffect(() => {
+    const convId = runConvIdRef.current;
+    if (!convId || !runSessionId) return;
+    convRef.current.updateConversationSessionId(convId, runSessionId, false);
+  }, [runSessionId, convRef]);
 
   const lastMsgLen = apiMessages.length;
   const lastMsgStream = useMemo(() => {
