@@ -14,7 +14,7 @@ from auth import get_user_id
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from core.models import AttachmentResponse
-from extract import extract_text, validate_magic, validate_upload
+from extract import ALLOWED_CONTENT_TYPES, MAX_FILE_SIZE_MB, extract_text, validate_magic, validate_upload
 from orm.team import AttachmentDB
 from repository import get_session
 from repository.attachments import (
@@ -143,6 +143,19 @@ async def upload_attachment(
         has_extracted_text=bool(extracted),
         created_at=datetime.now(UTC),
     )
+
+
+@router.get("/api/attachments/upload-config")
+async def upload_config() -> dict[str, Any]:
+    """Expose upload constraints so the frontend stays single-sourced.
+
+    The frontend fetches the whitelist instead of maintaining its own copy;
+    adding a format only touches ``extract.registry`` (and a parser if new).
+    """
+    return {
+        "allowed_content_types": sorted(ALLOWED_CONTENT_TYPES),
+        "max_file_size_mb": MAX_FILE_SIZE_MB,
+    }
 
 
 @router.get("/api/attachments/{attachment_id}")

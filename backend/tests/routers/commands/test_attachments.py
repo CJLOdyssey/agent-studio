@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastapi import HTTPException
 
 
 class TestAttachments:
@@ -193,13 +194,21 @@ class TestAttachments:
 
     def test_validate_upload_too_large(self):
         from extract import validate_upload
-        with pytest.raises(Exception):
+        with pytest.raises(HTTPException):
             validate_upload("text/plain", 11 * 1024 * 1024)
 
     def test_validate_upload_invalid_type(self):
         from extract import validate_upload
-        with pytest.raises(Exception):
+        with pytest.raises(HTTPException):
             validate_upload("application/x-executable", 100)
+
+    async def test_upload_config_exposes_whitelist(self, client):
+        resp = client.get("/api/attachments/upload-config")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "application/pdf" in data["allowed_content_types"]
+        assert "text/plain" in data["allowed_content_types"]
+        assert data["max_file_size_mb"] == 10
 
     async def test_upload_traversal_session_id(self, client):
         resp = client.post(
@@ -268,7 +277,7 @@ class TestAttachments:
         att = await get_attachment_by_id(resp.json()["id"])
         assert att is not None
         assert att.user_id == "admin"
-        assert f"_u_admin" in att.storage_path
+        assert "_u_admin" in att.storage_path
 
     async def test_get_pending_attachment_forbidden_for_other_user(self, client, monkeypatch):
         resp = client.post(
