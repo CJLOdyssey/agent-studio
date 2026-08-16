@@ -3,7 +3,7 @@ import type { WsEvent } from './wsEvents';
 import { disconnectRun } from '../api/websocket';
 import { handleStreamEvent, handleThinkingStreamEvent, handleTeamResultMeta, handleApprovalRequest } from './streamHandler';
 import { handleMessageEvent, handleInfoEvent, handleErrorEvent, handleBalanceWarningEvent, handleOpenUrlEvent } from './messageHandler';
-import { handleThinkingDoneEvent, handleResultEvent, handleTeamResultEvent, handleThumbsEvent } from './resultHandler';
+import { handleThinkingDoneEvent, handleResultEvent, handleTeamResultEvent, handleThumbsEvent, handleCancelledEvent } from './resultHandler';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
@@ -66,6 +66,11 @@ export function createStreamHandler(set: SetFn, get: GetFn) {
       return;
     }
 
+    if (msg.type === 'cancelled') {
+      handleCancelledEvent(set, get, msg);
+      return;
+    }
+
     if (msg.type === 'team_result') {
       handleTeamResultEvent(set, get, _activeStreamMsgIds, msg);
       handleTeamResultMeta(set, msg);
@@ -73,7 +78,7 @@ export function createStreamHandler(set: SetFn, get: GetFn) {
     }
 
     if (msg.type === 'approval_request') {
-      handleApprovalRequest(set, msg);
+      handleApprovalRequest(msg);
       return;
     }
 

@@ -274,6 +274,11 @@ class StreamEmitter:
                 saved_with_content = True
             except Exception:
                 logger.exception("Stream publish failed for run %s", self._run_id)
+                # 失败不丢段：content 塞回缓冲，下次 flush（或取消时
+                # persist_partial）重试，避免该段永久丢失（thinking 已有
+                # _pending_thinking 缓存机制，content 此前没有）。
+                self._stream_buffer.append(full_content)
+                self._buffer_chars[id(self._stream_buffer)] = len(full_content)
 
         if thinking_text:
             try:

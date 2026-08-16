@@ -142,9 +142,8 @@ def _report_run_error(run_id: str, exc: Exception) -> None:
             publish_run_message(
                 run_id,
                 {
-                    "type": "status",
-                    "status": "error",
-                    "error": str(exc),
+                    "type": "error",
+                    "content": str(exc),
                 },
             )
         )

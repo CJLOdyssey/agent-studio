@@ -310,6 +310,19 @@ describe('TeamMessage', { tags: ['unit'] }, () => {
       expect(container.textContent).toContain('输出约束');
       expect(container.querySelector('strong')?.textContent).toBe('markdown');
     });
+
+    it('L3: tool call without [result] shows placeholder, not its own call text', async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <TeamMessage
+          msg={makeMsg({ thinking: '[skill] skill_code_review({})', thinkingDone: true })}
+          allAgents={[mockAgent]}
+        />
+      );
+      await user.click(screen.getByText('skill_code_review({})'));
+      // 展开区显示占位，而非重复调用文本
+      expect(container.textContent).toContain('(无返回结果)');
+    });
   });
 
   describe('unknown agent fallback', () => {

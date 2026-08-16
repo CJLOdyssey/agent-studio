@@ -8,7 +8,7 @@ import type { ChatMessage, RunResult } from '../types';
 function makeRunResult(code: string): RunResult {
   return { code, requirement: '', pm_document: '', review: '', approved: false, status: 'completed' };
 }
-import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent } from './wsEvents';
+import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent, WsCancelledEvent } from './wsEvents';
 
 type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
@@ -156,8 +156,10 @@ export function handleTeamResultEvent(
   const artifactCount = msg.artifacts && typeof msg.artifacts === 'object' && !Array.isArray(msg.artifacts)
     ? Object.keys(msg.artifacts).length
     : 0;
+  const streamMsgId = get().streamingId;
   set((_s) => {
     let msgs = _s.messages;
+    let summaryId: string | null = null;
     if (_s.streamingId) {
       const streamed = _s.messages.find((m) => m.id === _s.streamingId);
       const verdictFor = streamed
@@ -178,10 +180,11 @@ export function handleTeamResultEvent(
         );
         // 追加「团队汇总」最终成品（reporter 交付物）
         if (display) {
+          summaryId = crypto.randomUUID?.() || uid();
           msgs = [
             ...msgs,
             {
-              id: crypto.randomUUID?.() || uid(),
+              id: summaryId,
               role: 'agent',
               agent_name: '团队汇总',
               content: display,
@@ -207,8 +210,10 @@ export function handleTeamResultEvent(
     // 旧 run 列表 + 新 run），切换走分支加载（父链 + 子孙链）。
     // 与 handleResultEvent 保持一致——否则 team 会话重新生成后分页
     // 箭头要等刷新（buildPathTurns 从 DB 挂载）才出现。
+    // M8: 分页挂到「团队汇总」成品（reviewer 分支追加的独立消息）——
+    // 此前挂在 verdict 短气泡上，最终答案反而没有分页箭头。
     let pendingRegenerate = _s.pendingRegenerate;
-    const done = msgs.find((m) => m.id === _s.streamingId);
+    const done = msgs.find((m) => m.id === (summaryId ?? _s.streamingId));
     if (done && pendingRegenerate && runId) {
       const answerRunIds = [...pendingRegenerate.oldRunIds, runId];
       msgs = msgs.map((m) =>
@@ -234,13 +239,41 @@ export function handleTeamResultEvent(
       skipThinking: false,
     };
   });
+  // M8: 编辑重生成的答案版本持久化（对齐 handleResultEvent:133-140），
+  // 否则 team 会话重生成后的分页在刷新后丢失。
+  if (streamMsgId && runId) {
+    const done = get().messages.find((m) => m.id === streamMsgId);
+    if (done && done.versions && done.versions.length > 0) {
+      updateAnswerVersions(runId, done.versions, done.thinkingVersions).catch((err) => {
+        Logger.warn('[chat] failed to persist answer versions for team run %s: %s', runId, String(err));
+      });
+    }
+  }
   Logger.info('[chat] team_result received — surfaced %d node artifacts, status set to idle', artifactCount);
   activeStreamMsgIds.delete(runId || '');
   if (runId) disconnectRun(runId);
 }
 
-export function handleThumbsEvent(set: SetFn, msg: WsThumbsEvent): void {
-  set((s) => ({
+export function handleCancelledEvent(set: SetFn, get: GetFn, msg: WsCancelledEvent): void {
+  // L8: 后端取消路径（agent_pipeline CancelledError 分支）会发 cancelled 事件。
+  // 本地「停止生成」已由 cancelRun 置 idle；这里覆盖后端/多端触发的取消——
+  // 否则前端停在 running 直到 WS 重连。
+  const runId = get().currentRunId;
+  Logger.info('[chat] cancelled event received — run %s (event run %s)', runId, msg.run_id || '?');
+  set((_s) => ({
+    status: 'idle' as ChatState['status'],
+    streamingId: null,
+    skipThinking: false,
+    pendingRegenerate: null,
+    editTargetId: null,
+    continuingId: null,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
+  }));
+  if (runId) disconnectRun(runId);
+}
+
+export function handleThumbsEvent(set: SetFn, msg: WsThumbsEvent): void {  set((s) => ({
     messages: s.messages.map((m) =>
       m.id === msg.msgId ? { ...m, thumbs: msg.value } : m,
     ),

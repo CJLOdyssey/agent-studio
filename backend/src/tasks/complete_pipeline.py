@@ -69,12 +69,12 @@ async def _complete_pipeline(
     except httpx.HTTPStatusError as e:
         logger.error("[complete] HTTP error for run %s: %s", run_id, e, exc_info=True)
         await update_run_status(run_id, "error")
-        await publish_run_message(run_id, {"type": "error", "detail": f"LLM API 错误: {e}"})
+        await publish_run_message(run_id, {"type": "error", "content": f"LLM API 错误: {e}"})
         return None
     except Exception as e:
         logger.error("[complete] Stream failed for run %s: %s", run_id, e, exc_info=True)
         await update_run_status(run_id, "error")
-        await publish_run_message(run_id, {"type": "error", "detail": f"续写失败: {e}"})
+        await publish_run_message(run_id, {"type": "error", "content": f"续写失败: {e}"})
         return None
 
     if thinking_chunks:
@@ -120,7 +120,7 @@ async def _complete_pipeline(
     except Exception as e:
         logger.error("[complete] Save failed for run %s: %s", run_id, e, exc_info=True)
         await update_run_status(run_id, "error")
-        await publish_run_message(run_id, {"type": "error", "detail": f"保存失败: {e}"})
+        await publish_run_message(run_id, {"type": "error", "content": f"保存失败: {e}"})
     finally:
         # run 结束即释放 buffer pubsub 连接（continue_run 里 buffer_run_messages
         # 订阅；不释放则每次续写泄漏一个 Redis 连接，池耗尽 → MaxConnectionsError）

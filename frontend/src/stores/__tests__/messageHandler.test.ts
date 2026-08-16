@@ -114,6 +114,33 @@ describe('handleErrorEvent', { tags: ['unit'] }, () => {
     const result = set.mock.results[0].value as { error: string };
     expect(result.error).toBe('Unknown error');
   });
+
+  it('H3: error clears pending regenerate/edit context', () => {
+    const s = {
+      ...makeState(),
+      pendingRegenerate: { userMsgId: 'u1', oldRunIds: ['run-old'], requirement: 'req' },
+      editTargetId: 'edit-1',
+      continuingId: 'cont-1',
+      pendingVersions: ['v1'],
+      pendingThinkingVersions: ['t1'],
+    };
+    const set = vi.fn((fn: (state: typeof s) => unknown) => fn(s));
+
+    handleErrorEvent(set as never, { type: 'error', content: 'boom' });
+
+    const result = set.mock.results[0].value as {
+      pendingRegenerate: unknown;
+      editTargetId: unknown;
+      continuingId: unknown;
+      pendingVersions: unknown;
+      pendingThinkingVersions: unknown;
+    };
+    expect(result.pendingRegenerate).toBeNull();
+    expect(result.editTargetId).toBeNull();
+    expect(result.continuingId).toBeNull();
+    expect(result.pendingVersions).toBeNull();
+    expect(result.pendingThinkingVersions).toBeNull();
+  });
 });
 
 describe('handleBalanceWarningEvent', { tags: ['unit'] }, () => {

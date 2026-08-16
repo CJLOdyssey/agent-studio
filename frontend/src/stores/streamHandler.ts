@@ -8,6 +8,22 @@ import type { WsStreamEvent, WsThinkingStreamEvent, WsTeamResultEvent, WsApprova
 type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
+/**
+ * M7: 团队模式下角色切换 = 关闭当前流消息。给该消息标 thinkingDone，
+ * 否则若后端未在角色流尾发 thinking_done，上一角色气泡整场显示
+ * 「思考中」spinner。返回一个 messages 已更新的 ChatState 供 handleStreamStart
+ * 作基础（新消息从关闭后的列表派生）。
+ */
+function closeStreamingForRoleSwitch(s: ChatState): ChatState {
+  if (!s.streamingId) return s;
+  return {
+    ...s,
+    messages: s.messages.map((m) =>
+      m.id === s.streamingId ? { ...m, thinkingDone: true } : m,
+    ),
+  };
+}
+
 interface ApprovalRequest {
   runId: string;
   node: string;
@@ -26,34 +42,41 @@ export const useApprovalStore = create<ApprovalStoreState>((set) => ({
 type TeamMessageMeta = ChatMessage & {
   verdicts?: Record<string, TeamVerdict>;
   round?: number;
-  approvalRequest?: ApprovalRequest;
 };
 
 export function handleTeamResultMeta(set: SetFn, msg: WsTeamResultEvent): void {
   const verdicts = msg.verdicts;
   const rounds = msg.rounds;
   if (!verdicts || typeof verdicts !== 'object' || Array.isArray(verdicts)) return;
-  set((s) => ({
-    messages: s.messages.map((m) =>
-      ({ ...m, verdicts, ...(rounds !== undefined ? { round: rounds } : {}) }) as TeamMessageMeta,
-    ),
-  }));
-}
-
-export function handleApprovalRequest(set: SetFn, msg: WsApprovalRequestEvent): void {
-  const runId = msg.run_id;
-  const node = msg.node;
-  if (!runId || !node) return;
-  useApprovalStore.getState().setRequest({ runId, node });
   set((s) => {
-    const targetId = s.streamingId || s.messages[s.messages.length - 1]?.id;
-    if (!targetId) return {};
+    // M5: verdicts 只挂到本次 run 的最后一条 agent 消息（「团队汇总」），
+    // 不再全员挂载——多轮团队会话的历史消息会错误显示最新 run 的徽章。
+    let lastAgentIdx = -1;
+    for (let i = s.messages.length - 1; i >= 0; i--) {
+      if (s.messages[i].role !== 'user') {
+        lastAgentIdx = i;
+        break;
+      }
+    }
+    if (lastAgentIdx < 0) return {};
     return {
-      messages: s.messages.map((m) =>
-        m.id === targetId ? { ...m, approvalRequest: { runId, node } } as TeamMessageMeta : m,
+      messages: s.messages.map((m, i) =>
+        i === lastAgentIdx
+          ? ({ ...m, verdicts, ...(rounds !== undefined ? { round: rounds } : {}) } as TeamMessageMeta)
+          : m,
       ),
     };
   });
+}
+
+export function handleApprovalRequest(msg: WsApprovalRequestEvent): void {
+  const runId = msg.run_id;
+  const node = msg.node;
+  if (!runId || !node) return;
+  // M6: 审批 UI 由全局 useApprovalStore 单例 Modal 驱动（ApprovalModal），
+  // 不再挂到消息上——approval_request 可能先于流到达（目标消息尚未创建 /
+  // 最后一条还是 user 消息），挂消息会在 user 分支提前 return 被吞掉。
+  useApprovalStore.getState().setRequest({ runId, node });
 }
 
 
@@ -250,9 +273,10 @@ export function handleStreamEvent(
       if (prev.activeTeamId) {
         const current = prev.messages.find((m) => m.id === prev.streamingId);
         if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(prev);
           return {
             streamingId: null,
-            ...handleStreamStart(prev, msg, chunk),
+            ...handleStreamStart(closed, msg, chunk),
           };
         }
       }
@@ -276,9 +300,10 @@ export function handleStreamEvent(
       if (prev.activeTeamId) {
         const current = prev.messages.find((m) => m.id === prev.streamingId);
         if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(prev);
           return {
             streamingId: null,
-            ...handleStreamStart(prev, msg, chunk),
+            ...handleStreamStart(closed, msg, chunk),
           };
         }
       }
@@ -317,9 +342,10 @@ export function handleThinkingStreamEvent(
       if (prev.activeTeamId) {
         const current = prev.messages.find((m) => m.id === prev.streamingId);
         if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(prev);
           return {
             streamingId: null,
-            ...handleThinkingStreamNew(prev, msg, chunk),
+            ...handleThinkingStreamNew(closed, msg, chunk),
           };
         }
       }
@@ -338,9 +364,10 @@ export function handleThinkingStreamEvent(
       if (s.activeTeamId) {
         const current = s.messages.find((m) => m.id === s.streamingId);
         if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(s);
           return {
             streamingId: null,
-            ...handleThinkingStreamNew(s, msg, chunk),
+            ...handleThinkingStreamNew(closed, msg, chunk),
           };
         }
       }

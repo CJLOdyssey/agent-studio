@@ -177,7 +177,7 @@ class RunService:
         # ── Persist user message ─────────────────────────────────────
         # 只要有消息就入库：用户问题也落库 chat_messages（此前仅存 runs.
         # requirement，加载时由 with_requirement_message 运行时合成）。
-        # 幂等保护：已存在则跳过。
+        # 注：create_run 每次调用都会插入一条；调用方需保证不重复创建 run。
         try:
             await save_message(
                 run_id=run_id,

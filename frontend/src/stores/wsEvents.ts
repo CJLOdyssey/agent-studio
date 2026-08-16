@@ -61,6 +61,11 @@ export interface WsResultEvent {
   [key: string]: unknown;
 }
 
+export interface WsCancelledEvent {
+  type: 'cancelled';
+  run_id?: string;
+}
+
 /** Per-role verdict from the N1 team backend (contract-N1). */
 export interface TeamVerdict {
   role: string;
@@ -72,6 +77,8 @@ export interface TeamVerdict {
 
 export interface WsTeamResultEvent {
   type: 'team_result';
+  status?: string;
+  team_id?: string;
   artifacts?: Record<string, unknown>;
   display?: string;
   verdicts?: Record<string, TeamVerdict>;
@@ -101,6 +108,7 @@ export type WsEvent =
   | WsOpenUrlEvent
   | WsBrowserFrameEvent
   | WsResultEvent
+  | WsCancelledEvent
   | WsTeamResultEvent
   | WsApprovalRequestEvent
   | WsThumbsEvent;

@@ -78,6 +78,39 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
         expect(result.wsStatus).toBe('connected');
       }
     });
+
+    it('M7: role switch marks the closed message thinkingDone', () => {
+      const set = vi.fn();
+      const get = vi.fn(() => ({
+        ...makeBasicState(),
+        activeTeamId: 'team-1',
+        streamingId: 'stream-1',
+        messages: [
+          {
+            id: 'stream-1',
+            role: 'agent' as const,
+            content: 'writer output',
+            thinking: 'writer thinking',
+            agent_name: 'writer',
+            round_number: 0,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      }));
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({ type: 'stream', content: 'reviewer chunk', agent_name: 'reviewer' });
+
+      const updater = set.mock.calls[0]?.[0];
+      if (typeof updater === 'function') {
+        const result = updater(get());
+        const msgs = result.messages as Array<{ id: string; agent_name: string; thinkingDone?: boolean }>;
+        const closed = msgs.find((m) => m.id === 'stream-1');
+        // 角色切换：writer 消息关闭并标 thinkingDone，新 reviewer 消息开始流
+        expect(closed?.thinkingDone).toBe(true);
+        expect(msgs.find((m) => m.agent_name === 'reviewer')).toBeDefined();
+      }
+    });
   });
 
   describe('thinking_stream event', () => {
@@ -505,15 +538,56 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
 
       expect(set).toHaveBeenCalledTimes(1);
     });
+
+    it('M5: attaches verdicts only to the latest agent message, not history', () => {
+      const set = vi.fn();
+      const get = vi.fn(() => ({
+        ...makeBasicState(),
+        currentRunId: 'run-2',
+        streamingId: null,
+        continuingId: null,
+        pendingVersions: null,
+        pendingThinkingVersions: null,
+      }));
+
+      const handler = createStreamHandler(set as never, get as never);
+      handler({
+        type: 'team_result',
+        display: 'round2 done',
+        verdicts: { reviewer: { role: 'reviewer', approved: true, rounds: 1 } },
+        rounds: 2,
+      });
+
+      const updater = set.mock.calls[1]?.[0];
+      if (typeof updater === 'function') {
+        const s = {
+          ...makeBasicState(),
+          streamingId: null,
+          messages: [
+            { id: 'hist-1', role: 'agent' as const, content: 'round1', agent_name: 'writer', round_number: 1, created_at: new Date().toISOString() },
+            { id: 'hist-2', role: 'agent' as const, content: 'round1 done', agent_name: '团队汇总', round_number: 1, created_at: new Date().toISOString() },
+            { id: 'latest', role: 'agent' as const, content: 'round2 done', agent_name: '团队汇总', round_number: 1, created_at: new Date().toISOString() },
+          ],
+        };
+        const result = updater(s);
+        const msgs = result.messages as Array<{ id: string; verdicts?: unknown; round?: number }>;
+        // 历史消息不带最新 run 的 verdicts
+        expect(msgs.find((m) => m.id === 'hist-1')?.verdicts).toBeUndefined();
+        expect(msgs.find((m) => m.id === 'hist-2')?.verdicts).toBeUndefined();
+        // 最新 agent 消息（团队汇总）挂载
+        expect(msgs.find((m) => m.id === 'latest')?.verdicts).toBeDefined();
+        expect(msgs.find((m) => m.id === 'latest')?.round).toBe(2);
+      }
+    });
   });
 
   describe('approval_request event', () => {
-    it('sets approval store request and tags the streaming message', () => {
+    it('M6: sets the global approval store request (UI driven by single ApprovalModal)', () => {
       const set = vi.fn();
       const get = vi.fn(() => ({
         ...makeBasicState(),
         currentRunId: 'run-1',
-        streamingId: 'stream-1',
+        streamingId: null,
         continuingId: null,
         pendingVersions: null,
         pendingThinkingVersions: null,
@@ -522,14 +596,8 @@ describe('chatStreaming', { tags: ['unit'] }, () => {
       const handler = createStreamHandler(set as never, get as never);
       handler({ type: 'approval_request', run_id: 'run-1', node: 'reviewer' });
 
+      // 流前到达（streamingId 为空）也必须设置 store —— 不再依赖消息挂载
       expect(useApprovalStore.getState().request).toEqual({ runId: 'run-1', node: 'reviewer' });
-      const updater = set.mock.calls[0]?.[0];
-      if (typeof updater === 'function') {
-        const s = { ...makeBasicState(), streamingId: 'stream-1' };
-        const result = updater(s);
-        const msgs = result.messages as Array<{ id: string; approvalRequest?: { runId: string; node: string } }>;
-        expect(msgs.find((m) => m.id === 'stream-1')?.approvalRequest).toEqual({ runId: 'run-1', node: 'reviewer' });
-      }
       useApprovalStore.getState().setRequest(null);
     });
 

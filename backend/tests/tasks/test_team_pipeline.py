@@ -164,6 +164,10 @@ class TestRunTeamPipeline:
         )
 
         mock_team_deps["update_run_status"].assert_any_await("run-3", "error")
+        # H2: 异常路径必须发 error 终态事件（content 契约），前端才不卡 running
+        mock_team_deps["publish_run_message"].assert_awaited_once_with(
+            "run-3", {"type": "error", "content": "团队执行失败: graph failed"}
+        )
 
     async def test_custom_model_and_key(self, mock_team_deps):
         from tasks.team_pipeline import _run_team_pipeline
@@ -261,3 +265,37 @@ class TestRunTeamPipeline:
 
         call_kwargs = mock_team_deps["update_run_result"].call_args[1]
         assert call_kwargs["code"] == "fallback content"
+
+    async def test_no_reporter_final_from_role_artifact_no_duplicate(self, mock_team_deps):
+        """M4: 无 reporter 时 final 回退到角色 artifact → 该角色已独立保存，
+        「团队汇总」不得再存一条，避免刷新后同内容两条。"""
+        from tasks.team_pipeline import _run_team_pipeline
+
+        wf = MagicMock()
+        pm_node = MagicMock()
+        pm_node.role_identifier = "pm"
+        pm_node.strategy.value = "content"  # 非 REVIEWER/REPORTER
+        wf.nodes = [pm_node]
+        mock_team_deps["get_workflow_config_by_team"].return_value = wf
+
+        graph = MagicMock()
+        graph.set_workflow = AsyncMock()
+        graph.run = AsyncMock(return_value={
+            "artifacts": {"pm": "需求文档"},
+            "messages": [MagicMock(content="last msg")],
+        })
+        mock_team_deps["DynamicTeamGraph"].return_value = graph
+
+        await _run_team_pipeline(
+            requirement="test",
+            run_id="run-m4",
+            session_id=None,
+            team_id="team-1",
+        )
+
+        # pm 角色消息保存一次；「团队汇总」跳过
+        mock_team_deps["save_message"].assert_awaited_once_with(
+            "run-m4", "agent", "pm", "需求文档", 1
+        )
+        for call in mock_team_deps["save_message"].await_args_list:
+            assert call[0][2] != "团队汇总"

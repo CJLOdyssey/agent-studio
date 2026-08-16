@@ -19,13 +19,10 @@ import {
   XCircle,
   Paperclip,
 } from 'lucide-react';
-import { Modal, Input as AntdInput, Button } from 'antd';
 import type { Message, Agent } from '../../types/AgentStudio';
 import { useTranslation } from 'react-i18next';
 import { sanitizeHtml } from '../../utils/sanitize';
 import { CopyBtn, CodeBlock } from './messages';
-import api from '../../api/client/instance';
-import { useApprovalStore } from '../../stores/streamHandler';
 import type { TeamVerdict } from '../../stores/wsEvents';
 import type * as React from 'react';
 
@@ -131,7 +128,11 @@ type ThinkingItem =
   | { type: 'toolPair'; callNode: string; resultNode: string; callParsed: NonNullable<ParsedNode>; resultParsed: NonNullable<ParsedNode> };
 
 function groupThinkingNodes(text: string): ThinkingItem[] {
-  const nodes = text.split(/\n{2,}|(?=\[(?:tools|mcp|skill|result|info)\]|🔧|📡|🛠️|📋|📥)/).filter(Boolean);
+  // L2: 工具调用前缀（[tools]/[mcp]/[skill]/emoji）行首锚定 + 补 📏——
+  // 避免句中出现的 "[tools]" 之类文本把段落错拆成工具卡。
+  // [result]/[info] 保持任意位置可拆：单行 "[skill] xxx[result] yyy" 需靠
+  // 行中 [result] 拆分才能组成 toolPair。
+  const nodes = text.split(/\n{2,}|(?=^\[(?:tools|mcp|skill)\]|^🔧|^📡|^🛠️|\[(?:result|info)\]|📋|📏|📥)/m).filter(Boolean);
   const items: ThinkingItem[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const cur = parseNode(nodes[i]);
@@ -151,13 +152,14 @@ function groupThinkingNodes(text: string): ThinkingItem[] {
       }
     }
     // [tools] without [result] → create toolPair with empty result
+    // L3: 空 result 不再复用调用文本（展开后重复显示调用内容本身）。
     if (isToolCall) {
       items.push({
         type: 'toolPair',
         callNode: nodes[i],
         resultNode: `[result] ${cur.rest}`,
         callParsed: cur,
-        resultParsed: { prefix: 'result', rest: cur.rest },
+        resultParsed: { prefix: 'result', rest: '' },
       });
       continue;
     }
@@ -177,6 +179,8 @@ function ToolCallCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const resultDisplay = resultParsed.rest.replace(/^\w+\s*(?:→|返回:)\s*/, '');
+  // L3: 无 result 时展开区显示占位，而不是重复调用文本。
+  const display = resultDisplay || '(无返回结果)';
 
   return (
     <div>
@@ -204,7 +208,7 @@ function ToolCallCard({
         <div className="mt-1 flex gap-1.5 text-base leading-[1.65] text-[var(--color-text-muted)]">
           <span className="flex-none select-none text-[var(--color-text-tertiary)]">⟶</span>
           <div className="flex-1 min-w-0">
-            <ThinkingMarkdown t={t}>{resultDisplay}</ThinkingMarkdown>
+            <ThinkingMarkdown t={t}>{display}</ThinkingMarkdown>
           </div>
         </div>
       )}
@@ -271,38 +275,11 @@ const TeamMessage = memo(function TeamMessage({
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
-  const [approvalNote, setApprovalNote] = useState('');
-  const [approving, setApproving] = useState(false);
-  const [approvalError, setApprovalError] = useState('');
-  const request = useApprovalStore((s) => s.request);
   const thinkingBodyRef = useRef<HTMLDivElement>(null);
 
   const meta = msg as Message & {
     verdicts?: Record<string, TeamVerdict>;
     round?: number;
-    approvalRequest?: { runId: string; node: string };
-  };
-  const showApprovalModal = !!(meta.approvalRequest && request && meta.approvalRequest.runId === request.runId);
-
-  const submitApproval = async (approved: boolean) => {
-    if (!request) return;
-    setApproving(true);
-    setApprovalError('');
-    try {
-      await api.post(`/team-runs/${request.runId}/approve`, { approved, reason: approvalNote.trim() || undefined });
-      setApprovalNote('');
-      useApprovalStore.getState().setRequest(null);
-    } catch {
-      setApprovalError(t('teamMessage.approvalFailed'));
-    } finally {
-      setApproving(false);
-    }
-  };
-
-  const closeApproval = () => {
-    if (approving) return;
-    setApprovalNote('');
-    useApprovalStore.getState().setRequest(null);
   };
 
   // 思考内容流式更新时跟随到底；用户手动滚动离开底部则暂停跟随。
@@ -717,25 +694,6 @@ const TeamMessage = memo(function TeamMessage({
           </>
         )}
       </div>
-      <Modal
-        title={t('teamMessage.approvalRequired')}
-        open={showApprovalModal}
-        onCancel={closeApproval}
-        footer={[
-          <Button key="reject" data-testid="reject-btn" danger loading={approving} onClick={() => submitApproval(false)}>{t('teamMessage.approvalReject')}</Button>,
-          <Button key="approve" data-testid="approve-btn" type="primary" loading={approving} onClick={() => submitApproval(true)}>{t('teamMessage.approvalApprove')}</Button>,
-        ]}
-      >
-        {request && <p className="text-sm mb-3">{t('teamMessage.approvalNode', { node: request.node })}</p>}
-        <AntdInput.TextArea
-          data-testid="approval-note"
-          value={approvalNote}
-          onChange={(e) => setApprovalNote(e.target.value)}
-          placeholder={t('teamMessage.approvalNote')}
-          rows={3}
-        />
-        {approvalError && <p className="text-xs text-[#ef4444] mt-2">{approvalError}</p>}
-      </Modal>
     </div>
   );
 });

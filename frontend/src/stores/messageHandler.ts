@@ -68,6 +68,13 @@ export function handleErrorEvent(set: SetFn, msg: WsErrorEvent): void {
     error: msg.content || 'Unknown error',
     streamingId: null,
     wsStatus: 'connected' as ChatState['wsStatus'],
+    // H3: run 以 error 终止 = 重新生成/编辑目标作废，清理 pending 上下文，
+    // 否则滞留的 pendingRegenerate 会被后续任意新 run 消费（分页错位）。
+    pendingRegenerate: null,
+    editTargetId: null,
+    continuingId: null,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
   }));
 }
 
@@ -78,6 +85,12 @@ export function handleBalanceWarningEvent(set: SetFn, msg: WsBalanceWarningEvent
     error: msg.content || '模型余额不足',
     streamingId: null,
     wsStatus: 'connected' as ChatState['wsStatus'],
+    // H3: 同 handleErrorEvent——run 已终止，重生成上下文作废。
+    pendingRegenerate: null,
+    editTargetId: null,
+    continuingId: null,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
   }));
 }
 

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 
+// L1: 仅允许 http(s) 协议——open_url 由后端生成，但防御性拒绝 javascript:/data: 等。
+const SAFE_URL_RE = /^https?:\/\//i;
+
 export default function BrowserFrame() {
   const [img, setImg] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -21,6 +24,8 @@ export default function BrowserFrame() {
 
   if (!img && !url) return null;
 
+  const safeUrl = url && SAFE_URL_RE.test(url) ? url : null;
+
   return (
     <div className="rounded-xl overflow-hidden border border-[var(--color-border)] flex flex-col">
       <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-hover)] border-b border-[var(--color-border)]">
@@ -37,7 +42,20 @@ export default function BrowserFrame() {
         </button>
       </div>
       {img && <img src={`data:image/png;base64,${img}`} alt="" className="w-full" />}
-      {url && <iframe src={url} className="w-full h-[480px] bg-white" sandbox="allow-scripts allow-same-origin allow-forms" />}
+      {safeUrl && (
+        <iframe
+          src={safeUrl}
+          className="w-full h-[480px] bg-white"
+          // L1: 去掉 allow-same-origin——与 allow-scripts 组合会让同源 iframe
+          // 逃逸 sandbox 访问父页面 DOM；保留 allow-scripts/allow-forms 供站点 JS 使用。
+          sandbox="allow-scripts allow-forms"
+        />
+      )}
+      {url && !safeUrl && (
+        <div className="w-full h-[480px] flex items-center justify-center text-sm text-[var(--color-text-muted)] bg-white">
+          URL 已拦截
+        </div>
+      )}
     </div>
   );
 }
