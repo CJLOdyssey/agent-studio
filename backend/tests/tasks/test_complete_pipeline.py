@@ -295,10 +295,13 @@ class TestCompletePipeline:
         assert result is None
 
     async def test_tracemalloc_starts_when_not_tracing(self, mock_deps):
-        """Line 41: tracemalloc.start() called when not already tracing."""
+        """Line 41: tracemalloc.start() called when MEM_TRACE=1 and not already tracing."""
         mock_deps["stream_prefix_completion"].return_value = (" output", [])
 
-        with patch("tasks.complete_pipeline.tracemalloc") as mock_tm:
+        with patch("tasks.complete_pipeline.tracemalloc") as mock_tm, patch(
+            "tasks.complete_pipeline.os"
+        ) as mock_os:
+            mock_os.environ.get.return_value = "1"
             mock_tm.is_tracing.return_value = False
             await _complete_pipeline(
                 content="test",
@@ -309,3 +312,22 @@ class TestCompletePipeline:
                 thinking=None,
             )
             mock_tm.start.assert_called_once_with(25)
+
+    async def test_tracemalloc_skipped_without_mem_trace(self, mock_deps):
+        """86a693c 回归：MEM_TRACE 未设置时不得调用 tracemalloc.start（perf 门控）。"""
+        mock_deps["stream_prefix_completion"].return_value = (" output", [])
+
+        with patch("tasks.complete_pipeline.tracemalloc") as mock_tm, patch(
+            "tasks.complete_pipeline.os"
+        ) as mock_os:
+            mock_os.environ.get.return_value = ""
+            mock_tm.is_tracing.return_value = False
+            await _complete_pipeline(
+                content="test",
+                run_id="run-tracemalloc-off",
+                api_key="sk-test",
+                api_base=None,
+                model=None,
+                thinking=None,
+            )
+            mock_tm.start.assert_not_called()
