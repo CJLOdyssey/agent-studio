@@ -19,7 +19,7 @@ ignore = ["E402"]
 # deps installed (unresolvable third-party imports would otherwise be
 # misclassified as first-party and I001-fire spuriously).
 known-first-party = [
-    "auth", "broker", "checkpoint", "core", "domain", "graph", "observability",
+    "auth", "broker", "checkpoint", "core", "domain", "extract", "graph", "observability",
     "orm", "rag", "repository", "routers", "services", "streaming",
     "system_team", "tasks", "thinking_tree", "uploads", "workflow",
 ]
