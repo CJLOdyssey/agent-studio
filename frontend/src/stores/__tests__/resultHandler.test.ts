@@ -16,6 +16,7 @@ import {
   handleResultEvent,
   handleTeamResultEvent,
   handleThumbsEvent,
+  handleCancelledEvent,
 } from '../resultHandler';
 
 function makeMsg(id: string, overrides: Record<string, unknown> = {}) {
@@ -295,6 +296,48 @@ describe('handleTeamResultEvent', { tags: ['unit'] }, () => {
     expect(done!.answerVersions).toEqual(['same requirement', 'same requirement']);
     expect(done!.currentAnswerVersion).toBe(1);
   });
+
+  it('M8: reviewer regenerate — pagination lands on the 团队汇总 message, not the verdict bubble', () => {
+    const s = makeState({
+      currentRunId: 'run-new',
+      streamingId: 'msg-streamed',
+      messages: [makeMsg('msg-streamed', { content: '✅ 通过', agent_name: 'reviewer' })],
+      pendingRegenerate: {
+        userMsgId: 'run-old-requirement',
+        oldRunIds: ['run-old'],
+        requirement: 'same requirement',
+      },
+    });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+    const activeStreams = new Set<string>(['run-new']);
+
+    handleTeamResultEvent(set as never, get, activeStreams, {
+      type: 'team_result',
+      display: '团队最终成品',
+      verdicts: { reviewer: { role: 'reviewer', approved: true, rounds: 1 } },
+    });
+
+    const result = set.mock.results[0].value as {
+      messages: Array<{
+        id: string;
+        agent_name: string;
+        userMsgId?: string;
+        answerRunIds?: string[];
+        answerVersions?: string[];
+        currentAnswerVersion?: number;
+      }>;
+    };
+    const verdict = result.messages.find((m) => m.id === 'msg-streamed');
+    const summary = result.messages.find((m) => m.agent_name === '团队汇总');
+    expect(summary).toBeDefined();
+    // 分页挂在团队汇总，verdict 短气泡不挂
+    expect(summary!.userMsgId).toBe('run-old-requirement');
+    expect(summary!.answerRunIds).toEqual(['run-old', 'run-new']);
+    expect(summary!.currentAnswerVersion).toBe(1);
+    expect(verdict!.userMsgId).toBeUndefined();
+    expect(verdict!.answerRunIds).toBeUndefined();
+  });
 });
 
 describe('handleThumbsEvent', { tags: ['unit'] }, () => {
@@ -310,5 +353,36 @@ describe('handleThumbsEvent', { tags: ['unit'] }, () => {
     const result = updateFn(s) as { messages: Array<{ thumbs?: string }> };
     expect(result.messages![0].thumbs).toBe('up');
     expect(result.messages![1].thumbs).toBeUndefined();
+  });
+});
+
+describe('handleCancelledEvent', { tags: ['unit'] }, () => {
+  it('L8: sets idle, clears pending context and disconnects the run', () => {
+    const s = makeState({
+      currentRunId: 'run-1',
+      streamingId: 'stream-1',
+      pendingRegenerate: { userMsgId: 'u1', oldRunIds: ['run-old'], requirement: 'req' },
+      editTargetId: 'edit-1',
+      continuingId: 'cont-1',
+      pendingVersions: ['v1'],
+      pendingThinkingVersions: ['t1'],
+    });
+    const get = vi.fn(() => s);
+    const set = vi.fn((fn: (state: typeof s) => Partial<typeof s>) => fn(s));
+
+    handleCancelledEvent(set as never, get, { type: 'cancelled', run_id: 'run-1' });
+
+    const result = set.mock.results[0].value as {
+      status: string;
+      streamingId: null;
+      pendingRegenerate: unknown;
+      editTargetId: unknown;
+      continuingId: unknown;
+    };
+    expect(result.status).toBe('idle');
+    expect(result.streamingId).toBeNull();
+    expect(result.pendingRegenerate).toBeNull();
+    expect(result.editTargetId).toBeNull();
+    expect(result.continuingId).toBeNull();
   });
 });

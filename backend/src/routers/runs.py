@@ -14,7 +14,7 @@ from core.config import load_config
 from core.error_codes import ErrorCode, error_response
 from core.infra.logging_config import get_logger
 from core.models import RunDetail, RunSummary
-from repository import get_messages, get_run
+from repository import get_messages, get_run, get_session
 from services.run_service import run_service
 
 logger = get_logger(__name__)
@@ -154,26 +154,52 @@ async def run_websocket(websocket: WebSocket, run_id: str) -> Any:
             if run and run.status in ("converged", "error"):
                 await stop_buffer(run_id)
                 messages = await get_messages(run_id)
-                for m in messages:
+                # L5: 团队会话的 run 重连时回放 team_result（团队汇总语义），
+                # 而非 message+result——前端按团队消息布局渲染。verdicts 未持久化
+                # 无法恢复，但至少团队汇总/角色消息形态正确。
+                sess = await get_session(run.session_id) if run.session_id else None
+                is_team = sess is not None and sess.kind == "team"
+                if is_team:
+                    for m in messages:
+                        await websocket.send_json(
+                            {
+                                "type": "message",
+                                "role": m.role,
+                                "agent_name": m.agent_name,
+                                "content": m.content,
+                                "round_number": m.round_number,
+                            }
+                        )
                     await websocket.send_json(
                         {
-                            "type": "message",
-                            "role": m.role,
-                            "agent_name": m.agent_name,
-                            "content": m.content,
-                            "round_number": m.round_number,
+                            "type": "team_result",
+                            "status": run.status,
+                            "display": run.code or "",
+                            "artifacts": {},
+                            "rounds": 1,
                         }
                     )
-                await websocket.send_json(
-                    {
-                        "type": "result",
-                        "status": run.status,
-                        "approved": run.approved,
-                        "pm_document": run.pm_document or "",
-                        "code": run.code or "",
-                        "review": run.review or "",
-                    }
-                )
+                else:
+                    for m in messages:
+                        await websocket.send_json(
+                            {
+                                "type": "message",
+                                "role": m.role,
+                                "agent_name": m.agent_name,
+                                "content": m.content,
+                                "round_number": m.round_number,
+                            }
+                        )
+                    await websocket.send_json(
+                        {
+                            "type": "result",
+                            "status": run.status,
+                            "approved": run.approved,
+                            "pm_document": run.pm_document or "",
+                            "code": run.code or "",
+                            "review": run.review or "",
+                        }
+                    )
                 await websocket.close()
                 return
         except Exception as e:

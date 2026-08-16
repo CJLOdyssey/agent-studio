@@ -145,7 +145,7 @@ class TestRunAgentPipeline:
         mock_agent_deps["update_run_status"].assert_any_await("run-2", "running")
         mock_agent_deps["update_run_status"].assert_any_await("run-2", "error")
         mock_agent_deps["publish_run_message"].assert_any_await(
-            "run-2", {"type": "error", "message": "执行失败: Graph execution failed"}
+            "run-2", {"type": "error", "content": "执行失败: Graph execution failed"}
         )
 
     async def test_no_agent_id(self, mock_agent_deps):

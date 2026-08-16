@@ -21,12 +21,17 @@ def _resolve_final_and_roles(
     artifacts: dict[str, Any],
     workflow_config: Any,
     last_content: str,
-) -> tuple[str, set[str], set[str]]:
+) -> tuple[str, set[str], set[str], bool]:
     """Resolve the final deliverable and reviewer/reporter role sets.
 
     The final deliverable is the reporter's ``_final_report`` when present,
     otherwise the last non-reviewer node's artifact (reviewer output is a
     machine verdict, never a user-facing deliverable), else the last message.
+
+    Returns (final, reviewer_roles, reporter_roles, from_role_artifact):
+    ``from_role_artifact`` is True when ``final`` duplicates a per-role
+    artifact that is already persisted as its own message — callers must
+    then skip the extra "团队汇总" save to avoid duplicate rows on reload.
     """
     node_by_role = {n.role_identifier: n for n in workflow_config.nodes}
     reviewer_roles = {
@@ -39,7 +44,7 @@ def _resolve_final_and_roles(
     }
     final_report = str(artifacts.get("_final_report") or "").strip()
     if final_report:
-        return final_report, reviewer_roles, reporter_roles
+        return final_report, reviewer_roles, reporter_roles, False
     content_roles = [
         r for r in artifacts
         if r not in ("_final_report",) and r in node_by_role
@@ -49,8 +54,8 @@ def _resolve_final_and_roles(
         last_role = content_roles[-1]
         text = str(artifacts.get(last_role) or "").strip()
         if text:
-            return text, reviewer_roles, reporter_roles
-    return last_content, reviewer_roles, reporter_roles
+            return text, reviewer_roles, reporter_roles, True
+    return last_content, reviewer_roles, reporter_roles, False
 
 
 async def _run_team_pipeline(
@@ -93,7 +98,7 @@ async def _run_team_pipeline(
             if hasattr(m, "content") and m.content:
                 last_content = str(m.content)
                 break
-        final, reviewer_roles, reporter_roles = _resolve_final_and_roles(
+        final, reviewer_roles, reporter_roles, final_from_role_artifact = _resolve_final_and_roles(
             artifacts, workflow_config, last_content
         )
         verdicts = result.get("verdicts", {}) if isinstance(result, dict) else {}
@@ -131,7 +136,9 @@ async def _run_team_pipeline(
             except Exception:
                 logger.warning("[TEAM] failed to persist verdict message role=%s run=%s", role, run_id, exc_info=True)
         # 最终成品：reporter 输出（或无 reporter 时最后产出）作为交付物。
-        if final:
+        # M4: final 若来自已独立保存的角色 artifact（无 reporter 回退场景），
+        # 再存「团队汇总」会产生重复行（刷新后同内容两条），跳过。
+        if final and not final_from_role_artifact:
             try:
                 await save_message(run_id, "agent", "团队汇总", final, 1)
             except Exception:
@@ -141,6 +148,7 @@ async def _run_team_pipeline(
             run_id,
             {
                 "type": "team_result", "status": "completed",
+                "team_id": team_id,
                 "artifacts": artifacts, "display": display,
                 "verdicts": verdicts, "rounds": rounds,
             },
@@ -148,7 +156,11 @@ async def _run_team_pipeline(
         logger.info("[TEAM] completed run=%s artifacts=%d", run_id, len(artifacts))
     except Exception as e:
         logger.error("[TEAM] fatal run=%s error=%s", run_id, str(e), exc_info=True)
+        # 失败也必须发终态事件（error）：否则前端 running 态永卡转圈。
+        # 用 content 字段（前端 handleErrorEvent 唯一消费字段，见 H1 契约）。
+        await publish_run_message(run_id, {"type": "error", "content": f"团队执行失败: {e}"})
         await update_run_status(run_id, "error")
+        await notify_session_changed(session_id)
     finally:
         if checkpointer is not None:
             try:

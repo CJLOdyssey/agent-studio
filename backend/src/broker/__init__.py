@@ -105,9 +105,18 @@ async def close_redis() -> None:
 
 
 async def publish_run_message(run_id: str, message: dict[str, Any]) -> None:
-    """Publish a message to a run's Redis pub/sub channel."""
-    r = get_redis()
-    await r.publish(_channel(run_id), json.dumps(message, ensure_ascii=False))
+    """Publish a message to a run's Redis pub/sub channel.
+
+    Fail-open (aligned with publish_user_event): a Redis outage must not
+    break the run lifecycle. Without this, a transient Redis failure inside
+    a pipeline's try block (e.g. team_pipeline) would be caught by the
+    pipeline's exception handler and wrongly mark a converged run as error.
+    """
+    try:
+        r = get_redis()
+        await r.publish(_channel(run_id), json.dumps(message, ensure_ascii=False))
+    except Exception:
+        logger.debug("publish_run_message failed for %s", run_id, exc_info=True)
 
 
 async def subscribe_run(run_id: str) -> AsyncIterator[dict[str, Any]]:

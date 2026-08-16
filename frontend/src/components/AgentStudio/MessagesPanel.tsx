@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Agent, Message } from '../../types/AgentStudio';
 import TeamMessage from './TeamMessage';
 import BrowserFrame from './BrowserFrame';
+import ApprovalModal from './ApprovalModal';
 import { useChatStore } from '../../stores/chatStore';
 import { editAndRegenerate, regenerateMessage, continueGeneration } from '../../stores/chatActions';
 
@@ -84,7 +85,8 @@ export default function MessagesPanel({
 
   if (showAgentChat) {
     return (
-      <div className="max-w-[min(900px,85vw)] mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-12" aria-live="polite">
+      <>
+        <div className="max-w-[min(900px,85vw)] mx-auto w-full flex flex-col gap-6 px-6 py-6 pb-12" aria-live="polite">
         {!welcomeDismissed && !activeTeamId && (
           <div className="flex flex-col items-center justify-center px-6 py-12 text-center relative">
             <button className="absolute top-2 right-2 p-1 bg-transparent border-none rounded text-[var(--color-text-muted)] cursor-pointer opacity-0 transition-opacity group-hover:opacity-100" onClick={onDismissWelcome} aria-label={t('common.close')}>
@@ -122,7 +124,9 @@ export default function MessagesPanel({
         ))}
         <BrowserFrame />
         <div ref={messagesEndRef} />
-      </div>
+        <ApprovalModal />
+        </div>
+      </>
     );
   }
 
@@ -149,6 +153,7 @@ export default function MessagesPanel({
           ))}
         <BrowserFrame />
         <div ref={messagesEndRef} />
+        <ApprovalModal />
       </div>
     );
   }

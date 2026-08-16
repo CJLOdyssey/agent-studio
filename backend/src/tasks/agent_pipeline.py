@@ -266,7 +266,7 @@ async def _run_agent_pipeline(
             )
     except TimeoutError:
         logger.error("[TASKS] Agent pipeline timed out after %ds (run=%s)", _AGENT_TIMEOUT, run_id)
-        await publish_run_message(run_id, {"type": "error", "message": "任务执行超时"})
+        await publish_run_message(run_id, {"type": "error", "content": "任务执行超时"})
         await update_run_status(run_id, "timeout")
         # Kill any OS child processes spawned by the timed-out task
         _kill_stuck_child_processes()
@@ -292,7 +292,7 @@ async def _run_agent_pipeline(
         # exc_info 保留完整 traceback：统一标 error 不能掩盖编程错误（区别于
         # 业务失败，异常类型/堆栈是唯一诊断线索）。
         logger.error("[TASKS] Agent pipeline failed (run=%s): %s", run_id, exc, exc_info=True)
-        await publish_run_message(run_id, {"type": "error", "message": f"执行失败: {exc}"})
+        await publish_run_message(run_id, {"type": "error", "content": f"执行失败: {exc}"})
         await update_run_status(run_id, "error")
         await _notify_session_changed(user_id, session_id)
         return {"run_id": run_id, "status": "error"}
@@ -359,7 +359,8 @@ async def _run_agent_pipeline(
     except Exception:
         logger.warning("Failed to attach download links for run %s", run_id, exc_info=True)
 
-    # ── Save messages ── (now handled by save_response_action in agent_graph.py)
+    # ── Save messages ── (now handled by the graph streaming emitter: emitter
+    # saves streamed content/thinking as chat_message on flush.)
 
     # ── Long-term memory ──
     if session_id:

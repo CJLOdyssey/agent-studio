@@ -640,6 +640,39 @@ class TestFlushBuffers:
             await emitter._flush_buffers()
 
     @pytest.mark.asyncio
+    async def test_flush_failure_keeps_content_for_retry(self):
+        """M3: publish/save failure must not permanently drop the segment —
+        the content is restored to the buffer for the next flush / persist_partial."""
+        from streaming.emitter import StreamEmitter
+
+        emitter = StreamEmitter("run-45b")
+        with (
+            patch("streaming.emitter.publish_run_message", side_effect=Exception("redis down")),
+            patch("streaming.emitter.save_message", new_callable=AsyncMock),
+        ):
+            emitter._stream_buffer = ["content"]
+            await emitter._flush_buffers()
+            # content restored (not lost)
+            assert emitter._stream_buffer == ["content"]
+
+            # next flush succeeds → content published once and buffer emptied
+            with patch(
+                "streaming.emitter.publish_run_message", new_callable=AsyncMock
+            ) as mock_pub:
+                await emitter._flush_buffers()
+                mock_pub.assert_awaited_once_with(
+                    "run-45b",
+                    {
+                        "type": "message",
+                        "role": "Agent",
+                        "agent_name": "Agent",
+                        "content": "content",
+                        "round_number": 2,
+                    },
+                )
+                assert emitter._stream_buffer == []
+
+    @pytest.mark.asyncio
     async def test_publish_thinking_done_failure_handled(self):
         from streaming.emitter import StreamEmitter
 

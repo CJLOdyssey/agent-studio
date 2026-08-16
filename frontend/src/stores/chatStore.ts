@@ -73,6 +73,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
         continuingId: null,
         interruptedMessageId: null,
         submissionConvId: null,
+        // H3/M9: 切会话即重置编辑/重生成上下文——否则 pendingRegenerate/
+        // editTargetId 残留，新 run 响应会把旧分支 oldRunIds 挂到新消息
+        // （分页错位）或合并进幽灵 id（内容不渲染）。
+        pendingRegenerate: sameConv ? prev.pendingRegenerate : null,
+        editTargetId: null,
+        pendingVersions: null,
+        pendingThinkingVersions: null,
       };
     });
   },
@@ -117,6 +124,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       skipThinking: false,
       continuingId: null,
       interruptedMessageId: null,
+      // H3/M9: 同 loadConversation——清空消息即重置编辑/重生成上下文。
+      pendingRegenerate: sameConv ? s.pendingRegenerate : null,
+      editTargetId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
     });
   },
 

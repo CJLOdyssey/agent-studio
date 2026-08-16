@@ -212,7 +212,7 @@ class TestCompletePipeline:
         mock_complete_deps["update_run_status"].assert_awaited_with("run-c3", "error")
         mock_complete_deps["publish_run_message"].assert_awaited_with(
             "run-c3",
-            {"type": "error", "detail": "LLM API 错误: 402 Payment Required"},
+            {"type": "error", "content": "LLM API 错误: 402 Payment Required"},
         )
         assert result is None
 
@@ -231,7 +231,7 @@ class TestCompletePipeline:
         mock_complete_deps["update_run_status"].assert_awaited_with("run-c4", "error")
         mock_complete_deps["publish_run_message"].assert_awaited_with(
             "run-c4",
-            {"type": "error", "detail": "续写失败: Network timeout"},
+            {"type": "error", "content": "续写失败: Network timeout"},
         )
         assert result is None
 
@@ -251,7 +251,7 @@ class TestCompletePipeline:
         mock_complete_deps["update_run_status"].assert_awaited_with("run-c5", "error")
         mock_complete_deps["publish_run_message"].assert_awaited_with(
             "run-c5",
-            {"type": "error", "detail": "保存失败: DB write failed"},
+            {"type": "error", "content": "保存失败: DB write failed"},
         )
         assert result is None
 
