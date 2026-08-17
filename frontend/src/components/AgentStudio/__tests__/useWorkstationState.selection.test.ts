@@ -29,6 +29,7 @@ const {
   mockSubmitRequirement,
   mockRetry,
   mockConversations,
+  mockSessionsLoaded,
 } = vi.hoisted(() => {
   const store = {
     messages: [] as unknown[],
@@ -55,6 +56,7 @@ const {
     mockSubmitRequirement: vi.fn(),
     mockRetry: vi.fn(),
     mockConversations: [] as unknown[],
+    mockSessionsLoaded: { loaded: false },
   };
 });
 
@@ -74,6 +76,7 @@ vi.mock('../../../hooks/useConversation', () => ({
   useConversation: () => ({
     conversations: mockConversations,
     activeConvId: null,
+    sessionsLoaded: mockSessionsLoaded.loaded,
     switchConversation: vi.fn(),
     createConversation: vi.fn(),
     saveConversation: mockSaveConversation,
@@ -452,5 +455,56 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
       act(() => { result.current.handleCloseConfirm(); });
       expect(result.current.confirmDialog).toBeNull();
     });
+  });
+});
+
+describe('bug3: URL 直开无缓存 → 列表到达后补触发加载', { tags: ['unit'] }, () => {
+  const urlWrapper = (entries: string[]) =>
+    ({ children }: { children: ReactNode }) =>
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          { initialEntries: entries },
+          createElement(
+            Routes,
+            null,
+            createElement(Route, { path: '/chat/:sessionId', element: children }),
+          ),
+        ),
+      );
+
+  it('sessionsLoaded 翻转后重新触发加载 effect，命中会话并加载详情', async () => {
+    mockConversations.length = 0;
+    mockStoreLoadConversation.mockClear();
+    const conv = {
+      id: 's1',
+      title: 't',
+      kind: 'normal' as const,
+      messages: [{ id: 'm1', role: 'user', content: 'hi', timestamp: Date.now() }],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      temp: false,
+    };
+    renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper: urlWrapper(['/chat/s1']) },
+    );
+    await act(async () => {
+      // 首次 effect 的 setTimeout(0) 先行执行：此时列表仍空 → found 落空返回
+      await new Promise((r) => setTimeout(r, 50));
+      expect(mockStoreLoadConversation).not.toHaveBeenCalled();
+      // 列表到达 + sessionsLoaded 翻转 → 仅当 deps 含 sessionsLoaded 才补触发
+      mockConversations.push(conv);
+      mockSessionsLoaded.loaded = true;
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // deps 变化后的 effect 重跑在 act 结束后才 flush，其加载逻辑在 setTimeout(0) 中：
+    // 断言前必须真实等待 timer 执行（对照实验：不加此等待则同步断言必失败）
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(mockStoreLoadConversation).toHaveBeenCalled();
   });
 });

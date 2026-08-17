@@ -480,7 +480,7 @@ export function useWorkstationState(
     }, 0);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeConvId]);
+  }, [activeConvId, conv.sessionsLoaded]);
 
   // 权威兜底（两项目统一）：会话列表已加载后，URL 指向的会话不存在
   // （跨端删除 / 本地删除 / 刷新已删 URL）→ 回首页。保证 URL 永远指向存在的
