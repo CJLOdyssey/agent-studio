@@ -488,14 +488,22 @@ export function useWorkstationState(
   // 移除即触发），sessionsLoaded 防初始加载竞态误跳。
   useEffect(() => {
     if (!activeConvId || !conv.sessionsLoaded) return;
-    // 发送中乐观占位（temp-*）是合法状态：run 确认（confirm）转正前不得误判
-    // 为"会话不存在"跳回首页；转正后 activeConvId=sessionId 兜底恢复生效。
-    if (activeConvId.startsWith('temp-')) return;
+    // 发送中乐观占位（temp-*）是合法状态：temp 仍在列表（吸附中）或 run 在飞
+    // （apiStatus loading/running）时不得误判为"会话不存在"跳回首页；陈旧
+    // temp URL（temp 不落盘，刷新/直开即列表无此会话且 idle）恢复兜底踢回。
+    if (
+      activeConvId.startsWith('temp-') &&
+      (filteredConversations.some((c) => c.id === activeConvId) ||
+        apiStatus === 'loading' ||
+        apiStatus === 'running')
+    ) {
+      return;
+    }
     const exists = filteredConversations.some(
       (c) => c.id === activeConvId || c.sessionId === activeConvId,
     );
     if (!exists) navigate('/');
-  }, [activeConvId, filteredConversations, conv.sessionsLoaded, navigate]);
+  }, [activeConvId, filteredConversations, conv.sessionsLoaded, navigate, apiStatus]);
 
   // URL 直开/刷新恢复会话身份（对齐 navigateToConversation 语义）：侧栏点击
   // 已由 navigateToConversation 恢复；直开 /chat/:id 或刷新时 selectedAgentId/

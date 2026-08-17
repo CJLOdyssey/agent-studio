@@ -536,17 +536,17 @@ describe('次要: temp 发送中不被兜底踢回首页', { tags: ['unit'] }, (
         ),
       );
 
-  it('activeConvId 为 temp-* 前缀时跳过权威兜底', async () => {
+  it('发送中（run 在飞）temp 占位不被兜底踢回', async () => {
     mockConversations.length = 0;
     mockSessionsLoaded.loaded = true;
     mockStore.messages = [];
-    mockStore.status = 'idle';
+    mockStore.status = 'running';
     mockStore.currentSessionId = null;
     mockStoreReset.mockClear();
     // 复现真实时序（对齐 bug3 实证结构）：发送中 temp 占位在列表中（load effect
     // 的 tempFound 早退，不重置），随后 merge 吸附窗口未匹配以新数组移除占位 →
-    // 兜底因 filteredConversations 引用变化重跑 → 若无 temp 守卫会误判"会话
-    // 不存在"→ navigate('/')。
+    // 兜底因 filteredConversations 引用变化重跑 → 占位已不在列表，仅凭
+    // apiStatus='running'（run 在飞）判定为合法状态，不得误判"会话不存在"跳回首页。
     mockConversations.push({
       id: 'temp-abc',
       title: 'T',
@@ -575,5 +575,30 @@ describe('次要: temp 发送中不被兜底踢回首页', { tags: ['unit'] }, (
     // 放行路径不导航、不重置；误判路径会 navigate('/') → activeConvId 置
     // undefined → 加载 effect reset()。
     expect(mockStoreReset).not.toHaveBeenCalled();
+    // 用例结尾复位，防后续污染（reviewer Minor ①）
+    mockStore.status = 'idle';
+    mockConvRef.current = mockConversations;
+  });
+
+  it('陈旧 temp URL（列表无 temp + idle）仍被兜底踢回', async () => {
+    mockConversations.length = 0;
+    mockSessionsLoaded.loaded = true;
+    mockStore.messages = [];
+    mockStore.status = 'idle';
+    mockStore.currentSessionId = null;
+    mockStoreReset.mockClear();
+    // 陈旧 temp URL：temp 不落盘，刷新/直开时列表无此会话且无 run 在飞
+    // （idle）→ 兜底恢复生效，navigate('/') → 加载 effect reset()。
+    renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper: urlWrapper(['/chat/temp-abc']) },
+    );
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(mockStoreReset).toHaveBeenCalled();
+    // 用例结尾复位，防后续污染（reviewer Minor ①）
+    mockStore.status = 'idle';
+    mockConvRef.current = mockConversations;
   });
 });
