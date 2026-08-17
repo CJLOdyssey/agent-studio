@@ -5,7 +5,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 
 from broker import publish_run_message
 from services.thinking_chain import format_result_preview, get_tool_prefix
@@ -68,17 +68,22 @@ class NodeFactory:
         tools: list[ToolConfig] | None = None,
         node_tools: dict[str, list[ToolConfig]] | None = None,
         run_id: str = "",
+        attachment_context: str = "",
     ):
         """Initialize the node factory with LLM config, prompts, and optional tools.
 
         ``tools`` applies to every node as a fallback; ``node_tools`` maps a
         ``role_identifier`` to its own ToolConfig list, which takes precedence.
+        ``attachment_context`` is injected as a SystemMessage after the role's
+        system prompt (mirrors the agent pipeline) so every node sees the files
+        bound to the run.
         """
         self.llm = llm
         self.agent_prompts = agent_prompts
         self.tools = tools or []
         self.node_tools = node_tools or {}
         self.run_id = run_id
+        self.attachment_context = attachment_context
 
     def _build_request(
         self,
@@ -108,9 +113,7 @@ class NodeFactory:
             body["thinking"] = {"type": "enabled"}
         return url, headers, body
 
-    def _node_tool_configs(
-        self, node: WorkflowNode
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    def _node_tool_configs(self, node: WorkflowNode) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Resolve and register tool definitions + wrappers for a node.
 
         Returns ``(definitions, tool_map)`` where ``tool_map`` maps the API tool
@@ -141,7 +144,10 @@ class NodeFactory:
 
         async def node_fn(state: WorkflowState) -> dict[str, Any]:
             context = strategy.build_prompt_context(state, node)
-            messages = [SystemMessage(content=system_prompt), HumanMessage(content=context)]
+            messages: list[BaseMessage] = [SystemMessage(content=system_prompt)]
+            if self.attachment_context:
+                messages.append(SystemMessage(content=self.attachment_context))
+            messages.append(HumanMessage(content=context))
             api_msgs = convert_messages_to_api(messages)
 
             async def cb(ev: dict[str, Any]) -> Any:
@@ -169,13 +175,12 @@ class NodeFactory:
                 if not tool_calls:
                     break
 
-                messages.append(AIMessage(
-                    content=full_content,
-                    tool_calls=[
-                        {"name": tc["name"], "args": tc["args"], "id": tc["id"]}
-                        for tc in tool_calls
-                    ],
-                ))
+                messages.append(
+                    AIMessage(
+                        content=full_content,
+                        tool_calls=[{"name": tc["name"], "args": tc["args"], "id": tc["id"]} for tc in tool_calls],
+                    )
+                )
                 tool_messages = []
                 for tc in tool_calls:
                     name = tc.get("name", "")
@@ -191,15 +196,19 @@ class NodeFactory:
                             result = f"Error: {exc}"
                     else:
                         result = f"Unknown tool: {name}"
-                    await cb({
-                        "event": "on_custom_thinking",
-                        "data": {"content": f"[result] {name} → {format_result_preview(result)}"},
-                    })
-                    tool_messages.append(ToolMessage(
-                        content=str(result or ""),
-                        tool_call_id=tc.get("id", ""),
-                        name=name,
-                    ))
+                    await cb(
+                        {
+                            "event": "on_custom_thinking",
+                            "data": {"content": f"[result] {name} → {format_result_preview(result)}"},
+                        }
+                    )
+                    tool_messages.append(
+                        ToolMessage(
+                            content=str(result or ""),
+                            tool_call_id=tc.get("id", ""),
+                            name=name,
+                        )
+                    )
                 messages.extend(tool_messages)
                 api_msgs = convert_messages_to_api(messages)
             else:
@@ -209,15 +218,14 @@ class NodeFactory:
                 # Every tool round returned tool_calls — the appended ToolMessages
                 # are never re-sent, so the node output may be incomplete/empty.
                 # Surface that to the user via the thinking chain ([info] node).
-                await cb({
-                    "event": "on_custom_thinking",
-                    "data": {
-                        "content": (
-                            f"[info] 工具调用轮数已达上限（{_MAX_TOOL_ROUNDS + 1} 轮），"
-                            "本轮输出可能不完整"
-                        )
-                    },
-                })
+                await cb(
+                    {
+                        "event": "on_custom_thinking",
+                        "data": {
+                            "content": (f"[info] 工具调用轮数已达上限（{_MAX_TOOL_ROUNDS + 1} 轮），本轮输出可能不完整")
+                        },
+                    }
+                )
 
             schema = getattr(strategy, "output_schema", None)
             if schema:

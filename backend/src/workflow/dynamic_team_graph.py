@@ -27,6 +27,7 @@ class DynamicTeamGraph:
         temperature: float = 0.7,
         max_tokens: int = 16384,
         checkpointer: Any | None = None,
+        attachment_context: str = "",
     ):
         llm_kwargs: dict[str, Any] = {
             "model": model,
@@ -39,6 +40,7 @@ class DynamicTeamGraph:
             llm_kwargs["base_url"] = base_url
         self.llm = ChatOpenAI(**llm_kwargs)
         self.checkpointer = checkpointer
+        self.attachment_context = attachment_context
         self._config: WorkflowConfig | None = None
         self._graph: Any = None
         self._agent_prompts: dict[str, str] = {}
@@ -80,6 +82,7 @@ class DynamicTeamGraph:
             self._agent_prompts,
             node_tools=self._node_tools,
             run_id=getattr(self, "_run_id", ""),
+            attachment_context=self.attachment_context,
         )
         router = Router()
         builder = GraphBuilder(

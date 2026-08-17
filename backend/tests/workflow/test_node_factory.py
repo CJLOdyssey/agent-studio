@@ -65,6 +65,11 @@ class TestNodeFactoryInit:
         factory = NodeFactory(llm, {}, run_id="run-123")
         assert factory.run_id == "run-123"
 
+    def test_init_with_attachment_context(self):
+        llm = FakeLLM()
+        factory = NodeFactory(llm, {}, attachment_context="[附件: a.txt]\ncontent")
+        assert factory.attachment_context == "[附件: a.txt]\ncontent"
+
 
 @pytest.mark.unit
 class TestBuildRequest:
@@ -176,6 +181,51 @@ class TestNodeFactoryCreate:
         result = await fn(state)
         assert "artifacts" in result
 
+    @pytest.mark.asyncio
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    async def test_node_fn_injects_attachment_context_after_system_prompt(self, mock_stream):
+        """Attachment context is injected as a SystemMessage right after the
+        role's system prompt, before the task context (mirrors agent pipeline)."""
+        mock_stream.return_value = (["output"], None, None, None, None)
+
+        llm = FakeLLM()
+        factory = NodeFactory(
+            llm,
+            {"pm": "Be a PM"},
+            attachment_context="[附件: plan.pdf]\nplan text",
+        )
+        node = WorkflowNode(id="n1", role_identifier="pm", strategy=NodeStrategy.GENERATOR)
+        fn = factory.create(node)
+
+        state = create_initial_state("requirement")
+        result = await fn(state)
+        assert result["artifacts"]["pm"] == "output"
+
+        body = mock_stream.call_args[0][2]
+        assert body["messages"][0] == {"role": "system", "content": "Be a PM"}
+        assert body["messages"][1] == {"role": "system", "content": "[附件: plan.pdf]\nplan text"}
+        assert body["messages"][2]["role"] == "user"
+
+    @pytest.mark.asyncio
+    @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)
+    async def test_node_fn_without_attachment_context_unchanged(self, mock_stream):
+        """Empty attachment_context → messages identical to the previous shape."""
+        mock_stream.return_value = (["output"], None, None, None, None)
+
+        llm = FakeLLM()
+        factory = NodeFactory(llm, {"pm": "Be a PM"})
+        node = WorkflowNode(id="n1", role_identifier="pm", strategy=NodeStrategy.GENERATOR)
+        fn = factory.create(node)
+
+        state = create_initial_state("requirement")
+        await fn(state)
+
+        body = mock_stream.call_args[0][2]
+        assert body["messages"] == [
+            {"role": "system", "content": "Be a PM"},
+            {"role": "user", "content": "requirement"},
+        ]
+
 
 @pytest.mark.unit
 class TestBuildRequestTools:
@@ -208,7 +258,8 @@ class TestNodeToolConfigs:
     def test_node_tools_registered(self):
         llm = FakeLLM()
         factory = NodeFactory(
-            llm, {},
+            llm,
+            {},
             node_tools={"pm": [ToolConfig(name="web_search", description="Search the web")]},
         )
         defs, tool_map = factory._node_tool_configs(WorkflowNode(id="n1", role_identifier="pm"))
@@ -226,7 +277,8 @@ class TestNodeToolConfigs:
     def test_node_tools_take_precedence_over_fallback(self):
         llm = FakeLLM()
         factory = NodeFactory(
-            llm, {},
+            llm,
+            {},
             tools=[ToolConfig(name="fallback_tool")],
             node_tools={"pm": [ToolConfig(name="role_tool")]},
         )
@@ -237,7 +289,8 @@ class TestNodeToolConfigs:
     def test_empty_node_tools_does_not_fall_back(self):
         llm = FakeLLM()
         factory = NodeFactory(
-            llm, {},
+            llm,
+            {},
             tools=[ToolConfig(name="fallback_tool")],
             node_tools={"pm": []},
         )
@@ -267,13 +320,17 @@ class TestNodeFnToolExecution:
 
         # First LLM turn requests a tool call; second turn answers after tools ran.
         mock_stream.side_effect = [
-            ([""], [], {0: {"id": "call_1", "name": "web_search", "arguments": '{"query": "weather"}'}}, "tool_calls", {}),
+            (
+                [""],
+                [],
+                {0: {"id": "call_1", "name": "web_search", "arguments": '{"query": "weather"}'}},
+                "tool_calls",
+                {},
+            ),
             (["It is sunny."], [], {}, "stop", {}),
         ]
 
-        factory = self._factory(
-            node_tools={"pm": [ToolConfig(name="web_search", description="Search the web")]}
-        )
+        factory = self._factory(node_tools={"pm": [ToolConfig(name="web_search", description="Search the web")]})
         node = WorkflowNode(id="n1", role_identifier="pm", strategy=NodeStrategy.GENERATOR)
         fn = factory.create(node)
 
@@ -295,7 +352,8 @@ class TestNodeFnToolExecution:
         wrapper.set_run_id = MagicMock()
         wrapper.name = "mcp_search"
         mock_build_def.return_value = (
-            "mcp_search", wrapper,
+            "mcp_search",
+            wrapper,
             {"type": "function", "function": {"name": "mcp_search", "description": ""}},
         )
         mock_stream.side_effect = [
@@ -313,9 +371,7 @@ class TestNodeFnToolExecution:
         await fn(create_initial_state("req"))
 
         thinking_msgs = [
-            c[0][1]["content"]
-            for c in mock_publish.call_args_list
-            if c[0][1]["type"] == "thinking_stream"
+            c[0][1]["content"] for c in mock_publish.call_args_list if c[0][1]["type"] == "thinking_stream"
         ]
         assert any("[mcp] mcp_search" in m for m in thinking_msgs)
         assert any("[result] mcp_search" in m for m in thinking_msgs)
@@ -331,9 +387,7 @@ class TestNodeFnToolExecution:
             "workflow.node_factory.build_tool_definition",
             return_value=("loop_tool", wrapper, {"type": "function", "function": {"name": "loop_tool"}}),
         ):
-            factory = self._factory(
-                node_tools={"pm": [ToolConfig(name="loop_tool", instructions="loop")]}
-            )
+            factory = self._factory(node_tools={"pm": [ToolConfig(name="loop_tool", instructions="loop")]})
             node = WorkflowNode(id="n1", role_identifier="pm", strategy=NodeStrategy.GENERATOR)
             fn = factory.create(node)
 
@@ -375,9 +429,7 @@ class TestNodeFnToolExecution:
             await fn(create_initial_state("req"))
 
         thinking_msgs = [
-            c[0][1]["content"]
-            for c in mock_publish.call_args_list
-            if c[0][1]["type"] == "thinking_stream"
+            c[0][1]["content"] for c in mock_publish.call_args_list if c[0][1]["type"] == "thinking_stream"
         ]
         assert any("[info]" in m and "上限" in m for m in thinking_msgs)
         assert mock_stream.await_count == 9
@@ -421,6 +473,7 @@ class TestNodeFnToolExecution:
         result = await fn(create_initial_state("req"))
         mock_stream.assert_called_once()
         assert result["artifacts"]["pm"] == "hello world"
+
     @pytest.mark.asyncio
     @patch("workflow.node_factory.publish_run_message", new_callable=AsyncMock)
     @patch("workflow.node_factory.stream_llm_response", new_callable=AsyncMock)

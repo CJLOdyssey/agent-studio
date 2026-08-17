@@ -1,4 +1,5 @@
 """Tests for backend.tasks.team_pipeline — _run_team_pipeline."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,7 +15,10 @@ def mock_team_deps():
         patch("tasks.team_pipeline.update_run_result", new_callable=AsyncMock),
         patch("tasks.team_pipeline.publish_run_message", new_callable=AsyncMock),
         patch("tasks.team_pipeline.save_message", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.get_messages", new_callable=AsyncMock, return_value=[]),
+        patch("tasks.team_pipeline.update_message_content", new_callable=AsyncMock),
         patch("tasks.team_pipeline.create_checkpointer_async", new_callable=AsyncMock),
+        patch("tasks.team_pipeline.list_attachments_by_run", new_callable=AsyncMock, return_value=[]),
         patch("tasks.team_pipeline.DynamicTeamGraph"),
         patch("tasks.team_pipeline.log_memory_diff"),
     ]
@@ -33,7 +37,6 @@ def mock_team_deps():
 
 
 class TestRunTeamPipeline:
-
     async def test_success(self, mock_team_deps):
         from tasks.team_pipeline import _run_team_pipeline
 
@@ -61,9 +64,7 @@ class TestRunTeamPipeline:
         mock_team_deps["update_run_result"].assert_awaited_once()
         mock_team_deps["publish_run_message"].assert_awaited_once()
         # Only a _final_report artifact → display falls back to the report and is persisted
-        mock_team_deps["save_message"].assert_awaited_once_with(
-            "run-1", "agent", "团队汇总", "final report", 1
-        )
+        mock_team_deps["save_message"].assert_awaited_once_with("run-1", "agent", "团队汇总", "final report", 1)
 
     async def test_persists_composed_node_artifacts(self, mock_team_deps):
         """Per-node artifacts are composed into labeled blocks, persisted, and published."""
@@ -75,14 +76,16 @@ class TestRunTeamPipeline:
 
         graph = MagicMock()
         graph.set_workflow = AsyncMock()
-        graph.run = AsyncMock(return_value={
-            "artifacts": {
-                "pm": "需求文档",
-                "reviewer": "审查通过",
-                "_final_report": "final",
-            },
-            "messages": [MagicMock(content="last msg")],
-        })
+        graph.run = AsyncMock(
+            return_value={
+                "artifacts": {
+                    "pm": "需求文档",
+                    "reviewer": "审查通过",
+                    "_final_report": "final",
+                },
+                "messages": [MagicMock(content="last msg")],
+            }
+        )
         mock_team_deps["DynamicTeamGraph"].return_value = graph
 
         await _run_team_pipeline(
@@ -93,15 +96,9 @@ class TestRunTeamPipeline:
         )
 
         # 行业化布局（fe62fb5）：逐节点独立消息 + 「团队汇总」最终成品消息。
-        mock_team_deps["save_message"].assert_any_await(
-            "run-8", "agent", "pm", "需求文档", 1
-        )
-        mock_team_deps["save_message"].assert_any_await(
-            "run-8", "agent", "reviewer", "审查通过", 1
-        )
-        mock_team_deps["save_message"].assert_any_await(
-            "run-8", "agent", "团队汇总", "final", 1
-        )
+        mock_team_deps["save_message"].assert_any_await("run-8", "agent", "pm", "需求文档", 1)
+        mock_team_deps["save_message"].assert_any_await("run-8", "agent", "reviewer", "审查通过", 1)
+        mock_team_deps["save_message"].assert_any_await("run-8", "agent", "团队汇总", "final", 1)
         publish_call = mock_team_deps["publish_run_message"].call_args[0][1]
         assert publish_call["type"] == "team_result"
         # _final_report 存在时最终成品 = reporter 输出（行业化定案）
@@ -132,6 +129,7 @@ class TestRunTeamPipeline:
 
     async def test_no_workflow_config(self, mock_team_deps):
         from tasks.team_pipeline import _run_team_pipeline
+
         mock_team_deps["get_workflow_config_by_team"].return_value = None
 
         await _run_team_pipeline(
@@ -250,10 +248,12 @@ class TestRunTeamPipeline:
 
         graph = MagicMock()
         graph.set_workflow = AsyncMock()
-        graph.run = AsyncMock(return_value={
-            "artifacts": {"other": "data"},
-            "messages": [MagicMock(content="fallback content")],
-        })
+        graph.run = AsyncMock(
+            return_value={
+                "artifacts": {"other": "data"},
+                "messages": [MagicMock(content="fallback content")],
+            }
+        )
         mock_team_deps["DynamicTeamGraph"].return_value = graph
 
         await _run_team_pipeline(
@@ -280,10 +280,12 @@ class TestRunTeamPipeline:
 
         graph = MagicMock()
         graph.set_workflow = AsyncMock()
-        graph.run = AsyncMock(return_value={
-            "artifacts": {"pm": "需求文档"},
-            "messages": [MagicMock(content="last msg")],
-        })
+        graph.run = AsyncMock(
+            return_value={
+                "artifacts": {"pm": "需求文档"},
+                "messages": [MagicMock(content="last msg")],
+            }
+        )
         mock_team_deps["DynamicTeamGraph"].return_value = graph
 
         await _run_team_pipeline(
@@ -294,8 +296,123 @@ class TestRunTeamPipeline:
         )
 
         # pm 角色消息保存一次；「团队汇总」跳过
-        mock_team_deps["save_message"].assert_awaited_once_with(
-            "run-m4", "agent", "pm", "需求文档", 1
-        )
+        mock_team_deps["save_message"].assert_awaited_once_with("run-m4", "agent", "pm", "需求文档", 1)
         for call in mock_team_deps["save_message"].await_args_list:
             assert call[0][2] != "团队汇总"
+
+    async def test_attachment_context_passed_to_graph_and_links_appended(self, mock_team_deps):
+        """Run-bound attachments feed the model context and download links."""
+        from tasks.team_pipeline import _run_team_pipeline
+
+        wf = MagicMock()
+        wf.nodes = [MagicMock()]
+        mock_team_deps["get_workflow_config_by_team"].return_value = wf
+
+        graph = MagicMock()
+        graph.set_workflow = AsyncMock()
+        graph.run = AsyncMock(
+            return_value={
+                "artifacts": {"_final_report": "final report"},
+                "messages": [MagicMock(content="last msg")],
+            }
+        )
+        mock_team_deps["DynamicTeamGraph"].return_value = graph
+
+        att = MagicMock()
+        att.id = "att-1"
+        att.filename = "plan.pdf"
+        att.extracted_text = "PDF plan content"
+        mock_team_deps["list_attachments_by_run"].return_value = [att]
+
+        await _run_team_pipeline(requirement="build X", run_id="run-att", session_id="sess-1", team_id="team-1")
+
+        call_kwargs = mock_team_deps["DynamicTeamGraph"].call_args[1]
+        assert call_kwargs["attachment_context"] == "[附件: plan.pdf]\nPDF plan content"
+        # 团队汇总尾部拼接确定性下载链接（对齐 agent_pipeline 链接注入）
+        mock_team_deps["save_message"].assert_any_await(
+            "run-att",
+            "agent",
+            "团队汇总",
+            "final report\n\n- [📥 plan.pdf](/api/attachments/att-1)",
+            1,
+        )
+
+    async def test_attachment_context_empty_without_attachments(self, mock_team_deps):
+        """No bound attachments → empty attachment_context (message assembly unchanged)."""
+        from tasks.team_pipeline import _run_team_pipeline
+
+        wf = MagicMock()
+        wf.nodes = [MagicMock()]
+        mock_team_deps["get_workflow_config_by_team"].return_value = wf
+
+        graph = MagicMock()
+        graph.set_workflow = AsyncMock()
+        graph.run = AsyncMock(return_value={"artifacts": {"_final_report": "r"}, "messages": []})
+        mock_team_deps["DynamicTeamGraph"].return_value = graph
+
+        await _run_team_pipeline(requirement="build X", run_id="run-noatt", session_id="sess-1", team_id="team-1")
+
+        call_kwargs = mock_team_deps["DynamicTeamGraph"].call_args[1]
+        assert call_kwargs["attachment_context"] == ""
+
+    async def test_attachment_load_failure_fails_open(self, mock_team_deps):
+        """Attachment load errors must not break the team run (fail-open)."""
+        from tasks.team_pipeline import _run_team_pipeline
+
+        wf = MagicMock()
+        wf.nodes = [MagicMock()]
+        mock_team_deps["get_workflow_config_by_team"].return_value = wf
+
+        graph = MagicMock()
+        graph.set_workflow = AsyncMock()
+        graph.run = AsyncMock(return_value={"artifacts": {"_final_report": "r"}, "messages": []})
+        mock_team_deps["DynamicTeamGraph"].return_value = graph
+        mock_team_deps["list_attachments_by_run"].side_effect = Exception("db down")
+
+        await _run_team_pipeline(requirement="build X", run_id="run-fail", session_id="sess-1", team_id="team-1")
+
+        call_kwargs = mock_team_deps["DynamicTeamGraph"].call_args[1]
+        assert call_kwargs["attachment_context"] == ""
+        mock_team_deps["update_run_result"].assert_awaited_once()
+
+    async def test_no_reporter_links_appended_to_role_message(self, mock_team_deps):
+        """M4 无 reporter 回退场景：交付物 = 角色消息，下载链接须追加到该消息
+        （对齐 agent_pipeline 的 update_message_content 模式）。"""
+        from tasks.team_pipeline import _run_team_pipeline
+
+        wf = MagicMock()
+        pm_node = MagicMock()
+        pm_node.role_identifier = "pm"
+        pm_node.strategy.value = "content"  # 非 REVIEWER/REPORTER
+        wf.nodes = [pm_node]
+        mock_team_deps["get_workflow_config_by_team"].return_value = wf
+
+        graph = MagicMock()
+        graph.set_workflow = AsyncMock()
+        graph.run = AsyncMock(
+            return_value={
+                "artifacts": {"pm": "需求文档"},
+                "messages": [MagicMock(content="last msg")],
+            }
+        )
+        mock_team_deps["DynamicTeamGraph"].return_value = graph
+
+        att = MagicMock()
+        att.id = "att-9"
+        att.filename = "spec.txt"
+        att.extracted_text = "spec content"
+        mock_team_deps["list_attachments_by_run"].return_value = [att]
+
+        pm_msg = MagicMock()
+        pm_msg.id = "msg-pm"
+        pm_msg.agent_name = "pm"
+        pm_msg.content = "需求文档"
+        mock_team_deps["get_messages"].return_value = [pm_msg]
+
+        await _run_team_pipeline(requirement="test", run_id="run-m4att", session_id=None, team_id="team-1")
+
+        # pm 角色消息保存一次；「团队汇总」跳过；下载链接追加到 pm 消息
+        mock_team_deps["save_message"].assert_awaited_once_with("run-m4att", "agent", "pm", "需求文档", 1)
+        mock_team_deps["update_message_content"].assert_awaited_once_with(
+            "msg-pm", "需求文档\n\n- [📥 spec.txt](/api/attachments/att-9)"
+        )
