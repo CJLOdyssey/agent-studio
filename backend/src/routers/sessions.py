@@ -51,6 +51,7 @@ async def _publish_session_event(user_id: str, event_type: str, session_id: str)
 class SessionCreateRequest(BaseModel):
     title: str = "新对话"
     agent_id: str | None = None
+    team_id: str | None = None
 
 
 class SessionUpdateRequest(BaseModel):
@@ -87,6 +88,7 @@ async def list_sessions(request: Request, limit: int = 50, agent_id: str | None 
                     "title": s.title,
                     "kind": s.kind,
                     "agent_id": s.agent_id,
+                    "team_id": s.team_id,
                     "is_pinned": s.is_pinned,
                     "run_count": len(runs),
                     "created_at": s.created_at.isoformat() if s.created_at else None,
@@ -108,7 +110,7 @@ async def add_session(request: Request, req: SessionCreateRequest) -> Any:
             agent = await get_agent_config(req.agent_id)
             if not agent:
                 raise error_response(ErrorCode.INVALID_REQUEST, detail="Agent 不存在")
-        sess = await create_session(title=req.title, user_id=user_id, agent_id=req.agent_id)
+        sess = await create_session(title=req.title, user_id=user_id, agent_id=req.agent_id, team_id=req.team_id)
         await _publish_session_event(user_id, "session.created", sess.id)
         return {
             "id": sess.id,
@@ -188,6 +190,7 @@ async def get_session_detail(request: Request, session_id: str) -> Any:
             "title": sess.title,
             "kind": sess.kind,
             "agent_id": sess.agent_id,
+            "team_id": sess.team_id,
             "created_at": sess.created_at.isoformat() if sess.created_at else None,
             "updated_at": sess.updated_at.isoformat() if sess.updated_at else None,
             "runs": [

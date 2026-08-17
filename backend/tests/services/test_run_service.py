@@ -108,6 +108,8 @@ class TestRunService:
             existing = MagicMock()
             existing.id = "sess-existing"
             existing.title = "Existing Session"
+            existing.agent_id = None
+            existing.team_id = None
             mock_get_sess.return_value = existing
             mock_get_model.return_value = None
             mock_get_default.return_value = {"api_key": "sk-test", "base_url": None}

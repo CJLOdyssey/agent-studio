@@ -27,6 +27,7 @@ from repository import (
     get_session,
     save_message,
     update_run_status,
+    update_session_team,
     update_session_title,
 )
 from services.text_utils import parse_json_list
@@ -86,19 +87,27 @@ class RunService:
         # ── Session ─────────────────────────────────────────────────
         kind = 'agent' if agent_id else 'team' if team_id else 'normal'
         if session_id is None:
-            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind)
+            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind, team_id=team_id)
             session_id = sess.id
         else:
             existing_sess = await get_session(session_id)
             if existing_sess is None:
                 logger.warning("session_id=%s not found, creating new session", session_id)
                 sess = await create_session(
-                    title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind
+                    title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind, team_id=team_id
                 )
                 session_id = sess.id
-            elif agent_id is None and team_id is None and existing_sess.agent_id:
-                # 会话已绑定 agent，但前端续聊未显式传 agent_id 时从会话回退
-                agent_id = existing_sess.agent_id
+            else:
+                # 会话已绑定身份，但前端续聊未显式传时从会话回退（agent_id 自始
+                # 存在；team_id 为 Task 3 兼容层，旧链接 /chat/:id 直开续聊兜底）
+                if agent_id is None and existing_sess.agent_id:
+                    agent_id = existing_sess.agent_id
+                if team_id is None and existing_sess.team_id:
+                    team_id = existing_sess.team_id
+                # 幂等补写：URL 身份直开（/team/:tid/:sid）首次续聊把 team_id 落库，
+                # 供旧链接后续回退（session_repo.update_session_team 内部仅空值写入）
+                if team_id and not existing_sess.team_id:
+                    await update_session_team(session_id, team_id)
 
         # ── Key resolution ──────────────────────────────────────────
         api_key: str | None = None
