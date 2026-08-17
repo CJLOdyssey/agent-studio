@@ -135,6 +135,38 @@ function ThemedApp() {
                   }
                 />
                 <Route
+                  path="/agent/:agentId/:sessionId"
+                  element={
+                    <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                      <AgentStudioWorkstation />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/team/:teamId/:sessionId"
+                  element={
+                    <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                      <AgentStudioWorkstation />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/agent/:agentId"
+                  element={
+                    <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                      <AgentStudioWorkstation />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/team/:teamId"
+                  element={
+                    <ErrorBoundary FallbackComponent={Fallback} onError={logError}>
+                      <AgentStudioWorkstation />
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
                   path="*"
                   element={
                     <ErrorBoundary FallbackComponent={Fallback} onError={logError}>

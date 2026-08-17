@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+
+// 组件内 useNavigate 需要 Router 上下文（身份入口 URL 化后引入）。
+const RouterWrapper = ({ children }: { children: ReactNode }) => (
+  <MemoryRouter initialEntries={['/']}>{children}</MemoryRouter>
+);
 
 const { mockSetIsSidebarOpen, mockUpdateSettings,
   mockHandleNewChat, mockResetApi, mockCancelRun, mockRetryApi,
@@ -196,49 +203,49 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   });
 
   it('renders without crashing', () => {
-    const { container } = render(<AgentStudioWorkstation />);
+    const { container } = render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(container).toBeDefined();
   });
 
   it('renders the agentstudio-app container', () => {
-    const { container } = render(<AgentStudioWorkstation />);
+    const { container } = render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(container.querySelector('.agentstudio-app')).toBeDefined();
   });
 
   it('renders Sidebar component', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.AgentStudioSidebar).toHaveBeenCalled();
   });
 
   it('does not render WorkstationPage when isWorkstationOpen is false', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.WorkstationPage).not.toHaveBeenCalled();
   });
 
   it('renders WorkstationPage when isWorkstationOpen is true', () => {
     storeOverride.isWorkstationOpen = true;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.WorkstationPage).toHaveBeenCalled();
   });
 
   it('renders header with expand sidebar button when sidebar is closed', () => {
     storeOverride.isSidebarOpen = false;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.getByLabelText('Expand sidebar')).toBeInTheDocument();
   });
 
   it('renders dark mode toggle button', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.getByLabelText('Toggle dark mode')).toBeInTheDocument();
   });
 
   it('renders notifications button', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.getByLabelText('Notifications')).toBeInTheDocument();
   });
 
   it('renders HomeScreen when showAgentChat and hasMessages are false', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.HomeScreen).toHaveBeenCalled();
     expect(wsMock.MessagesPanel).not.toHaveBeenCalled();
   });
@@ -246,14 +253,14 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('renders MessagesPanel when showAgentChat is true', () => {
     storeOverride.showAgentChat = true;
     storeOverride.selectedAgentId = 'agent-1';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.MessagesPanel).toHaveBeenCalled();
     expect(wsMock.HomeScreen).not.toHaveBeenCalled();
   });
 
   it('renders MessagesPanel when hasMessages is true', () => {
     storeOverride.hasMessages = true;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.MessagesPanel).toHaveBeenCalled();
     expect(wsMock.HomeScreen).not.toHaveBeenCalled();
   });
@@ -261,36 +268,36 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('renders InputToolbar when showAgentChat is true', () => {
     storeOverride.showAgentChat = true;
     storeOverride.selectedAgentId = 'agent-1';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.InputToolbar).toHaveBeenCalled();
   });
 
   it('renders InputToolbar when hasMessages is true', () => {
     storeOverride.hasMessages = true;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.InputToolbar).toHaveBeenCalled();
   });
 
   it('does not render InputToolbar when neither showAgentChat nor hasMessages', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.InputToolbar).not.toHaveBeenCalled();
   });
 
   it('shows reconnecting banner when wsStatus is reconnecting', () => {
     storeOverride.wsStatus = 'reconnecting';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.getByText('common.connecting...')).toBeInTheDocument();
   });
 
   it('does not show reconnecting banner when wsStatus is connected', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.queryByText('common.connecting...')).not.toBeInTheDocument();
   });
 
   it('shows error banner when apiStatus is error with apiError', () => {
     storeOverride.apiStatus = 'error';
     storeOverride.apiError = 'Test error message';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.getByText('Test error message')).toBeInTheDocument();
     expect(screen.getByText('common.retry')).toBeInTheDocument();
   });
@@ -298,22 +305,22 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('does not show error banner when apiStatus is not error', () => {
     storeOverride.apiStatus = 'idle';
     storeOverride.apiError = 'hidden error';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.queryByText('hidden error')).not.toBeInTheDocument();
   });
 
   it('renders Workspace component', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.Workspace).toHaveBeenCalled();
   });
 
   it('renders Modals component', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(wsMock.Modals).toHaveBeenCalled();
   });
 
   it('passes correct props to Sidebar', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.AgentStudioSidebar.mock.calls[0][0];
     expect(call).toHaveProperty('teams');
     expect(call).toHaveProperty('selectedAgentId');
@@ -328,7 +335,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   });
 
   it('passes configuringAgent and modal open states to Modals', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.Modals.mock.calls[0][0];
     expect(call).toHaveProperty('configuringAgent');
     expect(call).toHaveProperty('isSettingsOpen');
@@ -339,31 +346,31 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
 
   it('does not render mobile overlay when sidebar is closed', () => {
     storeOverride.isSidebarOpen = false;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(document.querySelector('.agentstudio-mobile-overlay')).toBeNull();
   });
 
   it('renders mobile overlay when sidebar is open', () => {
     storeOverride.isSidebarOpen = true;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(document.querySelector('.agentstudio-mobile-overlay')).toBeDefined();
   });
 
   it('shows page drag overlay when isPageDragOver is true', () => {
     storeOverride.isPageDragOver = true;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     expect(screen.getByText('fileAttach.dropHere')).toBeInTheDocument();
   });
 
   it('passes isRunning=true to HomeScreen when apiStatus is loading', () => {
     storeOverride.apiStatus = 'loading';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.HomeScreen.mock.calls[0][0];
     expect(call.isRunning).toBe(true);
   });
 
   it('passes isRunning=false to HomeScreen when apiStatus is idle', () => {
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.HomeScreen.mock.calls[0][0];
     expect(call.isRunning).toBe(false);
   });
@@ -372,7 +379,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
     storeOverride.showAgentChat = true;
     storeOverride.selectedAgentId = 'agent-1';
     storeOverride.apiStatus = 'loading';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.InputToolbar.mock.calls[0][0];
     expect(call.isRunning).toBe(true);
   });
@@ -380,7 +387,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('passes isRunning=false to InputToolbar when apiStatus is idle', () => {
     storeOverride.showAgentChat = true;
     storeOverride.selectedAgentId = 'agent-1';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.InputToolbar.mock.calls[0][0];
     expect(call.isRunning).toBe(false);
   });
@@ -388,7 +395,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('passes selectedAgentId and activeTab to Workspace', () => {
     storeOverride.selectedAgentId = 'agent-1';
     storeOverride.activeWorkspaceTab = 'test';
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.Workspace.mock.calls[0][0];
     expect(call.selectedAgentId).toBe('agent-1');
     expect(call.activeTab).toBe('test');
@@ -397,7 +404,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('passes configuringAgent to Modals', () => {
     const agent = { id: 'a1', name: 'Test Agent', role: 'Developer' };
     storeOverride.configuringAgent = agent;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.Modals.mock.calls[0][0];
     expect(call.configuringAgent).toEqual(agent);
   });
@@ -405,7 +412,7 @@ describe('AgentStudioWorkstation', { tags: ['integration'] }, () => {
   it('passes confirmDialog to Modals', () => {
     const dialog = { title: '确认', message: '确定？', onConfirm: vi.fn() };
     storeOverride.confirmDialog = dialog;
-    render(<AgentStudioWorkstation />);
+    render(<AgentStudioWorkstation />, { wrapper: RouterWrapper });
     const call = wsMock.Modals.mock.calls[0][0];
     expect(call.confirmDialog).toEqual(dialog);
   });

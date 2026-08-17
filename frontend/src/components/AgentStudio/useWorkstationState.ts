@@ -109,7 +109,12 @@ export function useWorkstationState(
   const abandonedRunId = useChatStore((s) => s.lastAbandonedRunId);
   const runSessionId = useChatStore((s) => s.currentSessionId);
 
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  // 会话标识单一事实源 = URL 路由（/chat/:id /agent/:aid/:sid /team/:tid/:sid，
+  // 对齐 ragbase/DeepSeek：可分享/收藏/多标签独立/前进后退）；localStorage 仅
+  // 作 fallback。useParams 在 selectedAgentId 之前调用：直开 /agent/:aid/:sid
+  // 时初始身份即来自 URL（同步恢复，无需等待 conversations）。
+  const { sessionId, agentId: urlAgentId, teamId: urlTeamId } = useParams();
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(urlAgentId ?? null);
   const [configuringAgent, setConfiguringAgent] = useState<Agent | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -142,9 +147,6 @@ export function useWorkstationState(
     return teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
   }, [activeTeamId, teamMgmt.teams]);
   const showAgentChat = selectedAgentId !== null || activeTeamId !== null;
-  // 会话标识单一事实源 = URL 路由 /chat/:sessionId（对齐 ragbase/DeepSeek：
-  // 可分享/收藏/多标签独立/前进后退）；localStorage 仅作 fallback。
-  const { sessionId } = useParams();
   const navigate = useNavigate();
   const activeConvId = sessionId ?? null;
   // 会话加载中（恢复/切换，消息未就绪）— 期间渲染消息面板而非主页，
@@ -236,6 +238,15 @@ export function useWorkstationState(
     runConvIdRef.current = null;
   }, [activeTeamId, activeTeamName, convRef]);
 
+  // 会话身份 URL：/team/:tid/:id、/agent/:aid/:id；无身份 → /chat/:id（旧格式兼容）
+  const buildConvPath = useCallback((conv: {
+    id: string; kind?: string; teamId?: string | null; agentId?: string | null;
+  }) => {
+    if (conv.kind === 'team' && conv.teamId) return `/team/${conv.teamId}/${conv.id}`;
+    if (conv.kind === 'agent' && conv.agentId) return `/agent/${conv.agentId}/${conv.id}`;
+    return `/chat/${conv.id}`;
+  }, []);
+
   // 正式模式：run 响应返回 session_id → 立即把乐观占位（temp-*）原位替换为
   // 真实会话（confirmConversationSession：id→sessionId + 唯一化），并把 URL
   // 从临时占位 replace 到 server 会话 id（可分享/收藏）。幂等，重复调用安全。
@@ -257,8 +268,8 @@ export function useWorkstationState(
     // 占位已原位替换为 sessionId：run 完成后的 sync 写回必须用新 id
     runConvIdRef.current = runSessionId;
     skipReloadRef.current = true;
-    navigate(`/chat/${runSessionId}`, { replace: true });
-  }, [runSessionId, convRef, navigate, activeConvId]);
+    navigate(buildConvPath({ ...pending, id: runSessionId }), { replace: true });
+  }, [runSessionId, convRef, navigate, activeConvId, buildConvPath]);
 
   const lastMsgLen = apiMessages.length;
   const lastMsgStream = useMemo(() => {
@@ -502,8 +513,27 @@ export function useWorkstationState(
     const exists = filteredConversations.some(
       (c) => c.id === activeConvId || c.sessionId === activeConvId,
     );
-    if (!exists) navigate('/');
-  }, [activeConvId, filteredConversations, conv.sessionsLoaded, navigate, apiStatus]);
+    if (!exists) {
+      // 三态入口：带身份 URL 踢回对应身份入口（/team/:tid 或 /agent/:aid），
+      // 无身份 → 首页。刷新/分享身份 URL 不因会话不存在而丢失模式。
+      if (urlTeamId) navigate(`/team/${urlTeamId}`);
+      else if (urlAgentId) navigate(`/agent/${urlAgentId}`);
+      else navigate('/');
+    }
+  }, [activeConvId, filteredConversations, conv.sessionsLoaded, navigate, apiStatus, urlTeamId, urlAgentId]);
+
+  // URL 身份单一事实源：/team/:tid/:sid 与 /agent/:aid/:sid 直开/分享/刷新
+  // 即达（useParams 同步），无需等待 conversations——无竞态。幂等（同值
+  // setState 不触发重渲染）。旧链接 /chat/:id 无身份标注 → 下方降级恢复 effect。
+  // setSelectedAgentId 延后一帧：同步 setState 移出 effect 体
+  // （react-hooks/set-state-in-effect）；mount 直开经 useState 初始值已同步恢复，
+  // 此 effect 覆盖客户端路由切换（同组件不卸载）。
+  useEffect(() => {
+    if (urlTeamId) useChatStore.getState().setActiveTeam(urlTeamId);
+    if (!urlAgentId) return;
+    const timer = setTimeout(() => setSelectedAgentId(urlAgentId), 0);
+    return () => clearTimeout(timer);
+  }, [urlTeamId, urlAgentId, setSelectedAgentId]);
 
   // URL 直开/刷新恢复会话身份（对齐 navigateToConversation 语义）：侧栏点击
   // 已由 navigateToConversation 恢复；直开 /chat/:id 或刷新时 selectedAgentId/
@@ -511,6 +541,7 @@ export function useWorkstationState(
   // kind 判定错误）。按会话 kind 恢复/清除，幂等（同值 setState 不触发重渲染）。
   // setTimeout 延后一帧：同步 setState 移出 effect 体（react-hooks/set-state-in-effect），
   // conversations 尚未到达时跳过，由 filteredConversations 变化重新触发。
+  // 职责：旧链接（无 URL 身份标注）降级恢复——以会话自身 kind 为准。
   useEffect(() => {
     if (!activeConvId) return;
     const timer = setTimeout(() => {
@@ -551,35 +582,36 @@ export function useWorkstationState(
   }, [queryClient, navigate]);
 
   // 会话导航（对齐 ragbase/DeepSeek URL 语义）：点击会话/新建会话 →
-  // navigate 驱动 URL，activeConvId 由 useParams 派生。agent/team 身份
-  // 状态（selectedAgentId/activeTeamId）保持 state 语义，不 URL 化。
+  // navigate 驱动 URL，activeConvId 由 useParams 派生。会话身份随 URL
+  // 标注（/agent/:aid/:id /team/:tid/:id），刷新/分享不丢模式。
   const navigateToConversation = useCallback((convId: string | null) => {
+    const target = convId ? conv.conversations.find((c) => c.id === convId) : undefined;
     // 按会话自身身份恢复/清除 agent/team 状态，避免团队身份残留导致
     // 普通会话消息被渲染成团队消息（见 MessagesPanel TeamMessage 分支）。
     // convId 为 null（新建聊天/团队入口）时由调用方管理身份，此处不动。
-    if (convId) {
-      const target = conv.conversations.find((c) => c.id === convId);
-      const teamId = target?.kind === 'team' ? target.teamId : undefined;
-      const agentId = target?.kind === 'agent' ? target.agentId : undefined;
+    if (target) {
+      const teamId = target.kind === 'team' ? target.teamId : undefined;
+      const agentId = target.kind === 'agent' ? target.agentId : undefined;
       useChatStore.getState().setActiveTeam(teamId ?? null);
       setSelectedAgentId(agentId ?? null);
     }
     conv.setActiveConvId(convId);
     if (convId) {
       setRestoring(true);
-      navigate(`/chat/${convId}`);
+      navigate(buildConvPath(target ?? { id: convId }));
     } else {
       setRestoring(false);
       navigate('/');
     }
-  }, [conv, navigate, setSelectedAgentId]);
+  }, [conv, navigate, setSelectedAgentId, buildConvPath]);
 
   // 直达主页（无 URL 会话）时恢复上次会话：localStorage fallback 后
-  // 以 URL 形式重建（replace，不堆历史）。
+  // 以 URL 形式重建（replace，不堆历史）。URL 已带身份（/agent/:aid、
+  // /team/:tid）时以 URL 为准，不覆盖（分享/刷新不丢模式）。
   useEffect(() => {
     let stored: string | null = null;
     try { stored = localStorage.getItem('agentstudio-active-conv-id'); } catch { /* non-fatal */ }
-    if (!sessionId && stored) {
+    if (!sessionId && !urlAgentId && !urlTeamId && stored) {
       navigate(`/chat/${stored}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -657,6 +689,10 @@ export function useWorkstationState(
           .filter((f) => f.attachmentId)
           .map((f) => ({ id: f.attachmentId as string, filename: f.name, size_bytes: f.size })),
       };
+      // 会话查找提升到分支外：新会话/续聊均以会话自身身份为准（见 submitAgentId）
+      const activeConv = conv.activeConvId
+        ? conv.conversations.find((c) => c.id === conv.activeConvId)
+        : undefined;
       if (!conv.activeConvId) {
         const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
         const kind: 'agent' | 'team' | 'normal' = selectedAgentId ? 'agent' : activeTeamId ? 'team' : 'normal';
@@ -674,12 +710,11 @@ export function useWorkstationState(
               content: userMessage.content, round_number: 0, created_at: new Date().toISOString(),
             }],
           });
-          navigate(`/chat/${convId}`);
+          navigate(buildConvPath({ id: convId, kind, teamId: activeTeamId, agentId: selectedAgentId }));
         }
       } else {
         runConvIdRef.current = conv.activeConvId;
         // 续聊：把用户消息追加到当前会话，避免历史里只剩第一条用户消息
-        const activeConv = conv.conversations.find((c) => c.id === conv.activeConvId);
         const prevMessages = activeConv?.messages ?? [];
         conv.updateConversationMessages(conv.activeConvId, [...prevMessages, userMessage], true, activeTeamId ?? undefined, activeTeamName);
         const st = useChatStore.getState();
@@ -689,12 +724,17 @@ export function useWorkstationState(
         }] });
       }
       window.dispatchEvent(new CustomEvent('clear-browser-url'));
-      submitToApi(text, undefined, selectedAgentId ?? undefined, true, undefined, undefined, undefined, attachmentIdsOf(files)).catch(() => {
+      // agent 会话续聊：身份以会话自身为准（恢复竞态下 selectedAgentId 可能
+      // 尚未就绪，会话的 agentId 是 server 权威值）
+      const submitAgentId = activeConv?.kind === 'agent'
+        ? (activeConv.agentId ?? selectedAgentId ?? undefined)
+        : selectedAgentId ?? undefined;
+      submitToApi(text, undefined, submitAgentId, true, undefined, undefined, undefined, attachmentIdsOf(files)).catch(() => {
         Logger.warn('API submission failed');
       });
       notify();
     },
-    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate, attachmentIdsOf, ensureModelPersisted],
+    [submitToApi, selectedAgentId, notify, conv, activeTeamId, activeTeamName, teamMgmt.teams, navigate, attachmentIdsOf, ensureModelPersisted, buildConvPath],
   );
 
   const handleHomeSend = useCallback(

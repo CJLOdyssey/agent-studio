@@ -8,10 +8,12 @@ import MessagesPanel from './MessagesPanel';
 import Modals from './Modals';
 import WorkstationPage from './WorkstationPage';
 import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWorkstationState } from './useWorkstationState';
 import type { InputToolbarHandle } from '../input';
 
 export default function AgentStudioWorkstation() {
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLElement>(null);
@@ -53,7 +55,9 @@ export default function AgentStudioWorkstation() {
             s.syncActiveConversation();
             s.resetApi();
             useChatStore.getState().setActiveTeam(null);
-            s.navigateToConversation(null);
+            s.conv.setActiveConvId(null);
+            // 身份入口 URL 化：刷新/分享 /agent/:aid 不丢 agent 模式
+            navigate(`/agent/${_agent.id}`);
             s.setSelectedAgentId(_agent.id);
           }}
           onEditAgent={(agent) => { s.setConfiguringAgent(agent); }}
@@ -61,7 +65,9 @@ export default function AgentStudioWorkstation() {
             s.syncActiveConversation();
             s.resetApi();
             useChatStore.getState().setActiveTeam(teamId);
-            s.navigateToConversation(null);
+            s.conv.setActiveConvId(null);
+            // 身份入口 URL 化：刷新/分享 /team/:tid 不丢团队模式
+            navigate(`/team/${teamId}`);
             s.setSelectedAgentId(null);
           }}
           isSidebarOpen={s.isSidebarOpen}
