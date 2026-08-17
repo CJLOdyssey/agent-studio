@@ -101,6 +101,20 @@ class TestPreferences:
         resp = client.put("/api/preferences", headers=auth_headers, json={"key": "", "value": "x"})
         assert resp.status_code == 400
 
+    def test_preferences_put_missing_value(self, client, auth_headers):
+        """缺 value → 400，避免 JSON NOT NULL 列插 NULL → IntegrityError → 500。"""
+        resp = client.put("/api/preferences", headers=auth_headers, json={"key": "selected_model"})
+        assert resp.status_code == 400
+
+    def test_preferences_put_null_value(self, client, auth_headers):
+        """value:null → 400，同上。"""
+        resp = client.put(
+            "/api/preferences",
+            headers=auth_headers,
+            json={"key": "selected_model", "value": None},
+        )
+        assert resp.status_code == 400
+
     def test_preferences_get_exception(self, client, auth_headers):
         with patch(
             "routers.preferences.get_all_preferences", new_callable=AsyncMock, side_effect=RuntimeError("db error")

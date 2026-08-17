@@ -32,6 +32,10 @@ async def upsert_preference(request: Request, body: dict[str, Any]) -> dict[str,
     if not isinstance(key, str) or not key:
         raise error_response(ErrorCode.INVALID_REQUEST, detail="key 不能为空")
     value = body.get("value")
+    if value is None:
+        # value 列是 JSON NOT NULL——缺 value 或显式 null 会插 NULL → IntegrityError → 500。
+        # 显式 400，让客户端知道请求不合法（与 key 校验一致）。
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="value 不能为空")
     user_id = get_user_id(request)
     try:
         await set_preference(user_id, key, value)
