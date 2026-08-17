@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 const queryClient = new QueryClient();
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(
@@ -27,6 +28,7 @@ const {
   mockStoreSetActiveTeam,
   mockSubmitRequirement,
   mockRetry,
+  mockConversations,
 } = vi.hoisted(() => {
   const store = {
     messages: [] as unknown[],
@@ -52,6 +54,7 @@ const {
     mockStoreSetActiveTeam: vi.fn(),
     mockSubmitRequirement: vi.fn(),
     mockRetry: vi.fn(),
+    mockConversations: [] as unknown[],
   };
 });
 
@@ -69,7 +72,7 @@ vi.mock('../../../hooks/useTeamManagement', () => ({
 
 vi.mock('../../../hooks/useConversation', () => ({
   useConversation: () => ({
-    conversations: [],
+    conversations: mockConversations,
     activeConvId: null,
     switchConversation: vi.fn(),
     createConversation: vi.fn(),
@@ -120,6 +123,7 @@ vi.mock('../../../stores/chatStore', () => {
     get lastAbandonedRunId() { return mockStore.abandonedRunId; },
     get currentSessionId() { return mockStore.currentSessionId; },
     setActiveTeam: mockStoreSetActiveTeam,
+    clearMessages: vi.fn(),
   };
   const useChatStore = (selector?: (s: unknown) => unknown) =>
     selector ? selector(state) : state;
@@ -161,6 +165,7 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
     mockStore.activeTeamId = null;
     mockStore.abandonedRunId = null;
     mockStore.currentSessionId = null;
+    mockConversations.length = 0;
   });
 
   describe('derived values', () => {
@@ -299,6 +304,70 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
     it('confirmDialog is null by default', () => {
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
       expect(result.current.confirmDialog).toBeNull();
+    });
+  });
+
+  describe('URL 直开/刷新恢复会话身份', () => {
+    const urlWrapper = (entries: string[]) =>
+      ({ children }: { children: ReactNode }) =>
+        createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          createElement(
+            MemoryRouter,
+            { initialEntries: entries },
+            createElement(
+              Routes,
+              null,
+              createElement(Route, { path: '/chat/:sessionId', element: children }),
+            ),
+          ),
+        );
+
+    function makeConv(id: string, overrides: Record<string, unknown> = {}) {
+      return {
+        id,
+        title: 'T',
+        messages: [],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        ...overrides,
+      };
+    }
+
+    beforeEach(() => { vi.useFakeTimers(); });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('restores selectedAgentId for agent-kind conversation opened directly by URL', () => {
+      mockConversations.push(makeConv('conv-a', { kind: 'agent', agentId: 'agent-1' }));
+      const { result } = renderHook(
+        () => useWorkstationState(createRef(), createRef(), createRef()),
+        { wrapper: urlWrapper(['/chat/conv-a']) },
+      );
+      act(() => { vi.runAllTimers(); });
+      expect(result.current.selectedAgentId).toBe('agent-1');
+    });
+
+    it('restores activeTeamId for team-kind conversation opened directly by URL', () => {
+      mockConversations.push(makeConv('conv-t', { kind: 'team', teamId: 'team-9' }));
+      renderHook(
+        () => useWorkstationState(createRef(), createRef(), createRef()),
+        { wrapper: urlWrapper(['/chat/conv-t']) },
+      );
+      act(() => { vi.runAllTimers(); });
+      expect(mockStoreSetActiveTeam).toHaveBeenCalledWith('team-9');
+    });
+
+    it('clears team identity for normal-kind conversation opened directly by URL', () => {
+      mockStore.activeTeamId = 'team-9';
+      mockConversations.push(makeConv('conv-n', { kind: 'normal' }));
+      const { result } = renderHook(
+        () => useWorkstationState(createRef(), createRef(), createRef()),
+        { wrapper: urlWrapper(['/chat/conv-n']) },
+      );
+      act(() => { vi.runAllTimers(); });
+      expect(result.current.selectedAgentId).toBeNull();
+      expect(mockStoreSetActiveTeam).toHaveBeenCalledWith(null);
     });
   });
 

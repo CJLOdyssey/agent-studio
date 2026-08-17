@@ -87,7 +87,26 @@ vi.mock('lucide-react', () => ({
   Wrench: () => <span data-testid="icon-wrench" />,
   X: () => <span data-testid="icon-x" />,
   Zap: () => <span data-testid="icon-zap" />,
-}));
+
+  ExternalLink: () => <span data-testid="icon-externallink" />,
+  FileCode2: () => <span data-testid="icon-filecode2" />,
+  FileJson: () => <span data-testid="icon-filejson" />,
+  FileSpreadsheet: () => <span data-testid="icon-filespreadsheet" />,
+  FileType: () => <span data-testid="icon-filetype" />,
+  Terminal: () => <span data-testid="icon-terminal" />,
+  RotateCcw: () => <span data-testid="icon-rotateccw" />,
+  ThumbsUp: () => <span data-testid="icon-thumbsup" />,
+  ThumbsDown: () => <span data-testid="icon-thumbsdown" />,
+  XCircle: () => <span data-testid="icon-xcircle" />,
+  Archive: () => <span data-testid="icon-archive" />,
+  Tag: () => <span data-testid="icon-tag" />,
+  Radio: () => <span data-testid="icon-radio" />,
+  UserCog: () => <span data-testid="icon-usercog" />,
+  Minus: () => <span data-testid="icon-minus" />,
+  Mail: () => <span data-testid="icon-mail" />,
+  ShieldCheck: () => <span data-testid="icon-shieldcheck" />,
+  Inbox: () => <span data-testid="icon-inbox" />,
+  Folder: () => <span data-testid="icon-folder" />,}));
 
 vi.mock('../../../api/hooks', () => ({
   useAgents: () => ({ data: [], isLoading: false, isSuccess: true }),

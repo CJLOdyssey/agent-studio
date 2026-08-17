@@ -494,6 +494,25 @@ export function useWorkstationState(
     if (!exists) navigate('/');
   }, [activeConvId, filteredConversations, conv.sessionsLoaded, navigate]);
 
+  // URL 直开/刷新恢复会话身份（对齐 navigateToConversation 语义）：侧栏点击
+  // 已由 navigateToConversation 恢复；直开 /chat/:id 或刷新时 selectedAgentId/
+  // activeTeamId 仍是初始 null → 团队会话发送误走 agent pipeline（handleSendMessage
+  // kind 判定错误）。按会话 kind 恢复/清除，幂等（同值 setState 不触发重渲染）。
+  // setTimeout 延后一帧：同步 setState 移出 effect 体（react-hooks/set-state-in-effect），
+  // conversations 尚未到达时跳过，由 filteredConversations 变化重新触发。
+  useEffect(() => {
+    if (!activeConvId) return;
+    const timer = setTimeout(() => {
+      const target = filteredConversations.find((c) => c.id === activeConvId);
+      if (!target) return;
+      const teamId = target.kind === 'team' ? target.teamId : undefined;
+      const agentId = target.kind === 'agent' ? target.agentId : undefined;
+      useChatStore.getState().setActiveTeam(teamId ?? null);
+      setSelectedAgentId(agentId ?? null);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [activeConvId, filteredConversations, setSelectedAgentId]);
+
   const handleNewChat = useCallback(() => {
     syncActiveConversation();
     resetApi();

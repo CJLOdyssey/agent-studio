@@ -188,6 +188,17 @@ describe('MessagesPanel — correct props', { tags: ['integration'] }, () => {
       expect(screen.queryByText('agent.startChat')).not.toBeInTheDocument();
     });
 
+    it('hides welcome banner when messages exist (banner is empty-state guide only)', () => {
+      render(<MessagesPanel {...properBaseProps({
+        showAgentChat: true,
+        selectedAgentId: 'a1',
+        allAgents: [makeAgent('a1', 'T')],
+        displayMessages: [makeMsg('m1')],
+      })} />);
+      expect(screen.queryByText('agent.startChat')).not.toBeInTheDocument();
+      expect(screen.queryByText('agent.welcome')).not.toBeInTheDocument();
+    });
+
     it('renders messages with correct container and aria-live', () => {
       const msgs = [makeMsg('1'), makeMsg('2')];
       const { container } = render(<MessagesPanel {...properBaseProps({
