@@ -15,6 +15,7 @@ from core.infra.database import (
     SessionDB,
     UserApiKey,
     UserDB,
+    UserPreferenceDB,
     UserRoleDB,
     get_session_factory,
 )
@@ -274,9 +275,12 @@ async def revoke_token_family(family_id: str) -> None:
 async def merge_guest_data(guest_ids: set[str], real_user_id: str) -> None:
     """Reassign all guest data rows to the authenticated user.
 
-    For each table (SessionDB, UserApiKey, KeyUsageLog), updates rows where
-    ``user_id`` matches any ``guest_id`` or starts with ``u_`` (client-generated
-    anonymous prefix), setting ``user_id = real_user_id``.
+    For each table (SessionDB, UserApiKey, KeyUsageLog, UserPreferenceDB),
+    updates rows where ``user_id`` matches any ``guest_id`` or starts with
+    ``u_`` (client-generated anonymous prefix), setting ``user_id =
+    real_user_id``. Preferences use an upsert because their PK is
+    ``(user_id, key)`` — a plain UPDATE could collide with the real user's
+    existing key and roll the whole merge back.
 
     Args:
         guest_ids: Set of candidate guest identifiers (already filtered to exclude
@@ -308,4 +312,26 @@ async def merge_guest_data(guest_ids: set[str], real_user_id: str) -> None:
                 )
                 .values(user_id=real_user_id)
             )
+
+        # user_preferences 主键是 (user_id, key)：直接把 user_id 改成正式用户
+        # 会撞唯一约束（guest 与正式用户已有同一 key），整笔事务回滚。改为逐行
+        # upsert——正式用户已有该 key 则覆盖为 guest 最新值（与偏好 last-write-
+        # wins 语义一致），否则新建，保证 guest 合并永不失败。
+        guest_ids_for_pref = [g for g in guest_ids if g != "anonymous"]
+        pref_conditions: list[Any] = []
+        if guest_ids_for_pref:
+            pref_conditions.extend(UserPreferenceDB.user_id == g for g in guest_ids_for_pref)
+        pref_conditions.append(UserPreferenceDB.user_id.startswith("u_"))
+        pref_rows = await session.execute(
+            select(UserPreferenceDB).where(
+                or_(*pref_conditions),
+                UserPreferenceDB.user_id != real_user_id,
+            )
+        )
+        for pref in pref_rows.scalars().all():
+            target = await session.get(UserPreferenceDB, (real_user_id, pref.key))
+            if target is None:
+                session.add(UserPreferenceDB(user_id=real_user_id, key=pref.key, value=pref.value))
+            else:
+                target.value = pref.value
         await session.commit()

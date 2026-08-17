@@ -32,6 +32,7 @@ from routers import (
     keys,
     mcps,
     models,
+    preferences,
     prompts,
     providers,
     run_continue,
@@ -170,7 +171,7 @@ app.add_middleware(RequestSizeLimitMiddleware)
 # ── Routers ─────────────────────────────────────────────────────────────────
 routers = [auth, events, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
            teams, tools, skills, prompts, mcps, admin, providers, versions,
-           workflows, team_runs]
+           workflows, team_runs, preferences]
 for r in routers:
     app.include_router(r.router)
 
