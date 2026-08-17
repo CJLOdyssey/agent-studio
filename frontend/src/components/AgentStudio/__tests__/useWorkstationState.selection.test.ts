@@ -29,6 +29,7 @@ const {
   mockSubmitRequirement,
   mockRetry,
   mockConversations,
+  mockConvRef,
   mockSessionsLoaded,
 } = vi.hoisted(() => {
   const store = {
@@ -40,6 +41,7 @@ const {
     abandonedRunId: null as string | null,
     currentSessionId: null as string | null,
   };
+  const convArray = [] as unknown[];
   return {
     mockToast: vi.fn(),
     mockSaveConversation: vi.fn(),
@@ -55,7 +57,11 @@ const {
     mockStoreSetActiveTeam: vi.fn(),
     mockSubmitRequirement: vi.fn(),
     mockRetry: vi.fn(),
-    mockConversations: [] as unknown[],
+    mockConversations: convArray,
+    // useConversation 每次渲染返回 convArray 同一引用 → useMemo(filteredConversations)
+    // 永远缓存 → 兜底 effect 的 filteredConversations dep 不变、从不重跑。真实
+    // merge 会用新数组 setConversations；测试通过换引用复现"列表变化"。
+    mockConvRef: { current: convArray },
     mockSessionsLoaded: { loaded: false },
   };
 });
@@ -74,7 +80,7 @@ vi.mock('../../../hooks/useTeamManagement', () => ({
 
 vi.mock('../../../hooks/useConversation', () => ({
   useConversation: () => ({
-    conversations: mockConversations,
+    conversations: mockConvRef.current,
     activeConvId: null,
     sessionsLoaded: mockSessionsLoaded.loaded,
     switchConversation: vi.fn(),
@@ -506,5 +512,68 @@ describe('bug3: URL 直开无缓存 → 列表到达后补触发加载', { tags:
       await new Promise((r) => setTimeout(r, 50));
     });
     expect(mockStoreLoadConversation).toHaveBeenCalled();
+  });
+});
+
+describe('次要: temp 发送中不被兜底踢回首页', { tags: ['unit'] }, () => {
+  const urlWrapper = (entries: string[]) =>
+    ({ children }: { children: ReactNode }) =>
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          { initialEntries: entries },
+          createElement(
+            Routes,
+            null,
+            createElement(Route, { path: '/chat/:sessionId', element: children }),
+            // 真实应用 '/' 与 '/chat/:id' 同组件（navigate 不卸载）：兜底误判
+            // 跳回首页后组件保持挂载、sessionId 置 undefined → 加载 effect
+            // reset()。无 catch-all 时 navigate 直接卸载，mockStoreReset 无信号。
+            createElement(Route, { path: '*', element: children }),
+          ),
+        ),
+      );
+
+  it('activeConvId 为 temp-* 前缀时跳过权威兜底', async () => {
+    mockConversations.length = 0;
+    mockSessionsLoaded.loaded = true;
+    mockStore.messages = [];
+    mockStore.status = 'idle';
+    mockStore.currentSessionId = null;
+    mockStoreReset.mockClear();
+    // 复现真实时序（对齐 bug3 实证结构）：发送中 temp 占位在列表中（load effect
+    // 的 tempFound 早退，不重置），随后 merge 吸附窗口未匹配以新数组移除占位 →
+    // 兜底因 filteredConversations 引用变化重跑 → 若无 temp 守卫会误判"会话
+    // 不存在"→ navigate('/')。
+    mockConversations.push({
+      id: 'temp-abc',
+      title: 'T',
+      kind: 'normal',
+      messages: [],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+      temp: true,
+    });
+    renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper: urlWrapper(['/chat/temp-abc']) },
+    );
+    await act(async () => {
+      // 首次 effect 的 setTimeout(0) 先行执行：temp 在列表 → tempFound 早退
+      //（setRestoring(false)，延迟渲染挂起）
+      await new Promise((r) => setTimeout(r, 50));
+      // merge 以新数组引用移除占位 → 挂起的渲染 flush 时读到新数组 → 兜底重跑
+      mockConvRef.current = [];
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // deps 变化后的 effect 重跑在 act 结束后才 flush：断言前必须真实等待
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // 放行路径不导航、不重置；误判路径会 navigate('/') → activeConvId 置
+    // undefined → 加载 effect reset()。
+    expect(mockStoreReset).not.toHaveBeenCalled();
   });
 });

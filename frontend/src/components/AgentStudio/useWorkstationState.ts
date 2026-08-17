@@ -488,6 +488,9 @@ export function useWorkstationState(
   // 移除即触发），sessionsLoaded 防初始加载竞态误跳。
   useEffect(() => {
     if (!activeConvId || !conv.sessionsLoaded) return;
+    // 发送中乐观占位（temp-*）是合法状态：run 确认（confirm）转正前不得误判
+    // 为"会话不存在"跳回首页；转正后 activeConvId=sessionId 兜底恢复生效。
+    if (activeConvId.startsWith('temp-')) return;
     const exists = filteredConversations.some(
       (c) => c.id === activeConvId || c.sessionId === activeConvId,
     );
