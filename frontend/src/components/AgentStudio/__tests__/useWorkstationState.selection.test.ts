@@ -31,6 +31,8 @@ const {
   mockConversations,
   mockConvRef,
   mockSessionsLoaded,
+  mockGetPreferences,
+  mockSetPreference,
 } = vi.hoisted(() => {
   const store = {
     messages: [] as unknown[],
@@ -63,6 +65,8 @@ const {
     // merge 会用新数组 setConversations；测试通过换引用复现"列表变化"。
     mockConvRef: { current: convArray },
     mockSessionsLoaded: { loaded: false },
+    mockGetPreferences: vi.fn().mockResolvedValue({}),
+    mockSetPreference: vi.fn().mockResolvedValue(undefined),
   };
 });
 
@@ -156,6 +160,11 @@ vi.mock('./useDragAndDrop', () => ({
 }));
 
 vi.mock('../../../utils/logger', () => ({ default: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
+
+vi.mock('../../../api/client/preferences', () => ({
+  getPreferences: (...args: unknown[]) => mockGetPreferences(...args),
+  setPreference: (...args: unknown[]) => mockSetPreference(...args),
+}));
 
 import { useWorkstationState } from '../useWorkstationState';
 import type * as React from 'react';
@@ -600,5 +609,19 @@ describe('次要: temp 发送中不被兜底踢回首页', { tags: ['unit'] }, (
     // 用例结尾复位，防后续污染（reviewer Minor ①）
     mockStore.status = 'idle';
     mockConvRef.current = mockConversations;
+  });
+});
+
+describe('bug2: 模型偏好跨设备恢复', { tags: ['unit'] }, () => {
+  it('server 偏好覆盖 localStorage 空值（换设备/清缓存后恢复模型）', async () => {
+    localStorage.removeItem('agentstudio-selected-model');
+    mockGetPreferences.mockResolvedValue({ selected_model: 'THUDM/GLM-Z1-9B-0414' });
+    const { result } = renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper },
+    );
+    await act(async () => {});
+    await new Promise((r) => setTimeout(r, 10));
+    expect(localStorage.getItem('agentstudio-selected-model')).toBe('THUDM/GLM-Z1-9B-0414');
   });
 });

@@ -14,6 +14,7 @@ import { useAgentCommands } from '../../hooks/useAgentCommands';
 import { useChatStore } from '../../stores/chatStore';
 import { submitRequirement, retry } from '../../stores/chatActions';
 import { getSessionDetail } from '../../api/client/sessions';
+import { getPreferences, setPreference } from '../../api/client/preferences';
 import { buildPathTurns } from '../../utils/branchTurns';
 import type { ProjectRun } from '../../types';
 import { useDragAndDrop } from './useDragAndDrop';
@@ -183,6 +184,8 @@ export function useWorkstationState(
     } catch {
       // localStorage unavailable — routing falls back to the default key
     }
+    // 跨设备持久化：server 权威（Task 5 接口），失败静默不影响对话流
+    setPreference('selected_model', id).catch(() => {});
   }, []);
 
   // 模型选择的单一事实源：UI 生效模型（selectedModel 或 recent 回退）必须在
@@ -198,6 +201,22 @@ export function useWorkstationState(
       }
     }
   }, [effectiveSelectedModel]);
+
+  // 模型偏好 server 优先：localStorage 即时渲染（快），server GET 返回后覆盖
+  // （跨设备一致——换设备/清缓存后恢复上次选择，杜绝回退默认模型的 402）。
+  useEffect(() => {
+    let cancelled = false;
+    getPreferences().then((prefs) => {
+      if (cancelled) return;
+      const serverModel = prefs.selected_model;
+      if (typeof serverModel === 'string' && serverModel) {
+        setSelectedModelState(serverModel);
+        try { localStorage.setItem('agentstudio-selected-model', serverModel); } catch { /* non-fatal */ }
+      }
+    }).catch(() => { /* non-fatal — localStorage 兜底 */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const hasMessages = apiMessages.length > 0;
   const convRef = useRef(conv);
   useEffect(() => {
