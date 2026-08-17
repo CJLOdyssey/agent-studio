@@ -461,6 +461,74 @@ class TestSessions:
         assert resp.status_code == 200
         assert resp.json()["team_id"] == "team-9"
 
+    def test_run_team_id_fallback_from_existing_session(self, client):
+        """回退路径：会话已有 team_id、请求未带 → 分派仍走团队流水线。
+
+        首次 POST /api/runs 带 team_id 新建会话，再对同一 session_id 不带
+        team_id 续聊——get_workflow_config_by_team 返回有效 workflow 时，分派
+        应命中 _run_team_pipeline 且 team_id 为从会话回退的值（mock spy 佐证）。
+        """
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("repository.workflows.get_workflow_config_by_team", new_callable=AsyncMock,
+                   return_value=SimpleNamespace(nodes=[])), \
+             patch("tasks.team_pipeline._run_team_pipeline", new_callable=AsyncMock) as mock_team:
+            resp = client.post("/api/runs", json={
+                "requirement": "团队任务", "team_id": "team-9",
+            }, headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            session_id = resp.json()["session_id"]
+            assert session_id
+            resp2 = client.post("/api/runs", json={
+                "requirement": "续聊问题", "session_id": session_id,
+            }, headers={"X-User-ID": "admin"})
+            assert resp2.status_code == 200
+            assert resp2.json()["session_id"] == session_id
+        # 两次请求均命中团队分派，第二次回退的 team_id 取自会话
+        assert mock_team.call_count == 2
+        assert mock_team.call_args_list[-1].kwargs["team_id"] == "team-9"
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+
+    def test_run_team_id_backfills_empty_session_team(self, client):
+        """幂等补写路径：会话 team_id 为空、请求带 team_id → 落库；
+        会话已有 team_id 后再传不同值不覆盖（尊重首次来源）。"""
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("tasks._run_agent_pipeline", new_callable=AsyncMock):
+            resp = client.post("/api/runs", json={
+                "requirement": "普通任务",
+            }, headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            session_id = resp.json()["session_id"]
+            assert session_id
+            resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            assert resp.json()["team_id"] is None
+            resp2 = client.post("/api/runs", json={
+                "requirement": "团队续聊", "session_id": session_id, "team_id": "team-9",
+            }, headers={"X-User-ID": "admin"})
+            assert resp2.status_code == 200
+            assert resp2.json()["session_id"] == session_id
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+        # 幂等：已有 team_id 后再传不同值不覆盖
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("tasks._run_agent_pipeline", new_callable=AsyncMock):
+            resp3 = client.post("/api/runs", json={
+                "requirement": "再续", "session_id": session_id, "team_id": "team-8",
+            }, headers={"X-User-ID": "admin"})
+            assert resp3.status_code == 200
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+
     def test_session_create_request_model(self):
         from routers.sessions import SessionCreateRequest
         req = SessionCreateRequest(title="test")
