@@ -91,11 +91,11 @@ export function useConversation() {
   }, []);
 
   // 正式模式的统一列表归并（幂等核心）：
-  // 乐观占位（temp）保留在列；已确认会话与 server 按 sessionId 合并（唯一）；
-  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换；
-  // 已确认但不在 server 的——保留（server 响应可能不完整/延迟）。
+  // server 权威（DB 唯一真源）：已确认会话与 server 按 sessionId 合并（唯一）；
+  // server 未返回的已确认会话 → 删除（多端同步删除生效）；
+  // temp 占位保留（发送中未确认，等 run 响应转正）；
+  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换。
   const mergeWithServer = useCallback((prev: Conversation[], sessions: SessionItem[]) => {
-    const confirmed = new Map<string, Conversation>();
     const temp: Conversation[] = [];
     const orphan: Conversation[] = [];
     for (const c of prev) {
@@ -103,11 +103,9 @@ export function useConversation() {
         temp.push(c);
         continue;
       }
-      if (c.sessionId) {
-        confirmed.set(c.sessionId, c);
-        continue;
+      if (!c.sessionId) {
+        orphan.push(c);
       }
-      orphan.push(c);
     }
     const matchesTemp = (t: Conversation, s: SessionItem) =>
       t.title === s.title &&
@@ -116,12 +114,11 @@ export function useConversation() {
       ...orphan,
       ...temp.filter((t) => !sessions.some((s) => matchesTemp(t, s))),
     ];
-    // Track which local confirmed sessions got matched by server
-    const matchedLocalIds = new Set<string>();
     for (const s of sessions) {
-      const local = confirmed.get(s.id);
+      const local = prev.find(
+        (c) => !c.temp && c.sessionId === s.id,
+      );
       const tmp = temp.find((t) => matchesTemp(t, s));
-      if (local) matchedLocalIds.add(s.id);
       if (tmp && !local) {
         result.push({
           ...tmp,
@@ -153,12 +150,6 @@ export function useConversation() {
         teamId: s.team_id ?? (tmp ? tmp.teamId : undefined),
         teamName: s.team_id ? (local?.teamName ?? tmp?.teamName) : undefined,
       });
-    }
-    // Local confirmed sessions NOT matched by server — preserve (server may be incomplete)
-    for (const [sid, conv] of confirmed) {
-      if (!matchedLocalIds.has(sid)) {
-        result.push(conv);
-      }
     }
     return result;
   }, []);
