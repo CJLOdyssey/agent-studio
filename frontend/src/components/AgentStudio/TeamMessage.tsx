@@ -433,7 +433,7 @@ const TeamMessage = memo(function TeamMessage({
             <span>{t('agent.thinking', { name: agentInfo.name })}</span>
           </div>
         ) : (
-          <>
+          <div style={{ animation: 'fadeInUp 0.15s ease-out' }}>
             {msg.plan && (
               <div className="bg-[var(--color-surface-raised)] rounded-lg overflow-hidden mt-1">
                 <div
@@ -529,12 +529,14 @@ const TeamMessage = memo(function TeamMessage({
                       {isThinkingExpanded && (() => {
                         const items = groupThinkingNodes(msg.thinking ?? '');
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
-                            <div className="relative pl-4">
-                              <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
-                              {items.map((item, i) => (
-                                <ThinkingNodeItem key={i} item={item} t={t} />
-                              ))}
+                          <div className="mt-2 grid animate-slide-down">
+                            <div className="relative max-h-[420px] overflow-y-auto overflow-hidden text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                              <div className="relative pl-4">
+                                <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
+                                {items.map((item, i) => (
+                                  <ThinkingNodeItem key={i} item={item} t={t} />
+                                ))}
+                              </div>
                             </div>
                           </div>
                         );
@@ -549,12 +551,14 @@ const TeamMessage = memo(function TeamMessage({
                       {msg.thinking && (() => {
                         const items = groupThinkingNodes(msg.thinking);
                         return (
-                          <div className="relative mt-2 max-h-[420px] overflow-y-auto text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
-                            <div className="relative pl-4">
-                              <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
-                              {items.map((item, i) => (
-                                <ThinkingNodeItem key={i} item={item} t={t} />
-                              ))}
+                          <div className="mt-2 grid animate-slide-down">
+                            <div className="relative max-h-[420px] overflow-y-auto overflow-hidden text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                              <div className="relative pl-4">
+                                <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
+                                {items.map((item, i) => (
+                                  <ThinkingNodeItem key={i} item={item} t={t} />
+                                ))}
+                              </div>
                             </div>
                           </div>
                         );
@@ -575,13 +579,18 @@ const TeamMessage = memo(function TeamMessage({
                         {isThinkingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                       {isThinkingExpanded && (
-                        <div className="relative mt-2 max-h-[420px] overflow-y-auto text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
-                          {msg.thinking ? (() => {
-                            const items = groupThinkingNodes(msg.thinking);
-                            return items.map((item, i) => (
-                              <ThinkingNodeItem key={i} item={item} t={t} />
-                            ));
-                          })() : null}
+                        <div className="mt-2 grid animate-slide-down">
+                          <div className="relative max-h-[420px] overflow-y-auto overflow-hidden text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
+                            <div className="relative pl-4">
+                              <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
+                              {msg.thinking ? (() => {
+                                const items = groupThinkingNodes(msg.thinking);
+                                return items.map((item, i) => (
+                                  <ThinkingNodeItem key={i} item={item} t={t} />
+                                ));
+                              })() : null}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </>
@@ -675,7 +684,7 @@ const TeamMessage = memo(function TeamMessage({
               )}
             </div>
 
-          </>
+          </div>
         )}
       </div>
     </div>
