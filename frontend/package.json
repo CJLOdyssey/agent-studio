@@ -57,7 +57,7 @@
     "react-virtuoso": "^4.18.11",
     "reactflow": "^11.11.4",
     "vite-plugin-csp": "^1.1.2",
-    "zustand": "^5.0.0"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
