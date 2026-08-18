@@ -130,3 +130,6 @@ AGENTS.md
 CLAUDE.md
 RUNBOOK.md
 .mutmut-cache
+
+# Superpowers SDD tool working files (local dev artifacts)
+.superpowers/
