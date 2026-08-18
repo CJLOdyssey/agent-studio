@@ -13,6 +13,26 @@ from core.infra.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+async def get_current_user(request: Request) -> dict[str, Any]:
+    """FastAPI dependency to get current user from request state.
+
+    Returns a dict with user information set by AuthMiddleware.
+    Raises 401 if user is not authenticated.
+    """
+    from fastapi import HTTPException, status
+
+    if not getattr(request.state, "is_authenticated", False):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    return {
+        "user_id": getattr(request.state, "user_id", "unknown"),
+        "is_authenticated": True,
+    }
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware that validates JWT tokens on protected routes."""
 

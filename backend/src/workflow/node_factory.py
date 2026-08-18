@@ -5,6 +5,7 @@ import json
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
+from cost.token_tracker import get_token_tracker
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 
 from broker import publish_run_message
@@ -17,6 +18,7 @@ from streaming.llm_stream import (
 )
 
 from .models import WorkflowNode, WorkflowState
+from .quality_validator import QualityValidator, create_default_validator
 from .strategy_registry import registry
 
 # Cap tool-call turns inside a single node so a misbehaving model can't loop.
@@ -69,6 +71,7 @@ class NodeFactory:
         node_tools: dict[str, list[ToolConfig]] | None = None,
         run_id: str = "",
         attachment_context: str = "",
+        quality_validator: QualityValidator | None = None,
     ):
         """Initialize the node factory with LLM config, prompts, and optional tools.
 
@@ -77,6 +80,7 @@ class NodeFactory:
         ``attachment_context`` is injected as a SystemMessage after the role's
         system prompt (mirrors the agent pipeline) so every node sees the files
         bound to the run.
+        ``quality_validator`` validates node outputs before passing to downstream nodes.
         """
         self.llm = llm
         self.agent_prompts = agent_prompts
@@ -84,6 +88,7 @@ class NodeFactory:
         self.node_tools = node_tools or {}
         self.run_id = run_id
         self.attachment_context = attachment_context
+        self.quality_validator = quality_validator or create_default_validator()
 
     def _build_request(
         self,
@@ -165,11 +170,16 @@ class NodeFactory:
 
             full_content = ""
             tool_round_exhausted = False
+            total_usage = {"prompt_tokens": 0, "completion_tokens": 0}
             for _ in range(_MAX_TOOL_ROUNDS + 1):
                 url, headers, body = self._build_request(api_msgs, tool_definitions)
-                content_chunks, _, tool_calls_map, _, _ = await stream_llm_response(
+                content_chunks, _, tool_calls_map, _, usage_info = await stream_llm_response(
                     url, headers, body, cb, tool_definitions
                 )
+                # Accumulate token usage
+                if usage_info:
+                    total_usage["prompt_tokens"] += usage_info.get("prompt_tokens", 0)
+                    total_usage["completion_tokens"] += usage_info.get("completion_tokens", 0)
                 full_content = "".join(content_chunks)
                 tool_calls = build_tool_calls_list(tool_calls_map or {})
                 if not tool_calls:
@@ -236,8 +246,49 @@ class NodeFactory:
                     messages.append(HumanMessage(content="输出不符合 JSON Schema，请重试（必须含 required 字段）"))
                     api_msgs = convert_messages_to_api(messages)
                     url, headers, body = self._build_request(api_msgs, tool_definitions)
-                    chunks, _, _, _, _ = await stream_llm_response(url, headers, body, cb, tool_definitions)
+                    chunks, _, _, _, retry_usage = await stream_llm_response(url, headers, body, cb, tool_definitions)
+                    if retry_usage:
+                        total_usage["prompt_tokens"] += retry_usage.get("prompt_tokens", 0)
+                        total_usage["completion_tokens"] += retry_usage.get("completion_tokens", 0)
                     full_content = "".join(chunks)
+
+            # Record token usage to database
+            if run_id and total_usage["prompt_tokens"] > 0:
+                try:
+                    tracker = get_token_tracker()
+                    model_name = getattr(self.llm, "model_name", "unknown")
+                    team_id = state.get("team_id")
+                    await tracker.record_usage(
+                        run_id=run_id,
+                        node_id=node.role_identifier,
+                        model=model_name,
+                        prompt_tokens=total_usage["prompt_tokens"],
+                        completion_tokens=total_usage["completion_tokens"],
+                        team_id=team_id,
+                    )
+                except Exception as exc:
+                    # Token tracking failure should not break the workflow
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to record token usage: {exc}")
+
+            # Quality validation - validate output before passing to downstream nodes
+            if self.quality_validator:
+                validation_result = self.quality_validator.validate(full_content)
+                if not validation_result.passed:
+                    # Log validation failure but continue with degraded output
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Node {node.role_identifier} output validation failed: "
+                        f"{validation_result.message} (score: {validation_result.score:.2f})"
+                    )
+                    # Add validation metadata to result
+                    if "metadata" not in result:
+                        result["metadata"] = {}
+                    result["metadata"]["validation"] = {
+                        "passed": False,
+                        "message": validation_result.message,
+                        "score": validation_result.score,
+                    }
 
             result = strategy.process_output(state, node, full_content)
             result["messages"] = state.get("messages", []) + [AIMessage(content=full_content)]

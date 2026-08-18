@@ -1,8 +1,13 @@
 """Dynamic team graph — LangGraph-based multi-agent workflow execution."""
 
+import asyncio
 from collections.abc import Callable
 from typing import Any
 
+from context.compressor import ContextCompressor
+from context.cost_optimizer import CostOptimizer
+from context.smart_cache import get_response_cache
+from context.token_budget import TokenBudgetManager
 from langchain_openai import ChatOpenAI
 
 from core.infra.logging_config import get_logger
@@ -10,6 +15,12 @@ from repository import get_agent_configs
 from services.tool_config import ToolConfig
 from tasks.tool_bindings import build_agent_tool_configs
 
+from .circuit_breaker import CircuitBreakerRegistry
+from .graceful_degradation import (
+    DegradationLevel,
+    GracefulDegradationManager,
+    WorkflowTimeoutController,
+)
 from .graph_builder import GraphBuilder
 from .models import WorkflowConfig, create_initial_state
 from .node_factory import NodeFactory
@@ -28,6 +39,8 @@ class DynamicTeamGraph:
         max_tokens: int = 16384,
         checkpointer: Any | None = None,
         attachment_context: str = "",
+        workflow_timeout: float | None = None,
+        node_timeout: float | None = None,
     ):
         llm_kwargs: dict[str, Any] = {
             "model": model,
@@ -45,6 +58,35 @@ class DynamicTeamGraph:
         self._graph: Any = None
         self._agent_prompts: dict[str, str] = {}
         self._node_tools: dict[str, list[ToolConfig]] = {}
+
+        # Reliability features
+        self.workflow_timeout = workflow_timeout
+        self.node_timeout = node_timeout
+        self.circuit_breaker_registry = CircuitBreakerRegistry()
+        self.timeout_controller = WorkflowTimeoutController(
+            total_timeout=workflow_timeout,
+            node_timeout=node_timeout,
+        )
+        self.degradation_manager = GracefulDegradationManager(
+            timeout_controller=self.timeout_controller,
+            enable_fallback=True,
+        )
+
+        # Context management and cost optimization
+        self.context_compressor = ContextCompressor(
+            max_tokens=max_tokens // 2,
+            enable_deduplication=True,
+            enable_summarization=True,
+        )
+        self.token_budget_manager = TokenBudgetManager(
+            total_budget=max_tokens * 10,  # Budget for entire workflow
+            safety_margin=0.1,
+        )
+        self.cost_optimizer = CostOptimizer(
+            max_tokens_per_node=max_tokens,
+            min_cache_hit_rate=0.3,
+        )
+        self.response_cache = get_response_cache()
 
     async def set_workflow(self, config: WorkflowConfig) -> None:
         self._config = config
@@ -112,6 +154,10 @@ class DynamicTeamGraph:
             self._build()
         if self._graph is None:
             raise RuntimeError("Graph not built — call set_workflow() first")
+
+        # Start timeout tracking
+        self.timeout_controller.start()
+
         # Iteration rounds loop through the entry node, so the recursion budget
         # scales with max_rounds instead of the hardcoded 100.
         recursion_limit = max(self._config.max_rounds * 20, 100) if self._config else 100
@@ -120,21 +166,64 @@ class DynamicTeamGraph:
             "recursion_limit": recursion_limit,
         }
         initial_state = create_initial_state(requirement)
-        if stream_callback:
-            events = self._graph.astream_events(initial_state, config, version="v2")
-            result = None
-            async for event in events:
-                if event.get("event") == "on_chain_end" and event.get("name") == "LangGraph":
-                    result = event.get("data", {}).get("output")
-                    if isinstance(result, dict):
-                        for k in ["messages", "requirement", "artifacts", "round_number", "approved", "verdicts"]:
-                            result.setdefault(k, initial_state.get(k))
-                if stream_callback is not None:
-                    try:
-                        await stream_callback(event)
-                    except Exception:
-                        logger.exception("stream_callback failed")
-            return result if isinstance(result, dict) else {}
-        else:
-            result = await self._graph.ainvoke(initial_state, config)
-            return result if isinstance(result, dict) else {}
+
+        async def execute_graph() -> dict[str, Any]:
+            if stream_callback:
+                events = self._graph.astream_events(initial_state, config, version="v2")
+                result = None
+                async for event in events:
+                    if event.get("event") == "on_chain_end" and event.get("name") == "LangGraph":
+                        result = event.get("data", {}).get("output")
+                        if isinstance(result, dict):
+                            for k in ["messages", "requirement", "artifacts", "round_number", "approved", "verdicts"]:
+                                result.setdefault(k, initial_state.get(k))
+                    if stream_callback is not None:
+                        try:
+                            await stream_callback(event)
+                        except Exception:
+                            logger.exception("stream_callback failed")
+                return result if isinstance(result, dict) else {}
+            else:
+                result = await self._graph.ainvoke(initial_state, config)
+                return result if isinstance(result, dict) else {}
+
+        # Execute with timeout control
+        try:
+            if self.workflow_timeout:
+                result = await asyncio.wait_for(
+                    execute_graph(),
+                    timeout=self.workflow_timeout
+                )
+            else:
+                result = await execute_graph()
+
+            # Add degradation metadata
+            if self.degradation_manager.current_level != DegradationLevel.NORMAL:
+                result["degradation"] = {
+                    "level": self.degradation_manager.current_level.value,
+                    "events": self.degradation_manager.get_degradation_history(),
+                }
+
+            return result
+
+        except TimeoutError:
+            logger.error(f"Workflow execution timed out after {self.workflow_timeout}s")
+            self.degradation_manager.record_degradation(
+                DegradationLevel.FAILSAFE,
+                f"Workflow timed out after {self.workflow_timeout}s"
+            )
+            return {
+                "error": "Workflow execution timed out",
+                "timeout": self.workflow_timeout,
+                "degradation": {
+                    "level": DegradationLevel.FAILSAFE.value,
+                    "events": self.degradation_manager.get_degradation_history(),
+                },
+            }
+        except Exception as e:
+            logger.exception("Workflow execution failed")
+            self.degradation_manager.record_degradation(
+                DegradationLevel.DEGRADED,
+                f"Workflow failed: {str(e)}"
+            )
+            raise

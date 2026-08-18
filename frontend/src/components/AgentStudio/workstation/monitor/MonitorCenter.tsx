@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw } from 'lucide-react';
+import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw, DollarSign } from 'lucide-react';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import {
@@ -14,6 +14,7 @@ import { t } from './locales';
 import MonitorStats from './MonitorStats';
 import MonitorActivity from './MonitorActivity';
 import MonitorHealth, { type HealthItem } from './MonitorHealth';
+import { CostDashboard } from './CostDashboard';
 
 interface ViewActivity {
   id: string;
@@ -101,6 +102,7 @@ function MonitorCenter({ onNavigate }: Props) {
   const [healthItems, setHealthItems] = useState<HealthItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'cost'>('overview');
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -162,31 +164,67 @@ function MonitorCenter({ onNavigate }: Props) {
     >
       <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
         <div className="flex flex-col flex-1 min-h-0 p-6 gap-6 overflow-y-auto">
+          {/* 标签页切换 */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-[var(--color-text-muted)]">
-              {lastUpdated ? `上次更新: ${lastUpdated}` : ''}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'overview'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                系统概览
+              </button>
+              <button
+                onClick={() => setActiveTab('cost')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'cost'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <DollarSign size={16} />
+                成本分析
+              </button>
             </div>
-            <button
-              onClick={load}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-overlay)] text-[var(--color-text-secondary)] cursor-pointer text-xs font-medium"
-              title={t('monitor.refresh')}
-            >
-              <RefreshCw size={14} />
-              刷新
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-[var(--color-text-muted)]">
+                {lastUpdated ? `上次更新: ${lastUpdated}` : ''}
+              </div>
+              <button
+                onClick={load}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-overlay)] text-[var(--color-text-secondary)] cursor-pointer text-xs font-medium"
+                title={t('monitor.refresh')}
+              >
+                <RefreshCw size={14} />
+                刷新
+              </button>
+            </div>
           </div>
 
-          <MonitorStats stats={stats} statCards={statCards} onNavigate={onNavigate} />
+          {/* 系统概览标签页 */}
+          {activeTab === 'overview' && (
+            <>
+              <MonitorStats stats={stats} statCards={statCards} onNavigate={onNavigate} />
 
-          <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
-            <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-5 overflow-y-auto">
-              <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
-                {t('monitor.activity')}
-              </h3>
-              <MonitorActivity activities={activities} />
-            </div>
-            <MonitorHealth items={healthItems} />
-          </div>
+              <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+                <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-5 overflow-y-auto">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
+                    {t('monitor.activity')}
+                  </h3>
+                  <MonitorActivity activities={activities} />
+                </div>
+                <MonitorHealth items={healthItems} />
+              </div>
+            </>
+          )}
+
+          {/* 成本分析标签页 */}
+          {activeTab === 'cost' && (
+            <CostDashboard />
+          )}
         </div>
       </div>
     </ErrorBoundary>
