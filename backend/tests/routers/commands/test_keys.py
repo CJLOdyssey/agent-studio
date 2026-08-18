@@ -63,6 +63,67 @@ class TestKeys:
         resp = client.post("/api/keys", json={}, headers={"X-User-ID": "admin"})
         assert resp.status_code == 422
 
+    def test_create_key_connection_check_times_out(self, client):
+        """Slow provider must NOT block key save — degraded result + background refresh."""
+        import asyncio as _asyncio
+
+        async def _slow(*args, **kwargs):
+            await _asyncio.sleep(1)
+            return {"success": True, "models": ["gpt-4"]}
+
+        with patch("routers.keys._KEY_TEST_TIMEOUT", 0.05), \
+             patch("routers.keys.test_api_key_connection", new=AsyncMock(side_effect=_slow)), \
+             patch("routers.keys._schedule_key_models_refresh") as mock_schedule:
+            resp = client.post("/api/keys", json={
+                "provider": "openai", "capabilities": ["llm"],
+                "label": "llm-key-slow", "api_key": "sk-slow-test",
+            }, headers={"X-User-ID": "admin"})
+        assert resp.status_code == 201
+        assert resp.json()["models"] == []
+        mock_schedule.assert_called_once()
+
+    def test_create_key_connection_check_raises(self, client):
+        """Provider crash must still save the key and schedule a background refresh."""
+        with patch("routers.keys.test_api_key_connection", new=AsyncMock(side_effect=RuntimeError("boom"))), \
+             patch("routers.keys._schedule_key_models_refresh") as mock_schedule:
+            resp = client.post("/api/keys", json={
+                "provider": "openai", "capabilities": ["llm"],
+                "label": "llm-key-raise", "api_key": "sk-raise-test",
+            }, headers={"X-User-ID": "admin"})
+        assert resp.status_code == 201
+        mock_schedule.assert_called_once()
+
+    async def test_schedule_key_models_refresh_registers_background_task(self):
+        """Real _schedule_key_models_refresh schedules + tracks a background refresh."""
+        import asyncio as _asyncio
+        from types import SimpleNamespace
+
+        from routers.keys import _schedule_key_models_refresh
+
+        app = SimpleNamespace(state=SimpleNamespace())
+        with patch("routers.keys.test_api_key_connection", new=AsyncMock(return_value={"success": True, "models": ["gpt-4"]})), \
+             patch("routers.keys.update_api_key", new=AsyncMock()) as mock_update:
+            _schedule_key_models_refresh(app, "k1", "user1")
+            pending = getattr(app.state, "pending_key_tasks", None)
+            assert pending is not None and len(pending) == 1
+            await _asyncio.gather(*list(pending))
+            mock_update.assert_awaited_once()
+
+    async def test_schedule_key_models_refresh_background_task_fails_gracefully(self):
+        """Background refresh swallows provider errors without raising."""
+        import asyncio as _asyncio
+        from types import SimpleNamespace
+
+        from routers.keys import _schedule_key_models_refresh
+
+        app = SimpleNamespace(state=SimpleNamespace())
+        with patch("routers.keys.test_api_key_connection", new=AsyncMock(side_effect=RuntimeError("boom"))):
+            _schedule_key_models_refresh(app, "k1", "user1")
+            pending = getattr(app.state, "pending_key_tasks", None)
+            assert pending is not None and len(pending) == 1
+            await _asyncio.gather(*list(pending))
+            assert pending == set()
+
     def test_edit_key_not_found(self, client):
         with patch("routers.keys.update_api_key", new_callable=AsyncMock) as mock_update:
             mock_update.return_value = None

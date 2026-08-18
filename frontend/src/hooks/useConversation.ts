@@ -90,12 +90,12 @@ export function useConversation() {
     }
   }, []);
 
-  // 正式模式的统一列表归并（幂等核心，替代此前的 merge+删重补丁）：
-  // 乐观占位（temp）保留在列；已确认会话与 server 按 sessionId 合并（唯一）；
-  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换（不新增，
-  // 消除 WS 事件先于 run 响应的发送中暂态双条）；已确认但不在 server 的删除。
+  // 正式模式的统一列表归并（幂等核心）：
+  // server 权威（DB 唯一真源）：已确认会话与 server 按 sessionId 合并（唯一）；
+  // server 未返回的已确认会话 → 删除（多端同步删除生效）；
+  // temp 占位保留（发送中未确认，等 run 响应转正）；
+  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换。
   const mergeWithServer = useCallback((prev: Conversation[], sessions: SessionItem[]) => {
-    const confirmed = new Map<string, Conversation>();
     const temp: Conversation[] = [];
     const orphan: Conversation[] = [];
     for (const c of prev) {
@@ -103,12 +103,9 @@ export function useConversation() {
         temp.push(c);
         continue;
       }
-      if (c.sessionId) {
-        confirmed.set(c.sessionId, c);
-        continue;
+      if (!c.sessionId) {
+        orphan.push(c);
       }
-      // 无 sessionId 且非 temp：本地旧数据/未确认会话——保留（server 无对应）
-      orphan.push(c);
     }
     const matchesTemp = (t: Conversation, s: SessionItem) =>
       t.title === s.title &&
@@ -118,13 +115,11 @@ export function useConversation() {
       ...temp.filter((t) => !sessions.some((s) => matchesTemp(t, s))),
     ];
     for (const s of sessions) {
-      const local = confirmed.get(s.id);
+      const local = prev.find(
+        (c) => !c.temp && c.sessionId === s.id,
+      );
       const tmp = temp.find((t) => matchesTemp(t, s));
       if (tmp && !local) {
-        // WS 事件先于 run 响应到达：server 条目匹配到发送中的乐观占位。
-        // 原位「吸附」到 server 会话但保留 temp 语义（temp:true + 原 id）——
-        // 加载/兜底 effect 据 temp 标记放行进行中的流式状态；等 run 响应
-        // 的 confirm effect 再转正（id→sessionId）。不新增重复条。
         result.push({
           ...tmp,
           sessionId: s.id,
@@ -142,8 +137,8 @@ export function useConversation() {
         sessionId: s.id,
         title: s.title,
         messages: local?.messages ?? tmp?.messages ?? [],
-        kind: (s.kind as 'normal' | 'agent' | 'team') || 'normal',
-        agentId: s.agent_id || local?.agentId || tmp?.agentId,
+        kind: (s.kind as 'normal' | 'agent' | 'team') ?? local?.kind ?? 'normal',
+        agentId: s.agent_id ?? local?.agentId ?? tmp?.agentId,
         isPinned: s.is_pinned,
         runCount: s.run_count ?? 0,
         createdAt:
@@ -151,8 +146,9 @@ export function useConversation() {
         updatedAt:
           s.updated_at || s.created_at || local?.updatedAt || tmp?.updatedAt ||
           new Date().toISOString(),
-        teamId: s.team_id || local?.teamId || tmp?.teamId,
-        teamName: local?.teamName ?? tmp?.teamName,
+        // server 权威：team_id 明确为 null（不属于团队）→ 清掉 local 残留脏值
+        teamId: s.team_id ?? (tmp ? tmp.teamId : undefined),
+        teamName: s.team_id ? (local?.teamName ?? tmp?.teamName) : undefined,
       });
     }
     return result;
@@ -219,7 +215,13 @@ export function useConversation() {
       setSessionsLoaded(true);
       setConversations((prev) => {
         const merged = mergeWithServer(prev, sessions);
-        if (merged.length === prev.length) return prev;
+        // Deep compare: check if session ID sets differ (not just length)
+        const prevIds = new Set(prev.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const mergedIds = new Set(merged.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const sameContent = prevIds.size === mergedIds.size && [...prevIds].every((id) => mergedIds.has(id));
+        if (sameContent) return prev;
+        // Safety: never persist a list shorter than server authoritative data
+        if (merged.length < sessions.length) return prev;
         persistConversations(merged.filter((c) => !c.temp));
         return merged;
       });
@@ -233,6 +235,11 @@ export function useConversation() {
     listSessions(100).then((sessions) => {
       setConversations((prev) => {
         const merged = mergeWithServer(prev, sessions);
+        const prevIds = new Set(prev.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const mergedIds = new Set(merged.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const sameContent = prevIds.size === mergedIds.size && [...prevIds].every((id) => mergedIds.has(id));
+        if (sameContent) return prev;
+        if (merged.length < sessions.length) return prev;
         persistConversations(merged.filter((c) => !c.temp));
         return merged;
       });

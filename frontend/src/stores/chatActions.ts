@@ -272,38 +272,25 @@ export async function editAndRegenerate(userMsgId: string, newContent: string) {
 export async function retry() {
   const s = useChatStore.getState();
   Logger.info('[chat] retry — re-submitting last user message');
-  useChatStore.setState({ status: 'loading', error: null, result: null });
-  if (s.currentRunId) {
-    disconnectRun(s.currentRunId);
-  }
   const lastUserMsg = [...s.messages].reverse().find((m) => m.role === 'user');
   if (!lastUserMsg) {
     useChatStore.setState({ status: 'error', error: '没有找到用户消息，无法重试' });
     return;
   }
-  useChatStore.setState({ currentRunId: null });
-  // 重试与正常发送走同一 key/model 解析（否则落到后端 config 默认模型，
-  // 硅基流动/免费模型会被错误路由到 deepseek 默认 key）。
-  let keyId: string | undefined;
-  let model: string | undefined;
-  try {
-    const keys = await listKeys();
-    const activeKeys = keys.filter((k) => k.is_active);
-    const persistedModel = localStorage.getItem('agentstudio-selected-model');
-    const resolved = resolveKey(activeKeys, persistedModel ?? undefined);
-    keyId = resolved.keyId;
-    model = resolved.model;
-  } catch {
-    // Key vault unavailable — backend falls back to the default model
-  }
-  if (!keyId) {
+  // 提前校验 key 是否存在，给出与发送一致的错误提示；submitRequirement 内部
+  // 会再做同样的 key/model 解析并携带正确的 key 提交。
+  const keys = await listKeys().catch(() => null);
+  const hasKey = !!keys?.some((k) => k.is_active);
+  if (!hasKey) {
     useChatStore.setState({ status: 'error', error: '请先在设置中配置 API Key', wsStatus: 'disconnected' });
     return;
   }
+  // 复用 submitRequirement（store 完整流程）而非底层 submitRequirementExternal：
+  // 失败时 currentSessionId 可能为 null（session 未创建），直接调底层会让后端
+  // 新建 session 且 temp 占位不转正 → 列表残留新会话。走 store 流程可保证
+  // currentRunId/activeRunId/currentSessionId 完整更新 + temp→session 转正。
   try {
-    const resp = await submitRequirementExternal(lastUserMsg.content, s.currentSessionId ?? undefined, keyId, model);
-    useChatStore.setState({ currentRunId: resp.run_id, currentSessionId: resp.session_id || s.currentSessionId || null, status: 'running', wsStatus: 'connecting' });
-    connectRun(resp.run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
+    await submitRequirement(lastUserMsg.content, s.currentSessionId ?? undefined, undefined, true, undefined, null);
   } catch (err: unknown) {
     Logger.error('[chat] retry failed:', err);
     const errMsg = err instanceof Error ? err.message : String(err);

@@ -58,7 +58,7 @@ export function useConversationSync(deps: ConversationSyncDeps): ConversationSyn
   const {
     conv, activeConvId, filteredConversations, resetApi,
     loadConversation, setRestoring, setSelectedAgentId,
-    activeTeamId, activeTeamName, apiStatus, urlTeamId, urlAgentId,
+    apiStatus, urlTeamId, urlAgentId,
     navigate,
   } = deps;
 
@@ -77,13 +77,21 @@ export function useConversationSync(deps: ConversationSyncDeps): ConversationSyn
     if (!targetId) return;
     const state = useChatStore.getState();
     if (state.messages.length > 0) {
-      convRef.current.updateConversationMessages(targetId, state.messages, false, activeTeamId ?? undefined, activeTeamName ?? undefined);
+      // 用目标会话自身的团队归属写回，不用全局 activeTeamId：
+      // 从团队会话切到 agent/normal 会话时 activeTeam 残留会导致
+      // agent 会话被错写 teamId/teamName（副标题错乱 + localStorage 污染）。
+      const targetConv = convRef.current.conversations.find(
+        (c) => c.id === targetId || c.sessionId === targetId,
+      );
+      const teamId = targetConv?.teamId ?? undefined;
+      const teamName = targetConv?.teamName ?? undefined;
+      convRef.current.updateConversationMessages(targetId, state.messages, false, teamId, teamName);
     }
     if (state.currentSessionId) {
       convRef.current.confirmConversationSession(targetId, state.currentSessionId);
     }
     runConvIdRef.current = null;
-  }, [activeTeamId, activeTeamName]);
+  }, []);
 
   const buildConvPath = useCallback((conv: {
     id: string; kind?: string; teamId?: string | null; agentId?: string | null;

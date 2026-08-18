@@ -84,6 +84,22 @@ class TestAppLifespan:
         assert real_task.cancelled()
 
     @pytest.mark.asyncio
+    async def test_shutdown_cancels_pending_key_tasks(self):
+        import asyncio
+
+        from core.app_lifespan import shutdown
+
+        real_task = asyncio.create_task(asyncio.sleep(9999))
+        mock_app = MagicMock()
+        mock_app.state.gc_task = None
+        mock_app.state.retention_task = None
+        mock_app.state.pending_key_tasks = {real_task}
+        mock_app.title = "test"
+
+        await shutdown(mock_app)
+        assert real_task.cancelled()
+
+    @pytest.mark.asyncio
     async def test_startup_calls_config_and_init(self):
         from core.app_lifespan import startup
 

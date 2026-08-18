@@ -79,9 +79,9 @@ const AgentStudioSidebar = memo(function AgentStudioSidebar({
       setSelectedAgentId(null);
       setActiveConvId(conv.id);
       setInputValue(conv.title);
-      if (conv.teamId) {
-        useChatStore.getState().setActiveTeam(conv.teamId);
-      }
+      // 无条件 set（含 null）：切到 agent/normal 会话时清掉 team 残留，避免
+      // syncActiveConversation 把上个团队的 teamId/teamName 写进本会话。
+      useChatStore.getState().setActiveTeam(conv.teamId ?? null);
     },
     [setSelectedAgentId, setActiveConvId, setInputValue],
   );

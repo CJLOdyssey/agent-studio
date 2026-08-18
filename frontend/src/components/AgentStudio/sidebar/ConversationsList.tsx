@@ -162,11 +162,11 @@ const ConversationsList = memo(function ConversationsList({
       <div className="text-base text-[var(--color-text-primary)] leading-[1.3] overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-1.5">
         {!isEditing && (
           conv.kind === 'team' || isTeam ? (
-            <span className="shrink-0 flex items-center" style={{ color: 'var(--color-accent)' }}>
+            <span className="shrink-0 flex items-center" style={{ color: 'var(--color-text-tertiary)' }}>
               <Users size={14} />
             </span>
           ) : conv.kind === 'agent' ? (
-            <span className="shrink-0 flex items-center" style={{ color: agent?.color || 'var(--color-accent)' }}>
+            <span className="shrink-0 flex items-center" style={{ color: 'var(--color-text-tertiary)' }}>
               {agent && AgentIcon ? <AgentIcon size={14} /> : <Cpu size={14} />}
             </span>
           ) : (
@@ -221,7 +221,7 @@ const ConversationsList = memo(function ConversationsList({
           {renderTitle(conv)}
           <div className="text-sm text-[var(--color-text-tertiary)] mt-1 flex items-center gap-1">
             {isTeam && (
-              <span className="text-[var(--color-text-secondary)] font-medium" style={{ color: 'var(--color-accent)' }}>{conv.teamName || '团队'}</span>
+              <span className="text-[var(--color-text-secondary)] font-medium">{conv.teamName || '团队'}</span>
             )}
             {agent && !isTeam && (
               <span className="text-[var(--color-text-secondary)] font-medium">{agent.name}</span>
