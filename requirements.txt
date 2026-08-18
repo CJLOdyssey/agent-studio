@@ -44,7 +44,7 @@ pytest-xdist==3.6.1
 pytest==9.0.3
 python-multipart==0.0.31
 pyyaml==6.0.1
-redis==7.4.0
+redis==8.1.0
 ruff==0.15.14
 sqlalchemy==2.0.49
 types-redis==4.6.0.20241004
