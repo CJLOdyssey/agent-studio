@@ -87,7 +87,10 @@ class RunService:
         # ── Session ─────────────────────────────────────────────────
         kind = 'agent' if agent_id else 'team' if team_id else 'normal'
         if session_id is None:
-            sess = await create_session(title=requirement[:64], user_id=user_id, agent_id=agent_id, kind=kind, team_id=team_id)
+            sess = await create_session(
+                title=requirement[:64], user_id=user_id,
+                agent_id=agent_id, kind=kind, team_id=team_id,
+            )
             session_id = sess.id
         else:
             existing_sess = await get_session(session_id)
