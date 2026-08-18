@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 const queryClient = new QueryClient();
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(
@@ -27,6 +28,11 @@ const {
   mockStoreSetActiveTeam,
   mockSubmitRequirement,
   mockRetry,
+  mockConversations,
+  mockConvRef,
+  mockSessionsLoaded,
+  mockGetPreferences,
+  mockSetPreference,
 } = vi.hoisted(() => {
   const store = {
     messages: [] as unknown[],
@@ -37,6 +43,7 @@ const {
     abandonedRunId: null as string | null,
     currentSessionId: null as string | null,
   };
+  const convArray = [] as unknown[];
   return {
     mockToast: vi.fn(),
     mockSaveConversation: vi.fn(),
@@ -52,6 +59,14 @@ const {
     mockStoreSetActiveTeam: vi.fn(),
     mockSubmitRequirement: vi.fn(),
     mockRetry: vi.fn(),
+    mockConversations: convArray,
+    // useConversation 每次渲染返回 convArray 同一引用 → useMemo(filteredConversations)
+    // 永远缓存 → 兜底 effect 的 filteredConversations dep 不变、从不重跑。真实
+    // merge 会用新数组 setConversations；测试通过换引用复现"列表变化"。
+    mockConvRef: { current: convArray },
+    mockSessionsLoaded: { loaded: false },
+    mockGetPreferences: vi.fn().mockResolvedValue({}),
+    mockSetPreference: vi.fn().mockResolvedValue(undefined),
   };
 });
 
@@ -69,8 +84,9 @@ vi.mock('../../../hooks/useTeamManagement', () => ({
 
 vi.mock('../../../hooks/useConversation', () => ({
   useConversation: () => ({
-    conversations: [],
+    conversations: mockConvRef.current,
     activeConvId: null,
+    sessionsLoaded: mockSessionsLoaded.loaded,
     switchConversation: vi.fn(),
     createConversation: vi.fn(),
     saveConversation: mockSaveConversation,
@@ -120,6 +136,7 @@ vi.mock('../../../stores/chatStore', () => {
     get lastAbandonedRunId() { return mockStore.abandonedRunId; },
     get currentSessionId() { return mockStore.currentSessionId; },
     setActiveTeam: mockStoreSetActiveTeam,
+    clearMessages: vi.fn(),
   };
   const useChatStore = (selector?: (s: unknown) => unknown) =>
     selector ? selector(state) : state;
@@ -144,6 +161,11 @@ vi.mock('./useDragAndDrop', () => ({
 
 vi.mock('../../../utils/logger', () => ({ default: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
 
+vi.mock('../../../api/client/preferences', () => ({
+  getPreferences: (...args: unknown[]) => mockGetPreferences(...args),
+  setPreference: (...args: unknown[]) => mockSetPreference(...args),
+}));
+
 import { useWorkstationState } from '../useWorkstationState';
 import type * as React from 'react';
 
@@ -161,6 +183,7 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
     mockStore.activeTeamId = null;
     mockStore.abandonedRunId = null;
     mockStore.currentSessionId = null;
+    mockConversations.length = 0;
   });
 
   describe('derived values', () => {
@@ -302,6 +325,70 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
     });
   });
 
+  describe('URL 直开/刷新恢复会话身份', () => {
+    const urlWrapper = (entries: string[]) =>
+      ({ children }: { children: ReactNode }) =>
+        createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          createElement(
+            MemoryRouter,
+            { initialEntries: entries },
+            createElement(
+              Routes,
+              null,
+              createElement(Route, { path: '/chat/:sessionId', element: children }),
+            ),
+          ),
+        );
+
+    function makeConv(id: string, overrides: Record<string, unknown> = {}) {
+      return {
+        id,
+        title: 'T',
+        messages: [],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        ...overrides,
+      };
+    }
+
+    beforeEach(() => { vi.useFakeTimers(); });
+    afterEach(() => { vi.useRealTimers(); });
+
+    it('restores selectedAgentId for agent-kind conversation opened directly by URL', () => {
+      mockConversations.push(makeConv('conv-a', { kind: 'agent', agentId: 'agent-1' }));
+      const { result } = renderHook(
+        () => useWorkstationState(createRef(), createRef(), createRef()),
+        { wrapper: urlWrapper(['/chat/conv-a']) },
+      );
+      act(() => { vi.runAllTimers(); });
+      expect(result.current.selectedAgentId).toBe('agent-1');
+    });
+
+    it('restores activeTeamId for team-kind conversation opened directly by URL', () => {
+      mockConversations.push(makeConv('conv-t', { kind: 'team', teamId: 'team-9' }));
+      renderHook(
+        () => useWorkstationState(createRef(), createRef(), createRef()),
+        { wrapper: urlWrapper(['/chat/conv-t']) },
+      );
+      act(() => { vi.runAllTimers(); });
+      expect(mockStoreSetActiveTeam).toHaveBeenCalledWith('team-9');
+    });
+
+    it('clears team identity for normal-kind conversation opened directly by URL', () => {
+      mockStore.activeTeamId = 'team-9';
+      mockConversations.push(makeConv('conv-n', { kind: 'normal' }));
+      const { result } = renderHook(
+        () => useWorkstationState(createRef(), createRef(), createRef()),
+        { wrapper: urlWrapper(['/chat/conv-n']) },
+      );
+      act(() => { vi.runAllTimers(); });
+      expect(result.current.selectedAgentId).toBeNull();
+      expect(mockStoreSetActiveTeam).toHaveBeenCalledWith(null);
+    });
+  });
+
   describe('callback functions', () => {
     it('handleNewChat resets api and clears selection', () => {
       const { result } = renderHook(() => useWorkstationState(createRef(), createRef(), createRef()), { wrapper });
@@ -383,5 +470,158 @@ describe('useWorkstationState', { tags: ['unit'] }, () => {
       act(() => { result.current.handleCloseConfirm(); });
       expect(result.current.confirmDialog).toBeNull();
     });
+  });
+});
+
+describe('bug3: URL 直开无缓存 → 列表到达后补触发加载', { tags: ['unit'] }, () => {
+  const urlWrapper = (entries: string[]) =>
+    ({ children }: { children: ReactNode }) =>
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          { initialEntries: entries },
+          createElement(
+            Routes,
+            null,
+            createElement(Route, { path: '/chat/:sessionId', element: children }),
+          ),
+        ),
+      );
+
+  it('sessionsLoaded 翻转后重新触发加载 effect，命中会话并加载详情', async () => {
+    mockConversations.length = 0;
+    mockStoreLoadConversation.mockClear();
+    const conv = {
+      id: 's1',
+      title: 't',
+      kind: 'normal' as const,
+      messages: [{ id: 'm1', role: 'user', content: 'hi', timestamp: Date.now() }],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      temp: false,
+    };
+    renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper: urlWrapper(['/chat/s1']) },
+    );
+    await act(async () => {
+      // 首次 effect 的 setTimeout(0) 先行执行：此时列表仍空 → found 落空返回
+      await new Promise((r) => setTimeout(r, 50));
+      expect(mockStoreLoadConversation).not.toHaveBeenCalled();
+      // 列表到达 + sessionsLoaded 翻转 → 仅当 deps 含 sessionsLoaded 才补触发
+      mockConversations.push(conv);
+      mockSessionsLoaded.loaded = true;
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // deps 变化后的 effect 重跑在 act 结束后才 flush，其加载逻辑在 setTimeout(0) 中：
+    // 断言前必须真实等待 timer 执行（对照实验：不加此等待则同步断言必失败）
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(mockStoreLoadConversation).toHaveBeenCalled();
+  });
+});
+
+describe('次要: temp 发送中不被兜底踢回首页', { tags: ['unit'] }, () => {
+  const urlWrapper = (entries: string[]) =>
+    ({ children }: { children: ReactNode }) =>
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          { initialEntries: entries },
+          createElement(
+            Routes,
+            null,
+            createElement(Route, { path: '/chat/:sessionId', element: children }),
+            // 真实应用 '/' 与 '/chat/:id' 同组件（navigate 不卸载）：兜底误判
+            // 跳回首页后组件保持挂载、sessionId 置 undefined → 加载 effect
+            // reset()。无 catch-all 时 navigate 直接卸载，mockStoreReset 无信号。
+            createElement(Route, { path: '*', element: children }),
+          ),
+        ),
+      );
+
+  it('发送中（run 在飞）temp 占位不被兜底踢回', async () => {
+    mockConversations.length = 0;
+    mockSessionsLoaded.loaded = true;
+    mockStore.messages = [];
+    mockStore.status = 'running';
+    mockStore.currentSessionId = null;
+    mockStoreReset.mockClear();
+    // 复现真实时序（对齐 bug3 实证结构）：发送中 temp 占位在列表中（load effect
+    // 的 tempFound 早退，不重置），随后 merge 吸附窗口未匹配以新数组移除占位 →
+    // 兜底因 filteredConversations 引用变化重跑 → 占位已不在列表，仅凭
+    // apiStatus='running'（run 在飞）判定为合法状态，不得误判"会话不存在"跳回首页。
+    mockConversations.push({
+      id: 'temp-abc',
+      title: 'T',
+      kind: 'normal',
+      messages: [],
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+      temp: true,
+    });
+    renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper: urlWrapper(['/chat/temp-abc']) },
+    );
+    await act(async () => {
+      // 首次 effect 的 setTimeout(0) 先行执行：temp 在列表 → tempFound 早退
+      //（setRestoring(false)，延迟渲染挂起）
+      await new Promise((r) => setTimeout(r, 50));
+      // merge 以新数组引用移除占位 → 挂起的渲染 flush 时读到新数组 → 兜底重跑
+      mockConvRef.current = [];
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // deps 变化后的 effect 重跑在 act 结束后才 flush：断言前必须真实等待
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    // 放行路径不导航、不重置；误判路径会 navigate('/') → activeConvId 置
+    // undefined → 加载 effect reset()。
+    expect(mockStoreReset).not.toHaveBeenCalled();
+    // 用例结尾复位，防后续污染（reviewer Minor ①）
+    mockStore.status = 'idle';
+    mockConvRef.current = mockConversations;
+  });
+
+  it('陈旧 temp URL（列表无 temp + idle）仍被兜底踢回', async () => {
+    mockConversations.length = 0;
+    mockSessionsLoaded.loaded = true;
+    mockStore.messages = [];
+    mockStore.status = 'idle';
+    mockStore.currentSessionId = null;
+    mockStoreReset.mockClear();
+    // 陈旧 temp URL：temp 不落盘，刷新/直开时列表无此会话且无 run 在飞
+    // （idle）→ 兜底恢复生效，navigate('/') → 加载 effect reset()。
+    renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper: urlWrapper(['/chat/temp-abc']) },
+    );
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(mockStoreReset).toHaveBeenCalled();
+    // 用例结尾复位，防后续污染（reviewer Minor ①）
+    mockStore.status = 'idle';
+    mockConvRef.current = mockConversations;
+  });
+});
+
+describe('bug2: 模型偏好跨设备恢复', { tags: ['unit'] }, () => {
+  it('server 偏好覆盖 localStorage 空值（换设备/清缓存后恢复模型）', async () => {
+    localStorage.removeItem('agentstudio-selected-model');
+    mockGetPreferences.mockResolvedValue({ selected_model: 'THUDM/GLM-Z1-9B-0414' });
+    const { result } = renderHook(
+      () => useWorkstationState(createRef(), createRef(), createRef()),
+      { wrapper },
+    );
+    await act(async () => {});
+    await new Promise((r) => setTimeout(r, 10));
+    expect(localStorage.getItem('agentstudio-selected-model')).toBe('THUDM/GLM-Z1-9B-0414');
   });
 });

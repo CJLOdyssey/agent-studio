@@ -162,6 +162,7 @@ class SessionSummary(BaseModel):
     title: str
     kind: str = "normal"
     agent_id: str | None = None
+    team_id: str | None = None
     is_pinned: bool = False
     run_count: int = 0
     created_at: str | None = None
@@ -225,6 +226,7 @@ class SessionDetailResponse(BaseModel):
     title: str
     kind: str = "normal"
     agent_id: str | None = None
+    team_id: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
     runs: list[RunSummary] = Field(default_factory=list)

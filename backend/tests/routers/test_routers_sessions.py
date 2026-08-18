@@ -421,11 +421,122 @@ class TestSessions:
 
     # ── Model tests ──────────────────────────────────────────────────────
 
+    # ── team_id 兼容层（Bug 1 后端）───────────────────────────────────
+
+    def test_list_sessions_includes_team_id(self, client):
+        """会话列表返回 team_id 字段（前端 mergeWithServer server-first 依赖）。"""
+        resp = client.post("/api/sessions", json={
+            "title": "team-listed", "team_id": "team-1",
+        }, headers={"X-User-ID": "admin"})
+        assert resp.status_code == 201
+        session_id = resp.json()["id"]
+        resp = client.get("/api/sessions", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        item = next((s for s in resp.json() if s["id"] == session_id), None)
+        assert item is not None
+        assert item["team_id"] == "team-1"
+
+    def test_create_session_persists_team_id(self, client):
+        """create_session 支持 team_id 参数（团队会话落库，默认向后兼容）。"""
+        from repository import create_session
+        sess = asyncio.run(create_session("team-direct", user_id="admin", team_id="team-2"))
+        assert sess.team_id == "team-2"
+        plain = asyncio.run(create_session("plain-direct", user_id="admin"))
+        assert plain.team_id is None
+
+    def test_run_with_team_id_persists_session_team(self, client):
+        """回退/补写链路端到端：POST /api/runs 传 team_id → 新会话落库 →
+        GET /api/sessions/{id} 回读该 team_id。"""
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("tasks._run_agent_pipeline", new_callable=AsyncMock):
+            resp = client.post("/api/runs", json={
+                "requirement": "团队任务", "team_id": "team-9",
+            }, headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            session_id = resp.json()["session_id"]
+            assert session_id
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+
+    def test_run_team_id_fallback_from_existing_session(self, client):
+        """回退路径：会话已有 team_id、请求未带 → 分派仍走团队流水线。
+
+        首次 POST /api/runs 带 team_id 新建会话，再对同一 session_id 不带
+        team_id 续聊——get_workflow_config_by_team 返回有效 workflow 时，分派
+        应命中 _run_team_pipeline 且 team_id 为从会话回退的值（mock spy 佐证）。
+        """
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("repository.workflows.get_workflow_config_by_team", new_callable=AsyncMock,
+                   return_value=SimpleNamespace(nodes=[])), \
+             patch("tasks.team_pipeline._run_team_pipeline", new_callable=AsyncMock) as mock_team:
+            resp = client.post("/api/runs", json={
+                "requirement": "团队任务", "team_id": "team-9",
+            }, headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            session_id = resp.json()["session_id"]
+            assert session_id
+            resp2 = client.post("/api/runs", json={
+                "requirement": "续聊问题", "session_id": session_id,
+            }, headers={"X-User-ID": "admin"})
+            assert resp2.status_code == 200
+            assert resp2.json()["session_id"] == session_id
+        # 两次请求均命中团队分派，第二次回退的 team_id 取自会话
+        assert mock_team.call_count == 2
+        assert mock_team.call_args_list[-1].kwargs["team_id"] == "team-9"
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+
+    def test_run_team_id_backfills_empty_session_team(self, client):
+        """幂等补写路径：会话 team_id 为空、请求带 team_id → 落库；
+        会话已有 team_id 后再传不同值不覆盖（尊重首次来源）。"""
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("tasks._run_agent_pipeline", new_callable=AsyncMock):
+            resp = client.post("/api/runs", json={
+                "requirement": "普通任务",
+            }, headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            session_id = resp.json()["session_id"]
+            assert session_id
+            resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+            assert resp.status_code == 200
+            assert resp.json()["team_id"] is None
+            resp2 = client.post("/api/runs", json={
+                "requirement": "团队续聊", "session_id": session_id, "team_id": "team-9",
+            }, headers={"X-User-ID": "admin"})
+            assert resp2.status_code == 200
+            assert resp2.json()["session_id"] == session_id
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+        # 幂等：已有 team_id 后再传不同值不覆盖
+        with patch("services.run_service.get_default_api_key", new_callable=AsyncMock,
+                   return_value={"api_key": "sk-test", "base_url": None}), \
+             patch("services.run_service.buffer_run_messages", new_callable=AsyncMock), \
+             patch("tasks._run_agent_pipeline", new_callable=AsyncMock):
+            resp3 = client.post("/api/runs", json={
+                "requirement": "再续", "session_id": session_id, "team_id": "team-8",
+            }, headers={"X-User-ID": "admin"})
+            assert resp3.status_code == 200
+        resp = client.get(f"/api/sessions/{session_id}", headers={"X-User-ID": "admin"})
+        assert resp.status_code == 200
+        assert resp.json()["team_id"] == "team-9"
+
     def test_session_create_request_model(self):
         from routers.sessions import SessionCreateRequest
         req = SessionCreateRequest(title="test")
         assert req.title == "test"
         assert req.agent_id is None
+        assert req.team_id is None
+        req = SessionCreateRequest(title="test", team_id="team-x")
+        assert req.team_id == "team-x"
 
     def test_session_update_request_model(self):
         from routers.sessions import SessionUpdateRequest

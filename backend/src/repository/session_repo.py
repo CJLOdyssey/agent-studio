@@ -3,14 +3,14 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, update
 
 from core.infra.database import SessionDB, get_session_factory
 
 
 async def create_session(
     title: str = "新对话", user_id: str = "default", agent_id: str | None = None,
-    kind: str = "normal",
+    kind: str = "normal", team_id: str | None = None,
 ) -> SessionDB:
     """Create a new conversation session and return the persisted row.
 
@@ -19,6 +19,7 @@ async def create_session(
         user_id: Owner user ID.
         agent_id: Optional bound agent config ID.
         kind: Session kind — normal, agent, or team.
+        team_id: Optional bound team ID (kind='team' sessions).
 
     Returns:
         The newly created SessionDB instance.
@@ -32,6 +33,7 @@ async def create_session(
             user_id=user_id,
             kind=kind,
             agent_id=agent_id,
+            team_id=team_id,
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
@@ -114,3 +116,18 @@ async def delete_session(session_id: str) -> bool:
         await session.delete(obj)
         await session.commit()
         return True
+
+
+async def update_session_team(session_id: str, team_id: str) -> None:
+    """幂等补写：为会话绑定 team_id（URL 身份直开首次续聊时落库）。
+
+    仅当会话当前 team_id 为空时写入——已有值不覆盖（尊重首次来源）。
+    """
+    factory = get_session_factory()
+    async with factory() as session:
+        await session.execute(
+            update(SessionDB)
+            .where(SessionDB.id == session_id, SessionDB.team_id.is_(None))
+            .values(team_id=team_id)
+        )
+        await session.commit()

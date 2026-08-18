@@ -10,6 +10,14 @@ from starlette.requests import Request
 from starlette.testclient import TestClient
 
 
+@pytest.fixture(autouse=True)
+def _isolate_auth_env():
+    """隔离 AUTH_REQUIRE_LOGIN 环境变量，防止 .env 泄漏影响测试行为。"""
+    with patch("auth.auth_middleware.AUTH_REQUIRE_LOGIN", False), \
+         patch("auth.auth_rbac.AUTH_REQUIRE_LOGIN", False):
+        yield
+
+
 @pytest.fixture
 def client():
     # Use a fresh app with middleware for testing

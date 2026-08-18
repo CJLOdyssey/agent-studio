@@ -11,6 +11,7 @@ from orm.agent import AgentConfigDB, TeamAgentDB, TeamDB
 from orm.auth import RefreshTokenDB, RoleDB, UserDB, UserRoleDB
 from orm.content import MCPServerDB, PromptDB, RegisteredSkillDB, RegisteredToolDB, VersionDB
 from orm.key import KeyUsageLog, UserApiKey
+from orm.preference import UserPreferenceDB
 from orm.session import ChatMessage, MemoryEntry, ProjectRun, SessionDB
 from orm.team import AttachmentDB, AuditLogDB, CommandLogDB
 from orm.workflow import WorkflowConfigDB, WorkflowEdgeDB, WorkflowNodeDB
@@ -36,6 +37,7 @@ __all__ = [
     "TeamDB",
     "UserApiKey",
     "UserDB",
+    "UserPreferenceDB",
     "UserRoleDB",
     "VersionDB",
     "WorkflowConfigDB",

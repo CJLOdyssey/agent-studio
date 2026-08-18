@@ -271,7 +271,7 @@ async def test_consume_refresh_token_replay_attack(db_engine):
 @pytest.mark.asyncio
 async def test_consume_refresh_token_no_user(db_engine):
     """Token belongs to a user that was deleted after token creation."""
-    from core.infra.database import RefreshTokenDB, UserDB, get_session_factory
+    from core.infra.database import UserDB, get_session_factory
     from repository.auth import consume_refresh_token, create_refresh_token, create_user
 
     user = await create_user("test@example.com", "hash")
@@ -315,7 +315,6 @@ async def test_revoke_token_family(db_engine):
     from repository.auth import (
         create_refresh_token,
         create_user,
-        revoke_token_family,
     )
 
     user = await create_user("test@example.com", "hash")
@@ -394,3 +393,58 @@ async def test_merge_guest_data_with_anonymous(db_engine):
         )
         sessions = result.scalars().all()
         assert len(sessions) >= 1
+
+
+@pytest.mark.asyncio
+async def test_merge_guest_data_preferences_collision(db_engine):
+    """正式用户已有同 key 偏好时，guest 偏好合并不抛异常（回归：复合主键冲突）。
+
+    场景 A：正式用户 preference key='selected_model' value=X，guest 会话同 key
+    value=Y → merge 不抛异常（不 500）→ 合并后该 key = Y（guest 最新值覆盖，
+    last-write-wins）。
+    """
+    from core.infra.database import UserPreferenceDB, get_session_factory
+    from repository.auth import create_user, merge_guest_data
+
+    real_user = await create_user("real@example.com", "hash")
+
+    factory = get_session_factory()
+    async with factory() as session:
+        session.add(UserPreferenceDB(user_id=real_user.id, key="selected_model", value="X"))
+        session.add(UserPreferenceDB(user_id="u_guest1", key="selected_model", value="Y"))
+        await session.commit()
+
+    await merge_guest_data({"u_guest1"}, real_user.id)
+
+    async with factory() as session:
+        from sqlalchemy import select
+        result = await session.execute(select(UserPreferenceDB).where(UserPreferenceDB.user_id == real_user.id))
+        rows = result.scalars().all()
+        assert len(rows) == 1
+        assert rows[0].key == "selected_model"
+        assert rows[0].value == "Y"
+
+
+@pytest.mark.asyncio
+async def test_merge_guest_data_preferences_multi_guest_same_key(db_engine):
+    """多个 guest 会话带同 key 偏好时合并不抛异常（逐行 upsert，最终单行覆盖）。"""
+    from core.infra.database import UserPreferenceDB, get_session_factory
+    from repository.auth import create_user, merge_guest_data
+
+    real_user = await create_user("real@example.com", "hash")
+
+    factory = get_session_factory()
+    async with factory() as session:
+        session.add(UserPreferenceDB(user_id="u_g1", key="theme", value="dark"))
+        session.add(UserPreferenceDB(user_id="u_g2", key="theme", value="light"))
+        await session.commit()
+
+    await merge_guest_data({"u_g1", "u_g2"}, real_user.id)
+
+    async with factory() as session:
+        from sqlalchemy import select
+        result = await session.execute(select(UserPreferenceDB).where(UserPreferenceDB.user_id == real_user.id))
+        rows = result.scalars().all()
+        assert len(rows) == 1
+        assert rows[0].key == "theme"
+        assert rows[0].value in {"dark", "light"}

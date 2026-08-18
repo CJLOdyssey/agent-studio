@@ -61,6 +61,11 @@ class TestDynamicTeamGraphInit:
         graph = DynamicTeamGraph(checkpointer=cp)
         assert graph.checkpointer is cp
 
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
+    def test_init_attachment_context_default_empty(self, mock_chat_cls):
+        graph = DynamicTeamGraph()
+        assert graph.attachment_context == ""
+
 
 @pytest.mark.unit
 class TestDynamicTeamGraphSetWorkflowSync:
@@ -145,6 +150,20 @@ class TestDynamicTeamGraphBuild:
         graph._config = config
         graph._build()
         assert mock_factory_cls.call_args[1]["node_tools"] is node_tools
+
+    @patch("workflow.dynamic_team_graph.ChatOpenAI")
+    @patch("workflow.dynamic_team_graph.GraphBuilder")
+    @patch("workflow.dynamic_team_graph.NodeFactory")
+    def test_build_passes_attachment_context_to_factory(self, mock_factory_cls, mock_builder_cls, mock_chat_cls):
+        graph = DynamicTeamGraph(attachment_context="[附件: plan.pdf]\nplan text")
+        config = WorkflowConfig(
+            id="c1",
+            nodes=[WorkflowNode(id="n1", role_identifier="pm", order=0)],
+            edges=[],
+        )
+        graph._config = config
+        graph._build()
+        assert mock_factory_cls.call_args[1]["attachment_context"] == "[附件: plan.pdf]\nplan text"
 
     @patch("workflow.dynamic_team_graph.ChatOpenAI")
     @patch("workflow.dynamic_team_graph.GraphBuilder")

@@ -151,7 +151,7 @@ export function useConversation() {
         updatedAt:
           s.updated_at || s.created_at || local?.updatedAt || tmp?.updatedAt ||
           new Date().toISOString(),
-        teamId: local?.teamId ?? tmp?.teamId,
+        teamId: s.team_id || local?.teamId || tmp?.teamId,
         teamName: local?.teamName ?? tmp?.teamName,
       });
     }

@@ -200,6 +200,7 @@ from orm import (  # noqa: F401
     TeamDB,
     UserApiKey,
     UserDB,
+    UserPreferenceDB,
     UserRoleDB,
     VersionDB,
     WorkflowConfigDB,
@@ -214,6 +215,6 @@ __all__ = [
     "PromptDB", "RefreshTokenDB", "RegisteredSkillDB",
     "RegisteredToolDB", "RoleDB", "SessionDB",
     "TeamAgentDB", "TeamDB", "UserApiKey",
-    "UserDB", "UserRoleDB", "VersionDB",
+    "UserDB", "UserPreferenceDB", "UserRoleDB", "VersionDB",
     "WorkflowConfigDB", "WorkflowEdgeDB", "WorkflowNodeDB",
 ]

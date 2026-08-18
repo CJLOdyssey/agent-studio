@@ -24,6 +24,13 @@ class SessionDB(Base):
         nullable=True,
         index=True,
     )
+    # 团队会话归属（无 FK：团队删除后会话与历史消息仍保留；team pipeline
+    # 分发依赖该列，前端 URL 直开/刷新亦凭它恢复团队身份）。
+    team_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
