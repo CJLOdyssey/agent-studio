@@ -93,6 +93,37 @@ class TestKeys:
         assert resp.status_code == 201
         mock_schedule.assert_called_once()
 
+    async def test_schedule_key_models_refresh_registers_background_task(self):
+        """Real _schedule_key_models_refresh schedules + tracks a background refresh."""
+        import asyncio as _asyncio
+        from types import SimpleNamespace
+
+        from routers.keys import _schedule_key_models_refresh
+
+        app = SimpleNamespace(state=SimpleNamespace())
+        with patch("routers.keys.test_api_key_connection", new=AsyncMock(return_value={"success": True, "models": ["gpt-4"]})), \
+             patch("routers.keys.update_api_key", new=AsyncMock()) as mock_update:
+            _schedule_key_models_refresh(app, "k1", "user1")
+            pending = getattr(app.state, "pending_key_tasks", None)
+            assert pending is not None and len(pending) == 1
+            await _asyncio.gather(*list(pending))
+            mock_update.assert_awaited_once()
+
+    async def test_schedule_key_models_refresh_background_task_fails_gracefully(self):
+        """Background refresh swallows provider errors without raising."""
+        import asyncio as _asyncio
+        from types import SimpleNamespace
+
+        from routers.keys import _schedule_key_models_refresh
+
+        app = SimpleNamespace(state=SimpleNamespace())
+        with patch("routers.keys.test_api_key_connection", new=AsyncMock(side_effect=RuntimeError("boom"))):
+            _schedule_key_models_refresh(app, "k1", "user1")
+            pending = getattr(app.state, "pending_key_tasks", None)
+            assert pending is not None and len(pending) == 1
+            await _asyncio.gather(*list(pending))
+            assert pending == set()
+
     def test_edit_key_not_found(self, client):
         with patch("routers.keys.update_api_key", new_callable=AsyncMock) as mock_update:
             mock_update.return_value = None
