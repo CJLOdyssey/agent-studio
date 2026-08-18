@@ -331,11 +331,18 @@ describe('retry', { tags: ['unit'] }, () => {
     const state = useChatStore.getState();
     expect(state.currentRunId).toBe('run-1');
     expect(state.status).toBe('running');
+    // retry 走 store 完整流程（submitRequirement）：session 复用 + temp 转正，
+    // 不会因 currentSessionId 缺失而让后端新建会话。
     expect(mockSubmitReq).toHaveBeenCalledWith(
       'follow-up',
       'sess-1',
       'key-1',
       'deepseek-chat',
+      undefined, // agent_id
+      undefined, // team_id
+      null,      // parent_run_id（根分支）
+      undefined, // is_edit
+      undefined, // attachment_ids
     );
     expect(connectRun).toHaveBeenCalled();
   });
@@ -361,6 +368,11 @@ describe('retry', { tags: ['unit'] }, () => {
       'sess-1',
       'siliconflow-key',
       'THUDM/GLM-Z1-9B-0414',
+      undefined,
+      undefined,
+      null,
+      undefined,
+      undefined,
     );
   });
 

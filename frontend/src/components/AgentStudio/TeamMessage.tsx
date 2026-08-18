@@ -581,12 +581,15 @@ const TeamMessage = memo(function TeamMessage({
                       {isThinkingExpanded && (
                         <div className="mt-2 grid animate-slide-down">
                           <div className="relative max-h-[420px] overflow-y-auto overflow-hidden text-base text-[var(--color-text-muted)] leading-[1.65]" ref={thinkingBodyRef}>
-                            {msg.thinking ? (() => {
-                              const items = groupThinkingNodes(msg.thinking);
-                              return items.map((item, i) => (
-                                <ThinkingNodeItem key={i} item={item} t={t} />
-                              ));
-                            })() : null}
+                            <div className="relative pl-4">
+                              <div className="absolute left-2 top-0 bottom-0 w-px bg-[var(--color-border)] pointer-events-none" />
+                              {msg.thinking ? (() => {
+                                const items = groupThinkingNodes(msg.thinking);
+                                return items.map((item, i) => (
+                                  <ThinkingNodeItem key={i} item={item} t={t} />
+                                ));
+                              })() : null}
+                            </div>
                           </div>
                         </div>
                       )}
