@@ -140,8 +140,8 @@ export function useConversation() {
         sessionId: s.id,
         title: s.title,
         messages: local?.messages ?? tmp?.messages ?? [],
-        kind: (s.kind as 'normal' | 'agent' | 'team') || local?.kind || 'normal',
-        agentId: s.agent_id || local?.agentId || tmp?.agentId,
+        kind: (s.kind as 'normal' | 'agent' | 'team') ?? local?.kind ?? 'normal',
+        agentId: s.agent_id ?? local?.agentId ?? tmp?.agentId,
         isPinned: s.is_pinned,
         runCount: s.run_count ?? 0,
         createdAt:
@@ -149,7 +149,7 @@ export function useConversation() {
         updatedAt:
           s.updated_at || s.created_at || local?.updatedAt || tmp?.updatedAt ||
           new Date().toISOString(),
-        teamId: s.team_id || local?.teamId || tmp?.teamId,
+        teamId: s.team_id ?? local?.teamId ?? tmp?.teamId,
         teamName: local?.teamName ?? tmp?.teamName,
       });
     }
