@@ -43,7 +43,7 @@ pytest-rerunfailures==15.1
 pytest-xdist==3.6.1
 pytest==9.0.3
 python-multipart==0.0.31
-pyyaml==6.0.1
+pyyaml==6.0.3
 redis==7.4.0
 ruff==0.15.14
 sqlalchemy==2.0.49
