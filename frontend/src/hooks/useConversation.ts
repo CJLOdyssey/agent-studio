@@ -219,7 +219,13 @@ export function useConversation() {
       setSessionsLoaded(true);
       setConversations((prev) => {
         const merged = mergeWithServer(prev, sessions);
-        if (merged.length === prev.length) return prev;
+        // Deep compare: check if session ID sets differ (not just length)
+        const prevIds = new Set(prev.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const mergedIds = new Set(merged.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const sameContent = prevIds.size === mergedIds.size && [...prevIds].every((id) => mergedIds.has(id));
+        if (sameContent) return prev;
+        // Safety: never persist a list shorter than server authoritative data
+        if (merged.length < sessions.length) return prev;
         persistConversations(merged.filter((c) => !c.temp));
         return merged;
       });
@@ -233,6 +239,11 @@ export function useConversation() {
     listSessions(100).then((sessions) => {
       setConversations((prev) => {
         const merged = mergeWithServer(prev, sessions);
+        const prevIds = new Set(prev.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const mergedIds = new Set(merged.filter((c) => !c.temp).map((c) => c.sessionId || c.id));
+        const sameContent = prevIds.size === mergedIds.size && [...prevIds].every((id) => mergedIds.has(id));
+        if (sameContent) return prev;
+        if (merged.length < sessions.length) return prev;
         persistConversations(merged.filter((c) => !c.temp));
         return merged;
       });
