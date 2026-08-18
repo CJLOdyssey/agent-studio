@@ -149,8 +149,9 @@ export function useConversation() {
         updatedAt:
           s.updated_at || s.created_at || local?.updatedAt || tmp?.updatedAt ||
           new Date().toISOString(),
-        teamId: s.team_id ?? local?.teamId ?? tmp?.teamId,
-        teamName: local?.teamName ?? tmp?.teamName,
+        // server 权威：team_id 明确为 null（不属于团队）→ 清掉 local 残留脏值
+        teamId: s.team_id ?? (tmp ? tmp.teamId : undefined),
+        teamName: s.team_id ? (local?.teamName ?? tmp?.teamName) : undefined,
       });
     }
     // Local confirmed sessions NOT matched by server — preserve (server may be incomplete)
