@@ -90,10 +90,10 @@ export function useConversation() {
     }
   }, []);
 
-  // 正式模式的统一列表归并（幂等核心，替代此前的 merge+删重补丁）：
+  // 正式模式的统一列表归并（幂等核心）：
   // 乐观占位（temp）保留在列；已确认会话与 server 按 sessionId 合并（唯一）；
-  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换（不新增，
-  // 消除 WS 事件先于 run 响应的发送中暂态双条）；已确认但不在 server 的删除。
+  // server 新会话若匹配 temp 占位（同标题 + 15s 内创建）则原位替换；
+  // 已确认但不在 server 的——保留（server 响应可能不完整/延迟）。
   const mergeWithServer = useCallback((prev: Conversation[], sessions: SessionItem[]) => {
     const confirmed = new Map<string, Conversation>();
     const temp: Conversation[] = [];
@@ -107,7 +107,6 @@ export function useConversation() {
         confirmed.set(c.sessionId, c);
         continue;
       }
-      // 无 sessionId 且非 temp：本地旧数据/未确认会话——保留（server 无对应）
       orphan.push(c);
     }
     const matchesTemp = (t: Conversation, s: SessionItem) =>
@@ -117,14 +116,13 @@ export function useConversation() {
       ...orphan,
       ...temp.filter((t) => !sessions.some((s) => matchesTemp(t, s))),
     ];
+    // Track which local confirmed sessions got matched by server
+    const matchedLocalIds = new Set<string>();
     for (const s of sessions) {
       const local = confirmed.get(s.id);
       const tmp = temp.find((t) => matchesTemp(t, s));
+      if (local) matchedLocalIds.add(s.id);
       if (tmp && !local) {
-        // WS 事件先于 run 响应到达：server 条目匹配到发送中的乐观占位。
-        // 原位「吸附」到 server 会话但保留 temp 语义（temp:true + 原 id）——
-        // 加载/兜底 effect 据 temp 标记放行进行中的流式状态；等 run 响应
-        // 的 confirm effect 再转正（id→sessionId）。不新增重复条。
         result.push({
           ...tmp,
           sessionId: s.id,
@@ -142,7 +140,7 @@ export function useConversation() {
         sessionId: s.id,
         title: s.title,
         messages: local?.messages ?? tmp?.messages ?? [],
-        kind: (s.kind as 'normal' | 'agent' | 'team') || 'normal',
+        kind: (s.kind as 'normal' | 'agent' | 'team') || local?.kind || 'normal',
         agentId: s.agent_id || local?.agentId || tmp?.agentId,
         isPinned: s.is_pinned,
         runCount: s.run_count ?? 0,
@@ -154,6 +152,12 @@ export function useConversation() {
         teamId: s.team_id || local?.teamId || tmp?.teamId,
         teamName: local?.teamName ?? tmp?.teamName,
       });
+    }
+    // Local confirmed sessions NOT matched by server — preserve (server may be incomplete)
+    for (const [sid, conv] of confirmed) {
+      if (!matchedLocalIds.has(sid)) {
+        result.push(conv);
+      }
     }
     return result;
   }, []);
