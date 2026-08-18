@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pre-install Python dependencies
 COPY requirements.txt /tmp/
+ARG CACHEBUST=1
 RUN pip install --no-compile -r /tmp/requirements.txt --quiet
 RUN pip install --no-compile playwright locust --quiet
 
@@ -38,6 +39,7 @@ RUN npm install -g c8
 # Pre-warm mypy cache for backend
 COPY backend/ /tmp/backend/
 COPY pyproject.toml /tmp/
+ARG CACHEBUST=2
 RUN cd /tmp && mypy --cache-dir /opt/mypy-cache backend/ --strict --no-error-summary || true
 RUN rm -rf /tmp/backend /tmp/pyproject.toml
 
