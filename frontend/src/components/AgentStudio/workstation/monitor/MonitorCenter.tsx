@@ -19,6 +19,9 @@ import { PerformanceAnalysis } from './PerformanceAnalysis';
 import { AlertRules } from './AlertRules';
 import { AlertEvents } from './AlertEvents';
 import { AlertSubscriptions } from './AlertSubscriptions';
+import { RunTraces } from './RunTraces';
+import { TraceDetail } from './TraceDetail';
+import { useTeamData } from '../../../../hooks/useTeamData';
 
 interface ViewActivity {
   id: string;
@@ -130,12 +133,16 @@ interface Props {
 }
 
 function MonitorCenter({ onNavigate }: Props) {
+  const { teams } = useTeamData();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<ViewActivity[]>([]);
   const [healthItems, setHealthItems] = useState<HealthItem[]>([]);
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance' | 'alerts'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance' | 'traces' | 'alerts'>('overview');
+  const [activeTrace, setActiveTrace] = useState<string | null>(null);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -151,6 +158,7 @@ function MonitorCenter({ onNavigate }: Props) {
       }
       if (healthResult.status === 'fulfilled') {
         setHealthItems(healthToItems(healthResult.value));
+        setHealth(healthResult.value);
       }
       setLastUpdated(new Date().toLocaleTimeString());
     }).finally(() => {
@@ -231,6 +239,16 @@ function MonitorCenter({ onNavigate }: Props) {
                 性能分析
               </button>
               <button
+                onClick={() => setActiveTab('traces')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'traces'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
+                }`}
+              >
+                运行轨迹
+              </button>
+              <button
                 onClick={() => setActiveTab('alerts')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'alerts'
@@ -242,6 +260,16 @@ function MonitorCenter({ onNavigate }: Props) {
               </button>
             </div>
             <div className="flex items-center gap-4">
+              {teams.length > 0 && (
+                <select
+                  value={selectedTeam}
+                  onChange={(e) => setSelectedTeam(e.target.value)}
+                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-overlay)] px-2 py-1.5 text-xs text-[var(--color-text-secondary)]"
+                >
+                  <option value="">全部团队</option>
+                  {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+                </select>
+              )}
               <div className="text-sm text-[var(--color-text-muted)]">
                 {lastUpdated ? `上次更新: ${lastUpdated}` : ''}
               </div>
@@ -259,7 +287,7 @@ function MonitorCenter({ onNavigate }: Props) {
           {/* 系统概览标签页 */}
           {activeTab === 'overview' && (
             <>
-              <MonitorStats stats={stats} statCards={statCards} onNavigate={onNavigate} />
+              <MonitorStats stats={stats} statCards={statCards} health={health} onNavigate={onNavigate} />
 
               <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
                 <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-5 overflow-y-auto">
@@ -275,12 +303,19 @@ function MonitorCenter({ onNavigate }: Props) {
 
           {/* 成本分析标签页 */}
           {activeTab === 'cost' && (
-            <CostDashboard />
+            <CostDashboard teamId={selectedTeam || undefined} />
           )}
 
           {/* 性能分析标签页 */}
           {activeTab === 'performance' && (
-            <PerformanceAnalysis />
+            <PerformanceAnalysis teamId={selectedTeam || undefined} />
+          )}
+
+          {/* 运行轨迹标签页 */}
+          {activeTab === 'traces' && (
+            activeTrace
+              ? <TraceDetail traceId={activeTrace} onBack={() => setActiveTrace(null)} />
+              : <RunTraces onSelectTrace={setActiveTrace} />
           )}
 
           {/* 告警标签页 */}

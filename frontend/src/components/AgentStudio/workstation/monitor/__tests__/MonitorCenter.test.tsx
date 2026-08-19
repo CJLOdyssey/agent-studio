@@ -16,6 +16,8 @@ vi.mock('../MonitorStats', () => ({ default: () => <div data-testid="monitor-sta
 vi.mock('../AlertRules', () => ({ AlertRules: () => <div data-testid="alert-rules" /> }));
 vi.mock('../AlertEvents', () => ({ AlertEvents: () => <div data-testid="alert-events" /> }));
 vi.mock('../AlertSubscriptions', () => ({ AlertSubscriptions: () => <div data-testid="alert-subscriptions" /> }));
+vi.mock('../RunTraces', () => ({ RunTraces: () => <div data-testid="run-traces" /> }));
+vi.mock('../TraceDetail', () => ({ TraceDetail: () => <div data-testid="trace-detail" /> }));
 
 import MonitorCenter from '../MonitorCenter';
 
@@ -62,5 +64,14 @@ describe('MonitorCenter', { tags: ['integration'] }, () => {
     expect(await screen.findByTestId('alert-rules')).toBeInTheDocument();
     expect(screen.getByTestId('alert-events')).toBeInTheDocument();
     expect(screen.getByTestId('alert-subscriptions')).toBeInTheDocument();
+  });
+
+  it('switches to the traces tab', async () => {
+    render(<MonitorCenter onNavigate={vi.fn()} />);
+    await screen.findByText('刷新');
+
+    fireEvent.click(screen.getByText('运行轨迹'));
+
+    expect(await screen.findByTestId('run-traces')).toBeInTheDocument();
   });
 });

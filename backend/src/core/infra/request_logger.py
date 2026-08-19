@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from core.infra.logging_config import get_logger
+from core.infra.qps import record_request
 from observability import set_trace_id
 
 logger = get_logger(__name__)
@@ -50,6 +51,7 @@ class RequestLogMiddleware:
         request_id = uuid.uuid4().hex[:12]
         scope.setdefault("state", {})["request_id"] = request_id
         set_trace_id(request_id)
+        record_request()
 
         method = scope.get("method", "UNKNOWN")
         query_string = scope.get("query_string", b"").decode("utf-8", errors="replace")

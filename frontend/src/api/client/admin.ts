@@ -66,6 +66,8 @@ export interface SystemHealth {
       status: string;
       queued_jobs: number;
     };
+    mem_usage_mb?: number;
+    qps?: number;
   };
 }
 

@@ -34,6 +34,7 @@ from routers import (
     keys,
     mcps,
     models,
+    monitor_events,
     preferences,
     prompts,
     providers,
@@ -173,7 +174,7 @@ app.add_middleware(RequestSizeLimitMiddleware)
 # ── Routers ─────────────────────────────────────────────────────────────────
 routers = [auth, events, runs, run_continue, sessions, agents, agent_test_handler, attachments, commands, models, keys,
            teams, tools, skills, prompts, mcps, admin, providers, versions,
-           workflows, team_runs, preferences, cost, alert]
+           workflows, team_runs, preferences, cost, alert, monitor_events]
 for r in routers:
     app.include_router(r.router)
 
@@ -211,6 +212,19 @@ def _get_process_cpu_seconds() -> float | None:
         return None
 
 
+def _get_process_mem_mb() -> float | None:
+    """Return current RSS memory in MB for this process (from /proc/pid/status)."""
+    try:
+        with open(f"/proc/{os.getpid()}/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    kb = int(line.split()[1])
+                    return round(kb / 1024, 1)
+        return None
+    except Exception:
+        return None
+
+
 @app.get("/api/metrics")
 def metrics() -> Any:
     """Prometheus metrics endpoint."""
@@ -228,6 +242,13 @@ async def health() -> Any:
 
     if cpu_seconds is not None:
         health_data["checks"]["cpu_seconds"] = str(cpu_seconds)
+
+    mem_usage = _get_process_mem_mb()
+    if mem_usage is not None:
+        health_data["details"]["mem_usage_mb"] = mem_usage
+    from core.infra.qps import current_qps
+
+    health_data["details"]["qps"] = current_qps()
 
     status_code = 200 if health_data["status"] == "healthy" else 503
     return JSONResponse(
