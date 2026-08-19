@@ -33,8 +33,8 @@ export function TokenUsage({ teamId }: TokenUsageProps) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="text-sm text-red-600">{error}</p>
+      <div className="rounded-lg border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] p-4">
+        <p className="text-sm text-[var(--color-danger)]">{error}</p>
       </div>
     );
   }
@@ -48,61 +48,61 @@ export function TokenUsage({ teamId }: TokenUsageProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h3 className="mb-3 text-sm font-medium text-gray-700">Token 消耗分布（最近 7 天）</h3>
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-4">
+        <h3 className="mb-3 text-sm font-medium text-[var(--color-text-secondary)]">Token 消耗分布（最近 7 天）</h3>
         <div className="space-y-3">
           {models.map(([model, data]) => {
             const percentage = (data.tokens / maxTokens) * 100;
             return (
               <div key={model}>
                 <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="font-medium text-gray-900">{model}</span>
-                  <span className="text-gray-500">
+                  <span className="font-medium text-[var(--color-text-primary)]">{model}</span>
+                  <span className="text-[var(--color-text-muted)]">
                     {data.tokens.toLocaleString()} tokens · ${data.cost_usd.toFixed(4)}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-hover)]">
                   <div
-                    className="h-full rounded-full bg-blue-500 transition-all"
+                    className="h-full rounded-full bg-[var(--color-accent)] transition-all"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-[var(--color-text-muted)]">
                   {data.calls} 次调用 · 平均 {data.calls > 0 ? Math.round(data.tokens / data.calls).toLocaleString() : 0} tokens/次
                 </div>
               </div>
             );
           })}
           {models.length === 0 && (
-            <p className="text-center text-sm text-gray-500">暂无数据</p>
+            <p className="text-center text-sm text-[var(--color-text-muted)]">暂无数据</p>
           )}
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h3 className="mb-3 text-sm font-medium text-gray-700">总体统计</h3>
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-4">
+        <h3 className="mb-3 text-sm font-medium text-[var(--color-text-secondary)]">总体统计</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <div className="text-xs text-gray-500">总 Token</div>
-            <div className="text-lg font-semibold text-gray-900">
+            <div className="text-xs text-[var(--color-text-muted)]">总 Token</div>
+            <div className="text-lg font-semibold text-[var(--color-text-primary)]">
               {summary.total_tokens.toLocaleString()}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">总成本</div>
-            <div className="text-lg font-semibold text-gray-900">
+            <div className="text-xs text-[var(--color-text-muted)]">总成本</div>
+            <div className="text-lg font-semibold text-[var(--color-text-primary)]">
               ${summary.total_cost_usd.toFixed(4)}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">Prompt Tokens</div>
-            <div className="text-sm font-medium text-gray-700">
+            <div className="text-xs text-[var(--color-text-muted)]">Prompt Tokens</div>
+            <div className="text-sm font-medium text-[var(--color-text-secondary)]">
               {summary.total_prompt_tokens.toLocaleString()}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500">Completion Tokens</div>
-            <div className="text-sm font-medium text-gray-700">
+            <div className="text-xs text-[var(--color-text-muted)]">Completion Tokens</div>
+            <div className="text-sm font-medium text-[var(--color-text-secondary)]">
               {summary.total_completion_tokens.toLocaleString()}
             </div>
           </div>

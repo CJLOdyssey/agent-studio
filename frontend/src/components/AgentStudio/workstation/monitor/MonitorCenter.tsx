@@ -172,8 +172,8 @@ function MonitorCenter({ onNavigate }: Props) {
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'overview'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
                 }`}
               >
                 系统概览
@@ -182,8 +182,8 @@ function MonitorCenter({ onNavigate }: Props) {
                 onClick={() => setActiveTab('cost')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'cost'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
                 }`}
               >
                 <DollarSign size={16} />
@@ -193,8 +193,8 @@ function MonitorCenter({ onNavigate }: Props) {
                 onClick={() => setActiveTab('performance')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'performance'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
                 }`}
               >
                 <Activity size={16} />

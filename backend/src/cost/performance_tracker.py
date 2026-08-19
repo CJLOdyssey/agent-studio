@@ -92,13 +92,13 @@ class PerformanceTracker:
         async with factory() as session:
             cutoff = datetime.now(UTC) - timedelta(days=days)
 
-            # Daily response time trend
+            # Daily response time trend (PostgreSQL compatible)
             run_stmt = (
                 select(
                     func.date(ProjectRun.created_at).label("day"),
                     func.avg(
-                        func.julianday(ProjectRun.updated_at) * 86400
-                        - func.julianday(ProjectRun.created_at) * 86400
+                        func.extract("epoch", ProjectRun.updated_at)
+                        - func.extract("epoch", ProjectRun.created_at)
                     ).label("avg_duration_s"),
                     func.count(ProjectRun.id).label("total_runs"),
                     func.sum(

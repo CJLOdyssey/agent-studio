@@ -25,11 +25,11 @@ export default function MonitorHealth({ items }: Props) {
             <span className="text-sm text-[var(--color-text-secondary)]">{item.label}</span>
             <span
               className="flex items-center gap-1.5 text-sm font-medium"
-              style={{ color: item.status === 'normal' ? '#22c55e' : '#f59e0b' }}
+              style={{ color: item.status === 'normal' ? 'var(--color-success)' : 'var(--color-warning)' }}
             >
               <span
                 className="w-1.5 h-1.5 rounded-full"
-                style={{ background: item.status === 'normal' ? '#22c55e' : '#f59e0b' }}
+                style={{ background: item.status === 'normal' ? 'var(--color-success)' : 'var(--color-warning)' }}
               />{item.value}
             </span>
           </div>

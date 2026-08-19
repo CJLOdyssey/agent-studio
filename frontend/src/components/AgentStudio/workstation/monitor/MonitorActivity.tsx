@@ -30,7 +30,7 @@ export default function MonitorActivity({ activities }: Props) {
         >
           <span
             className="w-2 h-2 rounded-full shrink-0 mt-1"
-            style={{ background: act.type === 'success' ? '#22c55e' : act.type === 'warning' ? '#f59e0b' : '#3b82f6' }}
+            style={{ background: act.type === 'success' ? 'var(--color-success)' : act.type === 'warning' ? 'var(--color-warning)' : 'var(--color-accent)' }}
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
