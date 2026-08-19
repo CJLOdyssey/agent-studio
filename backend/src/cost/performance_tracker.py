@@ -3,7 +3,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from core.infra.database import get_session_factory
 from core.infra.logging_config import get_logger
@@ -102,7 +102,7 @@ class PerformanceTracker:
                     ).label("avg_duration_s"),
                     func.count(ProjectRun.id).label("total_runs"),
                     func.sum(
-                        func.case(
+                        case(
                             (ProjectRun.status == "converged", 1),
                             else_=0,
                         )
