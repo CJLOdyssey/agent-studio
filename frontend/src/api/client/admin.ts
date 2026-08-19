@@ -56,6 +56,17 @@ export async function fetchRecentActivity(limit = 10): Promise<ActivityEntry[]> 
 export interface SystemHealth {
   status: string;
   checks: Record<string, string>;
+  details?: {
+    api_response?: {
+      status: string;
+      avg_ms: number;
+      max_ms: number;
+    };
+    queue?: {
+      status: string;
+      queued_jobs: number;
+    };
+  };
 }
 
 export async function fetchSystemHealth(): Promise<SystemHealth> {

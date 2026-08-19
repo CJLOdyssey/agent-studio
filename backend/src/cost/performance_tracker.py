@@ -59,6 +59,14 @@ class PerformanceTracker:
             avg_response = sum(response_times) / len(response_times) if response_times else 0
             success_rate = success_count / len(runs) * 100 if runs else 0
 
+            # Calculate P50 and P95 percentiles
+            sorted_times = sorted(response_times)
+            n = len(sorted_times)
+            p50_idx = int(n * 0.5)
+            p95_idx = int(n * 0.95)
+            p50 = sorted_times[min(p50_idx, n - 1)]
+            p95 = sorted_times[min(p95_idx, n - 1)]
+
             # Get token data
             token_stmt = select(
                 func.sum(TokenUsageDB.total_tokens).label("total_tokens"),
@@ -77,6 +85,8 @@ class PerformanceTracker:
             return {
                 "period_days": days,
                 "avg_response_time_s": round(avg_response, 1),
+                "p50_response_time_s": round(p50, 1),
+                "p95_response_time_s": round(p95, 1),
                 "avg_success_rate": round(success_rate, 1),
                 "avg_tokens_per_call": avg_tokens,
                 "total_calls": total_calls,
@@ -128,9 +138,9 @@ class PerformanceTracker:
                 total = r.total_runs or 0
                 success = r.success_count or 0
                 trend.append({
-                    "day": str(r.day),
+                    "time_bucket": str(r.day),
                     "avg_response_time_s": round(avg_dur, 1),
-                    "total_calls": total,
+                    "calls": total,
                     "success_rate": round(success / total * 100, 1) if total > 0 else 0,
                 })
 
@@ -151,7 +161,7 @@ class PerformanceTracker:
             token_rows = {str(r.day): r.avg_tokens for r in token_result.all()}
 
             for item in trend:
-                item["avg_tokens"] = round(token_rows.get(item["day"], 0))
+                item["avg_tokens"] = round(token_rows.get(item["time_bucket"], 0))
 
             return {"trend": trend}
 

@@ -220,20 +220,17 @@ def metrics() -> Any:
 @app.get("/api/health")
 async def health() -> Any:
     """Deep health check — verifies DB, Redis, and self CPU health."""
-    from repository.health import check_database, check_redis
+    from repository.health import get_enhanced_health
 
-    db_status = await check_database()
-    redis_status = await check_redis()
+    health_data = await get_enhanced_health()
     cpu_seconds = _get_process_cpu_seconds()
 
-    checks: dict[str, str] = {"database": db_status, "redis": redis_status}
     if cpu_seconds is not None:
-        checks["cpu_seconds"] = str(cpu_seconds)
+        health_data["checks"]["cpu_seconds"] = str(cpu_seconds)
 
-    healthy = db_status == "ok" and redis_status == "ok"
-    status_code = 200 if healthy else 503
+    status_code = 200 if health_data["status"] == "healthy" else 503
     return JSONResponse(
-        content={"status": "healthy" if healthy else "degraded", "checks": checks},
+        content=health_data,
         status_code=status_code,
     )
 

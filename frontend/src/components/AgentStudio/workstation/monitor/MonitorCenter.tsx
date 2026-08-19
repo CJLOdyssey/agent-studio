@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw, DollarSign, Activity } from 'lucide-react';
+import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw } from 'lucide-react';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import {
@@ -49,32 +49,37 @@ function apiToView(a: ApiActivity): ViewActivity {
     action: actionLabel(a.action, a.entity_type),
     target: a.entity_name || `${a.action}_${a.entity_type}`,
     type: 'success',
+    entityType: a.entity_type,
+    entityId: a.entity_name,
   };
 }
 
 const ICON_MAP: Record<string, typeof Bot> = {
+  teams: Users,
   agents: Bot,
-  prompts: FileText,
+  skills: Zap,
   tools: Wrench,
   mcps: Server,
-  skills: Zap,
-  teams: Users,
+  prompts: FileText,
 };
 
 const TAB_MAP: Record<string, string> = {
+  teams: 'teams',
   agents: 'agents',
-  prompts: 'prompts',
+  skills: 'skills',
   tools: 'tools',
   mcps: 'mcp',
-  skills: 'skills',
-  teams: 'teams',
+  prompts: 'prompts',
 };
 
 function healthToItems(health: SystemHealth): HealthItem[] {
   const dbOk = health.checks?.database === 'ok';
   const redisOk = health.checks?.redis === 'ok';
   const healthy = health.status === 'healthy';
-  return [
+  const apiOk = health.details?.api_response?.status === 'ok';
+  const queueOk = health.details?.queue?.status === 'ok';
+
+  const items: HealthItem[] = [
     {
       label: t('monitor.health_status'),
       value: healthy ? t('monitor.health_ok') : t('monitor.health_degraded'),
@@ -91,6 +96,28 @@ function healthToItems(health: SystemHealth): HealthItem[] {
       status: redisOk ? 'normal' : 'warning',
     },
   ];
+
+  // Add API response time if available
+  if (health.details?.api_response) {
+    const avgMs = health.details.api_response.avg_ms;
+    items.push({
+      label: 'API 响应时间',
+      value: avgMs > 0 ? `${avgMs.toFixed(0)}ms` : '-',
+      status: apiOk ? 'normal' : 'warning',
+    });
+  }
+
+  // Add queue status if available
+  if (health.details?.queue) {
+    const queuedJobs = health.details.queue.queued_jobs;
+    items.push({
+      label: '队列状态',
+      value: queueOk ? `${queuedJobs} 任务` : '警告',
+      status: queueOk ? 'normal' : 'warning',
+    });
+  }
+
+  return items;
 }
 
 interface Props {
@@ -180,24 +207,22 @@ function MonitorCenter({ onNavigate }: Props) {
               </button>
               <button
                 onClick={() => setActiveTab('cost')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'cost'
                     ? 'bg-[var(--color-accent)] text-white'
                     : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
                 }`}
               >
-                <DollarSign size={16} />
                 成本分析
               </button>
               <button
                 onClick={() => setActiveTab('performance')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   activeTab === 'performance'
                     ? 'bg-[var(--color-accent)] text-white'
                     : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
                 }`}
               >
-                <Activity size={16} />
                 性能分析
               </button>
             </div>
@@ -226,7 +251,7 @@ function MonitorCenter({ onNavigate }: Props) {
                   <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
                     {t('monitor.activity')}
                   </h3>
-                  <MonitorActivity activities={activities} />
+                  <MonitorActivity activities={activities} onNavigate={onNavigate} />
                 </div>
                 <MonitorHealth items={healthItems} />
               </div>
@@ -235,7 +260,7 @@ function MonitorCenter({ onNavigate }: Props) {
 
           {/* 成本分析标签页 */}
           {activeTab === 'cost' && (
-            <CostDashboard />
+            <CostDashboard onNavigate={onNavigate} />
           )}
 
           {/* 性能分析标签页 */}

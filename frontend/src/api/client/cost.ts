@@ -52,13 +52,16 @@ export interface DailyTrendItem {
 }
 
 export interface CostAttribution {
-  by_team: Record<string, { tokens: number; cost_usd: number; calls: number }>;
-  by_node: Record<string, { tokens: number; cost_usd: number; calls: number }>;
+  by_team: Record<string, { tokens: number; cost_usd: number; calls: number; percentage?: number }>;
+  by_node: Record<string, { tokens: number; cost_usd: number; calls: number; avg_tokens?: number; percentage?: number }>;
+  by_model: Record<string, { tokens: number; cost_usd: number; calls: number; percentage?: number }>;
 }
 
 export interface PerformanceSummary {
   period_days: number;
   avg_response_time_s: number;
+  p50_response_time_s?: number;
+  p95_response_time_s?: number;
   avg_success_rate: number;
   avg_tokens_per_call: number;
   total_calls: number;
@@ -69,14 +72,16 @@ export interface PerformanceTrendItem {
   avg_response_time_s: number;
   success_rate: number;
   calls: number;
+  avg_tokens?: number;
 }
 
 export interface AgentRankingItem {
+  rank: number;
   node_id: string;
-  avg_response_time_s: number;
-  success_rate: number;
-  total_calls: number;
+  calls: number;
   total_tokens: number;
+  total_cost_usd: number;
+  avg_tokens: number;
 }
 
 export async function fetchTokenUsage(runId: string): Promise<TokenUsageResponse> {

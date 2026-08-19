@@ -59,14 +59,126 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
     return null;
   }
 
-  const maxResponseTime = Math.max(...trend.map((t) => t.avg_response_time_s), 1);
-  const maxSuccessRate = 100;
+  // SVG line chart for response time trend
+  const renderResponseTimeChart = () => {
+    if (trend.length === 0) return null;
+    const w = 600;
+    const h = 160;
+    const padX = 40;
+    const padY = 20;
+    const maxTime = Math.max(...trend.map((t) => t.avg_response_time_s), 1);
+    const points = trend.map((item, i) => {
+      const x = padX + (i / Math.max(trend.length - 1, 1)) * (w - 2 * padX);
+      const y = h - padY - (item.avg_response_time_s / maxTime) * (h - 2 * padY);
+      return { x, y, item };
+    });
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto">
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = h - padY - ratio * (h - 2 * padY);
+          return (
+            <line key={ratio} x1={padX} y1={y} x2={w - padX} y2={y} stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="4 2" />
+          );
+        })}
+        {/* Line */}
+        <path d={pathD} fill="none" stroke="var(--color-accent)" strokeWidth="2" />
+        {/* Points & labels */}
+        {points.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="3" fill="var(--color-accent)" />
+            <text x={p.x} y={h - 4} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)">
+              {p.item.time_bucket.slice(5)}
+            </text>
+            <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize="8" fill="var(--color-text-secondary)">
+              {p.item.avg_response_time_s.toFixed(1)}s
+            </text>
+          </g>
+        ))}
+        {/* Y axis labels */}
+        {[0, 0.5, 1].map((ratio) => {
+          const y = h - padY - ratio * (h - 2 * padY);
+          const val = (ratio * maxTime).toFixed(1);
+          return (
+            <text key={ratio} x={padX - 4} y={y + 3} textAnchor="end" fontSize="9" fill="var(--color-text-muted)">
+              {val}s
+            </text>
+          );
+        })}
+      </svg>
+    );
+  };
+
+  // SVG line chart for success rate trend
+  const renderSuccessRateChart = () => {
+    if (trend.length === 0) return null;
+    const w = 600;
+    const h = 160;
+    const padX = 40;
+    const padY = 20;
+    const points = trend.map((item, i) => {
+      const x = padX + (i / Math.max(trend.length - 1, 1)) * (w - 2 * padX);
+      const y = h - padY - (item.success_rate / 100) * (h - 2 * padY);
+      return { x, y, item };
+    });
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto">
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const y = h - padY - ratio * (h - 2 * padY);
+          return (
+            <line key={ratio} x1={padX} y1={y} x2={w - padX} y2={y} stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="4 2" />
+          );
+        })}
+        {/* 95% target line */}
+        <line
+          x1={padX}
+          y1={h - padY - 0.95 * (h - 2 * padY)}
+          x2={w - padX}
+          y2={h - padY - 0.95 * (h - 2 * padY)}
+          stroke="var(--color-warning)"
+          strokeWidth="1"
+          strokeDasharray="6 3"
+        />
+        <text x={w - padX + 4} y={h - padY - 0.95 * (h - 2 * padY) + 3} fontSize="8" fill="var(--color-warning)">
+          95%
+        </text>
+        {/* Line */}
+        <path d={pathD} fill="none" stroke="var(--color-success)" strokeWidth="2" />
+        {/* Points & labels */}
+        {points.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="3" fill="var(--color-success)" />
+            <text x={p.x} y={h - 4} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)">
+              {p.item.time_bucket.slice(5)}
+            </text>
+            <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize="8" fill="var(--color-text-secondary)">
+              {p.item.success_rate.toFixed(1)}%
+            </text>
+          </g>
+        ))}
+        {/* Y axis labels */}
+        {[0, 0.5, 1].map((ratio) => {
+          const y = h - padY - ratio * (h - 2 * padY);
+          const val = (ratio * 100).toFixed(0);
+          return (
+            <text key={ratio} x={padX - 4} y={y + 3} textAnchor="end" fontSize="9" fill="var(--color-text-muted)">
+              {val}%
+            </text>
+          );
+        })}
+      </svg>
+    );
+  };
 
   return (
     <div className="space-y-6">
       {/* 时间周期选择 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">性能分析</h2>
         <div className="flex gap-2">
           {[7, 14, 30].map((days) => (
             <button
@@ -92,7 +204,7 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
             {summary.avg_response_time_s.toFixed(1)}s
           </div>
           <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-            最近 {period} 天
+            P50 {summary.p50_response_time_s?.toFixed(1) ?? '-'}s · P95 {summary.p95_response_time_s?.toFixed(1) ?? '-'}s
           </div>
         </div>
 
@@ -131,61 +243,18 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-4">
           <h3 className="mb-3 text-sm font-medium text-[var(--color-text-secondary)]">响应时间趋势</h3>
-          <div className="space-y-2">
-            {trend.map((item, idx) => {
-              const width = (item.avg_response_time_s / maxResponseTime) * 100;
-              return (
-                <div key={idx}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="font-medium text-[var(--color-text-primary)]">{item.time_bucket}</span>
-                    <span className="text-[var(--color-text-muted)]">{item.avg_response_time_s.toFixed(1)}s</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-hover)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--color-accent)] transition-all"
-                      style={{ width: `${width}%` }}
-                    />
-                  </div>
-                  <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    {item.calls} 次调用
-                  </div>
-                </div>
-              );
-            })}
-            {trend.length === 0 && (
-              <p className="text-center text-sm text-[var(--color-text-muted)]">暂无数据</p>
-            )}
-          </div>
+          {renderResponseTimeChart()}
+          {trend.length === 0 && (
+            <p className="text-center text-sm text-[var(--color-text-muted)] py-8">暂无数据</p>
+          )}
         </div>
 
         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-4">
           <h3 className="mb-3 text-sm font-medium text-[var(--color-text-secondary)]">成功率趋势</h3>
-          <div className="space-y-2">
-            {trend.map((item, idx) => {
-              const width = (item.success_rate / maxSuccessRate) * 100;
-              const barColor = item.success_rate >= 95 ? 'var(--color-success)' : item.success_rate >= 80 ? 'var(--color-warning)' : 'var(--color-danger)';
-              return (
-                <div key={idx}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="font-medium text-[var(--color-text-primary)]">{item.time_bucket}</span>
-                    <span className="text-[var(--color-text-muted)]">{item.success_rate.toFixed(1)}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-hover)]">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${width}%`, background: barColor }}
-                    />
-                  </div>
-                  <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    {item.calls} 次调用
-                  </div>
-                </div>
-              );
-            })}
-            {trend.length === 0 && (
-              <p className="text-center text-sm text-[var(--color-text-muted)]">暂无数据</p>
-            )}
-          </div>
+          {renderSuccessRateChart()}
+          {trend.length === 0 && (
+            <p className="text-center text-sm text-[var(--color-text-muted)] py-8">暂无数据</p>
+          )}
         </div>
       </div>
 
@@ -200,16 +269,16 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
                   Agent
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                  响应时间
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                  成功率
-                </th>
-                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
                   调用次数
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
                   Token 消耗
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                  成本
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                  平均 Token/次
                 </th>
               </tr>
             </thead>
@@ -220,18 +289,16 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
                     {agent.node_id}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-[var(--color-text-secondary)]">
-                    {agent.avg_response_time_s.toFixed(1)}s
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-[var(--color-text-secondary)]">
-                    <span style={{ color: agent.success_rate >= 95 ? 'var(--color-success)' : agent.success_rate >= 80 ? 'var(--color-warning)' : 'var(--color-danger)' }}>
-                      {agent.success_rate.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-[var(--color-text-secondary)]">
-                    {agent.total_calls.toLocaleString()}
+                    {agent.calls.toLocaleString()}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-[var(--color-text-secondary)]">
                     {agent.total_tokens.toLocaleString()}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-[var(--color-text-secondary)]">
+                    ${agent.total_cost_usd.toFixed(4)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right text-sm text-[var(--color-text-secondary)]">
+                    {agent.avg_tokens.toLocaleString()}
                   </td>
                 </tr>
               ))}

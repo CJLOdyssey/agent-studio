@@ -213,7 +213,7 @@ class TokenTracker:
         team_id: str | None = None,
         days: int = 7,
     ) -> dict[str, Any]:
-        """Get cost attribution by team and node."""
+        """Get cost attribution by team, node, and model."""
         factory = get_session_factory()
         async with factory() as session:
             cutoff = datetime.now(UTC) - timedelta(days=days)
@@ -236,16 +236,16 @@ class TokenTracker:
             team_rows = team_result.all()
 
             total_cost = sum(float(r.cost or 0) for r in team_rows)
-            by_team = []
+            by_team = {}
             for r in team_rows:
                 cost = float(r.cost or 0)
-                by_team.append({
-                    "team_id": r.team_id or "unassigned",
+                team_name = r.team_id or "unassigned"
+                by_team[team_name] = {
                     "cost_usd": cost,
                     "tokens": r.tokens or 0,
                     "calls": r.calls or 0,
                     "percentage": round(cost / total_cost * 100, 1) if total_cost > 0 else 0,
-                })
+                }
 
             # By node
             node_stmt = (
@@ -264,23 +264,50 @@ class TokenTracker:
             node_result = await session.execute(node_stmt)
             node_rows = node_result.all()
 
-            by_node = []
+            by_node = {}
             for r in node_rows:
                 cost = float(r.cost or 0)
-                by_node.append({
-                    "node_id": r.node_id,
+                by_node[r.node_id] = {
                     "cost_usd": cost,
                     "tokens": r.tokens or 0,
                     "calls": r.calls or 0,
                     "avg_tokens": round((r.tokens or 0) / (r.calls or 1)),
                     "percentage": round(cost / total_cost * 100, 1) if total_cost > 0 else 0,
-                })
+                }
+
+            # By model
+            model_stmt = (
+                select(
+                    TokenUsageDB.model,
+                    func.sum(TokenUsageDB.cost_usd).label("cost"),
+                    func.sum(TokenUsageDB.total_tokens).label("tokens"),
+                    func.count(TokenUsageDB.id).label("calls"),
+                )
+                .where(TokenUsageDB.timestamp >= cutoff)
+            )
+            if team_id:
+                model_stmt = model_stmt.where(TokenUsageDB.team_id == team_id)
+            model_stmt = model_stmt.group_by(TokenUsageDB.model).order_by(func.sum(TokenUsageDB.cost_usd).desc())
+
+            model_result = await session.execute(model_stmt)
+            model_rows = model_result.all()
+
+            by_model = {}
+            for r in model_rows:
+                cost = float(r.cost or 0)
+                by_model[r.model] = {
+                    "cost_usd": cost,
+                    "tokens": r.tokens or 0,
+                    "calls": r.calls or 0,
+                    "percentage": round(cost / total_cost * 100, 1) if total_cost > 0 else 0,
+                }
 
             return {
                 "period_days": days,
                 "total_cost_usd": total_cost,
                 "by_team": by_team,
                 "by_node": by_node,
+                "by_model": by_model,
             }
 
 

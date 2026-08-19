@@ -20,7 +20,7 @@ export default function MonitorHealth({ items }: Props) {
         {items.map((item) => (
           <div
             key={item.label}
-            className="flex justify-between items-center px-3 py-2 rounded-lg bg-[var(--color-surface-hover)]"
+            className="flex justify-between items-center px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)]"
           >
             <span className="text-sm text-[var(--color-text-secondary)]">{item.label}</span>
             <span
