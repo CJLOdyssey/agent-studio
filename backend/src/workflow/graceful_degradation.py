@@ -13,15 +13,17 @@ from typing import Any
 
 class DegradationLevel(Enum):
     """Degradation levels indicating system health."""
-    NORMAL = "normal"           # Full functionality
-    DEGRADED = "degraded"       # Some features disabled
-    MINIMAL = "minimal"         # Core features only
-    FAILSAFE = "failsafe"       # Emergency mode
+
+    NORMAL = "normal"  # Full functionality
+    DEGRADED = "degraded"  # Some features disabled
+    MINIMAL = "minimal"  # Core features only
+    FAILSAFE = "failsafe"  # Emergency mode
 
 
 @dataclass
 class FallbackResult:
     """Result from a fallback operation."""
+
     success: bool
     data: Any
     degradation_level: DegradationLevel
@@ -69,10 +71,7 @@ class FallbackStrategy:
         for attempt in range(self.max_retries + 1):
             try:
                 if self.timeout:
-                    result = await asyncio.wait_for(
-                        self.primary(*args, **kwargs),
-                        timeout=self.timeout
-                    )
+                    result = await asyncio.wait_for(self.primary(*args, **kwargs), timeout=self.timeout)
                 else:
                     result = await self.primary(*args, **kwargs)
 
@@ -81,7 +80,7 @@ class FallbackStrategy:
                     data=result,
                     degradation_level=DegradationLevel.NORMAL,
                     message="Primary operation succeeded",
-                    used_fallback=False
+                    used_fallback=False,
                 )
             except TimeoutError:
                 if attempt < self.max_retries:
@@ -98,10 +97,7 @@ class FallbackStrategy:
         for idx, fallback in enumerate(self.fallbacks):
             try:
                 if self.timeout:
-                    result = await asyncio.wait_for(
-                        fallback(*args, **kwargs),
-                        timeout=self.timeout
-                    )
+                    result = await asyncio.wait_for(fallback(*args, **kwargs), timeout=self.timeout)
                 else:
                     result = await fallback(*args, **kwargs)
 
@@ -118,7 +114,7 @@ class FallbackStrategy:
                     data=result,
                     degradation_level=level,
                     message=f"Fallback {idx + 1} succeeded",
-                    used_fallback=True
+                    used_fallback=True,
                 )
             except Exception:
                 # This fallback failed, try next one
@@ -130,7 +126,7 @@ class FallbackStrategy:
             data=None,
             degradation_level=DegradationLevel.FAILSAFE,
             message="All operations failed",
-            used_fallback=True
+            used_fallback=True,
         )
 
 
@@ -159,6 +155,7 @@ class WorkflowTimeoutController:
     def start(self) -> None:
         """Mark workflow start time."""
         import time
+
         self._start_time = time.time()
 
     def check_remaining_time(self) -> float | None:
@@ -171,6 +168,7 @@ class WorkflowTimeoutController:
             return None
 
         import time
+
         elapsed = time.time() - self._start_time
         remaining = self.total_timeout - elapsed
         return max(0.0, remaining)
@@ -185,7 +183,7 @@ class WorkflowTimeoutController:
             True if warning should be issued
         """
         remaining = self.check_remaining_time()
-        if remaining is None:
+        if remaining is None or not self.total_timeout:
             return False
 
         # Warn if we've used more than warning_threshold of total time
@@ -199,11 +197,7 @@ class WorkflowTimeoutController:
         return False
 
     async def execute_with_timeout(
-        self,
-        operation: Callable,
-        *args: Any,
-        node_id: str = "unknown",
-        **kwargs: Any
+        self, operation: Callable, *args: Any, node_id: str = "unknown", **kwargs: Any
     ) -> Any:
         """Execute operation with timeout control.
 
@@ -222,12 +216,10 @@ class WorkflowTimeoutController:
         # Check if we should warn about approaching timeout
         if self.should_warn(node_id):
             import logging
+
             logger = logging.getLogger(__name__)
             remaining = self.check_remaining_time()
-            logger.warning(
-                f"Node {node_id}: Workflow approaching timeout "
-                f"({remaining:.1f}s remaining)"
-            )
+            logger.warning(f"Node {node_id}: Workflow approaching timeout ({remaining:.1f}s remaining)")
 
         # Determine effective timeout
         effective_timeout = self.node_timeout
@@ -237,10 +229,7 @@ class WorkflowTimeoutController:
 
         # Execute with timeout
         if effective_timeout:
-            return await asyncio.wait_for(
-                operation(*args, **kwargs),
-                timeout=effective_timeout
-            )
+            return await asyncio.wait_for(operation(*args, **kwargs), timeout=effective_timeout)
         else:
             return await operation(*args, **kwargs)
 
@@ -277,11 +266,14 @@ class GracefulDegradationManager:
             reason: Reason for degradation
         """
         import time
-        self._degradation_events.append({
-            "timestamp": time.time(),
-            "level": level.value,
-            "reason": reason,
-        })
+
+        self._degradation_events.append(
+            {
+                "timestamp": time.time(),
+                "level": level.value,
+                "reason": reason,
+            }
+        )
 
         # Update current level to worst seen
         level_priority = {
@@ -303,7 +295,7 @@ class GracefulDegradationManager:
         *args: Any,
         node_id: str = "unknown",
         fallbacks: list[Callable] | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> FallbackResult:
         """Execute operation with graceful degradation.
 
@@ -320,11 +312,11 @@ class GracefulDegradationManager:
             FallbackResult with execution outcome
         """
         # Wrap operation with timeout if controller is available
-        if self.timeout_controller:
+        controller = self.timeout_controller
+        if controller:
+
             async def timed_operation(*a: Any, **kw: Any) -> Any:
-                return await self.timeout_controller.execute_with_timeout(
-                    operation, *a, node_id=node_id, **kw
-                )
+                return await controller.execute_with_timeout(operation, *a, node_id=node_id, **kw)
         else:
             timed_operation = operation
 
@@ -334,16 +326,13 @@ class GracefulDegradationManager:
                 primary=timed_operation,
                 fallbacks=fallbacks,
                 timeout=self.timeout_controller.node_timeout if self.timeout_controller else None,
-                max_retries=1
+                max_retries=1,
             )
             result = await strategy.execute(*args, **kwargs)
 
             # Record degradation if fallback was used
             if result.used_fallback:
-                self.record_degradation(
-                    result.degradation_level,
-                    f"Node {node_id}: {result.message}"
-                )
+                self.record_degradation(result.degradation_level, f"Node {node_id}: {result.message}")
 
             return result
         else:
@@ -361,29 +350,23 @@ class GracefulDegradationManager:
                     data=result_data,
                     degradation_level=DegradationLevel.NORMAL,
                     message="Operation succeeded",
-                    used_fallback=False
+                    used_fallback=False,
                 )
             except TimeoutError:
-                self.record_degradation(
-                    DegradationLevel.MINIMAL,
-                    f"Node {node_id}: Operation timed out"
-                )
+                self.record_degradation(DegradationLevel.MINIMAL, f"Node {node_id}: Operation timed out")
                 return FallbackResult(
                     success=False,
                     data=None,
                     degradation_level=DegradationLevel.MINIMAL,
                     message="Operation timed out",
-                    used_fallback=False
+                    used_fallback=False,
                 )
             except Exception as e:
-                self.record_degradation(
-                    DegradationLevel.DEGRADED,
-                    f"Node {node_id}: {str(e)}"
-                )
+                self.record_degradation(DegradationLevel.DEGRADED, f"Node {node_id}: {str(e)}")
                 return FallbackResult(
                     success=False,
                     data=None,
                     degradation_level=DegradationLevel.DEGRADED,
                     message=f"Operation failed: {str(e)}",
-                    used_fallback=False
+                    used_fallback=False,
                 )

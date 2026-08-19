@@ -4,6 +4,7 @@ Decouples HTTP routing (routers/runs.py) from run orchestration logic
 (tasks/*, repository/*, broker.py).  Routers become thin HTTP adapters;
 RunService holds the business process.
 """
+
 # ▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲▼▲
 from __future__ import annotations
 
@@ -85,11 +86,14 @@ class RunService:
         config = load_config()
 
         # ── Session ─────────────────────────────────────────────────
-        kind = 'agent' if agent_id else 'team' if team_id else 'normal'
+        kind = "agent" if agent_id else "team" if team_id else "normal"
         if session_id is None:
             sess = await create_session(
-                title=requirement[:64], user_id=user_id,
-                agent_id=agent_id, kind=kind, team_id=team_id,
+                title=requirement[:64],
+                user_id=user_id,
+                agent_id=agent_id,
+                kind=kind,
+                team_id=team_id,
             )
             session_id = sess.id
         else:
@@ -174,14 +178,15 @@ class RunService:
         # ── Bind pre-uploaded attachments ─────────────────────────────
         # Pre-uploaded files (POST /api/attachments) carry session_id but no
         # run_id; binding happens here so the pipeline can inject their links.
-        if attachment_ids:
+        if attachment_ids and session_id is not None:
             try:
                 from repository.attachments import bind_attachments_to_run
 
                 await bind_attachments_to_run(attachment_ids, run_id, session_id, user_id)
                 logger.info(
                     "Attachments bound | run=%s | requested=%d",
-                    run_id, len(attachment_ids),
+                    run_id,
+                    len(attachment_ids),
                 )
             except Exception:
                 logger.exception("Failed to bind attachments for run=%s", run_id)
@@ -203,9 +208,10 @@ class RunService:
 
         # ── Update session timestamp ────────────────────────────────
         try:
-            existing_sess = await get_session(session_id)
-            if existing_sess:
-                await update_session_title(session_id, existing_sess.title)
+            if session_id is not None:
+                existing_sess = await get_session(session_id)
+                if existing_sess:
+                    await update_session_title(session_id, existing_sess.title)
         except Exception:
             pass
 
@@ -223,16 +229,26 @@ class RunService:
                     workflow = await get_workflow_config_by_team(team_id)
                     if workflow:
                         _reg.run_team.delay(
-                            requirement=requirement, run_id=run_id, session_id=session_id,
-                            team_id=team_id, key_id=key_id, api_key=api_key,
-                            api_base=api_base, model=effective_model,
+                            requirement=requirement,
+                            run_id=run_id,
+                            session_id=session_id,
+                            team_id=team_id,
+                            key_id=key_id,
+                            api_key=api_key,
+                            api_base=api_base,
+                            model=effective_model,
                         )
                         logger.info("Team task -> celery | run=%s | team=%s", run_id, team_id)
                         return {"run_id": run_id, "status": "pending", "session_id": session_id}
                 _reg.run_agent.delay(
-                    requirement=requirement, run_id=run_id, session_id=session_id,
-                    agent_id=agent_id, api_key=api_key, api_base=api_base,
-                    model=effective_model, user_id=user_id,
+                    requirement=requirement,
+                    run_id=run_id,
+                    session_id=session_id,
+                    agent_id=agent_id,
+                    api_key=api_key,
+                    api_base=api_base,
+                    model=effective_model,
+                    user_id=user_id,
                 )
                 logger.info("Task -> celery | run=%s", run_id)
                 return {"run_id": run_id, "status": "pending", "session_id": session_id}
@@ -260,7 +276,9 @@ class RunService:
                     self._register_task(run_id, task)
                     logger.info(
                         "Team task started (thread) | run=%s | team=%s | nodes=%d",
-                        run_id, team_id, len(workflow.nodes),
+                        run_id,
+                        team_id,
+                        len(workflow.nodes),
                     )
                     return {"run_id": run_id, "status": "pending", "session_id": session_id}
 
@@ -282,7 +300,9 @@ class RunService:
             self._register_task(run_id, task)
             logger.info(
                 "Task started (thread) | run_id=%s | session_id=%s | model=%s",
-                run_id, session_id, effective_model,
+                run_id,
+                session_id,
+                effective_model,
             )
         except Exception:
             logger.exception("Failed to start agent task for run=%s", run_id)
@@ -372,8 +392,12 @@ class RunService:
             from tasks import registry as _reg
 
             _reg.complete_agent.delay(
-                content=content, run_id=run_id, api_key=api_key,
-                api_base=api_base, model=effective_model, thinking=thinking,
+                content=content,
+                run_id=run_id,
+                api_key=api_key,
+                api_base=api_base,
+                model=effective_model,
+                thinking=thinking,
                 question=question,
             )
             logger.info("Complete -> celery | run=%s", run_id)

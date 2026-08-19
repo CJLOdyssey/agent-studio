@@ -96,7 +96,7 @@ class NodeFactory:
         tool_definitions: list[dict[str, Any]] | None = None,
     ) -> tuple[str, dict[str, Any], dict[str, Any]]:
         """Build the HTTP request for the LLM streaming API."""
-        raw_key = getattr(self.llm, "openai_api_key", "")
+        raw_key: Any = getattr(self.llm, "openai_api_key", "")
         actual_key = raw_key.get_secret_value() if hasattr(raw_key, "get_secret_value") else str(raw_key)
         base = (getattr(self.llm, "openai_api_base", None) or "https://api.deepseek.com").rstrip("/")
         url = f"{base}/chat/completions"

@@ -4,10 +4,11 @@ import asyncio
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import delete, select
+from sqlalchemy.engine import CursorResult
 
 from core.infra.database import get_session_factory
 from core.infra.logging_config import get_logger
@@ -43,7 +44,7 @@ class GlobalMemoryEntry:
             "last_accessed": self.last_accessed,
             "access_count": self.access_count,
             "decay_rate": self.decay_rate,
-            "metadata": self.metadata_json,
+            "metadata": self.metadata,
         }
 
     @classmethod
@@ -54,7 +55,7 @@ class GlobalMemoryEntry:
 class GlobalMemoryStore:
     """Manages global memory entries with decay, conflict resolution, and automatic extraction."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = asyncio.Lock()
 
     async def store(
@@ -153,7 +154,7 @@ class GlobalMemoryStore:
                 GlobalMemoryDB.user_id == user_id,
                 GlobalMemoryDB.key == key,
             )
-            result = await session.execute(stmt)
+            result = cast(CursorResult[Any], await session.execute(stmt))
             await session.commit()
             return result.rowcount > 0
 
@@ -197,7 +198,7 @@ class GlobalMemoryStore:
         factory = get_session_factory()
         async with factory() as session:
             stmt = delete(GlobalMemoryDB).where(GlobalMemoryDB.created_at < cutoff)
-            result = await session.execute(stmt)
+            result = cast(CursorResult[Any], await session.execute(stmt))
             await session.commit()
             return result.rowcount
 
@@ -230,25 +231,4 @@ def get_global_memory_store() -> GlobalMemoryStore:
     return _global_memory_store
 
 
-# Database model (to be added to orm/)
-from sqlalchemy import JSON, Column, Float, Integer, String, Text
-
-from core.infra.database import Base
-
-
-class GlobalMemoryDB(Base):
-    """ORM model for global memory entries."""
-
-    __tablename__ = "global_memory"
-
-    id = Column(String(36), primary_key=True)
-    user_id = Column(String(36), nullable=False, index=True)
-    key = Column(String(255), nullable=False, index=True)
-    value = Column(Text, nullable=True)
-    confidence = Column(Float, default=1.0)
-    source_sessions = Column(JSON, default=list)
-    created_at = Column(Float, nullable=False)
-    last_accessed = Column(Float, nullable=False)
-    access_count = Column(Integer, default=0)
-    decay_rate = Column(Float, default=0.01)
-    metadata_json = Column("metadata", JSON, default=dict)
+from orm.global_memory import GlobalMemoryDB  # noqa: E402

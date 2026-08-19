@@ -6,6 +6,7 @@ import string
 import subprocess
 import sys
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -72,9 +73,13 @@ try:
     from conftest_flaky import flaky_test  # noqa: F401
 except (ImportError, SyntaxError):
 
-    def flaky_test(**kwargs):  # type: ignore[no-redef]
+    def flaky_test(max_runs: int = 3, min_passes: int = 1, delay: float = 1) -> Callable[[Any], Any]:  # type: ignore[no-redef]
         """No-op fallback when conftest_flaky is unavailable."""
-        return lambda fn: fn
+
+        def decorator(func):
+            return func
+
+        return decorator
 
 
 BASE = os.environ.get("E2E_BASE_URL", "http://localhost:8082")

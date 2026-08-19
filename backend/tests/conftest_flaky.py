@@ -17,6 +17,7 @@ Quarantine policy (see ``tests/flaky/__init__.py``):
   2. CI runs them with ``--run-flaky`` to detect regressions without blocking builds.
   3. Fix the root cause within one sprint; remove ``@flaky_test`` after verification.
 """
+
 import asyncio
 import time
 from collections.abc import Callable
@@ -109,3 +110,4 @@ def flaky_test(max_runs: int = 3, min_passes: int = 1, delay: float = 1):
             result = marker(sync_wrapper)
             return result  # type: ignore[return-value]
 
+    return decorator

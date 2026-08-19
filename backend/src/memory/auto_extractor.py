@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
@@ -101,7 +101,7 @@ class MemoryExtractor:
         json_match = re.search(r'\[[\s\S]*\]', text)
         if json_match:
             try:
-                return json.loads(json_match.group())
+                return cast(list[dict[str, Any]], json.loads(json_match.group()))
             except json.JSONDecodeError:
                 pass
 

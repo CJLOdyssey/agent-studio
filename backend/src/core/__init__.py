@@ -5,6 +5,11 @@ Public symbols are explicitly imported below so callers can use either:
     from core.xxx import XXX
 """
 
+# log_audit / seed_default_roles_and_admin are resolved lazily via __getattr__
+# (PEP 562) and therefore absent from the module dict — suppress the false
+# "in __all__ but not present" warning (see _LAZY_MODULES below).
+# pyright: reportUnsupportedDunderAll=false
+
 from typing import Any
 
 from ._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor

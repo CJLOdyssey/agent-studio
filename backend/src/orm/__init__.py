@@ -16,6 +16,7 @@ from orm.alert import (
 )
 from orm.auth import RefreshTokenDB, RoleDB, UserDB, UserRoleDB
 from orm.content import MCPServerDB, PromptDB, RegisteredSkillDB, RegisteredToolDB, VersionDB
+from orm.global_memory import GlobalMemoryDB
 from orm.key import KeyUsageLog, UserApiKey
 from orm.preference import UserPreferenceDB
 from orm.session import ChatMessage, MemoryEntry, ProjectRun, SessionDB
@@ -31,6 +32,7 @@ __all__ = [
     "AuditLogDB",
     "ChatMessage",
     "CommandLogDB",
+    "GlobalMemoryDB",
     "KeyUsageLog",
     "MCPServerDB",
     "MemoryEntry",
