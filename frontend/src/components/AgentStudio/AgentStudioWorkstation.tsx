@@ -1,4 +1,4 @@
-import { PanelLeft, Sun, Moon, Bell } from 'lucide-react';
+import { PanelLeft, Sun, Moon } from 'lucide-react';
 import AgentStudioSidebar from './AgentStudioSidebar';
 import Workspace from './workspace/Workspace';
 import { InputToolbar } from '../input';
@@ -11,6 +11,7 @@ import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkstationState } from './useWorkstationState';
 import type { InputToolbarHandle } from '../input';
+import { NotificationsBell } from './workstation/NotificationsBell';
 
 export default function AgentStudioWorkstation() {
   const navigate = useNavigate();
@@ -101,10 +102,7 @@ if (currentTheme === 'system') {
 }} aria-label="Toggle dark mode">
                 {s.isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-              <button className="flex items-center justify-center w-8 h-8 bg-transparent border-none rounded-md text-[var(--color-text-secondary)] cursor-pointer relative transition-[color,background] duration-150 hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]" aria-label="Notifications">
-                <Bell size={16} />
-                <span className="absolute -top-[2px] -right-[2px] w-2 h-2 rounded-full bg-[var(--color-danger)] border-2 border-[var(--color-surface-card)]" />
-              </button>
+              <NotificationsBell />
             </div>
           </header>
 

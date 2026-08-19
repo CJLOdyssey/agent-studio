@@ -12,10 +12,9 @@ import { DateRangePicker, type PeriodMode } from './DateRangePicker';
 
 interface CostDashboardProps {
   teamId?: string;
-  onNavigate?: (tab: string) => void;
 }
 
-export function CostDashboard({ teamId, onNavigate }: CostDashboardProps) {
+export function CostDashboard({ teamId }: CostDashboardProps) {
   const [summary, setSummary] = useState<CostSummary | null>(null);
   const [dailyTrend, setDailyTrend] = useState<DailyTrendItem[]>([]);
   const [attribution, setAttribution] = useState<CostAttribution | null>(null);

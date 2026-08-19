@@ -16,6 +16,9 @@ import MonitorActivity from './MonitorActivity';
 import MonitorHealth, { type HealthItem } from './MonitorHealth';
 import { CostDashboard } from './CostDashboard';
 import { PerformanceAnalysis } from './PerformanceAnalysis';
+import { AlertRules } from './AlertRules';
+import { AlertEvents } from './AlertEvents';
+import { AlertSubscriptions } from './AlertSubscriptions';
 
 interface ViewActivity {
   id: string;
@@ -23,6 +26,8 @@ interface ViewActivity {
   action: string;
   target: string;
   type: 'success' | 'warning' | 'info';
+  entityType?: string;
+  entityId?: string;
 }
 
 interface StatCard {
@@ -130,7 +135,7 @@ function MonitorCenter({ onNavigate }: Props) {
   const [healthItems, setHealthItems] = useState<HealthItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance' | 'alerts'>('overview');
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -225,6 +230,16 @@ function MonitorCenter({ onNavigate }: Props) {
               >
                 性能分析
               </button>
+              <button
+                onClick={() => setActiveTab('alerts')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'alerts'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
+                }`}
+              >
+                告警
+              </button>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-sm text-[var(--color-text-muted)]">
@@ -260,12 +275,21 @@ function MonitorCenter({ onNavigate }: Props) {
 
           {/* 成本分析标签页 */}
           {activeTab === 'cost' && (
-            <CostDashboard onNavigate={onNavigate} />
+            <CostDashboard />
           )}
 
           {/* 性能分析标签页 */}
           {activeTab === 'performance' && (
             <PerformanceAnalysis />
+          )}
+
+          {/* 告警标签页 */}
+          {activeTab === 'alerts' && (
+            <div className="flex flex-col gap-6">
+              <AlertRules />
+              <AlertEvents />
+              <AlertSubscriptions />
+            </div>
           )}
         </div>
       </div>

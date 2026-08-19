@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
 
@@ -13,6 +13,9 @@ vi.mock('../../../../../api/client/admin', () => ({
 
 vi.mock('../MonitorActivity', () => ({ default: () => <div data-testid="monitor-activity" /> }));
 vi.mock('../MonitorStats', () => ({ default: () => <div data-testid="monitor-stats" /> }));
+vi.mock('../AlertRules', () => ({ AlertRules: () => <div data-testid="alert-rules" /> }));
+vi.mock('../AlertEvents', () => ({ AlertEvents: () => <div data-testid="alert-events" /> }));
+vi.mock('../AlertSubscriptions', () => ({ AlertSubscriptions: () => <div data-testid="alert-subscriptions" /> }));
 
 import MonitorCenter from '../MonitorCenter';
 
@@ -48,5 +51,16 @@ describe('MonitorCenter', { tags: ['integration'] }, () => {
     render(<MonitorCenter />);
 
     expect(await screen.findByText('刷新')).toBeInTheDocument();
+  });
+
+  it('switches to the alert tab and renders alert panels', async () => {
+    render(<MonitorCenter onNavigate={vi.fn()} />);
+    await screen.findByText('刷新');
+
+    fireEvent.click(screen.getByText('告警'));
+
+    expect(await screen.findByTestId('alert-rules')).toBeInTheDocument();
+    expect(screen.getByTestId('alert-events')).toBeInTheDocument();
+    expect(screen.getByTestId('alert-subscriptions')).toBeInTheDocument();
   });
 });
