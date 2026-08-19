@@ -169,8 +169,8 @@ export function CostDashboard({ teamId }: CostDashboardProps) {
 
       {/* 详细分析 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <TokenUsage teamId={teamId} />
-        <AgentMetrics teamId={teamId} />
+        <TokenUsage summary={summary} />
+        <AgentMetrics summary={summary} />
       </div>
 
       {/* 成本归因 */}
