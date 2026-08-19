@@ -21,6 +21,7 @@ import { AlertEvents } from './AlertEvents';
 import { AlertSubscriptions } from './AlertSubscriptions';
 import { RunTraces } from './RunTraces';
 import { TraceDetail } from './TraceDetail';
+import { SloBudget } from './SloBudget';
 import { useTeamData } from '../../../../hooks/useTeamData';
 
 interface ViewActivity {
@@ -141,7 +142,7 @@ function MonitorCenter({ onNavigate }: Props) {
   const [selectedTeam, setSelectedTeam] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance' | 'traces' | 'alerts'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance' | 'traces' | 'alerts' | 'slo'>('overview');
   const [activeTrace, setActiveTrace] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -258,6 +259,16 @@ function MonitorCenter({ onNavigate }: Props) {
               >
                 告警
               </button>
+              <button
+                onClick={() => setActiveTab('slo')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'slo'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
+                }`}
+              >
+                SLO
+              </button>
             </div>
             <div className="flex items-center gap-4">
               {teams.length > 0 && (
@@ -325,6 +336,11 @@ function MonitorCenter({ onNavigate }: Props) {
               <AlertEvents />
               <AlertSubscriptions />
             </div>
+          )}
+
+          {/* SLO 标签页 */}
+          {activeTab === 'slo' && (
+            <SloBudget />
           )}
         </div>
       </div>

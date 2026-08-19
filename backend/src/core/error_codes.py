@@ -109,6 +109,7 @@ class ErrorCode(StrEnum):
     ALERT_RULE_NOT_FOUND = "ALERT_001"
     ALERT_EVENT_NOT_FOUND = "ALERT_002"
     NOTIFICATION_NOT_FOUND = "ALERT_003"
+    SLO_NOT_FOUND = "SLO_001"
 
     # ── Run ─────────────────────────────────────────────────────────
     RUN_NOT_FOUND = "RUN_001"
@@ -152,6 +153,7 @@ _STATUS_MAP: dict[ErrorCode, int] = {
     ErrorCode.ALERT_RULE_NOT_FOUND: HTTP_404_NOT_FOUND,
     ErrorCode.ALERT_EVENT_NOT_FOUND: HTTP_404_NOT_FOUND,
     ErrorCode.NOTIFICATION_NOT_FOUND: HTTP_404_NOT_FOUND,
+    ErrorCode.SLO_NOT_FOUND: HTTP_404_NOT_FOUND,
     ErrorCode.AUTH_USER_NOT_FOUND: HTTP_404_NOT_FOUND,
     # 409
     ErrorCode.TEAM_CONFLICT: HTTP_409_CONFLICT,

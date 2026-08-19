@@ -20,6 +20,7 @@ from orm.global_memory import GlobalMemoryDB
 from orm.key import KeyUsageLog, UserApiKey
 from orm.preference import UserPreferenceDB
 from orm.session import ChatMessage, MemoryEntry, ProjectRun, SessionDB
+from orm.slo import SLIDefinitionDB
 from orm.team import AttachmentDB, AuditLogDB, CommandLogDB
 from orm.workflow import WorkflowConfigDB, WorkflowEdgeDB, WorkflowNodeDB
 
@@ -45,6 +46,7 @@ __all__ = [
     "RegisteredToolDB",
     "RoleDB",
     "SessionDB",
+    "SLIDefinitionDB",
     "TeamAgentDB",
     "TeamDB",
     "UserApiKey",

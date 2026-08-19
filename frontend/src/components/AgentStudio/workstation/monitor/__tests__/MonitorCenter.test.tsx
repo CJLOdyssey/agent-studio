@@ -18,6 +18,7 @@ vi.mock('../AlertEvents', () => ({ AlertEvents: () => <div data-testid="alert-ev
 vi.mock('../AlertSubscriptions', () => ({ AlertSubscriptions: () => <div data-testid="alert-subscriptions" /> }));
 vi.mock('../RunTraces', () => ({ RunTraces: () => <div data-testid="run-traces" /> }));
 vi.mock('../TraceDetail', () => ({ TraceDetail: () => <div data-testid="trace-detail" /> }));
+vi.mock('../SloBudget', () => ({ SloBudget: () => <div data-testid="slo-budget" /> }));
 
 import MonitorCenter from '../MonitorCenter';
 
@@ -73,5 +74,14 @@ describe('MonitorCenter', { tags: ['integration'] }, () => {
     fireEvent.click(screen.getByText('运行轨迹'));
 
     expect(await screen.findByTestId('run-traces')).toBeInTheDocument();
+  });
+
+  it('switches to the SLO tab', async () => {
+    render(<MonitorCenter onNavigate={vi.fn()} />);
+    await screen.findByText('刷新');
+
+    fireEvent.click(screen.getByText('SLO'));
+
+    expect(await screen.findByTestId('slo-budget')).toBeInTheDocument();
   });
 });
