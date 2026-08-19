@@ -1,5 +1,7 @@
 """Token usage tracking and cost calculation."""
 
+import json
+import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
@@ -12,14 +14,28 @@ from orm.token_usage import TokenUsageDB
 
 logger = get_logger(__name__)
 
-# Model pricing (USD per 1K tokens)
-MODEL_PRICING = {
+# Default model pricing (USD per 1K tokens) - can be overridden via MODEL_PRICING_JSON env var
+_DEFAULT_MODEL_PRICING = {
     "gpt-4": {"prompt": 0.03, "completion": 0.06},
     "gpt-4-turbo": {"prompt": 0.01, "completion": 0.03},
     "gpt-3.5-turbo": {"prompt": 0.0005, "completion": 0.0015},
     "deepseek-chat": {"prompt": 0.00014, "completion": 0.00028},
     "deepseek-coder": {"prompt": 0.00014, "completion": 0.00028},
 }
+
+
+def _load_model_pricing() -> dict[str, dict[str, float]]:
+    """Load model pricing from env var MODEL_PRICING_JSON, fall back to defaults."""
+    raw = os.environ.get("MODEL_PRICING_JSON", "")
+    if raw:
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            logger.warning("MODEL_PRICING_JSON is invalid JSON, using defaults")
+    return _DEFAULT_MODEL_PRICING
+
+
+MODEL_PRICING: dict[str, dict[str, float]] = _load_model_pricing()
 
 
 def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
