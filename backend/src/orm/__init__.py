@@ -8,6 +8,12 @@ from core.base import Base
 
 # Import from domain files
 from orm.agent import AgentConfigDB, TeamAgentDB, TeamDB
+from orm.alert import (
+    AlertEventDB,
+    AlertRuleDB,
+    NotificationDB,
+    NotificationSubscriptionDB,
+)
 from orm.auth import RefreshTokenDB, RoleDB, UserDB, UserRoleDB
 from orm.content import MCPServerDB, PromptDB, RegisteredSkillDB, RegisteredToolDB, VersionDB
 from orm.key import KeyUsageLog, UserApiKey
@@ -19,6 +25,8 @@ from orm.workflow import WorkflowConfigDB, WorkflowEdgeDB, WorkflowNodeDB
 __all__ = [
     "Base",
     "AgentConfigDB",
+    "AlertEventDB",
+    "AlertRuleDB",
     "AttachmentDB",
     "AuditLogDB",
     "ChatMessage",
@@ -26,6 +34,8 @@ __all__ = [
     "KeyUsageLog",
     "MCPServerDB",
     "MemoryEntry",
+    "NotificationDB",
+    "NotificationSubscriptionDB",
     "ProjectRun",
     "PromptDB",
     "RefreshTokenDB",
