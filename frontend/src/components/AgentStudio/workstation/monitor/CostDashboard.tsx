@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   fetchCostSummary,
   fetchDailyTrend,
@@ -8,13 +8,12 @@ import {
   type CostAttribution,
 } from '../../../../api/client/cost';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
+import { DateRangePicker, type PeriodMode } from './DateRangePicker';
 
 interface CostDashboardProps {
   teamId?: string;
   onNavigate?: (tab: string) => void;
 }
-
-type PeriodMode = 'preset' | 'custom';
 
 export function CostDashboard({ teamId, onNavigate }: CostDashboardProps) {
   const [summary, setSummary] = useState<CostSummary | null>(null);
@@ -26,18 +25,6 @@ export function CostDashboard({ teamId, onNavigate }: CostDashboardProps) {
   const [presetDays, setPresetDays] = useState(7);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-        setShowDatePicker(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const getDaysParam = () => {
     if (periodMode === 'preset') return presetDays;
@@ -223,64 +210,14 @@ export function CostDashboard({ teamId, onNavigate }: CostDashboardProps) {
   return (
     <div className="space-y-6">
       {/* 时间周期选择 */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex gap-2">
-          {[7, 14, 30].map((d) => (
-            <button
-              key={d}
-              onClick={() => { setPeriodMode('preset'); setPresetDays(d); }}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                periodMode === 'preset' && presetDays === d
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
-              }`}
-            >
-              {d}天
-            </button>
-          ))}
-          <div className="relative" ref={pickerRef}>
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                periodMode === 'custom'
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
-              }`}
-            >
-              自定义
-            </button>
-            {showDatePicker && (
-              <div className="absolute top-full mt-1 right-0 z-50 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)] p-3 shadow-lg">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs text-[var(--color-text-muted)]">开始日期</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="rounded border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-2 py-1 text-xs text-[var(--color-text-primary)]"
-                  />
-                  <label className="text-xs text-[var(--color-text-muted)]">结束日期</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="rounded border border-[var(--color-border)] bg-[var(--color-surface-hover)] px-2 py-1 text-xs text-[var(--color-text-primary)]"
-                  />
-                  <button
-                    onClick={() => { setPeriodMode('custom'); setShowDatePicker(false); }}
-                    className="rounded bg-[var(--color-accent)] px-3 py-1 text-xs text-white"
-                  >
-                    应用
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="text-xs text-[var(--color-text-muted)]">
-          {periodMode === 'preset' ? `最近 ${presetDays} 天` : (startDate && endDate ? `${startDate} ~ ${endDate}` : '请选择日期')}
-        </div>
-      </div>
+      <DateRangePicker
+        periodMode={periodMode}
+        presetDays={presetDays}
+        startDate={startDate}
+        endDate={endDate}
+        onPresetChange={(d) => { setPeriodMode('preset'); setPresetDays(d); }}
+        onCustomChange={(start, end) => { setStartDate(start); setEndDate(end); setPeriodMode('custom'); }}
+      />
 
       {/* 关键指标卡片 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

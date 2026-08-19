@@ -8,6 +8,7 @@ import {
   type AgentRankingItem,
 } from '../../../../api/client/cost';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
+import { DateRangePicker, type PeriodMode } from './DateRangePicker';
 
 interface PerformanceAnalysisProps {
   teamId?: string;
@@ -19,7 +20,22 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
   const [ranking, setRanking] = useState<AgentRankingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState(7);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('preset');
+  const [presetDays, setPresetDays] = useState(7);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // 计算实际查询的天数
+  const getDaysParam = () => {
+    if (periodMode === 'preset') return presetDays;
+    if (startDate && endDate) {
+      const diff = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000);
+      return Math.max(1, Math.min(365, diff));
+    }
+    return 7;
+  };
+
+  const period = getDaysParam();
 
   useEffect(() => {
     const load = async () => {
@@ -41,7 +57,7 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
       }
     };
     load();
-  }, [teamId, period]);
+  }, [teamId, periodMode, presetDays, startDate, endDate]);
 
   if (loading) {
     return <CardSkeleton count={4} />;
@@ -178,23 +194,14 @@ export function PerformanceAnalysis({ teamId }: PerformanceAnalysisProps) {
   return (
     <div className="space-y-6">
       {/* 时间周期选择 */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          {[7, 14, 30].map((days) => (
-            <button
-              key={days}
-              onClick={() => setPeriod(days)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                period === days
-                  ? 'bg-[var(--color-accent)] text-white'
-                  : 'bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)]'
-              }`}
-            >
-              {days}天
-            </button>
-          ))}
-        </div>
-      </div>
+      <DateRangePicker
+        periodMode={periodMode}
+        presetDays={presetDays}
+        startDate={startDate}
+        endDate={endDate}
+        onPresetChange={(d) => { setPeriodMode('preset'); setPresetDays(d); }}
+        onCustomChange={(start, end) => { setStartDate(start); setEndDate(end); setPeriodMode('custom'); }}
+      />
 
       {/* 关键性能指标 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
