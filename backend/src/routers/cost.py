@@ -1,5 +1,6 @@
 """Cost tracking API endpoints."""
 
+from cost.performance_tracker import get_performance_tracker
 from cost.token_tracker import get_token_tracker
 from fastapi import APIRouter, Depends, Query
 
@@ -58,3 +59,63 @@ async def get_model_pricing(
         )
 
     return {"models": models}
+
+
+@router.get("/daily-trend")
+async def get_daily_trend(
+    team_id: str | None = Query(None, description="Team ID (optional)"),
+    days: int = Query(7, ge=1, le=365, description="Number of days"),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Get daily cost trend."""
+    tracker = get_token_tracker()
+    trend = await tracker.get_daily_trend(team_id=team_id, days=days)
+    return {"trend": trend}
+
+
+@router.get("/attribution")
+async def get_cost_attribution(
+    team_id: str | None = Query(None, description="Team ID (optional)"),
+    days: int = Query(7, ge=1, le=365, description="Number of days"),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Get cost attribution by team and node."""
+    tracker = get_token_tracker()
+    attribution = await tracker.get_cost_attribution(team_id=team_id, days=days)
+    return attribution
+
+
+@router.get("/performance/summary")
+async def get_performance_summary(
+    team_id: str | None = Query(None, description="Team ID (optional)"),
+    days: int = Query(7, ge=1, le=365, description="Number of days"),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Get overall performance summary."""
+    tracker = get_performance_tracker()
+    summary = await tracker.get_performance_summary(team_id=team_id, days=days)
+    return summary
+
+
+@router.get("/performance/trend")
+async def get_performance_trend(
+    team_id: str | None = Query(None, description="Team ID (optional)"),
+    days: int = Query(7, ge=1, le=365, description="Number of days"),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Get daily performance trend."""
+    tracker = get_performance_tracker()
+    trend = await tracker.get_performance_trend(team_id=team_id, days=days)
+    return trend
+
+
+@router.get("/performance/ranking")
+async def get_agent_ranking(
+    team_id: str | None = Query(None, description="Team ID (optional)"),
+    days: int = Query(7, ge=1, le=365, description="Number of days"),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Get agent/node performance ranking."""
+    tracker = get_performance_tracker()
+    ranking = await tracker.get_agent_ranking(team_id=team_id, days=days)
+    return ranking

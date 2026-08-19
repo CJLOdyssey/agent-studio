@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
-import { fetchCostSummary, fetchModelPricing, type CostSummary, type ModelPricing } from '../../../../api/client/cost';
+import {
+  fetchCostSummary,
+  fetchModelPricing,
+  fetchDailyTrend,
+  fetchCostAttribution,
+  type CostSummary,
+  type ModelPricing,
+  type DailyTrendItem,
+  type CostAttribution,
+} from '../../../../api/client/cost';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
 import { AgentMetrics } from './AgentMetrics';
 import { TokenUsage } from './TokenUsage';
@@ -11,6 +20,8 @@ interface CostDashboardProps {
 export function CostDashboard({ teamId }: CostDashboardProps) {
   const [summary, setSummary] = useState<CostSummary | null>(null);
   const [pricing, setPricing] = useState<ModelPricing[]>([]);
+  const [dailyTrend, setDailyTrend] = useState<DailyTrendItem[]>([]);
+  const [attribution, setAttribution] = useState<CostAttribution | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState(7);
@@ -20,12 +31,16 @@ export function CostDashboard({ teamId }: CostDashboardProps) {
       try {
         setLoading(true);
         setError(null);
-        const [summaryData, pricingData] = await Promise.all([
+        const [summaryData, pricingData, trendData, attributionData] = await Promise.all([
           fetchCostSummary(teamId, period),
           fetchModelPricing(),
+          fetchDailyTrend(teamId, period),
+          fetchCostAttribution(teamId, period),
         ]);
         setSummary(summaryData);
         setPricing(pricingData);
+        setDailyTrend(trendData);
+        setAttribution(attributionData);
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载失败');
       } finally {
@@ -119,11 +134,94 @@ export function CostDashboard({ teamId }: CostDashboardProps) {
         </div>
       </div>
 
+      {/* 成本趋势图 */}
+      <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <h3 className="mb-3 text-sm font-medium text-gray-700">成本趋势</h3>
+        <div className="space-y-2">
+          {dailyTrend.map((item, idx) => {
+            const maxCost = Math.max(...dailyTrend.map((t) => t.total_cost), 0.01);
+            const width = (item.total_cost / maxCost) * 100;
+            return (
+              <div key={idx}>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className="font-medium text-gray-900">{item.day}</span>
+                  <span className="text-gray-500">
+                    ${item.total_cost.toFixed(4)} · {item.total_tokens.toLocaleString()} tokens
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full rounded-full bg-blue-500 transition-all"
+                    style={{ width: `${width}%` }}
+                  />
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {item.calls} 次调用
+                </div>
+              </div>
+            );
+          })}
+          {dailyTrend.length === 0 && (
+            <p className="text-center text-sm text-gray-500">暂无数据</p>
+          )}
+        </div>
+      </div>
+
       {/* 详细分析 */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <TokenUsage teamId={teamId} />
         <AgentMetrics teamId={teamId} />
       </div>
+
+      {/* 成本归因 */}
+      {attribution && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h3 className="mb-3 text-sm font-medium text-gray-700">成本归因</h3>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div>
+              <h4 className="mb-2 text-xs font-medium text-gray-600">按团队</h4>
+              <div className="space-y-2">
+                {Object.entries(attribution.by_team).map(([team, data]) => (
+                  <div key={team} className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="font-medium text-gray-900">{team}</span>
+                      <span className="text-gray-500">${data.cost_usd.toFixed(4)}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {data.tokens.toLocaleString()} tokens · {data.calls} 次调用
+                    </div>
+                  </div>
+                ))}
+                {Object.keys(attribution.by_team).length === 0 && (
+                  <p className="text-xs text-gray-500">暂无数据</p>
+                )}
+              </div>
+            </div>
+            <div>
+              <h4 className="mb-2 text-xs font-medium text-gray-600">按 Agent</h4>
+              <div className="space-y-2">
+                {Object.entries(attribution.by_node)
+                  .sort((a, b) => b[1].cost_usd - a[1].cost_usd)
+                  .slice(0, 10)
+                  .map(([node, data]) => (
+                    <div key={node} className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span className="font-medium text-gray-900">{node}</span>
+                        <span className="text-gray-500">${data.cost_usd.toFixed(4)}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {data.tokens.toLocaleString()} tokens · {data.calls} 次调用
+                      </div>
+                    </div>
+                  ))}
+                {Object.keys(attribution.by_node).length === 0 && (
+                  <p className="text-xs text-gray-500">暂无数据</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 模型定价参考 */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">

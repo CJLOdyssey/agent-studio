@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw, DollarSign } from 'lucide-react';
+import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw, DollarSign, Activity } from 'lucide-react';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import {
@@ -15,6 +15,7 @@ import MonitorStats from './MonitorStats';
 import MonitorActivity from './MonitorActivity';
 import MonitorHealth, { type HealthItem } from './MonitorHealth';
 import { CostDashboard } from './CostDashboard';
+import { PerformanceAnalysis } from './PerformanceAnalysis';
 
 interface ViewActivity {
   id: string;
@@ -102,7 +103,7 @@ function MonitorCenter({ onNavigate }: Props) {
   const [healthItems, setHealthItems] = useState<HealthItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cost'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance'>('overview');
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -188,6 +189,17 @@ function MonitorCenter({ onNavigate }: Props) {
                 <DollarSign size={16} />
                 成本分析
               </button>
+              <button
+                onClick={() => setActiveTab('performance')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'performance'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Activity size={16} />
+                性能分析
+              </button>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-sm text-[var(--color-text-muted)]">
@@ -224,6 +236,11 @@ function MonitorCenter({ onNavigate }: Props) {
           {/* 成本分析标签页 */}
           {activeTab === 'cost' && (
             <CostDashboard />
+          )}
+
+          {/* 性能分析标签页 */}
+          {activeTab === 'performance' && (
+            <PerformanceAnalysis />
           )}
         </div>
       </div>
