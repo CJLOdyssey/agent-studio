@@ -108,6 +108,24 @@ services:
         condition: service_healthy
     mem_limit: 2g
     mem_reservation: 1g
+
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        - PIP_INDEX_URL
+        - PIP_TRUSTED_HOST
+    image: agent-studio/backend:latest
+    container_name: agent-studio-beat
+    restart: unless-stopped
+    command: celery -A broker beat --loglevel=${LOG_LEVEL:-info}
+    environment:
+      <<: *common-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    mem_limit: 512m
     volumes:
       - checkpoint_data:/app/data
 

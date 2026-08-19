@@ -40,6 +40,18 @@ celery_app.conf.update(
     task_time_limit=900,
 )
 
+# Periodic alert evaluation tick (monitoring center).
+# The evaluator itself is idempotent per rule (cooldown/silence/status guard),
+# so a missed or duplicated beat tick is safe.
+from celery.schedules import schedule as celery_schedule  # type: ignore[import-untyped]  # noqa: E402
+
+celery_app.conf.beat_schedule = {
+    "monitoring-tick": {
+        "task": "monitoring.tick",
+        "schedule": celery_schedule(float(os.environ.get("MONITOR_EVAL_INTERVAL_SECONDS", "60"))),
+    },
+}
+
 celery_app.autodiscover_tasks(["tasks"])
 
 # ---------------------------------------------------------------------------

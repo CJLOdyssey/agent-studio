@@ -19,7 +19,7 @@ class CamelModel(BaseModel):
 
 class AlertRuleCreate(CamelModel):
     name: str = Field(min_length=1, max_length=128)
-    metric_type: MetricType
+    metric_type: str
     operator: Operator
     threshold: float
     window_seconds: int = Field(default=3600, ge=60)
@@ -31,7 +31,7 @@ class AlertRuleCreate(CamelModel):
 
 class AlertRuleUpdate(CamelModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
-    metric_type: MetricType | None = None
+    metric_type: str | None = None
     operator: Operator | None = None
     threshold: float | None = None
     window_seconds: int | None = Field(default=None, ge=60)

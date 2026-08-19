@@ -236,14 +236,6 @@ async def startup(app: FastAPI) -> None:
 
     app.state.retention_task = asyncio.create_task(_periodic_retention())
 
-    # Periodic alert evaluation (monitoring center)
-    try:
-        from monitoring.scheduler import start_alert_evaluator
-
-        start_alert_evaluator(app)
-    except Exception:
-        logger.exception("[LIFECYCLE] alert evaluator failed to start — continuing")
-
     # Database + Redis
     try:
         await _init_database()
@@ -265,7 +257,7 @@ async def startup(app: FastAPI) -> None:
 
 async def shutdown(app: FastAPI) -> None:
     """Run on application shutdown — cancel GC + retention, stop marker."""
-    for attr in ("gc_task", "retention_task", "alert_eval_task"):
+    for attr in ("gc_task", "retention_task"):
         task = getattr(app.state, attr, None)
         if isinstance(task, asyncio.Task):
             task.cancel()

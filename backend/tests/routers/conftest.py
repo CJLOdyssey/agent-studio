@@ -1,25 +1,36 @@
 """Shared fixtures for router tests."""
+
 import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 from starlette.testclient import TestClient
 
-os.environ.update({
-    "AUTH_MODE": "legacy",
-    "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
-    "REDIS_URL": "redis://localhost:6379/0",
-    "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",
-    "AUTH_ENABLED": "0",
-    "RATE_LIMIT": "9999",
-    "CHECKPOINTER_BACKEND": "memory",
-})
+os.environ.update(
+    {
+        "AUTH_MODE": "legacy",
+        "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
+        "REDIS_URL": "redis://localhost:6379/0",
+        "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",
+        "AUTH_ENABLED": "0",
+        "RATE_LIMIT": "9999",
+        "CHECKPOINTER_BACKEND": "memory",
+    }
+)
 
 import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
-    _sqlite_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    # Single shared in-memory connection: TestClient runs in its own event
+    # loop while test helpers use asyncio.run() — a fresh aiosqlite ":memory:"
+    # connection per loop would silently split into separate databases.
+    _sqlite_engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
+    )
     db_mod._async_engine = _sqlite_engine
 if db_mod._async_session_factory is None:
     db_mod._async_session_factory = async_sessionmaker(
@@ -65,16 +76,16 @@ def client():
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         from core.seed import seed_default_roles_and_admin
+
         await seed_default_roles_and_admin()
         import bcrypt
         from sqlalchemy import select
 
         from core.infra.database import UserDB, get_session_factory
+
         factory = get_session_factory()
         async with factory() as session:
-            existing = await session.execute(
-                select(UserDB).where(UserDB.email == "admin@test.com")
-            )
+            existing = await session.execute(select(UserDB).where(UserDB.email == "admin@test.com"))
             if not existing.scalar_one_or_none():
                 user = UserDB(
                     id="admin-login",
