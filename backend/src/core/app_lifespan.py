@@ -57,8 +57,11 @@ def _startup_report() -> list[str]:
     _add(lines, "auth: mode=%s | enabled=%s", _env("AUTH_MODE", "legacy"), _env("AUTH_ENABLED", "0"))
     _user_rate = _env("RATE_LIMIT_USER", "none")
     _add(
-        lines, "rate_limit: %s req/%ss | user=%s",
-        _env("RATE_LIMIT", "60"), _env("RATE_LIMIT_WINDOW", "60"), _user_rate,
+        lines,
+        "rate_limit: %s req/%ss | user=%s",
+        _env("RATE_LIMIT", "60"),
+        _env("RATE_LIMIT_WINDOW", "60"),
+        _user_rate,
     )
     _add(lines, "cors_origin: %s", _env("CORS_ORIGIN", "not set (dev defaults)"))
     _add(
@@ -214,6 +217,7 @@ async def startup(app: FastAPI) -> None:
 
     async def _periodic_retention() -> None:
         from observability.store import get_store
+
         while True:
             try:
                 await asyncio.sleep(3600)  # Run every hour
@@ -222,7 +226,8 @@ async def startup(app: FastAPI) -> None:
                 if deleted > 0:
                     logger.info(
                         "[RETENTION] cleaned up %d observability events older than %d days",
-                        deleted, _retention_days,
+                        deleted,
+                        _retention_days,
                     )
             except asyncio.CancelledError:
                 break
@@ -230,6 +235,14 @@ async def startup(app: FastAPI) -> None:
                 logger.exception("Observability retention cleanup failed, continuing...")
 
     app.state.retention_task = asyncio.create_task(_periodic_retention())
+
+    # Periodic alert evaluation (monitoring center)
+    try:
+        from monitoring.scheduler import start_alert_evaluator
+
+        start_alert_evaluator(app)
+    except Exception:
+        logger.exception("[LIFECYCLE] alert evaluator failed to start — continuing")
 
     # Database + Redis
     try:
@@ -252,9 +265,9 @@ async def startup(app: FastAPI) -> None:
 
 async def shutdown(app: FastAPI) -> None:
     """Run on application shutdown — cancel GC + retention, stop marker."""
-    for attr in ("gc_task", "retention_task"):
+    for attr in ("gc_task", "retention_task", "alert_eval_task"):
         task = getattr(app.state, attr, None)
-        if task:
+        if isinstance(task, asyncio.Task):
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError, asyncio.TimeoutError):
                 await asyncio.wait_for(task, timeout=5)
