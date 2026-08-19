@@ -231,8 +231,9 @@ def get_global_memory_store() -> GlobalMemoryStore:
 
 
 # Database model (to be added to orm/)
-from core.infra.database import Base
 from sqlalchemy import JSON, Column, Float, Integer, String, Text
+
+from core.infra.database import Base
 
 
 class GlobalMemoryDB(Base):

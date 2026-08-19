@@ -17,19 +17,25 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 # core/infra/database.py reads DATABASE_URL (and other vars) at import time;
 # a polluted DATABASE_URL from the host shell (e.g. opencode's own
 # skill-tracker.db) would otherwise leak into every test worker.
-os.environ.update({
-    "AUTH_MODE": "legacy",
-    "AUTH_ENABLED": "0",
-    # auth 流程（register/login）无条件签发 token（_create_auth_response），
-    # 空 AUTH_SECRET 会让 PyJWT>=2.12 抛 InvalidKeyError。测试统一给足长密钥。
-    "AUTH_SECRET": "test-secret-0123456789abcdef0123456789",
-    "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
-    "REDIS_URL": "redis://localhost:6379/0",
-    "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",
-    "RATE_LIMIT": "9999",
-    "CHECKPOINTER_BACKEND": "memory",
-    "DATABASE_POOL_SIZE": "0",
-})
+os.environ.update(
+    {
+        "AUTH_MODE": "legacy",
+        "AUTH_ENABLED": "0",
+        # 登录墙必须显式关掉：backend/.env 的 AUTH_REQUIRE_LOGIN=1 会经
+        # core.infra.database 的 setdefault 泄漏进来，使 legacy 模式（anonymous
+        # 身份）在会话列表等业务接口上误判 401。测试环境必须自洽，不依赖外部 .env。
+        "AUTH_REQUIRE_LOGIN": "0",
+        # auth 流程（register/login）无条件签发 token（_create_auth_response），
+        # 空 AUTH_SECRET 会让 PyJWT>=2.12 抛 InvalidKeyError。测试统一给足长密钥。
+        "AUTH_SECRET": "test-secret-0123456789abcdef0123456789",
+        "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
+        "REDIS_URL": "redis://localhost:6379/0",
+        "KEY_VAULT_SECRET": "0123456789abcdef0123456789abcdef",
+        "RATE_LIMIT": "9999",
+        "CHECKPOINTER_BACKEND": "memory",
+        "DATABASE_POOL_SIZE": "0",
+    }
+)
 
 from core.infra.database import Base  # type: ignore[attr-defined]
 from core.infra.redis_sentinel import (
@@ -45,11 +51,11 @@ import importlib as _il
 
 import backend as _backend_mod
 
-_backend_src = _base / 'src'
+_backend_src = _base / "src"
 for _p in _backend_src.iterdir():
-    if _p.is_dir() and (_p / '__init__.py').exists() and not _p.name.startswith('_'):
+    if _p.is_dir() and (_p / "__init__.py").exists() and not _p.name.startswith("_"):
         _mod = _il.import_module(_p.name)
-        sys.modules[f'backend.{_p.name}'] = _mod
+        sys.modules[f"backend.{_p.name}"] = _mod
         setattr(_backend_mod, _p.name, _mod)
 
 # Register the requirement coverage plugin
@@ -65,9 +71,11 @@ from .requirement_coverage import (  # noqa: F401
 try:
     from conftest_flaky import flaky_test  # noqa: F401
 except (ImportError, SyntaxError):
+
     def flaky_test(**kwargs):  # type: ignore[no-redef]
         """No-op fallback when conftest_flaky is unavailable."""
         return lambda fn: fn
+
 
 BASE = os.environ.get("E2E_BASE_URL", "http://localhost:8082")
 
@@ -90,13 +98,16 @@ def _clear_rate_limits() -> None:
     try:
         out = subprocess.run(
             ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "KEYS", "ratelimit:*"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if out.stdout.strip():
             keys = out.stdout.strip().split("\n")
             subprocess.run(
                 ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "DEL"] + keys,
-                capture_output=True, timeout=5,
+                capture_output=True,
+                timeout=5,
             )
     except Exception:
         pass
@@ -176,14 +187,18 @@ def _read_redis(pattern: str) -> list[str]:
     try:
         out = subprocess.run(
             ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "KEYS", pattern],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if not out.stdout.strip():
             return []
         keys = out.stdout.strip().split("\n")
         vals = subprocess.run(
             ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "MGET"] + keys,
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return [v for v in vals.stdout.strip().split("\n") if v]
     except Exception:
@@ -195,13 +210,16 @@ def _delete_redis(pattern: str) -> None:
     try:
         out = subprocess.run(
             ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "KEYS", pattern],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if out.stdout.strip():
             subprocess.run(
                 ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "DEL"]
                 + out.stdout.strip().split("\n"),
-                capture_output=True, timeout=5,
+                capture_output=True,
+                timeout=5,
             )
     except Exception:
         pass
@@ -239,6 +257,7 @@ def api() -> Any:
 def event_loop() -> Any:
     """Session-scoped event loop for async fixtures."""
     import asyncio
+
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -276,6 +295,7 @@ async def test_client() -> Any:
         await conn.run_sync(Base.metadata.create_all)
 
     import core.infra.database as db_mod
+
     db_mod._async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # ── 3. Import the app (deps already patched) ────────────────────

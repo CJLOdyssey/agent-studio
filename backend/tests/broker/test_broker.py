@@ -43,9 +43,7 @@ def _restore_get_redis(monkeypatch: MonkeyPatch):
         return pool
 
     monkeypatch.setattr("broker.get_redis", real_get_redis)
-    monkeypatch.setattr(
-        "core.infra.redis_sentinel.create_redis", _real_create_redis
-    )
+    monkeypatch.setattr("core.infra.redis_sentinel.create_redis", _real_create_redis)
 
     yield
 
@@ -67,10 +65,9 @@ class TestBrokerRedis:
         assert REDIS_URL.startswith("redis://")
         assert "localhost" in REDIS_URL or "redis" in REDIS_URL
 
-    def test_broker_url_default(self):
-        from broker import BROKER_URL
-
-        assert BROKER_URL == "redis://localhost:6379/0"
+    def test_broker_url_default(self, monkeypatch):
+        b = _reload_broker(monkeypatch)
+        assert b.BROKER_URL == "redis://localhost:6379/0"
 
     def test_channel_format(self):
         from broker import _channel
@@ -133,9 +130,7 @@ class TestBrokerRedis:
         msg = {"type": "text", "content": "hello"}
         await publish_run_message("run-123", msg)
 
-        mock_redis.publish.assert_awaited_once_with(
-            "run:run-123", json.dumps(msg, ensure_ascii=False)
-        )
+        mock_redis.publish.assert_awaited_once_with("run:run-123", json.dumps(msg, ensure_ascii=False))
 
     @patch("broker.get_redis")
     @pytest.mark.asyncio
@@ -165,26 +160,45 @@ class TestBrokerRedis:
 """Extended tests for backend/broker.py — Redis connection, message formatting, buffer."""
 
 import asyncio
+import importlib
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 
-class TestBrokerFull:
-    def test_broker_url_default_value(self):
-        from broker import BROKER_URL
-        assert BROKER_URL == "redis://localhost:6379/0"
+def _reload_broker(monkeypatch, env: dict[str, str] | None = None) -> Any:
+    """Reload broker with a controlled environment.
 
-    def test_result_backend_default_value(self):
-        from broker import RESULT_BACKEND
-        assert RESULT_BACKEND == "redis://localhost:6379/0"
+    broker.py reads CELERY_BROKER_URL / CELERY_RESULT_BACKEND at import time,
+    and backend/.env can leak values (e.g. a custom Redis port) into tests.
+    Clearing the env before reload makes "default value" tests deterministic.
+    """
+    for key in ("CELERY_BROKER_URL", "CELERY_RESULT_BACKEND"):
+        monkeypatch.delenv(key, raising=False)
+    if env:
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+    return importlib.reload(importlib.import_module("broker"))
+
+
+class TestBrokerFull:
+    def test_broker_url_default_value(self, monkeypatch):
+        b = _reload_broker(monkeypatch)
+        assert b.BROKER_URL == "redis://localhost:6379/0"
+
+    def test_result_backend_default_value(self, monkeypatch):
+        b = _reload_broker(monkeypatch)
+        assert b.RESULT_BACKEND == "redis://localhost:6379/0"
 
     def test_channel_prefix(self):
         from broker import CHANNEL_PREFIX
+
         assert CHANNEL_PREFIX == "run:"
 
     def test_channel_format(self):
         from broker import _channel
+
         assert _channel("abc-123") == "run:abc-123"
         assert _channel("") == "run:"
 
@@ -444,6 +458,7 @@ class TestBrokerFull:
         mock_pubsub.subscribe.assert_awaited_once_with("run:run-buf-task")
 
         from broker import stop_buffer
+
         await stop_buffer("run-buf-task")
 
     @patch("broker.get_redis")
@@ -493,9 +508,7 @@ class TestBrokerFull:
         mock_pubsub.subscribe = AsyncMock()
         calls = []
         mock_pubsub.get_message = AsyncMock(
-            side_effect=self._blocking_get_message(
-                calls, [{"type": "message", "data": json.dumps(payload)}]
-            )
+            side_effect=self._blocking_get_message(calls, [{"type": "message", "data": json.dumps(payload)}])
         )
         mock_redis.pubsub.return_value = mock_pubsub
         mock_get_redis.return_value = mock_redis
@@ -521,9 +534,7 @@ async def test_publish_user_event_publishes_to_user_channel(monkeypatch: MonkeyP
     monkeypatch.setattr("broker.get_redis", lambda: mock_redis)
     event = {"type": "session.deleted", "session_id": "s1", "ts": 1}
     await publish_user_event("u1", event)
-    mock_redis.publish.assert_called_once_with(
-        _user_channel("u1"), json.dumps(event, ensure_ascii=False)
-    )
+    mock_redis.publish.assert_called_once_with(_user_channel("u1"), json.dumps(event, ensure_ascii=False))
 
 
 async def test_publish_user_event_fails_open(monkeypatch: MonkeyPatch) -> None:
@@ -568,5 +579,3 @@ async def test_subscribe_user_events_yields_parsed_messages(monkeypatch: MonkeyP
         received.append(ev)
         break
     assert received == [payload]
-
-

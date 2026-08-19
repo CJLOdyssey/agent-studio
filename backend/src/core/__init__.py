@@ -5,8 +5,9 @@ Public symbols are explicitly imported below so callers can use either:
     from core.xxx import XXX
 """
 
+from typing import Any
+
 from ._interfaces import StreamResponseHandler, ToolDescriptor, ToolExecutor
-from .audit import log_audit
 from .base import Base
 from .config import TeamConfig, load_config
 from .error_codes import ErrorCode, error_response
@@ -18,7 +19,26 @@ from .infra.key_vault import (
 from .infra.logging_config import get_logger
 from .infra.metrics import metrics_endpoint
 from .infra.request_logger import RequestLogMiddleware
-from .seed import seed_default_roles_and_admin
+
+# log_audit / seed_default_roles_and_admin are resolved lazily via __getattr__
+# (PEP 562): both modules transitively import `orm`, and an eager import here
+# would put `orm` on the import path of EVERY `import core.*` — creating a
+# cycle (orm → core.base → core → orm) that fails for callers who import orm
+# directly. The public `from core import log_audit` API is preserved.
+
+_LAZY_MODULES = {"log_audit": "audit", "seed_default_roles_and_admin": "seed"}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_MODULES:
+        import importlib
+
+        module = importlib.import_module(f".{_LAZY_MODULES[name]}", __name__)
+        attr = getattr(module, name)
+        globals()[name] = attr
+        return attr
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "Base",

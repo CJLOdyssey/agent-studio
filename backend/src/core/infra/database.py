@@ -48,6 +48,7 @@ DATABASE_URL = os.environ.get(
 _async_engine: AsyncEngine | None = None
 _async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
+
 def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
     @event.listens_for(engine.sync_engine, "before_cursor_execute")
     def _before_execute(
@@ -64,8 +65,10 @@ def _attach_slow_query_listeners(engine: AsyncEngine) -> None:
             stmt = statement[:300] if isinstance(statement, str) else str(statement)[:300]
             logger.warning(
                 "Slow query (%.2fs): %s",
-                elapsed, stmt,
+                elapsed,
+                stmt,
             )
+
 
 def get_async_engine() -> AsyncEngine:
     """Return or create the singleton async SQLAlchemy engine."""
@@ -86,12 +89,14 @@ def get_async_engine() -> AsyncEngine:
         _attach_slow_query_listeners(_async_engine)
     return _async_engine
 
+
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
     """Return or create the singleton async session factory."""
     global _async_session_factory
     if _async_session_factory is None:
         _async_session_factory = async_sessionmaker(get_async_engine(), expire_on_commit=False)
     return _async_session_factory
+
 
 def dispose_engine() -> None:
     """Dispose the singleton async engine's connection pool.
@@ -104,6 +109,7 @@ def dispose_engine() -> None:
     global _async_engine
     if _async_engine is not None:
         _async_engine.sync_engine.dispose()
+
 
 async def init_db() -> None:
     """Bootstrap database tables on first run.
@@ -145,9 +151,7 @@ async def init_db() -> None:
         """
             )
         )
-        await conn.execute(
-            text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);")
-        )
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sessions_agent_id ON sessions(agent_id);"))
         await conn.execute(
             text(
                 """
@@ -165,10 +169,11 @@ async def init_db() -> None:
         )
 
     from core.seed import seed_default_roles_and_admin  # noqa: F401
+
     await seed_default_roles_and_admin()
     from core.seed import seed_builtin_tools  # noqa: F401
-    await seed_builtin_tools()
 
+    await seed_builtin_tools()
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
@@ -177,44 +182,73 @@ async def get_session() -> AsyncIterator[AsyncSession]:
     async with factory() as session:
         yield session
 
+
 # ── Backward-compatible re-exports ─────────────────────────────────────
 # All ORM models moved to backend.orm package.
-# These imports keep `from core.infra.database import XxxDB` working.
-from orm import (  # noqa: F401
-    AgentConfigDB,
-    AttachmentDB,
-    AuditLogDB,
-    ChatMessage,
-    CommandLogDB,
-    KeyUsageLog,
-    MCPServerDB,
-    MemoryEntry,
-    ProjectRun,
-    PromptDB,
-    RefreshTokenDB,
-    RegisteredSkillDB,
-    RegisteredToolDB,
-    RoleDB,
-    SessionDB,
-    TeamAgentDB,
-    TeamDB,
-    UserApiKey,
-    UserDB,
-    UserPreferenceDB,
-    UserRoleDB,
-    VersionDB,
-    WorkflowConfigDB,
-    WorkflowEdgeDB,
-    WorkflowNodeDB,
+# `from core.infra.database import XxxDB` keeps working via lazy PEP 562
+# module __getattr__ instead of an eager import.
+#
+# Eager `from orm import ...` here created an import-time cycle:
+#   orm/__init__ → core/__init__ (from core.base) → core.audit → repository
+#   → core.infra.database → orm (partially initialized) → ImportError.
+# Lazy resolution breaks the cycle: the module body no longer touches orm,
+# and by the time a caller accesses a model attribute, orm is fully loaded.
+
+_ORM_MODEL_NAMES = frozenset(
+    {
+        "AgentConfigDB",
+        "AlertEventDB",
+        "AlertRuleDB",
+        "AttachmentDB",
+        "AuditLogDB",
+        "ChatMessage",
+        "CommandLogDB",
+        "KeyUsageLog",
+        "MCPServerDB",
+        "MemoryEntry",
+        "NotificationDB",
+        "NotificationSubscriptionDB",
+        "ProjectRun",
+        "PromptDB",
+        "RefreshTokenDB",
+        "RegisteredSkillDB",
+        "RegisteredToolDB",
+        "RoleDB",
+        "SessionDB",
+        "TeamAgentDB",
+        "TeamDB",
+        "UserApiKey",
+        "UserDB",
+        "UserPreferenceDB",
+        "UserRoleDB",
+        "VersionDB",
+        "WorkflowConfigDB",
+        "WorkflowEdgeDB",
+        "WorkflowNodeDB",
+    }
 )
 
+
+def __getattr__(name: str) -> Any:
+    """Lazily resolve backward-compatible ORM model re-exports (PEP 562)."""
+    if name in _ORM_MODEL_NAMES:
+        import orm
+
+        model = getattr(orm, name)
+        globals()[name] = model
+        return model
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(globals()) + sorted(_ORM_MODEL_NAMES)
+
+
 __all__ = [
-    "AgentConfigDB", "AttachmentDB", "AuditLogDB",
-    "ChatMessage", "CommandLogDB", "KeyUsageLog",
-    "MCPServerDB", "MemoryEntry", "ProjectRun",
-    "PromptDB", "RefreshTokenDB", "RegisteredSkillDB",
-    "RegisteredToolDB", "RoleDB", "SessionDB",
-    "TeamAgentDB", "TeamDB", "UserApiKey",
-    "UserDB", "UserPreferenceDB", "UserRoleDB", "VersionDB",
-    "WorkflowConfigDB", "WorkflowEdgeDB", "WorkflowNodeDB",
+    "DATABASE_URL",
+    "dispose_engine",
+    "get_async_engine",
+    "get_session",
+    "get_session_factory",
+    "init_db",
 ]

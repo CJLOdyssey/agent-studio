@@ -269,28 +269,30 @@ class NodeFactory:
                 except Exception as exc:
                     # Token tracking failure should not break the workflow
                     import logging
+
                     logging.getLogger(__name__).warning(f"Failed to record token usage: {exc}")
 
             # Quality validation - validate output before passing to downstream nodes
+            validation_meta: dict[str, Any] | None = None
             if self.quality_validator:
                 validation_result = self.quality_validator.validate(full_content)
                 if not validation_result.passed:
                     # Log validation failure but continue with degraded output
                     import logging
+
                     logging.getLogger(__name__).warning(
                         f"Node {node.role_identifier} output validation failed: "
                         f"{validation_result.message} (score: {validation_result.score:.2f})"
                     )
-                    # Add validation metadata to result
-                    if "metadata" not in result:
-                        result["metadata"] = {}
-                    result["metadata"]["validation"] = {
+                    validation_meta = {
                         "passed": False,
                         "message": validation_result.message,
                         "score": validation_result.score,
                     }
 
             result = strategy.process_output(state, node, full_content)
+            if validation_meta is not None:
+                result.setdefault("metadata", {})["validation"] = validation_meta
             result["messages"] = state.get("messages", []) + [AIMessage(content=full_content)]
             return result
 

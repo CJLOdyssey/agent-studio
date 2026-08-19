@@ -3,7 +3,7 @@
 import json
 import os
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import func, select
@@ -29,7 +29,7 @@ def _load_model_pricing() -> dict[str, dict[str, float]]:
     raw = os.environ.get("MODEL_PRICING_JSON", "")
     if raw:
         try:
-            return json.loads(raw)
+            return cast("dict[str, dict[str, float]]", json.loads(raw))
         except json.JSONDecodeError:
             logger.warning("MODEL_PRICING_JSON is invalid JSON, using defaults")
     return _DEFAULT_MODEL_PRICING

@@ -31,9 +31,10 @@ class PerformanceTracker:
             if team_id:
                 # Join with sessions to filter by team
                 from orm.session import SessionDB
-                run_stmt = run_stmt.join(
-                    SessionDB, ProjectRun.session_id == SessionDB.id
-                ).where(SessionDB.team_id == team_id)
+
+                run_stmt = run_stmt.join(SessionDB, ProjectRun.session_id == SessionDB.id).where(
+                    SessionDB.team_id == team_id
+                )
 
             result = await session.execute(run_stmt)
             runs = result.scalars().all()
@@ -78,8 +79,8 @@ class PerformanceTracker:
             token_result = await session.execute(token_stmt)
             token_row = token_result.first()
 
-            total_tokens = token_row.total_tokens or 0
-            total_calls = token_row.total_calls or 0
+            total_tokens = int(token_row.total_tokens or 0) if token_row else 0
+            total_calls = int(token_row.total_calls or 0) if token_row else 0
             avg_tokens = round(total_tokens / total_calls) if total_calls > 0 else 0
 
             return {
@@ -107,8 +108,7 @@ class PerformanceTracker:
                 select(
                     func.date(ProjectRun.created_at).label("day"),
                     func.avg(
-                        func.extract("epoch", ProjectRun.updated_at)
-                        - func.extract("epoch", ProjectRun.created_at)
+                        func.extract("epoch", ProjectRun.updated_at) - func.extract("epoch", ProjectRun.created_at)
                     ).label("avg_duration_s"),
                     func.count(ProjectRun.id).label("total_runs"),
                     func.sum(
@@ -125,9 +125,10 @@ class PerformanceTracker:
 
             if team_id:
                 from orm.session import SessionDB
-                run_stmt = run_stmt.join(
-                    SessionDB, ProjectRun.session_id == SessionDB.id
-                ).where(SessionDB.team_id == team_id)
+
+                run_stmt = run_stmt.join(SessionDB, ProjectRun.session_id == SessionDB.id).where(
+                    SessionDB.team_id == team_id
+                )
 
             result = await session.execute(run_stmt)
             rows = result.all()
@@ -137,12 +138,14 @@ class PerformanceTracker:
                 avg_dur = float(r.avg_duration_s or 0)
                 total = r.total_runs or 0
                 success = r.success_count or 0
-                trend.append({
-                    "time_bucket": str(r.day),
-                    "avg_response_time_s": round(avg_dur, 1),
-                    "calls": total,
-                    "success_rate": round(success / total * 100, 1) if total > 0 else 0,
-                })
+                trend.append(
+                    {
+                        "time_bucket": str(r.day),
+                        "avg_response_time_s": round(avg_dur, 1),
+                        "calls": total,
+                        "success_rate": round(success / total * 100, 1) if total > 0 else 0,
+                    }
+                )
 
             # Daily token trend
             token_stmt = (
@@ -161,7 +164,7 @@ class PerformanceTracker:
             token_rows = {str(r.day): r.avg_tokens for r in token_result.all()}
 
             for item in trend:
-                item["avg_tokens"] = round(token_rows.get(item["time_bucket"], 0))
+                item["avg_tokens"] = round(token_rows.get(str(item["time_bucket"]), 0))
 
             return {"trend": trend}
 
@@ -196,14 +199,16 @@ class PerformanceTracker:
             for i, r in enumerate(rows, 1):
                 calls = r.calls or 0
                 tokens = r.total_tokens or 0
-                ranking.append({
-                    "rank": i,
-                    "node_id": r.node_id,
-                    "calls": calls,
-                    "total_tokens": tokens,
-                    "total_cost_usd": float(r.total_cost or 0),
-                    "avg_tokens": round(tokens / calls) if calls > 0 else 0,
-                })
+                ranking.append(
+                    {
+                        "rank": i,
+                        "node_id": r.node_id,
+                        "calls": calls,
+                        "total_tokens": tokens,
+                        "total_cost_usd": float(r.total_cost or 0),
+                        "avg_tokens": round(tokens / calls) if calls > 0 else 0,
+                    }
+                )
 
             return {"ranking": ranking}
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import time
 from typing import Any
 
-from sqlalchemy import func, text
+from sqlalchemy import text
 
 from core.infra.database import get_session_factory
 
