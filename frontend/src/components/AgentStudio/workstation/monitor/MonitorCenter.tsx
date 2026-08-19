@@ -22,7 +22,6 @@ import { AlertSubscriptions } from './AlertSubscriptions';
 import { RunTraces } from './RunTraces';
 import { TraceDetail } from './TraceDetail';
 import { SloBudget } from './SloBudget';
-import { useTeamData } from '../../../../hooks/useTeamData';
 
 interface ViewActivity {
   id: string;
@@ -134,12 +133,10 @@ interface Props {
 }
 
 function MonitorCenter({ onNavigate }: Props) {
-  const { teams } = useTeamData();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<ViewActivity[]>([]);
   const [healthItems, setHealthItems] = useState<HealthItem[]>([]);
   const [health, setHealth] = useState<SystemHealth | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'cost' | 'performance' | 'traces' | 'alerts' | 'slo'>('overview');
@@ -271,16 +268,6 @@ function MonitorCenter({ onNavigate }: Props) {
               </button>
             </div>
             <div className="flex items-center gap-4">
-              {teams.length > 0 && (
-                <select
-                  value={selectedTeam}
-                  onChange={(e) => setSelectedTeam(e.target.value)}
-                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-overlay)] px-2 py-1.5 text-xs text-[var(--color-text-secondary)]"
-                >
-                  <option value="">全部团队</option>
-                  {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-                </select>
-              )}
               <div className="text-sm text-[var(--color-text-muted)]">
                 {lastUpdated ? `上次更新: ${lastUpdated}` : ''}
               </div>
@@ -314,12 +301,12 @@ function MonitorCenter({ onNavigate }: Props) {
 
           {/* 成本分析标签页 */}
           {activeTab === 'cost' && (
-            <CostDashboard teamId={selectedTeam || undefined} />
+            <CostDashboard />
           )}
 
           {/* 性能分析标签页 */}
           {activeTab === 'performance' && (
-            <PerformanceAnalysis teamId={selectedTeam || undefined} />
+            <PerformanceAnalysis />
           )}
 
           {/* 运行轨迹标签页 */}
