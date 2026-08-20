@@ -63,12 +63,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
             token = request.cookies.get("access_token", "")
 
         client_ip = request.client.host if request.client else "?"
+        user_agent = request.headers.get("user-agent", "")[:255]
+        request_id = str(getattr(request.state, "request_id", "") or "")
 
         # Audit identity for this request — filled in as soon as the user is
         # known so log_audit call sites don't thread request context.
         from core.audit import set_audit_context
 
-        set_audit_context(client_ip=client_ip)
+        set_audit_context(
+            client_ip=client_ip, user_agent=user_agent, request_id=request_id
+        )
 
         # ── Guest mode: no token → pass through as unauthenticated ────
         # AUTH_REQUIRE_LOGIN=1 turns the guest namespace into a login wall:
@@ -143,6 +147,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         set_audit_context(
             user_name=user.username if user is not None else "",
             client_ip=client_ip,
+            user_agent=request.headers.get("user-agent", "")[:255],
+            request_id=str(getattr(request.state, "request_id", "") or ""),
         )
 
         return cast(Response, await call_next(request))

@@ -11,15 +11,20 @@ export interface DashboardStats {
   updated_at: string;
 }
 
-interface LogEntry {
+export interface LogEntry {
   id: string;
   timestamp: string;
   action: string;
   entity_type: string;
   entity_name: string;
   detail: string;
+  level: 'info' | 'warn' | 'error';
+  before: string;
+  after: string;
   user: string;
   ip: string;
+  user_agent: string;
+  request_id: string;
 }
 
 export interface CommandLogsResponse {
@@ -29,13 +34,24 @@ export interface CommandLogsResponse {
   limit: number;
 }
 
+export interface CommandLogsQuery {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  action?: string;
+  entity_type?: string;
+  level?: string;
+  start?: string;
+  end?: string;
+}
+
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   const resp = await client.get('/admin/stats');
   return resp.data;
 }
 
-export async function fetchCommandLogs(limit = 50, offset = 0): Promise<CommandLogsResponse> {
-  const resp = await client.get('/admin/logs', { params: { limit, offset } });
+export async function fetchCommandLogs(params: CommandLogsQuery = {}): Promise<CommandLogsResponse> {
+  const resp = await client.get('/admin/logs', { params });
   return resp.data;
 }
 

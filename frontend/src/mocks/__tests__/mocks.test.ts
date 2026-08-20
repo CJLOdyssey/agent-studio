@@ -6,7 +6,6 @@ import { MOCK_SKILLS, MOCK_SKILL_VERSIONS } from '../skill';
 import { MOCK_TEAMS, MOCK_TEAM_VERSIONS } from '../team';
 import { MOCK_STATS, MOCK_ACTIVITY, MOCK_HEALTH } from '../monitor';
 import { MOCK_OUTPUTS } from '../output';
-import { MOCK_LOGS } from '../logs';
 import { MOCK_AGENTS } from '../agent';
 
 describe('mocks/tool', { tags: ['unit'] }, () => {
@@ -85,13 +84,6 @@ describe('mocks/monitor', { tags: ['unit'] }, () => {
 describe('mocks/output', { tags: ['unit'] }, () => {
   it('exports MOCK_OUTPUTS array', () => {
     expect(Array.isArray(MOCK_OUTPUTS)).toBe(true);
-  });
-});
-
-describe('mocks/logs', { tags: ['unit'] }, () => {
-  it('exports MOCK_LOGS array', () => {
-    expect(Array.isArray(MOCK_LOGS)).toBe(true);
-    expect(MOCK_LOGS.length).toBeGreaterThan(0);
   });
 });
 

@@ -46,26 +46,28 @@ describe('fetchDashboardStats', { tags: ['unit'] }, () => {
 describe('fetchCommandLogs', { tags: ['unit'] }, () => {
   it('calls GET /admin/logs with default params and returns paginated response', async () => {
     const mockResponse = {
-      items: [{ id: '1', timestamp: '2024-01-01', command: 'test', payload: '{}', result: 'ok' }],
+      items: [{ id: '1', timestamp: '2024-01-01', action: 'test', entity_type: 'agent', entity_name: 'a', detail: 'ok', level: 'info', before: '', after: '', user: 'admin', ip: '1.1.1.1', user_agent: '', request_id: '' }],
       total: 1,
       offset: 0,
       limit: 50,
     };
     mockClient.get.mockResolvedValue({ data: mockResponse });
 
-    const result = await fetchCommandLogs();
+    const result = await fetchCommandLogs({ limit: 50, offset: 0 });
 
     expect(mockClient.get).toHaveBeenCalledWith('/admin/logs', { params: { limit: 50, offset: 0 } });
     expect(result).toEqual(mockResponse);
     expect(Array.isArray(result.items)).toBe(true);
   });
 
-  it('passes custom limit and offset', async () => {
+  it('passes custom limit, offset, search, level and entity_type', async () => {
     mockClient.get.mockResolvedValue({ data: { items: [], total: 0, offset: 20, limit: 10 } });
 
-    await fetchCommandLogs(10, 20);
+    await fetchCommandLogs({ limit: 10, offset: 20, search: 'foo', level: 'error', entity_type: 'agent' });
 
-    expect(mockClient.get).toHaveBeenCalledWith('/admin/logs', { params: { limit: 10, offset: 20 } });
+    expect(mockClient.get).toHaveBeenCalledWith('/admin/logs', {
+      params: { limit: 10, offset: 20, search: 'foo', level: 'error', entity_type: 'agent' },
+    });
   });
 });
 

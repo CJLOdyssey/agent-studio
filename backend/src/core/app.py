@@ -195,6 +195,35 @@ def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     )
 
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Handle HTTP exceptions — persist 403 (insufficient-role) attempts to the audit trail.
+
+    Failed authorization is a security-relevant event: recording it at
+    ``level=error`` makes brute-force / privilege-escalation probing visible in
+    the tamper-evident audit log. Other statuses pass through unchanged.
+    """
+    if exc.status_code == 403:
+        try:
+            from core.audit import log_audit
+
+            await log_audit(
+                action="access_denied",
+                entity_type="system",
+                entity_name=request.url.path,
+                detail=f"403 越权访问被拒绝: {request.method} {request.url.path}",
+                level="error",
+            )
+        except Exception:  # noqa: BLE001 — audit write must never break the response
+            logger.exception("Failed to write 403 audit entry for %s", request.url.path)
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=getattr(exc, "headers", None),
+    )
+
+
 # ── Health / Metrics / Version ─────────────────────────────────────────────
 
 

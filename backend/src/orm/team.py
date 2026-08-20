@@ -30,7 +30,14 @@ class CommandLogDB(Base):
     )
 
 class AuditLogDB(Base):
-    """Admin audit log — records management CRUD operations (no session FK)."""
+    """Admin audit log — records management CRUD operations (no session FK).
+
+    ``before_snapshot``/``after_snapshot`` hold JSON payloads (stringified) of
+    the pre/post state so the audit view can show exactly what changed.
+    ``hash``/``prev_hash`` form a tamper-evident chain: each entry's hash is
+    derived from the previous hash plus its own content, so altering any row
+    breaks the chain and is detectable by a verification scan.
+    """
 
     __tablename__ = "audit_logs"
 
@@ -39,8 +46,15 @@ class AuditLogDB(Base):
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
     entity_name: Mapped[str] = mapped_column(String(255), default="")
     detail: Mapped[str] = mapped_column(Text, default="")
+    level: Mapped[str] = mapped_column(String(8), nullable=False, default="info", comment="info|warn|error")
+    before_snapshot: Mapped[str | None] = mapped_column(Text, nullable=True, comment="pre-state JSON (stringified)")
+    after_snapshot: Mapped[str | None] = mapped_column(Text, nullable=True, comment="post-state JSON (stringified)")
     user_name: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     client_ip: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    user_agent: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    request_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    prev_hash: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    hash: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

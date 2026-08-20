@@ -50,6 +50,10 @@ celery_app.conf.beat_schedule = {
         "task": "monitoring.tick",
         "schedule": celery_schedule(float(os.environ.get("MONITOR_EVAL_INTERVAL_SECONDS", "60"))),
     },
+    "audit-cleanup": {
+        "task": "audit.cleanup",
+        "schedule": celery_schedule(float(os.environ.get("AUDIT_CLEANUP_INTERVAL_SECONDS", "86400"))),
+    },
 }
 
 celery_app.autodiscover_tasks(["tasks"])

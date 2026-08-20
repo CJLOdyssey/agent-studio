@@ -51,6 +51,7 @@ class TestAccountLockout:
         )
 
         # Simulate 5 failed attempts
+        count = 0
         for i in range(5):
             count = await increment_failed_logins("lockout5@example.com")
 
@@ -65,6 +66,72 @@ class TestAccountLockout:
         # locked_until is stored as UTC, so add UTC offset for comparison
         locked_until_utc = locked_user.locked_until.replace(tzinfo=UTC) if locked_user.locked_until.tzinfo is None else locked_user.locked_until
         assert locked_until_utc > datetime.now(UTC)
+
+    async def test_lockout_writes_error_audit_entry(self, db_engine):
+        """Crossing the lock threshold records an error-level audit entry."""
+        import uuid
+
+        email = f"lockout_audit_{uuid.uuid4().hex[:8]}@example.com"
+        await create_user(
+            email=email,
+            password_hash="hashed_password",
+            is_verified=True,
+        )
+
+        for _ in range(5):
+            await increment_failed_logins(email)
+
+        from sqlalchemy import select
+
+        from core.infra.database import get_session_factory
+        from orm import AuditLogDB
+
+        factory = get_session_factory()
+        async with factory() as session:
+            result = await session.execute(
+                select(AuditLogDB).where(
+                    AuditLogDB.action == "account_locked",
+                    AuditLogDB.entity_name == email,
+                )
+            )
+            entries = result.scalars().all()
+
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.level == "error"
+        assert entry.entity_type == "user"
+        assert entry.entity_name == email
+
+    async def test_below_threshold_no_audit_entry(self, db_engine):
+        """Failed attempts below the lock threshold do not write audit entries."""
+        import uuid
+
+        email = f"lockout_under_{uuid.uuid4().hex[:8]}@example.com"
+        await create_user(
+            email=email,
+            password_hash="hashed_password",
+            is_verified=True,
+        )
+
+        for _ in range(3):
+            await increment_failed_logins(email)
+
+        from sqlalchemy import select
+
+        from core.infra.database import get_session_factory
+        from orm import AuditLogDB
+
+        factory = get_session_factory()
+        async with factory() as session:
+            result = await session.execute(
+                select(AuditLogDB).where(
+                    AuditLogDB.action == "account_locked",
+                    AuditLogDB.entity_name == email,
+                )
+            )
+            entries = result.scalars().all()
+
+        assert len(entries) == 0
 
     async def test_lockout_duration_is_15_minutes(self, db_engine):
         """Locked account remains locked for 15 minutes."""
@@ -102,6 +169,7 @@ class TestAccountLockout:
 
         # Verify counter is 3
         user_before = await get_user_by_email("reset_test@example.com")
+        assert user_before is not None
         assert user_before.failed_login_attempts == 3
 
         # Simulate successful login (resets counter)
@@ -109,6 +177,7 @@ class TestAccountLockout:
 
         # Verify counter is reset
         user_after = await get_user_by_email("reset_test@example.com")
+        assert user_after is not None
         assert user_after.failed_login_attempts == 0
 
     async def test_reset_failed_logins_unlocks_account(self, db_engine):
@@ -125,6 +194,7 @@ class TestAccountLockout:
 
         # Verify account is locked
         locked_user = await get_user_by_email("unlock_test@example.com")
+        assert locked_user is not None
         assert locked_user.locked_until is not None
 
         # Unlock account
@@ -132,6 +202,7 @@ class TestAccountLockout:
 
         # Verify account is unlocked
         unlocked_user = await get_user_by_email("unlock_test@example.com")
+        assert unlocked_user is not None
         assert unlocked_user.locked_until is None
         assert unlocked_user.failed_login_attempts == 0
 
@@ -157,6 +228,7 @@ class TestAccountLockout:
             await increment_failed_logins("not_locked@example.com")
 
         user_not_locked = await get_user_by_email("not_locked@example.com")
+        assert user_not_locked is not None
         assert user_not_locked.failed_login_attempts == 4
         assert user_not_locked.locked_until is None
 

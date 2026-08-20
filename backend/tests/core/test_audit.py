@@ -6,9 +6,10 @@ import pytest
 
 
 class TestLogAudit:
+    @patch("repository.audit._last_hash", new_callable=AsyncMock, return_value="")
     @patch("repository.audit.get_session_factory")
     @pytest.mark.asyncio
-    async def test_log_audit_creates_entry(self, mock_get_factory):
+    async def test_log_audit_creates_entry(self, mock_get_factory, mock_last_hash):
         from core.audit import log_audit
 
         mock_factory = MagicMock()
@@ -29,9 +30,10 @@ class TestLogAudit:
         assert added.detail == "创建成功"
         mock_session.commit.assert_awaited_once()
 
+    @patch("repository.audit._last_hash", new_callable=AsyncMock, return_value="")
     @patch("repository.audit.get_session_factory")
     @pytest.mark.asyncio
-    async def test_log_audit_minimal_args(self, mock_get_factory):
+    async def test_log_audit_minimal_args(self, mock_get_factory, mock_last_hash):
         from core.audit import log_audit
 
         mock_factory = MagicMock()

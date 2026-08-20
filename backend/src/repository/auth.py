@@ -19,6 +19,9 @@ from core.infra.database import (
     UserRoleDB,
     get_session_factory,
 )
+from core.infra.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 async def get_user_by_email(email: str) -> UserDB | None:
@@ -111,6 +114,11 @@ async def update_password(user_id: str, new_hash: str) -> None:
 async def increment_failed_logins(email: str) -> int:
     """Increment failed login counter for an email; lock after 5 failures.
 
+    When the attempt count crosses the lock threshold (5) the account is
+    temporarily locked and a security-relevant ``level=error`` audit entry is
+    recorded (brute-force probing becomes visible in the tamper-evident audit
+    trail). Audit writes are best-effort — a failure never breaks login.
+
     Returns:
         The new failed-attempt count.
 
@@ -123,10 +131,26 @@ async def increment_failed_logins(email: str) -> int:
             return 0
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
         count = user.failed_login_attempts
+        locked_now = False
         if count >= 5:
             user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
+            locked_now = True
         await session.commit()
-        return count
+
+    if locked_now:
+        try:
+            from repository.audit import create_audit_entry
+
+            await create_audit_entry(
+                action="account_locked",
+                entity_type="user",
+                entity_name=email,
+                detail=f"连续 {count} 次登录失败，账户已临时锁定",
+                level="error",
+            )
+        except Exception:  # noqa: BLE001 — audit write must never break login
+            logger.warning("Failed to write account-lockout audit entry for %s", email, exc_info=True)
+    return count
 
 
 async def reset_failed_logins(email: str) -> None:

@@ -13,15 +13,28 @@ need to thread current_user/request through every router.
 """
 
 from contextvars import ContextVar
+from typing import Any
 
 from repository.audit import create_audit_entry
 
 _audit_ctx: ContextVar[dict[str, str] | None] = ContextVar("audit_ctx", default=None)
 
 
-def set_audit_context(user_name: str = "", client_ip: str = "") -> None:
+def set_audit_context(
+    user_name: str = "",
+    client_ip: str = "",
+    user_agent: str = "",
+    request_id: str = "",
+) -> None:
     """Set the current request's audit identity (called by auth middleware)."""
-    _audit_ctx.set({"user_name": user_name, "client_ip": client_ip})
+    _audit_ctx.set(
+        {
+            "user_name": user_name,
+            "client_ip": client_ip,
+            "user_agent": user_agent,
+            "request_id": request_id,
+        }
+    )
 
 
 async def log_audit(
@@ -31,6 +44,9 @@ async def log_audit(
     detail: str = "",
     user_name: str = "",
     client_ip: str = "",
+    level: str = "info",
+    before_snapshot: Any = None,
+    after_snapshot: Any = None,
 ) -> None:
     ctx = _audit_ctx.get() or {}
     await create_audit_entry(
@@ -40,4 +56,9 @@ async def log_audit(
         detail=detail,
         user_name=user_name or ctx.get("user_name", ""),
         client_ip=client_ip or ctx.get("client_ip", ""),
+        level=level,
+        before_snapshot=before_snapshot,
+        after_snapshot=after_snapshot,
+        user_agent=ctx.get("user_agent", ""),
+        request_id=ctx.get("request_id", ""),
     )
