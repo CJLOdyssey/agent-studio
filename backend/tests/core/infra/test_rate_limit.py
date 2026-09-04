@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from backend.core.infra.rate_limit import DEFAULT_RATE, DEFAULT_WINDOW, RateLimiter
+from core.infra.rate_limit import DEFAULT_RATE, DEFAULT_WINDOW, RateLimiter
 
 
 class TestInit:
@@ -24,7 +24,8 @@ class TestIsAllowed:
     async def test_first_request(self):
         mock = AsyncMock()
         mock.incr.return_value = 1
-        with patch("backend.broker.get_redis", return_value=mock):
+        mock.mget.return_value = [None, None, b"1"]
+        with patch("broker.get_redis", return_value=mock):
             assert await RateLimiter(10).is_allowed("1.2.3.4") is True
             mock.incr.assert_called_once()
 
@@ -32,25 +33,37 @@ class TestIsAllowed:
     async def test_within_limit(self):
         mock = AsyncMock()
         mock.incr.return_value = 5
-        with patch("backend.broker.get_redis", return_value=mock):
+        mock.mget.return_value = [None, None, b"5"]
+        with patch("broker.get_redis", return_value=mock):
             assert await RateLimiter(10).is_allowed("1.2.3.4") is True
 
     @pytest.mark.asyncio
     async def test_exceeds_limit(self):
         mock = AsyncMock()
         mock.incr.return_value = 11
-        with patch("backend.broker.get_redis", return_value=mock):
+        mock.mget.return_value = [None, None, b"11"]
+        with patch("broker.get_redis", return_value=mock):
+            assert await RateLimiter(10).is_allowed("1.2.3.4") is False
+
+    @pytest.mark.asyncio
+    async def test_sliding_window_sums_buckets(self):
+        mock = AsyncMock()
+        mock.incr.return_value = 6
+        # 当前 bucket 6 + 前一个 bucket 5 = 11 > 10 → 拒绝（边界突发被拦）
+        mock.mget.return_value = [None, b"5", b"6"]
+        with patch("broker.get_redis", return_value=mock):
             assert await RateLimiter(10).is_allowed("1.2.3.4") is False
 
     @pytest.mark.asyncio
     async def test_redis_failure_fails_open(self):
-        with patch("backend.broker.get_redis", side_effect=ConnectionError("down")):
+        with patch("broker.get_redis", side_effect=ConnectionError("down")):
             assert await RateLimiter(10).is_allowed("1.2.3.4") is True
 
     @pytest.mark.asyncio
     async def test_different_keys_independent(self):
         mock = AsyncMock()
         mock.incr.side_effect = [1, 1]
-        with patch("backend.broker.get_redis", return_value=mock):
+        mock.mget.return_value = [None, None, b"1"]
+        with patch("broker.get_redis", return_value=mock):
             assert await RateLimiter(1).is_allowed("a") is True
             assert await RateLimiter(1).is_allowed("b") is True

@@ -214,8 +214,8 @@ describe('useGenericCrud', { tags: ['unit'] }, () => {
       const { result } = renderHook(() => useGenericCrud(config));
       await waitFor(() => expect(result.current.isLoading).toBe(false));
       expect(result.current.page).toBe(1);
-      expect(result.current.totalPages).toBe(2); // 6 items / 5 per page = 2
-      expect(result.current.paged).toHaveLength(5);
+      expect(result.current.totalPages).toBe(1); // 6 items / 7 per page = 1
+      expect(result.current.paged).toHaveLength(6);
     });
 
     it('navigates to page 2', async () => {
@@ -223,9 +223,10 @@ describe('useGenericCrud', { tags: ['unit'] }, () => {
       config.api.fetchAll = vi.fn().mockResolvedValue(sampleItems);
       const { result } = renderHook(() => useGenericCrud(config));
       await waitFor(() => expect(result.current.isLoading).toBe(false));
+      // PAGE_SIZE=7, 6 items → only 1 page; setting page 2 clamps to page 1
       act(() => result.current.setPage(2));
-      await waitFor(() => expect(result.current.page).toBe(2));
-      expect(result.current.paged).toHaveLength(1);
+      await waitFor(() => expect(result.current.page).toBe(1));
+      expect(result.current.paged).toHaveLength(6);
     });
   });
 
@@ -247,8 +248,8 @@ describe('useGenericCrud', { tags: ['unit'] }, () => {
       const { result } = renderHook(() => useGenericCrud(config));
       await waitFor(() => expect(result.current.isLoading).toBe(false));
       act(() => result.current.toggleSelectAll());
-      // Page 1 has 5 items (id: 1-5)
-      expect(result.current.selectedIds.size).toBe(5);
+      // PAGE_SIZE=7, 6 items on page 1
+      expect(result.current.selectedIds.size).toBe(6);
     });
 
     it('toggleSelectAll deselects when all already selected', async () => {

@@ -1,30 +1,42 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, EyeOff, Save, Loader2, RefreshCw, Tag } from 'lucide-react';
-
+import { X, Tag, Loader2, Save, AlertCircle } from 'lucide-react';
 import { fetchModelsFromProvider } from '../../../api/client/keys';
+import { listModels } from '../../../api/client/commands';
 import { listProviders } from '../../../api/client/providers';
 import type { ProvidersMap } from '../../../api/client/providers';
+import { categoriesOf } from '../../../utils/providerCategories';
+import ProviderSelector from './ProviderSelector';
+import CredentialsSection from './CredentialsSection';
+import ModelSection from './ModelSection';
+import Modal from '@/components/shared/Modal';
 
 export interface ApiProviderForm {
   id: string;
   provider: string;
-  usage_type: string;
+  capabilities: string[];
   name: string;
   baseUrl: string;
   apiKey: string;
   models: string[];
+  model_types?: Record<string, string> | null;
   isActive: boolean;
   status?: 'connected' | 'error' | 'untested';
 }
 
-/** Fallback used when /api/providers is unreachable. */
 const FALLBACK_PROVIDERS: ProvidersMap = {
-  openai:    { name: 'OpenAI',       base_url: 'https://api.openai.com/v1',                          capabilities: ['llm', 'embedding'], docs_url: null },
-  deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['llm'],              docs_url: null },
-  anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['llm'],              docs_url: null },
-  dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['llm', 'embedding'], docs_url: null },
-  custom:    { name: '自定义',       base_url: '',                                                    capabilities: ['llm', 'embedding'], docs_url: null },
+  openai:    { name: 'OpenAI',       base_url: 'https://api.openai.com/v1',                          capabilities: ['chat', 'vector'], docs_url: null },
+  deepseek:  { name: 'DeepSeek',     base_url: 'https://api.deepseek.com',                           capabilities: ['chat'],            docs_url: null },
+  anthropic: { name: 'Anthropic',    base_url: 'https://api.anthropic.com',                          capabilities: ['chat'],            docs_url: null },
+  dashscope: { name: 'DashScope',    base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',  capabilities: ['chat', 'vector'], docs_url: null },
+  custom_llm: { name: '自定义大模型', base_url: '', capabilities: ['chat'],            docs_url: null },
+  custom_embedding: { name: '自定义嵌入', base_url: '', capabilities: ['vector'],         docs_url: null },
+  custom_rerank: { name: '自定义重排序', base_url: '', capabilities: ['rerank'],          docs_url: null },
+  custom_speech2text: { name: '自定义语音转文字', base_url: '', capabilities: ['speech2text'], docs_url: null },
+  custom_tts: { name: '自定义文字转语音', base_url: '', capabilities: ['tts'],            docs_url: null },
+  custom_moderation: { name: '自定义内容审核', base_url: '', capabilities: ['moderation'], docs_url: null },
+  custom_image: { name: '自定义图像', base_url: '', capabilities: ['image'],             docs_url: null },
+  custom_tool: { name: '自定义工具', base_url: '', capabilities: ['tool'],               docs_url: null },
 };
 
 interface Props {
@@ -32,25 +44,29 @@ interface Props {
   onSave: (provider: ApiProviderForm) => void;
   onClose: () => void;
   saving?: boolean;
+  error?: string | null;
+  onCloseError?: () => void;
+  /** 新建模式必须填写 API Key；编辑模式（明文不暴露）允许留空 */
+  requireApiKey?: boolean;
 }
 
-const CAP_LABEL: Record<string, string> = { llm: 'LLM', embedding: 'Embed' };
-
-export default function ProviderEditModal({ provider, onSave, onClose, saving = false }: Props) {
+export default function ProviderEditModal({ provider, onSave, onClose, saving = false, error, onCloseError, requireApiKey = false }: Props) {
   const { t } = useTranslation();
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const [providers, setProviders] = useState<ProvidersMap>(FALLBACK_PROVIDERS);
   const [loadingProviders, setLoadingProviders] = useState(true);
-
-  const [providerType, setProviderType] = useState(provider.provider || 'custom');
-  const [usageType, setUsageType] = useState(provider.usage_type || 'llm');
+  const [providerType, setProviderType] = useState(provider.provider || 'openai');
   const [name, setName] = useState(provider.name);
   const [baseUrl, setBaseUrl] = useState(provider.baseUrl);
   const [apiKey, setApiKey] = useState(provider.apiKey);
   const [models, setModels] = useState<string[]>(provider.models);
+  const [modelTypes, setModelTypes] = useState<Record<string, string>>(
+    provider.model_types ?? {},
+  );
   const [showKey, setShowKey] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [typeDefaults, setTypeDefaults] = useState<Record<string, string>>({});
 
   useEffect(() => {
     listProviders()
@@ -60,173 +76,149 @@ export default function ProviderEditModal({ provider, onSave, onClose, saving = 
   }, []);
 
   useEffect(() => {
-    const info = providers[providerType];
-    if (!info || !info.base_url) return;
-    const knownDefaults = Object.values(providers).map((p) => p.base_url).filter(Boolean);
-    const nextBaseUrl = (!baseUrl || knownDefaults.includes(baseUrl)) ? info.base_url : baseUrl;
-    let nextUsage = usageType;
-    if (usageType === 'both' && !info.capabilities.includes('embedding')) nextUsage = 'llm';
-    if (usageType === 'embedding' && !info.capabilities.includes('embedding')) nextUsage = 'llm';
-    const patch: Record<string, string> = {};
-    if (nextBaseUrl !== baseUrl) patch.baseUrl = nextBaseUrl;
-    if (nextUsage !== usageType) patch.usageType = nextUsage;
-    if (Object.keys(patch).length) requestAnimationFrame(() => {
-      if (patch.baseUrl) setBaseUrl(patch.baseUrl);
-      if (patch.usageType) setUsageType(patch.usageType as 'llm' | 'embedding' | 'both');
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providerType]);
+    listModels()
+      .then((infos) => setTypeDefaults(Object.fromEntries(infos.map((i) => [i.id, i.type]))))
+      .catch(() => {});
+  }, []);
 
-  const caps = providers[providerType]?.capabilities ?? ['llm'];
-  const multipleCaps = caps.length > 1;
-  const showModels = usageType === 'llm' || usageType === 'both';
+  const info = providers[providerType];
+  const caps = info?.capabilities ?? [];
+  const isToolProvider = caps.includes('tool');
+  const showModels = !isToolProvider && (caps.includes('chat') || caps.includes('image'));
+
+  const canSave = !saving && (!requireApiKey || !!apiKey.trim());
 
   const handleSave = () => {
+    const preserveStored = Boolean(provider.id) && providerType === provider.provider;
     onSave({
-      ...provider, provider: providerType, usage_type: usageType,
-      name, baseUrl, apiKey, models,
+      ...provider, provider: providerType,
+      capabilities: preserveStored
+        ? (provider.capabilities ?? categoriesOf(info ?? {}))
+        : categoriesOf(info ?? {}),
+      name: name.trim() || info?.name || providerType, baseUrl, apiKey, models,
+      model_types: modelTypes,
     });
   };
 
   const handleFetchModels = async () => {
     if (!apiKey.trim()) return;
     setFetchingModels(true);
+    setFetchError(null);
     try {
       const result = await fetchModelsFromProvider({
         api_key: apiKey, base_url: baseUrl || undefined, provider: providerType,
       });
-      if (result.success && result.models.length > 0) setModels(result.models);
-      else setModels([]);
-    } catch { setModels([]); }
-    finally { setFetchingModels(false); }
+      if (result.success) {
+        if (result.models.length > 0) {
+          setModels((prev) => {
+            const merged = new Set([...prev, ...result.models]);
+            return Array.from(merged);
+          });
+        }
+        setModelTypes(result.types ?? {});
+      } else {
+        setFetchError(result.message ?? 'Fetch failed');
+      }
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Fetch failed');
+    } finally {
+      setFetchingModels(false);
+    }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content api-edit-modal provider-edit-modal" onClick={(e) => e.stopPropagation()} ref={contentRef} role="dialog" aria-modal="true">
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div className="provider-edit-avatar">
-              {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
-            </div>
-            <div>
-              <h3 style={{ margin: 0 }}>{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
-              <p style={{ margin: '2px 0 0', fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)' }}>
-                {providers[providerType]?.base_url || ''}
-              </p>
-            </div>
+    <Modal
+      title={
+        <div className="flex items-center gap-3">
+          <div className="w-[38px] h-[38px] rounded-[10px] bg-[color-mix(in_srgb,var(--color-surface),var(--color-text-primary)_8%)] flex items-center justify-center text-[var(--color-accent)] shrink-0">
+            {loadingProviders ? <Loader2 size={16} className="animate-spin" /> : <Tag size={18} />}
           </div>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <div>
+            <h3 className="m-0">{provider.id ? t('providerEdit.edit') : t('providerEdit.add')}</h3>
+          </div>
         </div>
-
-        <div className="api-edit-form">
-          <div className="api-edit-row">
-            <div className="form-group" style={{ flex: 2 }}>
-              <label>{t('providerEdit.provider')}</label>
-              <select value={providerType} onChange={(e) => setProviderType(e.target.value)}>
-                {Object.entries(providers).map(([key, info]) => (
-                  <option key={key} value={key}>{info.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>{t('workstation.capabilities')}</label>
-              <div className="capability-badges" style={{ marginTop: 4 }}>
-                {caps.map((cap) => (
-                  <span key={cap} className={`capability-badge capability-${cap}`}>{CAP_LABEL[cap] || cap}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>{t('workstation.purpose')}</label>
-            {multipleCaps ? (
-              <div className="usage-type-options">
-                {caps.map((cap) => (
-                  <label key={cap} className="usage-type-option">
-                    <input type="radio" name="usage_type" checked={usageType === cap} onChange={() => setUsageType(cap)} />
-                    <span>{CAP_LABEL[cap] || cap}</span>
-                  </label>
-                ))}
-                {caps.includes('llm') && caps.includes('embedding') && (
-                  <label className="usage-type-option">
-                    <input type="radio" name="usage_type" checked={usageType === 'both'} onChange={() => setUsageType('both')} />
-                    <span>{t('workstation.bothSupported')}</span>
-                  </label>
-                )}
-              </div>
-            ) : (
-              <div className="usage-type-static" style={{ marginTop: 4 }}>
-                <span className={`capability-badge capability-${caps[0]}`}>{CAP_LABEL[caps[0]] || caps[0]}</span>
-                <span style={{ fontSize: 'var(--da-font-size-xs)', color: 'var(--da-text-muted)', marginLeft: 8 }}>
-                  {t('workstation.purpose')}: {CAP_LABEL[caps[0]] || caps[0]}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label>
-              {t('providerEdit.name')}
-              <span style={{ fontWeight: 400, color: 'var(--da-text-muted)', fontSize: 'var(--da-font-size-xs)' }}>
-                ({t('providerEdit.nameOptional') || 'optional'})
-              </span>
-            </label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('providerEdit.placeholders.name')} />
-            <p className="form-hint" style={{ marginTop: 4 }}>
-              <Tag size={11} /> {t('providerEdit.nameHint') || '用于区分不同的 Key，不填则使用提供商名称'}
-            </p>
-          </div>
-
-          <div className="form-group">
-            <label>{t('providerEdit.baseUrl')}</label>
-            <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder={t('providerEdit.placeholders.baseUrl')} />
-          </div>
-
-          <div className="form-group">
-            <label>{t('providerEdit.apiKey')}</label>
-            <div className="api-key-input">
-              <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={t('providerEdit.placeholders.apiKey')} />
-              <button className="api-key-toggle" onClick={() => setShowKey(!showKey)} aria-label={showKey ? 'Hide API key' : 'Show API key'}>
-                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
-          </div>
-
-          {showModels && (
-            <div className="form-group">
-              <label>{t('providerEdit.supportedModels')}</label>
-              <div className="models-display">
-                {fetchingModels ? (
-                  <div className="models-loading">
-                    <Loader2 size={14} className="animate-spin" />
-                    <span>{t('workstation.fetchingModels')}</span>
-                  </div>
-                ) : models.length > 0 ? (
-                  <div className="models-tags">
-                    {models.map((model) => <span key={model} className="model-tag">{model}</span>)}
-                  </div>
-                ) : (
-                  <div className="models-empty"><span>{t('workstation.enterApiKeyToFetch')}</span></div>
-                )}
-                <button type="button" className="btn btn-secondary btn-sm" onClick={handleFetchModels}
-                  disabled={!apiKey.trim() || fetchingModels} title={t('workstation.fetchFromApi')}>
-                  {fetchingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>{t('confirm.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim() || !apiKey.trim() || saving}>
+      }
+      onClose={onClose}
+      width={480}
+      bodyClassName="px-6 py-5 space-y-5"
+      footer={
+        <>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]" onClick={onClose}>{t('confirm.cancel')}</button>
+          <button type="button" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-all duration-150 bg-[var(--color-accent)] text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100" onClick={handleSave} disabled={!canSave}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? '...' : t('providerEdit.save')}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {fetchError && (
+            <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
+              <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+              <span className="text-[var(--color-danger)] text-sm flex-1">{fetchError}</span>
+              <button type="button" onClick={() => setFetchError(null)}
+                className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-0.5 rounded hover:bg-[var(--color-surface-hover)] transition-colors shrink-0">
+                <X size={14} />
+              </button>
+            </div>
+          )}
+      {error && (
+            <div className="bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] rounded-lg py-2.5 px-3.5 flex items-start gap-2.5">
+              <AlertCircle size={15} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+              <span className="text-[var(--color-danger)] text-sm flex-1">{error}</span>
+              {onCloseError && (
+                <button type="button" onClick={onCloseError}
+                  className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer p-0.5 rounded hover:bg-[var(--color-surface-hover)] transition-colors shrink-0">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          )}
+          <div>
+            <ProviderSelector
+              providers={providers}
+              providerType={providerType}
+              onChangeProvider={setProviderType}
+            />
+          </div>
+
+          <div className="pt-1">
+            <CredentialsSection
+              name={name} baseUrl={baseUrl} apiKey={apiKey}
+              showKey={showKey} hideBaseUrl={isToolProvider}
+              onChangeName={setName} onChangeBaseUrl={setBaseUrl}
+              onChangeApiKey={setApiKey}
+              onToggleShowKey={() => setShowKey(!showKey)}
+            />
+          </div>
+
+          {showModels && (
+            <div className="pt-1">
+              <ModelSection
+                models={models} fetching={fetchingModels} apiKey={apiKey}
+                modelTypes={modelTypes} typeDefaults={typeDefaults}
+                onRemoveModel={(m) => {
+                  setModels((prev) => prev.filter((x) => x !== m));
+                  setModelTypes((prev) => {
+                    const next = { ...prev };
+                    delete next[m];
+                    return next;
+                  });
+                }}
+                onChangeModelType={(m, type) =>
+                  setModelTypes((prev) => {
+                    const next = { ...prev };
+                    if (type) {
+                      next[m] = type;
+                    } else {
+                      delete next[m];
+                    }
+                    return next;
+                  })
+                }
+                onFetchModels={handleFetchModels}
+              />
+            </div>
+          )}
+    </Modal>
   );
 }

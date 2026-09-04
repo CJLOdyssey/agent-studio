@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
@@ -42,11 +41,11 @@ const baseProps = () => ({
 
 function mockBoundingRect(el: HTMLElement, rect: DOMRectInit = {}) {
   const original = el.getBoundingClientRect;
-  // eslint-disable-next-line no-param-reassign
+   
   el.getBoundingClientRect = () =>
     ({ top: 0, bottom: 40, left: 0, right: 160, width: 160, height: 40, x: 0, y: 0, ...rect, toJSON: () => '' } as DOMRect);
   return () => {
-    // eslint-disable-next-line no-param-reassign
+     
     el.getBoundingClientRect = original;
   };
 }
@@ -106,37 +105,37 @@ describe('TeamTree', { tags: ['integration'] }, () => {
   it('renders pin icon when team is pinned', () => {
     const teams = [mockTeam({ id: 't1', isPinned: true })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const pin = document.querySelector('.agentstudio-team-pin');
+    const pin = document.querySelector('[class*="text-[var(--color-accent-soft)]"]');
     expect(pin).toBeDefined();
   });
 
   it('does not render pin icon when team is not pinned', () => {
     const teams = [mockTeam({ id: 't1', isPinned: false })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const pin = document.querySelector('.agentstudio-team-pin');
+    const pin = document.querySelector('[class*="text-[var(--color-accent-soft)]"]');
     expect(pin).toBeNull();
   });
 
-  it('renders chevron with collapsed class when team is collapsed', () => {
+  it('renders chevron with rotation when team is collapsed', () => {
     const teams = [mockTeam({ id: 't1', isExpanded: false })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const chevron = document.querySelector('.chevron-icon.collapsed');
+    const chevron = document.querySelector('[class*="-rotate-90"]');
     expect(chevron).toBeDefined();
   });
 
-  it('renders chevron without collapsed class when team is expanded', () => {
+  it('renders chevron without rotation when team is expanded', () => {
     const teams = [mockTeam({ id: 't1', isExpanded: true })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const chevron = document.querySelector('.chevron-icon');
+    const chevron = document.querySelector('[class*="transition-transform"]');
     expect(chevron).toBeDefined();
-    expect(chevron?.className).not.toContain('collapsed');
+    expect(chevron?.className).not.toContain('-rotate-90');
   });
 
   it('calls toggleTeam when team header clicked', () => {
     const toggleTeam = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} toggleTeam={toggleTeam} />);
-    fireEvent.click(document.querySelector('.agentstudio-team-folder-header')!);
+    fireEvent.click(screen.getByText('Team Alpha')!);
     expect(toggleTeam).toHaveBeenCalledWith('t1');
   });
 
@@ -160,7 +159,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const menuBtn = screen.getByTitle('sidebar.moreOptions');
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.queryByText('sidebar.addAgent')).toBeDefined();
     restore();
   });
 
@@ -171,7 +170,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(menuBtn);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeNull();
+    expect(screen.queryByText('sidebar.addAgent')).toBeNull();
     restore();
   });
 
@@ -182,9 +181,9 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore1 = mockBoundingRect(buttons[0]);
     const restore2 = mockBoundingRect(buttons[1]);
     fireEvent.click(buttons[0]);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.queryByText('sidebar.addAgent')).toBeDefined();
     fireEvent.click(buttons[1]);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.queryByText('sidebar.addAgent')).toBeDefined();
     restore1();
     restore2();
   });
@@ -238,7 +237,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     const deleteBtn = screen.getByText('workstation.delete').closest('button');
-    expect(deleteBtn?.className).toContain('danger');
+    expect(deleteBtn?.className).toContain('color-danger');
     restore();
   });
 
@@ -276,7 +275,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
 
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     expect(input).toBeDefined();
     expect(input.value).toBe('Team Alpha');
     restore();
@@ -411,7 +410,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(screen.getByText('workstation.delete'));
     fireEvent.click(screen.getByText('common.cancel'));
     expect(handleDeleteTeam).not.toHaveBeenCalled();
-    expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
   });
 
@@ -424,7 +423,8 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
 
     fireEvent.click(screen.getByText('workstation.delete'));
-    fireEvent.click(document.body.querySelector('.agentstudio-modal-overlay')!);
+    const dialog = document.body.querySelector('[role="dialog"]')!;
+    fireEvent.click(dialog.parentElement!);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
     restore();
   });
@@ -439,11 +439,11 @@ describe('TeamTree', { tags: ['integration'] }, () => {
 
     fireEvent.click(screen.getByText('workstation.delete'));
     // Click on the modal itself (not overlay) should not dismiss
-    const modal = document.body.querySelector('.agentstudio-modal')!;
+    const modal = document.body.querySelector('[role="dialog"]')!;
     fireEvent.click(modal);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
     // Dialog still visible
-    expect(document.body.querySelector('.agentstudio-modal')).toBeDefined();
+    expect(document.body.querySelector('[role="dialog"]')).toBeDefined();
     restore();
   });
 
@@ -470,7 +470,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
 
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(handleRenameTeam).toHaveBeenCalledWith('t1', 'Team Alpha');
     restore();
@@ -486,7 +486,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
 
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.blur(input);
     // The blur handler uses setTimeout(100ms)
     act(() => { vi.advanceTimersByTime(100); });
@@ -504,7 +504,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
 
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
@@ -524,7 +524,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
 
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Bad<Name' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -542,7 +542,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
 
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
@@ -551,7 +551,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     expect(document.body.textContent).toContain('sidebar.nameNotEmpty');
 
     // Dismiss by clicking close button
-    fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
     expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
     restore();
     vi.useRealTimers();
@@ -563,14 +563,14 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const onTeamChat = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} onTeamChat={onTeamChat} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn');
+    const chatBtn = document.querySelector('[title="团队对话"]');
     expect(chatBtn).toBeDefined();
   });
 
   it('does not render team chat button when onTeamChat is undefined', () => {
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} onTeamChat={undefined} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn');
+    const chatBtn = document.querySelector('[title="团队对话"]');
     expect(chatBtn).toBeNull();
   });
 
@@ -578,7 +578,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const onTeamChat = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} onTeamChat={onTeamChat} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn')!;
+    const chatBtn = document.querySelector('[title="团队对话"]')!;
     fireEvent.click(chatBtn);
     expect(onTeamChat).toHaveBeenCalledWith('t1');
   });
@@ -588,7 +588,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const onTeamChat = vi.fn();
     const teams = [mockTeam({ id: 't1' })];
     render(<TeamTree {...baseProps()} teams={teams} toggleTeam={toggleTeam} onTeamChat={onTeamChat} />);
-    const chatBtn = document.querySelector('.agentstudio-team-chat-btn')!;
+    const chatBtn = document.querySelector('[title="团队对话"]')!;
     fireEvent.click(chatBtn);
     expect(toggleTeam).not.toHaveBeenCalled();
   });
@@ -601,11 +601,11 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const menuBtn = screen.getByTitle('sidebar.moreOptions');
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeDefined();
+    expect(screen.queryByText('sidebar.addAgent')).toBeDefined();
 
     // Click document to close
     fireEvent.click(document);
-    expect(document.body.querySelector('.agentstudio-team-dropdown')).toBeNull();
+    expect(screen.queryByText('sidebar.addAgent')).toBeNull();
     restore();
   });
 
@@ -638,7 +638,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
   it('shows Pin icon in header for pinned team', () => {
     const teams = [mockTeam({ id: 't1', isPinned: true })];
     render(<TeamTree {...baseProps()} teams={teams} />);
-    const pinIcon = document.querySelector('.agentstudio-team-pin');
+    const pinIcon = document.querySelector('[class*="text-[var(--color-accent-soft)]"]');
     expect(pinIcon).toBeDefined();
   });
 

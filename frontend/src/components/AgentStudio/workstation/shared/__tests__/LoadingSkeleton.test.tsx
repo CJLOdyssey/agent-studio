@@ -4,26 +4,30 @@ import { TableSkeleton, CardSkeleton } from '../LoadingSkeleton';
 
 describe('TableSkeleton', { tags: ['unit'] }, () => {
   it('renders with default rows and cols', () => {
-    const { container } = render(<TableSkeleton />);
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(container.querySelectorAll('.wsta-skeleton-row')).toHaveLength(5);
+    render(<TableSkeleton />);
+    const statusEl = screen.getByRole('status');
+    expect(statusEl).toBeInTheDocument();
+    expect(statusEl.childElementCount).toBe(5);
   });
 
   it('renders with custom rows', () => {
-    const { container } = render(<TableSkeleton rows={3} cols={4} />);
-    expect(container.querySelectorAll('.wsta-skeleton-row')).toHaveLength(3);
+    render(<TableSkeleton rows={3} cols={4} />);
+    const statusEl = screen.getByRole('status');
+    expect(statusEl.childElementCount).toBe(3);
   });
 });
 
 describe('CardSkeleton', { tags: ['unit'] }, () => {
   it('renders with default count', () => {
-    const { container } = render(<CardSkeleton />);
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(container.querySelectorAll('.wsta-skeleton-card')).toHaveLength(6);
+    render(<CardSkeleton />);
+    const statusEl = screen.getByRole('status');
+    expect(statusEl).toBeInTheDocument();
+    expect(statusEl.childElementCount).toBe(6);
   });
 
   it('renders with custom count', () => {
-    const { container } = render(<CardSkeleton count={3} />);
-    expect(container.querySelectorAll('.wsta-skeleton-card')).toHaveLength(3);
+    render(<CardSkeleton count={3} />);
+    const statusEl = screen.getByRole('status');
+    expect(statusEl.childElementCount).toBe(3);
   });
 });

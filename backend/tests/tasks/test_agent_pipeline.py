@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.tasks.agent_pipeline import _run_agent_pipeline
+from tasks.agent_pipeline import _run_agent_pipeline
 
 # =============================================================================
 # Fixtures
@@ -16,23 +16,28 @@ from backend.tasks.agent_pipeline import _run_agent_pipeline
 def mock_agent_deps():
     """Mock all external dependencies for _run_agent_pipeline."""
     patchers = [
-        patch("backend.tasks.agent_pipeline.load_config"),
-        patch("backend.tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.StreamEmitter"),
-        patch("backend.tasks.agent_pipeline.SingleAgentGraph"),
-        patch("backend.tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
-        patch("backend.tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
-        patch("backend.tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.load_config"),
+        patch("tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.get_run_ancestors", new_callable=AsyncMock, return_value=set()),
+        patch("tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
+        patch("tasks.tool_bindings.get_tools", new_callable=AsyncMock),
+        patch("tasks.tool_bindings.get_skills", new_callable=AsyncMock),
+        patch("tasks.tool_bindings.get_mcps", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.StreamEmitter"),
+        patch("tasks.agent_pipeline.SingleAgentGraph"),
+        patch("tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
+        patch("tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
+        patch("tasks.agent_pipeline.list_attachments_by_run", new_callable=AsyncMock, return_value=[]),
+        patch("tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
+        # Don't let tests actually start tracemalloc (agent_pipeline starts it
+        # when not already tracing) — it slows every test significantly.
+        patch("tasks.agent_pipeline.tracemalloc"),
     ]
     mocks = {}
     for p in patchers:
@@ -58,8 +63,8 @@ def _default_agent_mocks(mocks, agent_id="agent-1"):
     mocks["get_agent_config"].return_value = ac
 
     graph = MagicMock()
-    graph.run = AsyncMock()
-    graph.run.return_value = {
+    graph.run_traced = AsyncMock()
+    graph.run_traced.return_value = {
         "messages": [MagicMock(content="Hello world!", tool_calls=None)],
         "input_tokens": 100,
         "output_tokens": 50,
@@ -75,11 +80,11 @@ def _default_agent_mocks(mocks, agent_id="agent-1"):
 def mock_complete_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("backend.tasks.complete_pipeline.load_config"),
-        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.load_config"),
+        patch("tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -127,17 +132,21 @@ class TestRunAgentPipeline:
 
     async def test_error_handling(self, mock_agent_deps):
         _, graph = _default_agent_mocks(mock_agent_deps)
-        graph.run.side_effect = Exception("Graph execution failed")
+        graph.run_traced.side_effect = Exception("Graph execution failed")
 
-        with pytest.raises(Exception, match="Graph execution failed"):
-            await _run_agent_pipeline(
-                requirement="test",
-                run_id="run-2",
-                session_id=None,
-                agent_id="agent-1",
-            )
+        result = await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-2",
+            session_id=None,
+            agent_id="agent-1",
+        )
 
+        assert result["status"] == "error"
         mock_agent_deps["update_run_status"].assert_any_await("run-2", "running")
+        mock_agent_deps["update_run_status"].assert_any_await("run-2", "error")
+        mock_agent_deps["publish_run_message"].assert_any_await(
+            "run-2", {"type": "error", "content": "执行失败: Graph execution failed"}
+        )
 
     async def test_no_agent_id(self, mock_agent_deps):
         cfg = MagicMock()
@@ -146,8 +155,8 @@ class TestRunAgentPipeline:
         mock_agent_deps["get_agent_config"].return_value = None
 
         graph = MagicMock()
-        graph.run = AsyncMock()
-        graph.run.return_value = {
+        graph.run_traced = AsyncMock()
+        graph.run_traced.return_value = {
             "messages": [MagicMock(content="Hello!", tool_calls=None)],
             "input_tokens": 10,
             "output_tokens": 5,
@@ -179,6 +188,7 @@ class TestRunAgentPipeline:
             agent_id="agent-1",
         )
 
+        mock_agent_deps["get_run_ancestors"].assert_awaited_with("run-4")
         mock_agent_deps["get_session_memories"].assert_awaited_with("sess-1")
         mock_agent_deps["get_session_messages"].assert_awaited_with("sess-1", exclude_run_id="run-4")
         mock_agent_deps["_save_output_memories"].assert_awaited()
@@ -246,6 +256,114 @@ class TestRunAgentPipeline:
         bound_tools = graph.bind_tools.call_args[0][0]
         tool_names = [t.name for t in bound_tools]
         assert "search-tool" in tool_names
+
+    async def test_prepare_tools_stdio_mcp_subtool_carries_mcp_identity(self, mock_agent_deps):
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.mcp = '[{"name": "my-mcp"}]'
+
+        mcp_mock = MagicMock()
+        mcp_mock.name = "my-mcp"
+        mcp_mock.type = "stdio"
+        mcp_mock.endpoint = "npx"
+        mcp_mock.config = '{"args": ["-y", "mcp-srv"], "env": {"KEY": "VAL"}}'
+        mock_agent_deps["get_mcps"].return_value = [mcp_mock]
+
+        with patch(
+            "tasks.tool_bindings._discover_mcp_tools",
+            new_callable=AsyncMock,
+            return_value=[
+                {
+                    "name": "read_file",
+                    "description": "Read a file",
+                    "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}},
+                }
+            ],
+        ):
+            await _run_agent_pipeline(
+                requirement="test",
+                run_id="run-stdio-mcp",
+                session_id=None,
+                agent_id="agent-1",
+            )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        sub = next(t for t in bound_tools if t.name == "mcp_my-mcp_read_file")
+        assert sub.mcp_type == "stdio"
+        assert sub.mcp_endpoint == "npx"
+        assert sub.mcp_tool_name == "read_file"
+        assert sub.mcp_config["command"] == "npx"
+        assert sub.mcp_config["args"] == ["-y", "mcp-srv"]
+
+    async def test_prepare_tools_stdio_subtool_dispatch_reaches_call_mcp_sdk(self, mock_agent_deps):
+        """A stdio sub-tool must dispatch to call_mcp_sdk (not fall back to a
+        fabricated "called" result). Regression for mcp_endpoint missing on the
+        sub-tool ToolConfig."""
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.mcp = '[{"name": "my-mcp"}]'
+
+        mcp_mock = MagicMock()
+        mcp_mock.name = "my-mcp"
+        mcp_mock.type = "stdio"
+        mcp_mock.endpoint = "npx"
+        mcp_mock.config = '{"args": ["-y", "mcp-srv"], "env": {"KEY": "VAL"}}'
+        mock_agent_deps["get_mcps"].return_value = [mcp_mock]
+
+        with patch(
+            "tasks.tool_bindings._discover_mcp_tools",
+            new_callable=AsyncMock,
+            return_value=[
+                {
+                    "name": "read_file",
+                    "description": "Read a file",
+                    "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}},
+                }
+            ],
+        ):
+            await _run_agent_pipeline(
+                requirement="test",
+                run_id="run-stdio-dispatch",
+                session_id=None,
+                agent_id="agent-1",
+            )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        sub = next(t for t in bound_tools if t.name == "mcp_my-mcp_read_file")
+        assert sub.mcp_endpoint == "npx"
+
+        from services.tool_config import build_tool_definition
+
+        _, wrapper, _ = build_tool_definition(sub)
+        wrapper.set_run_id("run-stdio-dispatch")
+        assert wrapper._resolve_handler() == "mcp"
+
+        with patch("services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
+            mock_sdk.return_value = "real mcp output"
+            result = await wrapper.invoke({"path": "/tmp/x"})
+        assert result == "real mcp output"
+        mock_sdk.assert_awaited_once_with(wrapper, {"path": "/tmp/x"})
+
+    async def test_prepare_tools_non_stdio_mcp_carries_mcp_type(self, mock_agent_deps):
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.mcp = '[{"name": "sse-mcp"}]'
+
+        mcp_mock = MagicMock()
+        mcp_mock.name = "sse-mcp"
+        mcp_mock.type = "sse"
+        mcp_mock.endpoint = "http://localhost:3000/mcp"
+        mcp_mock.config = "{}"
+        mock_agent_deps["get_mcps"].return_value = [mcp_mock]
+
+        await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-sse-mcp",
+            session_id=None,
+            agent_id="agent-1",
+        )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        sub = next(t for t in bound_tools if t.name == "mcp_sse-mcp_sse-mcp")
+        assert sub.mcp_type == "sse"
+        assert sub.method == "SSE"
 
     async def test_prepare_tools_disabled_item_skipped(self, mock_agent_deps):
         ac, graph = _default_agent_mocks(mock_agent_deps)
@@ -333,6 +451,42 @@ class TestRunAgentPipeline:
         skill_names = [t.name for t in bound_tools]
         assert "skill_code-review" in skill_names
 
+    async def test_prepare_skills_dedup_tool_with_agent_tools(self, mock_agent_deps):
+        """Skill allowed-tools overlapping agent's own tools must not duplicate."""
+        ac, graph = _default_agent_mocks(mock_agent_deps)
+        ac.tools = '[{"name": "custom_python", "enabled": true}]'
+        ac.skills = '[{"name": "xlsx"}]'
+
+        tool_mock = MagicMock()
+        tool_mock.name = "custom_python"
+        tool_mock.description = "Execute Python"
+        tool_mock.parameters = "{}"
+        tool_mock.endpoint = ""
+        tool_mock.method = "GET"
+        tool_mock.headers = "{}"
+        mock_agent_deps["get_tools"].return_value = [tool_mock]
+
+        skill_mock = MagicMock()
+        skill_mock.name = "xlsx"
+        skill_mock.description = "Excel"
+        skill_mock.instructions = "build xlsx"
+        skill_mock.output_constraint = ""
+        skill_mock.script_files = {}
+        skill_mock.tool_names = ["custom_python"]
+        mock_agent_deps["get_skills"].return_value = [skill_mock]
+
+        await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-dedup-skill-tool",
+            session_id=None,
+            agent_id="agent-1",
+        )
+
+        bound_tools = graph.bind_tools.call_args[0][0]
+        names = [t.name for t in bound_tools]
+        assert names.count("custom_python") == 1, f"duplicate tool: {names}"
+        assert "skill_xlsx" in names
+
     async def test_prepare_skill_no_match_skipped(self, mock_agent_deps):
         ac, graph = _default_agent_mocks(mock_agent_deps)
         ac.skills = '[{"name": "ghost-skill"}]'
@@ -360,7 +514,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "node server.js"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("backend.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("tasks.tool_bindings._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.return_value = [
                 {"name": "read_file", "description": "Read a file", "inputSchema": {"type": "object"}},
             ]
@@ -387,7 +541,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "nonexistent"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("backend.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("tasks.tool_bindings._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.side_effect = Exception("Connection refused")
             await _run_agent_pipeline(
                 requirement="test",
@@ -455,7 +609,7 @@ class TestRunAgentPipeline:
             agent_id="agent-1",
         )
 
-        assert graph.run.awaited
+        assert graph.run_traced.awaited
 
     async def test_custom_model_from_agent_config(self, mock_agent_deps):
         ac, graph = _default_agent_mocks(mock_agent_deps)
@@ -508,7 +662,7 @@ class TestRunAgentPipeline:
         msg1 = MagicMock(content="Hello", tool_calls=None)
         msg2 = MagicMock(content="<pm_document>doc</pm_document>", tool_calls=None)
         msg3 = MagicMock(content="<review>Looks good</review>", tool_calls=None)
-        graph.run.return_value = {
+        graph.run_traced.return_value = {
             "messages": [msg1, msg2, msg3],
             "input_tokens": 200,
             "output_tokens": 100,
@@ -534,7 +688,7 @@ class TestRunAgentPipeline:
     async def test_empty_messages_fallback_content(self, mock_agent_deps):
         _default_agent_mocks(mock_agent_deps)
         graph = mock_agent_deps["SingleAgentGraph"].return_value
-        graph.run.return_value = {
+        graph.run_traced.return_value = {
             "messages": [MagicMock(content="", tool_calls=None)],
             "input_tokens": 0,
             "output_tokens": 0,
@@ -553,7 +707,7 @@ class TestRunAgentPipeline:
     async def test_last_message_with_content_is_used(self, mock_agent_deps):
         _default_agent_mocks(mock_agent_deps)
         graph = mock_agent_deps["SingleAgentGraph"].return_value
-        graph.run.return_value = {
+        graph.run_traced.return_value = {
             "messages": [
                 MagicMock(content="first msg", tool_calls=None),
                 MagicMock(content="last and final", tool_calls=None),
@@ -576,7 +730,7 @@ class TestRunAgentPipeline:
     async def test_key_usage_logging(self, mock_agent_deps):
         _default_agent_mocks(mock_agent_deps)
         graph = mock_agent_deps["SingleAgentGraph"].return_value
-        graph.run.return_value = {
+        graph.run_traced.return_value = {
             "messages": [MagicMock(content="result", tool_calls=None)],
             "input_tokens": 150,
             "output_tokens": 75,
@@ -596,7 +750,7 @@ class TestRunAgentPipeline:
         ac, _ = _default_agent_mocks(mock_agent_deps)
         mock_agent_deps["get_session_messages"].return_value = []
 
-        with patch("backend.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
+        with patch("rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
             await _run_agent_pipeline(
                 requirement="test requirement",
                 run_id="run-rag",
@@ -610,7 +764,7 @@ class TestRunAgentPipeline:
         _default_agent_mocks(mock_agent_deps)
         mock_agent_deps["get_session_messages"].return_value = []
 
-        with patch("backend.rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
+        with patch("rag.rag_pipeline.ingest_session_messages", new_callable=AsyncMock) as mock_ingest:
             mock_ingest.side_effect = RuntimeError("RAG down")
             await _run_agent_pipeline(
                 requirement="test",
@@ -663,8 +817,8 @@ class TestRunAgentPipeline:
         mock_agent_deps["get_agent_config"].return_value = None
 
         graph = MagicMock()
-        graph.run = AsyncMock()
-        graph.run.return_value = {
+        graph.run_traced = AsyncMock()
+        graph.run_traced.return_value = {
             "messages": [MagicMock(content="ok", tool_calls=None)],
             "input_tokens": 5,
             "output_tokens": 5,
@@ -698,7 +852,7 @@ class TestRunAgentPipeline:
         mock_agent_deps["get_session_messages"].return_value = [msg_user, msg_agent, msg_other]
 
         graph = mock_agent_deps["SingleAgentGraph"].return_value
-        graph.run.return_value = {
+        graph.run_traced.return_value = {
             "messages": [MagicMock(content="result", tool_calls=None)],
             "input_tokens": 10,
             "output_tokens": 5,
@@ -822,7 +976,7 @@ class TestRunAgentPipeline:
         mcp_mock.endpoint = "node server.js"
         mock_agent_deps["get_mcps"].return_value = [mcp_mock]
 
-        with patch("backend.tasks.agent_pipeline._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
+        with patch("tasks.tool_bindings._discover_mcp_tools", new_callable=AsyncMock) as mock_discover:
             mock_discover.return_value = [
                 {"name": "tool1", "description": "A tool", "inputSchema": {"type": "object"}},
             ]
@@ -947,6 +1101,45 @@ class TestRunAgentPipeline:
             agent_id="agent-1",
         )
         assert result["status"] == "completed"
+
+    async def test_attachment_text_injected_into_session_context(self, mock_agent_deps):
+        """Attachment extracted_text must reach the model input via session_context."""
+        _default_agent_mocks(mock_agent_deps)
+        att = MagicMock()
+        att.filename = "codex配置第三方api.txt"
+        att.extracted_text = "Codex 使用 DeepSeek 模型完全指南"
+        mock_agent_deps["list_attachments_by_run"].return_value = [att]
+
+        await _run_agent_pipeline(
+            requirement="这个文档写了什么",
+            run_id="run-att",
+            session_id="sess-1",
+            agent_id="agent-1",
+        )
+
+        graph = mock_agent_deps["SingleAgentGraph"].return_value
+        session_context = graph.run_traced.await_args.kwargs["session_context"]
+        assert "[附件: codex配置第三方api.txt]" in session_context
+        assert "Codex 使用 DeepSeek 模型完全指南" in session_context
+
+    async def test_attachment_without_extracted_text_skipped(self, mock_agent_deps):
+        """Attachments with no extracted text must not pollute session_context."""
+        _default_agent_mocks(mock_agent_deps)
+        att = MagicMock()
+        att.filename = "empty.bin"
+        att.extracted_text = None
+        mock_agent_deps["list_attachments_by_run"].return_value = [att]
+
+        await _run_agent_pipeline(
+            requirement="test",
+            run_id="run-att-empty",
+            session_id="sess-1",
+            agent_id="agent-1",
+        )
+
+        graph = mock_agent_deps["SingleAgentGraph"].return_value
+        session_context = graph.run_traced.await_args.kwargs["session_context"]
+        assert "empty.bin" not in session_context
 
 
 # =============================================================================

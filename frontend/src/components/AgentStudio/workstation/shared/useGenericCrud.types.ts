@@ -1,8 +1,8 @@
-/** Types for the generic CRUD hook — extracted for independent import. */
+/** 通用 CRUD hook 的类型——抽出以便独立导入。 */
 
 import type { SortDir } from '../types';
 
-/** Minimal CRUD service interface — must be adapted per module. */
+/** 最小 CRUD 服务接口——各模块需自行适配。 */
 export interface CrudAPI<T, F> {
   fetchAll(): Promise<T[]>;
   create(data: F): Promise<T>;
@@ -17,14 +17,14 @@ export interface GenericCrudConfig<T, F> {
   emptyForm: F;
   itemName: string;
   validate?: (data: F, items: T[], editingId?: string) => string[];
-  /** Sort field keys relevant for this entity (clickable column headers). */
+  /** 该实体可排序的字段键（可点击的表头列）。 */
   sortFields?: (keyof T)[];
-  /** Extra filter keys that reset page on change. E.g. { categoryFilter: 'all', statusFilter: 'all' } */
+  /** 变化时重置页码的额外筛选键。例：{ categoryFilter: 'all', statusFilter: 'all' } */
   extraFilters?: Record<string, string>;
 }
 
 export interface GenericCrudReturn<T, F> {
-  /* Data */
+  /* 数据 */
   items: T[];
   isLoading: boolean;
   error: string | null;
@@ -39,7 +39,7 @@ export interface GenericCrudReturn<T, F> {
   allOnPageSelected: boolean;
   extraFilterValues: Record<string, string>;
 
-  /* UI */
+  /* 界面状态 */
   editingItem: T | null;
   deletingItem: T | null;
   historyItem: T | null;
@@ -52,7 +52,7 @@ export interface GenericCrudReturn<T, F> {
   openMenuId: string | null;
   menuAnchorEl: HTMLElement | null;
 
-  /* Setters */
+  /* 设置器 */
   setSearch(v: string): void;
   setPage(v: number): void;
   setSelectedIds(v: Set<string> | ((prev: Set<string>) => Set<string>)): void;
@@ -64,13 +64,13 @@ export interface GenericCrudReturn<T, F> {
   toggleSelectAll(): void;
   toggleSelect(id: string): void;
 
-  /* Actions */
+  /* 操作 */
   openCreate(): void;
   openEdit(item: T): void;
   openDelete(item: T): void;
-  handleSave(): void;
-  handleDelete(): void;
-  handleBatchDelete(): void;
+  handleSave(): Promise<void> | undefined;
+  handleDelete(): Promise<void> | undefined;
+  handleBatchDelete(): Promise<void> | undefined;
   openHistory(item: T): void;
   openBatchDelete(): void;
   closeForm(): void;
@@ -82,7 +82,7 @@ export interface GenericCrudReturn<T, F> {
   retry(): void;
   batchAdd(items: T[]): void;
 
-  /* Imperative data mutations (used internally) */
+  /* 命令式数据变更（内部使用） */
   createItem(data: F): Promise<T>;
   updateItem(id: string, data: Partial<T>): Promise<void>;
   removeItem(id: string): Promise<void>;

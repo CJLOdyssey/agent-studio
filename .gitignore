@@ -8,10 +8,21 @@ dist/
 .ruff_cache/
 *.whl
 
+# ── pytest-testmon 增量测试本地缓存（机器相关，不入库）─────────────────────
+.testmondata
+.testmondata-*
+.testmondata-shm
+
+# ── mutmut 运行时临时 symlink + 缓存（src → backend/src，勿入库）────────────
+/src
+.mutmut-cache
+
 # ── Node / Frontend ───────────────────────────────────────────────────────
+node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/tsconfig.tsbuildinfo
+frontend/coverage/
 
 # ── IDE / Editor ──────────────────────────────────────────────────────────
 .idea/
@@ -31,12 +42,14 @@ desktop.ini
 .env.local
 .env.*.local
 .env.*
+!.env.example
+.secrets.baseline
 
 # ── Databases ──────────────────────────────────────────────────────────────
 *.db
 *.db-shm
 *.db-wal
-.sqlite3
+*.sqlite3
 
 # ── Runtime / Logs ─────────────────────────────────────────────────────────
 *.log
@@ -47,7 +60,7 @@ desktop.ini
 .coverage.*
 coverage.xml
 coverage/
-frontend/coverage/
+coverage.json
 
 # ── Virtual Env ────────────────────────────────────────────────────────────
 .venv/
@@ -58,50 +71,14 @@ frontend/coverage/
 
 # ── Testing Tools ──────────────────────────────────────────────────────────
 .playwright-mcp/
-
-# ── Build Artifacts ───────────────────────────────────────────────────────
-frontend/lighthouse-report.json
-frontend/antd-migration-screenshot.png
-frontend/antd-snapshot.txt
-
-# ── Code Intelligence Caches ──────────────────────────────────────────────
-.codegraph/
-.superpowers/
-
-# ── AI Tool Directories ───────────────────────────────────────────────────
-.mimocode/
-.opencode/
-.agents/
-.claude/
+.playwright-cli/
+frontend/.auth/
+frontend/test-results/
 
 # ── Runtime Artifacts ─────────────────────────────────────────────────────
 checkpoints.db
 uploads/
+data/cost_budget.json
 
-# ── Project-specific ───────────────────────────────────────────────────────
-skills-lock.json
-.sisyphus/
-prototypes/
-scripts/deploy_prod.py
-scripts/ask_credentials.py
-.omo/
-coverage.json
-docs/e2e-*.png
-docs/
-
-# Internal docs (not for public repo)
-AGENTS.md
-CLAUDE.md
-RUNBOOK.md
-start.sh
-.secrets.baseline
-monitoring/
-.github/workflows/deploy*.yml
-.github/workflows/rollback.yml
-.github/workflows/sync-docs.yml
-docker/compose.redis-ha.yml
-scripts/ci-debug.sh
-scripts/sync-docs.sh
-scripts/run_mutmut.sh
-scripts/test_tools_in_ai_response.py
-scripts/test_tools_verified.py
+# ── 开发文档（非公共仓库内容，忽略不删除）──────────────────────────────
+/docs/

@@ -1,4 +1,4 @@
-/** Agent form validation. */
+/** Agent 表单校验。 */
 import type { AgentEntry, AgentFormData } from './agent.types';
 
 export function validateForm(data: AgentFormData, agents: AgentEntry[], editingId?: string): string[] {

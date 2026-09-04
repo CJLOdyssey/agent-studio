@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AgentTool, AgentMCP, AgentSkill } from '../../../../types/AgentStudio';
 import type { ToolFormData } from '../../workstation/tool/tool.types';
+import type { MCPFormData } from '../../workstation/mcp/mcp.types';
+import type { SkillFormData } from '../../workstation/skill/skill.types';
 import { toolAPI } from '../../workstation/tool/api';
+import { mcpAPI } from '../../workstation/mcp/api';
+import { skillAPI } from '../../workstation/skill/api';
+
+type ArchiveKind = 'tool' | 'mcp' | 'skill';
 
 interface ItemListHandle<T> {
   items: T[];
@@ -12,6 +18,14 @@ interface ItemListHandle<T> {
   addCustom: (fn: () => T) => void;
   update: (id: string, updates: Partial<T>) => void;
   remove: (id: string) => void;
+}
+
+export interface PendingArchiveState {
+  kind: ArchiveKind;
+  kindName: string;
+  name: string;
+  customId: string;
+  data: ToolFormData | MCPFormData | SkillFormData;
 }
 
 export interface ConfigItemEditReturn {
@@ -27,6 +41,10 @@ export interface ConfigItemEditReturn {
   handleEditTool: (item: Record<string, unknown>) => void;
   handleEditMcp: (item: Record<string, unknown>) => void;
   handleEditSkill: (item: Record<string, unknown>) => void;
+  pendingArchive: PendingArchiveState | null;
+  archiveItem: (kind: ArchiveKind, customId: string, data: ToolFormData | MCPFormData | SkillFormData) => void;
+  setPendingArchive: (v: PendingArchiveState | null) => void;
+  handleArchiveFromMenu: (kind: ArchiveKind, item: Record<string, unknown>) => void;
 }
 
 export function useConfigItemEdit(
@@ -49,17 +67,45 @@ export function useConfigItemEdit(
   const [editingToolItem, setEditingToolItem] = useState<AgentTool | null>(null);
   const [editingMcpItem, setEditingMcpItem] = useState<AgentMCP | null>(null);
   const [editingSkillItem, setEditingSkillItem] = useState<AgentSkill | null>(null);
+  const [pendingArchive, setPendingArchive] = useState<PendingArchiveState | null>(null);
 
   function itemsToFormData(item: Record<string, unknown>): ToolFormData {
     return {
       name: (item.name as string) || '',
       description: (item.description as string) || '',
       category: (item.category as string) || '自定义工具',
-      model: (item.model as string) || 'GPT-4o',
       status: 'active',
       version: (item.version as string) || 'v1.0.0',
       endpoint: (item.endpoint as string) || '',
       parameters: (item.parameters as string) || '{"type":"object"}',
+    };
+  }
+
+  function itemsToMCPFormData(item: Record<string, unknown>): MCPFormData {
+    return {
+      name: (item.name as string) || '',
+      description: (item.description as string) || '',
+      type: (item.type as 'stdio' | 'sse') || 'stdio',
+      status: (item.status as 'error' | 'disconnected' | 'connected') || 'disconnected',
+      version: (item.version as string) || 'v1.0.0',
+      command: (item.command as string) || '',
+      url: (item.url as string) || '',
+      args: Array.isArray(item.args) ? (item.args as string[]) : [],
+      env: Array.isArray(item.env) ? (item.env as string[]) : [],
+    };
+  }
+
+  function itemsToSkillFormData(item: Record<string, unknown>): SkillFormData {
+    return {
+      name: (item.name as string) || '',
+      description: (item.description as string) || '',
+      category: (item.category as string) || 'AI/ML',
+      status: (item.status as 'installed' | 'available') || 'available',
+      version: (item.version as string) || 'v1.0.0',
+      author: (item.author as string) || '',
+      instructions: (item.instructions as string) || '',
+      tool_names: (item.tool_names as string[]) || [],
+      output_constraint: (item.output_constraint as string) || '',
     };
   }
 
@@ -70,6 +116,30 @@ export function useConfigItemEdit(
     setEditingSkillItem(null);
   }
 
+  function archiveItem(kind: ArchiveKind, customId: string, data: ToolFormData | MCPFormData | SkillFormData) {
+    const onDone = () => setPendingArchive(null);
+    switch (kind) {
+      case 'tool':
+        toolAPI.create(data as ToolFormData).then((entry) => {
+          tools.update(customId, { id: entry.id, archived: true } as Partial<AgentTool>);
+          onDone();
+        }).catch(onDone);
+        break;
+      case 'mcp':
+        mcpAPI.create(data as MCPFormData).then((entry) => {
+          mcp.update(customId, { id: entry.id, archived: true } as Partial<AgentMCP>);
+          onDone();
+        }).catch(onDone);
+        break;
+      case 'skill':
+        skillAPI.create(data as SkillFormData).then((entry) => {
+          skills.update(customId, { id: entry.id, archived: true } as Partial<AgentSkill>);
+          onDone();
+        }).catch(onDone);
+        break;
+    }
+  }
+
   function saveFormItem(kind: 'tool' | 'mcp' | 'skill') {
     const f = form.forms[kind];
     const fdata = f.data as Record<string, unknown>;
@@ -77,36 +147,79 @@ export function useConfigItemEdit(
       form.setFormErrors(kind, [t('workstation.nameRequired')]);
       return;
     }
-    const data = f.data as Record<string, string>;
+    const customId = `custom-${Date.now()}`;
     switch (kind) {
-      case 'tool':
+      case 'tool': {
+        const data = f.data as ToolFormData;
+        const updates = {
+          name: data.name,
+          description: data.description || '',
+          category: data.category,
+          status: data.status,
+          version: data.version,
+          endpoint: data.endpoint,
+          parameters: data.parameters || '',
+        } as Partial<AgentTool>;
         if (editingToolItem) {
-          tools.update(editingToolItem.id, { name: data.name, description: data.description || '', parameters: data.parameters || '' } as Partial<AgentTool>);
+          tools.update(editingToolItem.id, updates);
           setEditingToolItem(null);
+          form.closeForm(kind);
         } else {
-          const id = `custom-${Date.now()}`;
-          tools.addCustom(() => ({ id, name: data.name, description: data.description || '', enabled: true, parameters: data.parameters || '' }) as AgentTool);
-          toolAPI.create({ name: data.name, description: data.description || '', category: '自定义工具', model: 'GPT-4o', status: 'active', version: 'v1.0.0', endpoint: data.endpoint || '', parameters: data.parameters || '' }).catch(() => {});
+          tools.addCustom(() => ({ id: customId, enabled: true, ...updates }) as AgentTool);
+          form.closeForm(kind);
+          setPendingArchive({ kind, kindName: '工具', name: data.name, customId, data: f.data as ToolFormData });
         }
         break;
-      case 'mcp':
+      }
+      case 'mcp': {
+        const data = f.data as MCPFormData;
+        const updates = {
+          name: data.name,
+          description: data.description || '',
+          type: data.type,
+          status: data.status,
+          version: data.version,
+          command: data.command,
+          url: data.url,
+          args: data.args,
+          env: data.env,
+        } as Partial<AgentMCP>;
         if (editingMcpItem) {
-          mcp.update(editingMcpItem.id, { name: data.name, description: data.description || '' } as Partial<AgentMCP>);
+          mcp.update(editingMcpItem.id, updates);
           setEditingMcpItem(null);
+          form.closeForm(kind);
         } else {
-          mcp.addCustom(() => ({ id: `custom-${Date.now()}`, name: data.name, description: data.description || '', enabled: true }) as AgentMCP);
+          mcp.addCustom(() => ({ id: customId, enabled: true, ...updates }) as AgentMCP);
+          form.closeForm(kind);
+          setPendingArchive({ kind, kindName: 'MCP', name: data.name, customId, data: f.data as MCPFormData });
         }
         break;
-      case 'skill':
+      }
+      case 'skill': {
+        const data = f.data as SkillFormData;
+        const updates = {
+          name: data.name,
+          description: data.description || '',
+          category: data.category,
+          status: data.status,
+          version: data.version,
+          author: data.author,
+          instructions: data.instructions,
+          tool_names: data.tool_names,
+          output_constraint: data.output_constraint,
+        } as Partial<AgentSkill>;
         if (editingSkillItem) {
-          skills.update(editingSkillItem.id, { name: data.name, description: data.description || '' } as Partial<AgentSkill>);
+          skills.update(editingSkillItem.id, updates);
           setEditingSkillItem(null);
+          form.closeForm(kind);
         } else {
-          skills.addCustom(() => ({ id: `custom-${Date.now()}`, name: data.name, description: data.description || '', enabled: true }) as AgentSkill);
+          skills.addCustom(() => ({ id: customId, enabled: true, ...updates }) as AgentSkill);
+          form.closeForm(kind);
+          setPendingArchive({ kind, kindName: 'Skill', name: data.name, customId, data: f.data as SkillFormData });
         }
         break;
+      }
     }
-    form.closeForm(kind);
   }
 
   function handleEditTool(item: Record<string, unknown>) {
@@ -138,6 +251,8 @@ export function useConfigItemEdit(
       version: (item.version as string) || 'v1.0.0',
       command: (item.command as string) || '',
       url: (item.url as string) || '',
+      args: Array.isArray(item.args) ? (item.args as string[]) : [],
+      env: Array.isArray(item.env) ? (item.env as string[]) : [],
     }));
   }
 
@@ -157,10 +272,26 @@ export function useConfigItemEdit(
       version: (item.version as string) || 'v1.0.0',
       author: (item.author as string) || '',
       instructions: (item.instructions as string) || '',
-      prompt_id: (item.prompt_id as string) || '',
       tool_names: (item.tool_names as string[]) || [],
       output_constraint: (item.output_constraint as string) || '',
     }));
+  }
+
+  function handleArchiveFromMenu(kind: ArchiveKind, item: Record<string, unknown>) {
+    const customId = String(item.id ?? '');
+    let data: ToolFormData | MCPFormData | SkillFormData;
+    switch (kind) {
+      case 'tool':
+        data = itemsToFormData(item);
+        break;
+      case 'mcp':
+        data = itemsToMCPFormData(item);
+        break;
+      case 'skill':
+        data = itemsToSkillFormData(item);
+        break;
+    }
+    archiveItem(kind, customId, data);
   }
 
   return {
@@ -168,5 +299,6 @@ export function useConfigItemEdit(
     setEditingToolItem, setEditingMcpItem, setEditingSkillItem,
     itemsToFormData, saveFormItem, handleFormClose,
     handleEditTool, handleEditMcp, handleEditSkill,
+    pendingArchive, archiveItem, setPendingArchive, handleArchiveFromMenu,
   };
 }

@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from backend.repository.prompts import (
+from repository.prompts import (
     create_prompt,
     delete_prompt,
     get_prompts,

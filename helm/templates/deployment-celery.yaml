@@ -35,7 +35,7 @@ spec:
           command:
             - celery
             - -A
-            - backend.broker.celery_app
+            - broker.celery_app
             - worker
             - --loglevel={{ .Values.celery.logLevel | lower }}
             - --concurrency={{ .Values.celery.concurrency }}
@@ -64,7 +64,7 @@ spec:
               command:
                 - celery
                 - -A
-                - backend.broker.celery_app
+                - broker.celery_app
                 - inspect
                 - ping
             initialDelaySeconds: 30
@@ -76,7 +76,7 @@ spec:
               command:
                 - celery
                 - -A
-                - backend.broker.celery_app
+                - broker.celery_app
                 - inspect
                 - ping
             initialDelaySeconds: 30

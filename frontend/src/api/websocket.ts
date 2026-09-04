@@ -8,13 +8,11 @@ export interface ConnectOptions {
   onStatusChange?: (status: WsConnectionStatus) => void;
 }
 
-const WS_BASE = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+const WS_BASE = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/ws`;
 
-/** Build WS URL with auth token as query param for connection-level auth */
+/** 构建 WS URL。认证基于 cookie（httpOnly）——同源握手自动携带。 */
 function buildWsUrl(runId: string): string {
-  const token = localStorage.getItem('auth_token');
-  const base = `${WS_BASE}/runs/${runId}`;
-  return token ? `${base}?token=${encodeURIComponent(token)}` : base;
+  return `${WS_BASE}/runs/${runId}`;
 }
 
 let maxRetries = 3;
@@ -69,7 +67,7 @@ function connect(runId: string, options: ConnectOptions): ConnState {
       }
       state.listeners.forEach((cb) => cb(data));
     } catch {
-      // ignore parse errors — malformed messages are logged but not fatal
+      // 忽略解析错误——畸形消息仅记录日志，不致命
     }
   };
 
@@ -92,7 +90,7 @@ function connect(runId: string, options: ConnectOptions): ConnState {
         }
       }, delay);
     } else if (state.listeners.size === 0) {
-      // All listeners removed — intentional close
+      // 所有监听器已移除——有意的关闭
       connections.delete(runId);
     } else {
       Logger.warn(`[ws] run ${runId} max retries reached, giving up`);
@@ -114,7 +112,7 @@ export function connectRun(runId: string, onMessageOrOptions: WsCallback | Conne
 
   const existing = connections.get(runId);
   if (existing) {
-    // Shared connection — add to existing listener sets
+    // 共享连接——加入现有监听器集合
     existing.listeners.add(options.onMessage);
     if (options.onStatusChange) {
       existing.statusListeners.add(options.onStatusChange);

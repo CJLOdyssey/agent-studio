@@ -1,11 +1,12 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """E2E Test: Full end-to-end business flow."""
 
 import contextlib
 
-from backend.tests.conftest import Api, _clear_rate_limits, _rid
+from tests.conftest import Api, _clear_rate_limits, _rid
 
 
 class TestFullE2EFlow:

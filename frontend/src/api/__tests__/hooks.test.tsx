@@ -18,6 +18,10 @@ vi.mock('axios', () => ({
   default: { create: vi.fn(() => mockAxiosInstance) },
 }));
 
+vi.mock('../../components/auth', () => ({
+  useAuth: () => ({ isAuthenticated: true }),
+}));
+
 function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -95,7 +99,7 @@ describe('API hooks', { tags: ['unit'] }, () => {
       if (callCount === 1) {
         return Promise.resolve({ data: [{ id: 'gpt-4', label: 'GPT-4', provider: 'openai' }] });
       }
-      return Promise.resolve({ data: [{ id: 'k1', provider: 'openai', usage_type: 'chat', label: 'Key', key_masked: 'sk-***', base_url: null, models: ['gpt-3.5'], is_active: true, is_default: false, last_used_at: null, created_at: null }] });
+      return Promise.resolve({ data: [{ id: 'k1', provider: 'openai', capabilities: ['llm'], label: 'Key', key_masked: 'sk-***', base_url: null, models: ['gpt-3.5'], is_active: true, is_default: false, last_used_at: null, created_at: null }] });
     });
     const { useAvailableModels } = await import('../hooks');
     const { result } = renderHook(() => useAvailableModels(), { wrapper: createWrapper() });

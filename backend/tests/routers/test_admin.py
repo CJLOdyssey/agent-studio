@@ -2,11 +2,13 @@
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.asyncio
 async def test_admin_router_importable():
     """Verify admin router exposes expected endpoint paths."""
-    from backend.routers.admin import router
+    from routers.admin import router
 
     paths = [getattr(r, "path", "") for r in router.routes]
     assert "/api/admin/stats" in paths
@@ -16,7 +18,7 @@ async def test_admin_router_importable():
 @pytest.mark.asyncio
 async def test_dashboard_stats_query():
     """Verify dashboard stats function is importable."""
-    from backend.routers.admin import get_dashboard_stats
+    from routers.admin import get_dashboard_stats
 
     assert get_dashboard_stats is not None
 
@@ -24,6 +26,6 @@ async def test_dashboard_stats_query():
 @pytest.mark.asyncio
 async def test_command_logs_query():
     """Verify command logs function is importable."""
-    from backend.routers.admin import get_command_logs
+    from routers.admin import get_command_logs
 
     assert get_command_logs is not None

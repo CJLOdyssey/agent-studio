@@ -1,6 +1,5 @@
-# Repository settings compatible with github/settings-action@v1
-# This is a desired-state document — not applied by a workflow.
-# If the team later adopts the settings-action, this config can be used directly.
+# Repository settings consumed by mooseburgr/repository-settings-action
+# Applied on demand via .github/workflows/settings-apply.yml (workflow_dispatch).
 
 repository:
   # Soft-glue to allow rebase merging but keep squash as default
@@ -15,16 +14,18 @@ branches:
       # Require status checks before merging
       required_status_checks:
         # NOTE: These check names must match the job names in CI exactly.
-        # If a job uses a matrix, include the full job name as rendered by GitHub.
-        status_checks:
+        # Matrix jobs render unstable names — covered by the final "CI Passed" gate.
+        contexts:
+          # Final aggregation gate: passes only when all CI jobs succeed or are skipped
+          - "CI Passed"
           # Backend checks
-          - "Backend Lint"
-          - "Backend Tests"
+          - "Backend: Lint & Typecheck"
+          - "Backend: Security"
           # Frontend checks
-          - "Frontend Lint & Typecheck"
-          - "Frontend Tests"
-          # CI summary — final gate that only passes when all previous jobs succeed
-          - "CI Summary"
+          - "Frontend: Lint & Typecheck"
+          - "Frontend: Build & Bundle"
+          # Security
+          - "Security: Secrets Scan"
         # Require branches to be up-to-date before merging
         strict: true
 

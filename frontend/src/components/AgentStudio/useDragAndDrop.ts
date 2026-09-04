@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { RefObject } from 'react';
 import type { InputToolbarHandle } from '../input';
+import type * as React from 'react';
 
 export function useDragAndDrop(inputToolbarRef: RefObject<InputToolbarHandle>) {
   const [isPageDragOver, setIsPageDragOver] = useState(false);

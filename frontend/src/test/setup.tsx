@@ -4,8 +4,8 @@ import { vi, expect } from 'vitest';
 
 expect.extend(axeMatchers);
 
-// Suppress act(...) warnings from harmless async effects (useGenericCrud,
-// usePickerState, etc.). These are noisy but harmless when tests pass.
+// 屏蔽无害异步副作用（useGenericCrud、usePickerState 等）产生的 act(...) 警告。
+// 测试通过时这些警告只是噪音，无害。
 const _origWarn = console.warn;
 const _origErr = console.error;
 console.warn = (...args: unknown[]) => {
@@ -18,6 +18,7 @@ console.error = (...args: unknown[]) => {
 };
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ToastProvider } from '../utils/useToast';
@@ -52,7 +53,42 @@ Element.prototype.scrollIntoView = vi.fn();
 Element.prototype.scrollTo = vi.fn();
 Object.defineProperty(window, 'matchMedia', { writable: true, value: vi.fn().mockImplementation((query: string) => ({ matches: false, media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() })) });
 
-// react-virtuoso requires ResizeObserver to measure container dimensions
+// ECharts 需要 canvas mock
+const mockCtx = {
+  fillRect: vi.fn(),
+  clearRect: vi.fn(),
+  getImageData: vi.fn(() => ({ data: [] })),
+  putImageData: vi.fn(),
+  createImageData: vi.fn(() => []),
+  setTransform: vi.fn(),
+  drawImage: vi.fn(),
+  save: vi.fn(),
+  fillText: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  stroke: vi.fn(),
+  translate: vi.fn(),
+  scale: vi.fn(),
+  rotate: vi.fn(),
+  arc: vi.fn(),
+  fill: vi.fn(),
+  measureText: vi.fn(() => ({ width: 0 })),
+  transform: vi.fn(),
+  rect: vi.fn(),
+  clip: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  canvas: { width: 800, height: 600 },
+};
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+  value: vi.fn(() => mockCtx),
+  writable: true,
+  configurable: true,
+});
+
+// react-virtuoso 需要 ResizeObserver 来测量容器尺寸
 window.ResizeObserver = vi.fn(function ResizeObserver(callback: ResizeObserverCallback) {
   const targets = new WeakSet<Element>();
   return {
@@ -88,7 +124,12 @@ export function TestProviders({ children }: { children: ReactNode }) {
       <SettingsProvider>
         <ToastProvider>
           <VirtuosoMockContext.Provider value={{ viewportHeight: 800, itemHeight: 60 }}>
-            {children}
+            <MemoryRouter>
+              <Routes>
+                <Route path="/chat/:sessionId" element={children} />
+                <Route path="*" element={children} />
+              </Routes>
+            </MemoryRouter>
           </VirtuosoMockContext.Provider>
         </ToastProvider>
       </SettingsProvider>

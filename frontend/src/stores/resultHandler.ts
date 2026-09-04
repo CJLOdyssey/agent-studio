@@ -1,14 +1,16 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
+import { disconnectRun } from '../api/websocket';
+import { updateAnswerVersions } from '../api/client/sessions';
 import type { ChatState } from './chatTypes';
 import type { ChatMessage, RunResult } from '../types';
 
 function makeRunResult(code: string): RunResult {
   return { code, requirement: '', pm_document: '', review: '', approved: false, status: 'completed' };
 }
-import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent } from './wsEvents';
+import type { WsThinkingDoneEvent, WsResultEvent, WsTeamResultEvent, WsThumbsEvent, WsCancelledEvent } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
 export function handleThinkingDone(s: ChatState, msg: WsThinkingDoneEvent): Partial<ChatState> {
@@ -63,7 +65,13 @@ export function handleThinkingDoneEvent(set: SetFn, msg: WsThinkingDoneEvent): v
     if (s.streamingId) {
       return {
         messages: s.messages.map((m) =>
-          m.id === s.streamingId ? { ...m, thinkingDone: true } : m,
+          m.id === s.streamingId
+            ? {
+                ...m,
+                thinkingDone: true,
+                ...(msg.thinking ? { thinking: msg.thinking } : {}),
+              }
+            : m,
         ),
       };
     }
@@ -78,6 +86,7 @@ export function handleResultEvent(
   msg: WsResultEvent,
 ): void {
   const runId = get().currentRunId;
+  const streamMsgId = get().streamingId;
     const codeContent: string = msg.code ? String(msg.code) : '';
   set((_s) => {
     let msgs = _s.messages;
@@ -90,46 +99,181 @@ export function handleResultEvent(
         return { ...m, ...updated, thinkingDone: true } as ChatMessage;
       });
     }
+    // 重新生成完成：给新模型消息挂答案分页（同 requirement 答案组 =
+    // 旧 run 列表 + 新 run），切换走分支加载（父链 + 子孙链）。
+    let pendingRegenerate = _s.pendingRegenerate;
+    const done = msgs.find((m) => m.id === _s.streamingId);
+    if (done && pendingRegenerate && runId) {
+      const answerRunIds = [...pendingRegenerate.oldRunIds, runId];
+      msgs = msgs.map((m) =>
+        m.id === done.id
+          ? {
+              ...m,
+              userMsgId: pendingRegenerate!.userMsgId,
+              answerVersions: answerRunIds.map(
+                () => pendingRegenerate!.requirement,
+              ),
+              answerRunIds,
+              currentAnswerVersion: answerRunIds.length - 1,
+            }
+          : m,
+      );
+      pendingRegenerate = null;
+    }
     return {
       messages: msgs,
+      pendingRegenerate,
       status: 'idle' as ChatState['status'],
       streamingId: null,
       result: makeRunResult(codeContent),
       skipThinking: false,
     };
   });
+  // 编辑-重新生成：持久化合并后的答案版本，使刷新后仍保留。
+  if (streamMsgId && runId) {
+    const done = get().messages.find((m) => m.id === streamMsgId);
+    if (done && done.versions && done.versions.length > 0) {
+      updateAnswerVersions(runId, done.versions, done.thinkingVersions).catch((err) => {
+        Logger.warn('[chat] failed to persist answer versions for run %s: %s', runId, String(err));
+      });
+    }
+  }
   Logger.info('[chat] result received — status set to idle');
   activeStreamMsgIds.delete(runId || '');
+  // run 完成：停止 WS 流。否则 onclose 自动重连，
+  // 后端 drain_buffer 回放会重复已完成的会话。
+  if (runId) disconnectRun(runId);
 }
 
 export function handleTeamResultEvent(
   set: SetFn,
   get: GetFn,
   activeStreamMsgIds: Set<string>,
-  _msg: WsTeamResultEvent,
+  msg: WsTeamResultEvent,
 ): void {
   const runId = get().currentRunId;
+  const display = typeof msg.display === 'string' && msg.display.trim() ? msg.display : '';
+  const artifactCount = msg.artifacts && typeof msg.artifacts === 'object' && !Array.isArray(msg.artifacts)
+    ? Object.keys(msg.artifacts).length
+    : 0;
+  const streamMsgId = get().streamingId;
   set((_s) => {
     let msgs = _s.messages;
+    let summaryId: string | null = null;
     if (_s.streamingId) {
-      msgs = _s.messages.map((m) => {
-        if (m.id !== _s.streamingId) return m;
-        return { ...m, thinkingDone: true } as ChatMessage;
-      });
+      const streamed = _s.messages.find((m) => m.id === _s.streamingId);
+      const verdictFor = streamed
+        ? msg.verdicts?.[streamed.agent_name || ''] ?? undefined
+        : undefined;
+      if (verdictFor) {
+        // Reviewer：verdict 人类可读化，保留角色消息（行业化布局——
+        // 评审是角色自己的输出，不并入团队汇总）。
+        const score = typeof verdictFor.score === 'number'
+          ? ` · score ${verdictFor.score}`
+          : '';
+        const head = `${verdictFor.approved ? '✅ 通过' : '❌ 未通过'}${score}`;
+        const reason = verdictFor.reason ? `\n理由：${verdictFor.reason}` : '';
+        msgs = _s.messages.map((m) =>
+          m.id === _s.streamingId
+            ? { ...m, thinkingDone: true, content: `${head}${reason}` } as ChatMessage
+            : m,
+        );
+        // 追加「团队汇总」最终成品（reporter 交付物）
+        if (display) {
+          summaryId = crypto.randomUUID?.() || uid();
+          msgs = [
+            ...msgs,
+            {
+              id: summaryId,
+              role: 'agent',
+              agent_name: '团队汇总',
+              content: display,
+              round_number: 1,
+              created_at: new Date().toISOString(),
+            } as ChatMessage,
+          ];
+        }
+      } else {
+        // Generator：最后一条流消息升级为「团队汇总」最终成品
+        msgs = _s.messages.map((m) => {
+          if (m.id !== _s.streamingId) return m;
+          const updated: Record<string, unknown> = { thinkingDone: true };
+          if (display) {
+            updated.content = display;
+            updated.agent_name = '团队汇总';
+          }
+          return { ...m, ...updated } as ChatMessage;
+        });
+      }
+    }
+    // 重新生成完成：给新模型消息挂答案分页（同 requirement 答案组 =
+    // 旧 run 列表 + 新 run），切换走分支加载（父链 + 子孙链）。
+    // 与 handleResultEvent 保持一致——否则 team 会话重新生成后分页
+    // 箭头要等刷新（buildPathTurns 从 DB 挂载）才出现。
+    // M8: 分页挂到「团队汇总」成品（reviewer 分支追加的独立消息）——
+    // 此前挂在 verdict 短气泡上，最终答案反而没有分页箭头。
+    let pendingRegenerate = _s.pendingRegenerate;
+    const done = msgs.find((m) => m.id === (summaryId ?? _s.streamingId));
+    if (done && pendingRegenerate && runId) {
+      const answerRunIds = [...pendingRegenerate.oldRunIds, runId];
+      msgs = msgs.map((m) =>
+        m.id === done.id
+          ? {
+              ...m,
+              userMsgId: pendingRegenerate!.userMsgId,
+              answerVersions: answerRunIds.map(
+                () => pendingRegenerate!.requirement,
+              ),
+              answerRunIds,
+              currentAnswerVersion: answerRunIds.length - 1,
+            }
+          : m,
+      );
+      pendingRegenerate = null;
     }
     return {
       messages: msgs,
+      pendingRegenerate,
       status: 'idle' as ChatState['status'],
       streamingId: null,
       skipThinking: false,
     };
   });
-  Logger.info('[chat] team_result received — status set to idle');
+  // M8: 编辑重生成的答案版本持久化（对齐 handleResultEvent:133-140），
+  // 否则 team 会话重生成后的分页在刷新后丢失。
+  if (streamMsgId && runId) {
+    const done = get().messages.find((m) => m.id === streamMsgId);
+    if (done && done.versions && done.versions.length > 0) {
+      updateAnswerVersions(runId, done.versions, done.thinkingVersions).catch((err) => {
+        Logger.warn('[chat] failed to persist answer versions for team run %s: %s', runId, String(err));
+      });
+    }
+  }
+  Logger.info('[chat] team_result received — surfaced %d node artifacts, status set to idle', artifactCount);
   activeStreamMsgIds.delete(runId || '');
+  if (runId) disconnectRun(runId);
 }
 
-export function handleThumbsEvent(set: SetFn, msg: WsThumbsEvent): void {
-  set((s) => ({
+export function handleCancelledEvent(set: SetFn, get: GetFn, msg: WsCancelledEvent): void {
+  // L8: 后端取消路径（agent_pipeline CancelledError 分支）会发 cancelled 事件。
+  // 本地「停止生成」已由 cancelRun 置 idle；这里覆盖后端/多端触发的取消——
+  // 否则前端停在 running 直到 WS 重连。
+  const runId = get().currentRunId;
+  Logger.info('[chat] cancelled event received — run %s (event run %s)', runId, msg.run_id || '?');
+  set((_s) => ({
+    status: 'idle' as ChatState['status'],
+    streamingId: null,
+    skipThinking: false,
+    pendingRegenerate: null,
+    editTargetId: null,
+    continuingId: null,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
+  }));
+  if (runId) disconnectRun(runId);
+}
+
+export function handleThumbsEvent(set: SetFn, msg: WsThumbsEvent): void {  set((s) => ({
     messages: s.messages.map((m) =>
       m.id === msg.msgId ? { ...m, thumbs: msg.value } : m,
     ),

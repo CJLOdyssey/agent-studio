@@ -7,18 +7,19 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import httpx
 import pytest
 
-from backend.tasks.complete_pipeline import _complete_pipeline
+from tasks.complete_pipeline import _complete_pipeline
 
 
 @pytest.fixture
 def mock_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("backend.tasks.complete_pipeline.load_config"),
-        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.load_config"),
+        patch("tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.save_message", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -53,9 +54,10 @@ class TestCompletePipeline:
         args, _ = mock_deps["stream_prefix_completion"].await_args
         body = args[2]
         assert body["model"] == "test-model"
-        assert "Continue the following text" in body["messages"][0]["content"]
+        assert "<已生成的回答草稿>" in body["messages"][0]["content"]
         assert "Hello" in body["messages"][0]["content"]
         assert body.get("stream") is True
+        assert body["thinking"] == {"type": "disabled"}
 
         mock_deps["update_run_result"].assert_awaited_with(
             "run-c1",
@@ -64,6 +66,14 @@ class TestCompletePipeline:
             review="",
             approved=False,
             status="completed",
+        )
+        mock_deps["save_message"].assert_awaited_with(
+            run_id="run-c1",
+            role="Agent",
+            agent_name="Agent",
+            content=content + " world!",
+            thinking=None,
+            round_number=1,
         )
         mock_deps["publish_run_message"].assert_awaited_with(
             "run-c1",
@@ -91,6 +101,7 @@ class TestCompletePipeline:
             api_base=api_base,
             model="deepseek-v4-flash",
             thinking="previous reasoning",
+            question="Continue this",
         )
 
         args, _ = mock_deps["stream_prefix_completion"].await_args
@@ -103,13 +114,15 @@ class TestCompletePipeline:
         assert body["messages"][1]["role"] == "assistant"
         assert body["messages"][1]["prefix"] is True
         assert body.get("thinking") == {"type": "enabled"}
+        assert body["messages"][1]["content"] == content
+        assert body["messages"][1]["reasoning_content"] == "previous reasoning"
 
         thinking_call = call(
             "run-c2",
             {
                 "type": "thinking_done",
                 "agent_name": "Agent",
-                "thinking": "thinking...",
+                "thinking": "previous reasoningthinking...",
             },
         )
         assert thinking_call in mock_deps["publish_run_message"].await_args_list
@@ -121,6 +134,14 @@ class TestCompletePipeline:
             review="",
             approved=False,
             status="completed",
+        )
+        mock_deps["save_message"].assert_awaited_with(
+            run_id="run-c2",
+            role="Agent",
+            agent_name="Agent",
+            content=content + " continued text.",
+            thinking="previous reasoningthinking...",
+            round_number=1,
         )
         assert result is None
 
@@ -143,7 +164,7 @@ class TestCompletePipeline:
         mock_deps["update_run_status"].assert_awaited_with("run-c3", "error")
         mock_deps["publish_run_message"].assert_awaited_with(
             "run-c3",
-            {"type": "error", "detail": "LLM API 错误: 402 Payment Required"},
+            {"type": "error", "content": "LLM API 错误: 402 Payment Required"},
         )
         assert result is None
 
@@ -162,7 +183,7 @@ class TestCompletePipeline:
         mock_deps["update_run_status"].assert_awaited_with("run-c4", "error")
         mock_deps["publish_run_message"].assert_awaited_with(
             "run-c4",
-            {"type": "error", "detail": "续写失败: Network timeout"},
+            {"type": "error", "content": "续写失败: Network timeout"},
         )
         assert result is None
 
@@ -182,9 +203,37 @@ class TestCompletePipeline:
         mock_deps["update_run_status"].assert_awaited_with("run-c5", "error")
         mock_deps["publish_run_message"].assert_awaited_with(
             "run-c5",
-            {"type": "error", "detail": "保存失败: DB write failed"},
+            {"type": "error", "content": "保存失败: DB write failed"},
         )
         assert result is None
+
+    async def test_save_message_failure_suppressed(self, mock_deps):
+        """save_message failure must not fail the run — result still published."""
+        mock_deps["stream_prefix_completion"].return_value = (" output", ["thought"])
+        mock_deps["save_message"].side_effect = RuntimeError("DB write failed")
+
+        result = await _complete_pipeline(
+            content="test",
+            run_id="run-c7",
+            api_key="sk-test",
+            api_base="https://api.deepseek.com",
+            model="deepseek-v4",
+            thinking="prev",
+        )
+
+        assert result is None
+        mock_deps["update_run_result"].assert_awaited()
+        mock_deps["publish_run_message"].assert_awaited_with(
+            "run-c7",
+            {
+                "type": "result",
+                "status": "completed",
+                "code": "test output",
+                "pm_document": "",
+                "review": "",
+                "approved": False,
+            },
+        )
 
     async def test_custom_model_and_base(self, mock_deps):
         content = "test"
@@ -212,7 +261,7 @@ class TestCompletePipeline:
         """Lines 38-39, 138-139: /proc read failure is silently ignored."""
         mock_deps["stream_prefix_completion"].return_value = (" output", [])
 
-        with patch("backend.tasks.complete_pipeline.os") as mock_os:
+        with patch("tasks.complete_pipeline.os") as mock_os:
             mock_os.getpid.return_value = 999999
             mock_os.open.side_effect = OSError("no such proc")
             result = await _complete_pipeline(
@@ -231,7 +280,7 @@ class TestCompletePipeline:
         """Lines 38-39, 138-139: /proc read failure with thinking enabled."""
         mock_deps["stream_prefix_completion"].return_value = (" result", ["thinking"])
 
-        with patch("backend.tasks.complete_pipeline.os") as mock_os:
+        with patch("tasks.complete_pipeline.os") as mock_os:
             mock_os.getpid.return_value = 999999
             mock_os.open.side_effect = OSError("no such proc")
             result = await _complete_pipeline(
@@ -246,10 +295,13 @@ class TestCompletePipeline:
         assert result is None
 
     async def test_tracemalloc_starts_when_not_tracing(self, mock_deps):
-        """Line 41: tracemalloc.start() called when not already tracing."""
+        """Line 41: tracemalloc.start() called when MEM_TRACE=1 and not already tracing."""
         mock_deps["stream_prefix_completion"].return_value = (" output", [])
 
-        with patch("backend.tasks.complete_pipeline.tracemalloc") as mock_tm:
+        with patch("tasks.complete_pipeline.tracemalloc") as mock_tm, patch(
+            "tasks.complete_pipeline.os"
+        ) as mock_os:
+            mock_os.environ.get.return_value = "1"
             mock_tm.is_tracing.return_value = False
             await _complete_pipeline(
                 content="test",
@@ -260,3 +312,22 @@ class TestCompletePipeline:
                 thinking=None,
             )
             mock_tm.start.assert_called_once_with(25)
+
+    async def test_tracemalloc_skipped_without_mem_trace(self, mock_deps):
+        """86a693c 回归：MEM_TRACE 未设置时不得调用 tracemalloc.start（perf 门控）。"""
+        mock_deps["stream_prefix_completion"].return_value = (" output", [])
+
+        with patch("tasks.complete_pipeline.tracemalloc") as mock_tm, patch(
+            "tasks.complete_pipeline.os"
+        ) as mock_os:
+            mock_os.environ.get.return_value = ""
+            mock_tm.is_tracing.return_value = False
+            await _complete_pipeline(
+                content="test",
+                run_id="run-tracemalloc-off",
+                api_key="sk-test",
+                api_base=None,
+                model=None,
+                thinking=None,
+            )
+            mock_tm.start.assert_not_called()

@@ -1,0 +1,83 @@
+"""Agent 配置测试端点：用 agent 设置运行单次 LLM 调用。"""
+
+import time
+from typing import Any
+
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+
+from auth import require_owned
+from core.error_codes import ErrorCode, error_response
+from core.infra.logging_config import get_logger
+
+logger = get_logger(__name__)
+router = APIRouter(tags=["agents_test"])
+
+
+class AgentTestResult(BaseModel):
+    success: bool
+    message: str
+    duration_ms: int = 0
+
+
+@router.post("/api/agents/{agent_id}/test")
+async def test_agent(agent_id: str, request: Request) -> Any:
+    """用 agent 的配置运行单次 LLM 调用来测试 agent 配置。"""
+    from repository.agents import get_agent_config
+
+    await require_owned(
+        request, agent_id, get_agent_config,
+        not_found=ErrorCode.AGENT_NOT_FOUND, allow_unowned=False,
+    )
+    agent = await get_agent_config(agent_id)
+    if not agent:
+        raise error_response(ErrorCode.AGENT_NOT_FOUND, detail="Agent not found")
+
+    start = time.monotonic()
+    try:
+        import httpx
+
+        from core.config import load_config
+        from repository.keys import get_default_api_key
+
+        cfg = load_config()
+        effective_model = agent.model or cfg.model
+        key_cfg = await get_default_api_key("system")
+        if not key_cfg:
+            return AgentTestResult(
+                success=False, message="No API key configured", duration_ms=0
+            )
+
+        base_url = (key_cfg.get("base_url") or "https://api.deepseek.com").rstrip("/")
+        url = f"{base_url}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {key_cfg['api_key']}",
+            "Content-Type": "application/json",
+        }
+        body = {
+            "model": effective_model,
+            "messages": [
+                {"role": "system", "content": agent.system_prompt or "You are a helpful assistant."},
+                {"role": "user", "content": "Hello, respond with 'OK' if you are working."},
+            ],
+            "max_tokens": 10,
+            "stream": False,
+        }
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            resp = await client.post(url, json=body, headers=headers)
+            dur = int((time.monotonic() - start) * 1000)
+            if resp.status_code == 200:
+                return AgentTestResult(
+                    success=True,
+                    message=f"LLM responded ({effective_model})",
+                    duration_ms=dur,
+                )
+            return AgentTestResult(
+                success=False,
+                message=f"HTTP {resp.status_code}: {resp.text[:200]}",
+                duration_ms=dur,
+            )
+    except Exception as e:
+        dur = int((time.monotonic() - start) * 1000)
+        return AgentTestResult(success=False, message=str(e), duration_ms=dur)

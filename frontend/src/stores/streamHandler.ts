@@ -1,16 +1,125 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
+import { create } from 'zustand';
 import type { ChatState } from './chatTypes';
-import type { WsStreamEvent, WsThinkingStreamEvent } from './wsEvents';
+import type { ChatMessage } from '../types';
+import type { WsStreamEvent, WsThinkingStreamEvent, WsTeamResultEvent, WsApprovalRequestEvent, TeamVerdict } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
+
+/**
+ * M7: 团队模式下角色切换 = 关闭当前流消息。给该消息标 thinkingDone，
+ * 否则若后端未在角色流尾发 thinking_done，上一角色气泡整场显示
+ * 「思考中」spinner。返回一个 messages 已更新的 ChatState 供 handleStreamStart
+ * 作基础（新消息从关闭后的列表派生）。
+ */
+function closeStreamingForRoleSwitch(s: ChatState): ChatState {
+  if (!s.streamingId) return s;
+  return {
+    ...s,
+    messages: s.messages.map((m) =>
+      m.id === s.streamingId ? { ...m, thinkingDone: true } : m,
+    ),
+  };
+}
+
+interface ApprovalRequest {
+  runId: string;
+  node: string;
+}
+
+interface ApprovalStoreState {
+  request: ApprovalRequest | null;
+  setRequest: (request: ApprovalRequest | null) => void;
+}
+
+export const useApprovalStore = create<ApprovalStoreState>((set) => ({
+  request: null,
+  setRequest: (request) => set({ request }),
+}));
+
+type TeamMessageMeta = ChatMessage & {
+  verdicts?: Record<string, TeamVerdict>;
+  round?: number;
+};
+
+export function handleTeamResultMeta(set: SetFn, msg: WsTeamResultEvent): void {
+  const verdicts = msg.verdicts;
+  const rounds = msg.rounds;
+  if (!verdicts || typeof verdicts !== 'object' || Array.isArray(verdicts)) return;
+  set((s) => {
+    // M5: verdicts 只挂到本次 run 的最后一条 agent 消息（「团队汇总」），
+    // 不再全员挂载——多轮团队会话的历史消息会错误显示最新 run 的徽章。
+    let lastAgentIdx = -1;
+    for (let i = s.messages.length - 1; i >= 0; i--) {
+      if (s.messages[i].role !== 'user') {
+        lastAgentIdx = i;
+        break;
+      }
+    }
+    if (lastAgentIdx < 0) return {};
+    return {
+      messages: s.messages.map((m, i) =>
+        i === lastAgentIdx
+          ? ({ ...m, verdicts, ...(rounds !== undefined ? { round: rounds } : {}) } as TeamMessageMeta)
+          : m,
+      ),
+    };
+  });
+}
+
+export function handleApprovalRequest(msg: WsApprovalRequestEvent): void {
+  const runId = msg.run_id;
+  const node = msg.node;
+  if (!runId || !node) return;
+  // M6: 审批 UI 由全局 useApprovalStore 单例 Modal 驱动（ApprovalModal），
+  // 不再挂到消息上——approval_request 可能先于流到达（目标消息尚未创建 /
+  // 最后一条还是 user 消息），挂消息会在 user 分支提前 return 被吞掉。
+  useApprovalStore.getState().setRequest({ runId, node });
+}
+
 
 export function handleStreamStart(s: ChatState, msg: WsStreamEvent, chunk: string): Partial<ChatState> {
   const newId = crypto.randomUUID?.() || uid();
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
   const continuingId = s.continuingId;
+  if (s.editTargetId) {
+    // 编辑-重新生成：新答案替换目标消息。旧内容归档进版本；
+    // 流从全新开始（不是旧+新）。
+    const targetIdx = s.messages.findIndex((m) => m.id === s.editTargetId);
+    const oldMsg = targetIdx >= 0 ? s.messages[targetIdx] : null;
+    const oldContent = oldMsg?.content || '';
+    const oldThinking = oldMsg?.thinking || '';
+    const newVersions = oldMsg?.versions ? [...oldMsg.versions, oldContent] : [oldContent];
+    const newThinkingVersions = oldMsg?.thinkingVersions
+      ? [...oldMsg.thinkingVersions, oldThinking]
+      : (oldThinking ? [oldThinking] : undefined);
+    Logger.info('[chat] edit stream — merging into target msg %s', s.editTargetId);
+    return {
+      streamingId: newId,
+      editTargetId: null,
+      continuingId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
+      skipThinking: false,
+      messages: s.messages.map((m) => {
+        if (m.id !== s.editTargetId) return m;
+        return {
+          ...m,
+          id: newId,
+          content: chunk,
+          thinking: '',
+          versions: newVersions,
+          thinkingVersions: newThinkingVersions,
+          currentVersion: newVersions.length - 1,
+        };
+      }),
+      currentRole: msg.agent_name || 'Agent',
+      wsStatus: 'connected' as ChatState['wsStatus'],
+    };
+  }
   if (continuingId) {
     Logger.info('[chat] continue stream — replacing interrupted msg (continuingId=%s, newId=%s)', continuingId, newId);
     const contIdx = s.messages.findIndex((m) => m.id === continuingId);
@@ -44,6 +153,38 @@ export function handleThinkingStreamNew(s: ChatState, msg: WsThinkingStreamEvent
   const continuingId = s.continuingId;
   const pending = s.pendingVersions;
   const pendingThinking = s.pendingThinkingVersions;
+  if (s.editTargetId) {
+    const targetIdx = s.messages.findIndex((m) => m.id === s.editTargetId);
+    const oldMsg = targetIdx >= 0 ? s.messages[targetIdx] : null;
+    const oldContent = oldMsg?.content || '';
+    const oldThinking = oldMsg?.thinking || '';
+    const newVersions = oldMsg?.versions ? [...oldMsg.versions, oldContent] : [oldContent];
+    const newThinkingVersions = oldMsg?.thinkingVersions
+      ? [...oldMsg.thinkingVersions, oldThinking]
+      : (oldThinking ? [oldThinking] : undefined);
+    return {
+      streamingId: newId,
+      editTargetId: null,
+      continuingId: null,
+      pendingVersions: null,
+      pendingThinkingVersions: null,
+      skipThinking: false,
+      messages: s.messages.map((m) => {
+        if (m.id !== s.editTargetId) return m;
+        return {
+          ...m,
+          id: newId,
+          content: '',
+          thinking: chunk,
+          versions: newVersions,
+          thinkingVersions: newThinkingVersions,
+          currentVersion: newVersions.length - 1,
+        };
+      }),
+      currentRole: msg.agent_name || 'Agent',
+      wsStatus: 'connected' as ChatState['wsStatus'],
+    };
+  }
   if (continuingId) {
     const contIdx = s.messages.findIndex((m) => m.id === continuingId);
     const oldMsg = contIdx >= 0 ? s.messages[contIdx] : null;
@@ -117,9 +258,28 @@ export function handleStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
-  if (activeStreamMsgIds.has(s.currentRunId || '')) {
+  // run 已完成（result → 状态 idle）：WS 重连会回放缓冲事件。
+  // 忽略它们——追加会重复已完成的会话。
+  if (s.status !== 'running') return;
+  const runId = s.currentRunId || '';
+  // 续写仅在消息流式传输中有效：遗留的 run id（result 事件丢失 /
+  // 运行中途状态重置）绝不能吞掉第一个 chunk。
+  if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
+      // 团队模式：每个角色流式输出自己的消息。当流式 agent 切换时，
+      // 关闭当前消息并开启新消息（行业布局：每个 agent 一条消息，
+      // 与 LangGraph add_messages 对齐）。
+      if (prev.activeTeamId) {
+        const current = prev.messages.find((m) => m.id === prev.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(prev);
+          return {
+            streamingId: null,
+            ...handleStreamStart(closed, msg, chunk),
+          };
+        }
+      }
       return {
         skipThinking: false,
         messages: prev.messages.map((m) => {
@@ -132,7 +292,33 @@ export function handleStreamEvent(
     });
     return;
   }
-  activeStreamMsgIds.add(s.currentRunId || '');
+  activeStreamMsgIds.add(runId);
+  // 若 streamingId 已设置（来自先前的 thinking_stream），则复用该消息
+  if (s.streamingId) {
+    set((prev) => {
+      if (!prev.streamingId) return {};
+      if (prev.activeTeamId) {
+        const current = prev.messages.find((m) => m.id === prev.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(prev);
+          return {
+            streamingId: null,
+            ...handleStreamStart(closed, msg, chunk),
+          };
+        }
+      }
+      return {
+        skipThinking: false,
+        messages: prev.messages.map((m) => {
+          if (m.id !== prev.streamingId) return m;
+          return { ...m, content: m.content + chunk, thinking: m.thinking ?? '' };
+        }),
+        currentRole: msg.agent_name || 'Agent',
+        wsStatus: 'connected' as ChatState['wsStatus'],
+      };
+    });
+    return;
+  }
   set((prev) => {
     return handleStreamStart(prev, msg, chunk);
   });
@@ -147,9 +333,22 @@ export function handleThinkingStreamEvent(
   const chunk = msg.content || '';
   if (!chunk) return;
   const s = get();
-  if (activeStreamMsgIds.has(s.currentRunId || '')) {
+  if (s.status !== 'running') return;
+  Logger.info('[chat] thinking stream entry — editTargetId=%s streamingId=%s runId=%s', s.editTargetId, s.streamingId, s.currentRunId);
+  const runId = s.currentRunId || '';
+  if (runId && activeStreamMsgIds.has(runId) && s.streamingId) {
     set((prev) => {
       if (!prev.streamingId) return {};
+      if (prev.activeTeamId) {
+        const current = prev.messages.find((m) => m.id === prev.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(prev);
+          return {
+            streamingId: null,
+            ...handleThinkingStreamNew(closed, msg, chunk),
+          };
+        }
+      }
       return {
         messages: prev.messages.map((m) => {
           if (m.id !== prev.streamingId) return m;
@@ -159,9 +358,19 @@ export function handleThinkingStreamEvent(
     });
     return;
   }
-  activeStreamMsgIds.add(s.currentRunId || '');
+  activeStreamMsgIds.add(runId);
   set((s) => {
     if (s.streamingId) {
+      if (s.activeTeamId) {
+        const current = s.messages.find((m) => m.id === s.streamingId);
+        if (current && current.agent_name !== msg.agent_name) {
+          const closed = closeStreamingForRoleSwitch(s);
+          return {
+            streamingId: null,
+            ...handleThinkingStreamNew(closed, msg, chunk),
+          };
+        }
+      }
       return {
         messages: s.messages.map((m) => {
           if (m.id !== s.streamingId) return m;

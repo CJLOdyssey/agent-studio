@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../locales', () => ({ t: (k: string) => k }));
@@ -12,6 +12,7 @@ vi.mock('../../shared/ResourcePickerModal', () => ({ default: () => null }));
 import AgentFormModal from '../AgentFormModal';
 import type { AgentFormData, AgentEntry } from '../agent.types';
 import { ResourcePickerSection } from '../ResourcePickerSection';
+import type * as React from 'react';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const Wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -75,12 +76,12 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders create mode title when no editingAgent', () => {
     render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(screen.getByText('agent.form_create_title')).toBeInTheDocument();
+    expect(screen.getByText('agent.form_title_new')).toBeInTheDocument();
   });
 
   it('renders edit mode title when editingAgent is provided', () => {
     render(<AgentFormModal {...baseProps} editingAgent={makeAgentEntry()} />, { wrapper: Wrapper });
-    expect(screen.getByText('agent.form_edit_title')).toBeInTheDocument();
+    expect(screen.getByText('agent.form_title_edit')).toBeInTheDocument();
   });
 
   it('renders name input with placeholder', () => {
@@ -201,6 +202,20 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
     expect(lastCall.selectedMCPs).toEqual([{ id: 'm1', name: 'MCP 1' }]);
   });
 
+  it('matches bindings by name when stored ids are display names', () => {
+    const mcps = [{ id: '39fad2d1-3cd8', name: 'Playwright MCP' }];
+    render(
+      <AgentFormModal
+        {...baseProps}
+        formData={makeFormData({ mcpIds: ['Playwright MCP'] })}
+        availableMCPs={mcps}
+      />,
+      { wrapper: Wrapper }
+    );
+    const lastCall = (ResourcePickerSection as ReturnType<typeof vi.fn>).mock.lastCall?.[0];
+    expect(lastCall.selectedMCPs).toEqual([{ id: '39fad2d1-3cd8', name: 'Playwright MCP' }]);
+  });
+
   it('passes selected skills to ResourcePickerSection', () => {
     const skills = [{ id: 's1', name: 'Skill 1' }];
     render(
@@ -218,7 +233,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when clicking X button', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const closeBtn = document.querySelector('.modal-close') as HTMLButtonElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLButtonElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -242,7 +257,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when clicking overlay', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -250,7 +265,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose when clicking modal content', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const modalContent = document.querySelector('.wsta-agent-form-modal');
+    const modalContent = document.querySelector('.bg-\\[var\\(--color-surface-raised\\)\\]');
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -258,7 +273,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('calls onClose on Escape key', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -266,7 +281,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose for non-Escape keys', () => {
     const onClose = vi.fn();
     render(<AgentFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -296,8 +311,7 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders required asterisk on name field', () => {
     render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    const labels = document.querySelectorAll('.wsta-label');
-    const nameLabel = labels[0];
+    const nameLabel = screen.getByText((c) => c.startsWith('agent.form_name'));
     expect(nameLabel.textContent).toContain('*');
   });
 
@@ -309,11 +323,12 @@ describe('AgentFormModal', { tags: ['unit'] }, () => {
 
   it('renders modal with correct CSS class', () => {
     const { container } = render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(container.querySelector('.wsta-agent-form-modal')).toBeInTheDocument();
+    expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument();
+    expect(container.querySelector('.bg-\\[var\\(--color-surface-raised\\)\\]')).toBeInTheDocument();
   });
 
-  it('renders header with Bot icon', () => {
+  it('renders header with Cpu icon', () => {
     const { container } = render(<AgentFormModal {...baseProps} />, { wrapper: Wrapper });
-    expect(container.querySelector('.modal-title')).toBeInTheDocument();
+    expect(container.querySelector('.lucide-cpu')).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 
 vi.mock('react-i18next', () => ({
@@ -8,13 +8,6 @@ vi.mock('../TeamTreeAgentItem', () => ({ default: () => <li data-testid="agent-i
 
 import TeamTree from '../TeamTree';
 import type { Team, Agent } from '../../../../types/AgentStudio';
-
-const mockAgent = (overrides: Partial<Agent> = {}): Agent =>
-  ({
-    id: 'a1', name: 'Agent One', role: 'assistant',
-    icon: 'Bot', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe',
-    ...overrides,
-  } as unknown as Agent);
 
 const mockTeam = (overrides: Partial<Team> = {}): Team => ({
   id: 't1', name: 'Team Alpha', isExpanded: false, isPinned: false, agents: [],
@@ -100,7 +93,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     fireEvent.click(screen.getByText('workstation.delete'));
     fireEvent.click(screen.getByText('common.cancel'));
     expect(handleDeleteTeam).not.toHaveBeenCalled();
-    expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
   });
 
@@ -112,7 +105,8 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.delete'));
-    fireEvent.click(document.body.querySelector('.agentstudio-modal-overlay')!);
+    const dialog = document.body.querySelector('[role="dialog"]')!;
+    fireEvent.click(dialog.parentElement!);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
     restore();
   });
@@ -125,10 +119,10 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.delete'));
-    const modal = document.body.querySelector('.agentstudio-modal')!;
+    const modal = document.body.querySelector('[role="dialog"]')!;
     fireEvent.click(modal);
     expect(handleDeleteTeam).not.toHaveBeenCalled();
-    expect(document.body.querySelector('.agentstudio-modal')).toBeDefined();
+    expect(document.body.querySelector('[role="dialog"]')).toBeDefined();
     restore();
   });
 
@@ -151,7 +145,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(handleRenameTeam).toHaveBeenCalledWith('t1', 'Team Alpha');
     restore();
@@ -166,7 +160,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
     expect(handleRenameTeam).toHaveBeenCalledWith('t1', 'Team Alpha');
@@ -182,7 +176,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
@@ -199,7 +193,7 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Bad<Name' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(handleRenameTeam).not.toHaveBeenCalled();
@@ -215,13 +209,13 @@ describe('TeamTree', { tags: ['integration'] }, () => {
     const restore = mockBoundingRect(menuBtn);
     fireEvent.click(menuBtn);
     fireEvent.click(screen.getByText('workstation.rename'));
-    const input = document.querySelector('.agentstudio-team-edit-input') as HTMLInputElement;
+    const input = document.querySelector('input') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.blur(input);
     act(() => { vi.advanceTimersByTime(100); });
     expect(document.body.textContent).toContain('sidebar.nameNotEmpty');
-    fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
-    expect(document.body.querySelector('.agentstudio-modal-overlay')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
+    expect(document.body.querySelector('[role="dialog"]')).toBeNull();
     restore();
     vi.useRealTimers();
   });

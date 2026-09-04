@@ -10,7 +10,7 @@ export function useMcpManagement(): MCPData {
     emptyForm: EMPTY_FORM,
     itemName: 'MCP',
     validate: validateMCPForm,
-    extraFilters: { typeFilter: 'all', statusFilter: 'all' },
+    extraFilters: { type: 'all', status: 'all' },
   });
 
   const addMCP = useCallback(async (data: MCPFormData) => { await crud.createItem(data); }, [crud]);
@@ -21,10 +21,10 @@ export function useMcpManagement(): MCPData {
 
   return useMemo(() => ({
     ...crud,
-    get typeFilter() { return crud.extraFilterValues.typeFilter ?? 'all'; },
-    get statusFilter() { return crud.extraFilterValues.statusFilter ?? 'all'; },
-    setTypeFilter: (v: string) => crud.setExtraFilter('typeFilter', v),
-    setStatusFilter: (v: string) => crud.setExtraFilter('statusFilter', v),
+    get typeFilter() { return crud.extraFilterValues.type ?? 'all'; },
+    get statusFilter() { return crud.extraFilterValues.status ?? 'all'; },
+    setTypeFilter: (v: string) => crud.setExtraFilter('type', v),
+    setStatusFilter: (v: string) => crud.setExtraFilter('status', v),
     addMCP, updateMCP, removeMCP, copyMCP, removeMultiple,
   }), [crud, addMCP, updateMCP, removeMCP, copyMCP, removeMultiple]);
 }

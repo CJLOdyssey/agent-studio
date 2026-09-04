@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
+import { formatDateTime } from '../../../../../utils/formatDateTime';
+import type { ReactNode } from 'react';
 
 const mockOpenCreate = vi.fn();
 const mockOpenEdit = vi.fn();
@@ -25,11 +27,11 @@ const mockCloseMenu = vi.fn();
 let mockIsLoading = false;
 let mockError: string | null = null;
 let mockBatchError = '';
-let mockProcessed: any[] = [];
+let mockProcessed: unknown[] = [];
 let mockSelectedIds = new Set<string>();
-let mockEditingAgent: any = null;
-let mockDeletingAgent: any = null;
-let mockHistoryAgent: any = null;
+let mockEditingAgent: unknown = null;
+let mockDeletingAgent: unknown = null;
+let mockHistoryAgent: unknown = null;
 let mockIsFormOpen = false;
 let mockIsDeleteOpen = false;
 let mockIsBatchDeleteOpen = false;
@@ -96,14 +98,14 @@ vi.mock('../../shared/DeleteConfirmModal', () => ({ default: () => null }));
 vi.mock('../../shared/BatchDeleteModal', () => ({ default: () => null }));
 vi.mock('../../shared/VersionHistoryModal', () => ({ default: () => null }));
 vi.mock('../../shared/LoadingSkeleton', () => ({ TableSkeleton: () => <div data-testid="skeleton" /> }));
-vi.mock('../../shared/ErrorBoundary', () => ({ ErrorBoundary: ({ children }: any) => <>{children}</> }));
+vi.mock('../../shared/ErrorBoundary', () => ({ ErrorBoundary: ({ children }: { children: ReactNode }) => <>{children}</> }));
 
 import AgentManagement from '../AgentManagement';
 
 function makeAgent(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: '前端开发 Agent', team: '前端团队', model: 'Claude Sonnet 4',
-    status: 'running' as const, version: 'v2.1.0', createdAt: '2026-05-10',
+    status: 'running' as const, version: 'v2.1.0', createdAt: '2026-05-10T00:00:00Z',
     ...overrides,
   };
 }
@@ -148,6 +150,12 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
     expect(screen.getByText('Claude Sonnet 4')).toBeInTheDocument();
   });
 
+  it('renders bound teams when agent has team links', () => {
+    mockProcessed = [makeAgent({ team: '', teams: ['客户支持中心', '智能客服组'] })];
+    renderComponent();
+    expect(screen.getByText('客户支持中心、智能客服组')).toBeInTheDocument();
+  });
+
   it('renders multiple agents', () => {
     mockProcessed = [
       makeAgent({ id: '1', name: 'Agent One', team: '前端团队' }),
@@ -176,10 +184,10 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
     expect(document.querySelector('.wsta-badge-dot-red')).toBeInTheDocument();
   });
 
-  it('renders version text in monospace', () => {
+  it('renders createdAt column with absolute datetime', () => {
     mockProcessed = [makeAgent()];
     renderComponent();
-    expect(document.querySelector('.wsta-mono-text')).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime('2026-05-10T00:00:00Z'))).toBeInTheDocument();
   });
 
   it('shows create button', () => {
@@ -196,7 +204,7 @@ describe('AgentManagement', { tags: ['unit'] }, () => {
   it('shows action dropdown for each agent', () => {
     mockProcessed = [makeAgent()];
     renderComponent();
-    expect(document.querySelector('.wsta-action-btn')).toBeInTheDocument();
+    expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
   it('renders error banner when error is present', () => {

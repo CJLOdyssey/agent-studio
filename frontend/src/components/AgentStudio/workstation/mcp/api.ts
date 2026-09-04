@@ -17,11 +17,14 @@ function toEntry(item: { id: string; name: string; type: string; endpoint: strin
     name: item.name,
     description: typeof cfg.description === 'string' ? cfg.description : item.name,
     type: (item.type === 'stdio' || item.type === 'sse') ? item.type : 'stdio',
+    enabled: item.status === 'active',
     status: item.status === 'active' ? 'connected' : 'disconnected',
     version: typeof cfg.version === 'string' ? cfg.version : 'v1.0.0',
     command: item.type === 'stdio' ? item.endpoint : '',
     url: item.type === 'sse' ? item.endpoint : '',
-    createdAt: item.created_at.slice(0, 10),
+    args: Array.isArray(cfg.args) ? cfg.args as string[] : [],
+    env: Array.isArray(cfg.env) ? cfg.env as string[] : [],
+    createdAt: item.created_at,
   };
 }
 
@@ -31,7 +34,8 @@ const { bind: mcpAPI, setAPI: setMCPAPI } = defineCrudModule<MCPEntry, MCPFormDa
     const item = await createMCP({
       name: data.name, type: data.type,
       endpoint: data.type === 'stdio' ? data.command : data.url,
-      config: JSON.stringify({ description: data.description, version: data.version }),
+      config: JSON.stringify({ description: data.description, version: data.version || 'v1.0.0', args: data.args, env: data.env }),
+      status: data.enabled === false ? 'inactive' : 'active',
     });
     return toEntry(item);
   },
@@ -47,8 +51,9 @@ const { bind: mcpAPI, setAPI: setMCPAPI } = defineCrudModule<MCPEntry, MCPFormDa
       if (data.command !== undefined) patch.endpoint = data.command;
       if (data.url !== undefined) patch.endpoint = data.url;
     }
-    if (data.description !== undefined || data.version !== undefined) {
-      patch.config = JSON.stringify({ description: data.description, version: data.version });
+    if (data.enabled !== undefined) patch.status = data.enabled ? 'active' : 'inactive';
+    if (data.description !== undefined || data.version !== undefined || data.args !== undefined || data.env !== undefined) {
+      patch.config = JSON.stringify({ description: data.description, version: data.version, args: data.args, env: data.env });
     }
     await updateMCP(id, patch);
   },
@@ -57,7 +62,8 @@ const { bind: mcpAPI, setAPI: setMCPAPI } = defineCrudModule<MCPEntry, MCPFormDa
     const created = await createMCP({
       name: `${item.name.slice(0, 48)} (副本)`, type: item.type,
       endpoint: item.type === 'stdio' ? item.command : item.url,
-      config: JSON.stringify({ description: item.description, version: item.version }),
+      config: JSON.stringify({ description: item.description, version: item.version, args: item.args, env: item.env }),
+      status: item.enabled === false ? 'inactive' : 'active',
     });
     return toEntry(created);
   },

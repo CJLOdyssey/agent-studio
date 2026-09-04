@@ -50,41 +50,19 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: 8,
-    border: '1px solid var(--da-border)',
-    background: 'var(--da-bg-secondary)',
-    color: 'var(--da-text-primary)',
-    fontSize: 14,
-    outline: 'none',
-    boxSizing: 'border-box',
-    marginBottom: 12,
-  };
+  const inputClass = 'w-full px-3 py-[10px] rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] text-sm outline-none box-border mb-3';
 
-  const btnStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 0',
-    borderRadius: 8,
-    border: 'none',
-    background: 'var(--da-accent)',
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: submitting ? 'default' : 'pointer',
-    opacity: submitting ? 0.6 : 1,
-  };
+  const btnClass = 'w-full py-[10px] rounded-[var(--radius-btn)] border-none bg-[var(--color-accent)] text-white text-base font-semibold';
 
   if (step === 'reset') {
     return (
-      <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
-        <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>密码已重置</p>
-        <p style={{ fontSize: 13, color: 'var(--da-text-tertiary)', margin: '0 0 20px' }}>
+      <div className="text-center py-5">
+        <div className="text-[40px] mb-3">✓</div>
+        <p className="text-base font-semibold m-0 mb-2">密码已重置</p>
+        <p className="text-sm text-[var(--color-text-tertiary)] m-0 mb-5">
           请使用新密码重新登录
         </p>
-        <button onClick={onBack} style={btnStyle}>
+        <button onClick={onBack} className={btnClass} style={{ cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
           返回登录
         </button>
       </div>
@@ -94,7 +72,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
   if (step === 'code') {
     return (
       <form onSubmit={handleReset}>
-        <p style={{ fontSize: 13, color: 'var(--da-text-tertiary)', marginBottom: 16 }}>
+        <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
           验证码已发送至 {email}
         </p>
         <input
@@ -103,7 +81,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
           placeholder="验证码"
           value={code}
           onChange={(e) => setCode(e.target.value.slice(0, 6))}
-          style={inputStyle}
+          className={inputClass}
           autoComplete="one-time-code"
         />
         <input
@@ -111,7 +89,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
           placeholder="新密码 (至少8位)"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          style={inputStyle}
+          className={inputClass}
         />
         <PasswordStrengthIndicator password={newPassword} validated={true} />
         <input
@@ -119,20 +97,17 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
           placeholder="确认新密码"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          style={{ ...inputStyle, marginTop: 12 }}
+          className={`${inputClass} mt-3`}
         />
         {(localError || error) && (
-          <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--da-error)' }}>
+          <p className="m-0 mb-2 text-sm text-[var(--color-danger)]">
             {localError || error}
           </p>
         )}
-        <button type="submit" disabled={submitting} style={btnStyle}>
+        <button type="submit" disabled={submitting} className={btnClass} style={{ cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
           {submitting ? '重置中...' : '重置密码'}
         </button>
-        <button type="button" onClick={() => setStep('email')} style={{
-          display: 'block', margin: '12px auto 0', background: 'none', border: 'none',
-          color: 'var(--da-text-tertiary)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline',
-        }}>
+        <button type="button" onClick={() => setStep('email')} className="block mx-auto mt-3 bg-transparent border-none text-[var(--color-text-tertiary)] cursor-pointer text-sm underline">
           返回
         </button>
       </form>
@@ -141,7 +116,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
 
   return (
     <form onSubmit={handleSendCode}>
-      <p style={{ fontSize: 13, color: 'var(--da-text-tertiary)', marginBottom: 16 }}>
+      <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
         输入注册邮箱，我们将发送验证码
       </p>
       <input
@@ -149,21 +124,18 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
         placeholder="邮箱地址"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        style={inputStyle}
+        className={inputClass}
         autoComplete="email"
       />
       {(localError || error) && (
-        <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--da-error)' }}>
+        <p className="m-0 mb-2 text-sm text-[var(--color-danger)]">
           {localError || error}
         </p>
       )}
-      <button type="submit" disabled={submitting} style={btnStyle}>
+      <button type="submit" disabled={submitting} className={btnClass} style={{ cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
         {submitting ? '发送中...' : '发送验证码'}
       </button>
-      <button type="button" onClick={onBack} style={{
-        display: 'block', margin: '12px auto 0', background: 'none', border: 'none',
-        color: 'var(--da-text-tertiary)', cursor: 'pointer', fontSize: 13, textDecoration: 'underline',
-      }}>
+      <button type="button" onClick={onBack} className="block mx-auto mt-3 bg-transparent border-none text-[var(--color-text-tertiary)] cursor-pointer text-sm underline">
         返回登录
       </button>
     </form>

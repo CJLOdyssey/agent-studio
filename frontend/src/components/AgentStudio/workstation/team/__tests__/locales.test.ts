@@ -7,7 +7,7 @@ describe('team locales', { tags: ['unit'] }, () => {
     expect(t('team.new')).toBe('新建团队');
     expect(t('team.edit')).toBe('编辑团队');
     expect(t('team.col_name')).toBe('团队名称');
-    expect(t('team.status_active')).toBe('活跃');
+    expect(t('team.status_active')).toBe('已启用');
   });
 
   it('translates en keys', () => {

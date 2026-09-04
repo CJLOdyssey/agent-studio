@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as api from './client';
+import { useAuth } from '../components/auth';
 import type { ModelOption } from '../types/input';
 
-// ---- Sessions ----
+// ---- 会话 ----
 
 export function useSessions(limit = 50, agent_id?: string) {
   return useQuery({
@@ -38,7 +39,7 @@ export function useDeleteSession() {
   });
 }
 
-// ---- Runs ----
+// ---- 运行 ----
 
 export function useRuns(limit = 20) {
   return useQuery({
@@ -57,7 +58,7 @@ export function useRun(runId: string | undefined) {
   });
 }
 
-// ---- Agents ----
+// ---- Agent ----
 
 export function useAgents() {
   return useQuery({
@@ -122,7 +123,7 @@ export function useToggleAgent() {
   });
 }
 
-// ---- Commands ----
+// ---- 命令 ----
 
 export function useCommands() {
   return useQuery({
@@ -132,19 +133,22 @@ export function useCommands() {
   });
 }
 
-// ---- Available Models (server key vault + backend models API) ----
+// ---- 可用模型（服务端 key vault + 后端 models API） ----
 
 /**
- * Returns available models from the server-side key vault.
+ * 返回来自服务端 key vault 的可用模型。
  *
- * The enterprise architecture stores API keys server-side. This hook
- * fetches the key list from GET /api/keys and extracts available models.
- * Also merges GET /api/models (server env var fallback).
+ * 企业架构将 API key 存在服务端。该 hook 从 GET /api/keys 拉取 key 列表
+ * 并提取可用模型，同时合并 GET /api/models（服务端环境变量兜底）。
  */
 export function useAvailableModels(): ModelOption[] {
+  const { isAuthenticated } = useAuth();
   const { data: apiModels } = useQuery({
     queryKey: ['models'],
     queryFn: () => api.listModels(),
+    // 未认证的 GET 后端返回 200 []——仅在认证建立后才查询，
+    // 避免认证前的空结果被缓存。
+    enabled: isAuthenticated,
     staleTime: 0,
     gcTime: 30_000,
   });
@@ -152,6 +156,9 @@ export function useAvailableModels(): ModelOption[] {
   const { data: keys } = useQuery({
     queryKey: ['keys'],
     queryFn: () => api.listKeys(),
+    // 未认证的 GET 后端返回 200 []——仅在认证建立后才查询，
+    // 避免认证前的空结果被缓存。
+    enabled: isAuthenticated,
     staleTime: 30_000,
     gcTime: 60_000,
   });
@@ -159,7 +166,7 @@ export function useAvailableModels(): ModelOption[] {
   const seen = new Set<string>();
   const models: ModelOption[] = [];
 
-  // 1. Backend /api/models (server env var fallback)
+  // 1. 后端 /api/models（服务端环境变量兜底）
   if (apiModels) {
     for (const m of apiModels) {
       if (seen.has(m.id)) continue;
@@ -168,7 +175,7 @@ export function useAvailableModels(): ModelOption[] {
     }
   }
 
-  // 2. Server key vault — active keys with their models
+  // 2. 服务端 key vault——激活的 key 及其模型
   if (keys) {
     for (const k of keys) {
       if (!k.is_active) continue;
@@ -183,7 +190,7 @@ export function useAvailableModels(): ModelOption[] {
   return models;
 }
 
-// ---- Prefetch ----
+// ---- 预取 ----
 
 export async function prefetchAgents(queryClient: QueryClient): Promise<void> {
   try {
@@ -193,6 +200,6 @@ export async function prefetchAgents(queryClient: QueryClient): Promise<void> {
       staleTime: 60_000,
     });
   } catch {
-    // non-fatal
+    // 非致命，忽略
   }
 }

@@ -1,9 +1,10 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """E2E Test: Tool CRUD + generate + validate operations."""
 
-from backend.tests.conftest import Api, _cleanup
+from tests.conftest import Api, _cleanup
 
 
 class TestToolCRUD:

@@ -1,0 +1,27 @@
+# Applies .github/settings.yml to the repository (branch protection, merge settings).
+# Trigger: Actions -> "Apply Repository Settings" -> Run workflow.
+#
+# Requires secrets.ADMIN_GITHUB_TOKEN:
+#   - classic PAT with `repo` scope, OR
+#   - fine-grained PAT with Administration: Read and write on this repo.
+#   A fine-grained PAT WITHOUT Administration write fails with
+#   "Resource not accessible by personal access token" (HTTP 403).
+#
+# Manual fallback (if the workflow token is unavailable):
+#   gh api -X PUT repos/<owner>/agent-studio/branches/main/protection \
+#     --input bp.json   # body mirrors the `branches.main.protection` block in settings.yml
+name: Apply Repository Settings
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mooseburgr/repository-settings-action@v0.1.3
+        with:
+          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}

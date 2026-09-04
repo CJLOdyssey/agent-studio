@@ -26,6 +26,7 @@ describe('team api', { tags: ['unit'] }, () => {
         name: 'Dev Team',
         description: 'Development team',
         status: 'active',
+        category: 'dev',
         created_at: '2024-01-15T00:00:00Z',
         order: 1,
         agents: [{ agentConfigId: 'a1', name: 'Agent1' }],
@@ -40,7 +41,7 @@ describe('team api', { tags: ['unit'] }, () => {
     expect(result[0].category).toBe('dev');
     expect(result[0].status).toBe('active');
     expect(result[0].memberCount).toBe(1);
-    expect(result[0].createdAt).toBe('2024-01-15');
+    expect(result[0].createdAt).toBe('2024-01-15T00:00:00Z');
   });
 
   it('fetchAll handles missing optional fields', async () => {
@@ -55,28 +56,6 @@ describe('team api', { tags: ['unit'] }, () => {
     expect(result[0].status).toBe('active');
     expect(result[0].createdAt).toBe('');
     expect(result[0].memberCount).toBe(0);
-  });
-
-  it('deriveCategory returns test for test keywords', async () => {
-    mockListTeams.mockResolvedValue([
-      { id: 't3', name: '测试团队', description: '质量' },
-    ]);
-
-    const { teamAPI } = await import('../api');
-    const result = await teamAPI.fetchAll();
-
-    expect(result[0].category).toBe('test');
-  });
-
-  it('deriveCategory returns ops for devops keywords', async () => {
-    mockListTeams.mockResolvedValue([
-      { id: 't4', name: '运维团队', description: 'ci/cd pipeline' },
-    ]);
-
-    const { teamAPI } = await import('../api');
-    const result = await teamAPI.fetchAll();
-
-    expect(result[0].category).toBe('ops');
   });
 
   it('create calls createTeam and returns mapped entry', async () => {

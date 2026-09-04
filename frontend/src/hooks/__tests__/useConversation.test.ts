@@ -124,4 +124,81 @@ describe('useConversation', { tags: ['unit'] }, () => {
     const updated = result.current.conversations.find((c) => c.id === convId);
     expect(updated?.messages).toHaveLength(2);
   });
+
+  it('does NOT persist optimistic temp placeholder; persists after confirm', () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useConversation());
+
+    let convId = '';
+    act(() => {
+      convId = result.current.saveConversation('Persist Test', [{ role: 'user', content: 'hello' }]);
+    });
+
+    // 乐观占位不落盘（刷新后以 server 为准）
+    expect(convId.startsWith('temp-')).toBe(true);
+    const rawTemp = localStorage.getItem('agentstudio-conversations');
+    expect(rawTemp).toBe('[]');
+
+    act(() => {
+      result.current.confirmConversationSession(convId, 'session-abc-123');
+    });
+
+    // server 确认后原位替换为 sessionId 并落盘
+    const raw = localStorage.getItem('agentstudio-conversations');
+    const parsed = JSON.parse(raw!);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].id).toBe('session-abc-123');
+    expect(parsed[0].sessionId).toBe('session-abc-123');
+    expect(parsed[0].temp).toBeUndefined();
+    expect(result.current.conversations[0].id).toBe('session-abc-123');
+  });
+
+  it('persists updated messages to localStorage after confirm', () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useConversation());
+
+    let convId = '';
+    act(() => {
+      convId = result.current.saveConversation('MsgSync', [{ role: 'user', content: 'a' }]);
+    });
+    act(() => {
+      result.current.confirmConversationSession(convId, 'session-msg-1');
+    });
+
+    act(() => {
+      result.current.updateConversationMessages('session-msg-1', [
+        { role: 'user', content: 'a' },
+        { role: 'agent', content: 'reply' },
+      ]);
+    });
+
+    const raw = localStorage.getItem('agentstudio-conversations');
+    const parsed = JSON.parse(raw!);
+    const conv = parsed.find((c: { id: string }) => c.id === 'session-msg-1');
+    expect(conv?.messages).toHaveLength(2);
+    expect(conv?.messages[1].content).toBe('reply');
+  });
+
+  it('confirm replaces temp id with session id and dedupes same-session entries', () => {
+    localStorage.clear();
+    const { result } = renderHook(() => useConversation());
+
+    let convId = '';
+    act(() => {
+      convId = result.current.saveConversation('SessionTest', [{ role: 'user', content: 'x' }]);
+    });
+
+    act(() => {
+      result.current.confirmConversationSession(convId, 'session-abc-123');
+    });
+
+    const conv = result.current.conversations.find((c) => c.id === 'session-abc-123');
+    expect(conv?.sessionId).toBe('session-abc-123');
+    expect(conv?.temp).toBeUndefined();
+    expect(conv?.messages).toHaveLength(1);
+    // 唯一化：同 sessionId 至多一条
+    expect(
+      result.current.conversations.filter((c) => c.sessionId === 'session-abc-123'),
+    ).toHaveLength(1);
+  });
 });

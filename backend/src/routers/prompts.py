@@ -1,0 +1,155 @@
+"""提示词 CRUD API 路由。"""
+
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from auth import require_owned
+from core.error_codes import ErrorCode, error_response
+from core.infra.logging_config import get_logger
+from repository import create_prompt, delete_prompt, get_prompt, get_prompts_as_dicts, update_prompt
+from services.audit_service import log_audit
+
+logger = get_logger(__name__)
+router = APIRouter(tags=["prompts"])
+
+
+class PromptCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=64)
+    description: str = ""
+    category: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1)
+    model: str | None = None
+    status: str | None = None
+
+
+class PromptUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    category: str | None = None
+    content: str | None = None
+    model: str | None = None
+    status: str | None = None
+
+
+@router.get("/api/prompts/categories")
+async def list_prompt_categories() -> Any:
+    return [
+        {"value": "system", "label": "系统提示词"},
+        {"value": "user", "label": "用户提示词"},
+        {"value": "meta", "label": "元提示词"},
+    ]
+
+
+@router.get("/api/prompts")
+async def list_prompts(category: str | None = None) -> Any:
+    """列出所有提示词，可选按类别过滤。"""
+    try:
+        prompts = await get_prompts_as_dicts()
+        if category:
+            prompts = [p for p in prompts if p["category"] == category]
+        return prompts
+    except Exception as e:
+        logger.error("Error listing prompts: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+async def _snapshot_prompt(resource_id: str, session: AsyncSession | None = None) -> Any:
+    """提示词保存后创建版本快照。"""
+    try:
+        from repository.snapshot_helper import build_table_snapshot, with_session
+        from repository.versions import create_version as _cv
+
+        async def _save(s: Any, rt: str, rid: str, **kw: Any) -> None:
+            from repository.prompts import get_prompt
+            item = await get_prompt(rid)
+            if not item:
+                return
+            snapshot = build_table_snapshot(item)
+            await _cv(s, rt, rid, snapshot, "system")
+
+        await with_session(
+            _save,
+            resource_type="prompt",
+            resource_id=resource_id,
+            session=session,
+        )
+    except Exception:
+        logger.warning("Version snapshot failed for prompt %s", resource_id, exc_info=True)
+
+@router.post("/api/prompts", status_code=201)
+async def add_prompt(req: PromptCreate) -> Any:
+    """创建新提示词。"""
+    try:
+        p = await create_prompt(req.model_dump())
+        await _snapshot_prompt(p.id)
+        await log_audit("create", "prompt", p.name, "创建成功")
+        return {
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "category": p.category,
+            "content": p.content,
+            "model": p.model,
+            "status": p.status,
+            "version": p.version,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        }
+    except Exception as e:
+        logger.error("Error creating prompt: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.put("/api/prompts/{prompt_id}")
+async def edit_prompt(prompt_id: str, req: PromptUpdate, request: Request) -> Any:
+    """更新现有提示词。"""
+    try:
+        await require_owned(
+            request, prompt_id, get_prompt,
+            not_found=ErrorCode.PROMPT_NOT_FOUND, allow_unowned=False,
+        )
+        p = await update_prompt(prompt_id, req.model_dump(exclude_unset=True))
+        if not p:
+            raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
+        await _snapshot_prompt(prompt_id)
+        await log_audit("update", "prompt", p.name, "更新成功")
+        return {
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "category": p.category,
+            "content": p.content,
+            "model": p.model,
+            "status": p.status,
+            "version": p.version,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error updating prompt: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.delete("/api/prompts/{prompt_id}", status_code=204)
+async def remove_prompt(prompt_id: str, request: Request) -> None:
+    """按 ID 删除提示词。"""
+    try:
+        await require_owned(
+            request, prompt_id, get_prompt,
+            not_found=ErrorCode.PROMPT_NOT_FOUND, allow_unowned=False,
+        )
+        from repository import get_prompts
+        prompts = await get_prompts()
+        target = next((p for p in prompts if p.id == prompt_id), None)
+        prompt_name = target.name if target else prompt_id
+        ok = await delete_prompt(prompt_id)
+        if not ok:
+            raise error_response(ErrorCode.PROMPT_NOT_FOUND, detail="Prompt not found")
+        await log_audit("delete", "prompt", prompt_name, "删除成功")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error deleting prompt: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e

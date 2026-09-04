@@ -1,36 +1,230 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ModelOption } from '../../types/input';
+
+const RECENT_KEY = 'agentstudio-recent-models';
+const RECENT_LIMIT = 5;
+
+function readRecentModels(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentModels(ids: string[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(ids));
+  } catch {
+    // 存储不可用——最近列表仅本次会话有效
+  }
+}
 
 interface Props {
   models: ModelOption[];
   selectedModel: string;
   onChange: (id: string) => void;
-  /** Called when the user clicks the selector while no models are available */
+  /** 无可用模型时，用户点击选择器触发的回调 */
   onConfigure?: () => void;
 }
 
-export default function ModelSelector({ models, selectedModel, onChange, onConfigure }: Props) {
+function ModelOptionButton({
+  m,
+  isSelected,
+  isFocused,
+  onSelect,
+}: {
+  m: ModelOption;
+  isSelected: boolean;
+  isFocused: boolean;
+  onSelect: () => void;
+}) {
+  const { t } = useTranslation();
+  const badge =
+    m.status === 'deprecated' ? (
+      <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">
+        {t('model.statusDeprecated')}
+      </span>
+    ) : m.status === 'sunset' ? (
+      <span className="text-xs px-1.5 py-0.5 rounded bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)] text-[var(--color-danger)]">
+        {t('model.statusSunset')}
+      </span>
+    ) : null;
+  return (
+    <button
+      data-model-option
+      className={`flex items-center justify-between w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${isSelected ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]' : ''} ${isFocused ? 'outline-2 outline-[var(--color-accent)] outline-offset-[-2px]' : ''}`}
+      onClick={onSelect}
+      role="option"
+      aria-selected={isSelected}
+      type="button"
+    >
+      <span>{m.label}</span>
+      {badge}
+    </button>
+  );
+}
+
+function modelsReady(models: ModelOption[], selectedModel: string): boolean {
+  return models.length > 0 || models.some((m) => m.id === selectedModel);
+}
+
+function SelectorLabel({
+  hasLoadedOnce,
+  isEmpty,
+  current,
+}: {
+  hasLoadedOnce: boolean;
+  isEmpty: boolean;
+  current: ModelOption | undefined;
+}) {
+  const { t } = useTranslation();
+  if (!hasLoadedOnce) {
+    return (
+      <span className="inline-flex items-center justify-center gap-1 h-[16px]">
+        <Loader2 size={10} className="animate-spin" />
+        <span>{t('model.loadingText') || '加载中'}</span>
+      </span>
+    );
+  }
+  return (
+    <>
+      {isEmpty ? t('model.configure') : (current?.label ?? t('model.select'))}
+    </>
+  );
+}
+
+function OptionsList({
+  providers,
+  recentModels,
+  selectedModel,
+  focusIdx,
+  onSelect,
+}: {
+  providers: [string, ModelOption[]][];
+  recentModels: ModelOption[];
+  selectedModel: string;
+  focusIdx: number;
+  onSelect: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const allOptions = [
+    ...recentModels,
+    ...providers.flatMap(([, list]) => list),
+  ];
+  return (
+    <>
+      {recentModels.length > 0 && (
+        <div key="__recent" className="flex flex-col">
+          <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+            {t('model.recent')}
+          </div>
+          {recentModels.map((m) => (
+            <ModelOptionButton
+              key={m.id}
+              m={m}
+              isSelected={m.id === selectedModel}
+              isFocused={allOptions.indexOf(m) === focusIdx}
+              onSelect={() => onSelect(m.id)}
+            />
+          ))}
+          <div className="h-px bg-[var(--color-border-subtle)] mx-2 my-1" />
+        </div>
+      )}
+      {providers.map(([provider, list]) => (
+        <div key={provider} className="flex flex-col">
+          <div className="px-3 py-1.5 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+            {provider}
+          </div>
+          {list.map((m) => (
+            <ModelOptionButton
+              key={m.id}
+              m={m}
+              isSelected={m.id === selectedModel}
+              isFocused={allOptions.indexOf(m) === focusIdx}
+              onSelect={() => onSelect(m.id)}
+            />
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
+export default function ModelSelector({
+  models,
+  selectedModel,
+  onChange,
+  onConfigure,
+}: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(-1);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [recentIds, setRecentIds] = useState<string[]>(readRecentModels);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const current = models.find((m) => m.id === selectedModel);
   const isEmpty = models.length === 0;
 
-  // Memoize grouped models — not called in render path anymore
+  // 模型可用后立即锁定：渲染阶段的状态调整（React 认可的从 props 派生状态模式）。
+  // 避免刷新时闪现「请配置API」。
+  if (!hasLoadedOnce && modelsReady(models, selectedModel)) {
+    setHasLoadedOnce(true);
+  }
+
+  // 兜底：若 4 秒后模型仍未到达，标记为已加载以显示「请配置API」。
+  useEffect(() => {
+    if (hasLoadedOnce) return;
+    const timer = setTimeout(() => setHasLoadedOnce(true), 4000);
+    return () => clearTimeout(timer);
+  }, [hasLoadedOnce]);
+
+  // 缓存按供应商分组的模型——不再在渲染路径中调用
   const providers = useMemo(() => {
     const g: Record<string, ModelOption[]> = {};
     for (const m of models) (g[m.provider] ??= []).push(m);
     return Object.entries(g);
   }, [models]);
 
-  // All options flattened for keyboard navigation
-  const allOptions = useMemo(() => providers.flatMap(([, list]) => list), [providers]);
+  // 最近使用的模型（用户上次选择）显示在列表顶部
+  const recentModels = useMemo(() => {
+    const byId = new Map(models.map((m) => [m.id, m]));
+    return recentIds
+      .map((id) => byId.get(id))
+      .filter((m): m is ModelOption => !!m);
+  }, [models, recentIds]);
 
-  // Close on outside click
+  // 完整列表去重（排除最近使用项，避免重复）
+  const recentSet = useMemo(
+    () => new Set(recentModels.map((m) => m.id)),
+    [recentModels],
+  );
+  const fullProviders = useMemo(
+    () =>
+      providers.map(
+        ([provider, list]) =>
+          [provider, list.filter((m) => !recentSet.has(m.id))] as [
+            string,
+            ModelOption[],
+          ],
+      ),
+    [providers, recentSet],
+  );
+
+  // 扁平化全部选项以支持键盘导航
+  const allOptions = useMemo(
+    () => [...recentModels, ...fullProviders.flatMap(([, list]) => list)],
+    [recentModels, fullProviders],
+  );
+
+  // 点击外部关闭
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
@@ -43,7 +237,15 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
 
-  // Keyboard navigation + Escape close
+  const recordRecent = useCallback((id: string) => {
+    setRecentIds((prev) => {
+      const next = [id, ...prev.filter((x) => x !== id)].slice(0, RECENT_LIMIT);
+      writeRecentModels(next);
+      return next;
+    });
+  }, []);
+
+  // 键盘导航 + Escape 关闭
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
@@ -64,6 +266,7 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
           e.preventDefault();
           if (focusIdx >= 0 && focusIdx < allOptions.length) {
             onChange(allOptions[focusIdx].id);
+            recordRecent(allOptions[focusIdx].id);
             setOpen(false);
             setFocusIdx(-1);
           }
@@ -72,9 +275,9 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
     };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
-  }, [open, focusIdx, allOptions, onChange]);
+  }, [open, focusIdx, allOptions, onChange, recordRecent]);
 
-  // Scroll focused item into view
+  // 滚动聚焦项到可视区域
   useEffect(() => {
     if (!open || focusIdx < 0 || !listRef.current) return;
     const items = listRef.current.querySelectorAll('[data-model-option]');
@@ -84,16 +287,17 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
   const handleSelect = useCallback(
     (id: string) => {
       onChange(id);
+      recordRecent(id);
       setOpen(false);
       setFocusIdx(-1);
     },
-    [onChange],
+    [onChange, recordRecent],
   );
 
   return (
-    <div className="agentstudio-model-selector" ref={ref}>
+    <div className="relative inline-flex items-center" ref={ref}>
       <button
-        className={`agentstudio-model-trigger ${isEmpty ? 'agentstudio-model-trigger-empty' : ''}`}
+        className={`inline-flex items-center gap-1 px-2 h-[26px] min-w-[140px] border rounded-md bg-transparent text-xs font-[inherit] cursor-pointer transition-all duration-150 max-w-[180px] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border)] hover:text-[var(--color-text-primary)] ${!hasLoadedOnce || isEmpty || !current ? 'justify-center' : ''}`}
         onClick={() => {
           if (isEmpty) {
             onConfigure?.();
@@ -107,59 +311,39 @@ export default function ModelSelector({ models, selectedModel, onChange, onConfi
         aria-expanded={isEmpty ? undefined : open}
         aria-haspopup={isEmpty ? undefined : 'listbox'}
       >
-        <span className="agentstudio-model-label">
-          {isEmpty ? t('model.configure') : (current?.label ?? t('model.noModels'))}
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+          <SelectorLabel
+            hasLoadedOnce={hasLoadedOnce}
+            isEmpty={isEmpty}
+            current={current}
+          />
         </span>
-        <ChevronDown size={10} className={`agentstudio-model-chevron ${open ? 'open' : ''}`} />
+        {hasLoadedOnce && !isEmpty && current && <ChevronDown size={10} className={`flex-shrink-0 text-[var(--color-text-muted)] transition-transform duration-150 ease ${open ? 'rotate-180' : ''}`} />}
       </button>
 
       {open && !isEmpty && (
-        <div className="agentstudio-model-popover" ref={listRef} role="listbox">
-          {providers.length > 1
-            ? providers.map(([provider, list]) => (
-                <div key={provider} className="agentstudio-model-group">
-                  <div className="agentstudio-model-group-label">{provider}</div>
-                  {list.map((m) => {
-                    const globalIdx = allOptions.indexOf(m);
-                    return (
-                      <button
-                        key={m.id}
-                        data-model-option
-                        className={`agentstudio-model-option ${m.id === selectedModel ? 'selected' : ''} ${globalIdx === focusIdx ? 'focused' : ''}`}
-                        onClick={() => handleSelect(m.id)}
-                        role="option"
-                        aria-selected={m.id === selectedModel}
-                        type="button"
-                      >
-                        <span>{m.label}</span>
-                        {m.status === 'deprecated' && (
-                          <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
-                        )}
-                        {m.status === 'sunset' && (
-                          <span className="agentstudio-model-status">{t('model.statusSunset')}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))
-            : models.map((m, idx) => (
-                <button
-                  key={m.id}
-                  data-model-option
-                  className={`agentstudio-model-option ${m.id === selectedModel ? 'selected' : ''} ${idx === focusIdx ? 'focused' : ''}`}
-                  onClick={() => handleSelect(m.id)}
-                  role="option"
-                  aria-selected={m.id === selectedModel}
-                  type="button"
-                >
-                  <span>{m.label}</span>
-                  {m.status === 'deprecated' && (
-                    <span className="agentstudio-model-status">{t('model.statusDeprecated')}</span>
-                  )}
-                  {m.status === 'sunset' && <span className="agentstudio-model-status">{t('model.statusSunset')}</span>}
-                </button>
-              ))}
+        <div
+          className="absolute bottom-[calc(100%+8px)] left-0 min-w-[200px] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1"
+          ref={listRef}
+          role="listbox"
+        >
+          <OptionsList
+            providers={fullProviders}
+            recentModels={recentModels}
+            selectedModel={selectedModel}
+            focusIdx={focusIdx}
+            onSelect={handleSelect}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onConfigure?.();
+            }}
+            className="w-full px-3 py-2 mt-1 text-left text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] bg-transparent cursor-pointer transition-colors hover:text-[var(--color-text-primary)]"
+          >
+            {t('model.manageKeys')}
+          </button>
         </div>
       )}
     </div>

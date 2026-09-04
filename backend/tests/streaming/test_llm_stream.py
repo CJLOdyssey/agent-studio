@@ -7,28 +7,28 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 
 class TestConvertMessagesToApi:
     def test_system_message(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         msgs = [SystemMessage(content="You are a helpful assistant.")]
         result = convert_messages_to_api(msgs)
         assert result == [{"role": "system", "content": "You are a helpful assistant."}]
 
     def test_human_message(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         msgs = [HumanMessage(content="Hello!")]
         result = convert_messages_to_api(msgs)
         assert result == [{"role": "user", "content": "Hello!"}]
 
     def test_ai_message(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         msgs = [AIMessage(content="Hi there!")]
         result = convert_messages_to_api(msgs)
         assert result == [{"role": "assistant", "content": "Hi there!"}]
 
     def test_ai_message_with_tool_calls(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         msgs = [
             AIMessage(
@@ -45,7 +45,7 @@ class TestConvertMessagesToApi:
         assert result[0]["tool_calls"][0]["function"]["name"] == "search"
 
     def test_tool_message(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         msgs = [ToolMessage(content='{"result": "ok"}', tool_call_id="call_1")]
         result = convert_messages_to_api(msgs)
@@ -54,7 +54,7 @@ class TestConvertMessagesToApi:
         ]
 
     def test_mixed_messages(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         msgs = [
             SystemMessage(content="Be helpful."),
@@ -67,14 +67,14 @@ class TestConvertMessagesToApi:
         assert [m["role"] for m in result] == ["system", "user", "assistant", "tool"]
 
     def test_empty_list(self):
-        from backend.streaming.llm_stream import convert_messages_to_api
+        from streaming.llm_stream import convert_messages_to_api
 
         assert convert_messages_to_api([]) == []
 
 
 class TestBuildLlmRequestBody:
     def test_minimal_body(self):
-        from backend.streaming.llm_stream import build_llm_request_body
+        from streaming.llm_stream import build_llm_request_body
 
         url, headers, body = build_llm_request_body(
             [{"role": "user", "content": "hello"}],
@@ -89,7 +89,7 @@ class TestBuildLlmRequestBody:
         assert body["thinking"] == {"type": "enabled"}
 
     def test_custom_base_url(self):
-        from backend.streaming.llm_stream import build_llm_request_body
+        from streaming.llm_stream import build_llm_request_body
 
         url, headers, body = build_llm_request_body(
             [{"role": "user", "content": "hi"}],
@@ -101,7 +101,7 @@ class TestBuildLlmRequestBody:
         assert "thinking" not in body
 
     def test_with_tool_definitions(self):
-        from backend.streaming.llm_stream import build_llm_request_body
+        from streaming.llm_stream import build_llm_request_body
 
         tools = [{
             "type": "function",
@@ -118,7 +118,7 @@ class TestBuildLlmRequestBody:
         assert "thinking" not in body
 
     def test_custom_temperature_max_tokens(self):
-        from backend.streaming.llm_stream import build_llm_request_body
+        from streaming.llm_stream import build_llm_request_body
 
         url, headers, body = build_llm_request_body(
             [{"role": "user", "content": "hi"}],
@@ -130,10 +130,22 @@ class TestBuildLlmRequestBody:
         assert body["temperature"] == 0.1
         assert body["max_tokens"] == 1024
 
+    def test_default_max_tokens_within_common_provider_limit(self):
+        # 65536 exceeds SiliconFlow Qwen models' max_seq_len (32768) → 400.
+        # The default must fit mainstream providers (DeepSeek/Qwen/Groq/OpenRouter).
+        from streaming.llm_stream import build_llm_request_body
+
+        url, headers, body = build_llm_request_body(
+            [{"role": "user", "content": "hi"}],
+            model="Qwen/Qwen3-8B",
+            api_key="sk-test",
+        )
+        assert body["max_tokens"] <= 16384
+
 
 class TestBuildToolCallsList:
     def test_consolidates_fragments(self):
-        from backend.streaming.llm_stream import build_tool_calls_list
+        from streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             0: {"id": "call_1", "name": "get_wea", "arguments": '{"loc": "NYC"}'},
@@ -146,12 +158,12 @@ class TestBuildToolCallsList:
         assert result[0]["args"] == {"loc": "NYC"}
 
     def test_empty_map(self):
-        from backend.streaming.llm_stream import build_tool_calls_list
+        from streaming.llm_stream import build_tool_calls_list
 
         assert build_tool_calls_list({}) == []
 
     def test_invalid_json_arguments(self):
-        from backend.streaming.llm_stream import build_tool_calls_list
+        from streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             0: {"id": "c1", "name": "test", "arguments": "not valid json {"},
@@ -160,7 +172,7 @@ class TestBuildToolCallsList:
         assert result[0]["args"] == {}
 
     def test_empty_name_skipped(self):
-        from backend.streaming.llm_stream import build_tool_calls_list
+        from streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             0: {"id": "c1", "name": "", "arguments": "{}"},
@@ -169,7 +181,7 @@ class TestBuildToolCallsList:
         assert result == []
 
     def test_sorted_by_index(self):
-        from backend.streaming.llm_stream import build_tool_calls_list
+        from streaming.llm_stream import build_tool_calls_list
 
         tool_calls_map = {
             2: {"id": "c3", "name": "third", "arguments": '{"z": 1}'},
@@ -221,7 +233,7 @@ class _MockClientCtx:
 class TestStreamLlmResponse:
     @pytest.mark.asyncio
     async def test_streams_content_chunks(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}',
@@ -243,7 +255,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_streams_reasoning_content(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"reasoning_content":"Let me think"},"finish_reason":null}]}',
@@ -263,7 +275,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_parses_tool_call_deltas(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}',
@@ -285,7 +297,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_skips_non_data_lines(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             ":comment line",
@@ -304,7 +316,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_handles_json_decode_error(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             "data: {invalid json",
@@ -322,7 +334,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_calls_stream_callback(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         callback = AsyncMock()
         sse_lines = [
@@ -342,7 +354,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_raises_on_http_error(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = ["data: [DONE]"]
 
@@ -358,7 +370,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_skips_chunk_with_no_choices(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[],"finish_reason":null}',
@@ -375,7 +387,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_calls_callback_for_reasoning_content(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         callback = AsyncMock()
         sse_lines = [
@@ -394,7 +406,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_pending_content_flushed_after_stream(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         sse_lines = [
             'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}',
@@ -412,7 +424,7 @@ class TestStreamLlmResponse:
 
     @pytest.mark.asyncio
     async def test_pending_content_with_callback(self):
-        from backend.streaming.llm_stream import stream_llm_response
+        from streaming.llm_stream import stream_llm_response
 
         callback = AsyncMock()
         sse_lines = [
@@ -431,6 +443,107 @@ class TestStreamLlmResponse:
         assert "".join(content) == "pending content"
         callback.assert_any_call({"event": "on_custom_token", "data": {"content": "pending"}})
         callback.assert_any_call({"event": "on_custom_token", "data": {"content": " content"}})
+
+    @pytest.mark.asyncio
+    async def test_flushes_trailing_think_buffers_after_stream(self):
+        from streaming.llm_stream import stream_llm_response
+
+        callback = AsyncMock()
+        sse_lines = [
+            'data: {"choices":[{"delta":{"reasoning_content":"<think>推理未闭合"},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":"正文<think>内容未闭合"},"finish_reason":null}]}',
+            'data: {"choices":[{"delta":{"content":""},"finish_reason":"stop"}]}',
+            "data: [DONE]",
+        ]
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(sse_lines)):
+            content, thinking, tool_calls, finish_reason, usage = await stream_llm_response(
+                "https://api.deepseek.com/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "deepseek-chat", "messages": []},
+                stream_cb=callback,
+            )
+        assert "".join(content) == "正文"
+        assert "".join(thinking) == "内容未闭合推理未闭合"
+        callback.assert_any_call({"event": "on_custom_thinking", "data": {"content": "推理未闭合"}})
+        callback.assert_any_call({"event": "on_custom_thinking", "data": {"content": "内容未闭合"}})
+
+
+def _sse_delta(content: str) -> str:
+    return f'data: {{"choices":[{{"delta":{{"content":"{content}"}},"finish_reason":null}}]}}'
+
+
+class TestStreamLineGuard:
+    """Regression: the SSE line-count guard must not truncate reasoning-model
+    streams. GLM-Z1-style models emit thinking as 1-2 char chunks; 2000 lines
+    is exhausted by a ~2-4KB answer, silently cutting the model message off
+    (finish=None). The guard must be configurable and default far higher."""
+
+    @pytest.mark.asyncio
+    async def test_stream_above_2k_lines_not_truncated(self):
+        from streaming.llm_stream import _MAX_STREAM_LINES, stream_llm_response
+
+        # 2000-line guard truncates ~4KB answers; a realistic reasoning-model
+        # stream is much longer. Send 5000 lines and expect them all back.
+        lines = [_sse_delta("x") for _ in range(5000)]
+
+        with patch("httpx.AsyncClient", return_value=_MockClientCtx(lines)):
+            content, _, _, finish_reason, _ = await stream_llm_response(
+                "https://api.siliconflow.cn/v1/chat/completions",
+                {"Authorization": "Bearer sk-test"},
+                {"model": "THUDM/GLM-Z1-9B-0414", "messages": []},
+            )
+        assert len(content) == 5000
+        assert finish_reason is None or finish_reason != "length"
+
+    @pytest.mark.asyncio
+    async def test_guard_limit_configurable_via_env(self):
+        from streaming.llm_stream import stream_llm_response
+
+        with patch("streaming.llm_stream._MAX_STREAM_LINES", 10):
+            lines = [_sse_delta("y") for _ in range(20)]
+            with patch("httpx.AsyncClient", return_value=_MockClientCtx(lines)):
+                content, _, _, finish_reason, _ = await stream_llm_response(
+                    "https://api.siliconflow.cn/v1/chat/completions",
+                    {"Authorization": "Bearer sk-test"},
+                    {"model": "THUDM/GLM-Z1-9B-0414", "messages": []},
+                )
+        # Guard still exists as a runaway-output safety net, just with a sane default.
+        assert len(content) < 20
+        assert finish_reason is None
+
+    @pytest.mark.asyncio
+    async def test_default_guard_high_enough_for_reasoning_models(self):
+        import streaming.llm_stream as mod
+
+        # Reasoning models stream 1-2 char chunks; a 8KB answer + thinking is
+        # ~4000-8000 SSE lines. Default must comfortably cover that.
+        assert mod._MAX_STREAM_LINES >= 20000
+
+
+from streaming.llm_stream import ReasoningSplitter, ThinkTagSplitter
+
+
+def test_reasoning_splitter_strips_cross_chunk_think_tag():
+    s = ReasoningSplitter()
+    parts = []
+    # <think> 标签跨 chunk 切片（如 SiliconFlow GLM-Z1）
+    for chunk in ["<th", "ink>思考", "内容", "</thin", "k>"]:
+        parts += s.feed(chunk)
+    assert "".join(parts) == "思考内容"
+    assert s.finish() is None
+
+
+def test_reasoning_splitter_tagless_stream_emits_directly():
+    s = ReasoningSplitter()
+    parts = s.feed("无标签的思考内容" * 20)  # 超过 _TAG_WAIT_CHARS(16) 直接流出
+    assert "".join(parts) == "无标签的思考内容" * 20
+
+
+def test_think_tag_splitter_routes_inline_thinking():
+    s = ThinkTagSplitter()
+    thinking, content = s.feed("前置<think>推理</think>正文")
+    assert "".join(thinking) == "推理"
+    assert "".join(content) == "前置正文"
 
 
 class TestParseSse:

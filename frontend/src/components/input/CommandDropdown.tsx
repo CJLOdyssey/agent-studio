@@ -11,17 +11,15 @@ interface Props {
 }
 
 /**
- * Inline command palette popover — shown when user types '/' in the textarea.
- *
- * Renders filtered commands with keyboard-driven highlight.
- * Positioned above the textarea toolbar.
+ * 内联命令面板弹层——当用户在文本域中输入 '/' 时显示。
+ * 渲染过滤后的命令，并用键盘驱动高亮，定位在文本域工具栏上方。
  */
 export default function CommandDropdown({ commands, activeIndex, onSelect, onHover, onClose }: Props) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  // 点击外部关闭
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -30,7 +28,7 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
     return () => document.removeEventListener('mousedown', h);
   }, [onClose]);
 
-  // Scroll active item into view
+  // 滚动激活项到可视区域
   useEffect(() => {
     if (!listRef.current) return;
     const items = listRef.current.querySelectorAll('[data-cmd-option]');
@@ -46,29 +44,29 @@ export default function CommandDropdown({ commands, activeIndex, onSelect, onHov
 
   if (commands.length === 0) {
     return (
-      <div className="agentstudio-command-popover" ref={ref}>
-        <div className="agentstudio-command-empty">{t('model.noCommands')}</div>
+      <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref}>
+        <div className="p-4 text-center text-sm text-[var(--color-text-muted)]">{t('model.noCommands')}</div>
       </div>
     );
   }
 
   return (
-    <div className="agentstudio-command-popover" ref={ref} role="listbox">
+    <div className="absolute left-4 right-4 bottom-[calc(100%+6px)] max-h-[280px] overflow-y-auto bg-[var(--color-surface-raised)] rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-[500] p-1" ref={ref} role="listbox">
       <div ref={listRef}>
         {commands.map((opt, idx) => (
           <button
             key={opt.id}
             data-cmd-option
-            className={`agentstudio-command-option ${idx === activeIndex ? 'focused' : ''}`}
+            className={`flex items-center gap-2 w-full px-3 py-2 border-none rounded-md bg-transparent text-[var(--color-text-primary)] text-sm cursor-pointer transition-colors duration-100 text-left hover:bg-[var(--color-surface-hover)] ${idx === activeIndex ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)]' : ''}`}
             onClick={() => handleClick(idx)}
             onMouseEnter={() => onHover(idx)}
             role="option"
             aria-selected={idx === activeIndex}
             type="button"
           >
-            <span className="agentstudio-command-option-name">/{opt.name}</span>
-            {opt.source === 'agent' && <span className="agentstudio-command-option-source">Agent</span>}
-            {opt.description && <span className="agentstudio-command-option-desc">{opt.description}</span>}
+            <span className="font-medium">/{opt.name}</span>
+            {opt.source === 'agent' && <span className="inline-block px-1.5 rounded text-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-xs font-bold uppercase tracking-[0.5px] flex-shrink-0 ml-auto">Agent</span>}
+            {opt.description && <span className="text-xs text-[var(--color-text-muted)]">{opt.description}</span>}
           </button>
         ))}
       </div>

@@ -1,0 +1,63 @@
+name: Mutation Testing (mutmut)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  mutmut:
+    name: "Backend: Mutation Score"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/cjlodyssey/agent-studio/ci-runner:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install mutmut --quiet
+      # 范围：先 core/infra（纯逻辑、跑得快）。services/ 突变多、单轮 ~105s，
+      # 等 core/infra 达标后再扩（见 pyproject [tool.mutmut] 注释）。
+      # mutmut 3.7 CLI 无 --paths/--runner 选项：范围、测试选择、also_copy 均在 pyproject.toml 配置。
+      # PYTHONPATH 必须传给 mutmut 进程（其 PytestRunner 同进程调用 pytest，不读 test_runner 配置），
+      # 否则 mutants/ 下 conftest 的 core.base import 失败。
+      # source_paths=src/ 需 repo root 有 src→backend/src symlink（mutmut 从相对路径派生模块名
+      # core.infra.X 须与 trampoline 记录的 __module__ 一致；配 backend/src/ 会派生 backend.src.core
+      # 导致 0 关联）。symlink 不提交进 repo（会让 ruff 误报 I001），在 CI 运行时临时创建。
+      - name: Run mutation tests (core/infra)
+        run: |
+          set -o pipefail
+          ln -s backend/src src
+          PYTHONPATH=backend/src mutmut run 2>&1 | tail -40
+          rc=$?
+          rm -f src
+          exit $rc
+      - name: Enforce score threshold
+        run: |
+          # mutmut results 需遍历 source_paths=src/，须重建 symlink（Run 步骤已删除）。
+          ln -s backend/src src
+          python3 - <<'PY'
+          import subprocess, re
+          out = subprocess.run(
+              ["python3", "-m", "mutmut", "results", "--all", "true"],
+              capture_output=True, text=True,
+          ).stdout
+          counts: dict[str, int] = {}
+          for line in out.splitlines():
+              m = re.search(r": (\w+)$", line)
+              if m:
+                  counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+          killed = counts.get("killed", 0)
+          survived = counts.get("survived", 0)
+          score = (killed / (killed + survived) * 100) if (killed + survived) else 0.0
+          print(f"Mutation score: {score:.1f}%  (killed={killed}, survived={survived}, no-tests={counts.get('no tests', 0)})")
+          threshold = 40.0
+          if score < threshold:
+              print(f"❌ Mutation score {score:.1f}% below threshold {threshold:.1f}%")
+              raise SystemExit(1)
+          print(f"✅ Mutation score {score:.1f}% >= {threshold:.1f}%")
+          PY
+          rm -f src

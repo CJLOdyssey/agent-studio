@@ -1,35 +1,36 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { CommandOption } from '../types/input';
+import type * as React from 'react';
 
 interface UseCommandPaletteReturn {
   open: boolean;
   query: string;
   filtered: CommandOption[];
   activeIndex: number;
-  /** Call from the textarea's onKeyDown — returns true if the event was handled */
+  /** 从文本域的 onKeyDown 调用——事件已处理时返回 true */
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>, value: string) => boolean;
-  /** Select a command by index — returns the replacement text */
+  /** 按索引选择命令——返回替换文本 */
   selectCommand: (index: number) => string;
-  /** Set active index on mouse hover */
+  /** 鼠标悬停时设置激活索引 */
   setActiveIndex: (index: number) => void;
-  /** Force close the palette */
+  /** 强制关闭面板 */
   close: () => void;
-  /** Call from onChange — updates query from textarea value */
+  /** 从 onChange 调用——根据文本域值更新查询词 */
   updateFromValue: (value: string) => void;
 }
 
 /**
- * Slash-command palette state machine.
+ * 斜杠命令面板状态机。
  *
- * Activated when the user types '/' at the start of a line or after a space.
- * Filters commands as the user types, supports keyboard navigation,
- * and returns replacement text to be set in the textarea.
+ * 当用户在行首或空格后输入 '/' 时激活。
+ * 随用户输入筛选命令，支持键盘导航，
+ * 并返回要写入文本域的替换文本。
  */
 export function useCommandPalette(commands: CommandOption[]): UseCommandPaletteReturn {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const [slashIndex, setSlashIndex] = useState(-1); // position of '/' in the text
+  const [slashIndex, setSlashIndex] = useState(-1); // 文本中 '/' 的位置
 
   const filtered = useMemo(() => {
     if (!query) return commands;
@@ -49,18 +50,18 @@ export function useCommandPalette(commands: CommandOption[]): UseCommandPaletteR
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>, value: string): boolean => {
       if (!open) {
-        // Detect '/' trigger: at start of input or after a space
+        // 检测 '/' 触发：在输入开头或空格之后
         if (e.key === '/' && (value === '' || value.endsWith(' '))) {
           setOpen(true);
           setQuery('');
           setActiveIndex(0);
-          setSlashIndex(value.length); // position where '/' was typed
-          return false; // let '/' be inserted normally
+          setSlashIndex(value.length); // '/' 输入的位置
+          return false; // 让 '/' 正常插入
         }
         return false;
       }
 
-      // ── Palette is open ──
+      // ── 面板已打开 ──
 
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -82,22 +83,22 @@ export function useCommandPalette(commands: CommandOption[]): UseCommandPaletteR
 
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        // Selection is handled by the caller via selectCommand
-        return true; // caller should call selectCommand and replace text
+        // 选择由调用方通过 selectCommand 处理
+        return true; // 调用方应调用 selectCommand 并替换文本
       }
 
       if (e.key === 'Backspace') {
-        // If we backspace past the '/', close the palette
+        // 若退格越过 '/'，则关闭面板
         if (value.length <= slashIndex + 1) {
           close();
-          return false; // let backspace happen normally
+          return false; // 让退格正常发生
         }
-        // Update query — will be recalculated from value by caller
+        // 更新查询词——将由调用方从值中重算
         return false;
       }
 
-      // Any other key: update query from the value
-      // (caller will extract query from value after the slash)
+      // 其他按键：根据值更新查询词
+      // （调用方会从 '/' 之后提取查询词）
       return false;
     },
     [open, filtered.length, close, slashIndex],
@@ -107,7 +108,7 @@ export function useCommandPalette(commands: CommandOption[]): UseCommandPaletteR
     (index: number): string => {
       if (index < 0 || index >= filtered.length) return '';
       const cmd = filtered[index];
-      // Replace "/query" with the command name + space
+      // 将 "/query" 替换为命令名 + 空格
       const replacement = `/${cmd.name} `;
       close();
       return replacement;
@@ -115,7 +116,7 @@ export function useCommandPalette(commands: CommandOption[]): UseCommandPaletteR
     [filtered, close],
   );
 
-  /** Call from onChange — keeps query in sync with textarea value */
+  /** 从 onChange 调用——使查询词与文本域值保持同步 */
   const updateFromValue = useCallback(
     (value: string) => {
       if (!open) return;

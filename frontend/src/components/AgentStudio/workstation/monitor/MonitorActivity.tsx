@@ -6,62 +6,76 @@ interface ViewActivity {
   action: string;
   target: string;
   type: 'success' | 'warning' | 'info';
+  entityType?: string;
+  entityId?: string;
 }
 
 interface Props {
   activities: ViewActivity[];
+  onNavigate?: (tab: string) => void;
 }
 
-export default function MonitorActivity({ activities }: Props) {
+const ENTITY_TAB_MAP: Record<string, string> = {
+  agent: 'agents',
+  prompt: 'prompts',
+  tool: 'tools',
+  mcp: 'mcp',
+  skill: 'skills',
+  team: 'teams',
+  api_key: 'settings',
+};
+
+export default function MonitorActivity({ activities, onNavigate }: Props) {
   if (activities.length === 0) {
     return (
-      <p style={{ fontSize: 13, color: 'var(--da-text-muted)', textAlign: 'center', padding: 24 }}>
+      <p className="text-sm text-[var(--color-text-muted)] text-center p-6">
         {t('monitor.no_activity')}
       </p>
     );
   }
 
+  const handleClick = (act: ViewActivity) => {
+    const tab = act.entityType ? ENTITY_TAB_MAP[act.entityType] : undefined;
+    if (tab && onNavigate) {
+      onNavigate(tab);
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {activities.map((act) => (
-        <div
-          key={act.id}
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-            padding: '8px 10px',
-            borderRadius: 8,
-            background: 'var(--da-bg-hover)',
-          }}
-        >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: act.type === 'success' ? '#22c55e' : act.type === 'warning' ? '#f59e0b' : '#3b82f6',
-              marginTop: 5,
-              flexShrink: 0,
-            }}
-          />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--da-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {act.action}
-              </span>
-              <span style={{ fontSize: 11, color: 'var(--da-text-muted)', flexShrink: 0 }}>
-                {act.time}
-              </span>
-            </div>
-            {act.target && (
-              <div style={{ fontSize: 12, color: 'var(--da-text-secondary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {act.target}
+    <div className="flex flex-col gap-2.5">
+      {activities.map((act) => {
+        const tab = act.entityType ? ENTITY_TAB_MAP[act.entityType] : undefined;
+        const clickable = !!tab && !!onNavigate;
+        return (
+          <div
+            key={act.id}
+            className={`flex items-start gap-2.5 py-2 px-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-overlay)] ${
+              clickable ? 'cursor-pointer hover:border-[var(--color-accent)] transition-colors' : ''
+            }`}
+            onClick={() => handleClick(act)}
+          >
+            <span
+              className="w-2 h-2 rounded-full shrink-0 mt-1"
+              style={{ background: act.type === 'success' ? 'var(--color-success)' : act.type === 'warning' ? 'var(--color-warning)' : 'var(--color-accent)' }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                  {act.action}
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)] shrink-0">
+                  {act.time}
+                </span>
               </div>
-            )}
+              {act.target && (
+                <div className="text-xs text-[var(--color-text-secondary)] mt-0.5 truncate">
+                  {act.target}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

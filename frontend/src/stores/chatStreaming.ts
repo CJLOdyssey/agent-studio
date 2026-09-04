@@ -1,10 +1,11 @@
 import type { ChatState } from './chatTypes';
 import type { WsEvent } from './wsEvents';
-import { handleStreamEvent, handleThinkingStreamEvent } from './streamHandler';
+import { disconnectRun } from '../api/websocket';
+import { handleStreamEvent, handleThinkingStreamEvent, handleTeamResultMeta, handleApprovalRequest } from './streamHandler';
 import { handleMessageEvent, handleInfoEvent, handleErrorEvent, handleBalanceWarningEvent, handleOpenUrlEvent } from './messageHandler';
-import { handleThinkingDoneEvent, handleResultEvent, handleTeamResultEvent, handleThumbsEvent } from './resultHandler';
+import { handleThinkingDoneEvent, handleResultEvent, handleTeamResultEvent, handleThumbsEvent, handleCancelledEvent } from './resultHandler';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 type GetFn = () => ChatState;
 
 const _activeStreamMsgIds = new Set<string>();
@@ -40,11 +41,18 @@ export function createStreamHandler(set: SetFn, get: GetFn) {
 
     if (msg.type === 'error') {
       handleErrorEvent(set, msg);
+      // 后端 error 路径不发 result：run 已终止，必须显式断开 WS，否则
+      // onclose 自动重连 + drain_buffer 回放重复，且服务端 subscribe_run/
+      // Redis pubsub 连接挂到 idle 超时（泄漏）。
+      const runId = get().currentRunId;
+      if (runId) disconnectRun(runId);
       return;
     }
 
     if (msg.type === 'balance_warning') {
       handleBalanceWarningEvent(set, msg);
+      const runId = get().currentRunId;
+      if (runId) disconnectRun(runId);
       return;
     }
 
@@ -58,8 +66,19 @@ export function createStreamHandler(set: SetFn, get: GetFn) {
       return;
     }
 
+    if (msg.type === 'cancelled') {
+      handleCancelledEvent(set, get, msg);
+      return;
+    }
+
     if (msg.type === 'team_result') {
       handleTeamResultEvent(set, get, _activeStreamMsgIds, msg);
+      handleTeamResultMeta(set, msg);
+      return;
+    }
+
+    if (msg.type === 'approval_request') {
+      handleApprovalRequest(msg);
       return;
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-export interface MenuItemConfig {
+interface MenuItemConfig {
   icon?: ReactNode;
   label?: string;
   onClick?: () => void;
@@ -52,7 +52,7 @@ export default function WstaDropdownPortal({ open, anchorEl, items, onClose }: W
   return createPortal(
     <div
       ref={menuRef}
-      className="wsta-dropdown-portal"
+      className="bg-[var(--color-surface-elevated)] border border-[var(--color-border)] rounded-lg shadow-lg z-[var(--z-dropdown)] overflow-hidden p-1"
       style={{
         position: 'fixed',
         top,
@@ -63,7 +63,7 @@ export default function WstaDropdownPortal({ open, anchorEl, items, onClose }: W
     >
       {items.map((item, i) =>
         item.divider ? (
-          <div key={i} className="wsta-dropdown-divider" />
+          <div key={i} className="h-px bg-[var(--color-border)] my-1" />
         ) : (
           <button
             key={i}

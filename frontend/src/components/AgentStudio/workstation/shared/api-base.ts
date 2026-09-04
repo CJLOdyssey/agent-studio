@@ -1,4 +1,4 @@
-/** Generic CRUD API service interface for workstation modules. */
+/** 工作站模块的通用 CRUD API 服务接口。 */
 export interface CrudAPIService<TEntry, TForm = Partial<TEntry>> {
   fetchAll(): Promise<TEntry[]>;
   create(data: TForm): Promise<TEntry>;
@@ -9,11 +9,10 @@ export interface CrudAPIService<TEntry, TForm = Partial<TEntry>> {
 }
 
 /**
- * Creates a module-level `api` reference + `setAPI` function with ES-module
- * live-binding support.
+ * 创建模块级 `api` 引用 + `setAPI` 函数，支持 ES 模块 live-binding。
  *
- * Use in each CRUD api.ts — consumers import `{ xxxAPI, setXxxAPI }` where
- * `xxxAPI` is the live bound export alias:
+ * 在各 CRUD 的 api.ts 中使用——消费方导入 `{ xxxAPI, setXxxAPI }`，
+ * 其中 `xxxAPI` 是 live bound 的导出别名：
  *
  * ```ts
  * // api.ts
@@ -27,9 +26,9 @@ export interface CrudAPIService<TEntry, TForm = Partial<TEntry>> {
 export function defineCrudModule<TEntry, TForm = Partial<TEntry>>(
   impl: CrudAPIService<TEntry, TForm>,
 ): {
-  /** A getter proxy — always reads the current implementation. */
+  /** 一个 getter 代理——始终读取当前实现。 */
   bind: CrudAPIService<TEntry, TForm>;
-  /** Swap the implementation (for tests). */
+  /** 替换实现（供测试用）。 */
   setAPI(next: CrudAPIService<TEntry, TForm>): void;
 } {
   let current = impl;

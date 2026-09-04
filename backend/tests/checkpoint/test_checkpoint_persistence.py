@@ -16,10 +16,10 @@ from uuid import uuid4
 
 import pytest
 
-# Ensure backend is importable
-_sys_insert = str(Path(__file__).resolve().parent.parent.parent)
-if _sys_insert not in sys.path:
-    sys.path.insert(0, _sys_insert)
+# Ensure backend/src is importable (checkpoint package lives under src/)
+_SRC_PATH = str(Path(__file__).resolve().parent.parent.parent / "src")
+if _SRC_PATH not in sys.path:
+    sys.path.insert(0, _SRC_PATH)
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ def checkpoint_db_path(tmp_path):
 @pytest.fixture
 async def checkpointer_sqlite(checkpoint_db_path):
     """Create an AsyncSqliteSaver backed by a temp file."""
-    from backend.checkpoint import create_checkpointer_async
+    from checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()
     yield cp
@@ -86,7 +86,7 @@ async def checkpointer_sqlite(checkpoint_db_path):
 @pytest.fixture
 async def checkpointer_sqlite_fresh(checkpoint_db_path):
     """Create a fresh AsyncSqliteSaver instance against the same DB file."""
-    from backend.checkpoint import create_checkpointer_async
+    from checkpoint import create_checkpointer_async
 
     cp = await create_checkpointer_async()
     yield cp
@@ -144,13 +144,13 @@ async def test_recovery_after_restart(tmp_path):
     import asyncio
     import os
     import sys
-    sys.path.insert(0, {str(Path(__file__).resolve().parent.parent.parent)!r})
+    sys.path.insert(0, {_SRC_PATH!r})
 
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = {db_path!r}
 
     async def main():
-        from backend.checkpoint import create_checkpointer_async
+        from checkpoint import create_checkpointer_async
 
         cp = await create_checkpointer_async()
         config = {{"configurable": {{"thread_id": "recovery-t1", "checkpoint_ns": ""}}}}
@@ -181,6 +181,7 @@ async def test_recovery_after_restart(tmp_path):
         capture_output=True,
         text=True,
         timeout=15,
+        env={**os.environ, "PYTHONPATH": _SRC_PATH},
     )
     assert result.returncode == 0, (
         f"Writer subprocess failed (rc={result.returncode}):\n"
@@ -190,7 +191,7 @@ async def test_recovery_after_restart(tmp_path):
     # Now recover from the same DB file in this process
     os.environ["CHECKPOINTER_BACKEND"] = "sqlite"
     os.environ["CHECKPOINTER_DSN"] = db_path
-    from backend.checkpoint import create_checkpointer_async
+    from checkpoint import create_checkpointer_async
 
     recovery_cp = await create_checkpointer_async()
     config = _make_config("recovery-t1")

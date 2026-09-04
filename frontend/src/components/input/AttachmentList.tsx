@@ -1,52 +1,105 @@
-import { Image, FileText, File, X } from 'lucide-react';
+import { useState } from 'react';
+import { File, FileCode2, FileJson, FileSpreadsheet, FileText, FileType, Image, X, type LucideIcon } from 'lucide-react';
 import type { AttachedFile } from '../../types/input';
+import { fileIconKey, fmtSize, isImage, type IconKey } from '../../utils/attachmentMeta';
+
+const ICONS: Record<IconKey, LucideIcon> = {
+  image: Image,
+  pdf: FileText,
+  word: FileText,
+  json: FileJson,
+  csv: FileSpreadsheet,
+  markdown: FileCode2,
+  text: FileType,
+  generic: File,
+};
 
 interface Props {
   files: AttachedFile[];
   onRemove: (id: string) => void;
+  onPreview?: (file: AttachedFile) => void;
 }
 
-function getIcon(name: string) {
-  const ext = name.split('.').pop()?.toLowerCase();
-  if (/^(png|jpg|jpeg|gif|webp|svg)$/.test(ext || '')) return Image;
-  if (/^(txt|md|doc|docx|pdf)$/.test(ext || '')) return FileText;
-  return File;
-}
-
-function fmtSize(bytes: number) {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+function renderIcon(f: AttachedFile) {
+  const Icon = ICONS[fileIconKey({ content_type: f.type, filename: f.name })];
+  return <Icon size={14} />;
 }
 
 /**
- * Shared attachment list — used by both FileAttach (inside popover) and
- * InputToolbar (inline below the textarea). Single source of truth for
- * rendering attached files.
+ * Shared attachment list — used by InputToolbar (attach bar above the textarea).
+ * Thumbnails for uploaded images; optional onPreview makes the name a button.
  */
-export default function AttachmentList({ files, onRemove }: Props) {
+export default function AttachmentList({ files, onRemove, onPreview }: Props) {
   if (files.length === 0) return null;
 
   return (
-    <div className="agentstudio-attached-files">
-      {files.map((f) => {
-        const Icon = getIcon(f.name);
-        return (
-          <span key={f.id} className="agentstudio-attached-file">
-            <Icon size={14} />
-            <span className="agentstudio-attached-file-name">{f.name}</span>
-            <span className="agentstudio-attached-file-size">{fmtSize(f.size)}</span>
-            <button
-              className="agentstudio-attached-file-remove"
-              onClick={() => onRemove(f.id)}
-              type="button"
-              aria-label={`Remove ${f.name}`}
-            >
-              <X size={12} />
-            </button>
-          </span>
-        );
-      })}
+    <div className="flex flex-wrap gap-2 px-4">
+      {files.map((f) => (
+        <AttachmentChip key={f.id} file={f} onRemove={onRemove} onPreview={onPreview} />
+      ))}
     </div>
+  );
+}
+
+function AttachmentChip({
+  file,
+  onRemove,
+  onPreview,
+}: {
+  file: AttachedFile;
+  onRemove: (id: string) => void;
+  onPreview?: (file: AttachedFile) => void;
+}) {
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const previewEnabled = !!onPreview && file.status === 'done' && !!file.attachmentId;
+  const showThumb =
+    file.status === 'done' && !!file.attachmentId && isImage(file.name) && !thumbFailed;
+
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-xs">
+      {showThumb ? (
+        <img
+          src={`/api/attachments/${file.attachmentId}`}
+          alt={file.name}
+          className="h-10 w-10 rounded object-cover"
+          onError={() => setThumbFailed(true)}
+        />
+      ) : (
+        renderIcon(file)
+      )}
+
+      {previewEnabled ? (
+        <button
+          type="button"
+          onClick={() => onPreview?.(file)}
+          className="max-w-[240px] inline-flex items-center gap-1.5 bg-transparent border-none p-0 text-left cursor-pointer hover:underline"
+          aria-label={`Preview ${file.name}`}
+        >
+          <span className="max-w-[120px] truncate text-[var(--color-text-primary)]">{file.name}</span>
+          <span className="text-[var(--color-text-muted)] text-xs">{fmtSize(file.size)}</span>
+        </button>
+      ) : (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="max-w-[120px] truncate text-[var(--color-text-primary)]">{file.name}</span>
+          <span className="text-[var(--color-text-muted)] text-xs">{fmtSize(file.size)}</span>
+        </span>
+      )}
+
+      {file.status === 'uploading' && (
+        <span className="text-[var(--color-text-muted)] text-xs">{file.progress ?? 0}%</span>
+      )}
+      {file.status === 'error' && <span className="text-[var(--color-danger)] text-xs">失败</span>}
+      <button
+        type="button"
+        className="p-0.5 bg-transparent border-none rounded text-[var(--color-text-muted)] cursor-pointer flex items-center justify-center hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(file.id);
+        }}
+        aria-label={`Remove ${file.name}`}
+      >
+        <X size={12} />
+      </button>
+    </span>
   );
 }

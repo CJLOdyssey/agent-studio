@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.tool_config import _ToolWrapper
-from backend.services.tool_handlers import (
+from services.tool_config import _ToolWrapper
+from services.tool_handlers import (
     call_http_endpoint,
     call_mcp_sdk,
     execute_mcp,
@@ -57,6 +57,16 @@ class TestHandleSkill:
         parsed = json.loads(result)
         assert parsed["role"] == "skill"
         assert parsed["name"] == "bare-skill"
+        assert parsed["status"] == "unconfigured"
+
+    def test_skill_prefix_routes_unconfigured_to_handle_skill(self):
+        from services.tool_config import _ToolWrapper as W
+
+        W = W(name="skill_xlsx")
+        result = handle_skill(W, {})
+        parsed = json.loads(result)
+        assert parsed["status"] == "unconfigured"
+        assert "instructions" in parsed["content"]
 
 
 class TestCallHttpEndpoint:
@@ -78,6 +88,28 @@ class TestCallHttpEndpoint:
             assert result == '{"key": "value"}'
             mock_client.get.assert_called_once_with(
                 "https://example.com/data", params={"id": "42"}, headers={"Content-Type": "application/json"}
+            )
+
+    @pytest.mark.asyncio
+    async def test_get_request_path_template(self):
+        """{param} placeholders in the endpoint are substituted from args;
+        remaining args go to the query string."""
+        w = _ToolWrapper(name="weather", endpoint="https://wttr.in/{location}", method="GET")
+        mock_response = AsyncMock()
+        mock_response.text = "Beijing: +30C"
+        mock_response.raise_for_status = MagicMock()
+
+        with patch("httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client_cls.return_value = mock_client
+            mock_client.get.return_value = mock_response
+
+            result = await call_http_endpoint(w, {"location": "Beijing", "format": "3"})
+
+            assert result == "Beijing: +30C"
+            mock_client.get.assert_called_once_with(
+                "https://wttr.in/Beijing", params={"format": "3"}, headers={"Content-Type": "application/json"}
             )
 
     @pytest.mark.asyncio
@@ -133,7 +165,7 @@ class TestHandleMcp:
     @pytest.mark.asyncio
     async def test_handle_mcp_mocked(self):
         w = _ToolWrapper(name="mcp", mcp_type="mocked")
-        with patch("backend.services.tool_handlers.execute_tool", return_value="mock result"):
+        with patch("services.tool_handlers.execute_tool", return_value="mock result"):
             result = await handle_mcp(w, {})
             assert result == "mock result"
 
@@ -169,7 +201,7 @@ class TestExecuteMcp:
     @pytest.mark.asyncio
     async def test_execute_mcp_fallback_to_execute_tool(self):
         w = _ToolWrapper(name="fallback")
-        with patch("backend.services.tool_handlers.execute_tool", return_value='{"status": "called"}'):
+        with patch("services.tool_handlers.execute_tool", return_value='{"status": "called"}'):
             result = await execute_mcp(w, {})
             assert "called" in result
 
@@ -197,9 +229,15 @@ class TestExecuteTool:
 
     def test_execute_tool_command_timeout(self):
         w = _ToolWrapper(name="tool", mcp_endpoint="/usr/bin/sleep")
-        result = execute_tool(w, {"input": "60"})
+        # Mock subprocess.run to raise TimeoutExpired instantly — the real
+        # path would run `/usr/bin/sleep 60` and block for 30s.
+        import subprocess
+
+        with patch("services.tool_handlers.subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["sleep"], timeout=30)):
+            result = execute_tool(w, {"input": "60"})
         parsed = json.loads(result)
         assert "error" in parsed
+        assert "timeout" in parsed["error"]
 
 
 class TestLlmFallback:
@@ -355,7 +393,7 @@ class TestCallMcpSdk:
             mcp_endpoint="/usr/bin/env",
             mcp_tool_name="test_cmd",
         )
-        with patch("backend.services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
+        with patch("services.tool_handlers.call_mcp_sdk", new_callable=AsyncMock) as mock_sdk:
             mock_sdk.return_value = '{"error": "mcp not available"}'
             result = await execute_mcp(w, {})
             assert "error" in result
@@ -383,52 +421,100 @@ class TestCallMcpSdk:
                 result = await call_mcp_sdk(w, {})
                 assert "result" in result
 
-
-class TestHandleOpenBrowser:
     @pytest.mark.asyncio
-    async def test_open_browser_publishes_event(self):
-        from backend.services.tool_handlers import handle_open_browser
+    async def test_call_mcp_sdk_builds_params_from_mcp_config(self):
+        """mcp_config args/env must reach StdioServerParameters; endpoint inline args ignored."""
+        w = _ToolWrapper(
+            name="mcp-stdio",
+            mcp_type="stdio",
+            mcp_endpoint="node legacy.js --old",
+            mcp_tool_name="test_cmd",
+            mcp_config={
+                "command": "/usr/bin/env",
+                "args": ["--foo", "bar"],
+                "env": ["FOO=1", "BAR=two"],
+            },
+        )
+        w._run_id = "run-mcp-cfg"
+        mock_result = MagicMock()
+        mock_result.content = [MagicMock(text="tool output")]
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock()
+        mock_session.call_tool = AsyncMock(return_value=mock_result)
 
-        w = _ToolWrapper(name="open_user_browser")
-        w._run_id = "run-123"
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
+            mock_read = AsyncMock()
+            mock_write = AsyncMock()
+            mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
+                mock_cs.return_value.__aenter__.return_value = mock_session
+                result = await call_mcp_sdk(w, {"x": 1})
 
-        with patch("backend.broker.publish_run_message", new_callable=AsyncMock) as mock_pub:
-            result = await handle_open_browser(w, {"url": "https://example.com"})
-            parsed = json.loads(result)
-            assert parsed["status"] == "ok"
-            mock_pub.assert_awaited_once_with(
-                "run-123",
-                {"type": "open_url", "url": "https://example.com", "agent_name": "Agent"},
-            )
-
-    @pytest.mark.asyncio
-    async def test_open_browser_missing_url(self):
-        from backend.services.tool_handlers import handle_open_browser
-
-        w = _ToolWrapper(name="open_user_browser")
-        result = await handle_open_browser(w, {})
-        parsed = json.loads(result)
-        assert "error" in parsed
-        assert "Missing" in parsed["error"]
-
-    @pytest.mark.asyncio
-    async def test_open_browser_publish_failure_handled(self):
-        from backend.services.tool_handlers import handle_open_browser
-
-        w = _ToolWrapper(name="open_user_browser")
-        w._run_id = "run-456"
-
-        with patch("backend.broker.publish_run_message", new_callable=AsyncMock) as mock_pub:
-            mock_pub.side_effect = Exception("Redis down")
-            result = await handle_open_browser(w, {"url": "https://example.com"})
-            parsed = json.loads(result)
-            assert parsed["status"] == "ok"
+        assert "tool output" in result
+        params = mock_stdio.call_args[0][0]
+        assert params.command == "/usr/bin/env"
+        assert params.args == ["--foo", "bar"]
+        assert params.env == {"FOO": "1", "BAR": "two"}
 
     @pytest.mark.asyncio
-    async def test_open_browser_without_run_id(self):
-        from backend.services.tool_handlers import handle_open_browser
+    async def test_call_mcp_sdk_mcp_config_json_string(self):
+        """mcp_config may be a JSON string (e.g. parsed from DB config column)."""
+        w = _ToolWrapper(
+            name="mcp-stdio",
+            mcp_type="stdio",
+            mcp_endpoint="node server.js",
+            mcp_tool_name="test_cmd",
+            mcp_config=json.dumps({
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-filesystem"],
+                "env": {"X": "Y"},
+            }),
+        )
+        w._run_id = "run-mcp-json"
+        mock_result = MagicMock()
+        mock_result.content = [MagicMock(text="ok")]
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock()
+        mock_session.call_tool = AsyncMock(return_value=mock_result)
 
-        w = _ToolWrapper(name="open_user_browser")
-        result = await handle_open_browser(w, {"url": "https://example.com"})
-        parsed = json.loads(result)
-        assert parsed["status"] == "ok"
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
+            mock_read = AsyncMock()
+            mock_write = AsyncMock()
+            mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
+                mock_cs.return_value.__aenter__.return_value = mock_session
+                await call_mcp_sdk(w, {})
+
+        params = mock_stdio.call_args[0][0]
+        assert params.command == "npx"
+        assert params.args == ["-y", "@modelcontextprotocol/server-filesystem"]
+        assert params.env == {"X": "Y"}
+
+    @pytest.mark.asyncio
+    async def test_call_mcp_sdk_legacy_shlex_fallback(self):
+        """Without mcp_config, endpoint is shlex.split() as before."""
+        w = _ToolWrapper(
+            name="mcp-stdio",
+            mcp_type="stdio",
+            mcp_endpoint="node server.js --port 3000",
+            mcp_tool_name="test_cmd",
+        )
+        w._run_id = "run-mcp-legacy"
+        mock_result = MagicMock()
+        mock_result.content = [MagicMock(text="ok")]
+        mock_session = AsyncMock()
+        mock_session.initialize = AsyncMock()
+        mock_session.call_tool = AsyncMock(return_value=mock_result)
+
+        with patch("mcp.client.stdio.stdio_client") as mock_stdio:
+            mock_read = AsyncMock()
+            mock_write = AsyncMock()
+            mock_stdio.return_value.__aenter__.return_value = (mock_read, mock_write)
+            with patch("mcp.client.session.ClientSession", return_value=mock_session) as mock_cs:
+                mock_cs.return_value.__aenter__.return_value = mock_session
+                await call_mcp_sdk(w, {})
+
+        params = mock_stdio.call_args[0][0]
+        assert params.command == "node"
+        assert params.args == ["server.js", "--port", "3000"]
+        assert params.env is None

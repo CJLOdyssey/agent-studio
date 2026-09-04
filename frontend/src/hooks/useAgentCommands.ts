@@ -3,15 +3,15 @@ import type { Team } from '../types/AgentStudio';
 import type { CommandOption } from '../types/input';
 
 /**
- * Derives slash commands from team agents' enabled MCP servers and skills.
+ * 从团队 agent 启用的 MCP 服务器和 skills 派生斜杠命令。
  *
- * Each enabled MCP server becomes a command prefixed with the agent role.
- * Each enabled skill becomes a command.
+ * 每个启用的 MCP 服务器成为一个以 agent 角色为前缀的命令。
+ * 每个启用的 skill 成为一个命令。
  *
- * Example output:
- *   /github:search-code   (frontend agent's GitHub MCP)
- *   /slack:post-message   (pm agent's Slack MCP)
- *   /code-review          (architect agent's skill)
+ * 输出示例：
+ *   /github:search-code   （前端 agent 的 GitHub MCP）
+ *   /slack:post-message   （pm agent 的 Slack MCP）
+ *   /code-review          （架构师 agent 的 skill）
  */
 export function useAgentCommands(teams: Team[]): CommandOption[] {
   return useMemo(() => {
@@ -20,7 +20,7 @@ export function useAgentCommands(teams: Team[]): CommandOption[] {
 
     for (const team of teams) {
       for (const agent of team.agents) {
-        // Agent's enabled MCP servers → commands
+        // Agent 启用的 MCP 服务器 → 命令
         if (agent.mcp) {
           for (const mcp of agent.mcp) {
             if (!mcp.enabled) continue;
@@ -36,7 +36,7 @@ export function useAgentCommands(teams: Team[]): CommandOption[] {
           }
         }
 
-        // Agent's enabled skills → commands
+        // Agent 启用的 skills → 命令
         if (agent.skills) {
           for (const skill of agent.skills) {
             if (!skill.enabled) continue;
@@ -52,7 +52,7 @@ export function useAgentCommands(teams: Team[]): CommandOption[] {
           }
         }
 
-        // Agent's enabled tools → commands
+        // Agent 启用的工具 → 命令
         if (agent.tools) {
           for (const tool of agent.tools) {
             if (!tool.enabled) continue;

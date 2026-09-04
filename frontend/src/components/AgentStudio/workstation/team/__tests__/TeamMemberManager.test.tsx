@@ -14,7 +14,6 @@ vi.mock('../../../../../api/client/teams', () => ({
 import TeamMemberManager from '../TeamMemberManager';
 import type { TeamEntry } from '../team.types';
 import { listAgents } from '../../../../../api/client/agents';
-import { addTeamMember, removeTeamMember } from '../../../../../api/client/teams';
 
 function makeTeam(overrides: Partial<TeamEntry> = {}): TeamEntry {
   return {
@@ -34,8 +33,6 @@ function makeTeam(overrides: Partial<TeamEntry> = {}): TeamEntry {
 }
 
 const listAgentsMock = listAgents as ReturnType<typeof vi.fn>;
-const addTeamMemberMock = addTeamMember as ReturnType<typeof vi.fn>;
-const removeTeamMemberMock = removeTeamMember as ReturnType<typeof vi.fn>;
 
 describe('TeamMemberManager', { tags: ['unit'] }, () => {
   beforeEach(() => {
@@ -117,7 +114,7 @@ describe('TeamMemberManager', { tags: ['unit'] }, () => {
     listAgentsMock.mockResolvedValue([]);
     const onClose = vi.fn();
     render(<TeamMemberManager team={makeTeam()} onClose={onClose} />);
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -126,7 +123,7 @@ describe('TeamMemberManager', { tags: ['unit'] }, () => {
     listAgentsMock.mockResolvedValue([]);
     const onClose = vi.fn();
     render(<TeamMemberManager team={makeTeam()} onClose={onClose} />);
-    const closeBtn = document.querySelector('.modal-close') as HTMLButtonElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLButtonElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -135,7 +132,7 @@ describe('TeamMemberManager', { tags: ['unit'] }, () => {
     listAgentsMock.mockResolvedValue([]);
     const onClose = vi.fn();
     render(<TeamMemberManager team={makeTeam()} onClose={onClose} />);
-    const modalContent = document.querySelector('.modal-content');
+    const modalContent = document.querySelector('.fixed.inset-0 > div') as HTMLElement;
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
   });

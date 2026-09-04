@@ -3,7 +3,7 @@ import uuid
 import bcrypt
 import pytest
 
-from backend.repository.auth import create_user
+from repository.auth import create_user
 
 
 @pytest.fixture

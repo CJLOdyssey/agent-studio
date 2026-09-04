@@ -15,8 +15,9 @@ vi.mock('../../../../../utils/useToast', () => ({
 const mockUseOutputMgmt = {
   isLoading: false,
   error: null,
-  filtered: [] as any[],
-  paged: [] as any[],
+  filtered: [] as unknown[],
+  paged: [] as unknown[],
+  get processed() { return this.filtered; },
   page: 1,
   totalPages: 1,
   search: '',
@@ -25,9 +26,9 @@ const mockUseOutputMgmt = {
   allOnPageSelected: false,
   isFormOpen: false,
   formErrors: [] as string[],
-  editingItem: null as any,
+  editingItem: null as unknown,
   editingId: null as string | null,
-  formData: { name: '', content: '', category: '格式约束', model: '全部模型', status: 'draft', version: 'v1.0.0' } as any,
+  formData: { name: '', content: '', category: '格式约束', status: 'draft' } as unknown,
   openMenuId: null as string | null,
   menuAnchorEl: null as HTMLElement | null,
   setSearch: vi.fn(),
@@ -60,15 +61,14 @@ vi.mock('../useOutputManagement', () => ({
 vi.mock('../shared/ResourcePickerModal', () => ({ default: () => null }));
 
 import OutputConstraintManagement from '../OutputConstraintManagement';
+import { getCategoryTagClass } from '../../shared/categoryTag';
 
 const makeItem = (overrides: Record<string, unknown> = {}) => ({
   id: 'o1',
   name: 'JSON格式',
   content: '以JSON格式输出',
   category: '格式约束',
-  model: '全部模型',
   status: 'active',
-  version: 'v1.0.0',
   createdAt: '2024-01-01',
   ...overrides,
 });
@@ -317,7 +317,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-tag-indigo')).toBeDefined();
+    expect(container.querySelector(`.${getCategoryTagClass('格式约束')}`)).toBeDefined();
     expect(screen.getByText('格式约束')).toBeDefined();
   });
 
@@ -329,7 +329,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-tag-green')).toBeDefined();
+    expect(container.querySelector(`.${getCategoryTagClass('内容约束')}`)).toBeDefined();
   });
 
   it('renders dropdown action button for each row', () => {
@@ -340,7 +340,7 @@ describe('OutputConstraintManagement', { tags: ['unit'] }, () => {
     mockUseOutputMgmt.totalPages = 1;
 
     const { container } = render(<OutputConstraintManagement />);
-    expect(container.querySelector('.wsta-action-btn')).toBeDefined();
+    expect(container.querySelector('.lucide-more-horizontal')).toBeDefined();
   });
 
   it('renders WstaPagination when data exists', () => {

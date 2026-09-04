@@ -68,7 +68,7 @@ describe('ItemEditor', { tags: ['integration'] }, () => {
   });
 
   it('passes editingItem to ToolFormModal', () => {
-    const editingItem = { id: 't1', name: 'Test Tool', description: 'desc', category: 'cat', model: '', endpoint: '', parameters: '' };
+    const editingItem = { id: 't1', name: 'Test Tool', description: 'desc', category: 'cat', endpoint: '', parameters: '' };
     render(
       <TestProviders>
         <ItemEditor {...defaultProps} kind="tool" editingItem={editingItem} />

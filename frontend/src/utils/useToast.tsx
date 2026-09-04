@@ -34,15 +34,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     info: <CheckCircle2 size={16} className="text-[var(--da-text-secondary)]" />,
   };
 
+  const borderColor = {
+    success: 'border-l-[3px] border-l-[var(--da-accent-emerald)]',
+    error: 'border-l-[3px] border-l-[var(--danger)]',
+    info: 'border-l-[3px] border-l-[var(--da-text-muted)]',
+  } as const;
+
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="toast-container" role="status" aria-live="polite" aria-atomic="false">
+      <div
+        className="fixed bottom-6 right-6 flex flex-col gap-2 z-[var(--z-toast)] pointer-events-none"
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+      >
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type}`} role="alert">
+          <div
+            key={t.id}
+            className={`flex items-center gap-3 py-3 px-4 bg-[var(--da-bg-elevated)] rounded-lg text-sm text-[var(--da-text-primary)] shadow-lg pointer-events-auto animate-[toast-in_0.2s_ease-out] ${borderColor[t.type]}`}
+            role="alert"
+          >
             {iconMap[t.type]}
             <span>{t.message}</span>
-            <button className="toast-close" onClick={() => remove(t.id)} aria-label="Close notification">
+            <button
+              className="bg-transparent border-none text-[var(--da-text-muted)] cursor-pointer p-0.5 ml-auto"
+              onClick={() => remove(t.id)}
+              aria-label="Close notification"
+            >
               <X size={12} />
             </button>
           </div>

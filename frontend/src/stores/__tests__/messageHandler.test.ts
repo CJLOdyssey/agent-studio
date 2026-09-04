@@ -19,7 +19,7 @@ function makeState(overrides: Record<string, unknown> = {}) {
     messages: [
       { id: 'msg-1', role: 'agent', content: 'Hello', thinking: 'thinking...', agent_name: 'Agent', round_number: 0, created_at: new Date().toISOString() },
     ],
-    status: 'streaming',
+    status: 'running',
     currentRole: 'Agent',
     wsStatus: 'connected',
     skipThinking: false,
@@ -52,6 +52,17 @@ describe('handleMessageEvent', { tags: ['unit'] }, () => {
     const result = set.mock.results[0].value as { messages: Array<{ content: string }> };
     expect(result.messages).toHaveLength(2);
     expect(result.messages[1].content).toBe('New msg');
+  });
+
+  it('ignores message event when run finished (status idle — reconnect replay)', () => {
+    const set = vi.fn((fn: (s: ReturnType<typeof makeState>) => unknown) =>
+      fn(makeState({ streamingId: null, status: 'idle' })),
+    );
+
+    handleMessageEvent(set as never, { type: 'message', content: 'Replayed', thinking: '', role: 'agent', agent_name: 'Agent' });
+
+    const result = set.mock.results[0].value;
+    expect(result).toEqual({});
   });
 });
 
@@ -103,6 +114,33 @@ describe('handleErrorEvent', { tags: ['unit'] }, () => {
     const result = set.mock.results[0].value as { error: string };
     expect(result.error).toBe('Unknown error');
   });
+
+  it('H3: error clears pending regenerate/edit context', () => {
+    const s = {
+      ...makeState(),
+      pendingRegenerate: { userMsgId: 'u1', oldRunIds: ['run-old'], requirement: 'req' },
+      editTargetId: 'edit-1',
+      continuingId: 'cont-1',
+      pendingVersions: ['v1'],
+      pendingThinkingVersions: ['t1'],
+    };
+    const set = vi.fn((fn: (state: typeof s) => unknown) => fn(s));
+
+    handleErrorEvent(set as never, { type: 'error', content: 'boom' });
+
+    const result = set.mock.results[0].value as {
+      pendingRegenerate: unknown;
+      editTargetId: unknown;
+      continuingId: unknown;
+      pendingVersions: unknown;
+      pendingThinkingVersions: unknown;
+    };
+    expect(result.pendingRegenerate).toBeNull();
+    expect(result.editTargetId).toBeNull();
+    expect(result.continuingId).toBeNull();
+    expect(result.pendingVersions).toBeNull();
+    expect(result.pendingThinkingVersions).toBeNull();
+  });
 });
 
 describe('handleBalanceWarningEvent', { tags: ['unit'] }, () => {
@@ -127,23 +165,25 @@ describe('handleBalanceWarningEvent', { tags: ['unit'] }, () => {
 });
 
 describe('handleOpenUrlEvent', { tags: ['unit'] }, () => {
-  it('opens URL in new tab', () => {
-    const openMock = vi.fn();
-    vi.stubGlobal('open', openMock);
+  it('dispatches browser-open-url event with the URL', () => {
+    const dispatched: string[] = [];
+    const listener = (e: Event) => dispatched.push((e as CustomEvent<string>).detail);
+    window.addEventListener('browser-open-url', listener);
 
     handleOpenUrlEvent({ type: 'open_url', url: 'https://example.com' });
 
-    expect(openMock).toHaveBeenCalledWith('https://example.com', '_blank');
-    vi.unstubAllGlobals();
+    expect(dispatched).toEqual(['https://example.com']);
+    window.removeEventListener('browser-open-url', listener);
   });
 
   it('does nothing when url is empty', () => {
-    const openMock = vi.fn();
-    vi.stubGlobal('open', openMock);
+    const dispatched: string[] = [];
+    const listener = (e: Event) => dispatched.push((e as CustomEvent<string>).detail);
+    window.addEventListener('browser-open-url', listener);
 
     handleOpenUrlEvent({ type: 'open_url' });
 
-    expect(openMock).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+    expect(dispatched).toEqual([]);
+    window.removeEventListener('browser-open-url', listener);
   });
 });

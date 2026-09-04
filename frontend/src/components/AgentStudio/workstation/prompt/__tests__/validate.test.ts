@@ -5,6 +5,7 @@ import type { PromptEntry, PromptFormData } from '../types';
 describe('validatePromptForm', { tags: ['unit'] }, () => {
   const baseData: PromptFormData = {
     name: 'TestPrompt',
+    description: '测试描述',
     content: 'Hello world',
     category: 'system',
     version: 'v1.0.0',
@@ -53,7 +54,22 @@ describe('validatePromptForm', { tags: ['unit'] }, () => {
     expect(errors).toContain('提示词内容不能为空');
   });
 
-  it('requires valid version format', () => {
+  it('requires description', () => {
+    const errors = validatePromptForm({ ...baseData, description: '' }, []);
+    expect(errors).toContain('提示词描述不能为空');
+  });
+
+  it('allows empty version (backend does not accept version)', () => {
+    const errors = validatePromptForm({ ...baseData, version: '' }, []);
+    expect(errors).not.toContain('版本格式应为 v1.0.0');
+  });
+
+  it('allows whitespace-only version', () => {
+    const errors = validatePromptForm({ ...baseData, version: '   ' }, []);
+    expect(errors).not.toContain('版本格式应为 v1.0.0');
+  });
+
+  it('requires valid version format when non-empty', () => {
     const errors = validatePromptForm({ ...baseData, version: 'bad' }, []);
     expect(errors).toContain('版本格式应为 v1.0.0');
   });

@@ -1,0 +1,248 @@
+"""Run API 路由：创建、列出、详情与 WebSocket 流式输出。"""
+
+import contextlib
+import time
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
+from pydantic.alias_generators import to_camel
+
+from auth import get_user_id, require_run_owner, ws_run_owner
+from broker import drain_buffer, stop_buffer, subscribe_run
+from core.config import load_config
+from core.error_codes import ErrorCode, error_response
+from core.infra.logging_config import get_logger
+from core.models import RunDetail, RunSummary
+from repository import get_messages, get_run, get_session
+from services.run_service import run_service
+
+logger = get_logger(__name__)
+router = APIRouter(tags=["runs"])
+
+_MAX_REQUIREMENT_LENGTH = 2000
+
+
+class RunRequest(BaseModel):
+    model_config = {"alias_generator": to_camel, "populate_by_name": True}
+    requirement: str = Field(..., min_length=1, max_length=_MAX_REQUIREMENT_LENGTH)
+    session_id: str | None = None
+    key_id: str | None = Field(
+        default=None, description="Vaulted API key ID — server resolves key, never exposes it"
+    )
+    model: str | None = None
+    agent_id: str | None = None
+    team_id: str | None = None
+    parent_run_id: str | None = None
+    is_edit: bool = False
+    attachment_ids: list[str] | None = None
+
+
+class RunResponse(BaseModel):
+    run_id: str
+    status: str
+    session_id: str | None = None
+
+
+@router.post("/api/runs", response_model=RunResponse)
+async def create_run(req: RunRequest, request: Request) -> Any:
+    """创建并启动新的 agent run。"""
+    requirement = req.requirement.strip()
+    config = load_config()
+    if len(requirement) > config.max_requirement_length:
+        raise error_response(
+            ErrorCode.INVALID_REQUEST, detail=f"需求不能超过 {config.max_requirement_length} 字"
+        )
+    if not requirement:
+        raise error_response(ErrorCode.INVALID_REQUEST, detail="需求不能为空")
+
+    user_id = get_user_id(request)
+    try:
+        result = await run_service.create_run(
+            requirement=requirement,
+            session_id=req.session_id,
+            user_id=user_id,
+            key_id=req.key_id,
+            agent_id=req.agent_id,
+            team_id=req.team_id,
+            model=req.model,
+            parent_run_id=req.parent_run_id,
+            is_edit=req.is_edit,
+            attachment_ids=req.attachment_ids,
+        )
+        return RunResponse(**result)
+    except ValueError as e:
+        raise error_response(ErrorCode.INVALID_REQUEST, detail=str(e)) from e
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to create run: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR, detail=f"执行失败: {e}") from e
+
+
+@router.get("/api/runs/{run_id}", response_model=RunDetail)
+async def get_run_detail(run_id: str, request: Request) -> Any:
+    """获取特定 run 的详细信息。"""
+    try:
+        await require_run_owner(request, run_id)
+        result = await run_service.get_run(run_id)
+        if result is None:
+            raise error_response(ErrorCode.RUN_NOT_FOUND, detail="未找到该次讨论")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error fetching run %s: %s", run_id, e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.get("/api/runs", response_model=list[RunSummary])
+async def list_runs(request: Request, limit: int = 20) -> Any:
+    """列出最近的 run，limit 可配置。"""
+    try:
+        from auth.ownership import auth_enabled
+        user_id = get_user_id(request)
+        if user_id == "anonymous" and auth_enabled():
+            return []
+        return await run_service.list_runs(
+            limit=limit,
+            user_id=None if user_id == "anonymous" else user_id,
+        )
+    except Exception as e:
+        logger.error("Error listing runs: %s", e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.post("/api/runs/{run_id}/cancel", response_model=RunResponse)
+async def cancel_run(run_id: str, request: Request) -> Any:
+    """取消进行中的 run：将取消传播到 LLM 流。"""
+    try:
+        await require_run_owner(request, run_id)
+        result = await run_service.cancel_run(run_id)
+        return RunResponse(**result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error cancelling run %s: %s", run_id, e, exc_info=True)
+        raise error_response(ErrorCode.INTERNAL_ERROR) from e
+
+
+@router.websocket("/api/ws/runs/{run_id}")
+async def run_websocket(websocket: WebSocket, run_id: str) -> Any:
+    """通过 WebSocket 连接流式输出 run 进度与消息。"""
+    client_host = websocket.client.host if websocket.client else "?"
+    await websocket.accept()
+    if not await ws_run_owner(websocket, run_id):
+        logger.warning(
+            "WebSocket ownership denied | run_id=%s | client=%s",
+            run_id, client_host,
+        )
+        await websocket.send_json({"type": "status", "status": "error", "error": "无权访问该运行"})
+        await websocket.close(code=1008)
+        return
+    logger.info(
+        "WebSocket connected | run_id=%s | client=%s",
+        run_id, client_host,
+    )
+    _ws_t0 = time.monotonic()
+    try:
+        await websocket.send_json({"type": "status", "status": "connected"})
+
+        # 检查 run 是否已完成（竞态：任务在 WS 连接前已结束）
+        try:
+            run = await get_run(run_id)
+            if run and run.status in ("converged", "error"):
+                await stop_buffer(run_id)
+                messages = await get_messages(run_id)
+                # L5: 团队会话的 run 重连时回放 team_result（团队汇总语义），
+                # 而非 message+result——前端按团队消息布局渲染。verdicts 未持久化
+                # 无法恢复，但至少团队汇总/角色消息形态正确。
+                sess = await get_session(run.session_id) if run.session_id else None
+                is_team = sess is not None and sess.kind == "team"
+                if is_team:
+                    for m in messages:
+                        await websocket.send_json(
+                            {
+                                "type": "message",
+                                "role": m.role,
+                                "agent_name": m.agent_name,
+                                "content": m.content,
+                                "round_number": m.round_number,
+                            }
+                        )
+                    await websocket.send_json(
+                        {
+                            "type": "team_result",
+                            "status": run.status,
+                            "display": run.code or "",
+                            "artifacts": {},
+                            "rounds": 1,
+                        }
+                    )
+                else:
+                    for m in messages:
+                        await websocket.send_json(
+                            {
+                                "type": "message",
+                                "role": m.role,
+                                "agent_name": m.agent_name,
+                                "content": m.content,
+                                "round_number": m.round_number,
+                            }
+                        )
+                    await websocket.send_json(
+                        {
+                            "type": "result",
+                            "status": run.status,
+                            "approved": run.approved,
+                            "pm_document": run.pm_document or "",
+                            "code": run.code or "",
+                            "review": run.review or "",
+                        }
+                    )
+                await websocket.close()
+                return
+        except Exception as e:
+            logger.warning("Pre-check run status failed: %s", e)
+
+        try:
+            for msg in drain_buffer(run_id):
+                try:
+                    await websocket.send_json(msg)
+                except WebSocketDisconnect:
+                    return
+
+            async for message in subscribe_run(run_id):
+                try:
+                    await websocket.send_json(message)
+                except WebSocketDisconnect:
+                    elapsed = time.monotonic() - _ws_t0
+                    logger.info(
+                        "WebSocket disconnected | run_id=%s | client=%s | elapsed=%.1fs",
+                        run_id, client_host, elapsed,
+                    )
+                    return
+                except Exception as e:
+                    logger.warning(
+                        "WebSocket send error | run_id=%s | client=%s | error=%s",
+                        run_id, client_host, e,
+                    )
+                    return
+        except Exception as e:
+            logger.error("Redis subscribe error: %s", e, exc_info=True)
+            with contextlib.suppress(Exception):
+                await websocket.send_json({"type": "status", "status": "error", "error": str(e)})
+        finally:
+            await stop_buffer(run_id)
+    except WebSocketDisconnect:
+        elapsed = time.monotonic() - _ws_t0
+        logger.info(
+            "WebSocket disconnected gracefully | run_id=%s | client=%s | elapsed=%.1fs",
+            run_id, client_host, elapsed,
+        )
+    except Exception as e:
+        elapsed = time.monotonic() - _ws_t0
+        logger.error(
+            "WebSocket error | run_id=%s | client=%s | elapsed=%.1fs | error=%s",
+            run_id, client_host, elapsed, e, exc_info=True,
+        )

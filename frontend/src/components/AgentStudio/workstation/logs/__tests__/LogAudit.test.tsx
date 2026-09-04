@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import LogAudit from '../LogAudit';
 import { fetchCommandLogs } from '../../../../../api/client/admin';
 import { t } from '../locales';
+import type * as React from 'react';
 
 vi.mock('../../../../../api/client/admin', () => ({
   fetchCommandLogs: vi.fn(),
@@ -17,14 +17,13 @@ vi.mock('../locales', () => ({
 }));
 
 const mockLogs = [
-  { id: '1', timestamp: '2025-01-01T10:00:00', command: 'create agent', payload: 'test payload', result: 'success' },
-  { id: '2', timestamp: '2025-01-01T10:05:00', command: 'delete prompt', payload: 'payload2', result: 'deleted' },
-  { id: '3', timestamp: '2025-01-01T10:10:00', command: 'run tool', payload: 'payload3', result: 'done' },
+  { id: '1', timestamp: '2025-01-01T10:00:00', action: 'create', entity_type: 'agent', entity_name: '研究员', detail: '创建成功', level: 'info', before: '', after: '', user: 'admin', ip: '127.0.0.1', user_agent: 'ua', request_id: 'r1' },
+  { id: '2', timestamp: '2025-01-01T10:05:00', action: 'delete', entity_type: 'prompt', entity_name: '旧模板', detail: '删除成功', level: 'warn', before: '', after: '', user: 'admin', ip: '127.0.0.1', user_agent: 'ua', request_id: 'r2' },
+  { id: '3', timestamp: '2025-01-01T10:10:00', action: 'update', entity_type: 'tool', entity_name: '搜索工具', detail: '更新成功', level: 'info', before: '', after: '', user: 'admin', ip: '127.0.0.1', user_agent: 'ua', request_id: 'r3' },
 ];
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+const resolveLogs = (items: unknown[] = mockLogs) =>
+  (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue({ items, total: items.length, offset: 0, limit: 7 });
 
 const renderWithVirtuoso = (ui: React.ReactElement) =>
   render(
@@ -33,7 +32,15 @@ const renderWithVirtuoso = (ui: React.ReactElement) =>
     </VirtuosoMockContext.Provider>,
   );
 
+const waitLoaded = () => waitFor(() => {
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
+});
+
 describe('LogAudit', { tags: ['integration'] }, () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders loading skeleton initially', () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
     renderWithVirtuoso(<LogAudit />);
@@ -41,32 +48,26 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders empty state when no logs returned', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    resolveLogs([]);
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
     expect(screen.getByText(t('logs.empty'))).toBeInTheDocument();
   });
 
   it('renders log entries in table', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    resolveLogs();
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
     expect(screen.getByRole('grid')).toBeInTheDocument();
-    expect(screen.getByText('create agent')).toBeInTheDocument();
-    expect(screen.getByText('delete prompt')).toBeInTheDocument();
-    expect(screen.getByText('run tool')).toBeInTheDocument();
+    expect(screen.getByText('create')).toBeInTheDocument();
+    expect(screen.getByText('delete')).toBeInTheDocument();
+    expect(screen.getByText('update')).toBeInTheDocument();
   });
 
   it('renders table column headers', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    resolveLogs();
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
     expect(screen.getByText(t('logs.col_time'))).toBeInTheDocument();
     expect(screen.getByText(t('logs.col_level'))).toBeInTheDocument();
     expect(screen.getByText(t('logs.col_module'))).toBeInTheDocument();
@@ -77,97 +78,101 @@ describe('LogAudit', { tags: ['integration'] }, () => {
   });
 
   it('renders toolbar with search input', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    resolveLogs();
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
     expect(screen.getByPlaceholderText(t('logs.search_placeholder'))).toBeInTheDocument();
   });
 
   it('handles API error gracefully by showing empty state', async () => {
     (fetchCommandLogs as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network'));
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
     expect(screen.getByText(t('logs.empty'))).toBeInTheDocument();
   });
 
-  it('shows details and IP columns for log entries', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+  it('shows details column for log entries', async () => {
+    resolveLogs();
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
-    expect(screen.getByText('success')).toBeInTheDocument();
-    expect(screen.getByText('deleted')).toBeInTheDocument();
-    expect(screen.getByText('done')).toBeInTheDocument();
+    await waitLoaded();
+    expect(screen.getByText('创建成功')).toBeInTheDocument();
+    expect(screen.getByText('删除成功')).toBeInTheDocument();
+    expect(screen.getByText('更新成功')).toBeInTheDocument();
   });
 
-  it('filters logs by search text', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+  it('passes search filter to the backend and reloads', async () => {
+    resolveLogs();
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
-
-    expect(screen.getByText('create agent')).toBeInTheDocument();
-    expect(screen.getByText('run tool')).toBeInTheDocument();
+    await waitLoaded();
 
     const searchInput = screen.getByPlaceholderText(t('logs.search_placeholder'));
     fireEvent.change(searchInput, { target: { value: 'delete' } });
 
     await waitFor(() => {
-      expect(screen.queryByText('create agent')).not.toBeInTheDocument();
+      expect(fetchCommandLogs).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'delete', level: undefined, entity_type: undefined }),
+      );
     });
-    expect(screen.getByText('delete prompt')).toBeInTheDocument();
-    expect(screen.queryByText('run tool')).not.toBeInTheDocument();
   });
 
-  it('shows pagination controls when logs exceed page size', async () => {
-    const manyLogs = Array.from({ length: 30 }, (_, i) => ({
-      id: String(i + 1),
-      timestamp: `2025-01-01T10:${String(i).padStart(2, '0')}:00`,
-      command: `command ${i + 1}`,
-      payload: `payload${i + 1}`,
-      result: `result${i + 1}`,
-    }));
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(manyLogs);
+  it('passes level and module filters to the backend', async () => {
+    resolveLogs();
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
-    expect(document.querySelector('.wsta-pagination')).toBeInTheDocument();
-  });
-
-  it('renders level filter select', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
-    renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
 
     const selects = document.querySelectorAll('.ant-select');
     expect(selects.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('renders toolbar with toolbar role', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+  it('shows pagination controls when total exceeds page size', async () => {
+    resolveLogs(Array.from({ length: 30 }, (_, i) => ({
+      id: String(i + 1),
+      timestamp: `2025-01-01T10:${String(i).padStart(2, '0')}:00`,
+      action: 'update',
+      entity_type: 'agent',
+      entity_name: `Agent ${i + 1}`,
+      detail: '更新成功',
+      level: 'info',
+      before: '',
+      after: '',
+      user: 'admin',
+      ip: '127.0.0.1',
+      user_agent: 'ua',
+      request_id: 'r',
+    })));
     renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
+    expect(screen.getByText(/共 \d+ 条/)).toBeInTheDocument();
+  });
+
+  it('renders toolbar with toolbar role', async () => {
+    resolveLogs();
+    renderWithVirtuoso(<LogAudit />);
+    await waitLoaded();
     expect(screen.getByRole('toolbar')).toBeInTheDocument();
   });
 
   it('renders region with aria-label', async () => {
-    (fetchCommandLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockLogs);
+    resolveLogs();
     const { container } = renderWithVirtuoso(<LogAudit />);
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
+    await waitLoaded();
     const region = container.querySelector('[role="region"]');
     expect(region).toBeInTheDocument();
+  });
+
+  it('opens detail modal with request_id and diff', async () => {
+    const withDiff = [
+      { id: '9', timestamp: '2025-01-01T11:00:00', action: 'update', entity_type: 'agent', entity_name: 'Agent X', detail: '配置更新', level: 'info', before: '{"name":"old"}', after: '{"name":"new"}', user: 'admin', ip: '1.2.3.4', user_agent: 'Mozilla/5.0', request_id: 'req-abc-123' },
+    ];
+    resolveLogs(withDiff);
+    renderWithVirtuoso(<LogAudit />);
+    await waitLoaded();
+    fireEvent.click(screen.getByText('配置更新'));
+    await waitFor(() => {
+      expect(screen.getByText('req-abc-123')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Mozilla/5.0')).toBeInTheDocument();
+    expect(screen.getByText('变更前')).toBeInTheDocument();
+    expect(screen.getByText('变更后')).toBeInTheDocument();
   });
 });

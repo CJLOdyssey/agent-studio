@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bot, FileText, Wrench, Server, Zap, Users, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { CardSkeleton } from '../shared/LoadingSkeleton';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import {
@@ -8,85 +8,29 @@ import {
   fetchSystemHealth,
   type DashboardStats,
   type SystemHealth,
-  type ActivityEntry as ApiActivity,
 } from '../../../../api/client/admin';
 import { t } from './locales';
 import MonitorStats from './MonitorStats';
 import MonitorActivity from './MonitorActivity';
 import MonitorHealth, { type HealthItem } from './MonitorHealth';
-
-interface ViewActivity {
-  id: string;
-  time: string;
-  action: string;
-  target: string;
-  type: 'success' | 'warning' | 'info';
-}
-
-interface StatCard {
-  key: keyof DashboardStats;
-  icon: typeof Bot;
-  label: string;
-  tab: string;
-}
-
-const ACTION_LABELS: Record<string, Record<string, string>> = {
-  create: { agent: '创建了 Agent', prompt: '创建了提示词', tool: '创建了工具', mcp: '创建了 MCP', skill: '创建了 Skill', team: '创建了团队', api_key: '创建了 API Key' },
-  update: { agent: '更新了 Agent', prompt: '更新了提示词', tool: '更新了工具', mcp: '更新了 MCP', skill: '更新了 Skill', team: '更新了团队' },
-  delete: { agent: '删除了 Agent', prompt: '删除了提示词', tool: '删除了工具', mcp: '删除了 MCP', skill: '删除了 Skill', team: '删除了团队', api_key: '删除了 API Key' },
-};
-
-function actionLabel(action: string, entityType: string): string {
-  return ACTION_LABELS[action]?.[entityType] || `执行了 ${action}_${entityType}`;
-}
-
-function apiToView(a: ApiActivity): ViewActivity {
-  return {
-    id: a.id,
-    time: a.timestamp ? a.timestamp.replace('T', ' ').substring(11, 19) : '',
-    action: actionLabel(a.action, a.entity_type),
-    target: a.entity_name || `${a.action}_${a.entity_type}`,
-    type: 'success',
-  };
-}
-
-const ICON_MAP: Record<string, typeof Bot> = {
-  agents: Bot,
-  prompts: FileText,
-  tools: Wrench,
-  mcps: Server,
-  skills: Zap,
-  teams: Users,
-};
-
-const TAB_MAP: Record<string, string> = {
-  agents: 'agents',
-  prompts: 'prompts',
-  tools: 'tools',
-  mcps: 'mcp',
-  skills: 'skills',
-  teams: 'teams',
-};
-
-function healthToItems(health: SystemHealth): HealthItem[] {
-  return [
-    {
-      label: t('monitor.health_status'),
-      value: health.status === 'ok' ? t('monitor.health_ok') : t('monitor.health_degraded'),
-      status: health.status === 'ok' ? 'normal' : 'warning',
-    },
-    {
-      label: t('monitor.health_database'),
-      value: health.database?.startsWith('connected') ? t('monitor.health_connected') : t('monitor.health_disconnected'),
-      status: health.database?.startsWith('connected') ? 'normal' : 'warning',
-    },
-    {
-      label: t('monitor.health_redis'),
-      value: health.redis?.startsWith('connected') ? t('monitor.health_connected') : t('monitor.health_disconnected'),
-      status: health.redis?.startsWith('connected') ? 'normal' : 'warning',
-    },
-  ];
-}
+import { CostAnalysis } from './CostAnalysis';
+import { PerformanceAnalysis } from './PerformanceAnalysis';
+import { AlertRules } from './AlertRules';
+import { AlertEvents } from './AlertEvents';
+import { AlertSubscriptions } from './AlertSubscriptions';
+import LLMTraces from './LLMTraces';
+import { SloBudget } from './SloBudget';
+import {
+  type ViewActivity,
+  type StatCard,
+  ICON_MAP,
+  TAB_MAP,
+  TABS,
+  AUTO_REFRESH_SECONDS,
+  type TabKey,
+  apiToView,
+  healthToItems,
+} from './monitorCenterData';
 
 interface Props {
   onNavigate?: (tab: string) => void;
@@ -96,8 +40,11 @@ function MonitorCenter({ onNavigate }: Props) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<ViewActivity[]>([]);
   const [healthItems, setHealthItems] = useState<HealthItem[]>([]);
+  const [health, setHealth] = useState<SystemHealth | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [nextRefreshIn, setNextRefreshIn] = useState(AUTO_REFRESH_SECONDS);
+  const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -113,6 +60,7 @@ function MonitorCenter({ onNavigate }: Props) {
       }
       if (healthResult.status === 'fulfilled') {
         setHealthItems(healthToItems(healthResult.value));
+        setHealth(healthResult.value);
       }
       setLastUpdated(new Date().toLocaleTimeString());
     }).finally(() => {
@@ -123,11 +71,21 @@ function MonitorCenter({ onNavigate }: Props) {
 
   useEffect(() => { const c = load(); return c; }, [load]);
 
-  // Auto-refresh every 60s
+  // 每 60 秒自动刷新；同时维护一个每秒递减的倒计时，让用户知道
+  // 下一次自动刷新在什么时候（避免只看到被动的“上次更新”）。
   useEffect(() => {
-    const timer = setInterval(load, 60000);
+    const timer = setInterval(load, AUTO_REFRESH_SECONDS * 1000);
     return () => clearInterval(timer);
   }, [load]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 新数据刷新时重置倒计时
+    setNextRefreshIn(AUTO_REFRESH_SECONDS);
+    const tick = setInterval(() => {
+      setNextRefreshIn((s) => (s <= 1 ? AUTO_REFRESH_SECONDS : s - 1));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [lastUpdated]);
 
   const statCards: StatCard[] = stats
     ? (Object.keys(ICON_MAP) as (keyof DashboardStats)[])
@@ -142,62 +100,106 @@ function MonitorCenter({ onNavigate }: Props) {
 
   if (isLoading)
     return (
-      <div className="wsta-monitor">
-        <div style={{ padding: 24 }}>
+      <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="p-6">
           <CardSkeleton count={6} />
         </div>
       </div>
     );
 
+  // resetKeys 一旦变化（如后端恢复新一轮数据成功 / 网络恢复），ErrorBoundary
+  // 自动清错回正，无需用户手动刷新。这是修复「后端 systemd 重启 1 秒 → 整页
+  // 卡在「模块出错了」」的关键。同时保留自定义轻量 fallback，避免破坏 6 tab 平铺
+  // 的视觉布局（fallback 显示在内容区，而非整页刷屏）。
+  const resetKeys = [lastUpdated, health?.status ?? '', nextRefreshIn > 0 ? 'online' : 'stale'];
+
   return (
-    <ErrorBoundary
-      fallback={
-        <div className="wsta-monitor wsta-error-state" role="alert">
-          <p>{t('monitor.error_render')}</p>
-        </div>
-      }
-    >
-      <div className="wsta-monitor">
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 24,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 13, color: 'var(--da-text-muted)' }}>
-              {lastUpdated ? `上次更新: ${lastUpdated}` : ''}
+    <ErrorBoundary resetKeys={resetKeys}>
+      <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 p-6 gap-6 overflow-y-auto">
+          {/* 标签页切换：大厂监控页常见范式 —— 顶部导航式 tab，激活项带
+              accent 底 + 白字，未激活为透明 + 底部描边，hover 才浮现底色。 */}
+          <div className="flex items-center justify-between">
+            <nav aria-label="监控分区" className="flex items-center">
+              {TABS.map((tab) => {
+                const active = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`relative px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      active
+                        ? 'bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)] text-[var(--color-accent)]'
+                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="flex items-center gap-4">
+              <div className="text-right text-xs text-[var(--color-text-muted)] leading-4 tabular-nums">
+                {lastUpdated ? <div>上次更新 {lastUpdated}</div> : null}
+                <div className="inline-flex items-center gap-1.5">
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--color-success)]"
+                    aria-hidden="true"
+                  />
+                  {nextRefreshIn} 秒后自动刷新
+                </div>
+              </div>
+              <button
+                onClick={load}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-overlay)] text-[var(--color-text-secondary)] cursor-pointer text-xs font-medium"
+                title={t('monitor.refresh')}
+              >
+                <RefreshCw size={14} />
+                刷新
+              </button>
             </div>
-            <button
-              onClick={load}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 14px', borderRadius: 6, border: '1px solid var(--da-border-subtle)',
-                background: 'var(--da-bg-card)', color: 'var(--da-text-secondary)',
-                cursor: 'pointer', fontSize: 12, fontWeight: 500,
-              }}
-              title={t('monitor.refresh')}
-            >
-              <RefreshCw size={14} />
-              刷新
-            </button>
           </div>
 
-          <MonitorStats stats={stats} statCards={statCards} onNavigate={onNavigate} />
+          {/* 系统概览标签页 */}
+          {activeTab === 'overview' && (
+            <>
+              <MonitorStats stats={stats} statCards={statCards} health={health} onNavigate={onNavigate} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, flex: 1, minHeight: 0 }}>
-            <div style={{ background: 'var(--da-bg-card)', border: '1px solid var(--da-border-subtle)', borderRadius: 10, padding: 20, overflowY: 'auto' }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--da-text-primary)', marginBottom: 16 }}>
-                {t('monitor.activity')}
-              </h3>
-              <MonitorActivity activities={activities} />
+              <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+                <div className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] rounded-lg p-5 overflow-y-auto">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">
+                    {t('monitor.activity')}
+                  </h3>
+                  <MonitorActivity activities={activities} onNavigate={onNavigate} />
+                </div>
+                <MonitorHealth items={healthItems} />
+              </div>
+            </>
+          )}
+
+          {/* 成本分析标签页 */}
+          {activeTab === 'cost' && (
+            <CostAnalysis />
+          )}
+
+          {/* 性能分析标签页 */}
+          {activeTab === 'performance' && (
+            <PerformanceAnalysis />
+          )}
+
+          {/* 运行轨迹标签页（LLM Trace 浏览器：列表 ⇄ 详情瀑布） */}
+          {activeTab === 'traces' && <LLMTraces />}
+
+          {/* 告警标签页 */}
+          {activeTab === 'alerts' && (
+            <div className="flex flex-col gap-6">
+              <AlertRules />
+              <AlertEvents />
+              <AlertSubscriptions />
+              <SloBudget />
             </div>
-            <MonitorHealth items={healthItems} />
-          </div>
+          )}
         </div>
       </div>
     </ErrorBoundary>

@@ -24,7 +24,7 @@ describe('ErrorBoundary', { tags: ['unit'] }, () => {
       </ErrorBoundary>,
     );
     expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByText('Test error')).toBeInTheDocument();
+    expect(screen.getAllByText('Test error').length).toBeGreaterThanOrEqual(1);
     vi.restoreAllMocks();
   });
 

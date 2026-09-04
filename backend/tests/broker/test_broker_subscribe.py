@@ -7,15 +7,28 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _clear_broker_pools():
+    """Clear broker._pools after each test.
+
+    Edge-case tests stash MagicMock/AsyncMock pools under mock loop keys;
+    leaking them makes later app-lifespan close_redis() raise TypeError on
+    ``await pool.aclose()``.
+    """
+    yield
+    from broker import _pools
+
+    _pools.clear()
+
 # ---------------------------------------------------------------------------
 # subscribe_run
 # ---------------------------------------------------------------------------
 
 class TestSubscribeRun:
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_yields_messages_from_pubsub(self, mock_get_redis):
-        from backend.broker import subscribe_run
+        from broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -40,10 +53,10 @@ class TestSubscribeRun:
         ]
         mock_pubsub.subscribe.assert_awaited_once_with("run:r1")
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_no_messages_yields_nothing(self, mock_get_redis):
-        from backend.broker import subscribe_run
+        from broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -61,10 +74,10 @@ class TestSubscribeRun:
         results = [m async for m in subscribe_run("r2")]
         assert results == []
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_skips_non_message_types(self, mock_get_redis):
-        from backend.broker import subscribe_run
+        from broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -85,10 +98,10 @@ class TestSubscribeRun:
         results = [m async for m in subscribe_run("r3")]
         assert results == [{"type": "done"}]
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_skips_non_string_data(self, mock_get_redis):
-        from backend.broker import subscribe_run
+        from broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -107,10 +120,10 @@ class TestSubscribeRun:
         results = [m async for m in subscribe_run("r4")]
         assert results == []
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_unsubscribes_and_closes_in_finally(self, mock_get_redis):
-        from backend.broker import subscribe_run
+        from broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -129,10 +142,10 @@ class TestSubscribeRun:
         mock_pubsub.unsubscribe.assert_awaited_once_with("run:r5")
         mock_pubsub.close.assert_awaited_once()
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_finally_survives_unsubscribe_error(self, mock_get_redis):
-        from backend.broker import subscribe_run
+        from broker import subscribe_run
 
         mock_redis = MagicMock()
         mock_pubsub = AsyncMock()
@@ -156,38 +169,38 @@ class TestSubscribeRun:
 # ---------------------------------------------------------------------------
 
 class TestCloseRedisEdgeCases:
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis_no_pool_does_not_raise(self, mock_get_redis):
-        from backend.broker import _pools, close_redis
+        from broker import _pools, close_redis
 
         _pools.clear()
         loop = MagicMock()
-        with patch("backend.broker.asyncio.get_running_loop", return_value=loop):
+        with patch("broker.asyncio.get_running_loop", return_value=loop):
             await close_redis()
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_close_redis_different_loop_does_not_affect_other(self, mock_get_redis):
-        from backend.broker import _pools, close_redis
+        from broker import _pools, close_redis
 
         _pools.clear()
         loop_a = MagicMock()
         loop_b = MagicMock()
         pool_a = AsyncMock()
         pool_b = AsyncMock()
-        _pools[id(loop_a)] = pool_a
-        _pools[id(loop_b)] = pool_b
+        _pools[loop_a] = pool_a
+        _pools[loop_b] = pool_b
 
-        with patch("backend.broker.asyncio.get_running_loop", return_value=loop_a):
+        with patch("broker.asyncio.get_running_loop", return_value=loop_a):
             await close_redis()
 
-        assert id(loop_a) not in _pools
-        assert id(loop_b) in _pools
+        assert loop_a not in _pools
+        assert loop_b in _pools
         pool_a.aclose.assert_awaited_once()
         pool_b.aclose.assert_not_awaited()
 
-        _pools.pop(id(loop_b), None)
+        _pools.pop(loop_b, None)
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +211,8 @@ class TestEnvVarOverrides:
     def test_redis_url_env_override(self):
         with patch.dict("os.environ", {"REDIS_URL": "redis://env-host:9999/1"}):
             import importlib
-            import backend.broker as broker_mod
+
+            import broker as broker_mod
             importlib.reload(broker_mod)
             assert broker_mod.REDIS_URL == "redis://env-host:9999/1"
             # Restore default for other tests
@@ -208,7 +222,8 @@ class TestEnvVarOverrides:
     def test_celery_broker_url_env_override(self):
         with patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://broker-host:6380/2"}):
             import importlib
-            import backend.broker as broker_mod
+
+            import broker as broker_mod
             # Reload picks up the new env var
             old_broker = broker_mod.BROKER_URL
             importlib.reload(broker_mod)
@@ -219,7 +234,8 @@ class TestEnvVarOverrides:
     def test_result_backend_env_override(self):
         with patch.dict("os.environ", {"CELERY_RESULT_BACKEND": "redis://result-host:6381/3"}):
             import importlib
-            import backend.broker as broker_mod
+
+            import broker as broker_mod
             importlib.reload(broker_mod)
             assert broker_mod.RESULT_BACKEND == "redis://result-host:6381/3"
             importlib.reload(broker_mod)
@@ -230,12 +246,12 @@ class TestEnvVarOverrides:
 # ---------------------------------------------------------------------------
 
 class TestBufferRunMessages:
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_accumulates_messages(self, mock_get_redis):
-        from backend.broker import (
-            _buffers,
+        from broker import (
             _buffer_tasks,
+            _buffers,
             buffer_run_messages,
             stop_buffer,
         )
@@ -272,10 +288,71 @@ class TestBufferRunMessages:
         await asyncio.sleep(0.1)  # let worker process messages
         await stop_buffer("run-buf-acc")
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_worker_closes_pubsub_on_stop_buffer(self, mock_get_redis):
+        """Regression: stop_buffer cancels the worker but the pubsub connection
+        must be returned to the pool — otherwise every run leaks one Redis
+        connection (pool of 20 exhausts after ~20 runs → "Too many connections")."""
+        from broker import (
+            _buffer_tasks,
+            _buffers,
+            buffer_run_messages,
+            stop_buffer,
+        )
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+
+        async def blocking_get_message(**kwargs):
+            await asyncio.sleep(10)
+
+        mock_pubsub.get_message = blocking_get_message
+        mock_pubsub.close = AsyncMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        await buffer_run_messages("run-close-cancel")
+        await asyncio.sleep(0.05)  # let the worker block inside get_message
+        await stop_buffer("run-close-cancel")
+
+        mock_pubsub.close.assert_awaited_once()
+
+    @patch("broker.get_redis")
+    @pytest.mark.asyncio
+    async def test_worker_closes_pubsub_on_idle_timeout(self, mock_get_redis):
+        """Regression: idle-timeout exit path must also return the pubsub
+        connection to the pool (no WebSocket ever connected)."""
+        from broker import (
+            _buffer_tasks,
+            _buffers,
+            buffer_run_messages,
+        )
+
+        _buffers.clear()
+        _buffer_tasks.clear()
+
+        mock_redis = MagicMock()
+        mock_pubsub = MagicMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.get_message = AsyncMock(side_effect=TimeoutError)
+        mock_pubsub.close = AsyncMock()
+        mock_redis.pubsub.return_value = mock_pubsub
+        mock_get_redis.return_value = mock_redis
+
+        await buffer_run_messages("run-close-timeout")
+        await asyncio.sleep(0.05)  # let the worker hit the timeout and exit
+
+        mock_pubsub.close.assert_awaited_once()
+
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_drain_buffer_returns_and_clears(self, mock_get_redis):
-        from backend.broker import _buffers, drain_buffer
+        from broker import _buffers, drain_buffer
 
         _buffers.clear()
         _buffers["run-d"] = [{"type": "x"}, {"type": "y"}]
@@ -284,20 +361,20 @@ class TestBufferRunMessages:
         assert result == [{"type": "x"}, {"type": "y"}]
         assert "run-d" not in _buffers
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_drain_buffer_nonexistent_returns_empty(self, mock_get_redis):
-        from backend.broker import drain_buffer
+        from broker import drain_buffer
 
         result = drain_buffer("no-such-run")
         assert result == []
 
-    @patch("backend.broker.get_redis")
+    @patch("broker.get_redis")
     @pytest.mark.asyncio
     async def test_buffer_run_messages_subscribe_called(self, mock_get_redis):
-        from backend.broker import (
-            _buffers,
+        from broker import (
             _buffer_tasks,
+            _buffers,
             buffer_run_messages,
             stop_buffer,
         )
@@ -328,16 +405,16 @@ class TestBufferRunMessages:
 class TestStopBuffer:
     @pytest.mark.asyncio
     async def test_stop_buffer_no_task(self):
-        from backend.broker import _buffer_tasks, stop_buffer
+        from broker import _buffer_tasks, stop_buffer
 
         _buffer_tasks.clear()
         await stop_buffer("nonexistent")
 
     @pytest.mark.asyncio
     async def test_stop_buffer_clears_buffers_and_task(self):
-        from backend.broker import (
-            _buffers,
+        from broker import (
             _buffer_tasks,
+            _buffers,
             stop_buffer,
         )
 

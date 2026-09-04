@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Wrench, Server, Sparkles } from 'lucide-react';
-import type { Agent, AgentTool, AgentMCP, AgentSkill } from '../../../types/AgentStudio';
-import { useItemList } from '../../../hooks/useItemList';
-import { useAutoSave } from '../../../hooks/useAutoSave';
+import type { Agent, AgentTool, AgentMCP, AgentSkill } from '@/types/AgentStudio.ts';
+import { useItemList } from '@/hooks/useItemList.ts';
+import { useAutoSave } from '@/hooks/useAutoSave.ts';
 import { useAgentConfigForm } from './tabs/useAgentConfigForm';
 import { useConfigItemEdit } from './tabs/useConfigItemEdit';
 import { usePickerState } from './tabs/usePickerState';
 import TabRenderer from './tabs/TabRenderer';
 import PickerSection from './PickerSection';
+import type * as React from 'react';
 
 interface Props {
   agent: Agent;
@@ -84,9 +85,9 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   useEffect(() => {
     let cancelled = false;
     if (!cancelled) {
-      if (agent.tools) tools.setItems(agent.tools);
-      if (agent.mcp) mcp.setItems(agent.mcp);
-      if (agent.skills) skills.setItems(agent.skills);
+      if (agent.tools) tools.setItems(agent.tools.map((t) => ({ ...t, archived: t.archived ?? !t.id.startsWith('custom-') })));
+      if (agent.mcp) mcp.setItems(agent.mcp.map((m) => ({ ...m, archived: m.archived ?? !m.id.startsWith('custom-') })));
+      if (agent.skills) skills.setItems(agent.skills.map((s) => ({ ...s, archived: s.archived ?? !s.id.startsWith('custom-') })));
     }
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,9 +96,9 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
   const { pickerTab, pickerItems, handlePickerSelect, setPickerTab } = usePickerState({
     setSystemPrompt,
     setOutputConstraints,
-    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true } as AgentTool)),
-    addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentMCP),
-    addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true }) as AgentSkill),
+    addTool: (item) => tools.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: !item.is_builtin } as AgentTool)),
+    addMcp: (item) => mcp.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentMCP),
+    addSkill: (item) => skills.addCustom(() => ({ id: item.id, name: item.name, description: item.description, enabled: true, archived: true }) as AgentSkill),
   });
 
   const handleSave = () => {
@@ -140,67 +141,71 @@ export default function AgentConfigModal({ agent, onSave, onClose }: Props) {
       onEditSkill={itemEdit.handleEditSkill}
       onPickerOpen={setPickerTab}
       itemsToFormData={itemEdit.itemsToFormData}
+      pendingArchive={itemEdit.pendingArchive}
+      onArchiveConfirm={() => {
+        if (itemEdit.pendingArchive) {
+          itemEdit.archiveItem(itemEdit.pendingArchive.kind, itemEdit.pendingArchive.customId, itemEdit.pendingArchive.data);
+        }
+      }}
+      onArchiveCancel={() => itemEdit.setPendingArchive(null)}
+      onArchiveMenu={(kind, item) => itemEdit.handleArchiveFromMenu(kind as 'tool' | 'mcp' | 'skill', item)}
     />
   );
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="fixed inset-0 bg-(--color-overlay) flex items-center justify-center z-(--z-modal-backdrop) backdrop-blur-xs" onClick={onClose}>
       <div
-        className="modal-content agent-config-modal"
+        className="bg-surface-raised rounded-[16px] w-[min(80vw,760px)] h-[min(85vh,720px)] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.06)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-header">
-          <div className="agent-config-header">
-            <div className={`agent-config-avatar ${agent.bg} ${agent.border}`}>
-              <agent.icon size={20} className={agent.color} />
-            </div>
-            <div>
-              <h3 className="agent-config-title">{t('workstation.agentManage')}</h3>
-              <p className="agent-config-subtitle">
-                设置 <strong>{agent.name}</strong> 的能力和行为
-              </p>
-            </div>
-          </div>
-          <button className="modal-close" onClick={onClose}>
+        <div className="flex items-center justify-between pt-5 pb-6 px-6 border-b-0">
+          <h3 className="text-lg font-semibold text-text-primary m-0">配置Agent</h3>
+          <button className="bg-transparent border-none text-text-muted cursor-pointer p-1 flex items-center justify-center rounded-md transition-[background,color] duration-150 hover:bg-surface-hover hover:text-text-primary active:scale-[0.92]" onClick={onClose} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>
 
-        <div className="agent-config-fields">
-          <div className="agent-config-field">
-            <label className="form-label">{t('workstation.agentName')}</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="form-input" />
+        <div className="px-6">
+          <div className="mt-0">
+            <label className="block text-sm font-medium text-text-secondary mb-2">{t('workstation.agentName')}</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="新 Agent" className="w-full px-3 py-2 bg-surface-raised border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:outline-none" />
           </div>
-          <div className="agent-config-field">
-            <label className="form-label">{t('workstation.agentDesc')}</label>
-            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="form-input" />
+          <div className="mt-3">
+            <label className="block text-sm font-medium text-text-secondary mb-2">{t('workstation.agentDesc')}</label>
+            <input type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="如：前端开发工程师、后端 API 设计师..." className="w-full px-3 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-md text-[var(--color-text-primary)] text-sm transition-colors duration-150 focus:border-[var(--color-accent)] focus:outline-none" />
           </div>
-          <p className="form-hint">{t('workstation.agentPlaceholder')}</p>
         </div>
 
-        <div className="agent-config-tabs">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`agent-config-tab ${activeTab === tab.key ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.icon && <tab.icon size={14} />}
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 mx-6 mt-3 p-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[10px]">
+          {TABS.map((tab) => {
+            const count = tab.key === 'tools' ? tools.items.length
+              : tab.key === 'mcp' ? mcp.items.length
+              : tab.key === 'skills' ? skills.items.length
+              : null;
+            return (
+              <button
+                key={tab.key}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 border-none rounded-lg bg-transparent text-[var(--color-text-muted)] text-sm font-[450] cursor-pointer transition-[background,color,transform] duration-200 whitespace-nowrap select-none hover:text-[var(--color-text-secondary)] hover:bg-[color-mix(in_srgb,var(--color-text-primary)_4%,transparent)] active:scale-[0.97] [&_svg]:opacity-60 ${activeTab === tab.key ? '!bg-[var(--color-surface-elevated)] !text-[var(--color-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] !font-medium [&_svg]:!opacity-100 [&_svg]:!text-[var(--color-accent)]' : ''}`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.icon && <tab.icon size={16} />}
+                {tab.label}
+                {count !== null && <span className="text-xs opacity-60 ml-0.5">({count})</span>}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="agent-config-content" key={activeTab}>
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto py-5 px-6 animate-[agentTabFadeIn_0.2s_ease]" key={activeTab}>
           {renderTabContent()}
         </div>
 
-        <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={onClose}>{t('workstation.cancel')}</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
+        <div className="flex items-center justify-end gap-2 px-6 py-3.5">
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-accent)]" onClick={onClose}>{t('workstation.cancel')}</button>
+          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-none transition-colors duration-150 bg-[var(--color-surface-hover)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-elevated)] disabled:bg-[var(--color-surface-hover)] disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed" onClick={handleSave} disabled={!name.trim()}>{t('workstation.saveConfig')}</button>
         </div>
       </div>
 

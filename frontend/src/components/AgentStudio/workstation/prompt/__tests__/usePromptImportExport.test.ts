@@ -4,7 +4,7 @@ import { usePromptImportExport } from '../usePromptImportExport';
 import type { PromptEntry } from '../types';
 
 const mockEntry = (id: string): PromptEntry => ({
-  id, name: `p${id}`, content: 'test', category: '系统提示词', model: 'GPT-4o', status: 'active', version: 'v1.0.0', createdAt: '2026-06-01',
+  id, name: `p${id}`, description: 'desc', content: 'test', category: '系统提示词', model: 'GPT-4o', status: 'active', version: 'v1.0.0', createdAt: '2026-06-01',
 });
 
 describe('usePromptImportExport', { tags: ['unit'] }, () => {

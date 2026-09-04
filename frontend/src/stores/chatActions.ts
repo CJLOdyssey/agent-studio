@@ -6,15 +6,46 @@ import { uid } from './uid';
 import { createStreamHandler } from './chatStreaming';
 import { useChatStore } from './chatStore';
 
+type KeyItem = Awaited<ReturnType<typeof listKeys>>[number];
+
+function resolveKey(
+  activeKeys: KeyItem[],
+  persistedModel: string | undefined,
+): { keyId?: string; model?: string } {
+  // 路由到 models 包含用户在 UI 中实际所选模型的 key，
+  // 避免 SiliconFlow/Groq 模型被发送到 DeepSeek 的 base URL。
+  const owningKey = persistedModel ? activeKeys.find((k) => k.models.includes(persistedModel)) : undefined;
+  if (owningKey) {
+    return { keyId: owningKey.id, model: persistedModel ?? undefined };
+  }
+  const defaultKey = activeKeys.find((k) => k.is_default && k.is_active) || activeKeys[0];
+  if (defaultKey) {
+    return {
+      keyId: defaultKey.id,
+      model: (persistedModel && defaultKey.models.includes(persistedModel))
+        ? persistedModel
+        : defaultKey.models[0],
+    };
+  }
+  return {};
+}
+
 export async function submitRequirement(
   requirement: string,
   session_id?: string,
   agent_id?: string,
   skipAddUserMessage?: boolean,
   submissionConvId?: string | null,
+  parent_run_id?: string | null,
+  is_edit?: boolean,
+  attachment_ids?: string[],
 ) {
   const s = useChatStore.getState();
   const effectiveSessionId = session_id || s.currentSessionId || undefined;
+  // 显式传 parent_run_id（编辑/重新生成分支，含 null=根）时按传入值；未传
+  // （正常续聊）才回退到 activeRunId（挂父链，上下文沿祖先链注入）。
+  const effectiveParentRunId =
+    parent_run_id === undefined ? s.activeRunId : parent_run_id;
   if (s.currentRunId) {
     disconnectRun(s.currentRunId);
   }
@@ -24,16 +55,13 @@ export async function submitRequirement(
   let model: string | undefined;
   try {
     const keys = await listKeys();
-    const defaultKey = keys.find((k) => k.is_default && k.is_active) || keys.find((k) => k.is_active);
-    if (defaultKey) {
-      keyId = defaultKey.id;
-      const persistedModel = localStorage.getItem('devagents-selected-model');
-      model = (persistedModel && defaultKey.models.includes(persistedModel))
-        ? persistedModel
-        : defaultKey.models[0];
-    }
+    const activeKeys = keys.filter((k) => k.is_active);
+    const persistedModel = localStorage.getItem('agentstudio-selected-model');
+    const resolved = resolveKey(activeKeys, persistedModel ?? undefined);
+    keyId = resolved.keyId;
+    model = resolved.model;
   } catch {
-    // Key vault unavailable
+    // key vault 不可用
   }
 
   if (!keyId) {
@@ -48,6 +76,9 @@ export async function submitRequirement(
     content: requirement,
     round_number: 0,
     created_at: new Date().toISOString(),
+    // 携带本 run 的 parent（流式生成时也记录，编辑/重新生成时用于产生兄弟分支；
+    // 若缺失会回退到 activeRunId，导致编辑根 turn 误成续写）
+    parentRunId: effectiveParentRunId,
   };
 
   useChatStore.setState({
@@ -62,10 +93,51 @@ export async function submitRequirement(
     const currentState = useChatStore.getState();
     const teamId = currentState.activeTeamId ?? undefined;
     Logger.info('[chat] submitRequirement — team_id=%s | agent_id=%s | session_id=%s', teamId, agent_id, effectiveSessionId);
-    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId);
+    const resp = await submitRequirementExternal(requirement, effectiveSessionId, keyId, model, agent_id, teamId, effectiveParentRunId, is_edit, attachment_ids);
     const run_id = resp.run_id;
     const returnedSessionId = resp.session_id || effectiveSessionId || null;
-    useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
+    useChatStore.setState({ currentRunId: run_id, activeRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
+    // 将刚添加的用户消息绑定到其 run，使后续编辑时能
+    // 从 "run-{run_id}-requirement" 解析出 parent_run_id。
+    if (!skipAddUserMessage) {
+      useChatStore.setState((prev) => {
+        const msgs = [...prev.messages];
+        const last = msgs[msgs.length - 1];
+        if (last && last.role === 'user' && !last.id.startsWith('run-')) {
+          msgs[msgs.length - 1] = { ...last, id: `run-${run_id}-requirement` };
+        }
+        return { messages: msgs };
+      });
+    } else {
+      // 编辑-重新生成 / 重新生成：将目标用户消息重绑到新 run，
+      // 否则下一次编辑会把 parent_run_id 解析到过期的 run，
+      // 后端 requirement_versions 链会静默丢弃中间版本。
+      useChatStore.setState((prev) => {
+        const msgs = [...prev.messages];
+        // edit 场景：editTargetId 前一条用户消息；regenerate 场景：截断后最后一条。
+        const targetIdx = prev.editTargetId
+          ? msgs.findIndex((m) => m.id === prev.editTargetId) - 1
+          : msgs.length - 1;
+        const u =
+          targetIdx >= 0 && msgs[targetIdx]?.role === 'user'
+            ? msgs[targetIdx]
+            : null;
+        if (!u) return { messages: msgs };
+        // 版本链最后一跳 = 新 run。userVersions/currentUserVersion 不在此写：
+        // 用户消息版本器由加载时 attachBranchVersions 全量挂载（branchGroup），
+        // 流式路径只维护 run 映射（versionRunIds）。
+        const versionRunIds = u.versionRunIds
+          ? [...u.versionRunIds, run_id]
+          : [run_id];
+        msgs[targetIdx] = {
+          ...u,
+          id: `run-${run_id}-requirement`,
+          runId: run_id,
+          versionRunIds,
+        };
+        return { messages: msgs };
+      });
+    }
     connectRun(run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
   } catch (err: unknown) {
     Logger.error('[chat] submitRequirement failed:', err);
@@ -90,27 +162,135 @@ export async function regenerateMessage(msgIndex: number) {
   const userMsg = s.messages[msgIndex - 1];
   if (!userMsg) return;
   if (s.currentRunId) disconnectRun(s.currentRunId);
-  useChatStore.setState({ status: 'loading', error: null, result: null, messages: s.messages.slice(0, msgIndex) });
-  await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true);
+
+  // 重新生成 = 重新回答该用户问题，产生兄弟分支：新 run 的 parent = 被重
+  // 生成 turn 的 parent（与编辑一致），而非 turn 自身。parentRunId 在加载
+  // （buildPathTurns）与流式提交（submitRequirement）时都注入，刷新后仍可靠；
+  // 不能用 synthetic id "run-{id}-requirement"（仅流式会话存在，刷新后消失）。
+  const parentRunId = userMsg.parentRunId ?? null;
+  // 被重新生成 turn 的旧 run：优先接续已有答案分页列表（多次重新生成累积），
+  // 否则用消息 runId（流式消息带 runId，加载消息经 buildPathTurns 注入）。
+  const modelMsg = s.messages[msgIndex];
+  const oldRunIds =
+    modelMsg?.answerRunIds && modelMsg.answerRunIds.length > 0
+      ? modelMsg.answerRunIds
+      : modelMsg?.runId
+        ? [modelMsg.runId]
+        : [];
+
+  useChatStore.setState({
+    status: 'loading',
+    error: null,
+    result: null,
+    streamingId: null,
+    messages: s.messages.slice(0, msgIndex),
+    pendingRegenerate: {
+      userMsgId: userMsg.id,
+      oldRunIds,
+      requirement: userMsg.content,
+    },
+  });
+  await submitRequirement(userMsg.content, s.currentSessionId ?? undefined, undefined, true, null, parentRunId, true);
+}
+
+/**
+ * Edit a user message and regenerate the following answer.
+ *
+ * Semantics (edit → model rethinks, old answers kept as versions):
+ *  - The user message keeps its edit history in `userVersions` (content becomes the new edit).
+ *  - The first agent answer after the edited message becomes the merge target: the streamed
+ *    new answer is appended to that message's `versions` instead of inserting a new message,
+ *    so older answers are never deleted and can be browsed with the pagination arrows.
+ */
+export async function editAndRegenerate(userMsgId: string, newContent: string) {
+  const s = useChatStore.getState();
+  const idx = s.messages.findIndex((m) => m.id === userMsgId);
+  if (idx < 0) return;
+  const old = s.messages[idx];
+  const trimmed = newContent.trim();
+  if (!trimmed || old.content === trimmed) return;
+  if (s.currentRunId) disconnectRun(s.currentRunId);
+
+  // 编辑 = 兄弟分支：新 run 的 parent = 被编辑 turn 的 parent（加载时注入），
+  // 而非 turn 自身（不能解析 synthetic id "run-{id}-requirement"）。
+  const parentRunId = old.parentRunId ?? null;
+  // 被编辑 turn 的 run（切回定位用；优先 synthetic id，fallback runId）。
+  const editedRunId =
+    old.id && old.id.startsWith('run-') && old.id.endsWith('-requirement')
+      ? old.id.slice(4, -'-requirement'.length)
+      : (old.runId ?? null);
+
+  // 本地版本链（乐观）：与新 run 的 requirement_versions 对应，驱动分页切换。
+  const history = old.userVersions ? [...old.userVersions] : [];
+  const userVersions =
+    history.length === 0 || history[history.length - 1] !== old.content
+      ? [...history, old.content, trimmed]
+      : [...history, trimmed];
+  // 版本 → runId：旧版本继承已加载的版本链；缺失时兜底为被编辑 turn 自身，
+  // 使切回（←）能定位到被编辑 turn 所在分支，而非停在当前分支。
+  const baseRunIds = old.versionRunIds
+    ? [...old.versionRunIds]
+    : editedRunId
+      ? [editedRunId]
+      : [];
+
+  // 编辑后第一条非 user 消息是合并目标（store 中 agent 角色为
+  // 'pm'|'programmer'|'tester'；displayMessages 将它们规范化为 'agent'）。
+  const nextAgentIdx = s.messages.findIndex((m, i) => i > idx && m.role !== 'user');
+  const editTargetId = nextAgentIdx >= 0 ? s.messages[nextAgentIdx].id : null;
+
+  useChatStore.setState({
+    status: 'loading',
+    error: null,
+    result: null,
+    streamingId: null,
+    continuingId: null,
+    editTargetId,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
+    skipThinking: false,
+    // 分支语义：编辑 = 切到新分支，分支点之后的轮次（后续 turn）从视图
+    // 截断隐藏（DB 留存），只保留本 turn 供流式替换。
+    messages: s.messages
+      .slice(0, nextAgentIdx >= 0 ? nextAgentIdx + 1 : s.messages.length)
+      .map((m, i) =>
+        i === idx
+          ? {
+              ...m,
+              content: trimmed,
+              userVersions,
+              versionRunIds: baseRunIds,
+              currentUserVersion: userVersions.length - 1,
+            }
+          : m,
+      ),
+  });
+
+  await submitRequirement(trimmed, s.currentSessionId ?? undefined, undefined, true, null, parentRunId, true);
 }
 
 export async function retry() {
   const s = useChatStore.getState();
   Logger.info('[chat] retry — re-submitting last user message');
-  useChatStore.setState({ status: 'loading', error: null, result: null });
-  if (s.currentRunId) {
-    disconnectRun(s.currentRunId);
-  }
   const lastUserMsg = [...s.messages].reverse().find((m) => m.role === 'user');
   if (!lastUserMsg) {
     useChatStore.setState({ status: 'error', error: '没有找到用户消息，无法重试' });
     return;
   }
-  useChatStore.setState({ currentRunId: null });
+  // 提前校验 key 是否存在，给出与发送一致的错误提示；submitRequirement 内部
+  // 会再做同样的 key/model 解析并携带正确的 key 提交。
+  const keys = await listKeys().catch(() => null);
+  const hasKey = !!keys?.some((k) => k.is_active);
+  if (!hasKey) {
+    useChatStore.setState({ status: 'error', error: '请先在设置中配置 API Key', wsStatus: 'disconnected' });
+    return;
+  }
+  // 复用 submitRequirement（store 完整流程）而非底层 submitRequirementExternal：
+  // 失败时 currentSessionId 可能为 null（session 未创建），直接调底层会让后端
+  // 新建 session 且 temp 占位不转正 → 列表残留新会话。走 store 流程可保证
+  // currentRunId/activeRunId/currentSessionId 完整更新 + temp→session 转正。
   try {
-    const resp = await submitRequirementExternal(lastUserMsg.content, s.currentSessionId ?? undefined);
-    useChatStore.setState({ currentRunId: resp.run_id, currentSessionId: resp.session_id || s.currentSessionId || null, status: 'running', wsStatus: 'connecting' });
-    connectRun(resp.run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
+    await submitRequirement(lastUserMsg.content, s.currentSessionId ?? undefined, undefined, true, undefined, null);
   } catch (err: unknown) {
     Logger.error('[chat] retry failed:', err);
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -129,21 +309,52 @@ export async function continueGeneration() {
   }
   Logger.info('[chat] continueGeneration — continuing from interrupted msg %s', intId);
   const interruptedMsg = s.messages[idx];
+  const continuation = interruptedMsg.content;
+  if (!continuation.trim() && !interruptedMsg.thinking?.trim()) {
+    // 思考与正文都未生成：没有可续写的原料（agent-studio 语义：思考链也可作续写原料）。
+    Logger.warn('[chat] continueGeneration — interrupted msg %s has no content/thinking, aborting', intId);
+    useChatStore.setState({
+      interruptedMessageId: null,
+      error: '没有可续写的内容，请重新生成',
+    });
+    return;
+  }
   useChatStore.setState({
     continuingId: intId,
     skipThinking: false,
     pendingVersions: interruptedMsg.versions || [interruptedMsg.content],
     pendingThinkingVersions: interruptedMsg.thinkingVersions?.length ? interruptedMsg.thinkingVersions : (interruptedMsg.thinking ? [interruptedMsg.thinking] : null),
   });
-  const continuation = interruptedMsg.content;
+  // 续写使用对话中选中的模型（与 submitRequirement 同一解析路径），
+  // 后端按该模型解析 key/base_url，避免落到 config 默认模型。
+  let model: string | undefined;
+  try {
+    const keys = await listKeys();
+    const activeKeys = keys.filter((k) => k.is_active);
+    const persistedModel = localStorage.getItem('agentstudio-selected-model');
+    model = resolveKey(activeKeys, persistedModel ?? undefined).model;
+  } catch {
+    // key vault 不可用——后端回退到默认模型
+  }
   const prevRunId = s.currentRunId;
   if (prevRunId) disconnectRun(prevRunId);
   useChatStore.setState({ status: 'loading', error: null, result: null });
   try {
-    const resp = await resumeRun(continuation, s.currentSessionId || undefined, interruptedMsg.thinking);
+    // 原问题 = 被中断消息的前一条用户消息（prefix/partial 机制需要它做无缝续写）。
+    const prevUser = [...s.messages]
+      .slice(0, idx)
+      .reverse()
+      .find((m) => m.role === 'user');
+    const resp = await resumeRun(
+      continuation,
+      s.currentSessionId || undefined,
+      interruptedMsg.thinking,
+      model,
+      prevUser?.content,
+    );
     const run_id = resp.run_id;
     const returnedSessionId = resp.session_id || s.currentSessionId || null;
-    useChatStore.setState({ currentRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
+    useChatStore.setState({ currentRunId: run_id, activeRunId: run_id, currentSessionId: returnedSessionId, status: 'running', wsStatus: 'connecting' });
     connectRun(run_id, { onMessage: createStreamHandler(useChatStore.setState, useChatStore.getState) });
   } catch (err: unknown) {
     Logger.error('[chat] continueGeneration failed:', err);

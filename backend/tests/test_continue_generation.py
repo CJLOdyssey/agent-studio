@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.run_service import RunService
+from services.run_service import RunService
 
 
 @pytest.mark.requirement("REQ-RUN-006")
@@ -25,11 +25,12 @@ class TestContinueRun:
         run_service = RunService()
 
         with (
-            patch("backend.services.run_service.load_config") as mock_config,
-            patch("backend.services.run_service.get_default_api_key") as mock_key,
-            patch("backend.services.run_service.create_session") as mock_create_sess,
-            patch("backend.repository.create_run") as mock_create_run,
-            patch("backend.services.run_service.buffer_run_messages") as mock_buffer,
+            patch("services.run_service.load_config") as mock_config,
+            patch("services.run_helpers.get_api_key_for_model", return_value=None),
+            patch("services.run_helpers.get_default_api_key") as mock_key,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.db_create_run") as mock_create_run,
+            patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("asyncio.create_task"),
         ):
             mock_config.return_value = MagicMock(model="test-model")
@@ -52,11 +53,12 @@ class TestContinueRun:
         run_service = RunService()
 
         with (
-            patch("backend.services.run_service.load_config") as mock_config,
-            patch("backend.services.run_service.get_default_api_key") as mock_key,
-            patch("backend.services.run_service.create_session") as mock_create_sess,
-            patch("backend.repository.create_run") as mock_create_run,
-            patch("backend.services.run_service.buffer_run_messages") as mock_buffer,
+            patch("services.run_service.load_config") as mock_config,
+            patch("services.run_helpers.get_api_key_for_model", return_value=None),
+            patch("services.run_helpers.get_default_api_key") as mock_key,
+            patch("services.run_service.create_session") as mock_create_sess,
+            patch("services.run_service.db_create_run") as mock_create_run,
+            patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("asyncio.create_task"),
         ):
             mock_config.return_value = MagicMock(model="test-model")
@@ -78,8 +80,9 @@ class TestContinueRun:
         run_service = RunService()
 
         with (
-            patch("backend.services.run_service.load_config") as mock_config,
-            patch("backend.services.run_service.get_default_api_key") as mock_key,
+            patch("services.run_service.load_config") as mock_config,
+            patch("services.run_helpers.get_api_key_for_model", return_value=None),
+            patch("services.run_helpers.get_default_api_key") as mock_key,
         ):
             mock_config.return_value = MagicMock(model="test-model")
             mock_key.return_value = None
@@ -97,10 +100,11 @@ class TestContinueRun:
         run_service = RunService()
 
         with (
-            patch("backend.services.run_service.load_config") as mock_config,
-            patch("backend.services.run_service.get_default_api_key") as mock_key,
-            patch("backend.repository.create_run") as mock_create_run,
-            patch("backend.services.run_service.buffer_run_messages") as mock_buffer,
+            patch("services.run_service.load_config") as mock_config,
+            patch("services.run_helpers.get_api_key_for_model", return_value=None),
+            patch("services.run_helpers.get_default_api_key") as mock_key,
+            patch("services.run_service.db_create_run") as mock_create_run,
+            patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("asyncio.create_task"),
         ):
             mock_config.return_value = MagicMock(model="test-model")
@@ -122,10 +126,11 @@ class TestContinueRun:
         run_service = RunService()
 
         with (
-            patch("backend.services.run_service.load_config") as mock_config,
-            patch("backend.services.run_service.get_default_api_key") as mock_key,
-            patch("backend.repository.create_run") as mock_create_run,
-            patch("backend.services.run_service.buffer_run_messages") as mock_buffer,
+            patch("services.run_service.load_config") as mock_config,
+            patch("services.run_helpers.get_api_key_for_model", return_value=None),
+            patch("services.run_helpers.get_default_api_key") as mock_key,
+            patch("services.run_service.db_create_run") as mock_create_run,
+            patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("asyncio.create_task") as mock_create_task,
         ):
             mock_config.return_value = MagicMock(model="test-model")
@@ -138,7 +143,9 @@ class TestContinueRun:
                 user_id="user-1",
             )
 
-            mock_create_task.assert_called_once()
+            # AsyncSession.close 的惰性收尾也走 create_task（fire-and-forget），
+            # 只断言管道协程确实被派发。
+            assert any("_run_pipeline" in str(c.args) for c in mock_create_task.call_args_list)
 
     @pytest.mark.asyncio
     async def test_continue_run_with_thinking(self):
@@ -146,10 +153,11 @@ class TestContinueRun:
         run_service = RunService()
 
         with (
-            patch("backend.services.run_service.load_config") as mock_config,
-            patch("backend.services.run_service.get_default_api_key") as mock_key,
-            patch("backend.repository.create_run") as mock_create_run,
-            patch("backend.services.run_service.buffer_run_messages") as mock_buffer,
+            patch("services.run_service.load_config") as mock_config,
+            patch("services.run_helpers.get_api_key_for_model", return_value=None),
+            patch("services.run_helpers.get_default_api_key") as mock_key,
+            patch("services.run_service.db_create_run") as mock_create_run,
+            patch("services.run_service.buffer_run_messages") as mock_buffer,
             patch("asyncio.create_task") as mock_create_task,
         ):
             mock_config.return_value = MagicMock(model="test-model")
@@ -163,8 +171,9 @@ class TestContinueRun:
                 thinking="之前的思考内容",
             )
 
-            # Verify task was created
-            mock_create_task.assert_called_once()
+            # AsyncSession.close 的惰性收尾也走 create_task（fire-and-forget），
+            # 只断言管道协程确实被派发。
+            assert any("_run_pipeline" in str(c.args) for c in mock_create_task.call_args_list)
 
 
 @pytest.mark.requirement("REQ-RUN-006")
@@ -174,7 +183,7 @@ class TestCompleteRunEndpoint:
     @pytest.mark.asyncio
     async def test_complete_run_endpoint_success(self, test_client):
         """POST /api/runs/complete returns run response."""
-        with patch("backend.routers.run_continue.run_service") as mock_service:
+        with patch("routers.run_continue.run_service") as mock_service:
             mock_service.continue_run = AsyncMock(
                 return_value={
                     "run_id": "run-123",
@@ -199,7 +208,7 @@ class TestCompleteRunEndpoint:
     @pytest.mark.asyncio
     async def test_complete_run_endpoint_empty_content(self, test_client):
         """POST /api/runs/complete handles empty content."""
-        with patch("backend.routers.run_continue.run_service") as mock_service:
+        with patch("routers.run_continue.run_service") as mock_service:
             mock_service.continue_run = AsyncMock(
                 return_value={
                     "run_id": "run-456",
@@ -221,7 +230,7 @@ class TestCompleteRunEndpoint:
     @pytest.mark.asyncio
     async def test_complete_run_endpoint_with_thinking(self, test_client):
         """POST /api/runs/complete accepts thinking parameter."""
-        with patch("backend.routers.run_continue.run_service") as mock_service:
+        with patch("routers.run_continue.run_service") as mock_service:
             mock_service.continue_run = AsyncMock(
                 return_value={
                     "run_id": "run-789",

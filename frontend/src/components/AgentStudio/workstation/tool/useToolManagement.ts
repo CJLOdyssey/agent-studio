@@ -44,7 +44,7 @@ export function useToolManagement(): ToolData {
     removeTool,
     copyTool,
     removeMultiple,
-    // Override GenericCrudReturn handlerSort to match ToolEntry key subset
+    // 覆盖 GenericCrudReturn 的 handlerSort 以匹配 ToolEntry 键子集
     handleSort: (field: keyof ToolEntry) => crud.handleSort(field),
   }), [crud, addTool, updateTool, removeTool, copyTool, removeMultiple]);
 }

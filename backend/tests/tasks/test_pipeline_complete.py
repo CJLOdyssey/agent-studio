@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import httpx
 import pytest
 
-from backend.tasks.complete_pipeline import _complete_pipeline
-from backend.tasks.pipeline_utils import (
+from tasks.complete_pipeline import _complete_pipeline
+from tasks.pipeline_utils import (
     _build_session_context,
     _is_balance_error,
     _parse_json_field,
@@ -22,23 +22,20 @@ from backend.tasks.pipeline_utils import (
 def mock_agent_deps():
     """Mock all external dependencies for _run_agent_pipeline."""
     patchers = [
-        patch("backend.tasks.agent_pipeline.load_config"),
-        patch("backend.tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_tools", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_skills", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.get_mcps", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
-        patch("backend.tasks.agent_pipeline.StreamEmitter"),
-        patch("backend.tasks.agent_pipeline.SingleAgentGraph"),
-        patch("backend.tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
-        patch("backend.tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
-        patch("backend.tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.load_config"),
+        patch("tasks.agent_pipeline.get_agent_config", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.get_session_memories", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.get_session_messages", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.log_key_usage", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.create_checkpointer_async", new_callable=AsyncMock),
+        patch("tasks.agent_pipeline.StreamEmitter"),
+        patch("tasks.agent_pipeline.SingleAgentGraph"),
+        patch("tasks.agent_pipeline._build_session_context", return_value="session_ctx"),
+        patch("tasks.agent_pipeline._get_rag_context", new_callable=AsyncMock, return_value="rag_ctx"),
+        patch("tasks.agent_pipeline._save_output_memories", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -81,11 +78,11 @@ def _default_agent_mocks(mocks, agent_id="agent-1"):
 def mock_complete_deps():
     """Mock all external dependencies for _complete_pipeline."""
     patchers = [
-        patch("backend.tasks.complete_pipeline.load_config"),
-        patch("backend.tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
-        patch("backend.tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.load_config"),
+        patch("tasks.complete_pipeline.update_run_status", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.update_run_result", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.publish_run_message", new_callable=AsyncMock),
+        patch("tasks.complete_pipeline.stream_prefix_completion", new_callable=AsyncMock),
     ]
     mocks = {}
     for p in patchers:
@@ -125,7 +122,7 @@ class TestCompletePipeline:
         args, _ = mock_complete_deps["stream_prefix_completion"].await_args
         body = args[2]
         assert body["model"] == "test-model"
-        assert "Continue the following text" in body["messages"][0]["content"]
+        assert "<已生成的回答草稿>" in body["messages"][0]["content"]
         assert "Hello" in body["messages"][0]["content"]
 
         mock_complete_deps["update_run_result"].assert_awaited_with(
@@ -162,6 +159,7 @@ class TestCompletePipeline:
             api_base=api_base,
             model="deepseek-v4-flash",
             thinking="previous reasoning",
+            question="Continue this",
         )
 
         args, _ = mock_complete_deps["stream_prefix_completion"].await_args
@@ -180,7 +178,7 @@ class TestCompletePipeline:
             {
                 "type": "thinking_done",
                 "agent_name": "Agent",
-                "thinking": "thinking...",
+                "thinking": "previous reasoningthinking...",
             },
         )
         assert thinking_call in mock_complete_deps["publish_run_message"].await_args_list
@@ -214,7 +212,7 @@ class TestCompletePipeline:
         mock_complete_deps["update_run_status"].assert_awaited_with("run-c3", "error")
         mock_complete_deps["publish_run_message"].assert_awaited_with(
             "run-c3",
-            {"type": "error", "detail": "LLM API 错误: 402 Payment Required"},
+            {"type": "error", "content": "LLM API 错误: 402 Payment Required"},
         )
         assert result is None
 
@@ -233,7 +231,7 @@ class TestCompletePipeline:
         mock_complete_deps["update_run_status"].assert_awaited_with("run-c4", "error")
         mock_complete_deps["publish_run_message"].assert_awaited_with(
             "run-c4",
-            {"type": "error", "detail": "续写失败: Network timeout"},
+            {"type": "error", "content": "续写失败: Network timeout"},
         )
         assert result is None
 
@@ -253,7 +251,7 @@ class TestCompletePipeline:
         mock_complete_deps["update_run_status"].assert_awaited_with("run-c5", "error")
         mock_complete_deps["publish_run_message"].assert_awaited_with(
             "run-c5",
-            {"type": "error", "detail": "保存失败: DB write failed"},
+            {"type": "error", "content": "保存失败: DB write failed"},
         )
         assert result is None
 

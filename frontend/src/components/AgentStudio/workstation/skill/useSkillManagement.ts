@@ -11,12 +11,13 @@ import { validateSkillForm } from './validate';
 import { useGenericCrud } from '../shared/useGenericCrud';
 import type { GenericCrudReturn } from '../shared/useGenericCrud';
 
-export type SkillSortField = 'name' | 'category' | 'status';
-export type CategoryFilter = 'all' | string;
+type CategoryFilter = 'all' | string;
 
 export interface SkillData extends GenericCrudReturn<SkillEntry, SkillFormData> {
   categoryFilter: CategoryFilter;
   setCategoryFilter: (v: CategoryFilter) => void;
+  statusFilter: string;
+  setStatusFilter: (v: string) => void;
   addSkill: (data: SkillFormData) => void;
   updateSkill: (id: string, data: Partial<SkillEntry>) => void;
   removeSkill: (id: string) => void;
@@ -35,20 +36,21 @@ export function useSkillManagement(): SkillData {
       version: 'v1.0.0',
       author: '',
       instructions: '',
-      prompt_id: '',
       tool_names: [],
       output_constraint: '',
     },
     itemName: 'Skill',
     validate: validateSkillForm,
     sortFields: ['name', 'category', 'status'],
-    extraFilters: { categoryFilter: 'all' },
+    extraFilters: { category: 'all', status: 'all' },
   });
 
   return {
     ...crud,
-    get categoryFilter() { return crud.extraFilterValues.categoryFilter ?? 'all'; },
-    setCategoryFilter: (v) => crud.setExtraFilter('categoryFilter', v),
+    get categoryFilter() { return crud.extraFilterValues.category ?? 'all'; },
+    setCategoryFilter: (v) => crud.setExtraFilter('category', v),
+    get statusFilter() { return crud.extraFilterValues.status ?? 'all'; },
+    setStatusFilter: (v) => crud.setExtraFilter('status', v),
     addSkill: crud.createItem,
     updateSkill: crud.updateItem,
     removeSkill: crud.removeItem,

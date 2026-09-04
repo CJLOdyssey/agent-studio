@@ -24,6 +24,10 @@ export async function renameSession(sessionId: string, title: string): Promise<v
   await api.put(`/sessions/${sessionId}`, { title });
 }
 
+export async function pinSession(sessionId: string, isPinned: boolean): Promise<void> {
+  await api.put(`/sessions/${sessionId}/pin`, { is_pinned: isPinned });
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   await api.delete(`/sessions/${sessionId}`);
 }
@@ -42,6 +46,18 @@ export async function exportSessionMemories(sessionId: string, format: 'json' | 
 
 export async function getRun(runId: string): Promise<ProjectRun> {
   const { data } = await api.get(`/runs/${runId}`);
+  return data;
+}
+
+export async function updateAnswerVersions(
+  runId: string,
+  versions: string[],
+  thinking_versions?: string[],
+): Promise<{ ok: boolean; versions: number }> {
+  const { data } = await api.put(`/runs/${runId}/answer-versions`, {
+    versions,
+    thinking_versions: thinking_versions?.length ? thinking_versions : undefined,
+  });
   return data;
 }
 

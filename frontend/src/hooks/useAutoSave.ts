@@ -12,7 +12,7 @@ export function useAutoSave(key: string, data: unknown, enabled = true) {
       try {
         localStorage.setItem(key, JSON.stringify(data));
       } catch {
-        /* empty */
+        /* 留空 */
       }
     }, 2000);
     return () => {

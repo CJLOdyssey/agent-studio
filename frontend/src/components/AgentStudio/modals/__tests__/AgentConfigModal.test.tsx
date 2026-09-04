@@ -5,6 +5,7 @@ import { axe } from 'vitest-axe';
 import { TestProviders } from '../../../../test/setup';
 import AgentConfigModal from '../AgentConfigModal';
 import type { Agent } from '../../../types/AgentStudio';
+import type * as React from 'react';
 
 function renderWithProviders(ui: React.ReactElement) {
   return render(<TestProviders>{ui}</TestProviders>);
@@ -85,20 +86,20 @@ describe('AgentConfigModal', { tags: ['integration'] }, () => {
 
   it('switches to tools tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('workstation.tools'));
+    fireEvent.click(screen.getByText((content) => content.startsWith('workstation.tools')));
     expect(screen.getByText((content) => content.startsWith('workstation.tools'))).toBeInTheDocument();
   });
 
   it('switches to MCP tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('MCP'));
-    expect(screen.getByText('MCP (1)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /MCP.*1/i }));
+    expect(screen.getByRole('button', { name: /MCP.*1/i })).toBeInTheDocument();
   });
 
   it('switches to Skills tab on click', () => {
     renderModal();
-    fireEvent.click(screen.getByText('Skills'));
-    expect(screen.getByText('Skills (1)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Skills.*1/i }));
+    expect(screen.getByRole('button', { name: /Skills.*1/i })).toBeInTheDocument();
   });
 
   it('switches to output tab on click', () => {
@@ -133,7 +134,7 @@ describe('AgentConfigModal', { tags: ['integration'] }, () => {
 
   it('renders modal title with agent name', () => {
     renderModal();
-    expect(screen.getByText('workstation.agentManage')).toBeInTheDocument();
+    expect(screen.getByText('配置Agent')).toBeInTheDocument();
   });
 
   it('shows tool list items', () => {
@@ -157,7 +158,8 @@ describe('AgentConfigModal', { tags: ['integration'] }, () => {
 
   it('calls onClose when overlay clicked', () => {
     const { props } = renderModal();
-    fireEvent.click(screen.getByText('workstation.agentManage').closest('.modal-overlay')!);
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
+    fireEvent.click(overlay);
     expect(props.onClose).toHaveBeenCalled();
   });
 

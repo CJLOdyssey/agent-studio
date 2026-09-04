@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """Repository tests for Team CRUD and member management."""
@@ -7,7 +8,7 @@ import uuid
 
 import pytest
 
-from backend.repository.teams import (
+from repository.teams import (
     add_team_member,
     create_team,
     delete_team,

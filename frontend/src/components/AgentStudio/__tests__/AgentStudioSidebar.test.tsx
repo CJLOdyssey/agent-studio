@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { TestProviders } from '../../../test/setup';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
 vi.mock('../../../stores/chatStore', () => {
   const state = { activeConvId: null, conversations: [], setActiveTeam: vi.fn(), reset: vi.fn() };
-  const fn = (selector?: any) => (selector ? selector(state) : state);
+  const fn = (selector?: (s: typeof state) => unknown) => (selector ? selector(state) : state);
   fn.getState = () => state;
   return { useChatStore: fn };
 });
@@ -16,13 +17,21 @@ vi.mock('../../auth', () => ({
 }));
 vi.mock('../sidebar/UserMenu', () => ({ default: () => null }));
 vi.mock('../sidebar/ConversationsList', () => ({
-  default: (props: any) => {
-    (globalThis as any).__convOnSelect = props.onSelect;
-    (globalThis as any).__convOnDelete = props.onDelete;
+  default: (props: {
+    onSelect: (conv: Conversation) => void;
+    onDelete: (convId: string) => void;
+  }) => {
+    globalThis.__convOnSelect = props.onSelect;
+    globalThis.__convOnDelete = props.onDelete;
     return null;
   },
 }));
 vi.mock('../sidebar/TeamTree', () => ({ default: () => null }));
+
+declare global {
+  var __convOnSelect: ((conv: Conversation) => void) | undefined;
+  var __convOnDelete: ((convId: string) => void) | undefined;
+}
 
 import AgentStudioSidebar from '../AgentStudioSidebar';
 import type { Team, Agent, Conversation } from '../../../types/AgentStudio';
@@ -30,14 +39,15 @@ import type { Team, Agent, Conversation } from '../../../types/AgentStudio';
 const baseProps = {
   teams: [], selectedAgentId: null, conversations: [], activeConvId: null,
   onSelectAgent: vi.fn(), onSelectConversation: vi.fn(), onNewChat: vi.fn(),
-  onDeleteConversation: vi.fn(), onAddTeam: vi.fn(), onAddAgent: vi.fn(),
+  onDeleteConversation: vi.fn(), onRenameConversation: vi.fn(),
+  onPinConversation: vi.fn(), onAddTeam: vi.fn(), onAddAgent: vi.fn(),
   onDeleteTeam: vi.fn(), onDeleteAgent: vi.fn(), onRenameTeam: vi.fn(),
   onRenameAgent: vi.fn(), onTogglePinTeam: vi.fn(), onAgentClick: vi.fn(),
 };
 
 describe('AgentStudioSidebar', { tags: ['integration'] }, () => {
   it('renders without crashing', () => {
-    const { container } = render(<AgentStudioSidebar {...baseProps} />);
+    const { container } = render(<TestProviders><AgentStudioSidebar {...baseProps} /></TestProviders>);
     expect(container).toBeDefined();
   });
 });
@@ -62,12 +72,42 @@ function makeConv(id: string, title: string, overrides: Partial<Conversation> = 
   return { id, title, messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...overrides } as Conversation;
 }
 
-function properBaseProps() {
-  return {
-    teams: [] as Team[],
-    selectedAgentId: null as string | null,
-    conversations: [] as Conversation[],
-    activeConvId: null as string | null,
+interface SidebarTestProps {
+  teams: Team[];
+  selectedAgentId: string | null;
+  conversations: Conversation[];
+  activeConvId: string | null;
+  isUserMenuOpen: boolean;
+  setIsUserMenuOpen: (open: boolean) => void;
+  setIsSettingsOpen: (open: boolean) => void;
+  setIsApiOpen: (open: boolean) => void;
+  setSelectedAgentId: (id: string | null) => void;
+  setActiveConvId: (id: string | null) => void;
+  setInputValue: (value: string) => void;
+  setConversations: (convs: Conversation[]) => void;
+  onNewChat: () => void;
+  toggleTeam: (teamId: string) => void;
+  handleAddTeam: () => void;
+  handleAddAgent: (teamId: string) => void;
+  handleDeleteTeam: (teamId: string) => void;
+  handleDeleteAgent: (teamId: string, agentId: string) => void;
+  handleRenameTeam: (teamId: string, name: string) => void;
+  handleRenameAgent: (agentId: string, name: string) => void;
+  handleTogglePinTeam: (teamId: string) => void;
+  handleAgentClick: (agent: Agent) => void;
+  isSidebarOpen: boolean;
+  onOpenWorkstation: () => void;
+  onDeleteConversation: (convId: string) => void;
+  onRenameConversation: (convId: string, title: string) => void;
+  onPinConversation: (convId: string) => void;
+}
+
+function properBaseProps(): SidebarTestProps {
+  const props: SidebarTestProps = {
+    teams: [],
+    selectedAgentId: null,
+    conversations: [],
+    activeConvId: null,
     isUserMenuOpen: false,
     setIsUserMenuOpen: vi.fn(),
     setIsSettingsOpen: vi.fn(),
@@ -88,36 +128,48 @@ function properBaseProps() {
     handleAgentClick: vi.fn(),
     isSidebarOpen: true,
     onOpenWorkstation: vi.fn(),
+    onDeleteConversation: vi.fn(),
+    onRenameConversation: vi.fn(),
+    onPinConversation: vi.fn(),
   };
+
+  props.onDeleteConversation = vi.fn((convId: string) => {
+    props.setConversations(props.conversations.filter((c) => c.id !== convId));
+    if (props.activeConvId === convId) {
+      props.setActiveConvId(null);
+    }
+  });
+
+  return props;
 }
 
 describe('AgentStudioSidebar — correct props', { tags: ['integration'] }, () => {
   it('renders logo and brand text', () => {
     const props = properBaseProps();
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     expect(screen.getByText('AgentStudio')).toBeInTheDocument();
     expect(screen.getByText('sidebar.newChat')).toBeInTheDocument();
   });
 
-  it('renders with sidebar open class when isSidebarOpen=true', () => {
+  it('renders with sidebar open when isSidebarOpen=true', () => {
     const props = properBaseProps();
     props.isSidebarOpen = true;
-    const { container } = render(<AgentStudioSidebar {...props} />);
+    const { container } = render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     const aside = container.querySelector('aside');
-    expect(aside?.className).toContain('open');
+    expect(aside?.className).toContain('w-[var(--da-sidebar-width)]');
   });
 
-  it('renders with sidebar collapsed class when isSidebarOpen=false', () => {
+  it('renders with sidebar collapsed when isSidebarOpen=false', () => {
     const props = properBaseProps();
     props.isSidebarOpen = false;
-    const { container } = render(<AgentStudioSidebar {...props} />);
+    const { container } = render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     const aside = container.querySelector('aside');
-    expect(aside?.className).toContain('collapsed');
+    expect(aside?.className).toContain('w-0');
   });
 
   it('calls onNewChat when new chat button clicked', async () => {
     const props = properBaseProps();
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     const btn = screen.getByText('sidebar.newChat').closest('button')!;
     await userEvent.click(btn);
     expect(props.onNewChat).toHaveBeenCalledOnce();
@@ -125,7 +177,7 @@ describe('AgentStudioSidebar — correct props', { tags: ['integration'] }, () =
 
   it('renders "sidebar.recentConversations" section label', () => {
     const props = properBaseProps();
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     expect(screen.getByText('sidebar.recentConversations')).toBeInTheDocument();
   });
 
@@ -134,13 +186,13 @@ describe('AgentStudioSidebar — correct props', { tags: ['integration'] }, () =
     const team = makeTeam('t1', 'Team 1', [agent]);
     const props = properBaseProps();
     props.teams = [team];
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     expect(screen.getByText('sidebar.recentConversations')).toBeInTheDocument();
   });
 
   it('calls onOpenWorkstation from UserMenu', () => {
     const props = properBaseProps();
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     // UserMenu is mocked, but we can verify the component renders
     expect(screen.getByText('AgentStudio')).toBeInTheDocument();
   });
@@ -153,16 +205,16 @@ describe('AgentStudioSidebar — handler execution', { tags: ['integration'] }, 
   beforeEach(() => { vi.clearAllMocks(); });
 
   beforeEach(() => {
-    delete (globalThis as any).__convOnSelect;
-    delete (globalThis as any).__convOnDelete;
+    globalThis.__convOnSelect = undefined;
+    globalThis.__convOnDelete = undefined;
   });
 
   it('handleConvSelect sets selectedAgentId null, activeConvId, inputValue', () => {
     const props = properBaseProps();
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
 
     const conv = makeConv('c1', 'Test Conv', { teamId: undefined });
-    (globalThis as any).__convOnSelect(conv);
+    globalThis.__convOnSelect?.(conv);
 
     expect(props.setSelectedAgentId).toHaveBeenCalledWith(null);
     expect(props.setActiveConvId).toHaveBeenCalledWith('c1');
@@ -171,18 +223,18 @@ describe('AgentStudioSidebar — handler execution', { tags: ['integration'] }, 
 
   it('handleConvSelect with teamId does not throw (setActiveTeam called via store)', () => {
     const props = properBaseProps();
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
 
     const conv = makeConv('c2', 'Team Conv', { teamId: 't1' });
-    expect(() => (globalThis as any).__convOnSelect(conv)).not.toThrow();
+    expect(() => globalThis.__convOnSelect?.(conv)).not.toThrow();
   });
 
   it('handleConvDelete removes conversation and resets if active match', () => {
     const props = properBaseProps();
     props.activeConvId = 'c1';
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
 
-    (globalThis as any).__convOnDelete('c1');
+    globalThis.__convOnDelete?.('c1');
 
     expect(props.setConversations).toHaveBeenCalledOnce();
     expect(props.setActiveConvId).toHaveBeenCalledWith(null);
@@ -191,9 +243,9 @@ describe('AgentStudioSidebar — handler execution', { tags: ['integration'] }, 
   it('handleConvDelete removes conversation but does not reset if not active', () => {
     const props = properBaseProps();
     props.activeConvId = 'c2';
-    render(<AgentStudioSidebar {...props} />);
+    render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
 
-    (globalThis as any).__convOnDelete('c1');
+    globalThis.__convOnDelete?.('c1');
 
     expect(props.setConversations).toHaveBeenCalledOnce();
     expect(props.setActiveConvId).not.toHaveBeenCalled();
@@ -203,7 +255,7 @@ describe('AgentStudioSidebar — handler execution', { tags: ['integration'] }, 
 describe('AgentStudioSidebar — auth integration', { tags: ['integration'] }, () => {
   it('passes isAuthenticated=false when useAuth returns false', () => {
     const props = properBaseProps();
-    const { container } = render(<AgentStudioSidebar {...props} />);
+    const { container } = render(<TestProviders><AgentStudioSidebar {...props} /></TestProviders>);
     expect(container).toBeDefined();
   });
 });

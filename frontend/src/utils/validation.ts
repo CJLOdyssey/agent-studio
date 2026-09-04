@@ -4,13 +4,13 @@ const MAX_INPUT_LENGTH = 10000;
 const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 
 /** 团队名 / Agent 名最大长度 */
-export const MAX_NAME_LENGTH = 64;
+const MAX_NAME_LENGTH = 64;
 
 /** 团队数量上限 */
-export const MAX_TEAMS = 50;
+const MAX_TEAMS = 50;
 
 /** 每团队 Agent 数量上限 */
-export const MAX_AGENTS_PER_TEAM = 20;
+const MAX_AGENTS_PER_TEAM = 20;
 
 /** 系统保留名称（不允许用户手动使用） */
 const RESERVED_NAMES = ['新建', '默认', 'new', 'default'];

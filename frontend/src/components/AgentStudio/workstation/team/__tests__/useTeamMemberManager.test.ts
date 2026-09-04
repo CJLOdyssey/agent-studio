@@ -6,11 +6,11 @@ const mockAddTeamMember = vi.fn();
 const mockRemoveTeamMember = vi.fn();
 
 vi.mock('../../../../../api/client/agents', () => ({
-  listAgents: (...args: any[]) => mockListAgents(...args),
+  listAgents: (...args: unknown[]) => mockListAgents(...args),
 }));
 vi.mock('../../../../../api/client/teams', () => ({
-  addTeamMember: (...args: any[]) => mockAddTeamMember(...args),
-  removeTeamMember: (...args: any[]) => mockRemoveTeamMember(...args),
+  addTeamMember: (...args: unknown[]) => mockAddTeamMember(...args),
+  removeTeamMember: (...args: unknown[]) => mockRemoveTeamMember(...args),
 }));
 
 import useTeamMemberManager from '../useTeamMemberManager';
@@ -53,8 +53,28 @@ describe('useTeamMemberManager', { tags: ['unit'] }, () => {
     const teamWithAgent = { ...mockTeam, agents: [{ agentConfigId: 'a1', name: 'Agent 1' }] };
     const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
     await waitFor(() => {
-      expect(result.current.filteredAgents.map((a: any) => a.id)).toEqual(['a2']);
+      expect(result.current.filteredAgents.map((a) => a.id)).toEqual(['a2']);
     });
+  });
+
+  it('excludes existing members sent as snake_case agent_config_id', async () => {
+    mockListAgents.mockResolvedValue([
+      { id: 'a1', name: 'Agent 1' },
+      { id: 'a2', name: 'Agent 2' },
+    ]);
+    const teamWithAgent = { ...mockTeam, agents: [{ agent_config_id: 'a1', name: 'Agent 1' }] };
+    const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
+    await waitFor(() => {
+      expect(result.current.filteredAgents.map((a) => a.id)).toEqual(['a2']);
+    });
+  });
+
+  it('skips handleAdd when agent is already a member', async () => {
+    mockListAgents.mockResolvedValue([]);
+    const teamWithAgent = { ...mockTeam, agents: [{ agent_config_id: 'a1', name: 'Agent 1' }] };
+    const { result } = renderHook(() => useTeamMemberManager(teamWithAgent));
+    await act(async () => { await result.current.handleAdd({ id: 'a1', name: 'Agent 1' }); });
+    expect(mockAddTeamMember).not.toHaveBeenCalled();
   });
 
   it('handles handleAdd', async () => {

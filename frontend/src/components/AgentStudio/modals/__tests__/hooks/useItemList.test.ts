@@ -32,7 +32,7 @@ describe('useItemList', { tags: ['integration'] }, () => {
     act(() => result.current.addCustom(() => makeItem('new')));
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0].id).toBe('new');
-    expect(result.current.editingId).toBe('new');
+    expect(result.current.editingId).toBeNull();
   });
 
   it('update modifies item by id', () => {

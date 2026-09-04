@@ -5,13 +5,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from starlette.testclient import TestClient
 
-from backend.core.app import app
+from core.app import app
 
 
 @pytest.fixture
 def client():
-    with patch("backend.observability.startup_guard.health", return_value={"status": "ok"}):
-        from backend.core.app import app
+    with patch("observability.startup_guard.health", return_value={"status": "ok"}):
+        from core.app import app
         with TestClient(app) as c:
             yield c
 
@@ -34,37 +34,37 @@ def mock_store():
 
 
 class TestListEventsBranches:
-    @patch("backend.observability.router.get_store")
+    @patch("observability.router.get_store")
     def test_trace_id_filter(self, mock_get_store, mock_store):
         mock_get_store.return_value = mock_store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/events?trace_id=t1")
         assert resp.status_code == 200
         mock_store.by_trace.assert_called_once()
 
-    @patch("backend.observability.router.get_store")
+    @patch("observability.router.get_store")
     def test_q_filter(self, mock_get_store, mock_store):
         mock_get_store.return_value = mock_store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/events?q=search-term")
         assert resp.status_code == 200
         mock_store.search.assert_called_once()
 
-    @patch("backend.observability.router.get_store")
+    @patch("observability.router.get_store")
     def test_errors_filter(self, mock_get_store, mock_store):
         mock_get_store.return_value = mock_store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/events?errors=true")
         assert resp.status_code == 200
         mock_store.recent_errors.assert_called_once()
 
-    @patch("backend.observability.router.get_store")
+    @patch("observability.router.get_store")
     def test_slow_filter(self, mock_get_store, mock_store):
         mock_get_store.return_value = mock_store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/events?slow=2000")
         assert resp.status_code == 200
@@ -72,10 +72,10 @@ class TestListEventsBranches:
 
 
 class TestTraceDetail:
-    @patch("backend.observability.router.analyze_trace")
+    @patch("observability.router.analyze_trace")
     def test_trace_detail(self, mock_analyze):
         mock_analyze.return_value = {"trace_id": "abc", "events": [], "suggestion": None}
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/trace/abc")
         assert resp.status_code == 200
@@ -84,7 +84,7 @@ class TestTraceDetail:
 
 
 class TestHealthException:
-    @patch("backend.observability.router.get_store")
+    @patch("observability.router.get_store")
     def test_health_returns_500_on_query_failure(self, mock_get_store):
         """Lines 83-84: exception inside the try block returns 500 JSONResponse."""
         store = MagicMock()
@@ -97,7 +97,7 @@ class TestHealthException:
         assert data["status"] == "error"
         assert data["write_errors"] == -1
 
-    @patch("backend.observability.router.get_store")
+    @patch("observability.router.get_store")
     def test_health_returns_500_on_self_check_failure(self, mock_get_store):
         store = MagicMock()
         store._query.return_value = [{"cnt": 1}]
@@ -111,8 +111,8 @@ class TestHealthException:
 
 
 class TestHealthDegraded:
-    @patch("backend.observability.router.get_store")
-    @patch("backend.observability.router.guard_health", return_value={"crashed": True})
+    @patch("observability.router.get_store")
+    @patch("observability.router.guard_health", return_value={"crashed": True})
     def test_health_degraded_when_crashed(self, mock_guard, mock_get_store):
         store = MagicMock()
         store._query.return_value = [{"cnt": 5}]
@@ -122,15 +122,15 @@ class TestHealthDegraded:
             "closed": False, "last_heartbeat": 0, "db_path": ":memory:",
         }
         mock_get_store.return_value = store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/health")
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "degraded"
 
-    @patch("backend.observability.router.get_store")
-    @patch("backend.observability.router.guard_health", return_value={"status": "ok"})
+    @patch("observability.router.get_store")
+    @patch("observability.router.guard_health", return_value={"status": "ok"})
     def test_health_degraded_when_write_errors(self, mock_guard, mock_get_store):
         store = MagicMock()
         store._query.return_value = [{"cnt": 5}]
@@ -140,15 +140,15 @@ class TestHealthDegraded:
             "closed": False, "last_heartbeat": 0, "db_path": ":memory:",
         }
         mock_get_store.return_value = store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/health")
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "degraded"
 
-    @patch("backend.observability.router.get_store")
-    @patch("backend.observability.router.guard_health", return_value={"status": "ok"})
+    @patch("observability.router.get_store")
+    @patch("observability.router.guard_health", return_value={"status": "ok"})
     def test_health_degraded_when_disk_errors(self, mock_guard, mock_get_store):
         store = MagicMock()
         store._query.return_value = [{"cnt": 5}]
@@ -158,15 +158,15 @@ class TestHealthDegraded:
             "closed": False, "last_heartbeat": 0, "db_path": ":memory:",
         }
         mock_get_store.return_value = store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/health")
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "degraded"
 
-    @patch("backend.observability.router.get_store")
-    @patch("backend.observability.router.guard_health", return_value={"status": "ok"})
+    @patch("observability.router.get_store")
+    @patch("observability.router.guard_health", return_value={"status": "ok"})
     def test_health_degraded_when_large_queue(self, mock_guard, mock_get_store):
         store = MagicMock()
         store._query.return_value = [{"cnt": 5}]
@@ -176,7 +176,7 @@ class TestHealthDegraded:
             "closed": False, "last_heartbeat": 0, "db_path": ":memory:",
         }
         mock_get_store.return_value = store
-        from backend.core.app import app
+        from core.app import app
         with TestClient(app) as c:
             resp = c.get("/api/debug/health")
         assert resp.status_code == 200

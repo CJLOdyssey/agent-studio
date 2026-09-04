@@ -1,9 +1,12 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 """E2E Test: Workflow CRUD operations."""
 
-from backend.tests.conftest import Api, _cleanup, _rid
+import uuid
+
+from tests.conftest import Api, _cleanup, _rid
 
 
 class TestWorkflowCRUD:
@@ -11,11 +14,9 @@ class TestWorkflowCRUD:
 
     def _create_team(self, api: Api) -> str:
         """Helper: create a team and return its ID."""
-        r = api.post("/api/teams", json={"name": f"WF-Team-{_rid('wf')}"})
+        r = api.post("/api/teams", json={"name": f"WF-Team-{uuid.uuid4().hex[:16]}"})
         assert r.status_code == 201, r.text
-        tid = r.json()["id"]
-        _cleanup((tid, "/api/teams"))
-        return tid
+        return r.json()["id"]
 
     def _create_agent(self, api: Api) -> str:
         """Helper: create an agent and return its ID."""
@@ -23,14 +24,12 @@ class TestWorkflowCRUD:
             "/api/agents",
             json={
                 "name": f"WF-Agent-{_rid('wfa')}",
-                "role_identifier": _rid("wf_agent"),
+                "role_identifier": f"wf_agent_{uuid.uuid4().hex[:16]}",
                 "system_prompt": "workflow test agent",
             },
         )
         assert r.status_code == 201, r.text
-        aid = r.json()["id"]
-        _cleanup((aid, "/api/agents"))
-        return aid
+        return r.json()["id"]
 
     def _create_workflow_payload(self, team_id: str, agent_id: str) -> dict:
         """Build a minimal workflow config payload."""
@@ -59,11 +58,11 @@ class TestWorkflowCRUD:
         assert r.status_code == 201, r.text
         body = r.json()
         assert "id" in body
-        assert body["team_id"] == team_id
+        assert body["teamId"] == team_id
         assert body["name"] == payload["name"]
-        assert body["max_rounds"] == 3
+        assert body["maxRounds"] == 3
         assert len(body["nodes"]) == 1
-        assert body["nodes"][0]["role_identifier"] == "main"
+        assert body["nodes"][0]["roleIdentifier"] == "main"
         assert body["nodes"][0]["strategy"] == "generator"
 
     def test_list_workflows(self, api: Api):
@@ -82,13 +81,13 @@ class TestWorkflowCRUD:
         r = api.post("/api/workflows", json=payload)
         assert r.status_code == 201, r.text
         wf_id = r.json()["id"]
-        _cleanup((wf_id, "/api/workflows"))
 
         r2 = api.get(f"/api/workflows/teams/{team_id}")
         assert r2.status_code == 200
         body = r2.json()
-        assert body["team_id"] == team_id
+        assert body["teamId"] == team_id
         assert body["id"] == wf_id
+        _cleanup((wf_id, "/api/workflows"))
 
     def test_get_workflow_nonexistent_team(self, api: Api):
         """GET /api/workflows/teams/{fake} returns 404."""
@@ -114,7 +113,7 @@ class TestWorkflowCRUD:
         assert r2.status_code == 201, r2.text
         body = r2.json()
         assert body["name"] == "Updated-WF-Name"
-        assert body["max_rounds"] == 10
+        assert body["maxRounds"] == 10
 
     def test_delete_workflow(self, api: Api):
         """DELETE /api/workflows/{id} removes a workflow."""
@@ -147,7 +146,6 @@ class TestWorkflowCRUD:
             json={
                 "team_id": "some-team",
                 "name": "No-Nodes",
-                "nodes": [],
                 "edges": [],
             },
         )

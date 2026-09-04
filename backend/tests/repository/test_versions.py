@@ -4,8 +4,8 @@ import uuid
 
 import pytest
 
-from backend.core.infra.database import get_session_factory
-from backend.repository.versions import create_version, get_version, list_versions
+from core.infra.database import get_session_factory
+from repository.versions import create_version, get_version, list_versions
 
 
 class TestVersions:

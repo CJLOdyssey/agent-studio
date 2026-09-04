@@ -3,9 +3,9 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePromptManagement } from '../usePromptManagement';
 
 const STORE = [
-  { id: 'p1', name: '系统提示', content: '你是一个助手', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
-  { id: 'p2', name: '用户提示', content: '请帮助我', category: '用户提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
-  { id: 'p3', name: '代码审查', content: '审查代码质量', category: '任务模板' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
+  { id: 'p1', name: '系统提示', description: '系统级提示', content: '你是一个助手', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
+  { id: 'p2', name: '用户提示', description: '用户级提示', content: '请帮助我', category: '用户提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
+  { id: 'p3', name: '代码审查', description: '代码审查提示', content: '审查代码质量', category: '任务模板' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' },
 ];
 
 vi.mock('../api', () => ({
@@ -48,7 +48,7 @@ describe('usePromptManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    act(() => { result.current.addPrompt({ name: '新提示', content: '内容', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0' }); });
+    act(() => { result.current.addPrompt({ name: '新提示', description: '描述', content: '内容', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0' }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 
@@ -125,7 +125,7 @@ describe('usePromptManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => usePromptManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    const newItem = { id: 'new-1', name: 'Batch', content: 'batch content', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' };
+    const newItem = { id: 'new-1', name: 'Batch', description: 'desc', content: 'batch content', category: '系统提示词' as const, model: '', status: 'active' as const, version: 'v1.0.0', createdAt: '2024-01-01' };
     act(() => { result.current.addItems([newItem]); });
     expect(result.current.processed.length).toBe(before + 1);
   });

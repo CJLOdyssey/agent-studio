@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Bot, Search, BarChart3, FileText, Image, MoreHorizontal } from 'lucide-react';
+
 import type { ModelOption, AttachedFile, CommandOption } from '../../types/input';
 import GreetingAnimation from './GreetingAnimation';
 import { InputToolbar, type InputToolbarHandle } from '../input';
 import type { RefObject } from 'react';
+import { AgentStudioLogo } from '../shared/AgentStudioLogo';
 
 interface Props {
   conversationKey: number;
@@ -34,15 +35,15 @@ export default function HomeScreen({
 }: Props) {
   const { t } = useTranslation();
   return (
-    <div className="agentstudio-home">
-      <div className="agentstudio-home-centered">
-        <div className="agentstudio-home-group">
-          <div className="agentstudio-home-hero">
-            <div className="agentstudio-home-logo" role="img" tabIndex={-1} aria-label="AgentStudio Logo">
-              <Bot size={48} className="agentstudio-home-logo-icon" />
+    <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+      <div className="w-full max-w-[900px] flex flex-col items-center justify-center px-6">
+        <div className="flex flex-col items-center w-full">
+          <div className="text-center mb-8">
+            <div className="w-[72px] h-[72px] mx-auto mb-6 flex items-center justify-center">
+              <AgentStudioLogo size={48} />
             </div>
             <GreetingAnimation key={conversationKey} />
-            <p className="agentstudio-home-subtitle">{t('home.subtitle')}</p>
+            <p className="text-base text-[var(--color-text-muted)] m-0">{t('home.subtitle')}</p>
           </div>
           <InputToolbar
             ref={inputToolbarRef}
@@ -57,28 +58,6 @@ export default function HomeScreen({
             isRunning={isRunning}
             onStop={onStop}
           />
-          <div className="agentstudio-input-features">
-            <button className="agentstudio-feature-btn" onClick={() => onExecuteCommand?.('search')}>
-              <Search size={14} />
-              <span>{t('features.search', '搜索')}</span>
-            </button>
-            <button className="agentstudio-feature-btn" onClick={() => onExecuteCommand?.('data')}>
-              <BarChart3 size={14} />
-              <span>{t('features.data', '数据')}</span>
-            </button>
-            <button className="agentstudio-feature-btn" onClick={() => onExecuteCommand?.('document')}>
-              <FileText size={14} />
-              <span>{t('features.document', '文档')}</span>
-            </button>
-            <button className="agentstudio-feature-btn" onClick={() => onExecuteCommand?.('image')}>
-              <Image size={14} />
-              <span>{t('features.image', '图片')}</span>
-            </button>
-            <button className="agentstudio-feature-btn" onClick={() => onExecuteCommand?.('more')}>
-              <MoreHorizontal size={14} />
-              <span>{t('features.more', '更多')}</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

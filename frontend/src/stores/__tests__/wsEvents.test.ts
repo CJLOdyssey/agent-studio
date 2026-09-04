@@ -9,6 +9,7 @@ import type {
   WsBalanceWarningEvent,
   WsOpenUrlEvent,
   WsResultEvent,
+  WsCancelledEvent,
   WsTeamResultEvent,
   WsThumbsEvent,
   WsEvent,
@@ -76,6 +77,12 @@ describe('wsEvents types', { tags: ['unit'] }, () => {
     expect(event.team_id).toBe('t1');
   });
 
+  it('L8: creates a WsCancelledEvent', () => {
+    const event: WsCancelledEvent = { type: 'cancelled', run_id: 'r9' };
+    expect(event.type).toBe('cancelled');
+    expect(event.run_id).toBe('r9');
+  });
+
   it('creates a WsThumbsEvent', () => {
     const event: WsThumbsEvent = { type: 'thumbs', rating: 5 };
     expect(event.type).toBe('thumbs');
@@ -93,9 +100,10 @@ describe('wsEvents types', { tags: ['unit'] }, () => {
       { type: 'balance_warning' },
       { type: 'open_url' },
       { type: 'result' },
+      { type: 'cancelled' },
       { type: 'team_result' },
       { type: 'thumbs' },
     ];
-    expect(events).toHaveLength(11);
+    expect(events).toHaveLength(12);
   });
 });

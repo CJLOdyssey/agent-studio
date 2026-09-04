@@ -9,6 +9,7 @@ export interface AgentTool {
   type?: string;
   enabled: boolean;
   parameters?: string;
+  archived?: boolean;
 }
 
 // Agent MCP 配置
@@ -19,6 +20,7 @@ export interface AgentMCP {
   serverUrl: string;
   type?: string;
   enabled: boolean;
+  archived?: boolean;
 }
 
 // Agent Skills 配置
@@ -28,6 +30,7 @@ export interface AgentSkill {
   description: string;
   type?: string;
   enabled: boolean;
+  archived?: boolean;
 }
 
 // Agent 配置
@@ -85,6 +88,15 @@ export interface WorkflowConfig {
   edges: WorkflowEdge[];
 }
 
+export interface WorkflowSummary {
+  id: string;
+  teamId: string;
+  teamName: string;
+  name: string;
+  nodeCount: number;
+  createdAt: string;
+}
+
 // 对话历史记录
 export interface Conversation {
   id: string;
@@ -92,10 +104,17 @@ export interface Conversation {
   messages: Message[];
   createdAt: string;
   updatedAt: string;
+  kind?: 'normal' | 'agent' | 'team';
   agentId?: string;
   sessionId?: string;
   teamId?: string;
   teamName?: string;
+  /** 侧边栏置顶（对齐 ragbase is_pinned 语义） */
+  isPinned?: boolean;
+  /** 会话已产生的 run 数（后端 sessions 列表返回；列表消息未加载时用于判定是否已回复） */
+  runCount?: number;
+  /** 乐观占位：发送中未获 server 确认的临时会话（id=temp-*，确认后原位替换为 sessionId） */
+  temp?: boolean;
 }
 
 // 消息类型
@@ -118,18 +137,25 @@ export interface Message {
   versions?: string[];
   thinkingVersions?: string[];
   currentVersion?: number;
+  userVersions?: string[];
+  currentUserVersion?: number;
+  /** 模型消息答案分页（重新生成链）：与用户版本（userVersions）解耦的独立字段 */
+  answerVersions?: string[];
+  currentAnswerVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
+  /** 用户消息展示的附件（来自 run 绑定，下载 GET /api/attachments/{id}） */
+  attachments?: { id: string; filename: string; size_bytes?: number }[];
 }
 
 // 计划步骤
-export interface PlanStep {
+interface PlanStep {
   step: string;
   status: 'completed' | 'running' | 'pending';
 }
 
 // 消息动作
-export interface MessageAction {
+interface MessageAction {
   type: string;
   label: string;
 }
@@ -145,16 +171,6 @@ export type WorkspaceTab =
   | 'frontend-preview'
   | 'backend-code'
   | 'backend-test';
-
-// 文件节点
-export interface FileNode {
-  id: string;
-  name: string;
-  type: 'file' | 'folder';
-  children?: FileNode[];
-  content?: string;
-  language?: string;
-}
 
 // Agent 类型
 export type AgentType = 'ui' | 'frontend' | 'backend';

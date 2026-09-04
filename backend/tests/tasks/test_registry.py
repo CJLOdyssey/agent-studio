@@ -6,10 +6,10 @@ import pytest
 
 class TestRunAgentTask:
 
-    @patch("backend.tasks.registry._run_async")
+    @patch("tasks.registry._run_async")
     def test_success(self, mock_run_async):
         mock_run_async.return_value = {"run_id": "run-1", "status": "completed"}
-        from backend.tasks.registry import run_agent
+        from tasks.registry import run_agent
 
         result = run_agent.run(
             requirement="test req",
@@ -23,45 +23,45 @@ class TestRunAgentTask:
         assert result == {"run_id": "run-1", "status": "completed"}
 
     def test_assertion_error_without_run_id(self):
-        from backend.tasks.registry import run_agent
+        from tasks.registry import run_agent
         with pytest.raises(AssertionError, match="run_id must be provided"):
             run_agent.run(requirement="test", run_id=None)
 
-    @patch("backend.tasks.registry._report_run_error")
-    @patch("backend.tasks.registry._run_async", side_effect=Exception("pipeline crash"))
+    @patch("tasks.registry._report_run_error")
+    @patch("tasks.registry._run_async", side_effect=Exception("pipeline crash"))
     def test_failure_without_mock_fallback(self, mock_run_async, mock_report):
-        from backend.tasks.registry import run_agent
-        with patch("backend.tasks.registry.ENABLE_MOCK_FALLBACK", False):
+        from tasks.registry import run_agent
+        with patch("tasks.registry.ENABLE_MOCK_FALLBACK", False):
             with pytest.raises(Exception, match="pipeline crash"):
                 run_agent.run(requirement="test", run_id="run-1")
 
-    @patch("backend.tasks.registry._report_run_error")
-    @patch("backend.tasks.registry._try_mock_fallback")
-    @patch("backend.tasks.registry._run_async", side_effect=Exception("pipeline crash"))
+    @patch("tasks.registry._report_run_error")
+    @patch("tasks.registry._try_mock_fallback")
+    @patch("tasks.registry._run_async", side_effect=Exception("pipeline crash"))
     def test_failure_with_mock_fallback_success(self, mock_run_async, mock_fallback, mock_report):
-        from backend.tasks.registry import run_agent
+        from tasks.registry import run_agent
         mock_fallback.return_value = {"run_id": "run-1", "status": "completed", "fallback": True}
 
-        with patch("backend.tasks.registry.ENABLE_MOCK_FALLBACK", True):
+        with patch("tasks.registry.ENABLE_MOCK_FALLBACK", True):
             result = run_agent.run(requirement="test", run_id="run-1")
 
         assert result["fallback"] is True
 
-    @patch("backend.tasks.registry._report_run_error")
-    @patch("backend.tasks.registry._try_mock_fallback", return_value=None)
-    @patch("backend.tasks.registry._run_async", side_effect=Exception("pipeline crash"))
+    @patch("tasks.registry._report_run_error")
+    @patch("tasks.registry._try_mock_fallback", return_value=None)
+    @patch("tasks.registry._run_async", side_effect=Exception("pipeline crash"))
     def test_failure_with_mock_fallback_returns_none(self, mock_run_async, mock_fallback, mock_report):
-        from backend.tasks.registry import run_agent
+        from tasks.registry import run_agent
 
         # Need to patch self.retry to avoid actual retry
-        with patch("backend.tasks.registry.ENABLE_MOCK_FALLBACK", True):
+        with patch("tasks.registry.ENABLE_MOCK_FALLBACK", True):
             with pytest.raises(Exception, match="pipeline crash"):
                 run_agent.run(requirement="test", run_id="run-1")
 
-    @patch("backend.tasks.registry._run_async")
+    @patch("tasks.registry._run_async")
     def test_no_session_no_agent(self, mock_run_async):
         mock_run_async.return_value = {"run_id": "run-1", "status": "completed"}
-        from backend.tasks.registry import run_agent
+        from tasks.registry import run_agent
 
         result = run_agent.run(
             requirement="test req",
@@ -74,11 +74,11 @@ class TestRunAgentTask:
         )
         assert result == {"run_id": "run-1", "status": "completed"}
 
-    @patch("backend.tasks.registry._run_async")
+    @patch("tasks.registry._run_async")
     def test_elapse_logging(self, mock_run_async):
         """Test that timing and retry info is logged."""
         mock_run_async.return_value = {"run_id": "run-1", "status": "completed"}
-        from backend.tasks.registry import run_agent
+        from tasks.registry import run_agent
 
         result = run_agent.run(
             requirement="test req",
@@ -89,10 +89,10 @@ class TestRunAgentTask:
 
 class TestCompleteAgentTask:
 
-    @patch("backend.tasks.registry._run_async")
+    @patch("tasks.registry._run_async")
     def test_success(self, mock_run_async):
         mock_run_async.return_value = None
-        from backend.tasks.registry import complete_agent
+        from tasks.registry import complete_agent
 
         result = complete_agent.run(
             content="hello",
@@ -104,10 +104,10 @@ class TestCompleteAgentTask:
         )
         assert result is None
 
-    @patch("backend.tasks.registry._run_async")
+    @patch("tasks.registry._run_async")
     def test_success_with_thinking(self, mock_run_async):
         mock_run_async.return_value = None
-        from backend.tasks.registry import complete_agent
+        from tasks.registry import complete_agent
 
         result = complete_agent.run(
             content="hello",
@@ -119,9 +119,9 @@ class TestCompleteAgentTask:
         )
         assert result is None
 
-    @patch("backend.tasks.registry._run_async", side_effect=Exception("stream failed"))
+    @patch("tasks.registry._run_async", side_effect=Exception("stream failed"))
     def test_failure_raises(self, mock_run_async):
-        from backend.tasks.registry import complete_agent
+        from tasks.registry import complete_agent
 
         with pytest.raises(Exception, match="stream failed"):
             complete_agent.run(
@@ -130,10 +130,10 @@ class TestCompleteAgentTask:
                 api_key="sk-test",
             )
 
-    @patch("backend.tasks.registry._run_async")
+    @patch("tasks.registry._run_async")
     def test_success_with_custom_model_and_base(self, mock_run_async):
         mock_run_async.return_value = None
-        from backend.tasks.registry import complete_agent
+        from tasks.registry import complete_agent
 
         result = complete_agent.run(
             content="test content",

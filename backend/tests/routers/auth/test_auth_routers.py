@@ -7,7 +7,8 @@ class TestAuthLogin:
     def test_login_inactive_user(self, client):
         from sqlalchemy import update
 
-        from backend.core.infra.database import UserDB, get_session_factory
+        from core.infra.database import get_session_factory
+        from orm import UserDB
         factory = get_session_factory()
         async def _deactivate():
             async with factory() as s:
@@ -109,7 +110,7 @@ class TestAuthLogin:
 
 
 class TestAuthRegister:
-    @patch("backend.routers.auth.register._generate_code", return_value="654321")
+    @patch("routers.auth.register._generate_code", return_value="654321")
     def test_register_flow(self, mock_gen_code, client):
         resp = client.post(
             "/api/auth/send-register-code", json={"email": "newuser@test.com"}
@@ -130,7 +131,7 @@ class TestAuthRegister:
 
     def test_register_wrong_code(self, client):
         with patch(
-            "backend.routers.auth.register._generate_code", return_value="654321"
+            "routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -148,7 +149,7 @@ class TestAuthRegister:
 
     def test_register_weak_password(self, client):
         with patch(
-            "backend.routers.auth.register._generate_code", return_value="123456"
+            "routers.auth.register._generate_code", return_value="123456"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -164,7 +165,7 @@ class TestAuthRegister:
         )
         assert resp.status_code == 400
 
-    @patch("backend.routers.auth.register._generate_code", return_value="654321")
+    @patch("routers.auth.register._generate_code", return_value="654321")
     def test_register_flow_complete(self, mock_gen_code, client):
         resp = client.post(
             "/api/auth/send-register-code", json={"email": "flowtest@test.com"}
@@ -188,7 +189,7 @@ class TestAuthRegister:
 
     def test_password_policy_rejects_common(self, client):
         with patch(
-            "backend.routers.auth.register._generate_code", return_value="654321"
+            "routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -206,7 +207,7 @@ class TestAuthRegister:
 
     def test_password_policy_rejects_short(self, client):
         with patch(
-            "backend.routers.auth.register._generate_code", return_value="654321"
+            "routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -224,10 +225,10 @@ class TestAuthRegister:
 
     def test_register_duplicate(self, client):
         with patch(
-            "backend.routers.auth.register._generate_code", return_value="123456"
+            "routers.auth.register._generate_code", return_value="123456"
         ):
             with patch(
-                "backend.routers.auth.register.get_user_by_email",
+                "routers.auth.register.get_user_by_email",
                 return_value=None,
             ):
                 client.post(
@@ -246,7 +247,7 @@ class TestAuthRegister:
 
     def test_register_password_complexity_edge(self, client):
         with patch(
-            "backend.routers.auth.register._generate_code", return_value="654321"
+            "routers.auth.register._generate_code", return_value="654321"
         ):
             client.post(
                 "/api/auth/send-register-code",
@@ -271,7 +272,7 @@ class TestAuthPassword:
         assert resp.status_code == 200
 
     @patch(
-        "backend.routers.auth.password._generate_code", return_value="999999"
+        "routers.auth.password._generate_code", return_value="999999"
     )
     def test_reset_password(self, mock_gen_code, client):
         client.post(
@@ -289,7 +290,7 @@ class TestAuthPassword:
 
     def test_reset_wrong_code(self, client):
         with patch(
-            "backend.routers.auth.password._generate_code", return_value="111111"
+            "routers.auth.password._generate_code", return_value="111111"
         ):
             client.post(
                 "/api/auth/forgot-password", json={"email": "admin@test.com"}
@@ -306,15 +307,16 @@ class TestAuthPassword:
 
     def test_change_password(self, client):
         from unittest.mock import AsyncMock, MagicMock
+
         import bcrypt
         mock_user = MagicMock()
         mock_user.id = "u-change-legacy"
         mock_user.password_hash = bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode()
         mock_user.email = "change-legacy@test.com"
-        with patch("backend.routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user), \
-             patch("backend.routers.auth.password.update_password", new_callable=AsyncMock), \
-             patch("backend.routers.auth.password.revoke_all_user_tokens", new_callable=AsyncMock), \
-             patch("backend.routers.auth.password.send_email", new_callable=AsyncMock):
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.password.update_password", new_callable=AsyncMock), \
+             patch("routers.auth.password.revoke_all_user_tokens", new_callable=AsyncMock), \
+             patch("routers.auth.password.send_email", new_callable=AsyncMock):
             resp = client.post(
                 "/api/auth/change-password",
                 json={
@@ -349,7 +351,7 @@ class TestAuthProfile:
         resp = client.get("/api/auth/me")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["email"] == "admin@legacy.local"
+        assert data["email"] == "admin@example.com"
         assert data["is_verified"] is True
 
     def test_profile_returns_admin_in_legacy(self, client):
@@ -365,8 +367,8 @@ class TestAuthProfile:
 
 class TestAuthForgotPasswordFlow:
 
-    @patch("backend.routers.auth.register._generate_code", return_value="112233")
-    @patch("backend.routers.auth.password._generate_code", return_value="445566")
+    @patch("routers.auth.register._generate_code", return_value="112233")
+    @patch("routers.auth.password._generate_code", return_value="445566")
     def test_forgot_password_full_flow(self, mock_pwd_code, mock_reg_code, client):
         client.post(
             "/api/auth/send-register-code", json={"email": "fpflow@test.com"}

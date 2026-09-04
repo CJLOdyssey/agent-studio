@@ -1,4 +1,4 @@
-/** WebSocket event types for chat streaming */
+/** 聊天流式输出的 WebSocket 事件类型 */
 
 export interface WsStreamEvent {
   type: 'stream';
@@ -50,15 +50,46 @@ export interface WsOpenUrlEvent {
   url?: string;
 }
 
+export interface WsBrowserFrameEvent {
+  type: 'browser_frame';
+  data: string;
+}
+
 export interface WsResultEvent {
   type: 'result';
   run_id?: string;
   [key: string]: unknown;
 }
 
+export interface WsCancelledEvent {
+  type: 'cancelled';
+  run_id?: string;
+}
+
+/** N1 团队后端返回的按角色 verdict（contract-N1）。 */
+export interface TeamVerdict {
+  role: string;
+  approved: boolean;
+  reason?: string;
+  score?: number;
+  rounds: number;
+}
+
 export interface WsTeamResultEvent {
   type: 'team_result';
+  status?: string;
+  team_id?: string;
+  artifacts?: Record<string, unknown>;
+  display?: string;
+  verdicts?: Record<string, TeamVerdict>;
+  rounds?: number;
   [key: string]: unknown;
+}
+
+export interface WsApprovalRequestEvent {
+  type: 'approval_request';
+  run_id?: string;
+  node?: string;
 }
 
 export interface WsThumbsEvent {
@@ -75,6 +106,9 @@ export type WsEvent =
   | WsErrorEvent
   | WsBalanceWarningEvent
   | WsOpenUrlEvent
+  | WsBrowserFrameEvent
   | WsResultEvent
+  | WsCancelledEvent
   | WsTeamResultEvent
+  | WsApprovalRequestEvent
   | WsThumbsEvent;

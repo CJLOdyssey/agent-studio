@@ -2,6 +2,8 @@ import type { MCPEntry } from './mcp.types';
 
 export const MCP_TYPE_OPTIONS = ['stdio', 'sse'];
 
+export const MCP_TYPE_LABEL: Record<string, string> = { stdio: 'stdio', sse: 'Streamable HTTP' };
+
 export const MCP_STATUS_LABEL: Record<MCPEntry['status'], string> = {
   connected: '已连接',
   disconnected: '未连接',

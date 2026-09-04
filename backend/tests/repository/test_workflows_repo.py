@@ -4,13 +4,13 @@ import uuid
 
 import pytest
 
-from backend.repository.workflows import (
+from repository.workflows import (
     delete_workflow_config,
     get_workflow_config_by_team,
     list_workflow_configs,
     save_workflow_config,
 )
-from backend.workflow.models import NodeStrategy, WorkflowConfig, WorkflowEdge, WorkflowNode
+from workflow.models import NodeStrategy, WorkflowConfig, WorkflowEdge, WorkflowNode
 
 
 class TestWorkflowRepo:

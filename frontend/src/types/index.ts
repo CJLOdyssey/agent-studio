@@ -1,4 +1,4 @@
-export type AgentRole = string;
+type AgentRole = string;
 
 export interface AgentConfig {
   id: string;
@@ -55,8 +55,33 @@ export interface ChatMessage {
   versions?: string[];
   thinkingVersions?: string[];
   currentVersion?: number;
+  /** 用户消息编辑历史（旧编辑在前；content 为当前生效项） */
+  userVersions?: string[];
+  /** 版本 → runId 映射（userVersions[i] 对应 versionRunIds[i] 的 run turn） */
+  versionRunIds?: string[];
+  /** 本消息对应 run 的 parent_run_id（编辑产生兄弟分支时使用） */
+  parentRunId?: string | null;
+  /** 配对的用户消息 id（模型消息分页切换时归一化到用户消息） */
+  userMsgId?: string;
+  currentUserVersion?: number;
+  /** 模型消息答案分页（重新生成链）：与用户版本（userVersions）解耦的独立字段 */
+  answerVersions?: string[];
+  /** 答案分页 → runId 映射（answerVersions[i] 对应 answerRunIds[i] 的 run turn） */
+  answerRunIds?: string[];
+  currentAnswerVersion?: number;
   thumbsFeedback?: 'up' | 'down' | null;
   interrupted?: boolean;
+  runId?: string;
+  /** 本消息对应 run 绑定的附件（用户消息展示下载入口） */
+  attachments?: AttachmentInfo[];
+}
+
+export interface AttachmentInfo {
+  id: string;
+  filename: string;
+  content_type?: string;
+  size_bytes?: number;
+  has_extracted_text?: boolean;
 }
 
 export interface ProjectRun {
@@ -68,20 +93,28 @@ export interface ProjectRun {
   review: string;
   approved: boolean;
   status: string;
+  cost_usd?: number;
   created_at: string | null;
   updated_at: string | null;
+  parent_run_id?: string | null;
+  requirement_versions?: string[] | null;
   messages?: ChatMessage[];
+  attachments?: AttachmentInfo[];
 }
 
 export interface SessionItem {
   id: string;
   title: string;
+  kind: string;
+  agent_id: string | null;
+  team_id: string | null;
+  is_pinned: boolean;
   run_count: number;
   created_at: string | null;
   updated_at: string | null;
 }
 
-export interface MemoryEntry {
+interface MemoryEntry {
   id: string;
   agent_role: string;
   content_type: string;
@@ -97,7 +130,7 @@ export interface SessionDetail extends SessionItem {
 
 export type AppStatus = 'idle' | 'loading' | 'running' | 'completed' | 'error';
 
-// Agent info is now dynamic from the API
+// agent 信息现由 API 动态获取
 export function getAgentInfo(agents: AgentConfig[], role: string): { icon: string; label: string; color: string } {
   const found = agents.find((a) => a.role_identifier === role);
   if (found) {

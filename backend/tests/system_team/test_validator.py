@@ -1,6 +1,6 @@
 """Tests for tool code validator (backend/system_team/tools_agent/validator.py)."""
 
-from backend.system_team.tools_agent.validator import ToolValidator
+from system_team.tools_agent.validator import ToolValidator
 
 
 class TestToolValidator:

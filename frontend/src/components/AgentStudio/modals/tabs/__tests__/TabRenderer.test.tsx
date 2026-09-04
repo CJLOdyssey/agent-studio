@@ -22,9 +22,9 @@ vi.mock('../OutputConstraintTab', () => ({
 }));
 
 vi.mock('../ToolsTab', () => ({
-  ToolsTab: vi.fn(({ items, onEditFull, onCustomize }: any) => (
+  ToolsTab: vi.fn(({ items, onEditFull, onCustomize }: MockItemTabProps) => (
     <div data-testid="tools-tab">
-      {items.map((item: any) => <span key={item.id} data-testid="tool-item">{item.name}</span>)}
+      {items.map((item) => <span key={item.id} data-testid="tool-item">{item.name}</span>)}
       {onEditFull && <button data-testid="tool-edit-full" onClick={() => onEditFull({ id: 't1' })}>Edit Full</button>}
       {onCustomize && <button data-testid="tool-customize" onClick={onCustomize}>Customize</button>}
     </div>
@@ -32,9 +32,9 @@ vi.mock('../ToolsTab', () => ({
 }));
 
 vi.mock('../MCPTab', () => ({
-  MCPTab: vi.fn(({ items, onEditFull, onCustomize }: any) => (
+  MCPTab: vi.fn(({ items, onEditFull, onCustomize }: MockItemTabProps) => (
     <div data-testid="mcp-tab">
-      {items.map((item: any) => <span key={item.id} data-testid="mcp-item">{item.name}</span>)}
+      {items.map((item) => <span key={item.id} data-testid="mcp-item">{item.name}</span>)}
       {onEditFull && <button data-testid="mcp-edit-full" onClick={() => onEditFull({ id: 'm1' })}>Edit Full</button>}
       {onCustomize && <button data-testid="mcp-customize" onClick={onCustomize}>Customize</button>}
     </div>
@@ -42,9 +42,9 @@ vi.mock('../MCPTab', () => ({
 }));
 
 vi.mock('../SkillsTab', () => ({
-  SkillsTab: vi.fn(({ items, onEditFull, onCustomize }: any) => (
+  SkillsTab: vi.fn(({ items, onEditFull, onCustomize }: MockItemTabProps) => (
     <div data-testid="skills-tab">
-      {items.map((item: any) => <span key={item.id} data-testid="skill-item">{item.name}</span>)}
+      {items.map((item) => <span key={item.id} data-testid="skill-item">{item.name}</span>)}
       {onEditFull && <button data-testid="skill-edit-full" onClick={() => onEditFull({ id: 's1' })}>Edit Full</button>}
       {onCustomize && <button data-testid="skill-customize" onClick={onCustomize}>Customize</button>}
     </div>
@@ -60,6 +60,15 @@ vi.mock('../../ItemEditor', () => ({
 import TabRenderer from '../TabRenderer';
 import type { TabRendererProps } from '../TabRenderer';
 import type { AgentTool, AgentMCP, AgentSkill } from '../../../../../types/AgentStudio';
+import type { ToolFormData } from '../../../workstation/tool/tool.types';
+import type { MCPFormData } from '../../../workstation/mcp/mcp.types';
+import type { SkillFormData } from '../../../workstation/skill/skill.types';
+
+interface MockItemTabProps {
+  items: { id: string; name: string }[];
+  onEditFull: (item: { id: string }) => void;
+  onCustomize: () => void;
+}
 
 function makeListShape<T>(items: T[] = []) {
   return {
@@ -75,9 +84,9 @@ function makeListShape<T>(items: T[] = []) {
 
 const defaultForm = {
   forms: {
-    tool: { show: false, data: { name: '', description: '', parameters: '' } as any, errors: [] as string[] },
-    mcp: { show: false, data: { name: '', description: '' } as any, errors: [] as string[] },
-    skill: { show: false, data: { name: '', description: '' } as any, errors: [] as string[] },
+    tool: { show: false, data: { name: '', description: '', parameters: '' } as ToolFormData, errors: [] as string[] },
+    mcp: { show: false, data: { name: '', description: '' } as MCPFormData, errors: [] as string[] },
+    skill: { show: false, data: { name: '', description: '' } as SkillFormData, errors: [] as string[] },
   },
   openForm: vi.fn(),
   closeForm: vi.fn(),
@@ -108,7 +117,7 @@ function baseProps(overrides: Partial<TabRendererProps> = {}): TabRendererProps 
     onEditMcp: vi.fn(),
     onEditSkill: vi.fn(),
     onPickerOpen: vi.fn(),
-    itemsToFormData: vi.fn() as any,
+    itemsToFormData: vi.fn() as unknown as TabRendererProps['itemsToFormData'],
     ...overrides,
   };
 }
@@ -184,12 +193,12 @@ describe('TabRenderer', { tags: ['integration'] }, () => {
   });
 
   it('renders null for unknown activeTab', () => {
-    const { container } = render(<TabRenderer {...baseProps({ activeTab: 'invalid' as any })} />);
+    const { container } = render(<TabRenderer {...baseProps({ activeTab: 'invalid' })} />);
     expect(container.innerHTML).toBe('');
   });
 
   it('renders null for empty activeTab', () => {
-    const { container } = render(<TabRenderer {...baseProps({ activeTab: '' as any })} />);
+    const { container } = render(<TabRenderer {...baseProps({ activeTab: '' })} />);
     expect(container.innerHTML).toBe('');
   });
 

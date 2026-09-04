@@ -2,11 +2,12 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastapi import HTTPException
 
 
 class TestAttachments:
 
-    @patch("backend.routers.attachments.get_session", new_callable=AsyncMock, return_value=None)
+    @patch("routers.attachments.get_session", new_callable=AsyncMock, return_value=None)
     async def test_upload_session_not_found(self, mock_get, client):
         resp = client.post(
             "/api/attachments",
@@ -20,8 +21,8 @@ class TestAttachments:
         assert resp.status_code == 201
         session_id = resp.json()["id"]
 
-        from backend.core.error_codes import ErrorCode, error_response
-        with patch("backend.routers.attachments._validate_upload",
+        from core.error_codes import ErrorCode, error_response
+        with patch("routers.attachments.validate_upload",
                    side_effect=error_response(ErrorCode.ATTACHMENT_TOO_LARGE, detail="文件超过 10MB 限制")):
             large_content = b"x" * 100
             resp = client.post(
@@ -186,21 +187,111 @@ class TestAttachments:
             assert resp.json()["success"] is True
 
     def test_extract_text_failure(self):
-        from backend.routers.attachments import _extract_text
+        from extract import extract_text
         with patch("pathlib.Path.read_text", side_effect=Exception("IO error")):
-            result = _extract_text(Path("/fake/path.txt"), "text/plain")
+            result = extract_text(Path("/fake/path.txt"), "text/plain")
             assert result == ""
 
     def test_validate_upload_too_large(self):
-        from backend.routers.attachments import _validate_upload
-        with pytest.raises(Exception):
-            _validate_upload("text/plain", 11 * 1024 * 1024)
+        from extract import validate_upload
+        with pytest.raises(HTTPException):
+            validate_upload("text/plain", 11 * 1024 * 1024)
 
     def test_validate_upload_invalid_type(self):
-        from backend.routers.attachments import _validate_upload
-        with pytest.raises(Exception):
-            _validate_upload("application/x-executable", 100)
+        from extract import validate_upload
+        with pytest.raises(HTTPException):
+            validate_upload("application/x-executable", 100)
+
+    async def test_upload_config_exposes_whitelist(self, client):
+        resp = client.get("/api/attachments/upload-config")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "application/pdf" in data["allowed_content_types"]
+        assert "text/plain" in data["allowed_content_types"]
+        assert data["max_file_size_mb"] == 10
+
+    async def test_upload_traversal_session_id(self, client):
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("x.txt", b"content", "text/plain")},
+            data={"session_id": "../etc"},
+        )
+        assert resp.status_code == 400
+
+    async def test_upload_magic_mismatch(self, client):
+        resp = client.post("/api/sessions", json={"title": "att-magic"}, headers={"X-User-ID": "admin"})
+        session_id = resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("fake.png", b"this is not a png", "image/png")},
+            data={"session_id": session_id},
+        )
+        assert resp.status_code == 415
+
+    async def test_upload_text_with_nul_byte(self, client):
+        resp = client.post("/api/sessions", json={"title": "att-nul"}, headers={"X-User-ID": "admin"})
+        session_id = resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("evil.txt", b"real\x00binary", "text/plain")},
+            data={"session_id": session_id},
+        )
+        assert resp.status_code == 415
+
+    async def test_get_attachment_forbidden_when_auth_enabled(self, client, monkeypatch):
+        resp = client.post("/api/sessions", json={"title": "att-auth"}, headers={"X-User-ID": "admin"})
+        session_id = resp.json()["id"]
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("secret.txt", b"secret", "text/plain")},
+            data={"session_id": session_id},
+        )
+        attachment_id = resp.json()["id"]
+        monkeypatch.setenv("AUTH_ENABLED", "1")
+        # Unauthenticated caller (no cookie/state) resolves to "anonymous" → 403
+        resp = client.get(f"/api/attachments/{attachment_id}")
+        assert resp.status_code == 403
+
+    async def test_upload_without_session(self, client):
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("pre.txt", b"pre-session upload", "text/plain")},
+            data={},
+            headers={"X-User-ID": "admin"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["session_id"] is None
+        assert data["filename"] == "pre.txt"
+
+    async def test_upload_without_session_stored_user_scoped(self, client):
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("pre.txt", b"pre-session upload", "text/plain")},
+            data={},
+            headers={"X-User-ID": "admin"},
+        )
+        assert resp.status_code == 201
+        from repository.attachments import get_attachment_by_id
+
+        att = await get_attachment_by_id(resp.json()["id"])
+        assert att is not None
+        assert att.user_id == "admin"
+        assert "_u_admin" in att.storage_path
+
+    async def test_get_pending_attachment_forbidden_for_other_user(self, client, monkeypatch):
+        resp = client.post(
+            "/api/attachments",
+            files={"file": ("pre.txt", b"pre-session upload", "text/plain")},
+            data={},
+            headers={"X-User-ID": "admin"},
+        )
+        attachment_id = resp.json()["id"]
+        monkeypatch.setenv("AUTH_ENABLED", "1")
+        resp = client.get(f"/api/attachments/{attachment_id}")
+        # Unauthenticated caller resolves to "anonymous" ≠ uploader "admin"
+        assert resp.status_code == 403
 
     def test_upload_dir_creation(self):
-        from backend.routers.attachments import UPLOAD_DIR
+        from routers.attachments import UPLOAD_DIR
         assert UPLOAD_DIR.exists()

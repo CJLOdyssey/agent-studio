@@ -48,7 +48,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={makeTeamEntry()} formData={{ ...EMPTY_FORM, name: 'Alpha Team' }} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(screen.getByText('Alpha Team')).toBeInTheDocument();
+    expect(screen.getByText('team.form_title_edit')).toBeInTheDocument();
   });
 
   it('does not show team name subtitle in create mode', () => {
@@ -81,29 +81,24 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByPlaceholderText('team.form_desc_placeholder')).toBeInTheDocument();
   });
 
-  it('renders category dropdown with all options', () => {
+  it('renders category input with current form value', () => {
     render(
-      <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
+      <TeamFormModal editingItem={null} formData={{ ...EMPTY_FORM, category: 'dev' }} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    // Options are rendered as text nodes via option elements
-    const selects = screen.getAllByRole('combobox');
-    const categorySelect = selects[0] as HTMLSelectElement;
-    expect(categorySelect.value).toBe('dev');
-    // Check option text content exists
-    expect(categorySelect.textContent).toContain('team.category_dev');
-    expect(categorySelect.textContent).toContain('team.category_ops');
-    expect(categorySelect.textContent).toContain('team.category_test');
+    // Category is a free-text input (design: custom categories)
+    const categoryInput = screen.getByPlaceholderText('例如：业务、技术、数据') as HTMLInputElement;
+    expect(categoryInput).toBeInTheDocument();
+    expect(categoryInput.value).toBe('dev');
   });
 
-  it('renders status dropdown with active/inactive', () => {
+  it('renders status dropdown with active/disabled options', () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    const selects = screen.getAllByRole('combobox');
-    const statusSelect = selects[1] as HTMLSelectElement;
+    const statusSelect = screen.getByRole('combobox') as HTMLSelectElement;
     expect(statusSelect.value).toBe('active');
     expect(statusSelect.textContent).toContain('team.status_active');
-    expect(statusSelect.textContent).toContain('team.status_inactive');
+    expect(statusSelect.textContent).toContain('team.status_disabled');
   });
 
   it('displays validation errors', () => {
@@ -126,7 +121,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -136,7 +131,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay!, { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(overlay!, { key: 'Tab' });
@@ -148,7 +143,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const overlay = document.querySelector('.modal-overlay');
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -158,7 +153,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const modalContent = document.querySelector('.modal-content');
+    const modalContent = document.querySelector('.fixed.inset-0 > div') as HTMLElement;
     fireEvent.click(modalContent!);
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -188,7 +183,7 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={onClose} />
     );
-    const closeBtn = document.querySelector('.modal-close') as HTMLButtonElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLButtonElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -238,21 +233,21 @@ describe('TeamFormModal', { tags: ['unit'] }, () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(container.querySelector('.wsta-form-section-title')).toBeInTheDocument();
+    expect(container.querySelector('.text-sm.font-semibold')).toBeInTheDocument();
   });
 
   it('renders modal with correct CSS class', () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(container.querySelector('.wsta-modal')).toBeInTheDocument();
-    expect(container.querySelector('.wsta-modal-sm')).toBeInTheDocument();
+    expect(container.querySelector('.fixed.inset-0')).toBeInTheDocument();
+    expect(container.querySelector('[role="dialog"]')).toBeInTheDocument();
   });
 
   it('renders team avatar icon in header', () => {
     const { container } = render(
       <TeamFormModal editingItem={null} formData={EMPTY_FORM} setFormData={vi.fn()} errors={[]} onSave={vi.fn()} onClose={vi.fn()} />
     );
-    expect(container.querySelector('.team-form-avatar')).toBeInTheDocument();
+    expect(container.querySelector('.lucide-users')).toBeInTheDocument();
   });
 });

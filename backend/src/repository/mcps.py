@@ -1,0 +1,35 @@
+"""MCP 服务仓库——针对 :class:`MCPServerDB` 的 CRUD。"""
+
+from typing import Any
+
+from sqlalchemy import desc
+
+from orm import MCPServerDB
+from repository.base import BaseRepository
+
+
+class MCPRepository(BaseRepository[MCPServerDB]):
+    model = MCPServerDB
+    default_order = desc(MCPServerDB.updated_at)
+
+    @staticmethod
+    def to_dict(obj: Any) -> dict[str, Any]:
+        """将 MCPServerDB 行序列化为 JSON 安全字典。"""
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "type": obj.type,
+            "endpoint": obj.endpoint,
+            "config": obj.config,
+            "status": obj.status,
+            "created_at": obj.created_at.isoformat() if obj.created_at else None,
+        }
+
+
+# 模块级别名
+get_mcp = MCPRepository.get_one        # await get_mcp(id)
+get_mcps = MCPRepository.get_all
+get_mcps_as_dicts = MCPRepository.get_all_as_dicts
+create_mcp = MCPRepository.create_one
+update_mcp = MCPRepository.update_one
+delete_mcp = MCPRepository.delete_one

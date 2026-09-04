@@ -52,7 +52,7 @@ describe('Workspace', { tags: ['integration'] }, () => {
 
   it('renders workspace aside element', () => {
     const { container } = render(<Workspace {...baseProps} />);
-    expect(container.querySelector('.agentstudio-workspace')).toBeInTheDocument();
+    expect(container.querySelector('aside')).toBeInTheDocument();
   });
 
   it('renders tab buttons', () => {
@@ -63,11 +63,12 @@ describe('Workspace', { tags: ['integration'] }, () => {
     expect(screen.getByText('workspace.frontendTest')).toBeInTheDocument();
   });
 
-  it('highlights active tab with active class', () => {
+  it('highlights active tab when selected', () => {
     render(<Workspace {...baseProps} activeTab="code" />);
-    const tabs = document.querySelectorAll('.agentstudio-workspace-tab');
-    expect(tabs[0].classList.contains('active')).toBe(true);
-    expect(tabs[1].classList.contains('active')).toBe(false);
+    const codeBtn = screen.getByText('workspace.code').closest('button');
+    const previewBtn = screen.getByText('workspace.preview').closest('button');
+    expect(codeBtn?.className).toContain('bg-[var(--color-accent)]');
+    expect(previewBtn?.className).not.toContain('bg-[var(--color-accent)]');
   });
 
   it('calls setActiveTab when tab clicked', () => {

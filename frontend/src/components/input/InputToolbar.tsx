@@ -1,14 +1,19 @@
 import { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Send, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion, useReducedMotion } from 'motion/react';
 import type { ModelOption, AttachedFile, CommandOption, FileRejection } from '../../types/input';
 import ModelSelector from './ModelSelector';
 import FileAttach from './FileAttach';
+import AttachmentList from './AttachmentList';
+import AttachmentPreviewModal from './AttachmentPreviewModal';
 import CommandDropdown from './CommandDropdown';
 import { useMessageComposer } from '../../hooks/useMessageComposer';
 import { useCommandPalette } from '../../hooks/useCommandPalette';
 import { useToast } from '../../utils/useToast';
 import { useSettings } from '../../contexts/SettingsContext';
+import { uploadAttachment, deleteAttachment } from '../../api/client/attachments';
+import type * as React from 'react';
 
 export interface InputToolbarHandle {
   addFiles: (files: File[]) => void;
@@ -24,9 +29,9 @@ interface InputToolbarProps {
   commands?: CommandOption[];
   placeholder?: string;
   maxLength?: number;
-  /** Show stop button instead of send button (interrupt streaming) */
+  /** 显示停止按钮而非发送按钮（中断流式输出） */
   isRunning?: boolean;
-  /** Called when stop button is clicked */
+  /** 点击停止按钮时触发 */
   onStop?: () => void;
 }
 
@@ -49,12 +54,21 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   ref,
 ) {
   const { t } = useTranslation();
+  const reduce = useReducedMotion();
   const { toast } = useToast();
   const [files, setFiles] = useState<AttachedFile[]>([]);
+  const [previewFile, setPreviewFile] = useState<AttachedFile | null>(null);
   const { settings } = useSettings();
 
   const composer = useMessageComposer({
     onSend: (text) => {
+      // 附件未就绪（上传中/失败）时不发送——失败需移除，进行中需等待
+      const pending = files.filter((f) => f.status !== 'done');
+      if (pending.length > 0) {
+        const allFailed = pending.every((f) => f.status === 'error');
+        toast(allFailed ? '部分文件上传失败，请移除后重试' : '文件上传中，请稍候', 'error');
+        return;
+      }
       onSend(text, files);
       setFiles([]);
     },
@@ -62,7 +76,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
     sendMode: settings.sendMode,
   });
 
-  // ── Slash-command palette ──
+  // ── 斜杠命令面板 ──
 
   const palette = useCommandPalette(commands);
 
@@ -83,7 +97,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // Let palette intercept first (arrow keys, Enter, Escape when open)
+      // 让命令面板优先拦截（打开时处理方向键、Enter、Escape）
       const handled = palette.handleKeyDown(e, composer.value);
       if (handled) {
         if (e.key === 'Enter' && !e.shiftKey && palette.open) {
@@ -91,7 +105,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         }
         return;
       }
-      // Fall through to composer (Enter to send, etc.)
+      // 否则交给输入框处理（Enter 发送等）
       composer.handleKeyDown(e);
     },
     [palette, composer, handleCommandSelect],
@@ -105,28 +119,57 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
     [composer, palette],
   );
 
-  // ── File handling ──
+  // ── 文件处理 ──
 
+  // 选中即传（行业模式）：文件上传与会话解耦（后端支持 pre-session 上传），
+  // 选中立刻上传拿 attachment id，发送时消息只带 id。
   const addFiles = useCallback(
     (incoming: File[]) => {
-      setFiles((prev) => {
-        const now = Date.now();
-        const mapped: AttachedFile[] = incoming.map((f, i) => ({
-          id: `${now}-${i}-${Math.random().toString(36).slice(2, 6)}`,
-          name: f.name,
-          size: f.size,
-          type: f.type,
-          file: f,
-        }));
-        const merged = [...prev, ...mapped].slice(0, MAX_FILES);
-        if (merged.length < prev.length + mapped.length) {
-          toast(`最多附加 ${MAX_FILES} 个文件`, 'info');
-        }
-        return merged;
-      });
+      const now = Date.now();
+      const all: AttachedFile[] = incoming.map((f, i) => ({
+        id: `${now}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        file: f,
+        status: 'uploading',
+        progress: 0,
+      }));
+      const room = MAX_FILES - files.length;
+      if (room < all.length) {
+        toast(`最多附加 ${MAX_FILES} 个文件`, 'info');
+      }
+      const toKeep = all.slice(0, Math.max(0, room));
+      setFiles((prev) => [...prev, ...toKeep]);
+      for (const m of toKeep) {
+        if (!m.file) continue;
+        uploadAttachment(m.file, undefined, undefined, (pct) => {
+          setFiles((prev) => prev.map((x) => (x.id === m.id ? { ...x, progress: pct } : x)));
+        })
+          .then((att) => {
+            setFiles((prev) =>
+              prev.map((x) => (x.id === m.id ? { ...x, status: 'done', attachmentId: att.id } : x)),
+            );
+          })
+          .catch(() => {
+            setFiles((prev) => prev.map((x) => (x.id === m.id ? { ...x, status: 'error' } : x)));
+          });
+      }
     },
-    [toast],
+    [toast, files],
   );
+
+  const removeFile = useCallback((id: string) => {
+    setFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target?.attachmentId) {
+        deleteAttachment(target.attachmentId).catch(() => {
+          /* 服务端孤儿文件——尽力清理 */
+        });
+      }
+      return prev.filter((f) => f.id !== id);
+    });
+  }, []);
 
   useImperativeHandle(ref, () => ({ addFiles }), [addFiles]);
 
@@ -134,7 +177,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
     (rejections: FileRejection[]) => {
       for (const r of rejections) {
         if (r.reason === 'size_exceeded') {
-          toast(`"${r.file.name}" 超过 50MB 限制`, 'error');
+          toast(`"${r.file.name}" 超过 10MB 限制`, 'error');
         } else {
           toast(`"${r.file.name}" 格式不支持`, 'error');
         }
@@ -154,8 +197,22 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
   );
 
   return (
-    <div className="agentstudio-input-container">
-      <div className="agentstudio-input-wrapper">
+    <motion.div
+      className="px-6 py-4 pb-5 max-w-[900px] mx-auto w-full"
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {files.length > 0 && (
+        <div
+          data-testid="attach-bar"
+          className="mb-2 px-4 pt-3 pb-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[var(--da-input-radius)]"
+        >
+          <AttachmentList files={files} onRemove={removeFile} onPreview={setPreviewFile} />
+        </div>
+      )}
+
+      <div data-input-wrapper className="relative bg-[var(--color-surface-raised)] border-none rounded-[var(--da-input-radius)] transition-shadow duration-200 shadow-none focus-within:shadow-[0 0 0 2px var(--color-accent)]">
         {palette.open && (
           <CommandDropdown
             commands={palette.filtered}
@@ -167,7 +224,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
         )}
 
         <textarea
-          className="agentstudio-textarea"
+          className="w-full bg-transparent border-none px-6 py-5 min-h-[var(--da-input-height)] max-h-[200px] resize-none text-lg font-normal text-[var(--color-text-primary)] leading-[1.5] box-border scrollbar-thin scrollbar-thumb-transparent hover:scrollbar-thumb-[var(--color-border)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal" style={{ outline: 'none' }}
           placeholder={placeholder ?? t('home.placeholder')}
           value={composer.value}
           maxLength={maxLength}
@@ -177,8 +234,8 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           onPaste={handlePaste}
         />
 
-        <div className="agentstudio-input-toolbar">
-          <div className="agentstudio-input-tools">
+        <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-raised)] border-t-0 min-h-[var(--da-toolbar-height)] rounded-b-[var(--da-input-radius)]">
+          <div className="flex items-center gap-2">
             <ModelSelector
               models={models}
               selectedModel={selectedModel}
@@ -191,7 +248,7 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           {isRunning ? (
             <button
               onClick={onStop}
-              className="agentstudio-send-btn running"
+              className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 bg-red-500/20 text-[var(--color-danger)] shadow-sm hover:bg-red-500/30 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm"
               aria-label={t('home.stop', '停止')}
             >
               <Square size={14} fill="currentColor" />
@@ -201,7 +258,11 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
             <button
               onClick={composer.submit}
               disabled={!composer.hasContent}
-              className={`agentstudio-send-btn ${composer.hasContent ? 'active' : 'disabled'}`}
+              className={`flex items-center justify-center gap-2 px-6 py-2 rounded-xl border-none text-base font-semibold cursor-pointer transition-all duration-150 min-h-10 ${
+                composer.hasContent
+                  ? 'bg-[var(--color-accent)] text-[var(--color-text-on-accent)] shadow-sm hover:brightness-115 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm'
+                  : 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)] cursor-not-allowed opacity-70'
+              }`}
               aria-label={t('home.send')}
             >
               <span>{t('home.send')}</span>
@@ -210,7 +271,10 @@ const InputToolbar = forwardRef<InputToolbarHandle, InputToolbarProps>(function 
           )}
         </div>
       </div>
-    </div>
+      {previewFile && (
+        <AttachmentPreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />
+      )}
+      </motion.div>
   );
 });
 

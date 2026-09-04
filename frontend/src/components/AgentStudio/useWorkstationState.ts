@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { Agent, WorkspaceTab, Message } from '../../types/AgentStudio';
 import { useToast } from '../../utils/useToast';
 import { useTeamManagement } from '../../hooks/useTeamManagement';
@@ -11,8 +12,16 @@ import { executeCommand } from '../../api/client';
 import { useAgentCommands } from '../../hooks/useAgentCommands';
 import { useChatStore } from '../../stores/chatStore';
 import { submitRequirement, retry } from '../../stores/chatActions';
+import { getSessionDetail } from '../../api/client/sessions';
+import { buildPathTurns } from '../../utils/branchTurns';
 import { useDragAndDrop } from './useDragAndDrop';
+import { useModelSync } from './useModelSync';
+import { useConversationSync } from './useConversationSync';
+import { useWorkspaceNavigation } from './useWorkspaceNavigation';
+import { useMessageHandlers } from './useMessageHandlers';
+import { buildBranchPath } from './workstationUtils';
 import Logger from '../../utils/logger';
+import type * as React from 'react';
 
 export function useWorkstationState(
   messagesContainerRef: React.RefObject<HTMLDivElement | null>,
@@ -23,7 +32,7 @@ export function useWorkstationState(
   const { t } = useTranslation();
   const notify = useNotificationSound();
 
-  const teamMgmt = useTeamManagement();
+  const teamMgmt = useTeamManagement(toast);
   const conv = useConversation();
   useAgents();
   const { data: apiCommands } = useCommands();
@@ -40,8 +49,10 @@ export function useWorkstationState(
   const retryApi = retry;
   const loadConversation = useChatStore((s) => s.loadConversation);
   const abandonedRunId = useChatStore((s) => s.lastAbandonedRunId);
+  const runSessionId = useChatStore((s) => s.currentSessionId);
 
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const { sessionId, agentId: urlAgentId, teamId: urlTeamId } = useParams();
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(urlAgentId ?? null);
   const [configuringAgent, setConfiguringAgent] = useState<Agent | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -58,7 +69,6 @@ export function useWorkstationState(
   const [conversationKey, setConversationKey] = useState(0);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<WorkspaceTab>('code');
-  const [selectedModel, setSelectedModel] = useState('');
   const [isWorkstationOpen, setIsWorkstationOpen] = useState(false);
   const { settings, updateSettings } = useSettings();
   const isDarkMode = settings.theme === 'dark';
@@ -68,18 +78,57 @@ export function useWorkstationState(
     return teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
   }, [activeTeamId, teamMgmt.teams]);
   const showAgentChat = selectedAgentId !== null || activeTeamId !== null;
+  const navigate = useNavigate();
+  const activeConvId = sessionId ?? null;
+  const [restoring, setRestoring] = useState<boolean>(
+    () => sessionId !== undefined || !!localStorage.getItem('agentstudio-active-conv-id'),
+  );
 
   const filteredConversations = useMemo(() => conv.conversations, [conv.conversations]);
 
-  const effectiveSelectedModel = useMemo(
-    () => selectedModel || (models.length > 0 ? models[0].id : ''),
-    [selectedModel, models],
-  );
-  const hasMessages = apiMessages.length > 0;
-  const convRef = useRef(conv);
-  useEffect(() => {
-    convRef.current = conv;
+  // 模型同步
+  const { selectedModel, setSelectedModel, effectiveSelectedModel, ensureModelPersisted } =
+    useModelSync(models);
+
+  const setSelectedModelState = setSelectedModel;
+
+  // 会话同步
+  const {
+    syncActiveConversation, suppressScrollRef, followBottomRef,
+    skipReloadRef, runConvIdRef, pendingTempIdRef, loadSeqRef, buildConvPath,
+  } = useConversationSync({
+    conv, activeConvId, filteredConversations, resetApi,
+    loadConversation: loadConversation as (msgs: import('../../types').ChatMessage[], id: string, sessionId?: string) => void,
+    setRestoring, setSelectedAgentId,
+    activeTeamId, activeTeamName, apiStatus, urlTeamId, urlAgentId,
+    navigate,
   });
+
+  // 工作区导航
+  const { handleNewChat, navigateToConversation } = useWorkspaceNavigation({
+    conv, syncActiveConversation, resetApi, setSelectedAgentId,
+    setSelectedModelState, setRestoring, setConversationKey,
+    navigate, buildConvPath,
+  });
+
+  const hasMessages = apiMessages.length > 0;
+
+  // temp→sessionId 确认
+  useEffect(() => {
+    if (!runSessionId) return;
+    const tempId = pendingTempIdRef.current;
+    if (!tempId) return;
+    const pending = conv.conversations.find((c) => c.id === tempId);
+    if (!pending?.temp || activeConvId !== tempId) {
+      pendingTempIdRef.current = null;
+      return;
+    }
+    pendingTempIdRef.current = null;
+    conv.confirmConversationSession(tempId, runSessionId);
+    runConvIdRef.current = runSessionId;
+    skipReloadRef.current = true;
+    navigate(buildConvPath({ ...pending, id: runSessionId }), { replace: true });
+  }, [runSessionId, conv, navigate, activeConvId, buildConvPath]);
 
   const lastMsgLen = apiMessages.length;
   const lastMsgStream = useMemo(() => {
@@ -94,121 +143,102 @@ export function useWorkstationState(
     }
   }, [abandonedRunId, toast, t]);
 
+  // 滚动管理
+  const programmaticScrollRef = useRef(false);
   useEffect(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
+    const onScroll = () => {
+      if (programmaticScrollRef.current) {
+        programmaticScrollRef.current = false;
+        return;
+      }
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 24;
+      if (atBottom !== followBottomRef.current) followBottomRef.current = atBottom;
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [messagesContainerRef]);
+
+  const prevLenRef = useRef(lastMsgLen);
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    if (suppressScrollRef.current) {
+      suppressScrollRef.current = false;
+      return;
+    }
+    const lenChanged = lastMsgLen !== prevLenRef.current;
+    prevLenRef.current = lastMsgLen;
+    if (!lenChanged && !followBottomRef.current) return;
+    programmaticScrollRef.current = true;
     el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
   }, [lastMsgLen, lastMsgStream, messagesContainerRef]);
 
+  // run 完成或 WS 断开时同步
   useEffect(() => {
-    if (apiStatus === 'loading' || apiStatus === 'running') return;
-    const activeId = convRef.current.activeConvId;
-    if (activeId) {
-      const state = useChatStore.getState();
-      if (state.messages.length > 0) {
-        convRef.current.updateConversationMessages(activeId, state.messages, false, activeTeamId ?? undefined, activeTeamName);
-      }
-      if (state.currentSessionId) {
-        convRef.current.updateConversationSessionId(activeId, state.currentSessionId, false);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiMessages, apiStatus]);
+    if (apiStatus === 'loading') return;
+    if (apiStatus === 'running' && wsStatus !== 'disconnected') return;
+    syncActiveConversation(runConvIdRef.current ?? undefined);
+  }, [apiMessages, apiStatus, wsStatus, syncActiveConversation]);
 
-  useEffect(() => {
-    const activeId = conv.activeConvId;
-    if (!activeId) return;
-    const found = filteredConversations.find((c) => c.id === activeId);
-    if (!found || found.messages.length === 0) { resetApi(); return; }
-
-    const chatMessages: import('../../types').ChatMessage[] = found.messages.map((m, idx) => ({
-      id: typeof m.id === 'number' ? `${activeId}-${idx}` : m.id,
-      role: m.role === 'user' ? 'user' : 'agent',
-      agent_name: m.agentId ?? (m.role === 'user' ? '我' : 'Agent'),
-      content: m.content,
-      thinking: m.thinking ?? undefined,
-      thinkingDone: m.thinkingDone === true || Boolean(m.thinking && !m.interrupted),
-      versions: m.versions ?? undefined,
-      currentVersion: m.currentVersion ?? undefined,
-      thumbsFeedback: m.thumbsFeedback ?? undefined,
-      interrupted: m.interrupted ?? undefined,
-      round_number: 0,
-      created_at: m.timestamp
-        ? new Date(m.timestamp).toISOString()
-        : Reflect.get(m, 'created_at')
-          ? String(Reflect.get(m, 'created_at'))
-          : found.createdAt && found.updatedAt && found.messages.length > 0
-            ? new Date(
-                new Date(found.createdAt).getTime() +
-                (new Date(found.updatedAt).getTime() - new Date(found.createdAt).getTime()) *
-                ((idx + 0.5) / found.messages.length)
-              ).toISOString()
-            : null,
-    }));
-    const current = useChatStore.getState().messages;
-    for (const msg of chatMessages) {
-      if (!msg.thinking) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.thinking) msg.thinking = live.thinking;
+  // 分支切换
+  const handleSwitchBranch = useCallback(async (runId: string) => {
+    const convId = useChatStore.getState().currentSessionId;
+    if (!convId) return;
+    suppressScrollRef.current = true;
+    const seq = ++loadSeqRef.current;
+    try {
+      const detail = await getSessionDetail(convId);
+      if (seq !== loadSeqRef.current) return;
+      const currentPath = new Set(
+        useChatStore
+          .getState()
+          .messages.map((m) => m.runId)
+          .filter((id): id is string => !!id),
+      );
+      const path = buildBranchPath(detail.runs ?? [], runId, currentPath);
+      const loaded = buildPathTurns(path, detail.runs ?? []);
+      for (const m of loaded) {
+        if (m.role !== 'user' && m.thinkingDone === undefined) {
+          m.thinkingDone = true;
+        }
       }
-      if (!msg.versions) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.versions) { msg.versions = live.versions; msg.currentVersion = live.currentVersion; }
-      }
-      if (!msg.thumbsFeedback) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.thumbsFeedback) msg.thumbsFeedback = live.thumbsFeedback;
-      }
-      if (!msg.thinkingDone) {
-        const live = current.find((c) => c.content === msg.content && c.role === msg.role);
-        if (live?.thinkingDone) msg.thinkingDone = true;
-      }
-    }
-    loadConversation(chatMessages, found.id, found.sessionId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conv.activeConvId]);
-
-  const handleNewChat = useCallback(() => {
-    if (apiMessages.length > 0 && conv.activeConvId) {
-      conv.updateConversationMessages(conv.activeConvId, apiMessages);
-    }
-    resetApi();
-    setSelectedAgentId(null);
-    conv.setActiveConvId(null);
-    setConversationKey((prev) => prev + 1);
-  }, [apiMessages, conv, resetApi]);
-
-  const handleSendMessage = useCallback(
-    (text: string, _files: AttachedFile[]) => {
-      if (!conv.activeConvId) {
-        const tName = teamMgmt.teams.find(t => t.id === activeTeamId)?.name;
-        conv.saveConversation(text, [], selectedAgentId ?? undefined, activeTeamId ?? undefined, tName);
-      }
-      submitToApi(text, undefined, selectedAgentId ?? undefined).catch(() => {
-        Logger.warn('API submission failed');
+      useChatStore.getState().loadConversation(loaded, convId, convId);
+      useChatStore.setState({
+        currentRunId: path[path.length - 1]?.id ?? runId,
+        activeRunId: path[path.length - 1]?.id ?? runId,
       });
-      notify();
-    },
-    [submitToApi, selectedAgentId, notify, conv, activeTeamId, teamMgmt.teams],
-  );
+      try {
+        localStorage.setItem(
+          `agentstudio-branch:${convId}`,
+          path[path.length - 1]?.id ?? runId,
+        );
+      } catch { /* 非致命，忽略 */ }
+      Logger.info(
+        '[switchBranch] run=%s runs=%d path=%d loaded=%d',
+        runId.slice(0, 8),
+        (detail.runs ?? []).length,
+        path.length,
+        loaded.length,
+      );
+    } catch (err) {
+      Logger.warn('[useWorkstationState] failed to switch branch to %s', runId, err);
+    }
+  }, []);
 
-  const handleHomeSend = useCallback(
-    (text: string, _files: AttachedFile[]) => {
-      const userMessage: import('../../types/AgentStudio').Message = {
-        id: crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).substring(2, 10)),
-        role: 'user',
-        content: text,
-        timestamp: Date.now(),
-      };
-      const convId = conv.activeConvId ?? conv.saveConversation(text, [userMessage], selectedAgentId ?? undefined);
-      if (convId) conv.setActiveConvId(convId);
-      submitToApi(text, undefined, undefined, false).catch(() => {
-        Logger.warn('API submission failed');
-      });
-      notify();
-    },
-    [conv, submitToApi, notify, selectedAgentId],
-  );
+  // 消息处理器
+  const attachmentIdsOf = useCallback((files: AttachedFile[]): string[] | undefined => {
+    const ids = files.map((f) => f.attachmentId).filter((x): x is string => !!x);
+    return ids.length > 0 ? ids : undefined;
+  }, []);
+
+  const { handleSendMessage, handleHomeSend } = useMessageHandlers({
+    conv, selectedAgentId, activeTeamId, activeTeamName,
+    ensureModelPersisted, navigate, buildConvPath,
+    runConvIdRef, pendingTempIdRef, teamMgmtTeams: teamMgmt.teams,
+    notify, attachmentIdsOf,
+  });
 
   const { isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop } = useDragAndDrop(inputToolbarRef as React.RefObject<InputToolbarHandle>);
 
@@ -217,7 +247,7 @@ export function useWorkstationState(
     try {
       if (!document.fullscreenElement) await workspaceRef.current.requestFullscreen();
       else await document.exitFullscreen();
-    } catch { /* ignore */ }
+    } catch { /* 忽略 */ }
   }, [workspaceRef]);
 
   const handleSaveAgent = useCallback(
@@ -246,7 +276,7 @@ export function useWorkstationState(
             const team = teamMgmt.teams.find((t) => t.agents.some((a) => a.id === oldId));
             agent.id = created.id;
             teamMgmt.replaceAgentId(oldId, created.id);
-            if (team) teamMgmt.linkMemberAgent(team.id, oldId, created.id);
+            if (team) void teamMgmt.linkMemberAgent(team.id, oldId, created.id);
           } else { throw updateErr; }
         }
         setConfiguringAgent(null);
@@ -278,19 +308,28 @@ export function useWorkstationState(
     [currentSessionId, toast, t, conv],
   );
 
-  const displayMessages: Message[] = apiMessages.map((m) => ({
-    id: m.id,
-    role: m.role === 'user' ? 'user' : 'agent',
-    agentId: m.role,
-    content: m.content,
-    thinking: m.thinking,
-    thinkingDone: m.thinkingDone === true,
-    timestamp: m.created_at ? new Date(m.created_at).getTime() : 0,
-    versions: m.versions,
-    currentVersion: m.currentVersion,
-    thumbsFeedback: m.thumbsFeedback,
-    interrupted: m.interrupted,
-  }));
+  const displayMessages: Message[] = useMemo(
+    () =>
+      apiMessages.map((m) => ({
+        id: m.id,
+        role: m.role === 'user' ? 'user' : 'agent',
+        agentId: m.role,
+        content: m.content,
+        thinking: m.thinking,
+        thinkingDone: m.thinkingDone === true,
+        timestamp: m.created_at ? new Date(m.created_at).getTime() : 0,
+        versions: m.versions,
+        currentVersion: m.currentVersion,
+        userVersions: m.userVersions,
+        currentUserVersion: m.currentUserVersion,
+        answerVersions: m.answerVersions,
+        currentAnswerVersion: m.currentAnswerVersion,
+        thumbsFeedback: m.thumbsFeedback,
+        interrupted: m.interrupted,
+        attachments: m.attachments,
+      })),
+    [apiMessages],
+  );
 
   const handleCloseAgentConfig = useCallback(() => setConfiguringAgent(null), []);
   const handleCloseSettings = useCallback(() => setIsSettingsOpen(false), []);
@@ -306,79 +345,25 @@ export function useWorkstationState(
   const allAgents = teamMgmt.allAgents;
 
   return {
-
-    toast,
-    t,
-    notify,
-    teamMgmt,
-    conv,
-    apiCommands,
-    models,
-    agentCommands,
-    apiMessages,
-    apiStatus,
-    apiError,
-    wsStatus,
-    submitToApi,
-    resetApi,
-    cancelRun,
-    retryApi,
-    loadConversation,
-    abandonedRunId,
-    selectedAgentId,
-    setSelectedAgentId,
-    configuringAgent,
-    setConfiguringAgent,
-    isUserMenuOpen,
-    setIsUserMenuOpen,
-    isSettingsOpen,
-    setIsSettingsOpen,
-    isApiOpen,
-    setIsApiOpen,
-    isSidebarOpen,
-    setIsSidebarOpen,
-    welcomeDismissed,
-    setWelcomeDismissed,
-    isNewProjectOpen,
-    setIsNewProjectOpen,
-    confirmDialog,
-    setConfirmDialog,
-    conversationKey,
-    setConversationKey,
-    isWorkspaceOpen,
-    setIsWorkspaceOpen,
-    activeWorkspaceTab,
-    setActiveWorkspaceTab,
-    selectedModel,
-    setSelectedModel,
-    isWorkstationOpen,
-    setIsWorkstationOpen,
-    settings,
-    updateSettings,
-    isDarkMode,
-    activeTeamId,
-    activeTeamName,
-    showAgentChat,
-    filteredConversations,
+    toast, t, notify, teamMgmt, conv, apiCommands, models, agentCommands,
+    apiMessages, apiStatus, apiError, wsStatus, submitToApi, resetApi,
+    cancelRun, retryApi, loadConversation, abandonedRunId, selectedAgentId,
+    setSelectedAgentId, configuringAgent, setConfiguringAgent,
+    isUserMenuOpen, setIsUserMenuOpen, isSettingsOpen, setIsSettingsOpen,
+    isApiOpen, setIsApiOpen, isSidebarOpen, setIsSidebarOpen,
+    welcomeDismissed, setWelcomeDismissed, isNewProjectOpen, setIsNewProjectOpen,
+    confirmDialog, setConfirmDialog, conversationKey, setConversationKey,
+    isWorkspaceOpen, setIsWorkspaceOpen, activeWorkspaceTab, setActiveWorkspaceTab,
+    selectedModel, setSelectedModel, isWorkstationOpen, setIsWorkstationOpen,
+    settings, updateSettings, isDarkMode, activeTeamId, activeTeamName,
+    showAgentChat, activeConvId, navigateToConversation, filteredConversations,
     effectiveSelectedModel,
-    hasMessages,
-    isPageDragOver,
-    handlePageDragOver,
-    handlePageDragLeave,
-    handlePageDrop,
-    toggleWorkspaceFullscreen,
-    handleNewChat,
-    handleSendMessage,
-    handleHomeSend,
-    handleSaveAgent,
-    handleExecuteCommand,
-    handleCloseAgentConfig,
-    handleCloseSettings,
-    handleCloseApi,
-    handleCloseConfirm,
-    handleCloseNewProject,
-    displayMessages,
-    allCommands,
-    allAgents,
+    hasMessages: hasMessages || restoring || activeConvId !== null,
+    isPageDragOver, handlePageDragOver, handlePageDragLeave, handlePageDrop,
+    toggleWorkspaceFullscreen, handleNewChat, handleSwitchBranch,
+    syncActiveConversation, handleSendMessage, handleHomeSend,
+    handleSaveAgent, handleExecuteCommand, handleCloseAgentConfig,
+    handleCloseSettings, handleCloseApi, handleCloseConfirm, handleCloseNewProject,
+    displayMessages, allCommands, allAgents,
   };
 }

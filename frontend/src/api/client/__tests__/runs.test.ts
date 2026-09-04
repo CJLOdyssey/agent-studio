@@ -11,7 +11,7 @@ const { mockApi } = vi.hoisted(() => ({
 
 vi.mock('../instance', () => ({ default: mockApi }));
 
-import { submitRequirement, resumeRun } from '../runs';
+import { submitRequirement, resumeRun, cancelRun } from '../runs';
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -49,6 +49,38 @@ describe('submitRequirement', { tags: ['unit'] }, () => {
     });
     expect(result).toEqual({ run_id: 'r1', status: 'queued', session_id: 's1' });
   });
+
+  it('passes attachment_ids when provided', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r1', status: 'queued', session_id: 's1' } });
+
+    await submitRequirement('req', 's1', undefined, undefined, undefined, undefined, undefined, undefined, ['a1', 'a2']);
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs', {
+      requirement: 'req',
+      session_id: 's1',
+      key_id: undefined,
+      model: undefined,
+      agent_id: undefined,
+      team_id: undefined,
+      attachment_ids: ['a1', 'a2'],
+    });
+  });
+
+  it('omits attachment_ids when empty', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r1', status: 'queued' } });
+
+    await submitRequirement('req', 's1', undefined, undefined, undefined, undefined, undefined, undefined, []);
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs', {
+      requirement: 'req',
+      session_id: 's1',
+      key_id: undefined,
+      model: undefined,
+      agent_id: undefined,
+      team_id: undefined,
+      attachment_ids: undefined,
+    });
+  });
 });
 
 describe('resumeRun', { tags: ['unit'] }, () => {
@@ -61,6 +93,8 @@ describe('resumeRun', { tags: ['unit'] }, () => {
       content: 'continue generation',
       session_id: undefined,
       thinking: undefined,
+      model: undefined,
+      question: undefined,
     });
     expect(result).toEqual({ run_id: 'r2', status: 'completed' });
   });
@@ -74,6 +108,33 @@ describe('resumeRun', { tags: ['unit'] }, () => {
       content: 'continue',
       session_id: 's1',
       thinking: 'some thinking',
+      model: undefined,
+      question: undefined,
     });
+  });
+
+  it('passes model and question when provided', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r2', status: 'completed' } });
+
+    await resumeRun('continue', 's1', 'thinking', 'deepseek-chat', '原问题');
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs/complete', {
+      content: 'continue',
+      session_id: 's1',
+      thinking: 'thinking',
+      model: 'deepseek-chat',
+      question: '原问题',
+    });
+  });
+});
+
+describe('cancelRun', { tags: ['unit'] }, () => {
+  it('calls POST /runs/:id/cancel and returns data', async () => {
+    mockApi.post.mockResolvedValue({ data: { run_id: 'r9', status: 'cancelled', session_id: 's1' } });
+
+    const result = await cancelRun('r9');
+
+    expect(mockApi.post).toHaveBeenCalledWith('/runs/r9/cancel');
+    expect(result).toEqual({ run_id: 'r9', status: 'cancelled', session_id: 's1' });
   });
 });

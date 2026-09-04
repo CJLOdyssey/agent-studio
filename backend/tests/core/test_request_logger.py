@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from backend.core.infra.request_logger import (
+from core.infra.request_logger import (
     _SENSITIVE_HEADERS,
     RequestLogMiddleware,
     _client_ip,
@@ -70,7 +70,7 @@ class TestMiddlewareExemptPaths:
     @pytest.mark.asyncio
     async def test_non_http_passes_through(self):
         app = AsyncMock()
-        scope = {"type": "websocket", "path": "/ws/test"}
+        scope = {"type": "websocket", "path": "/api/ws/test"}
         mw = RequestLogMiddleware(app)
         await mw(scope, AsyncMock(), AsyncMock())
         app.assert_awaited_once()

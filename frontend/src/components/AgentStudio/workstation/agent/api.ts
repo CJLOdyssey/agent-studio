@@ -18,10 +18,11 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
     const agentToTeams = new Map<string, string[]>();
     for (const team of teamItems) {
       for (const member of team.agents) {
-        if (member.agentConfigId) {
-          const existing = agentToTeams.get(member.agentConfigId) ?? [];
+        const agentConfigId = String(Reflect.get(member, 'agent_config_id') ?? '') || member.agentConfigId;
+        if (agentConfigId) {
+          const existing = agentToTeams.get(agentConfigId) ?? [];
           existing.push(team.name);
-          agentToTeams.set(member.agentConfigId, existing);
+          agentToTeams.set(agentConfigId, existing);
         }
       }
     }
@@ -46,12 +47,7 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
         'agent_' +
         (crypto.randomUUID?.()?.slice(0, 8) || Date.now().toString(36)),
       system_prompt,
-      output_constraints: JSON.stringify({
-        description: data.description,
-        team: data.team,
-        version: data.version,
-        systemPromptId: data.systemPromptId,
-      }),
+      output_constraints: '',
       tools,
       mcp,
       skills,
@@ -66,7 +62,7 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
       id: result.id,
       ...data,
       teams: [],
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
     };
   },
 
@@ -80,21 +76,19 @@ const realImpl: CrudAPIService<AgentEntry, AgentFormData> = {
       d.skillIds,
     );
 
-    await apiUpdateAgent(id, {
+    const payload: Parameters<typeof apiUpdateAgent>[1] = {
       name: d.name,
-      system_prompt,
-      output_constraints: JSON.stringify({
-        description: d.description,
-        team: d.team,
-        version: d.version,
-        systemPromptId: d.systemPromptId,
-      }),
+      output_constraints: '',
       tools,
       mcp,
       skills,
       is_active: d.status === 'running',
       model: d.model,
-    });
+    };
+    if (system_prompt) {
+      payload.system_prompt = system_prompt;
+    }
+    await apiUpdateAgent(id, payload);
   },
 
   remove: async (id) => {

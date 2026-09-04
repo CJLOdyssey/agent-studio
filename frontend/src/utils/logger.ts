@@ -1,15 +1,15 @@
 /* eslint-disable no-console */
 import * as Sentry from '@sentry/browser';
 
-export enum LogLevel {
+enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
   ERROR = 3,
 }
 
-const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'production' ? LogLevel.WARN : LogLevel.DEBUG;
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const CURRENT_LOG_LEVEL = import.meta.env.MODE === 'production' ? LogLevel.WARN : LogLevel.DEBUG;
+const IS_PRODUCTION = import.meta.env.MODE === 'production';
 
 const log = (level: LogLevel, message: string, ...optionalParams: unknown[]): void => {
   if (IS_PRODUCTION && level < CURRENT_LOG_LEVEL) return;

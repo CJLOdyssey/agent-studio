@@ -6,25 +6,27 @@ import { useGenericCrud } from '../shared/useGenericCrud';
 export function usePromptManagement(): PromptData {
   const crud = useGenericCrud<PromptEntry, PromptFormData>({
     api: promptAPI,
-    emptyForm: { name: '', content: '', category: '系统提示词' as PromptCategory, model: 'GPT-4o', status: 'draft' as const, version: 'v1.0.0' },
+    emptyForm: { name: '', description: '', content: '', category: 'system' as PromptCategory, model: 'GPT-4o', status: 'draft' as const, version: 'v1.0.0' },
     itemName: '提示词',
     validate: validatePromptForm,
     sortFields: ['name', 'category', 'status'],
-    extraFilters: { categoryFilter: 'all' },
+    extraFilters: { category: 'all', status: 'all' },
   });
 
   return {
     ...crud,
-    get categoryFilter() { return (crud.extraFilterValues.categoryFilter ?? 'all') as CategoryFilter; },
-    setCategoryFilter: (v) => crud.setExtraFilter('categoryFilter', v as string),
+    get categoryFilter() { return (crud.extraFilterValues.category ?? 'all') as CategoryFilter; },
+    setCategoryFilter: (v) => crud.setExtraFilter('category', v as string),
+    get statusFilter() { return crud.extraFilterValues.status ?? 'all'; },
+    setStatusFilter: (v) => crud.setExtraFilter('status', v as string),
     addPrompt: crud.createItem,
     updatePrompt: crud.updateItem,
     removePrompt: crud.removeItem,
     copyPrompt: crud.cloneItem,
     removeMultiple: crud.removeMultipleItems,
-    /** Return ALL items (unfiltered) for JSON export. */
+    /** 返回全部（未过滤）条目，供 JSON 导出。 */
     getAllItems: () => crud.items,
-    /** Batch-append imported items directly to local state (no API call). */
+    /** 将导入的条目直接批量追加到本地状态（不调 API）。 */
     addItems: (newItems) => { crud.batchAdd(newItems); },
   };
 }

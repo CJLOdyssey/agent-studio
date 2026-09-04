@@ -114,7 +114,7 @@ describe('VersionHistoryModal', { tags: ['unit'] }, () => {
       expect(screen.getByText('v1')).toBeInTheDocument();
     });
 
-    const overlay = document.querySelector('.modal-overlay')!;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalled();
   });

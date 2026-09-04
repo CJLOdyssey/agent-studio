@@ -3,6 +3,7 @@ import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 pytestmark = pytest.mark.integration
 from starlette.testclient import TestClient
 
@@ -17,7 +18,7 @@ os.environ['DATABASE_POOL_SIZE'] = '0'
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-import backend.core.infra.database as db_mod
+import core.infra.database as db_mod
 
 if db_mod._async_engine is None:
     _sqlite_engine = create_async_engine('sqlite+aiosqlite:///:memory:')
@@ -29,19 +30,19 @@ if db_mod._async_session_factory is None:
     )
 db_mod.DATABASE_URL = 'sqlite+aiosqlite:///:memory:'
 
-from backend.core.app import app
-from backend.core.base import Base
+from core.app import app
+from core.base import Base
 
 
 @pytest.fixture
 def client():
-    import backend.core.app_lifespan as lifespan_mod
+    import core.app_lifespan as lifespan_mod
 
     async def _safe_init_db():
         engine = db_mod.get_async_engine()
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        from backend.core.seed import seed_default_roles_and_admin
+        from services.seed_service import seed_default_roles_and_admin
         await seed_default_roles_and_admin()
 
     lifespan_mod.init_db = _safe_init_db
@@ -173,7 +174,9 @@ class TestApiEndpoints:
     def test_admin_logs(self, client):
         resp = client.get("/api/admin/logs")
         assert resp.status_code == 200
-        assert isinstance(resp.json(), list)
+        data = resp.json()
+        assert isinstance(data.get("items"), list)
+        assert "total" in data
 
     def test_admin_activity(self, client):
         resp = client.get("/api/admin/activity")
@@ -556,7 +559,7 @@ class TestKeyCRUD:
     def test_key_create(self, client):
         payload = {
             "provider": "openai",
-            "usage_type": "embedding",
+            "capabilities": ["embedding"],
             "label": "test-key",
             "api_key": "sk-test-key-value",
         }
@@ -630,7 +633,7 @@ class TestWorkflowCRUD:
 class TestRunBasic:
 
     def test_create_run(self, client):
-        import backend.routers.runs as runs_router
+        import routers.runs as runs_router
 
         mock_result = {
             "run_id": "test-run-id-123",
@@ -647,7 +650,7 @@ class TestRunBasic:
             assert data["session_id"] == "test-session-id-456"
 
     def test_list_runs(self, client):
-        import backend.routers.runs as runs_router
+        import routers.runs as runs_router
 
         with patch.object(runs_router.run_service, 'list_runs', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = [

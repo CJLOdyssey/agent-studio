@@ -3,8 +3,8 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useToolManagement } from '../useToolManagement';
 
 const STORE = [
-  { id: 't1', name: '文件搜索', description: '搜索文件', category: '内置工具', model: '内置', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
-  { id: 't2', name: '代码执行', description: '执行代码', category: '内置工具', model: '内置', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
+  { id: 't1', name: '文件搜索', description: '搜索文件', category: '内置工具', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
+  { id: 't2', name: '代码执行', description: '执行代码', category: '内置工具', status: 'active' as const, version: 'v1.0.0', endpoint: '', parameters: '{"type":"object","properties":{}}', createdAt: '2024-01-01' },
 ];
 
 vi.mock('../api', () => ({
@@ -47,7 +47,7 @@ describe('useToolManagement', { tags: ['unit'] }, () => {
     const { result } = renderHook(() => useToolManagement());
     await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 2000 });
     const before = result.current.processed.length;
-    act(() => { result.current.addTool({ name: 'Test Tool', description: 'Test', category: '内置工具', model: '内置', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' }); });
+    act(() => { result.current.addTool({ name: 'Test Tool', description: 'Test', category: '内置工具', status: 'active', version: 'v1.0.0', endpoint: '', parameters: '{}' }); });
     await waitFor(() => expect(result.current.processed.length).toBe(before + 1));
   });
 

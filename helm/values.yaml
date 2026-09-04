@@ -12,7 +12,7 @@ fullnameOverride: ""
 
 global:
   # Alibaba Cloud Container Registry base path
-  acrRegistry: crpi-j0fhvkobexa3ilkn.cn-shenzhen.personal.cr.aliyuncs.com/agent-studio
+  acrRegistry: your-registry.cn-shenzhen.cr.aliyuncs.com/agent-studio
 
 # ── Postgres ───────────────────────────────────────────────────────────────────
 postgres:
@@ -68,7 +68,7 @@ backend:
       cpu: "250m"
   # Non-secret environment variables — stored in ConfigMap
   env:
-    PYTHONPATH: /app
+    PYTHONPATH: /app/backend/src
     DB_HOST: ""  # auto-set to postgres service name if empty
     DB_PORT: "5432"
     DB_USER: postgres
@@ -106,6 +106,16 @@ celery:
     requests:
       memory: "1Gi"
       cpu: "500m"
+
+# ── Alembic migration Job ─────────────────────────────────────────────────────
+migrations:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 # ── Frontend (Nginx SPA) ───────────────────────────────────────────────────────
 frontend:

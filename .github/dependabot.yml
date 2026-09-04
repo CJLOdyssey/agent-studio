@@ -5,21 +5,44 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: tuesday
     open-pull-requests-limit: 5
     labels:
       - dependencies
       - python
+    cooldown:
+      default-days: 7
+    groups:
+      python-deps:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
 
   # Frontend npm dependencies
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+      day: tuesday
     open-pull-requests-limit: 5
     labels:
       - dependencies
       - javascript
+    cooldown:
+      default-days: 7
+    groups:
+      npm-deps:
+        patterns:
+          - "*"
     ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
       - dependency-name: "@vitejs/plugin-react"
         versions: [">=6.0.0"]
       - dependency-name: "@types/react"
@@ -32,6 +55,13 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 5
     labels:
       - dependencies
       - ci
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns:
+          - "*"

@@ -44,22 +44,30 @@ describe('fetchDashboardStats', { tags: ['unit'] }, () => {
 });
 
 describe('fetchCommandLogs', { tags: ['unit'] }, () => {
-  it('calls GET /admin/logs with default params', async () => {
-    const mockLogs = [{ id: '1', timestamp: '2024-01-01', command: 'test', payload: '{}', result: 'ok' }];
-    mockClient.get.mockResolvedValue({ data: mockLogs });
+  it('calls GET /admin/logs with default params and returns paginated response', async () => {
+    const mockResponse = {
+      items: [{ id: '1', timestamp: '2024-01-01', action: 'test', entity_type: 'agent', entity_name: 'a', detail: 'ok', level: 'info', before: '', after: '', user: 'admin', ip: '1.1.1.1', user_agent: '', request_id: '' }],
+      total: 1,
+      offset: 0,
+      limit: 50,
+    };
+    mockClient.get.mockResolvedValue({ data: mockResponse });
 
-    const result = await fetchCommandLogs();
+    const result = await fetchCommandLogs({ limit: 50, offset: 0 });
 
     expect(mockClient.get).toHaveBeenCalledWith('/admin/logs', { params: { limit: 50, offset: 0 } });
-    expect(result).toEqual(mockLogs);
+    expect(result).toEqual(mockResponse);
+    expect(Array.isArray(result.items)).toBe(true);
   });
 
-  it('passes custom limit and offset', async () => {
-    mockClient.get.mockResolvedValue({ data: [] });
+  it('passes custom limit, offset, search, level and entity_type', async () => {
+    mockClient.get.mockResolvedValue({ data: { items: [], total: 0, offset: 20, limit: 10 } });
 
-    await fetchCommandLogs(10, 20);
+    await fetchCommandLogs({ limit: 10, offset: 20, search: 'foo', level: 'error', entity_type: 'agent' });
 
-    expect(mockClient.get).toHaveBeenCalledWith('/admin/logs', { params: { limit: 10, offset: 20 } });
+    expect(mockClient.get).toHaveBeenCalledWith('/admin/logs', {
+      params: { limit: 10, offset: 20, search: 'foo', level: 'error', entity_type: 'agent' },
+    });
   });
 });
 
@@ -84,13 +92,22 @@ describe('fetchRecentActivity', { tags: ['unit'] }, () => {
 });
 
 describe('fetchSystemHealth', { tags: ['unit'] }, () => {
-  it('calls GET /health and returns data', async () => {
-    const mockHealth = { status: 'healthy', database: 'connected', redis: 'connected' };
+  it('calls GET /health and returns backend health shape', async () => {
+    const mockHealth = { status: 'healthy', checks: { database: 'ok', redis: 'ok' } };
     mockClient.get.mockResolvedValue({ data: mockHealth });
 
     const result = await fetchSystemHealth();
 
-    expect(mockClient.get).toHaveBeenCalledWith('/health');
+    expect(mockClient.get).toHaveBeenCalledWith('/health', { validateStatus: expect.any(Function) });
     expect(result).toEqual(mockHealth);
+  });
+
+  it('accepts degraded health responses with 503 status', async () => {
+    const degradedHealth = { status: 'degraded', checks: { database: 'down', redis: 'ok' } };
+    mockClient.get.mockResolvedValue({ status: 503, data: degradedHealth });
+
+    const result = await fetchSystemHealth();
+
+    expect(result).toEqual(degradedHealth);
   });
 });

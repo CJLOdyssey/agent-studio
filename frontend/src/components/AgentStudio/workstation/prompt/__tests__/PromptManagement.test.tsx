@@ -2,20 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 
-const mockFetchAll = vi.fn().mockResolvedValue([]);
-const mockCreate = vi.fn();
-const mockUpdate = vi.fn();
-const mockRemove = vi.fn();
-const mockClone = vi.fn();
-const mockRemoveBatch = vi.fn();
+const { mockFetchAll, mockCreate, mockUpdate, mockRemove, mockClone, mockRemoveBatch } = vi.hoisted(() => ({
+  mockFetchAll: vi.fn().mockResolvedValue([]),
+  mockCreate: vi.fn(),
+  mockUpdate: vi.fn(),
+  mockRemove: vi.fn(),
+  mockClone: vi.fn(),
+  mockRemoveBatch: vi.fn(),
+}));
 
 vi.mock('../api', () => ({
-  get promptAPI() {
-    return { fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove, clone: mockClone, removeBatch: mockRemoveBatch };
+  promptAPI: {
+    fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove,
+    clone: mockClone, removeBatch: mockRemoveBatch,
   },
 }));
 
-vi.mock('../locales', () => ({ t: (k: string) => k, setLang: vi.fn(), getLang: () => 'zh' }));
+vi.mock('../locales', () => ({
+  t: (k: string) => (k === 'status.active' ? 'active' : k),
+  setLang: vi.fn(),
+  getLang: () => 'zh',
+}));
 vi.mock('../../shared/WstaPagination', () => ({ default: () => <div className="wsta-pagination" /> }));
 vi.mock('../../shared/LoadingSkeleton', () => ({ TableSkeleton: () => <div data-testid="skeleton" /> }));
 vi.mock('../PromptFormModal', () => ({ default: () => null }));
@@ -154,6 +161,11 @@ describe('PromptManagement', { tags: ['unit'] }, () => {
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     if (checkboxes.length >= 2) {
       fireEvent.click(checkboxes[1]);
+      expect(checkboxes[1]).toBeChecked();
+      expect(screen.getByText('prompt.batch_delete')).toBeInTheDocument();
+      fireEvent.click(checkboxes[1]);
+      expect(checkboxes[1]).not.toBeChecked();
+      expect(screen.queryByText('prompt.batch_delete')).not.toBeInTheDocument();
     }
   });
 
@@ -161,7 +173,7 @@ describe('PromptManagement', { tags: ['unit'] }, () => {
     mockFetchAll.mockResolvedValue([makePrompt()]);
     render(<PromptManagement />, { wrapper: TestProviders });
     await waitFor(() => { expect(screen.getByText('System Prompt')).toBeInTheDocument(); });
-    expect(document.querySelector('.wsta-action-btn')).toBeInTheDocument();
+    expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 
   it('wraps content in ErrorBoundary', async () => {

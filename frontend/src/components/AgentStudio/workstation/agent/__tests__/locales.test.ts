@@ -4,7 +4,7 @@ import { t, setLang } from '../locales';
 describe('agent locales', { tags: ['unit'] }, () => {
   it('translates base keys', () => {
     setLang('zh');
-    expect(t('agent.new')).toBe('创建 Agent');
+    expect(t('agent.new')).toBe('新建 Agent');
     expect(t('agent.edit')).toBe('编辑 Agent');
     expect(t('agent.col_name')).toBe('Agent 名称');
     expect(t('agent.col_status')).toBe('状态');

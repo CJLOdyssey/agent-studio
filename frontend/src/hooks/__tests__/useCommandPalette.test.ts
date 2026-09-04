@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCommandPalette } from '../useCommandPalette';
 import type { CommandOption } from '../../types/input';
+import type * as React from 'react';
 
 const commands: CommandOption[] = [
   { id: 'c1', name: 'help', description: 'Show help', category: 'system' },

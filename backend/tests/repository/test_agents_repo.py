@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from backend.repository.agents import (
+from repository.agents import (
     create_agent_config,
     delete_agent_config,
     get_active_agent_configs,

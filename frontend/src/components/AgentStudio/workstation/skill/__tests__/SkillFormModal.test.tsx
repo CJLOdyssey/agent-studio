@@ -7,14 +7,16 @@ vi.mock('../../../../api/hooks', () => ({ useAvailableModels: () => [] }));
 vi.mock('../../shared/ResourcePickerModal', () => ({ default: () => null }));
 
 import SkillFormModal from '../SkillFormModal';
+import type { SkillEntry } from '../skill.types';
+import type * as React from 'react';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const Wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
 
 const baseFormData = {
   name: '', description: '', category: 'AI/ML', status: 'available' as const,
-  version: 'v1.0.0', author: '', instructions: '', prompt_id: '',
-  tool_names: [] as string[], output_constraint: '',
+  version: 'v1.0.0', author: '', instructions: '',
+  tool_names: [] as string[], mcp_names: [] as string[], output_constraint: '',
 };
 
 const baseProps = {
@@ -29,6 +31,7 @@ const baseProps = {
 describe('SkillFormModal', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('renders create mode title', () => {
@@ -40,7 +43,7 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     render(
       <SkillFormModal
         {...baseProps}
-        editingSkill={{ id: 's1', name: 'Test Skill' } as any}
+        editingSkill={{ id: 's1', name: 'Test Skill' } as unknown as SkillEntry}
       />,
       { wrapper: Wrapper },
     );
@@ -54,10 +57,9 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     expect(screen.getByText('skill.form_category')).toBeInTheDocument();
     expect(screen.getByText('skill.form_status')).toBeInTheDocument();
     expect(screen.getByText('skill.form_version')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_author')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_prompt')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_tools')).toBeInTheDocument();
-    expect(screen.getByText('skill.form_output_constraint')).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_tools/)).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_mcp/)).toBeInTheDocument();
+    expect(screen.getByText(/skill\.form_output_constraint/)).toBeInTheDocument();
     expect(screen.getByText('skill.form_instructions')).toBeInTheDocument();
   });
 
@@ -86,6 +88,29 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
     expect(setFormData).toHaveBeenCalled();
   });
 
+  it('marks description as required', () => {
+    render(<SkillFormModal {...baseProps} />, { wrapper: Wrapper });
+    const label = screen.getByText('skill.form_desc').parentElement;
+    expect(label?.querySelector('span')).toHaveTextContent('*');
+  });
+
+  it('renders separate tool and mcp selection counts', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 't1', name: 'tool_a' }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'm1', name: 'github' }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] })
+    );
+    render(
+      <SkillFormModal
+        {...baseProps}
+        formData={{ ...baseFormData, tool_names: ['tool_a'], mcp_names: ['github'] }}
+      />,
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => expect(screen.getByText('skill.form_tools (1)')).toBeInTheDocument());
+    expect(screen.getByText('skill.form_mcp (1)')).toBeInTheDocument();
+  });
+
   it('calls setFormData on version input change', () => {
     const setFormData = vi.fn();
     render(<SkillFormModal {...baseProps} setFormData={setFormData} />, { wrapper: Wrapper });
@@ -111,7 +136,7 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when X button clicked', () => {
     const onClose = vi.fn();
     render(<SkillFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const closeBtn = document.querySelector('.modal-close') as HTMLElement;
+    const closeBtn = document.querySelector('.fixed.inset-0 button[aria-label]') as HTMLElement;
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -119,7 +144,7 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
   it('calls onClose when overlay clicked', () => {
     const onClose = vi.fn();
     render(<SkillFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay') as HTMLElement;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -127,7 +152,7 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
   it('does not call onClose when modal content clicked', () => {
     const onClose = vi.fn();
     render(<SkillFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const modal = document.querySelector('.wsta-modal') as HTMLElement;
+    const modal = document.querySelector('.fixed.inset-0 > div') as HTMLElement;
     fireEvent.click(modal);
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -135,14 +160,14 @@ describe('SkillFormModal', { tags: ['unit'] }, () => {
   it('calls onClose on Escape key', () => {
     const onClose = vi.fn();
     render(<SkillFormModal {...baseProps} onClose={onClose} />, { wrapper: Wrapper });
-    const overlay = document.querySelector('.modal-overlay') as HTMLElement;
+    const overlay = document.querySelector('.fixed.inset-0') as HTMLElement;
     fireEvent.keyDown(overlay, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('shows edit mode save button text', () => {
     render(
-      <SkillFormModal {...baseProps} editingSkill={{ id: 's1' } as any} />,
+      <SkillFormModal {...baseProps} editingSkill={{ id: 's1' } as unknown as SkillEntry} />,
       { wrapper: Wrapper },
     );
     expect(screen.getByText('skill.form_save_edit')).toBeInTheDocument();

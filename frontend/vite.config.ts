@@ -9,9 +9,13 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const isDev = mode === 'development';
-  const apiOrigin = env.VITE_API_BASE_URL || 'http://localhost:8080';
+  // Shell env takes precedence over .env files, then defaults.
+  // Ports per mode: hybrid 5174, full-container 5173, E2E 5175.
+  const devPort = Number(process.env.VITE_DEV_PORT ?? env.VITE_DEV_PORT) || 5174;
+  const apiOrigin =
+    process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || 'http://localhost:8091';
   // Derive WS origin from API origin or use env override
-  const wsOrigin = env.VITE_WS_URL || apiOrigin.replace(/^http/, 'ws');
+  const wsOrigin = process.env.VITE_WS_URL || env.VITE_WS_URL || apiOrigin.replace(/^http/, 'ws');
 
   return {
     resolve: {
@@ -46,15 +50,54 @@ export default defineConfig(({ mode }) => {
       visualizer({ open: false, filename: 'dist/stats.html', gzipSize: true }),
     ],
     server: {
-      port: 5173,
+      port: devPort,
       proxy: {
         '/api': {
           target: apiOrigin,
           changeOrigin: true,
-        },
-        '/ws': {
-          target: wsOrigin,
           ws: true,
+          // 后端 systemd 重启窗口（通常 <2s）会出现 ECONNREFUSED，给一个极短
+          // 重试 + 退避，避免这一过性错误触发前端 ErrorBoundary 把整页"打残"
+          // 必须用户刷新才能恢复。注意 retryDelay 也用于 websocket，后端重启期
+          // 间 ws 也会短暂断开，但 ws 由浏览器自动重连。
+          retryDelay: (attempt) => Math.min(200 * attempt, 800),
+          // Vite 自带的 http-proxy 透过 configure 钩子实现 retry/重定向
+          configure: (proxy) => {
+            proxy.on('error', (err, _req, res) => {
+              // ECONNREFUSED / ECONNRESET：只打日志，不主动发送 5xx，避免上游
+              // fetchTraces 把一过性错报成"模块出错"。前端 Query 会自动重试。
+              const maybeRes = res as unknown as {
+                writeHead?: (status: number, headers: Record<string, string>) => void;
+                end?: (body: string) => void;
+                headersSent?: boolean;
+              } | undefined;
+              if (
+                maybeRes &&
+                typeof maybeRes.writeHead === 'function' &&
+                !maybeRes.headersSent
+              ) {
+                try {
+                  maybeRes.writeHead(502, { 'Content-Type': 'application/json' });
+                  maybeRes.end?.(
+                    JSON.stringify({
+                      detail: {
+                        error: {
+                          code: 'PROXY_502',
+                          message: '后端暂不可达，请稍后重试',
+                        },
+                      },
+                    }),
+                  );
+                } catch {
+                  /* socket already closed */
+                }
+              }
+              // 仅在 dev 模式打日志，避免污染 prod 控制台
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn('[vite proxy] backend unreachable, will retry:', err.code);
+              }
+            });
+          },
         },
       },
     },

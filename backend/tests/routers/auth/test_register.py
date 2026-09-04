@@ -8,7 +8,7 @@ class TestAuthRegister:
 
     # ── send-register-code ──────────────────────────────────────────────────
 
-    @patch("backend.routers.auth.register._generate_code", return_value="654321")
+    @patch("routers.auth.register._generate_code", return_value="654321")
     def test_send_code_success(self, mock_gen, client):
         resp = client.post("/api/auth/send-register-code", json={"email": "new@test.com"})
         assert resp.status_code == 200
@@ -19,19 +19,19 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=4)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/send-register-code", json={"email": "rate@test.com"})
             assert resp.status_code == 429
 
     def test_send_code_email_exists(self, client):
-        with patch("backend.routers.auth.register.get_user_by_email", new_callable=AsyncMock) as mock_get:
+        with patch("routers.auth.register.get_user_by_email", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = MagicMock(id="existing-user")
             resp = client.post("/api/auth/send-register-code", json={"email": "exists@test.com"})
             assert resp.status_code == 409
 
     # ── register ────────────────────────────────────────────────────────────
 
-    @patch("backend.routers.auth.register._generate_code", return_value="123456")
+    @patch("routers.auth.register._generate_code", return_value="123456")
     def test_register_success(self, mock_gen, client):
         resp = client.post("/api/auth/send-register-code", json={"email": "reg@test.com"})
         assert resp.status_code == 200
@@ -47,7 +47,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=4)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/register", json={
                 "email": "rl@test.com", "code": "123456", "password": "Strong@1abc"
             })
@@ -58,7 +58,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/register", json={
                 "email": "expired@test.com", "code": "123456", "password": "Strong@1abc"
             })
@@ -69,7 +69,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=b"654321")
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/register", json={
                 "email": "wrong@test.com", "code": "000000", "password": "Strong@1abc"
             })
@@ -104,7 +104,7 @@ class TestAuthRegister:
         mock_redis.delete.side_effect = _delete
         mock_redis.incr.side_effect = _incr
         mock_redis.expire.side_effect = _expire
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/register", json={
                 "email": "exhausted@test.com", "code": "654321", "password": "Strong@1abc"
             })
@@ -138,7 +138,7 @@ class TestAuthRegister:
         mock_redis.incr = AsyncMock(side_effect=_incr)
         mock_redis.expire = AsyncMock(side_effect=_expire)
         mock_redis.delete = AsyncMock(side_effect=_delete)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/register", json={
                 "email": "reg-exh@test.com", "code": "123456",
                 "password": "Strong@1abc"
@@ -151,8 +151,8 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=b"123456")
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-             patch("backend.routers.auth.register.get_user_by_email", new_callable=AsyncMock) as mock_get:
+        with patch("routers.auth.register.get_redis", return_value=mock_redis), \
+             patch("routers.auth.register.get_user_by_email", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = MagicMock(id="existing")
             resp = client.post("/api/auth/register", json={
                 "email": "exists2@test.com", "code": "123456", "password": "Strong@1abc"
@@ -164,7 +164,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=b"123456")
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/register", json={
                 "email": "weak@test.com", "code": "123456", "password": "123"
             })
@@ -172,14 +172,14 @@ class TestAuthRegister:
 
     # ── verify ──────────────────────────────────────────────────────────────
 
-    @patch("backend.routers.auth.register._generate_code", return_value="999999")
+    @patch("routers.auth.register._generate_code", return_value="999999")
     def test_verify_success(self, mock_gen, client):
         resp = client.post("/api/auth/send-register-code", json={"email": "verify@test.com"})
         assert resp.status_code == 200
         mock_redis_v = AsyncMock()
         mock_redis_v.incr = AsyncMock(return_value=1)
         mock_redis_v.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis_v):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis_v):
             resp = client.post("/api/auth/verify", json={
                 "email": "verify@test.com", "code": "999999"
             })
@@ -199,11 +199,11 @@ class TestAuthRegister:
         mock_user.username = "verify-ok"
         mock_user.is_verified = False
 
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-             patch("backend.routers.auth.register.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
-             patch("backend.routers.auth.register.mark_user_verified", new_callable=AsyncMock) as mock_mark, \
-             patch("backend.routers.auth.register._create_auth_response", new_callable=AsyncMock) as mock_auth:
-            from backend.routers.auth.schemas import AuthResponse, UserResponse
+        with patch("routers.auth.register.get_redis", return_value=mock_redis), \
+             patch("routers.auth.register.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.register.mark_user_verified", new_callable=AsyncMock) as mock_mark, \
+             patch("routers.auth.register._create_auth_response", new_callable=AsyncMock) as mock_auth:
+            from routers.auth.schemas import AuthResponse, UserResponse
             user_resp = UserResponse(id="verify-user", email="verify-ok@test.com",
                                      username="verify-ok", roles=[], is_verified=True)
             mock_auth.return_value = AuthResponse(
@@ -221,7 +221,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=6)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/verify", json={
                 "email": "rl-verify@test.com", "code": "123456"
             })
@@ -232,7 +232,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/verify", json={
                 "email": "verify-exp@test.com", "code": "000000"
             })
@@ -243,7 +243,7 @@ class TestAuthRegister:
         mock_redis.get = AsyncMock(return_value=b"111111")
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/verify", json={
                 "email": "verify-wrong@test.com", "code": "000000"
             })
@@ -255,7 +255,7 @@ class TestAuthRegister:
         mock_redis.incr = AsyncMock(return_value=4)
         mock_redis.expire = AsyncMock(return_value=True)
         mock_redis.delete = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/verify", json={
                 "email": "verify-exh@test.com", "code": "111111"
             })
@@ -268,8 +268,8 @@ class TestAuthRegister:
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
         mock_redis.delete = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis), \
-             patch("backend.routers.auth.register.get_user_by_email", new_callable=AsyncMock, return_value=None):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis), \
+             patch("routers.auth.register.get_user_by_email", new_callable=AsyncMock, return_value=None):
             resp = client.post("/api/auth/verify", json={
                 "email": "nouser-verify@test.com", "code": "111111"
             })
@@ -281,7 +281,7 @@ class TestAuthRegister:
         mock_redis.incr = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
         mock_redis.delete = AsyncMock(return_value=True)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/verify", json={
                 "email": "admin@test.com", "code": "111111"
             })
@@ -289,7 +289,7 @@ class TestAuthRegister:
 
     # ── resend-verification ─────────────────────────────────────────────────
 
-    @patch("backend.routers.auth.register._generate_code", return_value="555555")
+    @patch("routers.auth.register._generate_code", return_value="555555")
     def test_resend_verification(self, mock_gen, client):
         resp = client.post("/api/auth/resend-verification", json={"email": "resend@test.com"})
         assert resp.status_code == 200
@@ -299,7 +299,7 @@ class TestAuthRegister:
         mock_redis.incr = AsyncMock(return_value=2)
         mock_redis.expire = AsyncMock(return_value=True)
         mock_redis.get = AsyncMock(return_value=None)
-        with patch("backend.routers.auth.register.get_redis", return_value=mock_redis):
+        with patch("routers.auth.register.get_redis", return_value=mock_redis):
             resp = client.post("/api/auth/resend-verification", json={"email": "resend-rate@test.com"})
             assert resp.status_code == 429
 

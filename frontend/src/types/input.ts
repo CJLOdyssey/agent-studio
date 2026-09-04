@@ -1,11 +1,11 @@
 /**
- * Shared types for the input component system.
+ * 输入组件系统的共享类型。
  *
- * All input-related components and hooks depend on this single file
- * instead of importing from each other — zero circular dependencies.
+ * 所有输入相关的组件和 hook 都依赖此单一文件，
+ * 而非相互导入——零循环依赖。
  */
 
-// ── Model ──
+// ── 模型 ──
 
 export interface ModelOption {
   id: string;
@@ -14,7 +14,7 @@ export interface ModelOption {
   status?: 'deprecated' | 'sunset';
 }
 
-// ── Command ──
+// ── 命令 ──
 
 export interface CommandOption {
   id: string;
@@ -23,7 +23,7 @@ export interface CommandOption {
   source?: 'local' | 'agent';
 }
 
-// ── File / Attachment ──
+// ── 文件 / 附件 ──
 
 export interface AttachedFile {
   id: string;
@@ -31,6 +31,10 @@ export interface AttachedFile {
   size: number;
   type: string;
   file?: File;
+  /** 预上传状态（选中即上传，行业模式） */
+  status?: 'uploading' | 'done' | 'error';
+  progress?: number;
+  attachmentId?: string;
 }
 
 export interface FileRejection {

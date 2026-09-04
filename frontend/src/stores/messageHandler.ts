@@ -1,12 +1,15 @@
 import Logger from '../utils/logger';
 import { uid } from './uid';
 import type { ChatState } from './chatTypes';
-import type { WsMessageEvent, WsInfoEvent, WsErrorEvent, WsBalanceWarningEvent, WsOpenUrlEvent } from './wsEvents';
+import type { WsMessageEvent, WsInfoEvent, WsErrorEvent, WsBalanceWarningEvent, WsOpenUrlEvent, WsBrowserFrameEvent } from './wsEvents';
 
-type SetFn = (fn: (state: ChatState) => Partial<ChatState> | Partial<ChatState>) => void;
+type SetFn = (fn: (state: ChatState) => Partial<ChatState>) => void;
 
 export function handleMessageEvent(set: SetFn, msg: WsMessageEvent): void {
   set((s) => {
+    // run 已完成（result → 状态 idle）：WS 重连会回放缓冲事件。
+    // 忽略它们——追加会重复已完成的会话。
+    if (s.status !== 'running') return {};
     if (s.streamingId) {
       return {
         messages: s.messages.map((m) => {
@@ -60,18 +63,62 @@ export function handleInfoEvent(set: SetFn, msg: WsInfoEvent): void {
 
 export function handleErrorEvent(set: SetFn, msg: WsErrorEvent): void {
   Logger.error('[chat] error event:', msg.content);
-  set((_s) => ({ status: 'error' as ChatState['status'], error: msg.content || 'Unknown error', wsStatus: 'connected' as ChatState['wsStatus'] }));
+  set((_s) => ({
+    status: 'error' as ChatState['status'],
+    error: msg.content || 'Unknown error',
+    streamingId: null,
+    wsStatus: 'connected' as ChatState['wsStatus'],
+    // H3: run 以 error 终止 = 重新生成/编辑目标作废，清理 pending 上下文，
+    // 否则滞留的 pendingRegenerate 会被后续任意新 run 消费（分页错位）。
+    pendingRegenerate: null,
+    editTargetId: null,
+    continuingId: null,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
+  }));
 }
 
 export function handleBalanceWarningEvent(set: SetFn, msg: WsBalanceWarningEvent): void {
   Logger.error('[chat] balance warning:', msg.content);
-  set((_s) => ({ status: 'error' as ChatState['status'], error: msg.content || '模型余额不足', wsStatus: 'connected' as ChatState['wsStatus'] }));
+  set((_s) => ({
+    status: 'error' as ChatState['status'],
+    error: msg.content || '模型余额不足',
+    streamingId: null,
+    wsStatus: 'connected' as ChatState['wsStatus'],
+    // H3: 同 handleErrorEvent——run 已终止，重生成上下文作废。
+    pendingRegenerate: null,
+    editTargetId: null,
+    continuingId: null,
+    pendingVersions: null,
+    pendingThinkingVersions: null,
+  }));
+}
+
+let _lastBrowserFrame = '';
+
+export function getLastBrowserFrame(): string {
+  return _lastBrowserFrame;
+}
+
+let _pendingBrowserUrl = '';
+
+export function getPendingBrowserUrl(): string {
+  return _pendingBrowserUrl;
+}
+
+export function clearPendingBrowserUrl(): void {
+  _pendingBrowserUrl = '';
 }
 
 export function handleOpenUrlEvent(msg: WsOpenUrlEvent): void {
   const targetUrl: string = msg.url || '';
-  if (targetUrl) {
-    Logger.info('[chat] open_url: %s', targetUrl);
-    window.open(targetUrl, '_blank');
-  }
+  if (!targetUrl) return;
+  Logger.info('[chat] open_url: %s', targetUrl);
+  _pendingBrowserUrl = targetUrl;
+  window.dispatchEvent(new CustomEvent('browser-open-url', { detail: targetUrl }));
+}
+
+export function handleBrowserFrameEvent(msg: WsBrowserFrameEvent): void {
+  _lastBrowserFrame = msg.data;
+  window.dispatchEvent(new CustomEvent('browser-frame', { detail: msg.data }));
 }

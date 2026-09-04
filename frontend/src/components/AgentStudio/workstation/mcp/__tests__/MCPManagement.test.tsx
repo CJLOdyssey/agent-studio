@@ -2,26 +2,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 
-const mockFetchAll = vi.fn().mockResolvedValue([]);
-const mockCreate = vi.fn();
-const mockUpdate = vi.fn();
-const mockRemove = vi.fn();
-const mockClone = vi.fn();
-const mockRemoveBatch = vi.fn();
+const { mockFetchAll, mockCreate, mockUpdate, mockRemove, mockClone, mockRemoveBatch } = vi.hoisted(() => ({
+  mockFetchAll: vi.fn().mockResolvedValue([]),
+  mockCreate: vi.fn(),
+  mockUpdate: vi.fn(),
+  mockRemove: vi.fn(),
+  mockClone: vi.fn(),
+  mockRemoveBatch: vi.fn(),
+}));
 
 vi.mock('../api', () => ({
-  get mcpAPI() {
-    return { fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove, clone: mockClone, removeBatch: mockRemoveBatch };
+  mcpAPI: {
+    fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove,
+    clone: mockClone, removeBatch: mockRemoveBatch,
   },
 }));
 
 import MCPManagement from '../MCPManagement';
+import { formatDateTime } from '../../../../../utils/formatDateTime';
 
 function makeMCP(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'File Server', description: 'MCP file server', type: 'sse' as const,
-    status: 'connected' as const, version: 'v1.0.0', command: '', url: 'http://localhost:3000',
-    createdAt: '2024-01-01', ...overrides,
+    status: 'connected' as const, enabled: true, version: 'v1.0.0', command: '', url: 'http://localhost:3000',
+    args: [], env: [], createdAt: '2024-01-01T00:00:00Z', ...overrides,
   };
 }
 
@@ -72,8 +76,9 @@ describe('MCPManagement', { tags: ['unit'] }, () => {
 
   it('shows loading skeleton while fetching', () => {
     mockFetchAll.mockReturnValue(new Promise(() => {}));
-    const { container } = render(<MCPManagement />, { wrapper: TestProviders });
-    expect(container.querySelector('.wsta-agent-mgmt')).toBeInTheDocument();
+    render(<MCPManagement />, { wrapper: TestProviders });
+    const statusElements = screen.getAllByRole('status');
+    expect(statusElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it('selects a row checkbox', async () => {
@@ -83,6 +88,11 @@ describe('MCPManagement', { tags: ['unit'] }, () => {
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThanOrEqual(2);
     fireEvent.click(checkboxes[1]);
+    expect(checkboxes[1]).toBeChecked();
+    expect(screen.getByText('批量删除 (1)')).toBeInTheDocument();
+    fireEvent.click(checkboxes[1]);
+    expect(checkboxes[1]).not.toBeChecked();
+    expect(screen.queryByText('批量删除 (1)')).not.toBeInTheDocument();
   });
 
   it('renders connected status badge', async () => {
@@ -107,5 +117,14 @@ describe('MCPManagement', { tags: ['unit'] }, () => {
     await waitFor(() => {
       expect(screen.getByText('SSE')).toBeInTheDocument();
     });
+  });
+
+  it('renders createdAt column with absolute datetime', async () => {
+    mockFetchAll.mockResolvedValue([makeMCP()]);
+    render(<MCPManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText('创建时间')).toBeInTheDocument();
+    });
+    expect(screen.getByText(formatDateTime('2024-01-01T00:00:00Z'))).toBeInTheDocument();
   });
 });

@@ -37,11 +37,11 @@ class TestExecStdioMcp:
         tc.endpoint = "node server.js"
         tc.name = "read_file"
 
-        with patch("backend.tasks.mcp_executor.asyncio") as mock_asyncio:
+        with patch("tasks.mcp_executor.asyncio") as mock_asyncio:
             mock_asyncio.timeout = MagicMock()
             mock_asyncio.timeout.__aenter__ = AsyncMock()
             mock_asyncio.timeout.__aexit__ = AsyncMock(return_value=False)
-            from backend.tasks.mcp_executor import exec_stdio_mcp
+            from tasks.mcp_executor import exec_stdio_mcp
             result = await exec_stdio_mcp(tc, '{"path": "/tmp"}')
 
         assert result == "output text"
@@ -75,11 +75,11 @@ class TestExecStdioMcp:
         tc.endpoint = "cmd"
         tc.name = "tool1"
 
-        with patch("backend.tasks.mcp_executor.asyncio") as mock_asyncio:
+        with patch("tasks.mcp_executor.asyncio") as mock_asyncio:
             mock_asyncio.timeout = MagicMock()
             mock_asyncio.timeout.__aenter__ = AsyncMock()
             mock_asyncio.timeout.__aexit__ = AsyncMock(return_value=False)
-            from backend.tasks.mcp_executor import exec_stdio_mcp
+            from tasks.mcp_executor import exec_stdio_mcp
             result = await exec_stdio_mcp(tc, "args")
 
         assert "[MCP Error]" in result
@@ -112,11 +112,11 @@ class TestExecStdioMcp:
         tc.endpoint = "cmd"
         tc.name = "tool1"
 
-        with patch("backend.tasks.mcp_executor.asyncio") as mock_asyncio:
+        with patch("tasks.mcp_executor.asyncio") as mock_asyncio:
             mock_asyncio.timeout = MagicMock()
             mock_asyncio.timeout.__aenter__ = AsyncMock()
             mock_asyncio.timeout.__aexit__ = AsyncMock(return_value=False)
-            from backend.tasks.mcp_executor import exec_stdio_mcp
+            from tasks.mcp_executor import exec_stdio_mcp
             result = await exec_stdio_mcp(tc, "args")
 
         assert "[MCP Error]" in result
@@ -149,11 +149,11 @@ class TestExecStdioMcp:
         tc.endpoint = "cmd"
         tc.name = "tool1"
 
-        with patch("backend.tasks.mcp_executor.asyncio") as mock_asyncio:
+        with patch("tasks.mcp_executor.asyncio") as mock_asyncio:
             mock_asyncio.timeout = MagicMock()
             mock_asyncio.timeout.__aenter__ = AsyncMock()
             mock_asyncio.timeout.__aexit__ = AsyncMock(return_value=False)
-            from backend.tasks.mcp_executor import exec_stdio_mcp
+            from tasks.mcp_executor import exec_stdio_mcp
             result = await exec_stdio_mcp(tc, "args")
 
         assert result == ""
@@ -172,11 +172,11 @@ class TestExecStdioMcp:
         tc.endpoint = "cmd"
         tc.name = "tool1"
 
-        with patch("backend.tasks.mcp_executor.asyncio") as mock_asyncio:
+        with patch("tasks.mcp_executor.asyncio") as mock_asyncio:
             mock_asyncio.timeout = MagicMock()
             mock_asyncio.timeout.__aenter__ = AsyncMock()
             mock_asyncio.timeout.__aexit__ = AsyncMock(return_value=False)
-            from backend.tasks.mcp_executor import exec_stdio_mcp
+            from tasks.mcp_executor import exec_stdio_mcp
             result = await exec_stdio_mcp(tc, "args")
 
         assert "[MCP Timeout]" in result
@@ -211,11 +211,11 @@ class TestExecStdioMcp:
         tc.endpoint = "cmd"
         tc.name = "tool1"
 
-        with patch("backend.tasks.mcp_executor.asyncio") as mock_asyncio:
+        with patch("tasks.mcp_executor.asyncio") as mock_asyncio:
             mock_asyncio.timeout = MagicMock()
             mock_asyncio.timeout.__aenter__ = AsyncMock()
             mock_asyncio.timeout.__aexit__ = AsyncMock(return_value=False)
-            from backend.tasks.mcp_executor import exec_stdio_mcp
+            from tasks.mcp_executor import exec_stdio_mcp
             result = await exec_stdio_mcp(tc, "args")
 
         assert "[MCP Error]" in result

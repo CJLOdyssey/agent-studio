@@ -3,7 +3,7 @@ import { validateMCPForm, EMPTY_FORM } from '../validate';
 import type { MCPFormData } from '../mcp.types';
 
 function makeForm(overrides: Partial<MCPFormData> = {}): MCPFormData {
-  return { name: 'my-mcp', version: 'v1.0.0', type: 'stdio', command: 'node server.js', url: '', ...overrides, description: '', status: 'disconnected' };
+  return { name: 'my-mcp', version: 'v1.0.0', type: 'stdio', command: 'node server.js', url: '', args: [], env: [], ...overrides, description: '', status: 'disconnected' };
 }
 
 describe('validateMCPForm', { tags: ['unit'] }, () => {
@@ -65,12 +65,38 @@ describe('validateMCPForm', { tags: ['unit'] }, () => {
     const errors = validateMCPForm(makeForm({ type: 'sse', url: '   ' }), []);
     expect(errors).toContain('sse 类型需要填写服务地址');
   });
+
+  it('accepts valid env entries in KEY=VALUE format', () => {
+    const errors = validateMCPForm(makeForm({ env: ['API_KEY=abc123', 'DEBUG=true', 'EMPTY='] }), []);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rejects env entry without "="', () => {
+    const errors = validateMCPForm(makeForm({ env: ['API_KEY abc123'] }), []);
+    expect(errors).toContain('环境变量格式应为 KEY=VALUE：API_KEY abc123');
+  });
+
+  it('rejects env entry with invalid key', () => {
+    const errors = validateMCPForm(makeForm({ env: ['123KEY=value'] }), []);
+    expect(errors.some((e) => e.includes('环境变量格式应为 KEY=VALUE'))).toBe(true);
+  });
+
+  it('skips empty env entries', () => {
+    const errors = validateMCPForm(makeForm({ env: [''] }), []);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('allows empty version (version is optional)', () => {
+    const errors = validateMCPForm(makeForm({ version: '   ' }), []);
+    expect(errors).toHaveLength(0);
+  });
 });
 
 describe('EMPTY_FORM', { tags: ['unit'] }, () => {
   it('has expected default values', () => {
     expect(EMPTY_FORM.name).toBe('');
     expect(EMPTY_FORM.type).toBe('stdio');
+    expect(EMPTY_FORM.enabled).toBe(true);
     expect(EMPTY_FORM.status).toBe('disconnected');
     expect(EMPTY_FORM.version).toBe('v1.0.0');
   });

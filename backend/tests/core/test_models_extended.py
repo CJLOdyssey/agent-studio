@@ -8,22 +8,22 @@ from pydantic import ValidationError
 
 class TestRoleEnum:
     def test_display_name_pm(self):
-        from backend.core.models import Role
+        from core.models import Role
 
         assert Role.PM.display_name == "产品经理"
 
     def test_display_name_programmer(self):
-        from backend.core.models import Role
+        from core.models import Role
 
         assert Role.PROGRAMMER.display_name == "资深程序员"
 
     def test_display_name_tester(self):
-        from backend.core.models import Role
+        from core.models import Role
 
         assert Role.TESTER.display_name == "测试工程师"
 
     def test_all_roles_have_display_names(self):
-        from backend.core.models import Role
+        from core.models import Role
 
         for role in Role:
             assert role.display_name != ""
@@ -31,25 +31,25 @@ class TestRoleEnum:
 
 class TestMessageValidation:
     def test_content_not_empty_rejects_whitespace(self):
-        from backend.core.models import Message
+        from core.models import Message
 
         with pytest.raises(ValidationError, match="must not be empty"):
             Message(role="pm", content="   ")
 
     def test_content_not_empty_rejects_empty_string(self):
-        from backend.core.models import Message
+        from core.models import Message
 
         with pytest.raises(ValidationError, match="must not be empty"):
             Message(role="programmer", content="")
 
     def test_content_not_empty_strips_whitespace(self):
-        from backend.core.models import Message
+        from core.models import Message
 
         msg = Message(role="pm", content="  hello  ")
         assert msg.content == "hello"
 
     def test_content_not_empty_accepts_non_empty(self):
-        from backend.core.models import Message
+        from core.models import Message
 
         msg = Message(role="tester", content="valid content")
         assert msg.content == "valid content"
@@ -57,7 +57,7 @@ class TestMessageValidation:
 
 class TestAgentConfigValidation:
     def test_role_identifier_pattern_validation(self):
-        from backend.core.models import AgentConfig
+        from core.models import AgentConfig
 
         with pytest.raises(ValidationError):
             AgentConfig(
@@ -67,7 +67,7 @@ class TestAgentConfigValidation:
             )
 
     def test_role_identifier_accepts_valid(self):
-        from backend.core.models import AgentConfig
+        from core.models import AgentConfig
 
         cfg = AgentConfig(
             name="Test Agent",
@@ -77,7 +77,7 @@ class TestAgentConfigValidation:
         assert cfg.role_identifier == "test_role"
 
     def test_name_too_long(self):
-        from backend.core.models import AgentConfig
+        from core.models import AgentConfig
 
         with pytest.raises(ValidationError):
             AgentConfig(
@@ -87,7 +87,7 @@ class TestAgentConfigValidation:
             )
 
     def test_temperature_out_of_range(self):
-        from backend.core.models import AgentConfig
+        from core.models import AgentConfig
 
         with pytest.raises(ValidationError):
             AgentConfig(
@@ -98,7 +98,7 @@ class TestAgentConfigValidation:
             )
 
     def test_default_values(self):
-        from backend.core.models import AgentConfig
+        from core.models import AgentConfig
 
         cfg = AgentConfig(
             name="Test",
@@ -115,7 +115,7 @@ class TestAgentConfigValidation:
 
 class TestMemoryEntryItemValidation:
     def test_content_type_pattern_validation(self):
-        from backend.core.models import MemoryEntryItem
+        from core.models import MemoryEntryItem
 
         with pytest.raises(ValidationError):
             MemoryEntryItem(
@@ -128,7 +128,7 @@ class TestMemoryEntryItemValidation:
             )
 
     def test_content_type_accepts_valid(self):
-        from backend.core.models import MemoryEntryItem
+        from core.models import MemoryEntryItem
 
         for valid_type in ("pm_document", "code", "review", "decision"):
             item = MemoryEntryItem(
@@ -144,7 +144,7 @@ class TestMemoryEntryItemValidation:
 
 class TestSessionDetailResponse:
     def test_defaults(self):
-        from backend.core.models import SessionDetailResponse
+        from core.models import SessionDetailResponse
 
         resp = SessionDetailResponse(
             id="s1",
@@ -156,7 +156,7 @@ class TestSessionDetailResponse:
 
 class TestTeamOutput:
     def test_requirement_min_length(self):
-        from backend.core.models import TeamOutput
+        from core.models import TeamOutput
 
         with pytest.raises(ValidationError):
             TeamOutput(
@@ -167,7 +167,7 @@ class TestTeamOutput:
             )
 
     def test_valid_team_output(self):
-        from backend.core.models import TeamOutput
+        from core.models import TeamOutput
 
         output = TeamOutput(
             requirement="Build a website",

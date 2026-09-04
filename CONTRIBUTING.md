@@ -2,7 +2,7 @@
 
 感谢你对 AgentStudio 的关注。本文档说明如何参与项目开发。
 
-> **注意**：详细安装和启动步骤见 [QUICKSTART.md](QUICKSTART.md)，项目架构见 [AGENTS.md](AGENTS.md)。
+> **注意**：详细安装和启动步骤见 [QUICKSTART.md](QUICKSTART.md)，项目架构见 QUICKSTART.md。
 
 ## 贡献方式
 
@@ -89,12 +89,12 @@ docs(readme): update quick start instructions
 - TypeScript `strict: true`，禁止 `as any` / `@ts-ignore`
 - React 函数组件 + Hooks
 - Zustand 管理全局状态，TanStack Query 管理服务端状态
-- CSS 使用 `wsta-*` 前缀，避免 CSS Modules
-- 每个 CRUD 模块遵循 9-10 文件结构
+- CSS 使用 Tailwind CSS v4（新模块）；部分旧模块仍用 `wsta-*` 前缀，新代码统一用 Tailwind
+- 每个 CRUD 模块 6-18 文件（视复杂度而定）
 
 ### 后端
 
-- 三层架构：`database.py` → `repository/` → `routers/`
+- 三层架构：`core/infra/database.py` → `repository/` → `routers/`
 - 异步优先：async/await + asyncpg
 - Ruff + Mypy strict 检查
 - 新增模块需在 `pyproject.toml` 添加 mypy 忽略规则

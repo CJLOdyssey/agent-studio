@@ -1,11 +1,13 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
 import { normalizeError } from './errors';
-import { refreshTokens } from './auth';
+import { refreshAccessToken } from './refresh';
 import Logger from '../../utils/logger';
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  // 30s：后端同步 key 连通性检查上限为 8s（_FETCH_TIMEOUT），
+  // 因此慢供应商绝不应触发客户端超时。
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
   xsrfCookieName: 'csrftoken',
   xsrfHeaderName: 'X-CSRFToken',
@@ -14,14 +16,8 @@ const api = axios.create({
 
 const REFRESH_KEY = 'agentstudio_refresh_token';
 
-function getRefreshToken(): string | null {
-  try { return localStorage.getItem(REFRESH_KEY); } catch { return null; }
-}
-let refreshToken: string | null = getRefreshToken();
-
-/** Store or clear the refresh_token only — access_token is an httpOnly cookie set by the server. */
+/** 仅存储或清除 refresh_token——access_token 是由服务端设置的 httpOnly cookie。 */
 export function setTokens(_access: string | null, refresh: string | null) {
-  refreshToken = refresh;
   if (refresh) {
     localStorage.setItem(REFRESH_KEY, refresh);
   } else {
@@ -29,7 +25,7 @@ export function setTokens(_access: string | null, refresh: string | null) {
   }
 }
 
-/** Access token is now an httpOnly cookie — not readable from JS. Returns null. */
+/** access token 现为 httpOnly cookie——JS 无法读取。返回 null。 */
 export function getAccessToken(): string | null {
   return null;
 }
@@ -41,7 +37,6 @@ export function clearTokens() {
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e: StorageEvent) => {
     if (e.key === REFRESH_KEY && !e.newValue) {
-      refreshToken = null;
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
   });
@@ -54,12 +49,9 @@ interface RetryConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-let isRefreshing = false;
-let pendingQueue: Array<() => void> = [];
-
 if (api.interceptors?.request) {
   api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    // Access token is in httpOnly cookie (auto-sent via withCredentials), no Authorization header needed
+    // access token 在 httpOnly cookie 中（经 withCredentials 自动发送），无需 Authorization 头
     let uid = localStorage.getItem('agentstudio_user_id');
     if (!uid) {
       uid = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
@@ -90,34 +82,25 @@ if (api.interceptors?.response) {
         return Promise.reject(normalizeError(error));
       }
 
-      if (!refreshToken) {
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      // 刷新端点的失败是终态——绝不再递归进入此拦截器，
+      // 也不排队在本身已失败的刷新之后。
+      if (retryConfig.url === '/auth/refresh') {
         return Promise.reject(normalizeError(error));
       }
 
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          pendingQueue.push(() => resolve(api(retryConfig)));
-        });
-      }
-
+      // 单飞刷新：refreshAccessToken 把并发的 401 折叠成一次后端调用
+      // （服务端会轮换 refresh token），从而绝不错配消费、
+      // 也绝不因竞态而误登出。
       retryConfig._retry = true;
-      isRefreshing = true;
-
       try {
-        const res = await refreshTokens(refreshToken);
-        setTokens(null, res.refresh_token);
-        pendingQueue.forEach((cb) => cb());
-        pendingQueue = [];
-        // New access_token was set as httpOnly cookie by server — auto-sent on retry
+        await refreshAccessToken();
         return api(retryConfig);
-      } catch {
-        clearTokens();
-        pendingQueue = [];
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      } catch (refreshErr) {
+        const rs = (refreshErr as { response?: { status?: number } })?.response?.status;
+        if (rs === 401 || rs === 403) {
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        }
         return Promise.reject(normalizeError(error));
-      } finally {
-        isRefreshing = false;
       }
     },
   );

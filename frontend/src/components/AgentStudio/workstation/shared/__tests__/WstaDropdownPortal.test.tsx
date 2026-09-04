@@ -51,7 +51,7 @@ describe('WstaDropdownPortal', { tags: ['unit'] }, () => {
     render(
       <WstaDropdownPortal open={true} anchorEl={anchorEl} items={items} onClose={vi.fn()} />,
     );
-    expect(document.querySelector('.wsta-dropdown-divider')).toBeInTheDocument();
+    expect(document.querySelector('.h-px')).toBeInTheDocument();
   });
 
   it('applies danger class to danger items', () => {

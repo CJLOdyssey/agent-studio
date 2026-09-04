@@ -75,6 +75,7 @@ vi.mock('../../shared/ToggleSwitch', () => ({
 }));
 
 import SettingsModal from '../SettingsModal';
+import type * as React from 'react';
 
 describe('SettingsModal', { tags: ['integration'] }, () => {
   beforeEach(() => {

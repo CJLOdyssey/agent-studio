@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
 
 const mockSetActivePicker = vi.fn();
@@ -11,6 +11,8 @@ vi.mock('../../shared/ResourcePickerModal', () => ({
 }));
 
 import { ResourcePickerSection } from '../ResourcePickerSection';
+import ResourcePickerModal from '../../shared/ResourcePickerModal';
+import type * as React from 'react';
 
 const baseFormData = {
   name: '', description: '', team: '前端团队', model: 'GPT-4o',
@@ -18,13 +20,13 @@ const baseFormData = {
   systemPromptId: '', toolIds: [] as string[], mcpIds: [] as string[], skillIds: [] as string[],
 };
 
-function renderComponent(overrides: Record<string, any> = {}) {
+function renderComponent(overrides: Partial<React.ComponentProps<typeof ResourcePickerSection>> = {}) {
   const props = {
     formData: baseFormData,
     setFormData: mockSetFormData,
-    activePicker: null as string | null,
+    activePicker: null,
     setActivePicker: mockSetActivePicker,
-    selectedPrompt: null as { id: string; name: string } | null,
+    selectedPrompt: undefined,
     selectedTools: [] as { id: string; name: string }[],
     selectedMCPs: [] as { id: string; name: string }[],
     selectedSkills: [] as { id: string; name: string }[],
@@ -49,7 +51,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('renders prompt picker trigger', () => {
     renderComponent();
-    expect(screen.getByText('agent.form_prompt_empty')).toBeInTheDocument();
+    expect(screen.getByText('agent.form_prompt_select')).toBeInTheDocument();
   });
 
   it('renders tools picker with count', () => {
@@ -78,7 +80,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('opens picker when prompt trigger clicked', () => {
     renderComponent();
-    fireEvent.click(screen.getByText('agent.form_prompt_empty'));
+    fireEvent.click(screen.getByText('agent.form_prompt_select'));
     expect(mockSetActivePicker).toHaveBeenCalledWith('prompt');
   });
 
@@ -106,12 +108,12 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
 
   it('renders resource grid', () => {
     const { container } = renderComponent();
-    expect(container.querySelector('.wsta-resource-grid')).toBeInTheDocument();
+    expect(container.querySelector('.grid.grid-cols-2')).toBeInTheDocument();
   });
 
   it('renders form section wrapper', () => {
     const { container } = renderComponent();
-    expect(container.querySelector('.wsta-form-section')).toBeInTheDocument();
+    expect(container.querySelector('.grid.grid-cols-2')).toBeInTheDocument();
   });
 
   it('renders chips when tools are selected', () => {
@@ -134,7 +136,7 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
     const setFormData = vi.fn();
     const formData = { ...baseFormData, toolIds: ['t1'] };
     renderComponent({ setFormData, formData, selectedTools: [{ id: 't1', name: 'Tool A' }] });
-    const removeBtns = document.querySelectorAll('.wsta-picker-chip-remove');
+    const removeBtns = document.querySelectorAll('button.cursor-pointer[class*="text-\\[var\\(--color-text-muted\\)\\]"]');
     expect(removeBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(removeBtns[0]);
     expect(setFormData).toHaveBeenCalled();
@@ -158,5 +160,19 @@ describe('ResourcePickerSection', { tags: ['unit'] }, () => {
   it('renders ResourcePickerModal for skills activePicker', () => {
     renderComponent({ activePicker: 'skills', availableSkills: [{ id: 's1', name: 'Skill 1' }] });
     expect(screen.getByTestId('resource-picker-modal')).toBeInTheDocument();
+  });
+
+  it('writes skills picker confirm into skillIds', () => {
+    renderComponent({ activePicker: 'skills', availableSkills: [{ id: 's1', name: 'Skill 1' }] });
+    const modalProps = (ResourcePickerModal as unknown as ReturnType<typeof vi.fn>).mock.lastCall?.[0];
+    act(() => modalProps.onConfirm(['s1']));
+    expect(mockSetFormData).toHaveBeenCalledWith(expect.objectContaining({ skillIds: ['s1'] }));
+  });
+
+  it('writes tools picker confirm into toolIds', () => {
+    renderComponent({ activePicker: 'tools', availableTools: [{ id: 't1', name: 'Tool 1' }] });
+    const modalProps = (ResourcePickerModal as unknown as ReturnType<typeof vi.fn>).mock.lastCall?.[0];
+    act(() => modalProps.onConfirm(['t1']));
+    expect(mockSetFormData).toHaveBeenCalledWith(expect.objectContaining({ toolIds: ['t1'] }));
   });
 });

@@ -1,17 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestProviders } from '../../../../../test/setup';
+import { formatDateTime } from '../../../../../utils/formatDateTime';
 
-const mockFetchAll = vi.fn().mockResolvedValue([]);
-const mockCreate = vi.fn();
-const mockUpdate = vi.fn();
-const mockRemove = vi.fn();
-const mockClone = vi.fn();
-const mockRemoveBatch = vi.fn();
+const { mockFetchAll, mockCreate, mockUpdate, mockRemove, mockClone, mockRemoveBatch, mockBatchAdd, mockImport } = vi.hoisted(() => ({
+  mockFetchAll: vi.fn().mockResolvedValue([]),
+  mockCreate: vi.fn(),
+  mockUpdate: vi.fn(),
+  mockRemove: vi.fn(),
+  mockClone: vi.fn(),
+  mockRemoveBatch: vi.fn(),
+  mockBatchAdd: vi.fn(),
+  mockImport: vi.fn().mockResolvedValue({
+    id: 'imported-1', name: 'imported-skill', description: 'desc', category: '导入',
+    status: 'active', version: 'v1.0.0', author: '', instructions: 'body text',
+    tool_names: ['execute_python'], output_constraint: '',
+    created_at: '2024-01-01T00:00:00Z',
+  }),
+}));
+
+vi.mock('../../../../../api/client/skills', () => ({
+  importSkillFromMarkdown: (...args: unknown[]) => mockImport(...args),
+}));
 
 vi.mock('../api', () => ({
-  get skillAPI() {
-    return { fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove, clone: mockClone, removeBatch: mockRemoveBatch };
+  skillAPI: {
+    fetchAll: mockFetchAll, create: mockCreate, update: mockUpdate, remove: mockRemove,
+    clone: mockClone, removeBatch: mockRemoveBatch, batchAdd: mockBatchAdd,
   },
 }));
 
@@ -21,7 +36,7 @@ function makeSkill(overrides: Record<string, unknown> = {}) {
   return {
     id: '1', name: 'React Skill', description: 'React coding skill', category: '前端开发',
     status: 'installed' as const, version: 'v1.0.0', author: 'Alice', instructions: 'Do stuff',
-    prompt_id: '', tool_names: [], output_constraint: '', createdAt: '2024-01-01',
+    tool_names: [], output_constraint: '', createdAt: '2024-01-01T00:00:00Z',
     ...overrides,
   };
 }
@@ -73,8 +88,9 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
 
   it('shows loading skeleton while fetching', () => {
     mockFetchAll.mockReturnValue(new Promise(() => {}));
-    const { container } = render(<SkillManagement />, { wrapper: TestProviders });
-    expect(container.querySelector('.wsta-agent-mgmt')).toBeInTheDocument();
+    render(<SkillManagement />, { wrapper: TestProviders });
+    const statusElements = screen.getAllByRole('status');
+    expect(statusElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it('selects a row checkbox', async () => {
@@ -84,6 +100,11 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThanOrEqual(2);
     fireEvent.click(checkboxes[1]);
+    expect(checkboxes[1]).toBeChecked();
+    expect(screen.getByText('批量删除 (1)')).toBeInTheDocument();
+    fireEvent.click(checkboxes[1]);
+    expect(checkboxes[1]).not.toBeChecked();
+    expect(screen.queryByText('批量删除 (1)')).not.toBeInTheDocument();
   });
 
   it('renders installed status badge', async () => {
@@ -99,6 +120,42 @@ describe('SkillManagement', { tags: ['unit'] }, () => {
     render(<SkillManagement />, { wrapper: TestProviders });
     await waitFor(() => {
       expect(screen.getByText('前端开发')).toBeInTheDocument();
+    });
+  });
+
+  it('renders createdAt column with absolute datetime', async () => {
+    mockFetchAll.mockResolvedValue([makeSkill()]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => {
+      expect(screen.getByText(formatDateTime('2024-01-01T00:00:00Z'))).toBeInTheDocument();
+    });
+  });
+
+  it('imports a SKILL.md and shows the imported skill', async () => {
+    mockFetchAll.mockResolvedValue([]);
+    render(<SkillManagement />, { wrapper: TestProviders });
+    await waitFor(() => { expect(screen.getByText('导入 SKILL.md')).toBeInTheDocument(); });
+    fireEvent.click(screen.getByText('导入 SKILL.md'));
+    // Modal 默认在「上传」tab，切到「粘贴」tab 找到 textarea
+    const pasteTab = await waitFor(() => {
+      const el = screen.getAllByRole('tab').find((t) => t.textContent?.includes('粘贴') || t.textContent?.includes('paste'));
+      if (!el) throw new Error('paste tab not found');
+      return el as Element;
+    });
+    fireEvent.click(pasteTab);
+    const textarea = await screen.findByPlaceholderText(/name: my-skill/);
+    fireEvent.change(textarea, { target: { value: '---\nname: imported-skill\n---\n\nbody' } });
+    const okButton = await waitFor(() => {
+      const el = document.querySelector('.ant-modal-footer .ant-btn-primary');
+      if (!el) throw new Error('ok button not found');
+      return el as Element;
+    });
+    fireEvent.click(okButton);
+    await waitFor(() => {
+      expect(mockImport).toHaveBeenCalledWith('---\nname: imported-skill\n---\n\nbody');
+    });
+    await waitFor(() => {
+      expect(screen.getByText('imported-skill')).toBeInTheDocument();
     });
   });
 });

@@ -1,14 +1,14 @@
 /**
- * Generic CRUD hook — replaces the per-module pattern of:
+ * 通用 CRUD hook——替代各模块各自的模式：
  *   useXxxData() + useXxxUI() + validateXxx()
  *
- * Each module provides:
- *   - api: CRUD operations (fetchAll, create, update, remove)
- *   - emptyForm: default form state
- *   - validate(): optional form validation
- *   - itemName: entity label for error messages (e.g. "Skill")
+ * 各模块需提供：
+ *   - api: CRUD 操作（fetchAll、create、update、remove）
+ *   - emptyForm: 默认表单状态
+ *   - validate(): 可选表单校验
+ *   - itemName: 错误信息中的实体名称（如 "Skill"）
  *
- * Returns unified data + UI state + action handlers.
+ * 返回统一的数据 + UI 状态 + 操作处理器。
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -17,7 +17,7 @@ import type { CrudAPI, GenericCrudConfig, GenericCrudReturn } from './useGeneric
 
 export type { CrudAPI, GenericCrudConfig, GenericCrudReturn };
 
-// ── Helpers for safe generic object access ───────────────────────
+// ── 安全访问泛型对象的辅助函数 ───────────────────────
 function getField(obj: unknown, key: string): string {
   return String(Reflect.get(Object(obj ?? {}), key) ?? '');
 }
@@ -33,12 +33,12 @@ export function useGenericCrud<T extends { id: string }, F>(
   const { api, emptyForm, validate, sortFields, extraFilters } = config;
   const itemName = config.itemName;
 
-  // ── Data state ─────────────────────────────────────────────────
+  // ── 数据状态 ─────────────────────────────────────────────────
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Search / sort / filter state ───────────────────────────────
+  // ── 搜索 / 排序 / 筛选状态 ───────────────────────────────
   const [search, setSearch_] = useState('');
   const [sortField, setSortField] = useState<keyof T | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -46,13 +46,13 @@ export function useGenericCrud<T extends { id: string }, F>(
     () => ({ ...extraFilters }),
   );
 
-  // ── Pagination state ───────────────────────────────────────────
+  // ── 分页状态 ───────────────────────────────────────────
   const [page, setPage_] = useState(1);
 
-  // ── Selection state ────────────────────────────────────────────
+  // ── 选择状态 ────────────────────────────────────────────
   const [selectedIds, setSelectedIds_] = useState<Set<string>>(new Set());
 
-  // ── Form / modal state ─────────────────────────────────────────
+  // ── 表单 / 弹窗状态 ─────────────────────────────────────────
   const [editingItem, setEditingItem] = useState<T | null>(null);
   const [deletingItem, setDeletingItem] = useState<T | null>(null);
   const [historyItem, setHistoryItem] = useState<T | null>(null);
@@ -65,7 +65,7 @@ export function useGenericCrud<T extends { id: string }, F>(
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
 
-  // ── Data fetching ──────────────────────────────────────────────
+  // ── 数据拉取 ──────────────────────────────────────────────
   const fetchItems = useCallback(() => {
     setIsLoading(true);
     setError(null);
@@ -80,7 +80,7 @@ export function useGenericCrud<T extends { id: string }, F>(
   const clearError = useCallback(() => setError(null), []);
   const retry = useCallback(() => fetchItems(), [fetchItems]);
 
-  // Wrappers that also reset page / selection when filter changes
+  // 筛选变化时同时重置页码 / 选中的包装函数
   const resetPagination = useCallback(() => { setPage_(1); setSelectedIds_(new Set()); }, []);
 
   const setSearch = useCallback((v: string) => { setSearch_(v); resetPagination(); }, [resetPagination]);
@@ -89,11 +89,11 @@ export function useGenericCrud<T extends { id: string }, F>(
     setSelectedIds_(v);
   }, []);
 
-  // ── Data processing (memoized) ─────────────────────────────────
+  // ── 数据处理（memoized） ─────────────────────────────────
   const processed = useMemo(() => {
     let result = items;
 
-    // Extra filters
+    // 额外筛选
     if (extraFilterValues && extraFilters) {
       for (const key of Object.keys(extraFilters)) {
         const val = extraFilterValues[key];
@@ -104,7 +104,7 @@ export function useGenericCrud<T extends { id: string }, F>(
       }
     }
 
-    // Search
+    // 搜索
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -114,7 +114,7 @@ export function useGenericCrud<T extends { id: string }, F>(
       );
     }
 
-    // Sort
+    // 排序
     if (sortField) {
       result.sort((a, b) => {
         const field = sortField as string;
@@ -139,7 +139,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     [paged, selectedIds],
   );
 
-  // ── Selection handlers ────────────────────────────────────────
+  // ── 选择处理器 ────────────────────────────────────────
   const toggleSelectAll = useCallback(() => {
     if (allOnPageSelected) {
       setSelectedIds_((prev) => {
@@ -165,7 +165,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     });
   }, []);
 
-  // ── Sort handler (resets pagination) ──────────────────────────
+  // ── 排序处理器（重置分页） ──────────────────────────
   const handleSort = useCallback(
     (field: keyof T) => {
       if (sortFields && !sortFields.includes(field)) return;
@@ -181,13 +181,13 @@ export function useGenericCrud<T extends { id: string }, F>(
     [sortFields, resetPagination],
   );
 
-  // ── Extra filter handler (resets pagination) ──────────────────
+  // ── 额外筛选处理器（重置分页） ──────────────────
   const setExtraFilter = useCallback((key: string, value: string) => {
     setExtraFilterValues_((prev) => ({ ...prev, [key]: value }));
     resetPagination();
   }, [resetPagination]);
 
-  // ── Mutations ─────────────────────────────────────────────────
+  // ── 变更操作 ─────────────────────────────────────────────────
   const createItem = useCallback(
     async (data: F) => {
       const created = await api.create(data);
@@ -218,7 +218,7 @@ export function useGenericCrud<T extends { id: string }, F>(
       if (api.clone) {
         await api.clone(item);
       } else {
-        // Strip id/createdAt before passing as form data
+        // 作为表单数据传入前先剥离 id/createdAt
         const form = Object.fromEntries(
           Object.entries(item).filter(([k]) => k !== 'id' && k !== 'createdAt'),
         );
@@ -241,7 +241,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     [api, fetchItems],
   );
 
-  // ── UI handlers ───────────────────────────────────────────────
+  // ── UI 处理器 ───────────────────────────────────────────────
   const setFormData = useCallback((v: F | ((prev: F) => F)) => {
     setFormData_(v);
   }, []);
@@ -301,7 +301,7 @@ export function useGenericCrud<T extends { id: string }, F>(
     setMenuAnchorEl(null);
   }, []);
 
-  // Click-outside for dropdown menu
+  // 下拉菜单点击外部关闭
   useEffect(() => {
     if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
@@ -314,40 +314,48 @@ export function useGenericCrud<T extends { id: string }, F>(
     return () => document.removeEventListener('mousedown', handleClick);
   }, [openMenuId]);
 
-  // ── Save / Delete / Batch Delete orchestration ────────────────
-  const handleSave = useCallback(() => {
+  // ── 保存 / 删除 / 批量删除编排 ────────────────
+  const handleSave = useCallback((): Promise<void> | undefined => {
     const errors = validate ? validate(formData_, items, editingItem?.id) : [];
     setFormErrors(errors);
-    if (errors.length > 0) return;
+    if (errors.length > 0) return undefined;
     const action = editingItem
       ? updateItem(editingItem.id, asPartial(formData_))
       : createItem(formData_);
-    action.then(() => {
+    return action.then(() => {
       setIsFormOpen(false);
+      setFormErrors([]);
+    }).catch((e: Error) => {
+      setError(e.message || `保存${itemName}失败`);
     });
-  }, [validate, formData_, items, editingItem, updateItem, createItem]);
+  }, [validate, formData_, items, editingItem, updateItem, createItem, itemName]);
 
-  const handleDelete = useCallback(() => {
-    if (!deletingItem) return;
-    removeItem(deletingItem.id).then(() => {
+  const handleDelete = useCallback((): Promise<void> | undefined => {
+    if (!deletingItem) return undefined;
+    return removeItem(deletingItem.id).then(() => {
       setIsDeleteOpen(false);
       setDeletingItem(null);
+    }).catch((e: Error) => {
+      setError(e.message || `删除${itemName}失败`);
     });
-  }, [deletingItem, removeItem]);
+  }, [deletingItem, removeItem, itemName]);
 
-  const handleBatchDelete = useCallback(() => {
-    removeMultipleItems(selectedIds).then(() => {
+  const handleBatchDelete = useCallback((): Promise<void> | undefined => {
+    if (selectedIds.size === 0) return undefined;
+    return removeMultipleItems(selectedIds).then(() => {
       setIsBatchDeleteOpen(false);
       setSelectedIds_(new Set());
+    }).catch((e: Error) => {
+      setError(e.message || `批量删除失败`);
     });
   }, [selectedIds, removeMultipleItems]);
 
-  // ── Batch add (import flow) ───────────────────────────────────
+  // ── 批量添加（导入流程） ───────────────────────────────────
   const batchAdd = useCallback((newItems: T[]) => {
     setItems((prev) => [...prev, ...newItems]);
   }, []);
 
-  // ── Return ────────────────────────────────────────────────────
+  // ── 返回值 ────────────────────────────────────────────────────
   return {
     items,
     isLoading,

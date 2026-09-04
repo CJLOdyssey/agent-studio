@@ -1,29 +1,43 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import type { Agent } from '../../../types/AgentStudio';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
 
 vi.mock('../modals/AgentConfigModal', () => ({
-  default: ({ onSave, onClose }: { onSave: () => void; onClose: () => void }) =>
+  default: ({ onSave: _onSave, onClose: _onClose }: { onSave: () => void; onClose: () => void }) =>
     <div data-testid="agent-config-modal">AgentConfigModal</div>,
 }));
 vi.mock('../modals/SettingsModal', () => ({
-  default: ({ onClose }: { onClose: () => void }) => <div data-testid="settings-modal">SettingsModal</div>,
+  default: ({ onClose: _onClose }: { onClose: () => void }) => <div data-testid="settings-modal">SettingsModal</div>,
 }));
 vi.mock('../modals/ApiManagementModal', () => ({
-  default: ({ onClose }: { onClose: () => void }) => <div data-testid="api-management-modal">ApiManagementModal</div>,
+  default: ({ onClose: _onClose }: { onClose: () => void }) => <div data-testid="api-management-modal">ApiManagementModal</div>,
 }));
 vi.mock('../modals/ConfirmModal', () => ({
-  default: ({ title, message, onConfirm, onCancel, danger }: { title: string; message: string; onConfirm: () => void; onCancel: () => void; danger?: boolean }) =>
+  default: ({ title, message, onConfirm: _onConfirm, onCancel: _onCancel, danger: _danger }: { title: string; message: string; onConfirm: () => void; onCancel: () => void; danger?: boolean }) =>
     <div data-testid="confirm-modal">{title} - {message}</div>,
 }));
 vi.mock('../modals/NewProjectModal', () => ({
-  default: ({ onClose }: { onClose: () => void }) => <div data-testid="new-project-modal">NewProjectModal</div>,
+  default: ({ onClose: _onClose }: { onClose: () => void }) => <div data-testid="new-project-modal">NewProjectModal</div>,
 }));
 
 import Modals from '../Modals';
+
+function makeAgent(overrides: Partial<Agent> = {}): Agent {
+  return {
+    id: 'a1',
+    name: 'Dev Agent',
+    role: 'Developer',
+    icon: vi.fn(() => null) as unknown as Agent['icon'],
+    color: '#334155',
+    bg: '#f1f5f9',
+    border: '#e2e8f0',
+    ...overrides,
+  };
+}
 
 describe('Modals', { tags: ['integration'] }, () => {
   const baseProps = {
@@ -54,7 +68,7 @@ describe('Modals', { tags: ['integration'] }, () => {
     render(
       <Modals
         {...baseProps}
-        configuringAgent={{ id: 'a1', name: 'Dev Agent', role: 'Developer' } as any}
+        configuringAgent={makeAgent()}
       />,
     );
     await waitFor(() => {
@@ -100,7 +114,7 @@ describe('Modals', { tags: ['integration'] }, () => {
     render(
       <Modals
         {...baseProps}
-        configuringAgent={{ id: 'a1', name: 'Test', role: 'Assistant' } as any}
+        configuringAgent={makeAgent({ name: 'Test', role: 'Assistant' })}
         isSettingsOpen
         isApiOpen
         confirmDialog={{ title: '确认', message: '确定？', onConfirm: vi.fn() }}

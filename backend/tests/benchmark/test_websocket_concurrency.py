@@ -8,8 +8,8 @@ import time
 
 import pytest
 import websockets
+from tests.conftest import Api
 
-from backend.tests.conftest import Api
 
 def _clear_limits():
     import subprocess
@@ -31,6 +31,18 @@ def _clear_limits():
 pytestmark = pytest.mark.benchmark
 
 WS_BASE = "ws://localhost:8080"
+
+
+@pytest.fixture(autouse=True)
+def _skip_unless_backend_up(api: Api):
+    """Benchmarks need a running backend; skip cleanly when it is unreachable."""
+    try:
+        r = api.get("/api/health")
+        unreachable = r.status_code >= 500
+    except Exception:
+        unreachable = True
+    if unreachable:
+        pytest.skip("Backend not available")
 
 
 class TestWebSocketConcurrency:
@@ -57,7 +69,7 @@ class TestWebSocketConcurrency:
 
         async def _connect_and_verify(run_id: str) -> float:
             """Connect to WS, measure time to receive first message."""
-            uri = f"{WS_BASE}/ws/runs/{run_id}"
+            uri = f"{WS_BASE}/api/ws/runs/{run_id}"
             t0 = time.monotonic()
             async with websockets.connect(uri) as ws:
                 msg = await asyncio.wait_for(ws.recv(), timeout=5.0)
@@ -95,7 +107,7 @@ class TestWebSocketConcurrency:
         run_id = r.json()["run_id"]
 
         async def _measure():
-            uri = f"{WS_BASE}/ws/runs/{run_id}"
+            uri = f"{WS_BASE}/api/ws/runs/{run_id}"
             msg_count = 0
             t0 = time.monotonic()
             async with websockets.connect(uri) as ws:
