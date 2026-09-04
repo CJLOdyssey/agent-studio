@@ -136,12 +136,6 @@ graph TB
         ORM[(ORM Models — 33 张表)]
         AUTH[Auth — JWT + RBAC]
         OBS[Observability — EventStore + Trace]
-    subgraph Backend["后端 (FastAPI + SQLAlchemy async)"]
-        RTR[routers/ <br/>28 个路由模块]
-        REP[repository/ <br/>29 个仓储模块]
-        ORM[(ORM Models<br/>33 张表)]
-        AUTH[Auth<br/>JWT + RBAC]
-        OBS[Observability<br/>EventStore + Trace]
     end
 
     subgraph Engines["Agent 引擎"]
@@ -168,7 +162,7 @@ graph TB
     DT -.->|StreamEmitter| RD
     RD -.->|Redis Pub/Sub| WS
     REP --> KV
-    OBS -.->|SQLite| OBS_DB[(event_store.db)]
+    OBS -.->|SQLite| OBS_DB[("event_store.db")]
 ```
 
 ---
