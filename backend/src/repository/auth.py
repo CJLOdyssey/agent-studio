@@ -221,8 +221,7 @@ async def create_refresh_token(user_id: str, family_id: str | None = None, ttl_d
 async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
     """验证并消费刷新令牌（轮换）。
 
-    成功返回 (user, new_family_id)，失败返回 (None, None)。
-    正常轮换时 new_family_id 为 None，重放攻击时为新的 uuid4。
+    成功返回 ``(user, family_id)``；失败返回 ``(None, None)``。
     """
     token_hash = _hash_token(token)
     factory = get_session_factory()
@@ -237,9 +236,6 @@ async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
 
         if rt.revoked_at is not None:
             # 重放攻击——撤销整个令牌族
-            await session.execute(
-                select(RefreshTokenDB).where(RefreshTokenDB.family_id == rt.family_id)
-            )
             family_result = await session.execute(
                 select(RefreshTokenDB).where(RefreshTokenDB.family_id == rt.family_id)
             )

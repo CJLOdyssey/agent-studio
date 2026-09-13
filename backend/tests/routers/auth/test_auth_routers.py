@@ -51,9 +51,11 @@ class TestAuthLogin:
         assert "token_type" in data
         assert "expires_in" in data
         assert "user" in data
-        assert data["access_token"] != ""
-        assert data["refresh_token"] != ""
-        assert len(data["access_token"].split(".")) == 3
+        # cookie-only：令牌仅经 httpOnly cookie 下发，响应体不回传
+        assert data["access_token"] == ""
+        assert data["refresh_token"] == ""
+        assert "access_token" in resp.cookies
+        assert "refresh_token" in resp.cookies
 
     def test_login_wrong_password(self, client):
         resp = client.post(
@@ -75,17 +77,17 @@ class TestAuthLogin:
             json={"email": "admin@test.com", "password": "admin123"},
         )
         assert login_resp.status_code == 200
-        refresh_token = login_resp.json()["refresh_token"]
-        resp = client.post(
-            "/api/auth/refresh", json={"refresh_token": refresh_token}
-        )
+        # refresh_token 在 httpOnly cookie —— client cookie jar 自动携带
+        assert "refresh_token" in login_resp.cookies
+        resp = client.post("/api/auth/refresh")
         assert resp.status_code == 200
         data = resp.json()
-        assert "access_token" in data
+        assert data["access_token"] == ""
+        assert "refresh_token" in resp.cookies
 
     def test_refresh_token_invalid(self, client):
         resp = client.post(
-            "/api/auth/refresh", json={"refresh_token": "totally_invalid_token"}
+            "/api/auth/refresh", cookies={"refresh_token": "totally_invalid_token"}
         )
         assert resp.status_code == 401
 
@@ -95,16 +97,16 @@ class TestAuthLogin:
             json={"email": "admin@test.com", "password": "admin123"},
         )
         assert login_resp.status_code == 200
-        first_refresh = login_resp.json()["refresh_token"]
+        first_refresh = login_resp.cookies.get("refresh_token")
+        assert first_refresh
 
-        resp1 = client.post(
-            "/api/auth/refresh", json={"refresh_token": first_refresh}
-        )
+        resp1 = client.post("/api/auth/refresh")
         assert resp1.status_code == 200
-        resp1.json()["refresh_token"]
 
+        # 轮换后旧令牌已撤销 —— 用旧 cookie 重放必须 401（并撤销整个令牌族）
+        client.cookies.clear()
         resp2 = client.post(
-            "/api/auth/refresh", json={"refresh_token": first_refresh}
+            "/api/auth/refresh", cookies={"refresh_token": first_refresh}
         )
         assert resp2.status_code == 401
 

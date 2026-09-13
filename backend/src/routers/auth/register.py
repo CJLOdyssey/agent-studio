@@ -1,5 +1,9 @@
-"""注册、邮箱验证与重发端点。"""
+"""注册、邮箱验证与重发端点。
 
+注册/验证成功后同时下发 access/refresh httpOnly cookie（cookie-only 传输）。
+"""
+
+import hmac
 from typing import Any
 
 import bcrypt
@@ -21,10 +25,12 @@ from .schemas import (
     VerifyRequest,
     _check_rate_limit,
     _client_ip,
+    _cookie_secure,
     _create_auth_response,
     _generate_code,
     _mask_email,
     _set_access_token_cookie,
+    _set_refresh_token_cookie,
     _store_code_in_redis,
 )
 
@@ -93,7 +99,7 @@ async def register(body: RegisterRequest, request: Request, response: Response) 
         raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取验证码")
 
     stored_code = stored.decode() if isinstance(stored, bytes) else stored
-    if stored_code != code:
+    if not hmac.compare_digest(stored_code, code):
         raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码错误")
 
     pwd_error = validate_password(password)
@@ -112,8 +118,15 @@ async def register(body: RegisterRequest, request: Request, response: Response) 
 
     logger.info("User registered and verified: %s", _mask_email(email))
     auth_resp = await _create_auth_response(user.id, user.email, user.username)
-    _set_access_token_cookie(response, auth_resp.access_token, secure=request.url.scheme == "https")
-    return auth_resp
+    secure = _cookie_secure(request)
+    _set_access_token_cookie(response, auth_resp.access_token, secure=secure)
+    _set_refresh_token_cookie(response, auth_resp.refresh_token, secure=secure)
+    return AuthResponse(
+        access_token="",
+        refresh_token="",
+        expires_in=auth_resp.expires_in,
+        user=auth_resp.user,
+    )
 
 
 @router.post("/verify", response_model=AuthResponse)
@@ -141,7 +154,7 @@ async def verify(body: VerifyRequest, request: Request, response: Response) -> A
         raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     stored_code = stored.decode() if isinstance(stored, bytes) else stored
-    if stored_code != code:
+    if not hmac.compare_digest(stored_code, code):
         raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码错误")
 
     await r.delete(_verify_key(email))
@@ -157,8 +170,15 @@ async def verify(body: VerifyRequest, request: Request, response: Response) -> A
     logger.info("Email verified: %s", _mask_email(email))
 
     auth_resp = await _create_auth_response(user.id, user.email, user.username)
-    _set_access_token_cookie(response, auth_resp.access_token, secure=request.url.scheme == "https")
-    return auth_resp
+    secure = _cookie_secure(request)
+    _set_access_token_cookie(response, auth_resp.access_token, secure=secure)
+    _set_refresh_token_cookie(response, auth_resp.refresh_token, secure=secure)
+    return AuthResponse(
+        access_token="",
+        refresh_token="",
+        expires_in=auth_resp.expires_in,
+        user=auth_resp.user,
+    )
 
 
 @router.post("/resend-verification", response_model=MessageResponse)

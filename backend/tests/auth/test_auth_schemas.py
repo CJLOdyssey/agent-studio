@@ -64,11 +64,12 @@ class TestAuthSchemas:
         user = UserResponse(id="u1", email="a@b.com", username="alice", roles=["user"], is_verified=True)
         assert user.username == "alice"
 
-    def test_refresh_request(self):
+    def test_refresh_request_is_cookie_based(self):
+        """刷新令牌经 httpOnly cookie 传递 —— 请求体不再携带该字段。"""
         from routers.auth.schemas import RefreshRequest
 
-        req = RefreshRequest(refresh_token="rtok")
-        assert req.refresh_token == "rtok"
+        assert "refresh_token" not in RefreshRequest.model_fields
+        assert RefreshRequest().model_dump() == {}
 
     def test_forgot_password_request(self):
         from routers.auth.schemas import ForgotPasswordRequest
@@ -82,11 +83,12 @@ class TestAuthSchemas:
         req = ResetPasswordRequest(email="user@ex.com", code="654321", new_password="NewPass1!")
         assert req.new_password == "NewPass1!"
 
-    def test_logout_request(self):
+    def test_logout_request_is_cookie_based(self):
+        """登出经 httpOnly cookie 读取刷新令牌 —— 请求体不再携带该字段。"""
         from routers.auth.schemas import LogoutRequest
 
-        req = LogoutRequest(refresh_token="tok")
-        assert req.refresh_token == "tok"
+        assert "refresh_token" not in LogoutRequest.model_fields
+        assert LogoutRequest().model_dump() == {}
 
     def test_change_password_request(self):
         from routers.auth.schemas import ChangePasswordRequest
@@ -161,13 +163,25 @@ class TestAuthHelpers:
         result = _mask_email("x@y.com")
         assert result == "x***@y.com"
 
-    def test_client_ip_with_forwarded(self):
+    def test_client_ip_with_forwarded_trusted_proxy(self, monkeypatch):
+        """TRUST_PROXY_HEADERS=1（可信代理后）才采信 X-Forwarded-For。"""
         from routers.auth.schemas import _client_ip
 
+        monkeypatch.setenv("TRUST_PROXY_HEADERS", "1")
         mock_request = MagicMock()
         mock_request.headers = {"X-Forwarded-For": "203.0.113.1, 10.0.0.1"}
         result = _client_ip(mock_request)
         assert result == "203.0.113.1"
+
+    def test_client_ip_ignores_forwarded_by_default(self, monkeypatch):
+        """默认不信任 X-Forwarded-For —— 防伪造头绕过 IP 限流。"""
+        from routers.auth.schemas import _client_ip
+
+        monkeypatch.delenv("TRUST_PROXY_HEADERS", raising=False)
+        mock_request = MagicMock()
+        mock_request.headers = {"X-Forwarded-For": "203.0.113.1, 10.0.0.1"}
+        mock_request.client.host = "10.0.0.9"
+        assert _client_ip(mock_request) == "10.0.0.9"
 
     def test_client_ip_without_forwarded(self):
         from routers.auth.schemas import _client_ip

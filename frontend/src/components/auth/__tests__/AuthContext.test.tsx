@@ -10,15 +10,16 @@ vi.mock('@/api/client/auth', () => ({
   login: vi.fn(),
   register: vi.fn(),
   verify: vi.fn(),
+  logout: vi.fn(),
   forgotPassword: vi.fn(),
   resetPassword: vi.fn(),
   resendVerification: vi.fn(),
   sendRegisterCode: vi.fn(),
 }));
 
-vi.mock('@/api/client/instance', () => ({
-  setTokens: vi.fn(),
-  clearTokens: vi.fn(),
+vi.mock('@/utils/authChannel', () => ({
+  broadcastAuthEvent: vi.fn(),
+  subscribeAuthEvents: vi.fn(() => () => {}),
 }));
 
 import * as authApi from '@/api/client/auth';
@@ -125,6 +126,42 @@ describe('AuthProvider', { tags: ['unit'] }, () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+  });
+
+  it('cross-tab logout event clears user state', async () => {
+    let channelHandler: ((event: 'logout') => void) | null = null;
+    const { subscribeAuthEvents } = await import('@/utils/authChannel');
+    vi.mocked(subscribeAuthEvents).mockImplementation((handler) => {
+      channelHandler = handler;
+      return () => {};
+    });
+
+    vi.mocked(authApi.getMe).mockResolvedValue({
+      id: 'u1',
+      email: 'tab@test.com',
+      username: 'tab',
+      roles: ['member'],
+      is_verified: true,
+    });
+    vi.mocked(authApi.getAuthConfig).mockResolvedValue({ enabled: true, mode: 'rbac' });
+
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('user').textContent).toBe('tab@test.com');
+    });
+
+    await act(async () => {
+      channelHandler?.('logout');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('user').textContent).toBe('null');
     });
   });
 });

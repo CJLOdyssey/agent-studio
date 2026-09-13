@@ -43,8 +43,6 @@ vi.mock('../../utils/logger', () => ({
   error: vi.fn(),
 }));
 
-const REFRESH_KEY = 'agentstudio_refresh_token';
-
 describe('instance', { tags: ['unit'] }, () => {
   beforeEach(() => {
     vi.resetModules();
@@ -56,49 +54,6 @@ describe('instance', { tags: ['unit'] }, () => {
 
   afterEach(() => {
     localStorage.clear();
-  });
-
-  describe('setTokens', () => {
-    it('ignores access parameter and stores refresh token', async () => {
-      const { setTokens } = await import('../instance');
-      setTokens('some-access', 'refresh-456');
-
-      expect(localStorage.getItem(REFRESH_KEY)).toBe('refresh-456');
-    });
-
-    it('removes refresh token when null is passed', async () => {
-      localStorage.setItem(REFRESH_KEY, 'old-refresh');
-
-      const { setTokens } = await import('../instance');
-      setTokens(null, null);
-
-      expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
-    });
-
-    it('only stores refresh token when passed', async () => {
-      const { setTokens } = await import('../instance');
-      setTokens(null, 'refresh-only');
-
-      expect(localStorage.getItem(REFRESH_KEY)).toBe('refresh-only');
-    });
-  });
-
-  describe('getAccessToken', () => {
-    it('returns null (access token is httpOnly cookie)', async () => {
-      const { getAccessToken } = await import('../instance');
-      expect(getAccessToken()).toBeNull();
-    });
-  });
-
-  describe('clearTokens', () => {
-    it('removes refresh token', async () => {
-      localStorage.setItem(REFRESH_KEY, 'refresh');
-
-      const { clearTokens } = await import('../instance');
-      clearTokens();
-
-      expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
-    });
   });
 
   describe('request interceptor', () => {
@@ -208,7 +163,10 @@ describe('instance', { tags: ['unit'] }, () => {
       }
     });
 
-    it('rejects 401 errors when no refresh token', async () => {
+    it('dispatches auth:unauthorized when refresh fails on 401', async () => {
+      const mockRefresh = await import('../auth');
+      (mockRefresh.refreshTokens as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Refresh failed'));
+
       let errorHandler: ((error: unknown) => Promise<unknown>) | null = null;
       mockAxiosInstance.interceptors.response.use.mockImplementation(
         (_s: (response: unknown) => unknown, e: (error: unknown) => Promise<unknown>) => {
@@ -216,7 +174,6 @@ describe('instance', { tags: ['unit'] }, () => {
         },
       );
 
-      localStorage.removeItem(REFRESH_KEY);
       const authSpy = vi.fn();
       window.addEventListener('auth:unauthorized', authSpy);
 
@@ -241,8 +198,6 @@ describe('instance', { tags: ['unit'] }, () => {
     });
 
     it('rejects if already retrying', async () => {
-      localStorage.setItem(REFRESH_KEY, 'my-refresh');
-
       let errorHandler: ((error: unknown) => Promise<unknown>) | null = null;
       mockAxiosInstance.interceptors.response.use.mockImplementation(
         (_s: (response: unknown) => unknown, e: (error: unknown) => Promise<unknown>) => {
@@ -275,13 +230,8 @@ describe('instance', { tags: ['unit'] }, () => {
     });
 
     it('refreshes token on 401 and retries', async () => {
-      localStorage.setItem(REFRESH_KEY, 'my-refresh-token');
-
       const mockRefresh = await import('../auth');
-      (mockRefresh.refreshTokens as ReturnType<typeof vi.fn>).mockResolvedValue({
-        access_token: 'new-access',
-        refresh_token: 'new-refresh',
-      });
+      (mockRefresh.refreshTokens as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
       let errorHandler: ((error: unknown) => Promise<unknown>) | null = null;
       mockAxiosInstance.interceptors.response.use.mockImplementation(
@@ -309,48 +259,8 @@ describe('instance', { tags: ['unit'] }, () => {
       } catch {
       }
 
-      expect(mockRefresh.refreshTokens).toHaveBeenCalledWith('my-refresh-token');
-    });
-
-    it('dispatches auth:unauthorized when refresh fails', async () => {
-      localStorage.setItem(REFRESH_KEY, 'bad-refresh');
-
-      const mockRefresh = await import('../auth');
-      (mockRefresh.refreshTokens as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Refresh failed'));
-
-      let errorHandler: ((error: unknown) => Promise<unknown>) | null = null;
-      mockAxiosInstance.interceptors.response.use.mockImplementation(
-        (_s: (response: unknown) => unknown, e: (error: unknown) => Promise<unknown>) => {
-          errorHandler = e;
-        },
-      );
-
-      const authSpy = vi.fn();
-      window.addEventListener('auth:unauthorized', authSpy);
-
-      await import('../instance');
-
-      const axiosErr = new (await import('axios')).AxiosError(
-        'Unauthorized',
-      ) as Error & { code?: string; config?: { method: string; url: string; _retry?: boolean; headers: Record<string, string> }; response?: { status: number; data: unknown; headers: Record<string, string> } };
-      (axiosErr as Record<string, unknown>).code = 'ERR_BAD_REQUEST';
-      (axiosErr as Record<string, unknown>).config = {
-        method: 'GET',
-        url: '/private',
-        _retry: false,
-        headers: {} as Record<string, string>,
-      };
-      (axiosErr as Record<string, unknown>).response = { status: 401, data: { detail: 'Unauthorized' }, headers: {} };
-
-      try {
-        await errorHandler!(axiosErr);
-        expect.fail('Should have thrown');
-      } catch (e) {
-        expect(e).toBeDefined();
-        expect(authSpy).toHaveBeenCalled();
-      }
-
-      window.removeEventListener('auth:unauthorized', authSpy);
+      // refresh_token 在 httpOnly cookie —— 无需参数（withCredentials 自动携带）
+      expect(mockRefresh.refreshTokens).toHaveBeenCalledWith();
     });
   });
 });
