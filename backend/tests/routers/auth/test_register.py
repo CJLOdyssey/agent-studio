@@ -173,17 +173,18 @@ class TestAuthRegister:
     # ── verify ──────────────────────────────────────────────────────────────
 
     @patch("routers.auth.register._generate_code", return_value="999999")
-    def test_verify_success(self, mock_gen, client):
+    def test_verify_wrong_code_returns_400(self, mock_gen, client):
         resp = client.post("/api/auth/send-register-code", json={"email": "verify@test.com"})
         assert resp.status_code == 200
         mock_redis_v = AsyncMock()
+        mock_redis_v.get = AsyncMock(return_value=b"111111")
         mock_redis_v.incr = AsyncMock(return_value=1)
         mock_redis_v.expire = AsyncMock(return_value=True)
         with patch("routers.auth.register.get_redis", return_value=mock_redis_v):
             resp = client.post("/api/auth/verify", json={
                 "email": "verify@test.com", "code": "999999"
             })
-            assert resp.status_code in (200, 400)
+            assert resp.status_code == 400
 
     def test_verify_success_flow(self, client):
         """Lines 153-156: verify endpoint success path."""

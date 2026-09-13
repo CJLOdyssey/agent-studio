@@ -1,5 +1,6 @@
 """密码管理端点：忘记、重置、修改。"""
 
+import hmac
 from typing import Any
 
 import bcrypt
@@ -88,7 +89,7 @@ async def reset_password(body: ResetPasswordRequest) -> Any:
         raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码已过期，请重新获取")
 
     stored_code = stored.decode() if isinstance(stored, bytes) else stored
-    if stored_code != code:
+    if not hmac.compare_digest(stored_code, code):
         raise error_response(ErrorCode.INVALID_REQUEST, detail="验证码错误")
 
     pwd_error = validate_password(new_password)

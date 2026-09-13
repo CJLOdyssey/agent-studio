@@ -14,44 +14,14 @@ const api = axios.create({
   withCredentials: true,
 });
 
-const REFRESH_KEY = 'agentstudio_refresh_token';
-
-/** 仅存储或清除 refresh_token——access_token 是由服务端设置的 httpOnly cookie。 */
-export function setTokens(_access: string | null, refresh: string | null) {
-  if (refresh) {
-    localStorage.setItem(REFRESH_KEY, refresh);
-  } else {
-    localStorage.removeItem(REFRESH_KEY);
-  }
-}
-
-/** access token 现为 httpOnly cookie——JS 无法读取。返回 null。 */
-export function getAccessToken(): string | null {
-  return null;
-}
-
-export function clearTokens() {
-  setTokens(null, null);
-}
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e: StorageEvent) => {
-    if (e.key === REFRESH_KEY && !e.newValue) {
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-    }
-  });
-  window.addEventListener('auth:unauthorized', () => {
-    clearTokens();
-  });
-}
-
 interface RetryConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
 if (api.interceptors?.request) {
   api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    // access token 在 httpOnly cookie 中（经 withCredentials 自动发送），无需 Authorization 头
+    // access/refresh token 均在 httpOnly cookie 中（经 withCredentials 自动发送），
+    // 前端无法也不应读取；X-User-ID 仅作 guest 数据命名空间（认证关闭时可信）。
     let uid = localStorage.getItem('agentstudio_user_id');
     if (!uid) {
       uid = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);

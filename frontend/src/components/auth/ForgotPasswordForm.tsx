@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
 interface Props {
@@ -10,7 +11,37 @@ interface Props {
 
 type Step = 'email' | 'code' | 'reset';
 
-export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error }: Props) {
+const btnClass =
+  'w-full py-[10px] rounded-[var(--radius-btn)] border-none bg-[var(--color-accent)] text-white text-base font-semibold';
+
+function SubmitButton({
+  submitting,
+  label,
+}: {
+  submitting: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="submit"
+      disabled={submitting}
+      className={btnClass}
+      style={{
+        cursor: submitting ? 'default' : 'pointer',
+        opacity: submitting ? 0.6 : 1,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+export default function ForgotPasswordForm({
+  onSendCode,
+  onReset,
+  onBack,
+  error,
+}: Props) {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -18,17 +49,21 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localError, setLocalError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   async function handleSendCode(e: FormEvent) {
     e.preventDefault();
-    if (!email) { setLocalError('请输入邮箱'); return; }
+    if (!email) {
+      setLocalError(t('auth.enterEmail'));
+      return;
+    }
     setSubmitting(true);
     setLocalError('');
     try {
       await onSendCode(email);
       setStep('code');
     } catch {
-      setLocalError('发送失败');
+      setLocalError(t('auth.sendFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -36,34 +71,52 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
 
   async function handleReset(e: FormEvent) {
     e.preventDefault();
-    if (!email || !code || !newPassword) { setLocalError('请填写完整信息'); return; }
-    if (newPassword !== confirmPassword) { setLocalError('两次密码输入不一致'); return; }
+    if (!email || !code || !newPassword) {
+      setLocalError(t('auth.fillComplete'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setLocalError(t('auth.passwordMismatch'));
+      return;
+    }
     setSubmitting(true);
     setLocalError('');
     try {
       await onReset(email, code, newPassword);
       setStep('reset');
     } catch (err: unknown) {
-      setLocalError((err as { message?: string })?.message || '重置失败');
+      setLocalError(
+        (err as { message?: string })?.message || t('auth.resetFailed'),
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
-  const inputClass = 'w-full px-3 py-[10px] rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] text-sm outline-none box-border mb-3';
+  const inputClass =
+    'w-full px-3 py-[10px] rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text-primary)] text-sm outline-none box-border mb-3';
 
-  const btnClass = 'w-full py-[10px] rounded-[var(--radius-btn)] border-none bg-[var(--color-accent)] text-white text-base font-semibold';
+  const errorText = localError || error;
 
   if (step === 'reset') {
     return (
       <div className="text-center py-5">
         <div className="text-[40px] mb-3">✓</div>
-        <p className="text-base font-semibold m-0 mb-2">密码已重置</p>
-        <p className="text-sm text-[var(--color-text-tertiary)] m-0 mb-5">
-          请使用新密码重新登录
+        <p className="text-base font-semibold m-0 mb-2">
+          {t('auth.passwordResetDone')}
         </p>
-        <button onClick={onBack} className={btnClass} style={{ cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
-          返回登录
+        <p className="text-sm text-[var(--color-text-tertiary)] m-0 mb-5">
+          {t('auth.reloginPrompt')}
+        </p>
+        <button
+          onClick={onBack}
+          className={btnClass}
+          style={{
+            cursor: submitting ? 'default' : 'pointer',
+            opacity: submitting ? 0.6 : 1,
+          }}
+        >
+          {t('auth.backToLogin')}
         </button>
       </div>
     );
@@ -73,12 +126,12 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
     return (
       <form onSubmit={handleReset}>
         <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
-          验证码已发送至 {email}
+          {t('auth.codeSentTo', { email })}
         </p>
         <input
           type="text"
           inputMode="numeric"
-          placeholder="验证码"
+          placeholder={t('auth.codePlaceholder')}
           value={code}
           onChange={(e) => setCode(e.target.value.slice(0, 6))}
           className={inputClass}
@@ -86,7 +139,7 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
         />
         <input
           type="password"
-          placeholder="新密码 (至少8位)"
+          placeholder={t('auth.newPasswordPlaceholder')}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           className={inputClass}
@@ -94,21 +147,26 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
         <PasswordStrengthIndicator password={newPassword} validated={true} />
         <input
           type="password"
-          placeholder="确认新密码"
+          placeholder={t('auth.confirmNewPasswordPlaceholder')}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={`${inputClass} mt-3`}
         />
-        {(localError || error) && (
+        {errorText && (
           <p className="m-0 mb-2 text-sm text-[var(--color-danger)]">
-            {localError || error}
+            {errorText}
           </p>
         )}
-        <button type="submit" disabled={submitting} className={btnClass} style={{ cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
-          {submitting ? '重置中...' : '重置密码'}
-        </button>
-        <button type="button" onClick={() => setStep('email')} className="block mx-auto mt-3 bg-transparent border-none text-[var(--color-text-tertiary)] cursor-pointer text-sm underline">
-          返回
+        <SubmitButton
+          submitting={submitting}
+          label={submitting ? t('auth.resetting') : t('auth.resetPassword')}
+        />
+        <button
+          type="button"
+          onClick={() => setStep('email')}
+          className="block mx-auto mt-3 bg-transparent border-none text-[var(--color-text-tertiary)] cursor-pointer text-sm underline"
+        >
+          {t('auth.back')}
         </button>
       </form>
     );
@@ -117,26 +175,31 @@ export default function ForgotPasswordForm({ onSendCode, onReset, onBack, error 
   return (
     <form onSubmit={handleSendCode}>
       <p className="text-sm text-[var(--color-text-tertiary)] mb-4">
-        输入注册邮箱，我们将发送验证码
+        {t('auth.emailHint')}
       </p>
       <input
         type="email"
-        placeholder="邮箱地址"
+        placeholder={t('auth.emailPlaceholder')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className={inputClass}
         autoComplete="email"
       />
-      {(localError || error) && (
+      {errorText && (
         <p className="m-0 mb-2 text-sm text-[var(--color-danger)]">
-          {localError || error}
+          {errorText}
         </p>
       )}
-      <button type="submit" disabled={submitting} className={btnClass} style={{ cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.6 : 1 }}>
-        {submitting ? '发送中...' : '发送验证码'}
-      </button>
-      <button type="button" onClick={onBack} className="block mx-auto mt-3 bg-transparent border-none text-[var(--color-text-tertiary)] cursor-pointer text-sm underline">
-        返回登录
+      <SubmitButton
+        submitting={submitting}
+        label={submitting ? t('auth.sending') : t('auth.sendResetCode')}
+      />
+      <button
+        type="button"
+        onClick={onBack}
+        className="block mx-auto mt-3 bg-transparent border-none text-[var(--color-text-tertiary)] cursor-pointer text-sm underline"
+      >
+        {t('auth.backToLogin')}
       </button>
     </form>
   );

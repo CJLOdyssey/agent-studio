@@ -102,7 +102,7 @@ def _rid(prefix: str = "test") -> str:
 def _clear_rate_limits() -> None:
     try:
         out = subprocess.run(
-            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "KEYS", "ratelimit:*"],
+            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "0", "KEYS", "ratelimit:*"],
             capture_output=True,
             text=True,
             timeout=5,
@@ -110,7 +110,7 @@ def _clear_rate_limits() -> None:
         if out.stdout.strip():
             keys = out.stdout.strip().split("\n")
             subprocess.run(
-                ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "DEL"] + keys,
+                ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "0", "DEL"] + keys,
                 capture_output=True,
                 timeout=5,
             )
@@ -118,20 +118,20 @@ def _clear_rate_limits() -> None:
         pass
 
 
-_TOKEN_CACHE: str | None = None
+_COOKIE_CACHE: httpx.Cookies | None = None
 
 
-def _obtain_token() -> str | None:
-    """Obtain a Bearer token for rbac mode.
+def _obtain_cookies() -> httpx.Cookies | None:
+    """Obtain auth cookies for rbac mode (cookie-only transport).
 
     Tries POST /api/auth/login first. If that fails (user not yet
     registered), runs the full register flow using docker exec to
-    read the verification code from Redis. Caches the token globally
+    read the verification code from Redis. Caches the cookies globally
     so the flow executes at most once per session.
     """
-    global _TOKEN_CACHE
-    if _TOKEN_CACHE is not None:
-        return _TOKEN_CACHE
+    global _COOKIE_CACHE
+    if _COOKIE_CACHE is not None:
+        return _COOKIE_CACHE
 
     c = httpx.Client(base_url=BASE, timeout=15)
     try:
@@ -141,8 +141,8 @@ def _obtain_token() -> str | None:
 
         resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
         if resp.status_code == 200:
-            _TOKEN_CACHE = resp.json()["access_token"]
-            return _TOKEN_CACHE
+            _COOKIE_CACHE = resp.cookies
+            return _COOKIE_CACHE
 
         # Login failed → register new user
         _clear_rate_limits()
@@ -156,26 +156,26 @@ def _obtain_token() -> str | None:
                 json={"email": TEST_EMAIL, "code": code, "password": TEST_PASSWORD},
             )
             if resp.status_code == 201:
-                _TOKEN_CACHE = resp.json()["access_token"]
-                return _TOKEN_CACHE
+                _COOKIE_CACHE = resp.cookies
+                return _COOKIE_CACHE
             resp = c.post("/api/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD})
             if resp.status_code == 200:
-                _TOKEN_CACHE = resp.json()["access_token"]
-                return _TOKEN_CACHE
+                _COOKIE_CACHE = resp.cookies
+                return _COOKIE_CACHE
     except Exception:
         pass
     finally:
         c.close()
 
     # Mark failure so we don't retry on every test
-    _TOKEN_CACHE = ""
+    _COOKIE_CACHE = httpx.Cookies()
     return None
 
 
 def _attach_auth(client: httpx.Client) -> None:
-    token = _obtain_token()
-    if token:
-        client.headers.update({"Authorization": f"Bearer {token}"})
+    cookies = _obtain_cookies()
+    if cookies:
+        client.cookies.update(cookies)
 
 
 def _cleanup(*ids_and_endpoints: tuple[str, str]) -> None:
@@ -191,7 +191,7 @@ def _read_redis(pattern: str) -> list[str]:
     """Read values from Redis matching a key pattern (via docker exec)."""
     try:
         out = subprocess.run(
-            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "KEYS", pattern],
+            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "0", "KEYS", pattern],
             capture_output=True,
             text=True,
             timeout=5,
@@ -200,7 +200,7 @@ def _read_redis(pattern: str) -> list[str]:
             return []
         keys = out.stdout.strip().split("\n")
         vals = subprocess.run(
-            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "MGET"] + keys,
+            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "0", "MGET"] + keys,
             capture_output=True,
             text=True,
             timeout=5,
@@ -214,14 +214,14 @@ def _delete_redis(pattern: str) -> None:
     """Delete Redis keys matching a pattern (via docker exec)."""
     try:
         out = subprocess.run(
-            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "KEYS", pattern],
+            ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "0", "KEYS", pattern],
             capture_output=True,
             text=True,
             timeout=5,
         )
         if out.stdout.strip():
             subprocess.run(
-                ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "1", "DEL"]
+                ["docker", "exec", "agent-studio-redis", "redis-cli", "-n", "0", "DEL"]
                 + out.stdout.strip().split("\n"),
                 capture_output=True,
                 timeout=5,

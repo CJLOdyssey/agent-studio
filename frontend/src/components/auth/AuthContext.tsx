@@ -12,9 +12,9 @@ import {
   sendRegisterCode as apiSendRegisterCode,
   logout as apiLogout,
 } from '../../api/client/auth';
-import { clearTokens, setTokens } from '../../api/client/instance';
 import { refreshAccessToken } from '../../api/client/refresh';
 import { useChatStore } from '../../stores/chatStore';
+import { broadcastAuthEvent, subscribeAuthEvents } from '../../utils/authChannel';
 
 function clearLocalConversations() {
   try {
@@ -159,14 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     void init();
 
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'agentstudio_refresh_token' && !e.newValue) {
-        setUser(null);
-        clearTokens();
-        clearLocalConversations();
-        setLoginModalOpen(true);
-      }
-    };
     const handleUnauthorized = () => {
       setUser(null);
       clearLocalConversations();
@@ -175,12 +167,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('agentstudio-active-conv-id');
       setLoginModalOpen(true);
     };
-    window.addEventListener('storage', handleStorage);
+    // 跨标签页登出：另一标签页登出后，cookie 已由服务端清除 ——
+    // 通过 BroadcastChannel 立即同步本页 UI（无需等待下一次 401）。
+    const unsubscribeAuthChannel = subscribeAuthEvents((event) => {
+      if (event !== 'logout') return;
+      handleUnauthorized();
+      window.dispatchEvent(new CustomEvent('auth:logout'));
+    });
     window.addEventListener('auth:unauthorized', handleUnauthorized);
 
     return () => {
       cancelled = true;
-      window.removeEventListener('storage', handleStorage);
+      unsubscribeAuthChannel();
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
   }, [refreshSession]);
@@ -238,7 +236,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string, rememberMe?: boolean) => {
     const res = await apiLogin(email, password, rememberMe);
-    setTokens(res.access_token, res.refresh_token);
     setLoading(false);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     localStorage.setItem('agentstudio_user_id', res.user.id);
@@ -248,7 +245,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (email: string, code: string, password: string) => {
     const res = await apiRegister(email, code, password);
-    setTokens(res.access_token, res.refresh_token);
     setLoading(false);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     localStorage.setItem('agentstudio_user_id', res.user.id);
@@ -258,7 +254,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verify = useCallback(async (email: string, code: string) => {
     const res = await apiVerify(email, code);
-    setTokens(res.access_token, res.refresh_token);
     setLoading(false);
     setUser({ userId: res.user.id, email: res.user.email, username: res.user.username, roles: res.user.roles });
     localStorage.setItem('agentstudio_user_id', res.user.id);
@@ -275,23 +270,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    // 先通知后端撤销 refresh token 并清除 httpOnly access_token cookie，
+    // 先通知后端撤销 refresh token 并清除两个 httpOnly cookie，
     // 否则 cookie 残留会在刷新后自动恢复登录（"刷新后又登录"）。
-    // token 已失效时后端调用失败，忽略并继续完成本地登出。
+    // 令牌已失效时后端调用失败，忽略并继续完成本地登出。
     try {
-      const rt = localStorage.getItem('agentstudio_refresh_token');
-      if (rt) await apiLogout(rt);
+      await apiLogout();
     } catch {
       // 后端登出失败（token 已失效 / 网络）— 仍完成本地登出
     }
     setUser(null);
-    clearTokens();
     clearLocalConversations();
     localStorage.removeItem('agentstudio_user_id');
     localStorage.removeItem('agentstudio-selected-model');
     localStorage.removeItem('agentstudio-active-conv-id');
     useChatStore.getState().reset();
     setLoginModalOpen(true);
+    // 广播给同源其他标签页：cookie 已清除，其他页立即同步登出 UI。
+    broadcastAuthEvent('logout');
     window.dispatchEvent(new CustomEvent('auth:logout'));
   }, []);
 
