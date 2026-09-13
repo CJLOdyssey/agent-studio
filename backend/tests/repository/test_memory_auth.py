@@ -215,11 +215,11 @@ class TestAuthRepo:
         token_str, family_id = await create_refresh_token(user.id, ttl_days=1)
         assert token_str is not None
 
-        consumed_user, new_token = await consume_refresh_token(token_str)
+        consumed_user, new_token, _ = await consume_refresh_token(token_str)
         assert consumed_user is not None
         assert consumed_user.id == user.id
 
-        consumed_user2, new_token2 = await consume_refresh_token(token_str)
+        consumed_user2, new_token2, _ = await consume_refresh_token(token_str)
         assert consumed_user2 is None
         assert new_token2 is None
 

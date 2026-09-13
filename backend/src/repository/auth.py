@@ -218,10 +218,12 @@ async def create_refresh_token(user_id: str, family_id: str | None = None, ttl_d
     return token, token_hash
 
 
-async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
+async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None, int]:
     """验证并消费刷新令牌（轮换）。
 
-    成功返回 ``(user, family_id)``；失败返回 ``(None, None)``。
+    成功返回 ``(user, family_id, ttl_days)``；失败返回 ``(None, None, 0)``。
+    ``ttl_days`` 由被消费行的 ``expires_at - created_at``（原始生命周期）派生，
+    使调用方在轮换时保留 ``remember_me`` 语义（30 天会话保持 30 天）。
     """
     token_hash = _hash_token(token)
     factory = get_session_factory()
@@ -232,7 +234,7 @@ async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
         rt = result.scalar_one_or_none()
 
         if rt is None:
-            return None, None
+            return None, None, 0
 
         if rt.revoked_at is not None:
             # 重放攻击——撤销整个令牌族
@@ -242,13 +244,18 @@ async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
             for row in family_result.scalars().all():
                 row.revoked_at = datetime.now(UTC)
             await session.commit()
-            return None, None
+            return None, None, 0
 
         expires = rt.expires_at
         if expires.tzinfo is None:
             expires = expires.replace(tzinfo=UTC)
         if expires < datetime.now(UTC):
-            return None, None
+            return None, None, 0
+
+        created = rt.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+        ttl_days = max(1, round((expires - created).total_seconds() / 86400))
 
         # 轮换：撤销当前令牌，检查全局撤销
         rt.revoked_at = datetime.now(UTC)
@@ -256,10 +263,10 @@ async def consume_refresh_token(token: str) -> tuple[UserDB | None, str | None]:
         user = await session.get(UserDB, rt.user_id)
         if user is None:
             await session.commit()
-            return None, None
+            return None, None, 0
 
         await session.commit()
-        return user, rt.family_id
+        return user, rt.family_id, ttl_days
 
 
 async def revoke_all_user_tokens(user_id: str) -> None:

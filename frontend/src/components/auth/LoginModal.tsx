@@ -1,9 +1,10 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
+import { AuthTabs } from './AuthFormParts';
 import ForgotPasswordForm from './ForgotPasswordForm';
 import LoginPanel from './LoginPanel';
 import RegisterPanel from './RegisterPanel';
-import { AuthTabs } from './AuthFormParts';
 
 interface Props {
   onClose: () => void;
@@ -17,6 +18,7 @@ interface Props {
  *    （大厂共识：同一 AuthForm 外壳 + mode 变体，避免异构布局造成撕裂）
  */
 export default function LoginModal({ onClose }: Props) {
+  const { t } = useTranslation();
   const {
     loginModalView: view,
     forgotPassword,
@@ -36,12 +38,12 @@ export default function LoginModal({ onClose }: Props) {
         >
           <div className="flex items-center justify-between border-b border-white/[0.06] px-[34px] py-[21px]">
             <h3 className="m-0 text-[18px] font-semibold text-[#f4f4f8]">
-              重置密码
+              {t('auth.resetPassword')}
             </h3>
             <button
               className="flex items-center justify-center rounded-[8px] bg-transparent p-[8px] text-[#8b8b9a] transition-colors hover:bg-white/[0.06] hover:text-[#f4f4f8]"
               onClick={onClose}
-              aria-label="关闭"
+              aria-label={t('common.close')}
             >
               <X size={18} />
             </button>
@@ -86,7 +88,7 @@ export default function LoginModal({ onClose }: Props) {
             <button
               className="flex items-center justify-center rounded-[8px] bg-transparent p-[8px] text-[#8b8b9a] transition-colors hover:bg-white/[0.06] hover:text-[#f4f4f8]"
               onClick={onClose}
-              aria-label="关闭"
+              aria-label={t('common.close')}
             >
               <X size={18} />
             </button>
@@ -94,8 +96,8 @@ export default function LoginModal({ onClose }: Props) {
           <AuthTabs
             view={isRegister ? 'register' : 'login'}
             onChange={setView}
-            loginLabel="登录"
-            registerLabel="注册"
+            loginLabel={t('auth.login')}
+            registerLabel={t('auth.register')}
           />
         </div>
 
