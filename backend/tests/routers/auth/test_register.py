@@ -2,6 +2,8 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from services.email_service import EmailSendError
+
 
 class TestAuthRegister:
     """Register tests merged from coverage_boost, coverage_gaps, remaining_coverage."""
@@ -28,6 +30,14 @@ class TestAuthRegister:
             mock_get.return_value = MagicMock(id="existing-user")
             resp = client.post("/api/auth/send-register-code", json={"email": "exists@test.com"})
             assert resp.status_code == 409
+
+    def test_send_code_email_failure(self, client):
+        # smtp/resend 发送失败必须暴露为 503（EMAIL_001），不得静默成功。
+        with patch("routers.auth.register.send_email", new_callable=AsyncMock,
+                   side_effect=EmailSendError("SMTP send failed")):
+            resp = client.post("/api/auth/send-register-code", json={"email": "emailfail@test.com"})
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["error"]["code"] == "EMAIL_001"
 
     # ── register ────────────────────────────────────────────────────────────
 
@@ -314,3 +324,13 @@ class TestAuthRegister:
             "email": "admin@test.com"
         })
         assert resp.status_code == 200
+
+    def test_resend_verification_email_failure(self, client):
+        mock_user = MagicMock()
+        mock_user.is_verified = False
+        with patch("routers.auth.register.get_user_by_email", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.register.send_email", new_callable=AsyncMock,
+                   side_effect=EmailSendError("SMTP send failed")):
+            resp = client.post("/api/auth/resend-verification", json={"email": "resend-fail@test.com"})
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["error"]["code"] == "EMAIL_001"
