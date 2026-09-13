@@ -1,6 +1,9 @@
-"""登录、刷新令牌与登出端点。"""
+"""登录、刷新令牌与登出端点。
 
-import os
+刷新令牌仅经 httpOnly cookie 传输（防 XSS 窃取）：login/register/verify
+下发 cookie，refresh/logout 服务端读取 cookie；响应体不再回传令牌。
+"""
+
 from datetime import UTC, datetime
 from typing import Any
 
@@ -23,15 +26,17 @@ from .schemas import (
     ACCESS_TOKEN_TTL,
     AuthResponse,
     LoginRequest,
-    LogoutRequest,
-    RefreshRequest,
     _build_user_response,
     _check_rate_limit,
     _clear_access_token_cookie,
+    _clear_refresh_token_cookie,
     _client_ip,
+    _cookie_secure,
     _create_auth_response,
     _mask_email,
+    _refresh_ttl_seconds,
     _set_access_token_cookie,
+    _set_refresh_token_cookie,
 )
 
 logger = get_logger(__name__)
@@ -81,47 +86,60 @@ async def login(body: LoginRequest, request: Request, response: Response) -> Any
     logger.info("User logged in: %s", _mask_email(email))
 
     auth_resp = await _create_auth_response(user.id, user.email, user.username, body.remember_me)
-    _set_access_token_cookie(response, auth_resp.access_token, secure=_cookie_secure(request))
-    return auth_resp
-
-
-def _cookie_secure(request: Request) -> bool:
-    """access_token cookie 是否需要 Secure 标志。
-
-    开发（DEV_MODE=1）在纯 http 上运行——Secure cookie 会被浏览器静默丢弃
-    （幽灵登录）。生产始终设 Secure，即使 TLS 终止于不转发 scheme 的代理：
-    那里缺失标志是安全降级，而开发中多余的标志只是登录阻塞的麻烦
-    （开发退出是显式的）。
-    """
-    if os.environ.get("DEV_MODE", "") == "1":
-        return False
-    return request.url.scheme == "https"
+    secure = _cookie_secure(request)
+    _set_access_token_cookie(response, auth_resp.access_token, secure=secure)
+    _set_refresh_token_cookie(
+        response,
+        auth_resp.refresh_token,
+        secure=secure,
+        max_age=_refresh_ttl_seconds(body.remember_me),
+    )
+    return AuthResponse(
+        access_token="",
+        refresh_token="",
+        expires_in=auth_resp.expires_in,
+        user=auth_resp.user,
+    )
 
 
 @router.post("/refresh", response_model=AuthResponse)
-async def refresh(body: RefreshRequest, request: Request, response: Response) -> Any:
-    """用刷新令牌换取新的访问令牌与刷新令牌。"""
-    user, family_id = await consume_refresh_token(body.refresh_token)
+async def refresh(request: Request, response: Response) -> Any:
+    """用 refresh_token cookie 换取新的访问令牌与刷新令牌。"""
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise error_response(ErrorCode.AUTH_TOKEN_EXPIRED, detail="登录已过期，请重新登录")
+    user, family_id, ttl_days = await consume_refresh_token(refresh_token)
     if user is None:
+        _clear_refresh_token_cookie(response)
         raise error_response(ErrorCode.AUTH_TOKEN_EXPIRED, detail="登录已过期，请重新登录")
 
     new_refresh_token_raw, _ = await create_refresh_token(
-        user.id, family_id=family_id, ttl_days=7
+        user.id, family_id=family_id, ttl_days=ttl_days
     )
     access_token = create_token(user.id, AUTH_SECRET, ttl=ACCESS_TOKEN_TTL)
     user_resp = await _build_user_response(user.id, user.email, user.username)
 
-    _set_access_token_cookie(response, access_token, secure=_cookie_secure(request))
+    secure = _cookie_secure(request)
+    _set_access_token_cookie(response, access_token, secure=secure)
+    _set_refresh_token_cookie(
+        response,
+        new_refresh_token_raw,
+        secure=secure,
+        max_age=ttl_days * 86400,
+    )
     return AuthResponse(
         access_token="",
-        refresh_token=new_refresh_token_raw,
+        refresh_token="",
         expires_in=ACCESS_TOKEN_TTL,
         user=user_resp,
     )
 
 
 @router.post("/logout", status_code=204)
-async def logout(body: LogoutRequest, response: Response) -> None:
-    """使刷新令牌失效以登出用户并清除 access_token cookie。"""
-    await consume_refresh_token(body.refresh_token)
+async def logout(request: Request, response: Response) -> None:
+    """撤销 refresh_token cookie 并使两个认证 cookie 失效。"""
+    refresh_token = request.cookies.get("refresh_token")
+    if refresh_token:
+        await consume_refresh_token(refresh_token)
     _clear_access_token_cookie(response)
+    _clear_refresh_token_cookie(response)

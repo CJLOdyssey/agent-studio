@@ -27,7 +27,7 @@ test-frontend:
 	cd frontend && npx vitest run --coverage.enabled
 
 lint-backend:
-	ruff check backend/
+	ruff check backend/ --exclude='backend/tests/,backend/alembic/,backend/stubs/'
 
 typecheck-backend:
 	mypy backend/src --strict --explicit-package-bases

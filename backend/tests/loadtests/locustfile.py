@@ -27,7 +27,7 @@ from typing import Any
 from locust import FastHttpUser, between, events, task
 from locust.runners import MasterRunner, WorkerRunner
 
-AUTH_USERNAME = os.environ.get("LOADTEST_USERNAME", "admin")
+AUTH_EMAIL = os.environ.get("LOADTEST_EMAIL", "admin@example.com")
 AUTH_PASSWORD = os.environ.get("LOADTEST_PASSWORD", "admin123")
 
 # ── Shared utility ────────────────────────────────────────────────────────────
@@ -37,17 +37,13 @@ def _uid() -> str:
     return hex(random.randint(1, 99999))[2:]
 
 
-def _login(client: Any) -> str | None:
+def _login(client: Any) -> bool:
+    """Login (cookie-only transport) — locust's client keeps the cookie jar."""
     resp = client.post("/api/auth/login", json={
-        "username": AUTH_USERNAME,
+        "email": AUTH_EMAIL,
         "password": AUTH_PASSWORD,
     })
-    if resp.status_code == 200:
-        token = resp.json().get("access_token")
-        if token:
-            client.headers.update({"Authorization": f"Bearer {token}"})
-            return token
-    return None
+    return resp.status_code == 200
 
 
 # ── Response-time tracking for percentiles ────────────────────────────────────
