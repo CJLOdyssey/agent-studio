@@ -33,7 +33,6 @@ vi.mock('../components/auth', () => ({
     isAuthenticated: false,
     loginModalOpen: false,
     loginModalView: 'login' as const,
-    loginModalEmail: '',
     login: vi.fn(),
     register: vi.fn(),
     verify: vi.fn(),
@@ -44,7 +43,6 @@ vi.mock('../components/auth', () => ({
     sendRegisterCode: vi.fn(),
     openLoginModal: vi.fn(),
     closeLoginModal: vi.fn(),
-    setLoginModalEmail: vi.fn(),
     refetchUser: vi.fn(),
   }),
 }));
