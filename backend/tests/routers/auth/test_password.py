@@ -76,6 +76,19 @@ class TestAuthPassword:
             })
             assert resp.status_code == 400
 
+    def test_change_password_rate_limited(self, client):
+        """每用户限流（5 次/分）——被盗会话不得无限尝试改密（OWASP A07）。"""
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_redis.incr = AsyncMock(return_value=6)
+        mock_redis.expire = AsyncMock(return_value=True)
+        with patch("routers.auth.password.get_redis", return_value=mock_redis):
+            resp = client.post("/api/auth/change-password", json={
+                "old_password": "Old@Pass123",
+                "new_password": "New@Pass456",
+            })
+            assert resp.status_code == 429
+
     # ── forgot-password ─────────────────────────────────────────────────────
 
     def test_forgot_password_rate_limited(self, client):
