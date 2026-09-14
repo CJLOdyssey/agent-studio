@@ -104,6 +104,13 @@ cd frontend && npm run dev
 
 > **必填变量**：`DEEPSEEK_API_KEY`（LLM 推理）、`AUTH_SECRET`（JWT 签名，≥32 字符）、`KEY_VAULT_SECRET`（密钥加密，≥32 字符）。完整列表见 [环境变量](#-环境变量)。
 
+> **注册需要邮箱验证码**：默认 `EMAIL_BACKEND=log` 不会真的发邮件，验证码打印在后端日志：
+>
+> - 全容器模式：`docker compose -f docker/compose.base.yml -f docker/compose.local.yml logs -f backend`
+> - 混合模式：`journalctl --user -u agent-studio-backend -f`
+>
+> 需要真实发送邮件时，在 `.env` 中配置 SMTP（Gmail / QQ / 163 / SendGrid 等），示例见 [.env.example](.env.example)「邮件服务」章节。
+
 ---
 
 ## 🛠 技术栈
@@ -200,6 +207,18 @@ graph TB
 | `DEV_MODE` | — | 设为 `1` 启用开发快捷行为（http cookie 等） |
 | `RATE_LIMIT` | `120` | 请求限流（次/窗口） |
 | `RATE_LIMIT_WINDOW` | `60` | 限流窗口（秒） |
+
+### 邮件（注册验证码 / 密码重置）
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `EMAIL_BACKEND` | `log` | `log`（仅打印日志，开发用）/ `smtp` / `resend`；smtp/resend 发送失败时接口返回 503（不静默降级） |
+| `EMAIL_SMTP_HOST` | — | SMTP 服务器地址 |
+| `EMAIL_SMTP_PORT` | `587` | SMTP 端口（465 走 SSL，其余走 STARTTLS） |
+| `EMAIL_SMTP_TLS` | `1` | 非 465 端口是否启用 STARTTLS |
+| `EMAIL_SMTP_USER` / `EMAIL_SMTP_PASSWORD` | — | SMTP 账号 / 密码（个人邮箱填授权码） |
+| `EMAIL_FROM` | `onboarding@resend.dev` | 发件人地址（须与 SMTP 账号一致，否则被拒） |
+| `RESEND_API_KEY` | — | Resend API 密钥（`EMAIL_BACKEND=resend` 时必填） |
 
 ### 可选增强
 

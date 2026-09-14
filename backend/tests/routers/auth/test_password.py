@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import bcrypt
 
+from services.email_service import EmailSendError
+
 
 class TestAuthPassword:
     """Password-related tests merged from coverage_gaps and remaining_coverage."""
@@ -89,6 +91,23 @@ class TestAuthPassword:
             })
             assert resp.status_code == 400
 
+    def test_change_password_notification_failure_still_succeeds(self, client):
+        # 密码已修改成功——通知邮件失败只记日志，接口仍须 200。
+        mock_user = MagicMock()
+        mock_user.id = "u-cp-emailfail"
+        mock_user.password_hash = bcrypt.hashpw(b"OldStr0ng@Pass", bcrypt.gensalt()).decode()
+        mock_user.email = "cp-emailfail@test.com"
+        with patch("routers.auth.password.get_user_by_id", new_callable=AsyncMock, return_value=mock_user), \
+             patch("routers.auth.password.update_password", new_callable=AsyncMock), \
+             patch("routers.auth.password.revoke_all_user_tokens", new_callable=AsyncMock), \
+             patch("routers.auth.password.send_email", new_callable=AsyncMock,
+                   side_effect=EmailSendError("SMTP send failed")):
+            resp = client.post("/api/auth/change-password", json={
+                "old_password": "OldStr0ng@Pass",
+                "new_password": "NewStr0ng@Pass",
+            })
+            assert resp.status_code == 200
+
     # ── forgot-password ─────────────────────────────────────────────────────
 
     def test_forgot_password_rate_limited(self, client):
@@ -102,6 +121,16 @@ class TestAuthPassword:
                 "email": "fp-rl@test.com"
             })
             assert resp.status_code == 429
+
+    def test_forgot_password_email_failure(self, client):
+        # 发送失败必须暴露为 503（EMAIL_001），不得静默成功。
+        with patch("routers.auth.password.send_email", new_callable=AsyncMock,
+                   side_effect=EmailSendError("SMTP send failed")):
+            resp = client.post("/api/auth/forgot-password", json={
+                "email": "admin@test.com"
+            })
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["error"]["code"] == "EMAIL_001"
 
     # ── reset-password ──────────────────────────────────────────────────────
 
