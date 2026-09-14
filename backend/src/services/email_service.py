@@ -26,6 +26,14 @@ SMTP_PASSWORD = os.environ.get("EMAIL_SMTP_PASSWORD", "")
 SMTP_USE_TLS = os.environ.get("EMAIL_SMTP_TLS", "1") == "1"
 
 
+class EmailSendError(RuntimeError):
+    """配置了真实后端（smtp/resend）但发送失败时抛出。
+
+    仅 ``EMAIL_BACKEND=log`` 允许降级为控制台输出。配置了真实后端就必须
+    送达或向调用方暴露失败，避免接口在邮件未送达时仍报告成功。
+    """
+
+
 class LogMailer:
     """开发用邮件发送器——将邮件打印到日志与标准输出。"""
 
@@ -102,20 +110,34 @@ class ResendApiMailer:
 
 
 async def send_email(to: str, subject: str, html: str) -> None:
-    """使用配置的后端发送邮件。"""
-    if EMAIL_BACKEND == "resend" and RESEND_API_KEY:
-        try:
-            await ResendApiMailer().send(to, subject, html)
-            return
-        except Exception:
-            logger.exception("[ResendAPI] Failed to send email, falling back to log")
-    elif EMAIL_BACKEND == "smtp" and SMTP_HOST:
+    """使用配置的后端发送邮件。
+
+    ``log``（默认）打印到控制台供本地开发使用。``smtp`` / ``resend``
+    真实发送，失败（含配置缺失）时抛 ``EmailSendError``，不再静默降级为
+    日志——否则接口会在验证码未送达时报告成功。
+    """
+    if EMAIL_BACKEND == "smtp":
+        if not SMTP_HOST:
+            raise EmailSendError("EMAIL_BACKEND=smtp requires EMAIL_SMTP_HOST")
         try:
             await SmtpMailer().send(to, subject, html)
-            return
-        except Exception:
-            logger.exception("[SMTP] Failed to send email, falling back to log")
-    LogMailer().send(to, subject, html)
+        except Exception as exc:
+            logger.exception("[SMTP] Failed to send email")
+            raise EmailSendError("SMTP send failed") from exc
+        return
+    if EMAIL_BACKEND == "resend":
+        if not RESEND_API_KEY:
+            raise EmailSendError("EMAIL_BACKEND=resend requires RESEND_API_KEY")
+        try:
+            await ResendApiMailer().send(to, subject, html)
+        except Exception as exc:
+            logger.exception("[ResendAPI] Failed to send email")
+            raise EmailSendError("Resend API send failed") from exc
+        return
+    if EMAIL_BACKEND == "log":
+        LogMailer().send(to, subject, html)
+        return
+    raise EmailSendError(f"Unknown EMAIL_BACKEND: {EMAIL_BACKEND!r} (expected log|smtp|resend)")
 
 
 def build_verification_email(code: str, ttl_minutes: int = 5) -> tuple[str, str]:
