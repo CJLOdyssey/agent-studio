@@ -81,13 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await refreshAccessToken();
       lastRefreshRef.current = Date.now();
       return true;
-    } catch (err) {
-      // refresh_token 失效（401/403）→ 会话过期：登出，避免"幽灵登录"后
-      // 业务请求以 anonymous 身份报误导性 400。网络错误不登出（由定时器重试）。
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 401 || status === 403) {
-        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-      }
+    } catch {
       return false;
     }
   }, []);
